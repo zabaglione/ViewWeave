@@ -9,16 +9,16 @@ using UnityEngine.VFX;
 using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 using UnityEngine.Rendering.Universal;
-using LookingGlass.Community;
-using LookingGlass.Community.URP;
-using LookingGlass.Community.HDRP;
+using ViewWeave;
+using ViewWeave.URP;
+using ViewWeave.HDRP;
 
 #if UNITY_EDITOR
 using UnityEditor;
 using UnityEngine.Rendering.HighDefinition;
 #endif
 
-namespace LookingGlass.VFXCompatibility
+namespace ViewWeave.VFXCompatibility
 {
     sealed class VfxCameraPrepareBehaviour : MonoBehaviour
     {

@@ -4,9 +4,9 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.HighDefinition;
 using UnityEngine.VFX;
-using LookingGlass.Community;
+using ViewWeave;
 
-namespace LookingGlass.VFXCompatibility
+namespace ViewWeave.VFXCompatibility
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(QuiltRenderer))]

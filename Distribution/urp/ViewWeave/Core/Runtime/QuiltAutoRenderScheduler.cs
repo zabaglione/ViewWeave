@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.LowLevel;
 using UnityEngine.PlayerLoop;
 
-namespace LookingGlass.Community
+namespace ViewWeave
 {
     internal static class QuiltAutoRenderScheduler
     {

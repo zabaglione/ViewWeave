@@ -35,14 +35,14 @@ Playerを作るvalidationだけは、Editor methodが一時的なsceneを作成�
 
 | Editor method | generated scene | 目的 |
 | --- | --- | --- |
-| `LookingGlass.BridgeWorkerValidation.Editor.BridgeWorkerValidationBuilder.Build` | `Assets/BridgeWorkerValidationGenerated/BridgeWorkerValidation.unity` | Bridge Worker validation Player |
-| `LookingGlass.BridgeWorkerValidation.Editor.BridgeWorkerValidationBuilder.BuildDemo` | `Assets/BridgeWorkerValidationGenerated/ViewWeaveDemo.unity` | 48 view demo Player |
+| `ViewWeave.BridgeWorkerValidation.Editor.BridgeWorkerValidationBuilder.Build` | `Assets/BridgeWorkerValidationGenerated/BridgeWorkerValidation.unity` | Bridge Worker validation Player |
+| `ViewWeave.BridgeWorkerValidation.Editor.BridgeWorkerValidationBuilder.BuildDemo` | `Assets/BridgeWorkerValidationGenerated/ViewWeaveDemo.unity` | 48 view demo Player |
 | `ViewWeave.SamplePlayerValidation.Editor.SamplePlayerValidationBuilder.BuildUrp` | `Assets/SamplePlayerValidationGenerated/SamplePlayerValidation.unity` | URP sample Player |
 | `ViewWeave.SamplePlayerValidation.Editor.SamplePlayerValidationBuilder.BuildHdrp` | `Assets/SamplePlayerValidationGenerated/SamplePlayerValidation.unity` | HDRP sample Player |
-| `LookingGlass.PlayerValidation.Editor.PlayerValidationBuilder.Build` | `Assets/PlayerValidationGenerated/PlayerValidation.unity` | BridgeなしのURP GRD Player検証 |
-| `LookingGlass.VfxPlayerValidation.Editor.VfxPlayerValidationBuilder.Build` | `Assets/VfxPlayerValidationGenerated/VfxPlayerValidation.unity` | VFX Player validation |
+| `ViewWeave.PlayerValidation.Editor.PlayerValidationBuilder.Build` | `Assets/PlayerValidationGenerated/PlayerValidation.unity` | BridgeなしのURP GRD Player検証 |
+| `ViewWeave.VfxPlayerValidation.Editor.VfxPlayerValidationBuilder.Build` | `Assets/VfxPlayerValidationGenerated/VfxPlayerValidation.unity` | VFX Player validation |
 
-Bridge demoの視点番号検証は`LookingGlass.BridgeWorkerValidation.Editor.BridgeWorkerViewIndexDebugVerification.Run`です。Bridge接続なしで48 tileの番号一意性とcoverageを確認し、結果を`.local`へ保存します。実機確認ではview 0/47を左右と仮定せず、左右から実際に見えた番号を記録します。
+Bridge demoの視点番号検証は`ViewWeave.BridgeWorkerValidation.Editor.BridgeWorkerViewIndexDebugVerification.Run`です。Bridge接続なしで48 tileの番号一意性とcoverageを確認し、結果を`.local`へ保存します。実機確認ではview 0/47を左右と仮定せず、左右から実際に見えた番号を記録します。
 
 generated sceneを作ってPlayerをBuildする場合は、Unity CLIからEditor methodへ引数を渡します。例えばURP sample Playerは次のように実行します。
 

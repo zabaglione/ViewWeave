@@ -1,6 +1,6 @@
 using System;
 
-namespace LookingGlass.Community
+namespace ViewWeave
 {
     [Serializable]
     public readonly struct BridgeDisplayProfile

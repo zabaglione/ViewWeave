@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Serialization;
 
-namespace LookingGlass.Community
+namespace ViewWeave
 {
     [DisallowMultipleComponent]
     public sealed class QuiltRenderer : MonoBehaviour
@@ -169,7 +169,7 @@ namespace LookingGlass.Community
             if (quiltTexture == null || quiltTexture.width != layout.QuiltWidth || quiltTexture.height != layout.QuiltHeight)
             {
                 ReleaseOwnedTexture(ref quiltTexture);
-                quiltTexture = new RenderTexture(layout.QuiltWidth, layout.QuiltHeight, 0, RenderTextureFormat.ARGB32) { name = "LookingGlass.Quilt" };
+                quiltTexture = new RenderTexture(layout.QuiltWidth, layout.QuiltHeight, 0, RenderTextureFormat.ARGB32) { name = "ViewWeave.Quilt" };
                 quiltTexture.Create();
                 if (!quiltTexture.IsCreated()) throw new InvalidOperationException("failed to create quilt render texture");
             }
@@ -181,7 +181,7 @@ namespace LookingGlass.Community
                 {
                     viewTexture = new RenderTexture(layout.TileWidth, layout.TileHeight, 24, RenderTextureFormat.ARGB32)
                     {
-                        name = "LookingGlass.View",
+                        name = "ViewWeave.View",
                         useMipMap = false,
                         autoGenerateMips = false
                     };
@@ -195,7 +195,7 @@ namespace LookingGlass.Community
                         useMipMap = false,
                         autoGenerateMips = false
                     };
-                    viewTexture = new RenderTexture(descriptor) { name = "LookingGlass.View" };
+                    viewTexture = new RenderTexture(descriptor) { name = "ViewWeave.View" };
                 }
                 viewTexture.Create();
                 if (!viewTexture.IsCreated()) throw new InvalidOperationException("failed to create view render texture");
@@ -212,7 +212,7 @@ namespace LookingGlass.Community
                         useMipMap = false,
                         autoGenerateMips = false
                     };
-                    resolveTexture = new RenderTexture(descriptor) { name = "LookingGlass.ViewResolve" };
+                    resolveTexture = new RenderTexture(descriptor) { name = "ViewWeave.ViewResolve" };
                     resolveTexture.Create();
                     if (!resolveTexture.IsCreated()) throw new InvalidOperationException("failed to create view resolve texture");
                 }

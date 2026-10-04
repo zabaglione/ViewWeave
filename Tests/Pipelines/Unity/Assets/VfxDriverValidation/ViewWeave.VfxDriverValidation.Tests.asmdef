@@ -1,0 +1,10 @@
+{
+  "name": "ViewWeave.VfxDriverValidation.Tests",
+  "rootNamespace": "ViewWeave.VfxDriverValidation",
+  "references": ["ViewWeave.Core", "ViewWeave.URP", "Unity.RenderPipelines.Core.Runtime", "Unity.RenderPipelines.Universal.Runtime", "Unity.VisualEffectGraph.Runtime", "UnityEngine.TestRunner", "UnityEditor.TestRunner"],
+  "overrideReferences": true,
+  "precompiledReferences": ["nunit.framework.dll"],
+  "defineConstraints": ["UNITY_INCLUDE_TESTS"],
+  "includePlatforms": [],
+  "autoReferenced": false
+}

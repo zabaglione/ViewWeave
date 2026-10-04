@@ -1,7 +1,7 @@
-using LookingGlass.Community;
+using ViewWeave;
 using UnityEngine;
 
-namespace LookingGlass.VfxPlayerValidation
+namespace ViewWeave.VfxPlayerValidation
 {
     public sealed class VfxPlayerValidationOutput : MonoBehaviour, IQuiltOutput
     {

@@ -1,0 +1,7 @@
+{
+  "name": "ViewWeave.URP.Editor",
+  "rootNamespace": "ViewWeave.URP.Editor",
+  "references": ["ViewWeave.Core.Editor", "ViewWeave.URP", "Unity.RenderPipelines.Universal.Runtime"],
+  "includePlatforms": ["Editor"],
+  "autoReferenced": true
+}

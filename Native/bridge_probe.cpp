@@ -23,7 +23,7 @@ int main(int argc, char** argv) {
     auto unload = (void(*)())GetProcAddress(shim, "lkg_bridge_unload");
     if (!load || !init || !version || !count || !uninit || !unload) { std::fprintf(stderr, "shim exports missing\n"); return 4; }
     int rc = load(argv[2]); if (rc) { step("bridge_load_failed"); std::fprintf(stderr, "bridge load failed: %d\n", rc); return 5; } step("bridge_loaded");
-    rc = init("LookingGlassCommunityProbe"); if (rc) { step("bridge_init_failed"); std::fprintf(stderr, "bridge init failed: %d\n", rc); unload(); return 6; } step("bridge_initialized");
+    rc = init("ViewWeaveProbe"); if (rc) { step("bridge_init_failed"); std::fprintf(stderr, "bridge init failed: %d\n", rc); unload(); return 6; } step("bridge_initialized");
     char v[64] = {}; version(v, sizeof(v)); uint32_t n = 0; rc = count(&n);
     log << "version=" << v << " displays=" << n << " count_rc=" << rc << "\n"; log.flush(); std::printf("version=%s displays=%u count_rc=%d\n", v, n, rc); std::fflush(stdout);
     uninit(); step("uninitialized"); unload(); step("unloaded"); FreeLibrary(shim); step("cleanexit"); return rc ? 7 : 0;

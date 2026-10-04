@@ -26,7 +26,7 @@ def log(message: str) -> None:
 
 
 def source_package(part: str) -> Path:
-    expected_name = "com.zabaglione.viewweave." + part
+    expected_name = "com.zabaglione.lookingglass.viewweave." + part
     matches = []
     for package_json in sorted((ROOT / "Packages").glob("*/package.json")):
         try:
@@ -116,10 +116,10 @@ def package_json(kind: str) -> dict:
             },
         )
     return {
-        "name": "com.zabaglione.viewweave." + package_suffix,
+        "name": "com.zabaglione.lookingglass.viewweave." + package_suffix,
         "version": VERSION,
-        "displayName": "ViewWeave " + kind.upper(),
-        "description": "Self-contained ViewWeave " + kind.upper() + " package for Unity 6.",
+        "displayName": "ViewWeave for Looking Glass - " + kind.upper() + " (Unofficial)",
+        "description": "Self-contained unofficial ViewWeave " + kind.upper() + " package for Unity 6.",
         "license": "Apache-2.0",
         "unity": UNITY,
         "author": {"name": "zabaglione"},
@@ -208,7 +208,7 @@ def compare(expected: Path, actual: Path) -> list[str]:
 
 def validate_target(target: Path) -> None:
     data = json.loads((target / "package.json").read_text(encoding="utf-8"))
-    expected_name = "com.zabaglione.viewweave." + target.name
+    expected_name = "com.zabaglione.lookingglass.viewweave." + target.name
     if data.get("name") != expected_name:
         raise RuntimeError("wrong package name in %s" % target)
     dependency = "universal" if target.name == "urp" else "high-definition"

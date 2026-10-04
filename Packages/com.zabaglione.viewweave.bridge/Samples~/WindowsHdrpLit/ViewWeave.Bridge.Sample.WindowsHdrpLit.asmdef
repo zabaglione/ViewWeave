@@ -1,7 +1,0 @@
-{
-  "name": "ViewWeave.Bridge.Sample.WindowsHdrpLit",
-  "rootNamespace": "ViewWeave.Samples.WindowsHdrpLit",
-  "references": ["LookingGlass.Community.Core", "LookingGlass.Community.Bridge", "Unity.RenderPipelines.Core.Runtime", "Unity.RenderPipelines.HighDefinition.Runtime"],
-  "includePlatforms": [],
-  "autoReferenced": false
-}

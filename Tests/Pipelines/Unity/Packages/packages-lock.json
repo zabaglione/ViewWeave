@@ -162,35 +162,35 @@
         "com.unity.render-pipelines.core": "17.6.0"
       }
     },
-    "com.zabaglione.viewweave.bridge": {
-      "version": "file:../../../../Packages/com.zabaglione.viewweave.bridge",
+    "com.zabaglione.lookingglass.viewweave.bridge": {
+      "version": "file:../../../../Packages/com.zabaglione.lookingglass.viewweave.bridge",
       "depth": 0,
       "source": "local",
       "dependencies": {
-        "com.zabaglione.viewweave.core": "0.1.0"
+        "com.zabaglione.lookingglass.viewweave.core": "0.1.0"
       }
     },
-    "com.zabaglione.viewweave.core": {
-      "version": "file:../../../../Packages/com.zabaglione.viewweave.core",
+    "com.zabaglione.lookingglass.viewweave.core": {
+      "version": "file:../../../../Packages/com.zabaglione.lookingglass.viewweave.core",
       "depth": 0,
       "source": "local",
       "dependencies": {}
     },
-    "com.zabaglione.viewweave.hdrp": {
-      "version": "file:../../../../Packages/com.zabaglione.viewweave.hdrp",
+    "com.zabaglione.lookingglass.viewweave.hdrp": {
+      "version": "file:../../../../Packages/com.zabaglione.lookingglass.viewweave.hdrp",
       "depth": 0,
       "source": "local",
       "dependencies": {
-        "com.zabaglione.viewweave.core": "0.1.0",
+        "com.zabaglione.lookingglass.viewweave.core": "0.1.0",
         "com.unity.render-pipelines.high-definition": "17.6.0"
       }
     },
-    "com.zabaglione.viewweave.urp": {
-      "version": "file:../../../../Packages/com.zabaglione.viewweave.urp",
+    "com.zabaglione.lookingglass.viewweave.urp": {
+      "version": "file:../../../../Packages/com.zabaglione.lookingglass.viewweave.urp",
       "depth": 0,
       "source": "local",
       "dependencies": {
-        "com.zabaglione.viewweave.core": "0.1.0",
+        "com.zabaglione.lookingglass.viewweave.core": "0.1.0",
         "com.unity.render-pipelines.universal": "17.6.0"
       }
     },

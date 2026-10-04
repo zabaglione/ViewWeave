@@ -4,7 +4,7 @@ using System.IO;
 using System.Text;
 using System.Runtime.InteropServices;
 
-namespace LookingGlass.Community
+namespace ViewWeave
 {
     public static class BridgeRuntimeLocator
     {

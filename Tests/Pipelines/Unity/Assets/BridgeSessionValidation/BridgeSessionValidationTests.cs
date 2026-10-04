@@ -5,10 +5,10 @@ using System.IO;
 using System.Reflection;
 using UnityEngine;
 using UnityEngine.TestTools;
-using LookingGlass.Community;
+using ViewWeave;
 using Object = UnityEngine.Object;
 
-namespace LookingGlass.BridgeSessionValidation
+namespace ViewWeave.BridgeSessionValidation
 {
     public sealed class BridgeSessionValidationTests
     {
@@ -242,7 +242,7 @@ namespace LookingGlass.BridgeSessionValidation
                 BridgeWorkerQuiltOutput output = host.GetComponent<BridgeWorkerQuiltOutput>();
                 ViewWeaveRig rig = host.GetComponent<ViewWeaveRig>();
                 Type outputType = typeof(BridgeWorkerQuiltOutput);
-                Type statusType = typeof(BridgeWorkerQuiltOutput).Assembly.GetType("LookingGlass.Community.BridgeWorkerNative", true).GetNestedType("Status", BindingFlags.Public | BindingFlags.NonPublic);
+                Type statusType = typeof(BridgeWorkerQuiltOutput).Assembly.GetType("ViewWeave.BridgeWorkerNative", true).GetNestedType("Status", BindingFlags.Public | BindingFlags.NonPublic);
                 FieldInfo status = outputType.GetField("status", BindingFlags.Instance | BindingFlags.NonPublic);
                 FieldInfo outputState = outputType.GetField("state", BindingFlags.Instance | BindingFlags.NonPublic);
                 FieldInfo submissions = outputType.GetField("<Submissions>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic);
@@ -312,7 +312,7 @@ namespace LookingGlass.BridgeSessionValidation
         [Test]
         public void BridgeStatusAcceptsNativeNonDivisibleGridAndRejectsZeroFloor()
         {
-            Type nativeType = typeof(BridgeWorkerQuiltOutput).Assembly.GetType("LookingGlass.Community.BridgeWorkerNative", true);
+            Type nativeType = typeof(BridgeWorkerQuiltOutput).Assembly.GetType("ViewWeave.BridgeWorkerNative", true);
             Type statusType = nativeType.GetNestedType("Status", BindingFlags.NonPublic | BindingFlags.Public);
             MethodInfo validator = typeof(BridgeWorkerQuiltOutput).GetMethod("IsValidStatus", BindingFlags.NonPublic | BindingFlags.Static);
             Assert.IsNotNull(statusType);

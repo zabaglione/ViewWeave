@@ -1,8 +1,8 @@
 using System;
 using System.IO;
-using LookingGlass.Community;
-using LookingGlass.MultiviewSpikeValidation;
-using LookingGlass.Community.URP;
+using ViewWeave;
+using ViewWeave.MultiviewSpikeValidation;
+using ViewWeave.URP;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
 using UnityEditor.SceneManagement;
@@ -11,7 +11,7 @@ using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.SceneManagement;
 
-namespace LookingGlass.MultiviewSpikeValidation.Editor
+namespace ViewWeave.MultiviewSpikeValidation.Editor
 {
     public static class MultiviewSpikeFixtureBuilder
     {

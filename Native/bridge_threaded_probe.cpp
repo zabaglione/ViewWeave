@@ -230,7 +230,7 @@ static int Worker(BridgeApi api, const std::string& bridgePath, ID3D11Device* wo
     const int loadResult = api.load(loadPath.c_str());
     if (loadResult) return fail(loadResult, "bridge_load_failed");
     Trace("bridge_loaded");
-    const int initializeResult = api.initialize("LookingGlassThreadedProbe");
+    const int initializeResult = api.initialize("ViewWeaveThreadedProbe");
     if (initializeResult) { const int result = fail(initializeResult, "bridge_initialize_failed"); api.unload(); return result; }
     Trace("bridge_initialized");
     const int countResult = api.count(&displayCount);

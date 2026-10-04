@@ -10,11 +10,11 @@ using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.Rendering.HighDefinition;
 using UnityEngine.TestTools;
-using LookingGlass.Community;
-using LookingGlass.Community.URP;
-using LookingGlass.Community.HDRP;
+using ViewWeave;
+using ViewWeave.URP;
+using ViewWeave.HDRP;
 
-namespace LookingGlass.GraphicsCompatibility
+namespace ViewWeave.GraphicsCompatibility
 {
     public sealed class GeometryGraphicsCompatibilityTests
     {

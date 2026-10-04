@@ -1,9 +1,9 @@
 using System;
 using System.IO;
-using LookingGlass.BridgeWorkerValidation;
-using LookingGlass.Community;
-using LookingGlass.Community.URP;
-using LookingGlass.Community.HDRP;
+using ViewWeave.BridgeWorkerValidation;
+using ViewWeave;
+using ViewWeave.URP;
+using ViewWeave.HDRP;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
 using UnityEditor.Rendering;
@@ -14,7 +14,7 @@ using UnityEngine.Rendering.Universal;
 using UnityEngine.Rendering.HighDefinition;
 using UnityEngine.SceneManagement;
 
-namespace LookingGlass.BridgeWorkerValidation.Editor
+namespace ViewWeave.BridgeWorkerValidation.Editor
 {
     public static class BridgeWorkerValidationBuilder
     {
@@ -74,7 +74,7 @@ namespace LookingGlass.BridgeWorkerValidation.Editor
                 indexOutput.SetTarget(outputComponent);
                 indexOutput.ViewIndexDebug = true;
                 SerializedObject indexSerialized = new SerializedObject(indexOutput);
-                Shader indexShader = Shader.Find("LookingGlass/BridgeWorkerViewIndexDebug");
+                Shader indexShader = Shader.Find("ViewWeave/BridgeWorkerViewIndexDebug");
                 if (indexShader == null) throw new InvalidOperationException("View index debug shader unavailable");
                 indexSerialized.FindProperty("indexShader").objectReferenceValue = indexShader;
                 indexSerialized.ApplyModifiedPropertiesWithoutUndo();

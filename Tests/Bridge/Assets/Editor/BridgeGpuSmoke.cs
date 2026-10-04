@@ -2,7 +2,7 @@ using System;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
-using LookingGlass.Community;
+using ViewWeave;
 
 public static class BridgeGpuSmoke
 {

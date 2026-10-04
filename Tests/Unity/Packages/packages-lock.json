@@ -44,8 +44,8 @@
         "com.unity.modules.jsonserialize": "1.0.0"
       }
     },
-    "com.zabaglione.viewweave.core": {
-      "version": "file:../../../Packages/com.zabaglione.viewweave.core",
+    "com.zabaglione.lookingglass.viewweave.core": {
+      "version": "file:../../../Packages/com.zabaglione.lookingglass.viewweave.core",
       "depth": 0,
       "source": "local",
       "dependencies": {}

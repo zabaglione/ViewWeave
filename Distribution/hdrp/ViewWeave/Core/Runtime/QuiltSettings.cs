@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace LookingGlass.Community
+namespace ViewWeave
 {
     [Serializable]
     public sealed class QuiltSettings

@@ -3,13 +3,13 @@ using System.Collections;
 using System.Globalization;
 using System.IO;
 using System.Security.Cryptography;
-using LookingGlass.Community;
+using ViewWeave;
 using UnityEngine;
 using Unity.Profiling;
 using UnityEngine.Profiling;
 using UnityEngine.Rendering;
 
-namespace LookingGlass.BridgeWorkerValidation
+namespace ViewWeave.BridgeWorkerValidation
 {
     public sealed class BridgeWorkerValidationRunner : MonoBehaviour
     {

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace LookingGlass.Community
+namespace ViewWeave
 {
     internal sealed class BridgeWorkerReaper : MonoBehaviour
     {
@@ -31,7 +31,7 @@ namespace LookingGlass.Community
         static BridgeWorkerReaper Ensure()
         {
             if (instance != null) return instance;
-            var host = new GameObject("LookingGlass Bridge Worker Reaper");
+            var host = new GameObject("ViewWeave Bridge Worker Reaper");
             host.hideFlags = HideFlags.HideAndDontSave;
             DontDestroyOnLoad(host);
             instance = host.AddComponent<BridgeWorkerReaper>();

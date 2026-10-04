@@ -1,0 +1,10 @@
+{
+  "name": "ViewWeave.BridgeSessionValidation.Tests",
+  "rootNamespace": "ViewWeave.BridgeSessionValidation",
+  "references": ["ViewWeave.Core", "ViewWeave.Bridge", "UnityEngine.TestRunner", "UnityEditor.TestRunner"],
+  "overrideReferences": true,
+  "precompiledReferences": ["nunit.framework.dll"],
+  "defineConstraints": ["UNITY_INCLUDE_TESTS"],
+  "includePlatforms": [],
+  "autoReferenced": false
+}

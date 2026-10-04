@@ -1,7 +1,7 @@
-using LookingGlass.Community;
+using ViewWeave;
 using UnityEngine;
 
-namespace LookingGlass.PlayerValidation
+namespace ViewWeave.PlayerValidation
 {
     public sealed class PlayerValidationOutput : MonoBehaviour, IQuiltOutput
     {

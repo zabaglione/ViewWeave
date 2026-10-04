@@ -9,10 +9,10 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.HighDefinition;
 using UnityEngine.TestTools;
-using LookingGlass.Community;
-using LookingGlass.Community.HDRP;
+using ViewWeave;
+using ViewWeave.HDRP;
 
-namespace LookingGlass.GraphicsCompatibility
+namespace ViewWeave.GraphicsCompatibility
 {
     public sealed class HdrpGraphicsCompatibilityTests
     {

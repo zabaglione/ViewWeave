@@ -1,10 +1,10 @@
 using System;
 using System.IO;
-using LookingGlass.Community;
+using ViewWeave;
 using UnityEditor;
 using UnityEngine;
 
-namespace LookingGlass.BridgeWorkerValidation.Editor
+namespace ViewWeave.BridgeWorkerValidation.Editor
 {
     public static class BridgeWorkerViewIndexDebugVerification
     {
@@ -29,7 +29,7 @@ namespace LookingGlass.BridgeWorkerValidation.Editor
                 RenderTexture.active = previous;
                 BridgeWorkerViewIndexOutput output = host.AddComponent<BridgeWorkerViewIndexOutput>();
                 SerializedObject serialized = new SerializedObject(output);
-                Shader shader = Shader.Find("LookingGlass/BridgeWorkerViewIndexDebug");
+                Shader shader = Shader.Find("ViewWeave/BridgeWorkerViewIndexDebug");
                 if (shader == null) throw new InvalidOperationException("view index debug shader is unavailable");
                 serialized.FindProperty("indexShader").objectReferenceValue = shader;
                 serialized.ApplyModifiedPropertiesWithoutUndo();

@@ -2,13 +2,13 @@ using System.IO;
 using UnityEditor;
 using UnityEngine;
 
-namespace LookingGlass.Community.Editor
+namespace ViewWeave.Editor
 {
     public sealed class QuiltPreviewWindow : EditorWindow
     {
         QuiltRenderer renderer;
 
-        [MenuItem("Window/Looking Glass Community/Quilt Preview")]
+        [MenuItem("Window/ViewWeave/Quilt Preview")]
         static void Open() => GetWindow<QuiltPreviewWindow>("Quilt Preview");
 
         void OnGUI()

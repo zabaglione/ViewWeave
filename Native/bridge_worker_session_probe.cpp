@@ -87,7 +87,7 @@ static int32_t ReleaseWhenFinished(Api& api, void* handle) {
 }
 
 static bool ValidSession(Api& api, ID3D11Device* producer, const char* runtime, uint32_t ordinal, bool closeImmediately, LkgWorkerStatus& finalStatus) {
-    void* handle = api.begin(runtime, "LookingGlassWorkerSessionProbe", ordinal, producer);
+    void* handle = api.begin(runtime, "ViewWeaveWorkerSessionProbe", ordinal, producer);
     if (!handle) return false;
     bool sawReady = false;
     if (closeImmediately) {
@@ -109,7 +109,7 @@ static bool ValidSession(Api& api, ID3D11Device* producer, const char* runtime, 
 }
 
 static bool FaultSession(Api& api, ID3D11Device* producer, const char* runtime, uint32_t ordinal, const char* name) {
-    void* handle = api.begin(runtime, "LookingGlassWorkerSessionProbe", ordinal, producer);
+    void* handle = api.begin(runtime, "ViewWeaveWorkerSessionProbe", ordinal, producer);
     if (!handle) return false;
     LkgWorkerStatus status{};
     bool sawReady = false;
@@ -120,10 +120,10 @@ static bool FaultSession(Api& api, ID3D11Device* producer, const char* runtime, 
 }
 
 static bool DoubleBeginSession(Api& api, ID3D11Device* producer, const char* runtime) {
-    void* first = api.begin(runtime, "LookingGlassWorkerSessionProbe", 0, producer);
-    void* second = api.begin(runtime, "LookingGlassWorkerSessionProbe", 0, producer);
+    void* first = api.begin(runtime, "ViewWeaveWorkerSessionProbe", 0, producer);
+    void* second = api.begin(runtime, "ViewWeaveWorkerSessionProbe", 0, producer);
     const int32_t directLoad = api.load("Z:\\missing\\bridge_inproc.dll");
-    const int32_t directInitialize = api.initialize("LookingGlassWorkerSessionProbe");
+    const int32_t directInitialize = api.initialize("ViewWeaveWorkerSessionProbe");
     const int32_t earlyRelease = first ? api.release(first) : -9;
     const bool doubleBegin = first && !second;
     if (!first) return false;
@@ -217,10 +217,10 @@ int main(int argc, char** argv) {
     failures += ValidSession(api, producer.Get(), argv[2], 0, false, status) ? 0 : 1;
     failures += FaultSession(api, producer.Get(), argv[2], 9999, "invalidordinal") ? 0 : 1;
     failures += ValidSession(api, producer.Get(), argv[2], 0, true, status) ? 0 : 1;
-    void* first = api.begin(argv[2], "LookingGlassWorkerSessionProbe", 0, producer.Get());
-    void* second = api.begin(argv[2], "LookingGlassWorkerSessionProbe", 0, producer.Get());
+    void* first = api.begin(argv[2], "ViewWeaveWorkerSessionProbe", 0, producer.Get());
+    void* second = api.begin(argv[2], "ViewWeaveWorkerSessionProbe", 0, producer.Get());
     const int32_t directLoad = api.load("Z:\\missing\\bridge_inproc.dll");
-    const int32_t directInitialize = api.initialize("LookingGlassWorkerSessionProbe");
+    const int32_t directInitialize = api.initialize("ViewWeaveWorkerSessionProbe");
     const int32_t earlyRelease = first ? api.release(first) : -9;
     bool doubleBegin = first && !second;
     if (first) {

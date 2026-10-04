@@ -1,4 +1,4 @@
-Shader "LookingGlass/BridgeWorkerViewIndexDebug"
+Shader "ViewWeave/BridgeWorkerViewIndexDebug"
 {
     Properties
     {

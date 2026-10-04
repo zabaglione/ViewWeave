@@ -1,0 +1,10 @@
+{
+  "name": "ViewWeave.SrpAdditionalValidation.Tests",
+  "rootNamespace": "ViewWeave.SrpAdditionalValidation",
+  "references": ["ViewWeave.Core", "ViewWeave.URP", "ViewWeave.HDRP", "Unity.RenderPipelines.Universal.Runtime", "Unity.RenderPipelines.HighDefinition.Runtime", "Unity.RenderPipelines.Core.Runtime", "UnityEngine.TestRunner", "UnityEditor.TestRunner"],
+  "overrideReferences": true,
+  "precompiledReferences": ["nunit.framework.dll"],
+  "defineConstraints": ["UNITY_INCLUDE_TESTS"],
+  "includePlatforms": [],
+  "autoReferenced": false
+}

@@ -1,7 +1,0 @@
-{
-  "name": "ViewWeave.Bridge.Sample.WindowsUrpLit",
-  "rootNamespace": "ViewWeave.Samples.WindowsUrpLit",
-  "references": ["LookingGlass.Community.Core", "LookingGlass.Community.Bridge", "Unity.RenderPipelines.Universal.Runtime"],
-  "includePlatforms": [],
-  "autoReferenced": false
-}

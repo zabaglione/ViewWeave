@@ -1,5 +1,5 @@
 using System;
-using LookingGlass.Community;
+using ViewWeave;
 using UnityEngine;
 
 public sealed class ForeignGuard : MonoBehaviour, IQuiltRenderGuard

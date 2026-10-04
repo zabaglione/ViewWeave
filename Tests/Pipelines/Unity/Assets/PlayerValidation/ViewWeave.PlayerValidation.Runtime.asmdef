@@ -1,0 +1,20 @@
+{
+  "name": "ViewWeave.PlayerValidation.Runtime",
+  "rootNamespace": "ViewWeave.PlayerValidation",
+  "references": [
+    "ViewWeave.Core",
+    "ViewWeave.URP",
+    "Unity.RenderPipelines.Core.Runtime",
+    "Unity.RenderPipelines.GPUDriven.Runtime",
+    "Unity.RenderPipelines.Universal.Runtime"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

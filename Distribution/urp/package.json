@@ -1,8 +1,8 @@
 {
-  "name": "com.zabaglione.viewweave.urp",
+  "name": "com.zabaglione.lookingglass.viewweave.urp",
   "version": "0.1.0",
-  "displayName": "ViewWeave URP",
-  "description": "Self-contained ViewWeave URP package for Unity 6.",
+  "displayName": "ViewWeave for Looking Glass - URP (Unofficial)",
+  "description": "Self-contained unofficial ViewWeave URP package for Unity 6.",
   "license": "Apache-2.0",
   "unity": "6000.6",
   "author": {

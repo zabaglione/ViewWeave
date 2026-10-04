@@ -10,10 +10,10 @@ using UnityEditor;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.TestTools;
-using LookingGlass.Community;
-using LookingGlass.Community.URP;
+using ViewWeave;
+using ViewWeave.URP;
 
-namespace LookingGlass.GraphicsCompatibility
+namespace ViewWeave.GraphicsCompatibility
 {
     public sealed class UrpGraphicsCompatibilityTests
     {

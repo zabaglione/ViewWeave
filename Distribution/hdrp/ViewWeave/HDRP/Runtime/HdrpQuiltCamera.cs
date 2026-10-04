@@ -1,9 +1,9 @@
 using System;
 using UnityEngine;
 using UnityEngine.Rendering;
-using LookingGlass.Community;
+using ViewWeave;
 
-namespace LookingGlass.Community.HDRP
+namespace ViewWeave.HDRP
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Camera))]

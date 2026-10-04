@@ -1,7 +1,0 @@
-{
-  "name": "LookingGlass.Community.Bridge.Editor",
-  "rootNamespace": "LookingGlass.Community.Editor",
-  "references": ["LookingGlass.Community.Core", "LookingGlass.Community.Core.Editor", "LookingGlass.Community.Bridge"],
-  "includePlatforms": ["Editor"],
-  "autoReferenced": true
-}

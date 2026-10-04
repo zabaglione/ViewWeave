@@ -1,7 +1,0 @@
-{
-  "name": "LookingGlass.Community.Core.Editor",
-  "rootNamespace": "LookingGlass.Community.Editor",
-  "references": ["LookingGlass.Community.Core"],
-  "includePlatforms": ["Editor"],
-  "autoReferenced": true
-}

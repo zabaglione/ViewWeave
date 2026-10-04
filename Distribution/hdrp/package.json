@@ -1,8 +1,8 @@
 {
-  "name": "com.zabaglione.viewweave.hdrp",
+  "name": "com.zabaglione.lookingglass.viewweave.hdrp",
   "version": "0.1.0",
-  "displayName": "ViewWeave HDRP",
-  "description": "Self-contained ViewWeave HDRP package for Unity 6.",
+  "displayName": "ViewWeave for Looking Glass - HDRP (Unofficial)",
+  "description": "Self-contained unofficial ViewWeave HDRP package for Unity 6.",
   "license": "Apache-2.0",
   "unity": "6000.6",
   "author": {

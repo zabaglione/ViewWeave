@@ -1,0 +1,7 @@
+{
+  "name": "ViewWeave.MultiviewSpikeValidation.Editor",
+  "rootNamespace": "ViewWeave.MultiviewSpikeValidation.Editor",
+  "references": ["ViewWeave.MultiviewSpikeValidation.Runtime", "ViewWeave.Core", "ViewWeave.URP", "Unity.RenderPipelines.Core.Editor", "Unity.RenderPipelines.Core.Runtime", "Unity.RenderPipelines.Universal.Editor", "Unity.RenderPipelines.Universal.Runtime"],
+  "includePlatforms": ["Editor"],
+  "autoReferenced": false
+}

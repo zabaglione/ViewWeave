@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
-using LookingGlass.Community;
+using ViewWeave;
 
 namespace ViewWeave.Samples.WindowsUrpLit
 {

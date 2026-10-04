@@ -1,0 +1,7 @@
+{
+  "name": "ViewWeave.Bridge.Sample.WindowsHdrpLit",
+  "rootNamespace": "ViewWeave.Samples.WindowsHdrpLit",
+  "references": ["ViewWeave.Core", "ViewWeave.Bridge", "Unity.RenderPipelines.Core.Runtime", "Unity.RenderPipelines.HighDefinition.Runtime"],
+  "includePlatforms": [],
+  "autoReferenced": false
+}

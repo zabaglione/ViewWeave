@@ -10,10 +10,10 @@ using UnityEngine.VFX;
 using UnityEngine.TestTools;
 using UnityEditor;
 using Object = UnityEngine.Object;
-using LookingGlass.Community;
-using LookingGlass.Community.URP;
+using ViewWeave;
+using ViewWeave.URP;
 
-namespace LookingGlass.VfxDriverValidation
+namespace ViewWeave.VfxDriverValidation
 {
     public sealed class UrpVfxCameraDriverTests
     {

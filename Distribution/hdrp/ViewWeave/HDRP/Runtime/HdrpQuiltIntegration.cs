@@ -2,9 +2,9 @@ using System;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.HighDefinition;
-using LookingGlass.Community;
+using ViewWeave;
 
-namespace LookingGlass.Community.HDRP
+namespace ViewWeave.HDRP
 {
     public static class HdrpQuiltIntegration
     {

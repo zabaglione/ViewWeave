@@ -10,9 +10,9 @@ using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.Rendering.HighDefinition;
 using UnityEngine.TestTools;
-using LookingGlass.Community;
-using LookingGlass.Community.URP;
-using LookingGlass.Community.HDRP;
+using ViewWeave;
+using ViewWeave.URP;
+using ViewWeave.HDRP;
 using URPColorAdjustments = UnityEngine.Rendering.Universal.ColorAdjustments;
 using URPTonemapping = UnityEngine.Rendering.Universal.Tonemapping;
 using HDRPColorAdjustments = UnityEngine.Rendering.HighDefinition.ColorAdjustments;
@@ -20,7 +20,7 @@ using HDRPTonemapping = UnityEngine.Rendering.HighDefinition.Tonemapping;
 using HDRPTonemappingMode = UnityEngine.Rendering.HighDefinition.TonemappingMode;
 using URPTonemappingMode = UnityEngine.Rendering.Universal.TonemappingMode;
 
-namespace LookingGlass.GraphicsCompatibility
+namespace ViewWeave.GraphicsCompatibility
 {
     public sealed class AdditionalGraphicsCompatibilityTests
     {

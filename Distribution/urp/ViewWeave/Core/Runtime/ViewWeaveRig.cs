@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace LookingGlass.Community
+namespace ViewWeave
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Camera), typeof(QuiltRenderer))]

@@ -8,6 +8,7 @@ from urllib.parse import urlparse
 SEMVER = re.compile(r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$")
 PACKAGE_NAME = re.compile(r"^com\.[a-z0-9]+(?:[.-][a-z0-9]+)*$")
 FORBIDDEN = re.compile(r"(?:bridge_inproc\.dll|(?:^|[\\/_])bridge\.h$|lookingglass.*(?:sdk|official).*\.(?:dll|lib|h)|(?:^|[\\/_])(?:third.?party|vendor)[\\/_].*\.(?:dll|lib|h))", re.I)
+LEGACY_ASMDEF_PREFIXES = ("Looking" + "Glass.", "Looking" + "GlassCommunity.")
 
 class Reporter:
     def __init__(self): self.errors, self.warnings = [], []
@@ -64,13 +65,18 @@ def asmdef_check_profile(root, base, report, profile):
         if not isinstance(name, str) or not name: report.error(f"asmdef has no name {path.relative_to(root)}")
         elif name in names: report.error(f"duplicate {profile} asmdef name {name}")
         else: names.add(name)
+        if isinstance(name, str) and name.startswith(LEGACY_ASMDEF_PREFIXES):
+            report.error(f"legacy asmdef name {name} in {path.relative_to(root)}")
         entries.append((path, data))
     for path, data in entries:
         refs = data.get("references", [])
         if not isinstance(refs, list): report.error(f"asmdef references must be a list {path.relative_to(root)}"); continue
         for ref in refs:
             if not isinstance(ref, str): report.error(f"asmdef reference must be a string {path.relative_to(root)}"); continue
-            if (ref.startswith("LookingGlass.") or ref.startswith("LookingGlassCommunity.")) and ref not in names: report.error(f"unknown local asmdef reference {ref} in {path.relative_to(root)}")
+            if ref.startswith(LEGACY_ASMDEF_PREFIXES):
+                report.error(f"legacy asmdef reference {ref} in {path.relative_to(root)}")
+            elif ref.startswith("ViewWeave.") and ref not in names:
+                report.error(f"unknown local asmdef reference {ref} in {path.relative_to(root)}")
 
 def asmdef_check(root, report):
     asmdef_check_profile(root, "Packages", report, "source")

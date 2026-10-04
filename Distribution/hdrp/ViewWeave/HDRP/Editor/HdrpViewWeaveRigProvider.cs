@@ -2,9 +2,9 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.HighDefinition;
-using LookingGlass.Community.Editor;
+using ViewWeave.Editor;
 
-namespace LookingGlass.Community.HDRP.Editor
+namespace ViewWeave.HDRP.Editor
 {
     [InitializeOnLoad]
     static class HdrpViewWeaveRigProviderRegistration

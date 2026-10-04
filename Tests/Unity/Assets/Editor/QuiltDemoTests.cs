@@ -1,12 +1,12 @@
 using System;
 using System.IO;
-using LookingGlass.Community;
+using ViewWeave;
 using UnityEditor;
 using UnityEngine;
 
 public static class QuiltDemoTests
 {
-    [MenuItem("Tools/Looking Glass Community/Create Demo")]
+    [MenuItem("Tools/ViewWeave/Create Demo")]
     public static void CreateDemo()
     {
         GameObject root = CreateDemoRoot();
@@ -41,7 +41,7 @@ public static class QuiltDemoTests
 
     static GameObject CreateDemoRoot()
     {
-        GameObject root = new GameObject("LookingGlassCommunityDemo");
+        GameObject root = new GameObject("ViewWeaveDemo");
         Camera camera = root.AddComponent<Camera>();
         camera.enabled = false;
         camera.transform.position = new Vector3(0f, 0f, -4f);

@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace LookingGlass.Community
+namespace ViewWeave
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-100)]
@@ -20,7 +20,7 @@ namespace LookingGlass.Community
 
         public bool startOnEnable;
         public string runtimePath;
-        public string applicationName = "LookingGlassCommunity";
+        public string applicationName = "ViewWeave";
         public uint displayOrdinal;
         [SerializeField] QuiltQualityPreset quality = QuiltQualityPreset.Preview;
 

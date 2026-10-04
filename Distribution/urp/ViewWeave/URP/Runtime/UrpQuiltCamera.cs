@@ -2,9 +2,9 @@ using System;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
-using LookingGlass.Community;
+using ViewWeave;
 
-namespace LookingGlass.Community.URP
+namespace ViewWeave.URP
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Camera))]

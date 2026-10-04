@@ -1,13 +1,13 @@
 using System;
 using System.Collections;
 using System.IO;
-using LookingGlass.Community;
-using LookingGlass.Community.URP;
+using ViewWeave;
+using ViewWeave.URP;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
-namespace LookingGlass.MultiviewSpikeValidation
+namespace ViewWeave.MultiviewSpikeValidation
 {
     public sealed class MultiviewSpikeValidationRunner : MonoBehaviour
     {

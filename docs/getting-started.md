@@ -12,9 +12,9 @@
 4. HTTPSではURPに`https://github.com/zabaglione/ViewWeave.git?path=/Distribution/urp#main`、HDRPに`https://github.com/zabaglione/ViewWeave.git?path=/Distribution/hdrp#main`を入力します。SSHではURPに`ssh://git@github.com/zabaglione/ViewWeave.git?path=/Distribution/urp#main`、HDRPに`ssh://git@github.com/zabaglione/ViewWeave.git?path=/Distribution/hdrp#main`を入力します。
 5. 配布packageにCore、Bridge、選択したpipelineが含まれるため、別packageを追加しません。Package Managerの`Samples`からURPでは`Quilt Preview`または`Windows URP Lit`、HDRPでは`Windows HDRP Lit`をImportします。
 
-URPとHDRPの配布packageは同じprojectへ同時に追加せず、projectのpipelineに合う方を1つ選びます。`#main`を使うGit packageはPackage Managerのcacheが残ることがあるため、更新を確認するときは一度Removeしてから同じGit URLを再Addするか、検証用のcommit hashをURLのrefに指定します。
+Package ManagerではURP版を`ViewWeave for Looking Glass - URP (Unofficial)`、HDRP版を`ViewWeave for Looking Glass - HDRP (Unofficial)`として表示します。
 
-旧`com.lookingglass.community.*` packageから移行する場合は、Rig sceneを保存してプロジェクトをバックアップし、Package Managerで旧URP/HDRP、Bridge、最後にCoreの順にRemoveしてから、新しいGit配布packageを1つAddします。旧packageをRemoveしてから新packageの導入が完了するまではRig sceneを上書き保存しないでください。導入後にConsoleとRig sceneのMissing Scriptを確認します。import済みSamplesは削除・再Importせず、そのまま利用してください。同名Sampleを旧場所に残したまま新しい場所からImportするとscript/class/GUIDが二重になるため避けてください。新しい`com.zabaglione.viewweave.*` modular packageと配布packageも同時に導入できません。source packageのローカル参照は、このrepositoryの開発用テストだけで使用します。
+URPとHDRPの配布packageは同じprojectへ同時に追加せず、projectのpipelineに合う方を1つ選びます。`#main`を使うGit packageはPackage Managerのcacheが残ることがあるため、更新を確認するときは一度Removeしてから同じGit URLを再Addするか、検証用のcommit hashをURLのrefに指定します。
 
 ## 2. BridgeなしのEditor preview
 
@@ -23,7 +23,7 @@ Coreの`Quilt Preview`はURP専用です。HDRPでこのsampleを生成しない
 1. `GameObject > ViewWeave > Quilt Rig`を作成します。
 2. Rigへ`QuiltPreviewDemoGenerator`をAdd Componentします。
 3. `Preset=Preview`のまま、コンテキストメニューの`Generate Preview Rig`を実行します。
-4. `Window > Looking Glass Community > Quilt Preview`を開き、Rigの`QuiltRenderer`をRenderer欄へdragします。
+4. `Window > ViewWeave > Quilt Preview`を開き、Rigの`QuiltRenderer`をRenderer欄へdragします。
 5. `Render Quilt`を押します。Quilt Preview windowに分割された複数視点画像が表示されれば成功です。
 
 生成される名前は`Preview Lit Cube`、`Preview Lit Sphere`、`Preview Directional Light`です。`Balanced`または`Native`を使う場合はGeneratorの`nativeQuiltWidth`、`nativeQuiltHeight`、`columns`、`rows`を実際のprofileに設定します。Bridge、Looking Glass本体、device auto detectionは不要です。
@@ -57,10 +57,10 @@ repository rootで`python tools/prepare_sample_tests.py`を実行してから、
 
 Player用のgenerated sceneはEditor methodから作成します。
 
-- `LookingGlass.BridgeWorkerValidation.Editor.BridgeWorkerValidationBuilder.Build`: `Assets/BridgeWorkerValidationGenerated/BridgeWorkerValidation.unity`
-- `LookingGlass.BridgeWorkerValidation.Editor.BridgeWorkerValidationBuilder.BuildDemo`: `Assets/BridgeWorkerValidationGenerated/ViewWeaveDemo.unity`
+- `ViewWeave.BridgeWorkerValidation.Editor.BridgeWorkerValidationBuilder.Build`: `Assets/BridgeWorkerValidationGenerated/BridgeWorkerValidation.unity`
+- `ViewWeave.BridgeWorkerValidation.Editor.BridgeWorkerValidationBuilder.BuildDemo`: `Assets/BridgeWorkerValidationGenerated/ViewWeaveDemo.unity`
 - `ViewWeave.SamplePlayerValidation.Editor.SamplePlayerValidationBuilder.BuildUrp`または`BuildHdrp`: `Assets/SamplePlayerValidationGenerated/SamplePlayerValidation.unity`
-- `LookingGlass.PlayerValidation.Editor.PlayerValidationBuilder.Build`: `Assets/PlayerValidationGenerated/PlayerValidation.unity`
+- `ViewWeave.PlayerValidation.Editor.PlayerValidationBuilder.Build`: `Assets/PlayerValidationGenerated/PlayerValidation.unity`
 
 これらはBuild用の一時sceneです。Projectウィンドウから手動で編集するsceneとして扱いません。
 

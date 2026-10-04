@@ -1,9 +1,9 @@
 #if UNITY_EDITOR
 using System;
 using System.IO;
-using LookingGlass.Community;
-using LookingGlass.Community.HDRP;
-using LookingGlass.Community.URP;
+using ViewWeave;
+using ViewWeave.HDRP;
+using ViewWeave.URP;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
 using UnityEditor.SceneManagement;

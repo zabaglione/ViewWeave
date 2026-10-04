@@ -1,0 +1,7 @@
+{
+  "name": "ViewWeave.HDRP.Editor",
+  "rootNamespace": "ViewWeave.HDRP.Editor",
+  "references": ["ViewWeave.Core.Editor", "ViewWeave.HDRP", "Unity.RenderPipelines.HighDefinition.Runtime"],
+  "includePlatforms": ["Editor"],
+  "autoReferenced": true
+}

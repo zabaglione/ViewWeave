@@ -1,0 +1,14 @@
+{
+  "name": "ViewWeave.BridgeWorkerValidation.Editor",
+  "rootNamespace": "ViewWeave.BridgeWorkerValidation.Editor",
+  "references": ["ViewWeave.BridgeWorkerValidation.Runtime", "ViewWeave.Core", "ViewWeave.Bridge", "ViewWeave.URP", "ViewWeave.HDRP", "Unity.RenderPipelines.Core.Editor", "Unity.RenderPipelines.Core.Runtime", "Unity.RenderPipelines.GPUDriven.Runtime", "Unity.RenderPipelines.Universal.Editor", "Unity.RenderPipelines.Universal.Runtime", "Unity.RenderPipelines.HighDefinition.Editor", "Unity.RenderPipelines.HighDefinition.Runtime"],
+  "includePlatforms": ["Editor"],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

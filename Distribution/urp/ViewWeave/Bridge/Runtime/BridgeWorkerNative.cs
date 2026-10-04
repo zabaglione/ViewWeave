@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace LookingGlass.Community
+namespace ViewWeave
 {
     internal static class BridgeWorkerNative
     {

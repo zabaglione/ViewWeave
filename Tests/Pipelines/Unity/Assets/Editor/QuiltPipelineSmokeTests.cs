@@ -6,7 +6,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.Rendering.HighDefinition;
-using LookingGlass.Community;
+using ViewWeave;
 
 public static class QuiltPipelineSmokeEntryPoints
 {
@@ -21,7 +21,7 @@ public static class QuiltPipelineSmokeEntryPoints
         var oldQuality = QualitySettings.renderPipeline;
         GraphicsSettings.defaultRenderPipeline = asset;
         QualitySettings.renderPipeline = asset;
-        var root = new GameObject("LookingGlass.HDRP.Smoke");
+        var root = new GameObject("ViewWeave.HDRP.Smoke");
         var lightObject = new GameObject("SmokeDirectional");
         var light = lightObject.AddComponent<Light>();
         light.type = LightType.Directional;
@@ -70,7 +70,7 @@ public static class QuiltPipelineSmokeEntryPoints
         var motionBlur = volume.profile.Add<UnityEngine.Rendering.HighDefinition.MotionBlur>(true);
         motionBlur.active = true;
         motionBlur.intensity.value = 0f;
-        var guard = cameraObject.AddComponent<LookingGlass.Community.HDRP.HdrpQuiltCamera>();
+        var guard = cameraObject.AddComponent<ViewWeave.HDRP.HdrpQuiltCamera>();
         var quilt = cameraObject.AddComponent<QuiltRenderer>();
         quilt.sourceCamera = camera;
         quilt.GuardBehaviour = guard;
@@ -104,7 +104,7 @@ public static class QuiltPipelineSmokeEntryPoints
             quilt.RenderQuilt();
             if (!PixelsDiffer(bloomPixels, CapturePixels(quilt.QuiltTexture))) throw new InvalidOperationException("HDRP Bloom on/off produced no pixel change");
             if (camera.enabled || camera.transform.position != new Vector3(0f, 0f, -4f)) throw new InvalidOperationException("camera state was not restored");
-            Debug.Log("LookingGlass HDRP pipeline smoke passed");
+            Debug.Log("ViewWeave HDRP pipeline smoke passed");
         }
         finally
         {
@@ -133,7 +133,7 @@ public static class QuiltPipelineSmokeEntryPoints
         var oldQuality = QualitySettings.renderPipeline;
         GraphicsSettings.defaultRenderPipeline = pipelineAsset;
         QualitySettings.renderPipeline = pipelineAsset;
-        var root = new GameObject("LookingGlass.URP.Smoke");
+        var root = new GameObject("ViewWeave.URP.Smoke");
         var lightObject = new GameObject("SmokeDirectional");
         var light = lightObject.AddComponent<Light>();
         light.type = LightType.Directional;
@@ -168,7 +168,7 @@ public static class QuiltPipelineSmokeEntryPoints
         var bloom = volume.profile.Add<UnityEngine.Rendering.Universal.Bloom>(true);
         bloom.threshold.value = 0.5f;
         bloom.intensity.value = 2f;
-        var guard = cameraObject.AddComponent<LookingGlass.Community.URP.UrpQuiltCamera>();
+        var guard = cameraObject.AddComponent<ViewWeave.URP.UrpQuiltCamera>();
         var quilt = cameraObject.AddComponent<QuiltRenderer>();
         quilt.sourceCamera = camera;
         quilt.GuardBehaviour = guard;
@@ -191,7 +191,7 @@ public static class QuiltPipelineSmokeEntryPoints
             quilt.RenderQuilt();
             if (!PixelsDiffer(bloomPixels, CapturePixels(quilt.QuiltTexture))) throw new InvalidOperationException("Bloom on/off produced no pixel change");
             if (camera.enabled || camera.transform.position != new Vector3(0f, 0f, -4f)) throw new InvalidOperationException("camera state was not restored");
-            Debug.Log("LookingGlass URP pipeline smoke passed");
+            Debug.Log("ViewWeave URP pipeline smoke passed");
         }
         finally
         {

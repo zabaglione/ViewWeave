@@ -1,9 +1,9 @@
 using System;
-using LookingGlass.Community;
+using ViewWeave;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 
-namespace LookingGlass.BridgeWorkerValidation
+namespace ViewWeave.BridgeWorkerValidation
 {
     [DisallowMultipleComponent]
     public sealed class BridgeWorkerViewIndexOutput : MonoBehaviour, IQuiltOutput
@@ -24,7 +24,7 @@ namespace LookingGlass.BridgeWorkerValidation
 
         void Awake()
         {
-            if (indexShader == null) indexShader = Shader.Find("LookingGlass/BridgeWorkerViewIndexDebug");
+            if (indexShader == null) indexShader = Shader.Find("ViewWeave/BridgeWorkerViewIndexDebug");
             string argument = Argument("--view-index-debug");
             if (argument == "0" || argument == "1") viewIndexDebug = argument == "1";
             if (viewIndexDebug && indexShader == null) throw new InvalidOperationException("view index debug shader is unavailable");

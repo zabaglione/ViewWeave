@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
-using LookingGlass.Community;
+using ViewWeave;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -24,7 +24,7 @@ public sealed class BridgeRuntimeDemo : MonoBehaviour
         Application.runInBackground = true;
         string path = Environment.GetEnvironmentVariable("LKG_BRIDGE_PATH");
         if (string.IsNullOrWhiteSpace(path)) { Debug.LogError("BRIDGE_RUNTIME_ERROR LKG_BRIDGE_PATH is required"); return; }
-        content = new GameObject("LookingGlassRuntimeDemo");
+        content = new GameObject("ViewWeaveRuntimeDemo");
         output = content.AddComponent<BridgeQuiltOutput>();
         output.initializeOnEnable = false;
         output.bridgeLibraryPath = path;

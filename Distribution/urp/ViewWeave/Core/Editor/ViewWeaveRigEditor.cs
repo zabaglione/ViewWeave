@@ -4,7 +4,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace LookingGlass.Community.Editor
+namespace ViewWeave.Editor
 {
     public interface IViewWeaveRigProvider
     {

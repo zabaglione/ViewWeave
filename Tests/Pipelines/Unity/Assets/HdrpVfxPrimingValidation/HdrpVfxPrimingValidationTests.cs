@@ -11,10 +11,10 @@ using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using UnityEngine.VFX;
 using UnityEditor;
-using LookingGlass.Community;
-using LookingGlass.Community.HDRP;
+using ViewWeave;
+using ViewWeave.HDRP;
 
-namespace LookingGlass.HdrpVfxPrimingValidation
+namespace ViewWeave.HdrpVfxPrimingValidation
 {
     public sealed class HdrpVfxPrimingValidationTests
     {

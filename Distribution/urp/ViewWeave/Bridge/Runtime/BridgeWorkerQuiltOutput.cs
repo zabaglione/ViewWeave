@@ -3,13 +3,13 @@ using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 
-namespace LookingGlass.Community
+namespace ViewWeave
 {
     [DisallowMultipleComponent]
     public sealed class BridgeWorkerQuiltOutput : MonoBehaviour, IQuiltOutput
     {
         public string runtimePath;
-        public string applicationName = "LookingGlassCommunity";
+        public string applicationName = "ViewWeave";
         public uint displayOrdinal;
         public bool initializeOnEnable = true;
         [Range(0.01f, 4f)] public float zoom = 1f;
@@ -169,7 +169,7 @@ namespace LookingGlass.Community
             bool executeAttempted = false;
             try
             {
-                if (command == null) command = new CommandBuffer { name = "LookingGlass Bridge Worker Draw" };
+                if (command == null) command = new CommandBuffer { name = "ViewWeave Bridge Worker Draw" };
                 command.Clear();
                 command.IssuePluginEventAndData(BridgeWorkerNative.lkg_worker_render_event_func(), 0, drawData);
                 executeAttempted = true;

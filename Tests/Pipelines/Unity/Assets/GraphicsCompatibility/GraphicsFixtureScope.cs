@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.Collections.Generic;
 
-namespace LookingGlass.GraphicsCompatibility
+namespace ViewWeave.GraphicsCompatibility
 {
     internal sealed class GraphicsFixtureScope : System.IDisposable
     {

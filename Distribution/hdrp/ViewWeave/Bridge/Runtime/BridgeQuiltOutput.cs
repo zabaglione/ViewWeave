@@ -2,14 +2,14 @@ using System;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace LookingGlass.Community
+namespace ViewWeave
 {
     [DisallowMultipleComponent]
     public sealed class BridgeQuiltOutput : MonoBehaviour, IQuiltOutput
     {
         [Tooltip("Absolute path to the installed Bridge runtime DLL or dylib.")]
         public string bridgeLibraryPath;
-        public string applicationName = "LookingGlassCommunity";
+        public string applicationName = "ViewWeave";
         public uint displayIndex;
         public bool initializeOnEnable = true;
         [Range(0.01f, 4f)] public float zoom = 1f;

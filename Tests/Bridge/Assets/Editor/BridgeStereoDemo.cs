@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
-using LookingGlass.Community;
+using ViewWeave;
 using UnityEditor;
 using UnityEditor.Compilation;
 using UnityEngine;
@@ -37,7 +37,7 @@ public static class BridgeStereoDemo
         {
             string path = Environment.GetEnvironmentVariable("LKG_BRIDGE_PATH");
             if (string.IsNullOrWhiteSpace(path)) throw new Exception("LKG_BRIDGE_PATH is required");
-            root = new GameObject("LookingGlassStereoDemo");
+            root = new GameObject("ViewWeaveStereoDemo");
             output = root.AddComponent<BridgeQuiltOutput>();
             output.initializeOnEnable = false;
             output.bridgeLibraryPath = path;

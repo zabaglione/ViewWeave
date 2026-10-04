@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using UnityEngine.Rendering;
 
-namespace LookingGlass.Community.Samples
+namespace ViewWeave.Samples
 {
     public sealed class QuiltPreviewDemoGenerator : MonoBehaviour
     {

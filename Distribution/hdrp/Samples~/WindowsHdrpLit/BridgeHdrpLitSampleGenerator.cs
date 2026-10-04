@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.HighDefinition;
-using LookingGlass.Community;
+using ViewWeave;
 
 namespace ViewWeave.Samples.WindowsHdrpLit
 {

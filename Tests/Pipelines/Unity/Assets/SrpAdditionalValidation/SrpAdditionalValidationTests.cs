@@ -8,15 +8,15 @@ using UnityEngine.SceneManagement;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.TestTools;
-using LookingGlass.Community;
-using LookingGlass.Community.URP;
-using LookingGlass.Community.HDRP;
+using ViewWeave;
+using ViewWeave.URP;
+using ViewWeave.HDRP;
 using HD = UnityEngine.Rendering.HighDefinition;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 
-namespace LookingGlass.SrpAdditionalValidation
+namespace ViewWeave.SrpAdditionalValidation
 {
     public sealed class SrpAdditionalValidationTests
     {

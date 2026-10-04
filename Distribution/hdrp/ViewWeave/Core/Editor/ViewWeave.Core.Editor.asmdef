@@ -1,0 +1,7 @@
+{
+  "name": "ViewWeave.Core.Editor",
+  "rootNamespace": "ViewWeave.Editor",
+  "references": ["ViewWeave.Core"],
+  "includePlatforms": ["Editor"],
+  "autoReferenced": true
+}

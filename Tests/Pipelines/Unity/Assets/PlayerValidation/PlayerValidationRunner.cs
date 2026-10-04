@@ -3,13 +3,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using Stopwatch = System.Diagnostics.Stopwatch;
-using LookingGlass.Community;
+using ViewWeave;
 using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.Profiling;
 using UnityEngine.Rendering;
 
-namespace LookingGlass.PlayerValidation
+namespace ViewWeave.PlayerValidation
 {
     public sealed class PlayerValidationRunner : MonoBehaviour
     {

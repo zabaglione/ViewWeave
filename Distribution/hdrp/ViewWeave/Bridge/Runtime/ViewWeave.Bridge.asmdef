@@ -1,0 +1,14 @@
+{
+  "name": "ViewWeave.Bridge",
+  "rootNamespace": "ViewWeave",
+  "references": ["ViewWeave.Core"],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

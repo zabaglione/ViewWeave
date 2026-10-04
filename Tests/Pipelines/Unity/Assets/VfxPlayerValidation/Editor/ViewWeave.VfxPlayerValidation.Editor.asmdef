@@ -1,0 +1,7 @@
+{
+  "name": "ViewWeave.VfxPlayerValidation.Editor",
+  "rootNamespace": "ViewWeave.VfxPlayerValidation.Editor",
+  "references": ["ViewWeave.VfxPlayerValidation.Runtime", "ViewWeave.Core", "ViewWeave.URP", "Unity.RenderPipelines.Core.Runtime", "Unity.RenderPipelines.GPUDriven.Runtime", "Unity.RenderPipelines.Universal.Runtime", "Unity.VisualEffectGraph.Runtime", "Unity.RenderPipelines.Core.Editor", "Unity.RenderPipelines.Universal.Editor"],
+  "includePlatforms": ["Editor"],
+  "autoReferenced": true
+}

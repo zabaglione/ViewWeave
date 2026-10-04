@@ -1,7 +1,7 @@
 using System;
 using System.IO;
-using LookingGlass.Community;
-using LookingGlass.Community.URP;
+using ViewWeave;
+using ViewWeave.URP;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
 using UnityEditor.Rendering;
@@ -11,9 +11,9 @@ using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.SceneManagement;
 using UnityEngine.VFX;
-using LookingGlass.VfxPlayerValidation;
+using ViewWeave.VfxPlayerValidation;
 
-namespace LookingGlass.VfxPlayerValidation.Editor
+namespace ViewWeave.VfxPlayerValidation.Editor
 {
     public static class VfxPlayerValidationBuilder
     {

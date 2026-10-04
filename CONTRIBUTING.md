@@ -12,7 +12,7 @@ Before running the sample lifecycle tests from a clean clone, prepare the ignore
 
 Formal integration support is planned for URP and HDRP; Built-in pipeline support is outside the formal support target.
 
-Do not make performance claims without a fair, reproducible benchmark that states Unity version, render pipeline, graphics API, GPU, resolution, view count, and test scene. Bridge runtime libraries are an independent distribution concern: do not add official proprietary Bridge source, headers, or binaries. Native CMake build instructions and Unity Plugin API header requirements are documented in [the Bridge package README](Packages/com.zabaglione.viewweave.bridge/README.md); provenance is recorded in `Plugins/native-provenance.json`. Distribution policy remains subject to the external runtime terms.
+Do not make performance claims without a fair, reproducible benchmark that states Unity version, render pipeline, graphics API, GPU, resolution, view count, and test scene. Bridge runtime libraries are an independent distribution concern: do not add official proprietary Bridge source, headers, or binaries. Native CMake build instructions and Unity Plugin API header requirements are documented in [the Bridge package README](Packages/com.zabaglione.lookingglass.viewweave.bridge/README.md); provenance is recorded in `Plugins/native-provenance.json`. Distribution policy remains subject to the external runtime terms.
 
 ## Pull requests
 

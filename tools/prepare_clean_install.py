@@ -47,16 +47,16 @@ def check_project(root: Path, name: str, directory: str) -> int:
         raise RuntimeError(name + " missing: " + ", ".join(ascii_text(path) for path in missing))
     manifest = json.loads((project / "Packages" / "manifest.json").read_text(encoding="utf-8"))
     dependencies = manifest.get("dependencies", {})
-    for package in ("com.zabaglione.viewweave.core", "com.zabaglione.viewweave.bridge"):
+    for package in ("com.zabaglione.lookingglass.viewweave.core", "com.zabaglione.lookingglass.viewweave.bridge"):
         value = dependencies.get(package, "")
         if not value.startswith("file:"):
             raise RuntimeError(name + " requires a relative file dependency for " + package)
         package_path = (project / "Packages" / value[5:]).resolve()
         if not package_path.is_dir():
             raise RuntimeError(name + " dependency is missing: " + ascii_text(package_path))
-    if name == "urp" and "com.zabaglione.viewweave.urp" not in dependencies:
+    if name == "urp" and "com.zabaglione.lookingglass.viewweave.urp" not in dependencies:
         raise RuntimeError("urp adapter dependency is missing")
-    if name == "hdrp" and "com.zabaglione.viewweave.hdrp" not in dependencies:
+    if name == "hdrp" and "com.zabaglione.lookingglass.viewweave.hdrp" not in dependencies:
         raise RuntimeError("hdrp adapter dependency is missing")
     emit("ok " + name)
     return 1

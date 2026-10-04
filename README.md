@@ -22,11 +22,11 @@ Looking Glass向けの非公式Unity SDKです。専用のQuilt RenderTextureへ
 4. HTTPSを使う場合、URPは`https://github.com/zabaglione/ViewWeave.git?path=/Distribution/urp#main`、HDRPは`https://github.com/zabaglione/ViewWeave.git?path=/Distribution/hdrp#main`を入力します。SSHの場合は、それぞれ`ssh://git@github.com/zabaglione/ViewWeave.git?path=/Distribution/urp#main`、`ssh://git@github.com/zabaglione/ViewWeave.git?path=/Distribution/hdrp#main`を使います。
 5. 配布packageはCore、Bridge、選択したpipelineを含むため、別のCore/Bridge packageを追加しないでください。導入後、Package Managerの`Samples`から目的のsampleを`Import`します。
 
+Package ManagerではURP版を`ViewWeave for Looking Glass - URP (Unofficial)`、HDRP版を`ViewWeave for Looking Glass - HDRP (Unofficial)`として表示します。
+
 URPとHDRPの配布packageは同じprojectへ同時に追加せず、projectのpipelineに合う方を1つ選びます。`#main`を使うGit packageは、同じURLの再取得時にPackage Managerのcacheが残ることがあります。更新を確認するときはPackage Managerで一度Removeしてから同じGit URLを再Addするか、検証用のcommit hashをURLのrefに指定してください。
 
 この手順はローカルディスク上の`package.json`を選ぶ方法を使いません。開発者がsource packageを検証する場合だけ、`Tests/`のmanifestにあるローカル参照を使います。
-
-旧`com.lookingglass.community.*` packageから移行する場合は、Rig sceneを保存してプロジェクトをバックアップし、Package Managerで旧URP/HDRP、Bridge、最後にCoreの順にRemoveしてから、新しいGit配布packageを1つAddします。旧packageをRemoveしてから新packageの導入が完了するまではRig sceneを上書き保存しないでください。導入後にConsoleとRig sceneのMissing Scriptを確認します。import済みSamplesは削除・再Importせず、そのまま利用してください。同名Sampleを旧場所に残したまま新しい場所からImportすると、script/class/GUIDが二重になるため避けてください。新しい`com.zabaglione.viewweave.*` modular packageを使う場合も、配布packageとの同時導入はできません。
 
 ## Bridgeなしで最短確認する
 
@@ -35,7 +35,7 @@ URPプロジェクトで次の操作を行います。
 1. `GameObject > ViewWeave > Quilt Rig`を作成します。専用Camera、`QuiltRenderer`、`ViewWeaveRig`、URP adapterが作成されます。
 2. Rigに`QuiltPreviewDemoGenerator`をAdd Componentします。
 3. Inspectorの`Preset`を`Preview`にして、コンポーネントのコンテキストメニューから`Generate Preview Rig`を実行します。
-4. `Window > Looking Glass Community > Quilt Preview`を開き、Rigの`QuiltRenderer`をRenderer欄へdragします。
+4. `Window > ViewWeave > Quilt Preview`を開き、Rigの`QuiltRenderer`をRenderer欄へdragします。
 5. `Render Quilt`を押します。Bridge runtimeやLooking Glass本体は不要です。
 
 生成されるpreview sceneには`Preview Lit Cube`、`Preview Lit Sphere`、`Preview Directional Light`が含まれます。Quilt Preview windowに分割された複数視点画像が表示されれば成功です。`Balanced`または`Native`を使う場合はGeneratorの解像度とgridを実際のprofileに合わせます。Nativeは機器を自動検出しません。

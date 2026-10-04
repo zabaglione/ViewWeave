@@ -2,9 +2,9 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
-using LookingGlass.Community.Editor;
+using ViewWeave.Editor;
 
-namespace LookingGlass.Community.URP.Editor
+namespace ViewWeave.URP.Editor
 {
     [InitializeOnLoad]
     static class UrpViewWeaveRigProviderRegistration

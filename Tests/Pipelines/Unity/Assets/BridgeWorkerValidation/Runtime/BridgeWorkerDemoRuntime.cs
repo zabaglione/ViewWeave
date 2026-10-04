@@ -1,10 +1,10 @@
 using System;
 using System.IO;
-using LookingGlass.Community;
+using ViewWeave;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace LookingGlass.BridgeWorkerValidation
+namespace ViewWeave.BridgeWorkerValidation
 {
     public sealed class BridgeWorkerDemoRuntime : MonoBehaviour
     {

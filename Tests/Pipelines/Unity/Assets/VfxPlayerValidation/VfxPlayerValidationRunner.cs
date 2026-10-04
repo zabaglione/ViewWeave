@@ -1,15 +1,15 @@
 using System;
 using System.Collections;
 using System.IO;
-using LookingGlass.Community;
-using LookingGlass.Community.URP;
+using ViewWeave;
+using ViewWeave.URP;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Profiling;
 using UnityEngine.VFX;
 using Unity.Profiling;
 
-namespace LookingGlass.VfxPlayerValidation
+namespace ViewWeave.VfxPlayerValidation
 {
     public sealed class VfxPlayerValidationRunner : MonoBehaviour
     {

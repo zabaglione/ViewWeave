@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace LookingGlass.Community
+namespace ViewWeave
 {
     public static class QuiltMath
     {

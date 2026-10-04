@@ -1,12 +1,12 @@
 using System;
-using LookingGlass.Community;
+using ViewWeave;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
 using UnityEngine.Rendering.Universal;
 
-namespace LookingGlass.MultiviewSpikeValidation
+namespace ViewWeave.MultiviewSpikeValidation
 {
     public sealed class MultiviewOpaqueLitFeature : ScriptableRendererFeature
     {

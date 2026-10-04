@@ -11,9 +11,9 @@ using UnityEngine.SceneManagement;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
-using LookingGlass.Community;
-using LookingGlass.Community.URP;
-using LookingGlass.Community.HDRP;
+using ViewWeave;
+using ViewWeave.URP;
+using ViewWeave.HDRP;
 using ViewWeave.Samples.WindowsUrpLit;
 using ViewWeave.Samples.WindowsHdrpLit;
 

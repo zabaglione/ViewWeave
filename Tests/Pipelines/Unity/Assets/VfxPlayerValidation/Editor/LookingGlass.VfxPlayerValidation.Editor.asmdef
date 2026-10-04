@@ -1,7 +1,0 @@
-{
-  "name": "LookingGlass.VfxPlayerValidation.Editor",
-  "rootNamespace": "LookingGlass.VfxPlayerValidation.Editor",
-  "references": ["LookingGlass.VfxPlayerValidation.Runtime", "LookingGlass.Community.Core", "LookingGlass.Community.URP", "Unity.RenderPipelines.Core.Runtime", "Unity.RenderPipelines.GPUDriven.Runtime", "Unity.RenderPipelines.Universal.Runtime", "Unity.VisualEffectGraph.Runtime", "Unity.RenderPipelines.Core.Editor", "Unity.RenderPipelines.Universal.Editor"],
-  "includePlatforms": ["Editor"],
-  "autoReferenced": true
-}

@@ -12,14 +12,14 @@ using UnityEngine.Rendering;
 using UnityEngine.Rendering.HighDefinition;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.TestTools;
-using LookingGlass.Community;
+using ViewWeave;
 
 #if UNITY_EDITOR
 using UnityEditor;
 using UnityEditor.Rendering;
 #endif
 
-namespace LookingGlass.GRDValidation
+namespace ViewWeave.GRDValidation
 {
     public enum GrdPipelineKind { Urp, Hdrp }
     public enum GrdLoopPhase { BeforeFinish, AfterFinish, Automatic }
@@ -256,8 +256,8 @@ namespace LookingGlass.GRDValidation
             {
                 quilt.autoRender = false;
                 quilt.RenderQuilt();
-                var urpGuard = quilt.GuardBehaviour as LookingGlass.Community.URP.UrpQuiltCamera;
-                var hdrpGuard = quilt.GuardBehaviour as LookingGlass.Community.HDRP.HdrpQuiltCamera;
+                var urpGuard = quilt.GuardBehaviour as ViewWeave.URP.UrpQuiltCamera;
+                var hdrpGuard = quilt.GuardBehaviour as ViewWeave.HDRP.HdrpQuiltCamera;
                 var first = urpGuard != null ? urpGuard.ValidationStackCreationCount : hdrpGuard.ValidationStackCreationCount;
                 quilt.RenderQuilt();
                 var second = urpGuard != null ? urpGuard.ValidationStackCreationCount : hdrpGuard.ValidationStackCreationCount;
@@ -273,8 +273,8 @@ namespace LookingGlass.GRDValidation
             {
                 quilt.autoRender = false;
                 quilt.RenderQuilt();
-                var urpGuard = quilt.GuardBehaviour as LookingGlass.Community.URP.UrpQuiltCamera;
-                var hdrpGuard = quilt.GuardBehaviour as LookingGlass.Community.HDRP.HdrpQuiltCamera;
+                var urpGuard = quilt.GuardBehaviour as ViewWeave.URP.UrpQuiltCamera;
+                var hdrpGuard = quilt.GuardBehaviour as ViewWeave.HDRP.HdrpQuiltCamera;
                 var first = urpGuard != null ? urpGuard.ValidationStackCreationCount : hdrpGuard.ValidationStackCreationCount;
                 var volumeObject = NewObject(new GameObject("GRD.Validation.MotionBlurVolume"));
                 volumeObject.layer = 0;
@@ -370,9 +370,9 @@ namespace LookingGlass.GRDValidation
                 var quiltObject = cameraObject;
                 MonoBehaviour guard;
                 if (pipelineKind == GrdPipelineKind.Urp)
-                    guard = quiltObject.AddComponent<LookingGlass.Community.URP.UrpQuiltCamera>();
+                    guard = quiltObject.AddComponent<ViewWeave.URP.UrpQuiltCamera>();
                 else
-                    guard = quiltObject.AddComponent<LookingGlass.Community.HDRP.HdrpQuiltCamera>();
+                    guard = quiltObject.AddComponent<ViewWeave.HDRP.HdrpQuiltCamera>();
                 quilt = quiltObject.AddComponent<QuiltRenderer>();
                 quilt.sourceCamera = camera;
                 quilt.GuardBehaviour = guard;

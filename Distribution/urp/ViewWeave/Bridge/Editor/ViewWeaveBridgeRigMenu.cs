@@ -1,8 +1,8 @@
 using UnityEditor;
 using UnityEngine;
-using LookingGlass.Community.Editor;
+using ViewWeave.Editor;
 
-namespace LookingGlass.Community.BridgeEditor
+namespace ViewWeave.Editor
 {
     public static class ViewWeaveBridgeRigMenu
     {

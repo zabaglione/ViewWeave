@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace LookingGlass.Community
+namespace ViewWeave
 {
     internal static class BridgeNative
     {
@@ -47,7 +47,7 @@ namespace LookingGlass.Community
             if (session == 0 || texture == null || !texture.IsCreated()) return -1;
             IntPtr data = lkg_bridge_make_draw_data(session, texture.GetNativeTexturePtr(), (uint)layout.Columns, (uint)layout.Rows, aspect, zoom);
             if (data == IntPtr.Zero) return -2;
-            var command = new CommandBuffer { name = "LookingGlass Bridge Draw" };
+            var command = new CommandBuffer { name = "ViewWeave Bridge Draw" };
             command.IssuePluginEventAndData(lkg_bridge_render_event_func(), 0, data);
             Graphics.ExecuteCommandBuffer(command);
             command.Release();
@@ -58,7 +58,7 @@ namespace LookingGlass.Community
         {
             IntPtr data = lkg_bridge_make_close_data(session);
             if (data == IntPtr.Zero) return;
-            var command = new CommandBuffer { name = "LookingGlass Bridge Close" };
+            var command = new CommandBuffer { name = "ViewWeave Bridge Close" };
             command.IssuePluginEventAndData(lkg_bridge_render_event_func(), 1, data);
             Graphics.ExecuteCommandBuffer(command);
             command.Release();

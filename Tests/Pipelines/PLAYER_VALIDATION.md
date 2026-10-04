@@ -7,7 +7,7 @@ The Player runs URP with GPU Resident Drawer disabled and enabled at 1, 8, and 4
 From the repository root, build into gitignored local artifacts with:
 
 ```powershell
-unity build ./Tests/Pipelines/Unity --target StandaloneWindows64 --execute-method LookingGlass.PlayerValidation.Editor.PlayerValidationBuilder.Build --output-path "$PWD/.local/grd-player-validation/build/ViewWeaveValidation.exe" --editor-version 6000.6.4f1 --allow-dirty-build --timeout 900 --log-file "$PWD/.local/grd-player-validation/build.log" --no-tail --format json --args '-force-d3d11'
+unity build ./Tests/Pipelines/Unity --target StandaloneWindows64 --execute-method ViewWeave.PlayerValidation.Editor.PlayerValidationBuilder.Build --output-path "$PWD/.local/grd-player-validation/build/ViewWeaveValidation.exe" --editor-version 6000.6.4f1 --allow-dirty-build --timeout 900 --log-file "$PWD/.local/grd-player-validation/build.log" --no-tail --format json --args '-force-d3d11'
 ```
 
 Run the Player normally, without `-batchmode`, `-force-gfx-direct`, or `-nographics`, so threaded graphics are selected:
