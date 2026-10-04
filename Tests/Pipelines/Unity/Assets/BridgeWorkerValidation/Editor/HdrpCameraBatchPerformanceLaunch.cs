@@ -3,6 +3,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -26,6 +27,8 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
         const double PipelineSettleTimeoutSeconds = 30.0;
         const int RequiredStableEditorUpdates = 3;
         const int HighLightmapEncodingQuality = 2;
+        const int MaximumPostDrainHoldSeconds = 30;
+        const string PostDrainHoldArgument = "--prototype-post-drain-hold-seconds";
 
         static readonly BuildTarget[] RequiredLightmapEncodingTargets =
         {
@@ -119,6 +122,9 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
             public bool blitMaterialAvailable;
             public string pipelineReadinessError;
             public string prototypeEvidencePath;
+            public int postDrainHoldSeconds;
+            public string postDrainDiagnosticPath;
+            public string nativeTracePath;
         }
 
         static HdrpCameraBatchPerformanceLaunch()
@@ -134,6 +140,12 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
             if (SessionState.GetString(Key("phase"), string.Empty) == "pipeline-settling" &&
                 string.IsNullOrEmpty(SessionState.GetString(Key("pipelineSettleDeadlineUtc"), string.Empty)))
                 SessionState.SetString(Key("pipelineSettleDeadlineUtc"), DateTime.UtcNow.AddSeconds(PipelineSettleTimeoutSeconds).ToString("O", CultureInfo.InvariantCulture));
+            if (SessionState.GetString(Key("phase"), string.Empty) == "post-drain-hold" &&
+                !TryReadDeadline(SessionState.GetString(Key("postDrainHoldDeadlineUtc"), string.Empty), out _))
+            {
+                SetFailure("post-drain hold deadline was missing or invalid after reload");
+                SessionState.SetBool(Key("postDrainHoldFailed"), true);
+            }
             EditorApplication.update -= Tick;
             EditorApplication.playModeStateChanged -= OnPlayModeChanged;
             EditorApplication.update += Tick;
@@ -164,6 +176,7 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
             string prototypePlan = (Argument("--prototype-plan") ?? "camera-batch").Trim().ToLowerInvariant();
             if (prototypePlan != "density" && prototypePlan != "camera-batch")
                 throw new InvalidOperationException("prototype plan must be density or camera-batch");
+            int postDrainHoldSeconds = ReadPostDrainHoldSeconds();
 
             string evidenceDirectory = Path.GetFullPath(Argument("--prototype-evidence-dir") ?? string.Empty);
             string evidenceRoot = Path.GetFullPath(Path.Combine(projectRoot, "..", "..", "..", ".local", "dx12-followup"));
@@ -171,6 +184,7 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
                 throw new InvalidOperationException("prototype evidence directory must be inside .local/dx12-followup");
             if (File.Exists(Path.Combine(evidenceDirectory, "hdrp-camera-batch-prototype.json")) ||
                 File.Exists(Path.Combine(evidenceDirectory, "hdrp-camera-batch-launch.json")) ||
+                File.Exists(Path.Combine(evidenceDirectory, "post-drain-diagnostic.log")) ||
                 Directory.Exists(evidenceDirectory) && Directory.EnumerateFiles(evidenceDirectory, "hdrp-camera-batch-*.png").Any())
                 throw new InvalidOperationException("prototype runtime evidence already exists in this directory");
 
@@ -185,8 +199,16 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
             if (prototype == null) throw new InvalidOperationException("the generated prototype component is missing");
 
             Directory.CreateDirectory(evidenceDirectory);
+            string diagnosticTracePath = Path.Combine(evidenceDirectory, "post-drain-diagnostic.log");
             SessionState.SetString(Key("projectRoot"), projectRoot);
             SessionState.SetString(Key("evidenceDirectory"), evidenceDirectory);
+            SessionState.SetString(Key("diagnosticTracePath"), diagnosticTracePath);
+            SessionState.SetString(Key("nativeTracePath"), Environment.GetEnvironmentVariable("LKG_NATIVE_TRACE") ?? string.Empty);
+            SessionState.SetInt(Key("postDrainHoldSeconds"), postDrainHoldSeconds);
+            SessionState.SetInt(Key("diagnosticTraceSequence"), 0);
+            SessionState.SetBool(Key("diagnosticTraceFailed"), false);
+            SessionState.SetBool(Key("postDrainHoldFailed"), false);
+            SessionState.SetString(Key("postDrainHoldDeadlineUtc"), string.Empty);
             SessionState.SetString(Key("runtimeResultPath"), Path.Combine(evidenceDirectory, "hdrp-camera-batch-prototype.json"));
             SessionState.SetString(Key("startedUtc"), DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture));
             SessionState.SetString(Key("deadlineUtc"), DateTime.UtcNow.AddSeconds(PrototypeTimeoutSeconds).ToString("O", CultureInfo.InvariantCulture));
@@ -214,6 +236,7 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
             SessionState.SetBool(Key("stopRequested"), false);
             SessionState.SetBool(Key("settingsRestored"), false);
             SessionState.SetBool(Key("sceneSetupRestored"), false);
+            TraceDiagnostic("launch-start", "holdSeconds=" + postDrainHoldSeconds.ToString(CultureInfo.InvariantCulture));
 
             try
             {
@@ -316,6 +339,7 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
                 if (!EditorApplication.isPlaying) return;
                 if (TryReadPrototypeResult(out PrototypeResult result, out string readError))
                 {
+                    TraceDiagnostic("runtime-result-read", "result=" + Sanitize(result.result));
                     SessionState.SetString(Key("prototypeResult"), result.result ?? string.Empty);
                     if (!string.Equals(result.result, "completed", StringComparison.OrdinalIgnoreCase))
                         SessionState.SetString(Key("failure"), "runtime prototype result was not completed: " + Sanitize(result.error));
@@ -329,6 +353,7 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
                 }
                 else if (DateTime.UtcNow > ReadUtc(Key("deadlineUtc")))
                 {
+                    TraceDiagnostic("runtime-result-read", "result=invalid error=" + Sanitize(readError));
                     SessionState.SetString(Key("failure"), "prototype result was missing or invalid before timeout: " + Sanitize(readError));
                     BeginDrain();
                 }
@@ -341,17 +366,64 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
                 {
                     SessionState.SetInt(Key("lastShutdownPending"), shutdownPending);
                     SessionState.SetInt(Key("lastNativePending"), unchecked((int)nativePending));
-                    SessionState.SetString(Key("phase"), "stopping-play");
                     SessionState.SetInt(Key("exitCode"), string.IsNullOrEmpty(SessionState.GetString(Key("failure"), string.Empty)) ? 0 : 1);
                     Debug.Log("hdrp_camera_batch_launch=drained shutdownPending=0 nativePending=0");
-                    EditorApplication.isPlaying = false;
+                    bool successfulRuntime = SessionState.GetInt(Key("exitCode"), 1) == 0 &&
+                        string.IsNullOrEmpty(SessionState.GetString(Key("failure"), string.Empty));
+                    if (SessionState.GetInt(Key("postDrainHoldSeconds"), 0) > 0 &&
+                        !SessionState.GetBool(Key("postDrainHoldFailed"), false) && successfulRuntime)
+                    {
+                        DateTime deadline = DateTime.UtcNow.AddSeconds(SessionState.GetInt(Key("postDrainHoldSeconds"), 0));
+                        SessionState.SetString(Key("postDrainHoldDeadlineUtc"), deadline.ToString("O", CultureInfo.InvariantCulture));
+                        SessionState.SetString(Key("phase"), "post-drain-hold");
+                        TraceDiagnostic("hold-begin", "deadlineUtc=" + deadline.ToString("O", CultureInfo.InvariantCulture));
+                    }
+                    else
+                    {
+                        SessionState.SetString(Key("phase"), "stopping-play");
+                        SessionState.SetBool(Key("stopRequested"), true);
+                        RequestPlayStop();
+                    }
                 }
                 else if (DateTime.UtcNow > ReadUtc(Key("drainDeadlineUtc")))
                 {
                     SessionState.SetString(Key("failure"), "worker shutdown did not reach Idle/Closed and both pending counts zero: " + Sanitize(drainError));
                     SessionState.SetInt(Key("exitCode"), 1);
                     SessionState.SetString(Key("phase"), "stopping-play");
+                    SessionState.SetBool(Key("stopRequested"), true);
+                    TraceDiagnostic("play-stop-request", "reason=drain-timeout");
                     EditorApplication.isPlaying = false;
+                }
+            }
+            else if (phase == "post-drain-hold")
+            {
+                if (!TryReadDeadline(SessionState.GetString(Key("postDrainHoldDeadlineUtc"), string.Empty), out DateTime holdDeadline))
+                {
+                    FailPostDrainHold("post-drain hold deadline was missing or invalid");
+                    return;
+                }
+                if (!IsFullyDrained(out int shutdownPending, out uint nativePending, out string holdError))
+                {
+                    TraceDiagnostic("hold-invariant-failed", "shutdownPending=" + shutdownPending.ToString(CultureInfo.InvariantCulture) +
+                        " nativePending=" + nativePending.ToString(CultureInfo.InvariantCulture) + " error=" + Sanitize(holdError));
+                    FailPostDrainHold("post-drain hold lost Idle/Closed/zero-pending invariant: " + Sanitize(holdError));
+                    return;
+                }
+                if (DateTime.UtcNow >= holdDeadline)
+                {
+                    if (!IsFullyDrained(out shutdownPending, out nativePending, out holdError))
+                    {
+                        FailPostDrainHold("post-drain hold deadline check failed: " + Sanitize(holdError));
+                        return;
+                    }
+                    TraceDiagnostic("hold-end", "shutdownPending=0 nativePending=0");
+                    SessionState.SetString(Key("phase"), "stopping-play");
+                    if (EditorApplication.isPlaying)
+                    {
+                        SessionState.SetBool(Key("stopRequested"), true);
+                        RequestPlayStop();
+                    }
+                    else RestoreAndExit();
                 }
             }
         }
@@ -361,7 +433,31 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
             if (SessionState.GetString(Key("phase"), string.Empty) == "draining") return;
             SessionState.SetString(Key("phase"), "draining");
             SessionState.SetString(Key("drainDeadlineUtc"), DateTime.UtcNow.AddSeconds(DrainTimeoutSeconds).ToString("O", CultureInfo.InvariantCulture));
+            TraceDiagnostic("drain-begin", "deadlineUtc=" + SessionState.GetString(Key("drainDeadlineUtc"), string.Empty));
             TryStopWorker();
+        }
+
+        static void RequestPlayStop()
+        {
+            TraceDiagnostic("play-stop-request", "phase=" + SessionState.GetString(Key("phase"), string.Empty));
+            if (EditorApplication.isPlaying) EditorApplication.isPlaying = false;
+            else if (SessionState.GetString(Key("phase"), string.Empty) == "stopping-play") RestoreAndExit();
+        }
+
+        static void FailPostDrainHold(string message)
+        {
+            SetFailure(message);
+            SessionState.SetInt(Key("exitCode"), 1);
+            SessionState.SetBool(Key("postDrainHoldFailed"), true);
+            SessionState.SetString(Key("phase"), EditorApplication.isPlaying ? "draining" : "stopping-play");
+            if (EditorApplication.isPlaying)
+            {
+                TryStopWorker();
+            }
+            else
+            {
+                RestoreAndExit();
+            }
         }
 
         static void TryStopWorker()
@@ -386,14 +482,27 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
         static void OnPlayModeChanged(PlayModeStateChange state)
         {
             if (!SessionState.GetBool(Key("armed"), false)) return;
+            TraceDiagnostic("playstate", "state=" + state.ToString());
             if (state == PlayModeStateChange.EnteredPlayMode)
             {
                 SessionState.SetString(Key("phase"), "playing");
                 RecordPipelineReadiness();
                 Debug.Log("hdrp_camera_batch_launch=entered_play_mode");
             }
-            else if (state == PlayModeStateChange.EnteredEditMode && SessionState.GetString(Key("phase"), string.Empty) == "stopping-play")
+            else if (state == PlayModeStateChange.ExitingPlayMode &&
+                !SessionState.GetBool(Key("stopRequested"), false))
             {
+                SetFailure("Play mode ended outside the launcher stop request");
+                SessionState.SetInt(Key("exitCode"), 1);
+            }
+            else if (state == PlayModeStateChange.EnteredEditMode)
+            {
+                string phase = SessionState.GetString(Key("phase"), string.Empty);
+                if (phase != "stopping-play")
+                {
+                    SetFailure("Editor entered Edit mode before the launcher completed runtime and drain checks");
+                    SessionState.SetInt(Key("exitCode"), 1);
+                }
                 RestoreAndExit();
             }
         }
@@ -402,22 +511,38 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
         {
             if (!SessionState.GetBool(Key("armed"), false)) return;
             EditorApplication.update -= Tick;
-            EditorApplication.playModeStateChanged -= OnPlayModeChanged;
             bool settingsRestored = false;
             bool sceneRestored = false;
             string failure = SessionState.GetString(Key("failure"), string.Empty);
             try
             {
-                int oldQualityLevel = SessionState.GetInt(Key("oldQualityLevel"), QualitySettings.GetQualityLevel());
-                if (oldQualityLevel >= 0 && oldQualityLevel < QualitySettings.names.Length && QualitySettings.GetQualityLevel() != oldQualityLevel)
-                    QualitySettings.SetQualityLevel(oldQualityLevel, false);
-                GraphicsSettings.defaultRenderPipeline = LoadPipeline(Key("oldGraphicsPipeline"));
-                QualitySettings.renderPipeline = LoadPipeline(Key("oldQualityPipeline"));
-                if (Enum.TryParse(SessionState.GetString(Key("oldColorSpace"), string.Empty), out ColorSpace oldColorSpace) && PlayerSettings.colorSpace != oldColorSpace)
-                    PlayerSettings.colorSpace = oldColorSpace;
-                QualitySettings.vSyncCount = SessionState.GetInt(Key("oldVSyncCount"), QualitySettings.vSyncCount);
-                Application.targetFrameRate = SessionState.GetInt(Key("oldTargetFrameRate"), Application.targetFrameRate);
-                Application.runInBackground = SessionState.GetBool(Key("oldRunInBackground"), Application.runInBackground);
+                TraceDiagnostic("restore-qualitylevel-begin", string.Empty);
+                try
+                {
+                    int oldQualityLevel = SessionState.GetInt(Key("oldQualityLevel"), QualitySettings.GetQualityLevel());
+                    if (oldQualityLevel >= 0 && oldQualityLevel < QualitySettings.names.Length && QualitySettings.GetQualityLevel() != oldQualityLevel)
+                        QualitySettings.SetQualityLevel(oldQualityLevel, false);
+                }
+                finally { TraceDiagnostic("restore-qualitylevel-end", "actual=" + QualitySettings.GetQualityLevel().ToString(CultureInfo.InvariantCulture)); }
+
+                TraceDiagnostic("restore-graphics-pipeline-begin", string.Empty);
+                try { GraphicsSettings.defaultRenderPipeline = LoadPipeline(Key("oldGraphicsPipeline")); }
+                finally { TraceDiagnostic("restore-graphics-pipeline-end", "path=" + Sanitize(SessionState.GetString(Key("oldGraphicsPipeline"), string.Empty))); }
+
+                TraceDiagnostic("restore-quality-pipeline-begin", string.Empty);
+                try { QualitySettings.renderPipeline = LoadPipeline(Key("oldQualityPipeline")); }
+                finally { TraceDiagnostic("restore-quality-pipeline-end", "path=" + Sanitize(SessionState.GetString(Key("oldQualityPipeline"), string.Empty))); }
+
+                TraceDiagnostic("restore-remaining-settings-begin", string.Empty);
+                try
+                {
+                    if (Enum.TryParse(SessionState.GetString(Key("oldColorSpace"), string.Empty), out ColorSpace oldColorSpace) && PlayerSettings.colorSpace != oldColorSpace)
+                        PlayerSettings.colorSpace = oldColorSpace;
+                    QualitySettings.vSyncCount = SessionState.GetInt(Key("oldVSyncCount"), QualitySettings.vSyncCount);
+                    Application.targetFrameRate = SessionState.GetInt(Key("oldTargetFrameRate"), Application.targetFrameRate);
+                    Application.runInBackground = SessionState.GetBool(Key("oldRunInBackground"), Application.runInBackground);
+                }
+                finally { TraceDiagnostic("restore-remaining-settings-end", string.Empty); }
                 settingsRestored = true;
             }
             catch (Exception error)
@@ -427,16 +552,20 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
 
             try
             {
+                TraceDiagnostic("restore-lightmap-begin", string.Empty);
                 RestoreLightmapEncoding();
+                TraceDiagnostic("restore-lightmap-end", "success=true");
             }
             catch (Exception error)
             {
+                TraceDiagnostic("restore-lightmap-end", "success=false error=" + Sanitize(error.GetType().Name));
                 settingsRestored = false;
                 failure = JoinFailure(failure, "lightmap encoding restore failed: " + Sanitize(error.GetType().Name + ": " + error.Message));
             }
 
             try
             {
+                TraceDiagnostic("restore-scene-setup-begin", string.Empty);
                 SceneSetup[] snapshot = RestoreSceneSetupData(SessionState.GetString(Key("oldSceneSetup"), string.Empty));
                 if (snapshot.Length > 0 && !SameSceneSetup(EditorSceneManager.GetSceneManagerSetup(), snapshot))
                 {
@@ -446,21 +575,36 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
                     EditorSceneManager.RestoreSceneManagerSetup(snapshot);
                 }
                 sceneRestored = true;
+                TraceDiagnostic("restore-scene-setup-end", "success=true");
             }
             catch (Exception error)
             {
+                TraceDiagnostic("restore-scene-setup-end", "success=false error=" + Sanitize(error.GetType().Name));
                 failure = JoinFailure(failure, "scene setup restore failed: " + Sanitize(error.GetType().Name + ": " + error.Message));
             }
 
             if (!settingsRestored || !sceneRestored) SessionState.SetInt(Key("exitCode"), 1);
             SessionState.SetBool(Key("settingsRestored"), settingsRestored);
             SessionState.SetBool(Key("sceneSetupRestored"), sceneRestored);
+            string latestFailure = SessionState.GetString(Key("failure"), string.Empty);
+            if (!string.Equals(latestFailure, failure, StringComparison.Ordinal))
+            {
+                if (string.IsNullOrEmpty(failure) || latestFailure.StartsWith(failure + "; ", StringComparison.Ordinal))
+                    failure = latestFailure;
+                else if (!failure.StartsWith(latestFailure + "; ", StringComparison.Ordinal))
+                    failure = JoinFailure(failure, latestFailure);
+            }
             SessionState.SetString(Key("failure"), failure);
+            TraceDiagnostic("launch-evidence-write", "settingsRestored=" + settingsRestored.ToString() + " sceneSetupRestored=" + sceneRestored.ToString());
+            failure = SessionState.GetString(Key("failure"), failure);
             WriteLaunchEvidence(settingsRestored, sceneRestored, failure);
             EditorApplication.update -= Tick;
             EditorApplication.playModeStateChanged -= OnPlayModeChanged;
             SessionState.SetBool(Key("restorePending"), false);
             SessionState.SetBool(Key("armed"), false);
+            TraceDiagnostic("editor-exit-request", "exitCode=" + SessionState.GetInt(Key("exitCode"), 1).ToString(CultureInfo.InvariantCulture));
+            if (SessionState.GetInt(Key("exitCode"), 1) != 0 || !string.IsNullOrEmpty(SessionState.GetString(Key("failure"), string.Empty)))
+                WriteLaunchEvidence(settingsRestored, sceneRestored, SessionState.GetString(Key("failure"), string.Empty));
             int exitCode = SessionState.GetInt(Key("exitCode"), 1);
             Debug.Log("hdrp_camera_batch_launch=restored exitCode=" + exitCode.ToString(CultureInfo.InvariantCulture));
             EditorApplication.Exit(exitCode);
@@ -545,7 +689,10 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
                     renderPipelineInstanceAvailable = SessionState.GetBool(Key("renderPipelineInstanceAvailable"), false),
                     blitMaterialAvailable = SessionState.GetBool(Key("blitMaterialAvailable"), false),
                     pipelineReadinessError = SessionState.GetString(Key("pipelineReadinessError"), string.Empty),
-                    prototypeEvidencePath = SessionState.GetString(Key("runtimeResultPath"), string.Empty)
+                    prototypeEvidencePath = SessionState.GetString(Key("runtimeResultPath"), string.Empty),
+                    postDrainHoldSeconds = SessionState.GetInt(Key("postDrainHoldSeconds"), 0),
+                    postDrainDiagnosticPath = SessionState.GetString(Key("diagnosticTracePath"), string.Empty),
+                    nativeTracePath = SessionState.GetString(Key("nativeTracePath"), string.Empty)
                 };
                 File.WriteAllText(path, JsonUtility.ToJson(evidence, true));
             }
@@ -790,6 +937,78 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
             for (int i = 0; i + 1 < args.Length; ++i)
                 if (string.Equals(args[i], key, StringComparison.Ordinal)) return args[i + 1];
             return null;
+        }
+
+        static int ReadPostDrainHoldSeconds()
+        {
+            string[] args = Environment.GetCommandLineArgs();
+            int found = -1;
+            for (int i = 0; i < args.Length; ++i)
+            {
+                if (!string.Equals(args[i], PostDrainHoldArgument, StringComparison.Ordinal)) continue;
+                if (found >= 0) throw new InvalidOperationException("post-drain hold argument must not be repeated");
+                if (i + 1 >= args.Length || args[i + 1].StartsWith("--", StringComparison.Ordinal))
+                    throw new InvalidOperationException("post-drain hold argument requires an integer value");
+                found = i + 1;
+            }
+            if (found < 0) return 0;
+            if (!int.TryParse(args[found], NumberStyles.None, CultureInfo.InvariantCulture, out int seconds) || seconds < 0 || seconds > MaximumPostDrainHoldSeconds)
+                throw new InvalidOperationException("post-drain hold seconds must be an integer from 0 through 30");
+            return seconds;
+        }
+
+        static void TraceDiagnostic(string eventName, string detail)
+        {
+            if (SessionState.GetBool(Key("diagnosticTraceFailed"), false)) return;
+            string path = SessionState.GetString(Key("diagnosticTracePath"), string.Empty);
+            try
+            {
+                if (string.IsNullOrWhiteSpace(path)) throw new IOException("diagnostic trace path is missing");
+                bool pendingAvailable = BridgeWorkerValidationDiagnostics.TryReadPendingCounts(out int shutdownPending, out uint nativePending, out _);
+                int sequence = SessionState.GetInt(Key("diagnosticTraceSequence"), 0) + 1;
+                SessionState.SetInt(Key("diagnosticTraceSequence"), sequence);
+                string line = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture) + "," +
+                    sequence.ToString(CultureInfo.InvariantCulture) + "," + TraceField(SessionState.GetString(Key("phase"), string.Empty)) + "," +
+                    TraceField(eventName) + "," + EditorApplication.isPlaying.ToString().ToLowerInvariant() + "," +
+                    (pendingAvailable ? shutdownPending.ToString(CultureInfo.InvariantCulture) : "-1") + "," +
+                    (pendingAvailable ? nativePending.ToString(CultureInfo.InvariantCulture) : "0") + "," + pendingAvailable.ToString().ToLowerInvariant() + "," +
+                    TraceField(detail ?? string.Empty) + "\r\n";
+                byte[] bytes = Encoding.ASCII.GetBytes(line);
+                using (FileStream stream = new FileStream(path, FileMode.Append, FileAccess.Write, FileShare.Read))
+                {
+                    if (sequence == 1)
+                    {
+                        byte[] header = Encoding.ASCII.GetBytes("utc,sequence,phase,event,isPlaying,shutdownPending,nativePending,pendingAvailable,detail\r\n");
+                        stream.Write(header, 0, header.Length);
+                    }
+                    stream.Write(bytes, 0, bytes.Length);
+                    stream.Flush(true);
+                }
+            }
+            catch (Exception error)
+            {
+                SessionState.SetBool(Key("diagnosticTraceFailed"), true);
+                SetFailure("diagnostic trace write failed: " + Sanitize(error.GetType().Name + ": " + error.Message));
+                SessionState.SetInt(Key("exitCode"), 1);
+            }
+        }
+
+        static string TraceField(string value)
+        {
+            return Sanitize(value).Replace(',', ';').Replace('\r', ' ').Replace('\n', ' ');
+        }
+
+        static void SetFailure(string message)
+        {
+            string existing = SessionState.GetString(Key("failure"), string.Empty);
+            SessionState.SetString(Key("failure"), JoinFailure(existing, Sanitize(message)));
+        }
+
+        static bool TryReadDeadline(string text, out DateTime deadline)
+        {
+            return DateTime.TryParse(text, CultureInfo.InvariantCulture,
+                DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out deadline) &&
+                deadline != DateTime.MinValue && deadline != DateTime.MaxValue;
         }
 
         static DateTime ReadUtc(string key)

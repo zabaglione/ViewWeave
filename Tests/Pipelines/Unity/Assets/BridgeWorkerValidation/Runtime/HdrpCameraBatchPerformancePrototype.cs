@@ -23,6 +23,9 @@ namespace ViewWeave.BridgeWorkerValidation
         const int MeasurementFrames = 120;
         const double LifecycleTimeoutSeconds = 60.0;
         const double NativeCompletionTimeoutSeconds = 10.0;
+        const double NaturalFirstReadyTimeoutSeconds = 10.0;
+        const int NaturalTraceCapacity = 512;
+        const int NaturalTracePrefixCapacity = 320;
         const string EvidenceArgument = "--prototype-evidence-dir";
         const string RuntimeArgument = "--runtime-path";
         const string PlanArgument = "--prototype-plan";
@@ -42,9 +45,17 @@ namespace ViewWeave.BridgeWorkerValidation
         readonly List<PhaseEvidence> phases = new List<PhaseEvidence>(3);
         readonly Dictionary<Camera, int> viewIndices = new Dictionary<Camera, int>();
         readonly HashSet<Camera> copiedCameras = new HashSet<Camera>();
+        readonly HashSet<int> copiedViewIndices = new HashSet<int>();
+        readonly HashSet<int> currentContextExpectedViews = new HashSet<int>();
+        readonly HashSet<int> currentContextCopiedViews = new HashSet<int>();
+        readonly HashSet<int> endedContextOwnedViews = new HashSet<int>();
         readonly List<Camera> viewCameras = new List<Camera>(48);
+        readonly List<GameObject> viewCameraObjects = new List<GameObject>(48);
         readonly List<RenderTexture> viewTargets = new List<RenderTexture>(48);
+        readonly List<int> naturalMainCameraCallbacksPerEpoch = new List<int>(WarmupFrames + MeasurementFrames);
         readonly FrameTiming[] latestTiming = new FrameTiming[1];
+        readonly NaturalTraceEntry[] naturalTraceEntries = new NaturalTraceEntry[NaturalTraceCapacity];
+        byte[] firstFullReferencePng;
 
         string qualityName = "balanced";
         string evidenceDirectory;
@@ -63,11 +74,33 @@ namespace ViewWeave.BridgeWorkerValidation
         bool phaseWindowComplete;
         bool playerLoopInstalled;
         bool callbacksSubscribed;
-        bool naturalFrameStarted;
-        bool naturalEndFrameSeen;
-        bool naturalFrameValid;
-        int naturalFrame;
         int naturalCopyCount;
+        int naturalEpochId;
+        int naturalRenderFrame = -1;
+        int naturalContextId;
+        int naturalContextFrame = -1;
+        int naturalContextExpectedCount;
+        int naturalContextCopyCount;
+        int naturalContextSubmitCount;
+        int naturalOwnedContextCount;
+        int naturalOwnedCameraCallbackCount;
+        int naturalEpochCount;
+        int naturalMainCameraFrame = -1;
+        int naturalMainCameraCallbacksForFrame;
+        int naturalRenderToTransferFrameOffsetMin;
+        int naturalRenderToTransferFrameOffsetMax;
+        bool naturalRenderToTransferOffsetSet;
+        bool naturalEpochArmed;
+        bool naturalEpochReady;
+        bool naturalContextOpen;
+        bool naturalMeasurementStarted;
+        bool naturalMainCameraCallbacksSnapshotCaptured;
+        double naturalFirstReadyDeadline;
+        double naturalPhaseArmedAt;
+        int naturalTracePrefixCount;
+        int naturalTraceTailCount;
+        int naturalTraceTailNext;
+        int naturalTraceSequence;
         int phaseFrameCount;
         int measuredFrameCount;
         int lastBoundaryFrame = -1;
@@ -83,6 +116,8 @@ namespace ViewWeave.BridgeWorkerValidation
         bool sessionLifecycleSnapshotCaptured;
         bool sessionEnabledBeforeRun;
         bool sessionStartOnEnableBeforeRun;
+        bool sourceGuardAdaptSnapshotCaptured;
+        bool sourceGuardAdaptBeforeRun;
         bool densityPlanSelected;
         bool viewRenderModeSnapshotCaptured;
         QuiltViewRenderMode viewRenderModeBeforeRun;
@@ -121,6 +156,10 @@ namespace ViewWeave.BridgeWorkerValidation
             public string initialHdrpPipelineManagedIdentity;
             public bool initialTex2DBlitMaterialAvailable;
             public bool hdrpPreflightObserved;
+            public bool sourceGuardAdaptSnapshotCaptured;
+            public bool sourceGuardAdaptBeforeRun;
+            public bool sourceGuardAdaptDuringCameraBatch;
+            public bool sourceGuardAdaptRestored;
             public string mainCameraConfigurationBefore;
             public string mainCameraConfigurationAfter;
             public string sessionStateAfter;
@@ -154,6 +193,23 @@ namespace ViewWeave.BridgeWorkerValidation
             public long nearestReuseComparedPixels;
             public long nearestReuseMismatchPixels;
             public int uniqueViewCameraCallbacks;
+            public int naturalEpochsCompleted;
+            public int naturalOwnedCameraCallbacks;
+            public int naturalOwnedContexts;
+            public int naturalContextSubmits;
+            public int naturalEpochsWithOneMainCameraCallback;
+            public int naturalMainCameraCallbacksTotal;
+            public int naturalMainCameraCallbacksMin;
+            public int naturalMainCameraCallbacksMax;
+            public int[] naturalMainCameraCallbacksPerEpoch;
+            public int renderToTransferFrameOffsetMin;
+            public int renderToTransferFrameOffsetMax;
+            public double firstReadyWaitMs;
+            public NaturalTraceEntry[] naturalTrace;
+            public int fullSourceComparedPixels;
+            public int fullSourceMismatchPixels;
+            public int fullSourceMaxChannelDifference;
+            public bool fullSourceComparisonValid;
             public long outputSubmissions;
             public bool outputSubmissionCountValid;
             public uint submissionAttemptsBaseline;
@@ -203,6 +259,23 @@ namespace ViewWeave.BridgeWorkerValidation
             public double[] tileMeanRgb;
             public string mainCameraConfigurationAfter;
             public string error;
+        }
+
+        [Serializable]
+        struct NaturalTraceEntry
+        {
+            public int sequence;
+            public string eventName;
+            public int frame;
+            public int epoch;
+            public int context;
+            public int cameraIndex;
+            public int contextOwnedCount;
+            public int uniqueViewCount;
+            public int copyCount;
+            public int contextSubmitCount;
+            public bool ready;
+            public uint attemptDelta;
         }
 
         [Serializable]
@@ -293,9 +366,6 @@ namespace ViewWeave.BridgeWorkerValidation
                 {
                     "SDK test-only prototype; no package, distribution, native, or user-project changes.",
                     "Generated fixture uses a global HDRP Volume and static red/green geometry only; no Local Volume and no VFX Graph.",
-                    "Legacy requests use the existing HDRP guard; natural mode holds the source guard preparation while sharing the fixture private global Volume.",
-                    "A natural-camera result does not establish Local Volume, VFX, temporal history, or general HDRP equivalence.",
-                    "Main camera component settings are checked, but effective Volume-stack or displayed-image preservation is not proven by this fixture.",
                     "No numeric FPS improvement threshold is imposed; report measurements, spread, image differences, and available counters.",
                     "Dedicated camera history and render-target memory may differ from the single-camera Render Request path."
                 }
@@ -304,7 +374,26 @@ namespace ViewWeave.BridgeWorkerValidation
             {
                 evidenceDirectory = ResolveEvidenceDirectory();
                 Directory.CreateDirectory(evidenceDirectory);
-                if (!ValidateFixture(out string validationError)) throw new InvalidOperationException(validationError);
+                string prototypePlan = ParsePlan();
+                densityPlanSelected = prototypePlan == "density";
+                evidence.prototypePlan = prototypePlan;
+                evidence.scopeNotes = densityPlanSelected
+                    ? new[]
+                    {
+                        "SDK test-only density plan; no package, distribution, native, or user-project changes.",
+                        "Generated fixture uses a static HDRP scene and existing Legacy Render Requests; it does not compare the natural-camera batch path.",
+                        "Full/Half/Quarter retain the same output layout and copy skipped tiles from their nearest rendered source view.",
+                        "No numeric FPS improvement threshold is imposed; report measured timing, image differences, and queue outcomes."
+                    }
+                    : new[]
+                    {
+                        "SDK test-only A/B/A plan; no package, distribution, native, or user-project changes.",
+                        "Generated fixture uses one global fixed-exposure HDRP Volume and static red/green geometry; Local Volumes and VFX components are rejected by preflight.",
+                        "Legacy and natural-camera phases keep adaptUnsupportedEffects disabled; the original guard value is restored after the run.",
+                        "Image equivalence is limited to this static fixture and does not establish Local Volume, VFX, temporal-history, or general HDRP equivalence.",
+                        "Dedicated camera history and render-target memory may differ from the single-camera Render Request path."
+                    };
+                if (!ValidateFixture(!densityPlanSelected, out string validationError)) throw new InvalidOperationException(validationError);
                 viewRenderModeBeforeRun = quilt.viewRenderMode;
                 viewRenderModeSnapshotCaptured = true;
                 if (!TryReadPending(out int shutdownPending, out uint nativePending, out string pendingError)) throw new InvalidOperationException("pending-count diagnostics unavailable: " + pendingError);
@@ -312,9 +401,15 @@ namespace ViewWeave.BridgeWorkerValidation
                 if (session.State != ViewWeaveBridgeSession.SessionState.Idle || output.State != BridgeWorkerQuiltOutput.WorkerState.Closed)
                     throw new InvalidOperationException("worker session must be idle and closed before prototype start");
 
-                string prototypePlan = ParsePlan();
-                densityPlanSelected = prototypePlan == "density";
-                evidence.prototypePlan = prototypePlan;
+                if (!densityPlanSelected)
+                {
+                    sourceGuardAdaptBeforeRun = sourceGuard.adaptUnsupportedEffects;
+                    sourceGuardAdaptSnapshotCaptured = true;
+                    sourceGuard.adaptUnsupportedEffects = false;
+                    evidence.sourceGuardAdaptSnapshotCaptured = true;
+                    evidence.sourceGuardAdaptBeforeRun = sourceGuardAdaptBeforeRun;
+                    evidence.sourceGuardAdaptDuringCameraBatch = sourceGuard.adaptUnsupportedEffects;
+                }
                 qualityName = ParseQuality();
                 evidence.qualityPreset = qualityName;
                 session.runtimePath = Argument(RuntimeArgument) ?? session.runtimePath;
@@ -402,6 +497,16 @@ namespace ViewWeave.BridgeWorkerValidation
                         SetFailure("phase produced no fresh native worker completion");
                     if (plan[i] == PhaseMode.NaturalCameraBatch && currentPhase.uniqueViewCameraCallbacks != 48)
                         SetFailure("natural camera phase did not observe all 48 unique view cameras");
+                    if (plan[i] == PhaseMode.NaturalCameraBatch)
+                    {
+                        currentPhase.naturalEpochsCompleted = naturalEpochCount;
+                        currentPhase.naturalOwnedCameraCallbacks = naturalOwnedCameraCallbackCount;
+                        currentPhase.naturalOwnedContexts = naturalOwnedContextCount;
+                        currentPhase.renderToTransferFrameOffsetMin = naturalRenderToTransferFrameOffsetMin;
+                        currentPhase.renderToTransferFrameOffsetMax = naturalRenderToTransferFrameOffsetMax;
+                        SnapshotNaturalMainCameraCallbacks();
+                        currentPhase.naturalTrace = SnapshotNaturalTrace();
+                    }
 
                     phases.Add(currentPhase);
                     StopSessionForDrain();
@@ -440,6 +545,7 @@ namespace ViewWeave.BridgeWorkerValidation
                 phaseActive = false;
                 running = false;
                 StopRecorders();
+                DisableNaturalCameras();
                 UnsubscribeCallbacks();
                 RemovePlayerLoopNode();
                 if (session != null)
@@ -458,6 +564,25 @@ namespace ViewWeave.BridgeWorkerValidation
                 {
                     sourcePreparation.Dispose();
                     sourcePreparation = null;
+                }
+                if (sourceGuard != null && sourceGuardAdaptSnapshotCaptured)
+                {
+                    sourceGuard.adaptUnsupportedEffects = sourceGuardAdaptBeforeRun;
+                    evidence.sourceGuardAdaptRestored = sourceGuard.adaptUnsupportedEffects == sourceGuardAdaptBeforeRun;
+                }
+                if (currentPhase != null && currentPhase.mode == PhaseMode.NaturalCameraBatch.ToString() && !phases.Contains(currentPhase))
+                {
+                    CapturePhaseSubmissionCounts(currentPhase);
+                    currentPhase.naturalEpochsCompleted = naturalEpochCount;
+                    currentPhase.naturalOwnedCameraCallbacks = naturalOwnedCameraCallbackCount;
+                    currentPhase.naturalOwnedContexts = naturalOwnedContextCount;
+                    currentPhase.renderToTransferFrameOffsetMin = naturalRenderToTransferFrameOffsetMin;
+                    currentPhase.renderToTransferFrameOffsetMax = naturalRenderToTransferFrameOffsetMax;
+                    SnapshotNaturalMainCameraCallbacks();
+                    currentPhase.naturalTrace = SnapshotNaturalTrace();
+                    currentPhase.error = failure ?? string.Empty;
+                    if (string.IsNullOrEmpty(currentPhase.finishedUtc)) currentPhase.finishedUtc = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture);
+                    phases.Add(currentPhase);
                 }
                 evidence.sessionStateAfter = session == null ? "missing" : session.State.ToString();
                 evidence.outputStateAfter = output == null ? "missing" : output.State.ToString();
@@ -484,7 +609,7 @@ namespace ViewWeave.BridgeWorkerValidation
             }
         }
 
-        bool ValidateFixture(out string error)
+        bool ValidateFixture(bool requireStaticCameraBatchFixture, out string error)
         {
             error = string.Empty;
             if (!Application.isPlaying || !Application.isEditor || Application.platform != RuntimePlatform.WindowsEditor)
@@ -501,6 +626,8 @@ namespace ViewWeave.BridgeWorkerValidation
                 error = "prototype requires an enabled MainCamera on the default display output";
             else if (quilt == null || quilt.sourceCamera != sourceCamera || quilt.useRenderRequests != true)
                 error = "prototype requires the fixture QuiltRenderer and Standard Render Requests";
+            else if (requireStaticCameraBatchFixture && quilt.viewRenderMode != QuiltViewRenderMode.Full)
+                error = "camera-batch A/B/A requires Full view render mode";
             else if (sourceGuard == null || sourceGuard.GetComponent<Camera>() != sourceCamera || quilt.RenderGuard != sourceGuard)
                 error = "prototype requires the fixture HDRP quilt guard";
             else if (rig == null || rig.Renderer != quilt)
@@ -524,7 +651,50 @@ namespace ViewWeave.BridgeWorkerValidation
                     error = "prototype fixture contains a Local Volume; only the global-volume fixture is supported";
                     return false;
                 }
+            if (requireStaticCameraBatchFixture && !ValidateStaticCameraBatchFixture(volumes, out error)) return false;
             return InstallPlayerLoopNode(out error);
+        }
+
+        static bool ValidateStaticCameraBatchFixture(Volume[] volumes, out string error)
+        {
+            error = string.Empty;
+            if (volumes == null || volumes.Length != 1 || volumes[0] == null || !volumes[0].isGlobal)
+            {
+                error = "camera-batch plan requires exactly one global HDRP Volume";
+                return false;
+            }
+
+            VolumeProfile profile = volumes[0].sharedProfile;
+            if (profile == null || !profile.TryGet<Exposure>(out Exposure exposure) || !exposure.mode.overrideState || exposure.mode.value != ExposureMode.Fixed ||
+                !exposure.fixedExposure.overrideState)
+            {
+                error = "camera-batch plan requires an overridden Fixed Exposure global Volume";
+                return false;
+            }
+
+            if (!profile.TryGet<MotionBlur>(out MotionBlur motionBlur) || !motionBlur.intensity.overrideState || motionBlur.intensity.value != 0f ||
+                !profile.TryGet<ScreenSpaceReflection>(out ScreenSpaceReflection reflections) || !reflections.enabled.overrideState || reflections.enabled.value ||
+                !profile.TryGet<GlobalIllumination>(out GlobalIllumination gi) || !gi.enable.overrideState || gi.enable.value ||
+                !profile.TryGet<VolumetricClouds>(out VolumetricClouds clouds) || !clouds.enable.overrideState || clouds.enable.value ||
+                !profile.TryGet<Fog>(out Fog fog) || !fog.enabled.overrideState || fog.enabled.value || !fog.enableVolumetricFog.overrideState || fog.enableVolumetricFog.value)
+            {
+                error = "camera-batch plan requires the static non-temporal HDRP Volume fixture";
+                return false;
+            }
+
+            GameObject[] objects = FindObjectsByType<GameObject>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            for (int i = 0; i < objects.Length; ++i)
+            {
+                if (objects[i] == null) continue;
+                Component[] components = objects[i].GetComponents<Component>();
+                for (int componentIndex = 0; componentIndex < components.Length; ++componentIndex)
+                    if (components[componentIndex] != null && components[componentIndex].GetType().FullName == "UnityEngine.VFX.VisualEffect")
+                    {
+                        error = "camera-batch plan does not support Visual Effect components";
+                        return false;
+                    }
+            }
+            return true;
         }
 
         IEnumerator WaitForHdrpBlitterReady(RunEvidence evidence)
@@ -784,11 +954,16 @@ namespace ViewWeave.BridgeWorkerValidation
                 if ((SystemInfo.copyTextureSupport & CopyTextureSupport.Basic) == 0) throw new NotSupportedException("basic texture copy is not supported");
                 viewIndices.Clear();
                 viewCameras.Clear();
+                viewCameraObjects.Clear();
                 viewTargets.Clear();
+                copiedViewIndices.Clear();
                 for (int index = 0; index < layout.ViewCount; ++index)
                 {
                     GameObject viewObject = new GameObject(ActiveCameraNamePrefix + index.ToString("D2", CultureInfo.InvariantCulture)) { hideFlags = HideFlags.HideAndDontSave };
+                    viewCameraObjects.Add(viewObject);
                     Camera viewCamera = viewObject.AddComponent<Camera>();
+                    viewCameras.Add(viewCamera);
+                    viewCamera.enabled = false;
                     viewCamera.CopyFrom(sourceCamera);
                     HDAdditionalCameraData viewData = viewObject.AddComponent<HDAdditionalCameraData>();
                     sourceData.CopyTo(viewData);
@@ -802,12 +977,9 @@ namespace ViewWeave.BridgeWorkerValidation
                     viewCamera.aspect = quilt.settings.viewAspect;
                     viewCamera.rect = new Rect(0f, 0f, 1f, 1f);
                     RenderTexture target = CreateViewTarget(atlas, tile.width, tile.height, index);
-                    viewCamera.targetTexture = target;
-                    viewCamera.enabled = false;
-                    viewCamera.enabled = true;
-                    viewIndices.Add(viewCamera, index);
-                    viewCameras.Add(viewCamera);
                     viewTargets.Add(target);
+                    viewCamera.targetTexture = target;
+                    viewIndices.Add(viewCamera, index);
                 }
                 currentPhase = null;
                 SubscribeCallbacks();
@@ -888,16 +1060,26 @@ namespace ViewWeave.BridgeWorkerValidation
             samples = new FrameSample[MeasurementFrames];
             if (mode == PhaseMode.NaturalCameraBatch)
             {
-                int enabled = 0;
-                for (int i = 0; i < viewCameras.Count; ++i)
-                {
-                    viewCameras[i].enabled = true;
-                    enabled += viewCameras[i].enabled ? 1 : 0;
-                }
-                if (enabled != 48) SetFailure("natural mode did not enable all 48 cameras");
+                ResetNaturalTrace();
+                naturalMeasurementStarted = false;
+                naturalOwnedContextCount = 0;
+                naturalOwnedCameraCallbackCount = 0;
+                naturalEpochCount = 0;
+                naturalEpochId = 0;
+                naturalContextSubmitCount = 0;
+                naturalMainCameraCallbacksPerEpoch.Clear();
+                naturalMainCameraCallbacksSnapshotCaptured = false;
+                naturalRenderToTransferOffsetSet = false;
+                naturalContextId = 0;
+                naturalPhaseArmedAt = Time.realtimeSinceStartupAsDouble;
+                naturalFirstReadyDeadline = naturalPhaseArmedAt + NaturalFirstReadyTimeoutSeconds;
+                naturalRenderToTransferFrameOffsetMin = 0;
+                naturalRenderToTransferFrameOffsetMax = 0;
+                currentPhase.startedUtc = string.Empty;
+                ArmNaturalEpoch();
             }
             StartRecorders();
-            stage = "warmup";
+            stage = mode == PhaseMode.NaturalCameraBatch ? "wait-first-natural-epoch" : "warmup";
         }
 
         void StartRecorders()
@@ -931,34 +1113,170 @@ namespace ViewWeave.BridgeWorkerValidation
         void SubscribeCallbacks()
         {
             if (callbacksSubscribed) return;
-            RenderPipelineManager.beginFrameRendering += OnBeginFrameRendering;
+            RenderPipelineManager.beginContextRendering += OnBeginContextRendering;
             RenderPipelineManager.endCameraRendering += OnEndCameraRendering;
-            RenderPipelineManager.endFrameRendering += OnEndFrameRendering;
+            RenderPipelineManager.endContextRendering += OnEndContextRendering;
             callbacksSubscribed = true;
         }
 
         void UnsubscribeCallbacks()
         {
             if (!callbacksSubscribed) return;
-            RenderPipelineManager.beginFrameRendering -= OnBeginFrameRendering;
+            RenderPipelineManager.beginContextRendering -= OnBeginContextRendering;
             RenderPipelineManager.endCameraRendering -= OnEndCameraRendering;
-            RenderPipelineManager.endFrameRendering -= OnEndFrameRendering;
+            RenderPipelineManager.endContextRendering -= OnEndContextRendering;
             callbacksSubscribed = false;
         }
 
-        void OnBeginFrameRendering(ScriptableRenderContext context, Camera[] cameras)
+        bool IsNaturalCaptureActive()
         {
-            if (!phaseActive || phaseMode != PhaseMode.NaturalCameraBatch || cameras == null) return;
-            bool containsOwned = false;
-            for (int i = 0; i < cameras.Length; ++i)
-                if (cameras[i] != null && viewIndices.ContainsKey(cameras[i])) { containsOwned = true; break; }
-            if (!containsOwned) return;
-            naturalFrame = Time.frameCount;
-            naturalFrameStarted = true;
-            naturalEndFrameSeen = false;
-            naturalFrameValid = true;
+            return phaseActive && phaseMode == PhaseMode.NaturalCameraBatch && string.IsNullOrEmpty(failure);
+        }
+
+        void ResetNaturalTrace()
+        {
+            naturalTracePrefixCount = 0;
+            naturalTraceTailCount = 0;
+            naturalTraceTailNext = 0;
+            naturalTraceSequence = 0;
+        }
+
+        void ArmNaturalEpoch()
+        {
+            naturalEpochId++;
+            naturalEpochArmed = true;
+            naturalEpochReady = false;
+            naturalContextOpen = false;
+            naturalRenderFrame = -1;
+            naturalContextFrame = -1;
+            naturalContextExpectedCount = 0;
+            naturalContextCopyCount = 0;
+            naturalMainCameraFrame = -1;
+            naturalMainCameraCallbacksForFrame = 0;
             naturalCopyCount = 0;
             copiedCameras.Clear();
+            copiedViewIndices.Clear();
+            currentContextExpectedViews.Clear();
+            currentContextCopiedViews.Clear();
+            int enabled = 0;
+            for (int i = 0; i < viewCameras.Count; ++i)
+            {
+                if (viewCameras[i] == null) continue;
+                viewCameras[i].enabled = true;
+                if (viewCameras[i].enabled) enabled++;
+            }
+            if (enabled != 48)
+                SetFailure("natural epoch did not enable all 48 owned cameras");
+            else
+                TraceNatural("epoch-armed", -1, 48, 0, false, 0);
+        }
+
+        void DisableNaturalCameras()
+        {
+            for (int i = 0; i < viewCameras.Count; ++i)
+                if (viewCameras[i] != null) viewCameras[i].enabled = false;
+        }
+
+        void TraceNatural(string eventName, int cameraIndex, int contextOwnedCount, int contextSubmitCount, bool ready, uint attemptDelta, int contextId = -1)
+        {
+            NaturalTraceEntry entry = new NaturalTraceEntry
+            {
+                sequence = naturalTraceSequence++,
+                eventName = eventName,
+                frame = Time.frameCount,
+                epoch = naturalEpochId,
+                context = contextId >= 0 ? contextId : naturalContextId,
+                cameraIndex = cameraIndex,
+                contextOwnedCount = contextOwnedCount,
+                uniqueViewCount = copiedViewIndices.Count,
+                copyCount = naturalCopyCount,
+                contextSubmitCount = contextSubmitCount,
+                ready = ready,
+                attemptDelta = attemptDelta
+            };
+            if (naturalEpochId <= 2 && naturalTracePrefixCount < NaturalTracePrefixCapacity)
+            {
+                naturalTraceEntries[naturalTracePrefixCount++] = entry;
+                return;
+            }
+
+            int tailCapacity = NaturalTraceCapacity - NaturalTracePrefixCapacity;
+            int destination = NaturalTracePrefixCapacity + naturalTraceTailNext;
+            naturalTraceEntries[destination] = entry;
+            naturalTraceTailNext = (naturalTraceTailNext + 1) % tailCapacity;
+            if (naturalTraceTailCount < tailCapacity) naturalTraceTailCount++;
+        }
+
+        NaturalTraceEntry[] SnapshotNaturalTrace()
+        {
+            int tailCapacity = NaturalTraceCapacity - NaturalTracePrefixCapacity;
+            NaturalTraceEntry[] snapshot = new NaturalTraceEntry[naturalTracePrefixCount + naturalTraceTailCount];
+            Array.Copy(naturalTraceEntries, 0, snapshot, 0, naturalTracePrefixCount);
+            int tailStart = naturalTraceTailCount == tailCapacity ? naturalTraceTailNext : 0;
+            for (int i = 0; i < naturalTraceTailCount; ++i)
+            {
+                int source = NaturalTracePrefixCapacity + ((tailStart + i) % tailCapacity);
+                snapshot[naturalTracePrefixCount + i] = naturalTraceEntries[source];
+            }
+            return snapshot;
+        }
+
+        void SnapshotNaturalMainCameraCallbacks()
+        {
+            if (naturalMainCameraCallbacksSnapshotCaptured || currentPhase == null || currentPhase.mode != PhaseMode.NaturalCameraBatch.ToString()) return;
+            currentPhase.naturalMainCameraCallbacksPerEpoch = naturalMainCameraCallbacksPerEpoch.ToArray();
+            naturalMainCameraCallbacksSnapshotCaptured = true;
+        }
+
+        void BeginNaturalMeasurementWindow()
+        {
+            naturalMeasurementStarted = true;
+            currentPhase.startedUtc = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture);
+            currentPhase.phaseStartFrame = Time.frameCount;
+            currentPhase.firstReadyWaitMs = Math.Max(0.0, (Time.realtimeSinceStartupAsDouble - naturalPhaseArmedAt) * 1000.0);
+            currentPhase.submissionAttemptsBaseline = output.SubmissionAttempts;
+            currentPhase.queuedSubmissionsBaseline = output.Submissions;
+            currentPhase.completedBaseline = output.Completed;
+            currentPhase.droppedBaseline = output.Dropped;
+            lastObservedSubmissionAttempts = output.SubmissionAttempts;
+            lastObservedSubmissions = output.Submissions;
+            naturalRenderToTransferOffsetSet = false;
+            stage = "warmup";
+        }
+
+        void OnBeginContextRendering(ScriptableRenderContext context, List<Camera> cameras)
+        {
+            if (!IsNaturalCaptureActive() || cameras == null) return;
+            currentContextExpectedViews.Clear();
+            for (int i = 0; i < cameras.Count; ++i)
+                if (cameras[i] != null && viewIndices.TryGetValue(cameras[i], out int viewIndex))
+                    currentContextExpectedViews.Add(viewIndex);
+            if (currentContextExpectedViews.Count == 0) return;
+            if (!naturalEpochArmed || naturalEpochReady)
+            {
+                SetFailure("owned HDRP context began without an armed natural epoch");
+                return;
+            }
+            if (naturalContextOpen)
+            {
+                SetFailure("nested owned HDRP contexts are unsupported");
+                return;
+            }
+            if (naturalRenderFrame < 0) naturalRenderFrame = Time.frameCount;
+            else if (naturalRenderFrame != Time.frameCount)
+            {
+                SetFailure("natural epoch mixed render frames");
+                return;
+            }
+
+            naturalContextOpen = true;
+            naturalContextFrame = Time.frameCount;
+            naturalContextExpectedCount = currentContextExpectedViews.Count;
+            naturalContextCopyCount = 0;
+            currentContextCopiedViews.Clear();
+            naturalOwnedContextCount++;
+            naturalContextId++;
+            TraceNatural("context-begin", -1, currentContextExpectedViews.Count, naturalContextSubmitCount, false, 0);
         }
 
         void OnEndCameraRendering(ScriptableRenderContext context, Camera camera)
@@ -967,13 +1285,24 @@ namespace ViewWeave.BridgeWorkerValidation
             if (camera == mainCamera)
             {
                 mainCameraCallbacks++;
+                if (naturalEpochArmed || (naturalEpochReady && naturalRenderFrame == Time.frameCount))
+                {
+                    if (naturalMainCameraFrame != Time.frameCount)
+                    {
+                        naturalMainCameraFrame = Time.frameCount;
+                        naturalMainCameraCallbacksForFrame = 0;
+                    }
+                    naturalMainCameraCallbacksForFrame++;
+                }
+                TraceNatural("main-camera-end", -1, naturalContextOpen ? naturalContextExpectedCount : 0, naturalContextSubmitCount, naturalEpochReady, 0,
+                    naturalContextOpen ? naturalContextId : 0);
                 return;
             }
             if (!viewIndices.TryGetValue(camera, out int index)) return;
-            if (!naturalFrameStarted || naturalFrame != Time.frameCount || !copiedCameras.Add(camera))
+            if (!naturalEpochArmed || naturalEpochReady || !naturalContextOpen || naturalContextFrame != Time.frameCount || naturalRenderFrame != Time.frameCount ||
+                !currentContextExpectedViews.Contains(index) || !copiedViewIndices.Add(index) || !copiedCameras.Add(camera))
             {
-                naturalFrameValid = false;
-                SetFailure("duplicate or out-of-frame natural camera callback");
+                SetFailure("duplicate, unexpected, or out-of-frame natural camera callback");
                 return;
             }
             try
@@ -984,23 +1313,70 @@ namespace ViewWeave.BridgeWorkerValidation
                 copyCommand.CopyTexture(viewTargets[index], 0, 0, 0, 0, tile.width, tile.height, quilt.QuiltTexture, 0, 0, tile.x, tile.y);
                 context.ExecuteCommandBuffer(copyCommand);
                 naturalCopyCount++;
+                naturalContextCopyCount++;
+                naturalOwnedCameraCallbackCount++;
+                currentContextCopiedViews.Add(index);
+                TraceNatural("tile-copy", index, currentContextExpectedViews.Count, naturalContextSubmitCount, false, 0);
             }
             catch (Exception error)
             {
-                naturalFrameValid = false;
                 SetFailure("natural camera tile copy failed: " + error.GetType().Name + ": " + error.Message);
             }
         }
 
-        void OnEndFrameRendering(ScriptableRenderContext context, Camera[] cameras)
+        void OnEndContextRendering(ScriptableRenderContext context, List<Camera> cameras)
         {
-            if (!phaseActive || phaseMode != PhaseMode.NaturalCameraBatch || !naturalFrameStarted || naturalFrame != Time.frameCount || cameras == null) return;
-            int cameraCount = 0;
-            for (int i = 0; i < cameras.Length; ++i)
-                if (cameras[i] != null && viewIndices.ContainsKey(cameras[i])) cameraCount++;
-            if (cameraCount == 0) return;
-            naturalEndFrameSeen = true;
-            naturalFrameValid &= cameraCount == 48 && naturalCopyCount == 48 && copiedCameras.Count == 48;
+            if (!IsNaturalCaptureActive() || cameras == null) return;
+            int contextOwnedCount = 0;
+            endedContextOwnedViews.Clear();
+            for (int i = 0; i < cameras.Count; ++i)
+                if (cameras[i] != null && viewIndices.TryGetValue(cameras[i], out int viewIndex))
+                {
+                    contextOwnedCount++;
+                    endedContextOwnedViews.Add(viewIndex);
+                }
+            if (contextOwnedCount == 0)
+            {
+                if (naturalContextOpen) SetFailure("owned HDRP context ended with an unexpected camera list");
+                return;
+            }
+            if (!naturalContextOpen || naturalContextFrame != Time.frameCount || naturalRenderFrame != Time.frameCount ||
+                contextOwnedCount != naturalContextExpectedCount || currentContextCopiedViews.Count != naturalContextExpectedCount ||
+                naturalContextCopyCount != naturalContextExpectedCount || !endedContextOwnedViews.SetEquals(currentContextExpectedViews))
+            {
+                SetFailure("owned HDRP context ended before all of its tile copies completed");
+                return;
+            }
+
+            try
+            {
+                context.Submit();
+                naturalContextSubmitCount++;
+                currentPhase.naturalContextSubmits++;
+                TraceNatural("context-submit", -1, naturalContextExpectedCount, naturalContextSubmitCount, false, 0);
+                naturalContextOpen = false;
+                naturalContextExpectedCount = 0;
+                naturalContextCopyCount = 0;
+                currentContextExpectedViews.Clear();
+                currentContextCopiedViews.Clear();
+
+                if (naturalCopyCount == 48 && copiedViewIndices.Count == 48)
+                {
+                    naturalEpochArmed = false;
+                    naturalEpochReady = true;
+                    naturalEpochCount++;
+                    DisableNaturalCameras();
+                    TraceNatural("epoch-ready", -1, 48, naturalContextSubmitCount, true, 0);
+                }
+                else if (naturalCopyCount > 48 || copiedViewIndices.Count > 48)
+                {
+                    SetFailure("natural epoch copied more than 48 unique view tiles");
+                }
+            }
+            catch (Exception error)
+            {
+                SetFailure("owned HDRP context submit failed: " + error.GetType().Name + ": " + error.Message);
+            }
         }
 
         static bool TryInsertAfterAutoRenderScheduler(ref PlayerLoopSystem system, PlayerLoopSystem node)
@@ -1092,6 +1468,20 @@ namespace ViewWeave.BridgeWorkerValidation
             if (instance == null || instance != this || !running || !phaseActive || !string.IsNullOrEmpty(failure)) return;
             try
             {
+                if (phaseMode == PhaseMode.NaturalCameraBatch && !naturalMeasurementStarted)
+                {
+                    if (!naturalEpochReady)
+                    {
+                        if (naturalRenderFrame >= 0 && naturalRenderFrame != Time.frameCount)
+                            throw new InvalidOperationException("initial natural epoch did not become ready within one render frame");
+                        if (Time.realtimeSinceStartupAsDouble >= naturalFirstReadyDeadline)
+                            throw new TimeoutException("natural camera batch did not produce its first ready epoch within 10 seconds");
+                        lastBoundaryFrame = Time.frameCount;
+                        return;
+                    }
+                    BeginNaturalMeasurementWindow();
+                }
+
                 if (phaseMode == PhaseMode.LegacyRequests)
                 {
                     currentPhase.actualRenderedViewCount = quilt.LastRenderedViewCount;
@@ -1100,12 +1490,45 @@ namespace ViewWeave.BridgeWorkerValidation
                 }
                 else
                 {
-                    if (!naturalFrameStarted || !naturalEndFrameSeen || !naturalFrameValid || naturalFrame != Time.frameCount || naturalCopyCount != 48 || copiedCameras.Count != 48)
-                        throw new InvalidOperationException("natural camera phase did not complete all 48 camera copies before the finish-frame boundary");
+                    if (!naturalEpochReady || naturalEpochArmed || naturalContextOpen || naturalRenderFrame < 0 || copiedViewIndices.Count != 48 ||
+                        copiedCameras.Count != 48 || naturalCopyCount != 48 || Time.frameCount < naturalRenderFrame)
+                        throw new InvalidOperationException("natural camera phase reached a boundary without one complete ready epoch");
+                    int frameOffset = Time.frameCount - naturalRenderFrame;
+                    if (!naturalRenderToTransferOffsetSet)
+                    {
+                        naturalRenderToTransferOffsetSet = true;
+                        naturalRenderToTransferFrameOffsetMin = frameOffset;
+                        naturalRenderToTransferFrameOffsetMax = frameOffset;
+                    }
+                    else
+                    {
+                        naturalRenderToTransferFrameOffsetMin = Math.Min(naturalRenderToTransferFrameOffsetMin, frameOffset);
+                        naturalRenderToTransferFrameOffsetMax = Math.Max(naturalRenderToTransferFrameOffsetMax, frameOffset);
+                        if (naturalRenderToTransferFrameOffsetMin != naturalRenderToTransferFrameOffsetMax)
+                            throw new InvalidOperationException("natural render-to-transfer frame offset varied during the phase");
+                    }
+
                     output.Submit(quilt.QuiltTexture, quilt.settings.GetLayout());
-                    currentPhase.uniqueViewCameraCallbacks = copiedCameras.Count;
+                    currentPhase.actualRenderedViewCount = 48;
+                    currentPhase.uniqueViewCameraCallbacks = copiedViewIndices.Count;
                     currentPhase.mainCameraCallbacks = mainCameraCallbacks - mainCameraCallbacksAtPhaseStart;
-                    naturalFrameStarted = false;
+                        int mainCallbacksForEpoch = naturalMainCameraFrame == naturalRenderFrame ? naturalMainCameraCallbacksForFrame : 0;
+                        naturalMainCameraCallbacksPerEpoch.Add(mainCallbacksForEpoch);
+                        currentPhase.naturalMainCameraCallbacksTotal += mainCallbacksForEpoch;
+                        if (naturalMainCameraCallbacksPerEpoch.Count == 1)
+                        {
+                            currentPhase.naturalMainCameraCallbacksMin = mainCallbacksForEpoch;
+                            currentPhase.naturalMainCameraCallbacksMax = mainCallbacksForEpoch;
+                        }
+                        else
+                        {
+                            currentPhase.naturalMainCameraCallbacksMin = Math.Min(currentPhase.naturalMainCameraCallbacksMin, mainCallbacksForEpoch);
+                            currentPhase.naturalMainCameraCallbacksMax = Math.Max(currentPhase.naturalMainCameraCallbacksMax, mainCallbacksForEpoch);
+                        }
+                        if (mainCallbacksForEpoch == 1)
+                            currentPhase.naturalEpochsWithOneMainCameraCallback++;
+                        if (mainCallbacksForEpoch != 1)
+                            throw new InvalidOperationException("natural render epoch observed " + mainCallbacksForEpoch.ToString(CultureInfo.InvariantCulture) + " MainCamera callbacks; expected exactly one");
                 }
 
                 uint afterAttempts = output.SubmissionAttempts;
@@ -1115,6 +1538,8 @@ namespace ViewWeave.BridgeWorkerValidation
                 if (attemptDelta != 1 || queuedDelta > 1)
                     throw new InvalidOperationException("phase submission boundary invariant failed: " +
                         BoundarySubmissionDiagnostic(attemptDelta, queuedDelta));
+                if (phaseMode == PhaseMode.NaturalCameraBatch)
+                    TraceNatural("output-submit", -1, 48, naturalContextSubmitCount, true, attemptDelta);
                 lastObservedSubmissionAttempts = afterAttempts;
                 lastObservedSubmissions = afterQueued;
 
@@ -1134,8 +1559,17 @@ namespace ViewWeave.BridgeWorkerValidation
                     phaseActive = false;
                     if (rig != null) rig.AutoRender = false;
                     if (phaseMode == PhaseMode.NaturalCameraBatch)
-                        for (int i = 0; i < viewCameras.Count; ++i) viewCameras[i].enabled = false;
+                    {
+                        naturalEpochReady = false;
+                        naturalEpochArmed = false;
+                        DisableNaturalCameras();
+                    }
                     FinalizeStats(currentPhase);
+                }
+                else if (phaseMode == PhaseMode.NaturalCameraBatch)
+                {
+                    naturalEpochReady = false;
+                    ArmNaturalEpoch();
                 }
                 if (lastBoundaryFrame >= 0 && Time.frameCount <= lastBoundaryFrame)
                     throw new InvalidOperationException("finish-frame callback did not advance with engine frames");
@@ -1148,7 +1582,11 @@ namespace ViewWeave.BridgeWorkerValidation
                 SetFailure(error.GetType().Name + ": " + error.Message);
                 if (rig != null) rig.AutoRender = false;
                 if (phaseMode == PhaseMode.NaturalCameraBatch)
-                    for (int i = 0; i < viewCameras.Count; ++i) if (viewCameras[i] != null) viewCameras[i].enabled = false;
+                {
+                    naturalEpochReady = false;
+                    naturalEpochArmed = false;
+                    DisableNaturalCameras();
+                }
             }
         }
 
@@ -1303,7 +1741,8 @@ namespace ViewWeave.BridgeWorkerValidation
 
                 string name = "hdrp-camera-batch-" + phase.mode.ToLowerInvariant() + "-" + phases.Count.ToString("D2", CultureInfo.InvariantCulture) + ".png";
                 string path = Path.Combine(evidenceDirectory, name);
-                File.WriteAllBytes(path, readback.EncodeToPNG());
+                byte[] encoded = readback.EncodeToPNG();
+                File.WriteAllBytes(path, encoded);
                 phase.imageCaptured = true;
                 phase.imagePath = Sanitize(path);
                 phase.nonBlankTiles = allNonBlank ? layout.ViewCount : 0;
@@ -1318,6 +1757,7 @@ namespace ViewWeave.BridgeWorkerValidation
                 phase.tileMeanRgb = tileMeans;
                 phase.maxTileMeanChannelDeltaFromFirstLegacy = CompareFirstLegacyMeans(tileMeans);
                 if (densityPlanSelected) ValidateNearestReuseAssignments(pixels, layout, phase);
+                else ValidateFullSourceReference(pixels, atlas.width, atlas.height, phase, encoded);
                 if (!phase.allTilesNonBlank) SetFailure("image validation found a blank view tile");
                 if (!phase.hasKnownRedAndGreenEvidence) SetFailure("image validation found no red and green fixture evidence");
                 if (!phase.hasNoMagentaEvidence) SetFailure("image validation found magenta fixture pixels");
@@ -1329,6 +1769,67 @@ namespace ViewWeave.BridgeWorkerValidation
             {
                 RenderTexture.active = previous;
                 Destroy(readback);
+            }
+        }
+
+        void ValidateFullSourceReference(Color32[] pixels, int width, int height, PhaseEvidence phase, byte[] encoded)
+        {
+            if (quilt.viewRenderMode != QuiltViewRenderMode.Full)
+            {
+                phase.fullSourceComparisonValid = false;
+                SetFailure("camera-batch A/B/A requires Full view render mode in every phase");
+                return;
+            }
+            if (phases.Count == 0)
+            {
+                firstFullReferencePng = encoded;
+                return;
+            }
+            if (phases.Count > 2 || firstFullReferencePng == null)
+            {
+                phase.fullSourceComparisonValid = false;
+                SetFailure("camera-batch A/B/A Full reference image is unavailable");
+                return;
+            }
+
+            Texture2D reference = new Texture2D(2, 2, TextureFormat.RGBA32, false, false)
+            {
+                name = "ViewWeave.HDRPBatch.FullReference",
+                hideFlags = HideFlags.HideAndDontSave
+            };
+            try
+            {
+                if (!reference.LoadImage(firstFullReferencePng, false) || reference.width != width || reference.height != height)
+                    throw new InvalidOperationException("camera-batch Full reference image could not be decoded at the expected dimensions");
+                Color32[] referencePixels = reference.GetPixels32();
+                if (referencePixels.Length != pixels.Length)
+                    throw new InvalidOperationException("camera-batch Full reference pixel count did not match the current image");
+
+                phase.fullSourceComparedPixels = pixels.Length;
+                for (int i = 0; i < pixels.Length; ++i)
+                {
+                    Color32 expected = referencePixels[i];
+                    Color32 actual = pixels[i];
+                    int deltaR = Math.Abs(expected.r - actual.r);
+                    int deltaG = Math.Abs(expected.g - actual.g);
+                    int deltaB = Math.Abs(expected.b - actual.b);
+                    int deltaA = Math.Abs(expected.a - actual.a);
+                    if (deltaR != 0 || deltaG != 0 || deltaB != 0 || deltaA != 0)
+                        phase.fullSourceMismatchPixels++;
+                    phase.fullSourceMaxChannelDifference = Math.Max(phase.fullSourceMaxChannelDifference, Math.Max(Math.Max(deltaR, deltaG), Math.Max(deltaB, deltaA)));
+                }
+                phase.fullSourceComparisonValid = phase.fullSourceMismatchPixels == 0;
+                if (!phase.fullSourceComparisonValid)
+                    SetFailure("camera-batch image differed from the first Full phase at " + phase.fullSourceMismatchPixels.ToString(CultureInfo.InvariantCulture) + " pixels");
+            }
+            catch (Exception error)
+            {
+                phase.fullSourceComparisonValid = false;
+                SetFailure("camera-batch Full image comparison failed: " + error.GetType().Name + ": " + error.Message);
+            }
+            finally
+            {
+                Destroy(reference);
             }
         }
 
@@ -1412,6 +1913,32 @@ namespace ViewWeave.BridgeWorkerValidation
                 }
                 if (phases[0].mode != PhaseMode.LegacyRequests.ToString() || phases[1].mode != PhaseMode.NaturalCameraBatch.ToString() || phases[2].mode != PhaseMode.LegacyRequests.ToString())
                     SetFailure("prototype phase order is invalid");
+                PhaseEvidence batchPhase = phases[1];
+                if (batchPhase.actualRenderedViewCount != 48 || batchPhase.uniqueViewCameraCallbacks != 48 ||
+                    batchPhase.naturalEpochsCompleted != WarmupFrames + MeasurementFrames ||
+                    batchPhase.naturalOwnedCameraCallbacks != 48 * (WarmupFrames + MeasurementFrames) ||
+                    batchPhase.naturalContextSubmits != batchPhase.naturalOwnedContexts ||
+                    batchPhase.naturalEpochsWithOneMainCameraCallback != WarmupFrames + MeasurementFrames ||
+                    batchPhase.naturalMainCameraCallbacksTotal != WarmupFrames + MeasurementFrames ||
+                    batchPhase.naturalMainCameraCallbacksMin != 1 || batchPhase.naturalMainCameraCallbacksMax != 1 ||
+                    batchPhase.naturalMainCameraCallbacksPerEpoch == null ||
+                    batchPhase.naturalMainCameraCallbacksPerEpoch.Length != WarmupFrames + MeasurementFrames ||
+                    batchPhase.renderToTransferFrameOffsetMin != batchPhase.renderToTransferFrameOffsetMax ||
+                    batchPhase.submissionAttemptsDelta != WarmupFrames + MeasurementFrames)
+                    SetFailure("camera-batch phase failed epoch, callback, context-submit, offset, or attempt invariants");
+                if (batchPhase.naturalMainCameraCallbacksPerEpoch != null)
+                    for (int i = 0; i < batchPhase.naturalMainCameraCallbacksPerEpoch.Length; ++i)
+                        if (batchPhase.naturalMainCameraCallbacksPerEpoch[i] != 1)
+                            SetFailure("camera-batch phase did not observe exactly one MainCamera callback per rendered epoch");
+                for (int i = 0; i < phases.Count; ++i)
+                {
+                    if (phases[i].renderMode != QuiltViewRenderMode.Full.ToString() || phases[i].tileCount != 48)
+                        SetFailure("camera-batch A/B/A must retain Full mode and all 48 output tiles");
+                    int expectedPixels = phases[i].outputTileWidth * phases[i].outputTileHeight * phases[i].tileCount;
+                    if (i > 0 && (phases[i].fullSourceComparedPixels != expectedPixels ||
+                                  phases[i].fullSourceMismatchPixels != 0 || !phases[i].fullSourceComparisonValid))
+                        SetFailure("camera-batch phase did not match the first Full reference image");
+                }
             }
             for (int i = 0; i < phases.Count; ++i)
             {
@@ -1425,8 +1952,8 @@ namespace ViewWeave.BridgeWorkerValidation
             stage = "stop-and-drain";
             phaseActive = false;
             if (rig != null) rig.AutoRender = false;
-            if (viewCameras.Count > 0)
-                for (int i = 0; i < viewCameras.Count; ++i) if (viewCameras[i] != null) viewCameras[i].enabled = false;
+            DisableNaturalCameras();
+            UnsubscribeCallbacks();
             session.StopSession();
         }
 
@@ -1454,13 +1981,14 @@ namespace ViewWeave.BridgeWorkerValidation
 
         void CleanupNaturalCamerasAfterDrain()
         {
-            if (viewCameras.Count == 0 && sourcePreparation == null) return;
+            DisableNaturalCameras();
+            UnsubscribeCallbacks();
+            if (viewCameras.Count == 0 && viewCameraObjects.Count == 0 && sourcePreparation == null && copyCommand == null) return;
             if (!TryReadPending(out int shutdownPending, out uint nativePending, out string pendingError) || shutdownPending != 0 || nativePending != 0)
             {
                 SetFailure("refusing to release prototype textures before native shutdown reaches zero: " + Sanitize(pendingError));
                 return;
             }
-            UnsubscribeCallbacks();
             for (int i = 0; i < viewCameras.Count; ++i)
             {
                 Camera camera = viewCameras[i];
@@ -1468,9 +1996,10 @@ namespace ViewWeave.BridgeWorkerValidation
                 {
                     camera.enabled = false;
                     camera.targetTexture = null;
-                    Destroy(camera.gameObject);
                 }
             }
+            for (int i = 0; i < viewCameraObjects.Count; ++i)
+                if (viewCameraObjects[i] != null) Destroy(viewCameraObjects[i]);
             for (int i = 0; i < viewTargets.Count; ++i)
             {
                 RenderTexture target = viewTargets[i];
@@ -1479,9 +2008,13 @@ namespace ViewWeave.BridgeWorkerValidation
                 Destroy(target);
             }
             viewCameras.Clear();
+            viewCameraObjects.Clear();
             viewTargets.Clear();
             viewIndices.Clear();
             copiedCameras.Clear();
+            copiedViewIndices.Clear();
+            currentContextExpectedViews.Clear();
+            currentContextCopiedViews.Clear();
             if (sourcePreparation != null)
             {
                 sourcePreparation.Dispose();
@@ -1497,9 +2030,18 @@ namespace ViewWeave.BridgeWorkerValidation
         void SetFailure(string message)
         {
             if (!string.IsNullOrEmpty(failure)) return;
+            if (phaseMode == PhaseMode.NaturalCameraBatch && currentPhase != null)
+            {
+                TraceNatural("failure", -1, naturalContextExpectedCount, naturalContextSubmitCount, naturalEpochReady, 0);
+                currentPhase.naturalTrace = SnapshotNaturalTrace();
+                SnapshotNaturalMainCameraCallbacks();
+            }
             failure = Sanitize(message);
             stage = "failed";
             phaseActive = false;
+            naturalEpochArmed = false;
+            naturalEpochReady = false;
+            DisableNaturalCameras();
             Debug.LogError("HDRP batch prototype failed: " + failure);
         }
 
@@ -1577,6 +2119,7 @@ namespace ViewWeave.BridgeWorkerValidation
             if (active == this) active = null;
             phaseActive = false;
             running = false;
+            DisableNaturalCameras();
             UnsubscribeCallbacks();
             RemovePlayerLoopNode();
             StopRecorders();
