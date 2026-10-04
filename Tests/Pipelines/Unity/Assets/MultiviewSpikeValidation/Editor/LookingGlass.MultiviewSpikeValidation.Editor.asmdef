@@ -1,0 +1,7 @@
+{
+  "name": "LookingGlass.MultiviewSpikeValidation.Editor",
+  "rootNamespace": "LookingGlass.MultiviewSpikeValidation.Editor",
+  "references": ["LookingGlass.MultiviewSpikeValidation.Runtime", "LookingGlass.Community.Core", "LookingGlass.Community.URP", "Unity.RenderPipelines.Core.Editor", "Unity.RenderPipelines.Core.Runtime", "Unity.RenderPipelines.Universal.Editor", "Unity.RenderPipelines.Universal.Runtime"],
+  "includePlatforms": ["Editor"],
+  "autoReferenced": false
+}

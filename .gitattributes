@@ -1,0 +1,22 @@
+* text=auto
+*.cs text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.asmdef text eol=lf
+*.meta text eol=lf
+*.shader text eol=lf
+*.h text eol=lf
+*.cpp text eol=lf
+*.cmake text eol=lf
+*.dll binary
+*.exe binary
+*.lib binary
+*.exp binary
+*.pdb binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.tga binary
+*.psd binary

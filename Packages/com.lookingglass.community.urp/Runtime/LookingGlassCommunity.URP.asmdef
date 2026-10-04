@@ -1,0 +1,8 @@
+{
+  "name": "LookingGlass.Community.URP",
+  "rootNamespace": "LookingGlass.Community.URP",
+  "references": ["LookingGlass.Community.Core", "Unity.RenderPipelines.Core.Runtime", "Unity.RenderPipelines.Universal.Runtime"],
+  "includePlatforms": ["Editor", "WindowsStandalone64", "macOSStandalone"],
+  "autoReferenced": true,
+  "overrideReferences": false
+}

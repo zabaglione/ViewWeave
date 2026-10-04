@@ -1,0 +1,13 @@
+{
+  "name": "ViewWeave.SamplePlayerValidation.Runtime",
+  "rootNamespace": "ViewWeave.SamplePlayerValidation",
+  "references": [
+    "LookingGlass.Community.Core",
+    "LookingGlass.Community.Bridge",
+    "Unity.RenderPipelines.Core.Runtime",
+    "ViewWeave.Bridge.Sample.WindowsUrpLit",
+    "ViewWeave.Bridge.Sample.WindowsHdrpLit"
+  ],
+  "includePlatforms": [],
+  "autoReferenced": false
+}

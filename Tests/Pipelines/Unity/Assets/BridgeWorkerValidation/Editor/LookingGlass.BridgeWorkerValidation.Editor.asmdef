@@ -1,0 +1,14 @@
+{
+  "name": "LookingGlass.BridgeWorkerValidation.Editor",
+  "rootNamespace": "LookingGlass.BridgeWorkerValidation.Editor",
+  "references": ["LookingGlass.BridgeWorkerValidation.Runtime", "LookingGlass.Community.Core", "LookingGlass.Community.Bridge", "LookingGlass.Community.URP", "LookingGlass.Community.HDRP", "Unity.RenderPipelines.Core.Editor", "Unity.RenderPipelines.Core.Runtime", "Unity.RenderPipelines.GPUDriven.Runtime", "Unity.RenderPipelines.Universal.Editor", "Unity.RenderPipelines.Universal.Runtime", "Unity.RenderPipelines.HighDefinition.Editor", "Unity.RenderPipelines.HighDefinition.Runtime"],
+  "includePlatforms": ["Editor"],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

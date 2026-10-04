@@ -1,0 +1,82 @@
+cmake_minimum_required(VERSION 3.20)
+project(lookingglass_bridge_shim LANGUAGES CXX)
+
+include(CTest)
+
+option(LKG_TRANSPORT_TESTS_ONLY "Build only the stubbed worker transport test" OFF)
+
+if (NOT LKG_TRANSPORT_TESTS_ONLY)
+  add_library(lookingglass_bridge_shim SHARED bridge_shim.cpp)
+  target_compile_features(lookingglass_bridge_shim PRIVATE cxx_std_17)
+  target_compile_definitions(lookingglass_bridge_shim PRIVATE LKG_BRIDGE_SHIM_EXPORTS)
+  if (WIN32)
+    target_sources(lookingglass_bridge_shim PRIVATE bridge_worker_transport.cpp)
+    if (NOT DEFINED UNITY_PLUGIN_API_DIR OR UNITY_PLUGIN_API_DIR STREQUAL "")
+      set(UNITY_PLUGIN_API_DIR "$ENV{UNITY_PLUGIN_API_DIR}")
+    endif()
+    if (UNITY_PLUGIN_API_DIR STREQUAL "")
+      message(FATAL_ERROR "Set UNITY_PLUGIN_API_DIR to the Unity Editor PluginAPI directory")
+    endif()
+    if (NOT EXISTS "${UNITY_PLUGIN_API_DIR}/IUnityInterface.h")
+      message(FATAL_ERROR "UNITY_PLUGIN_API_DIR is missing IUnityInterface.h: ${UNITY_PLUGIN_API_DIR}")
+    endif()
+    if (NOT EXISTS "${UNITY_PLUGIN_API_DIR}/IUnityGraphicsD3D11.h")
+      message(FATAL_ERROR "UNITY_PLUGIN_API_DIR is missing IUnityGraphicsD3D11.h: ${UNITY_PLUGIN_API_DIR}")
+    endif()
+    target_include_directories(lookingglass_bridge_shim PRIVATE "${UNITY_PLUGIN_API_DIR}")
+    target_compile_definitions(lookingglass_bridge_shim PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
+    target_link_libraries(lookingglass_bridge_shim PRIVATE user32 d3d11 dxgi)
+  elseif(APPLE)
+    set_source_files_properties(bridge_shim.cpp PROPERTIES COMPILE_FLAGS "-fobjc-exceptions")
+    target_link_libraries(lookingglass_bridge_shim PRIVATE ${CMAKE_DL_LIBS})
+  endif()
+endif()
+
+if (WIN32 AND NOT LKG_TRANSPORT_TESTS_ONLY)
+  add_executable(lookingglass_bridge_probe bridge_probe.cpp)
+  target_include_directories(lookingglass_bridge_probe PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+  target_link_libraries(lookingglass_bridge_probe PRIVATE user32)
+  add_executable(lookingglass_bridge_threaded_probe bridge_threaded_probe.cpp)
+  target_compile_features(lookingglass_bridge_threaded_probe PRIVATE cxx_std_17)
+  target_include_directories(lookingglass_bridge_threaded_probe PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+  target_compile_definitions(lookingglass_bridge_threaded_probe PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
+  target_link_libraries(lookingglass_bridge_threaded_probe PRIVATE d3d11 dxgi user32)
+  add_executable(lookingglass_bridge_worker_session_probe bridge_worker_session_probe.cpp)
+  target_compile_features(lookingglass_bridge_worker_session_probe PRIVATE cxx_std_17)
+  target_include_directories(lookingglass_bridge_worker_session_probe PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+  target_compile_definitions(lookingglass_bridge_worker_session_probe PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
+  target_link_libraries(lookingglass_bridge_worker_session_probe PRIVATE d3d11 dxgi user32)
+endif()
+
+if (WIN32 AND BUILD_TESTING)
+  add_executable(lookingglass_worker_transport_test
+    bridge_worker_transport.cpp
+    tests/worker_transport_test.cpp)
+  target_compile_features(lookingglass_worker_transport_test PRIVATE cxx_std_17)
+  target_include_directories(lookingglass_worker_transport_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+  target_compile_definitions(lookingglass_worker_transport_test PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX LKG_WORKER_TRANSPORT_TESTING)
+  target_link_libraries(lookingglass_worker_transport_test PRIVATE d3d11 dxgi user32)
+  add_test(NAME lookingglass_worker_transport_test COMMAND lookingglass_worker_transport_test)
+  set_tests_properties(lookingglass_worker_transport_test PROPERTIES TIMEOUT 10)
+
+  if (NOT LKG_TRANSPORT_TESTS_ONLY)
+    add_library(lkg_fake_bridge_runtime SHARED tests/fake_bridge_runtime.cpp)
+    add_library(lkg_fake_bridge_missing SHARED tests/fake_bridge_missing.cpp)
+    add_executable(lookingglass_bridge_loader_lifecycle_test tests/bridge_loader_lifecycle_test.cpp)
+    target_compile_features(lookingglass_bridge_loader_lifecycle_test PRIVATE cxx_std_17)
+    target_compile_definitions(lookingglass_bridge_loader_lifecycle_test PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
+    target_link_libraries(lookingglass_bridge_loader_lifecycle_test PRIVATE user32)
+    add_custom_command(TARGET lkg_fake_bridge_runtime POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "$<TARGET_FILE:lkg_fake_bridge_runtime>"
+        "$<TARGET_FILE_DIR:lkg_fake_bridge_runtime>/lkg_fake_bridge_other.dll")
+    add_test(NAME lookingglass_bridge_loader_lifecycle_test
+      COMMAND lookingglass_bridge_loader_lifecycle_test
+        "$<TARGET_FILE:lookingglass_bridge_shim>"
+        "$<TARGET_FILE:lkg_fake_bridge_runtime>"
+        "$<TARGET_FILE_DIR:lkg_fake_bridge_runtime>/lkg_fake_bridge_other.dll"
+        "$<TARGET_FILE:lkg_fake_bridge_missing>")
+    set_tests_properties(lookingglass_bridge_loader_lifecycle_test PROPERTIES TIMEOUT 10)
+  endif()
+endif()
+

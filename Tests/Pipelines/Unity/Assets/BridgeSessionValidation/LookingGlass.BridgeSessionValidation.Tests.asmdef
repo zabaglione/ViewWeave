@@ -1,0 +1,10 @@
+{
+  "name": "LookingGlass.BridgeSessionValidation.Tests",
+  "rootNamespace": "LookingGlass.BridgeSessionValidation",
+  "references": ["LookingGlass.Community.Core", "LookingGlass.Community.Bridge", "UnityEngine.TestRunner", "UnityEditor.TestRunner"],
+  "overrideReferences": true,
+  "precompiledReferences": ["nunit.framework.dll"],
+  "defineConstraints": ["UNITY_INCLUDE_TESTS"],
+  "includePlatforms": [],
+  "autoReferenced": false
+}

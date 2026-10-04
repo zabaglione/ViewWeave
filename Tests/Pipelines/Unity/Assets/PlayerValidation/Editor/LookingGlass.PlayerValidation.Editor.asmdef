@@ -1,0 +1,14 @@
+{
+  "name": "LookingGlass.PlayerValidation.Editor",
+  "rootNamespace": "LookingGlass.PlayerValidation.Editor",
+  "references": ["LookingGlass.PlayerValidation.Runtime", "LookingGlass.Community.Core", "LookingGlass.Community.URP", "Unity.RenderPipelines.Core.Runtime", "Unity.RenderPipelines.GPUDriven.Runtime", "Unity.RenderPipelines.Universal.Runtime", "Unity.RenderPipelines.Core.Editor", "Unity.RenderPipelines.Universal.Editor"],
+  "includePlatforms": ["Editor"],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

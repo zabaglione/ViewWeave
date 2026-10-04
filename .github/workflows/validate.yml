@@ -1,0 +1,27 @@
+name: validate
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  static:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run repository validator
+        run: python tools/validate_repository.py
+
+  native-transport:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure transport tests
+        run: cmake -S Native -B Native/build-transport-ci -G "Visual Studio 17 2022" -A x64 -DLKG_TRANSPORT_TESTS_ONLY=ON -DBUILD_TESTING=ON
+      - name: Build transport tests
+        run: cmake --build Native/build-transport-ci --config Release --target lookingglass_worker_transport_test --parallel
+      - name: Run transport tests
+        run: ctest --test-dir Native/build-transport-ci -C Release --output-on-failure

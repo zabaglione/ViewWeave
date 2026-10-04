@@ -1,0 +1,7 @@
+{
+  "name": "LookingGlass.VfxPlayerValidation.Runtime",
+  "rootNamespace": "LookingGlass.VfxPlayerValidation",
+  "references": ["LookingGlass.Community.Core", "LookingGlass.Community.URP", "Unity.RenderPipelines.Core.Runtime", "Unity.RenderPipelines.Universal.Runtime", "Unity.VisualEffectGraph.Runtime"],
+  "includePlatforms": [],
+  "autoReferenced": true
+}

@@ -1,0 +1,5 @@
+# Quilt Preview sample
+
+Import this optional sample from Unity Package Manager after importing the Core package. Configure a URP project and add the URP quilt adapter, then use `GameObject/ViewWeave/Quilt Rig` to create the rig. Add `QuiltPreviewDemoGenerator` to that rig and choose `Generate Preview Rig` manually. The sample explicitly supports URP; it reports an ASCII error in HDRP projects. The generator creates independent world-space Lit scene content and a directional light using the included `ViewWeave/CoreUrpPreviewLit` resource. The resource keeps the URP Lit shader in a Player build. The rig uses a disabled dedicated Camera and the Core quilt RenderTexture. It has no Bridge dependency and does not require a device.
+
+Select `Preview`, `Balanced`, or `Native` for the explicit scale values 0.25, 0.5, or 1.0. Configure `nativeQuiltWidth` and `nativeQuiltHeight` from a real device profile before using `Native`; this sample does not auto-select a device or display. `autoRender` starts disabled; enable it on `QuiltRenderer` only after the rig and adapter are configured. Re-running the generator replaces its generated content and its owned material.

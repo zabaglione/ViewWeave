@@ -1,0 +1,6 @@
+*
+!.gitignore
+WindowsUrpLit/
+WindowsHdrpLit/
+*.meta
+

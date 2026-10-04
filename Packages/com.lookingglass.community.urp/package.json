@@ -1,0 +1,13 @@
+{
+  "name": "com.lookingglass.community.urp",
+  "version": "0.1.0",
+  "displayName": "ViewWeave URP",
+  "description": "An unofficial Unity SDK for Looking Glass displays: URP integration for the ViewWeave quilt renderer.",
+  "license": "Apache-2.0",
+  "unity": "6000.6",
+  "dependencies": {
+    "com.lookingglass.community.core": "0.1.0",
+    "com.unity.render-pipelines.universal": "17.6.0"
+  },
+  "keywords": ["looking-glass", "quilt", "urp"]
+}

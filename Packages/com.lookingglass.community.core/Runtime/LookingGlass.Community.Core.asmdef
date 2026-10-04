@@ -1,0 +1,13 @@
+{
+  "name": "LookingGlass.Community.Core",
+  "rootNamespace": "LookingGlass.Community",
+  "references": [],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

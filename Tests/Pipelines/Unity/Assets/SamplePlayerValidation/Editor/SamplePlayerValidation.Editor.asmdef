@@ -1,0 +1,21 @@
+{
+  "name": "ViewWeave.SamplePlayerValidation.Editor",
+  "rootNamespace": "ViewWeave.SamplePlayerValidation.Editor",
+  "references": [
+    "ViewWeave.SamplePlayerValidation.Runtime",
+    "LookingGlass.Community.Core",
+    "LookingGlass.Community.Bridge",
+    "LookingGlass.Community.URP",
+    "LookingGlass.Community.HDRP",
+    "ViewWeave.Bridge.Sample.WindowsUrpLit",
+    "ViewWeave.Bridge.Sample.WindowsHdrpLit",
+    "Unity.RenderPipelines.Universal.Runtime",
+    "Unity.RenderPipelines.HighDefinition.Runtime",
+    "Unity.RenderPipelines.Core.Runtime",
+    "Unity.RenderPipelines.Core.Editor",
+    "Unity.RenderPipelines.Universal.Editor",
+    "Unity.RenderPipelines.HighDefinition.Editor"
+  ],
+  "includePlatforms": ["Editor"],
+  "autoReferenced": false
+}

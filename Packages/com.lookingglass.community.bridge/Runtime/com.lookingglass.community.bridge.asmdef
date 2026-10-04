@@ -1,0 +1,14 @@
+{
+  "name": "LookingGlass.Community.Bridge",
+  "rootNamespace": "LookingGlass.Community",
+  "references": ["LookingGlass.Community.Core"],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}
