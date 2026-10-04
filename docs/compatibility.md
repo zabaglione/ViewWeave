@@ -27,13 +27,13 @@ VFX GraphはLinear color spaceが必須です。Unity Visual Effect Graph 17.6�
 | Quilt / off-axis | Coreで実装、single CameraをN回描画 | 高解像度profileとRig |
 | profile / quality / hotplug / 複数機器 | Preview/Balanced/NativeとGRD ON/OFFの6条件、48 view Playerを確認。hotplug、複数機器、Registryの一般運用は未検証 | profile由来の自動選択、hotplug、複数機器を再現可能にする |
 | depthiness / frustum / gizmo / camera conversion | Quilt mathとcamera変換の一部のみ | 統合RigとEditor操作を検証 |
-| Editor / offline display | Bridge Worker経路はWindows D3D11/D3D12 Editor Playに対応。Edit Modeとoffline displayは提供しない。D3D12 EditorはURP/HDRPのDomain Reload enabled/disabledで各2 cycleを確認。GRDはこのmatrixで切り替えていない | ユーザーHDRP projectで更新packageを確認 |
+| Editor / offline display | Bridge Worker経路はWindows D3D11/D3D12 Editor Playに対応。Edit Modeとoffline displayは提供しない。D3D12 EditorはURP/HDRPのDomain Reload enabled/disabledで各2 cycleを確認。HDRP VFX Learning Templates projectもsnapshot 8adda27cでNative/48 viewsのPlayと停止cleanupを確認。GRDはこのmatrixで切り替えていない | 全48 viewsの人手光学レビュー、Editor再起動と一般機器条件を確認 |
 | still capture / video / quilt layer / RGBD | 未実装または未検証 | 保存形式、録画、RGBDの受入試験 |
 | 3D cursor / orbit / buttons | 未検証 | 入力と機器差を検証 |
 | URP | Unity 6000.6.4f1、SRP 17.6、D3D11でLit/Bloom smoke。Base cameraのみ、stackは拒否。M3の8 fixtureを確認済み | 残る視点別効果を個別に検証 |
 | HDRP | Linear必須。quilt view中はadapter既定設定でMotion Blur、SSR、SSGI、volumetric fog/cloudを一時抑制。Auto Exposureは全view共通Fixed EV 12、元がFixedならその値を保持。通常Fog/Sky/Bloomと元設定は維持 | HDRP標準templateのCubeとEditor Playで起動・再起動を確認 |
 | Built-in / Unity graphics | 製品サポート対象外。CoreはStandard RenderRequest経路を要求 | 対象外として扱う |
-| Bridge | WorkerはWindows D3D11/D3D12 Editor PlayとPlayerに対応。D3D12経路はUnity D3D12から同一GPU上のD3D11 workerへ共有して公式Bridgeへ送る。Native ring testはD3D11 baseline込み349 draw、loader 100-cycleはfake runtimeで確認。URP/HDRP Editor PlayのDomain Reload enabled/disabled各2 cycleと両pipelineのD3D12 Development Player Previewを確認。GRD設定はこのmatrixで切り替えていない。Player Native qualityとユーザーHDRP projectの更新package検証は未実施。Legacy Direct実機結果はD3D11のみ。全48 viewの人手確認、配布署名、hotplug、複数機器、Metalは未実施 | ユーザーHDRP project、Player Native quality、光学品質、hotplug、複数機器を検証 |
+| Bridge | WorkerはWindows D3D11/D3D12 Editor PlayとPlayerに対応。D3D12経路はUnity D3D12から同一GPU上のD3D11 workerへ共有して公式Bridgeへ送る。Native ring testはD3D11 baseline込み349 draw、loader 100-cycleはfake runtimeで確認。URP/HDRP Editor PlayのDomain Reload enabled/disabled各2 cycle、両pipelineのD3D12 Development Player Preview、HDRP user projectのsnapshot 8adda27cでのNative/48 views Editor Playを確認。GRD設定はこのmatrixで切り替えていない。Player Native qualityは未実施。Legacy Direct実機結果はD3D11のみ。全48 viewの人手確認、配布署名、hotplug、複数機器、Metalは未実施 | Player Native quality、全48 view光学品質、hotplug、複数機器を検証 |
 | Bloom / Tonemapping / Color Adjustments | Lit/Bloom smokeのみ確認 | per-view処理とtile seamを検証 |
 | TAA / temporal / Auto Exposure | TAAはquilt view中のみ停止して復元。HDRP Auto Exposureはquilt全view共通Fixed exposureへ一時変換。一般的なview別履歴分離は未検証 | temporal履歴の独立は別研究 |
 | HDRP Motion Blur / SSR / SSGI / volumetric fog / clouds | adapter既定の一時overrideでquilt view中のみ抑制。通常render scopeでは元stackの設定を使う | 別のtemporal効果や複雑なVolume構成は個別検証 |

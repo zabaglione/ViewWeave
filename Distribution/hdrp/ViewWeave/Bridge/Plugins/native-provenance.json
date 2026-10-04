@@ -24,7 +24,7 @@
   "generator": "Visual Studio 17 2022",
   "independentCTest": "Final native run: worker transport passed 349 draw cases including the D3D11 baseline; bridge loader lifecycle test passed 1/1 (100 cycles) using the fake Bridge runtime",
   "d3d12HardwareValidation": "NVIDIA RTX 3090 Ti; D3D12 shared-resource handoff, ring reuse, typeless formats, timeout, late completion, device-removal seam, and generation coverage passed",
-  "validationLimits": "Windows CI skips hardware D3D12 tests; RTX 3090 Ti is the only tested GPU; WARP and other GPUs are untested; URP/HDRP D3D12 Editor Play passed with Domain Reload on and off (2 cycles per setting); URP/HDRP Windows D3D12 Development Players passed in Preview only; Player Native quality is untested; user HDRP project revalidation on the pending package snapshot is pending; GRD settings were not toggled in this matrix; Plug and Play/hotplug, multi-device coverage, and exhaustive human review of all 48 views are untested",
+  "validationLimits": "Windows CI skips hardware D3D12 tests; RTX 3090 Ti is the only tested GPU; WARP and other GPUs are untested; URP/HDRP D3D12 Editor Play passed with Domain Reload on and off (2 cycles per setting); URP/HDRP Windows D3D12 Development Players passed in Preview only; Player Native quality is untested; the user's HDRP VFX Learning Templates project passed Editor Play on package Git revision 8adda27c at Native 7680x4320 across 48 views with completion progress and clean Idle/Closed stop; GRD settings were not toggled in this matrix; Plug and Play/hotplug, multi-device coverage, and exhaustive human review of all 48 views are untested",
   "license": "Apache-2.0",
   "generatedAt": "2026-10-04"
 }
