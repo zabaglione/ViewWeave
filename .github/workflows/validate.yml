@@ -16,7 +16,7 @@ jobs:
         run: python tools/validate_repository.py
 
   native-transport:
-    runs-on: windows-latest
+    runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
       - name: Configure transport tests
