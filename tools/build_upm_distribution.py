@@ -106,15 +106,6 @@ def package_json(kind: str) -> dict:
             "path": "Samples~/" + sample_name,
         }
     ]
-    if kind == "urp":
-        samples.insert(
-            0,
-            {
-                "displayName": "Quilt Preview",
-                "description": "Bridge-free URP quilt preview.",
-                "path": "Samples~/QuiltPreview",
-            },
-        )
     return {
         "name": "com.zabaglione.lookingglass.viewweave." + package_suffix,
         "version": VERSION,
@@ -159,8 +150,6 @@ def build(kind: str, target: Path) -> None:
         for component in components:
             copy_component(package, target, component, component_root + "/" + component)
 
-    if kind == "urp":
-        copy_component(core, target, "Samples~/QuiltPreview", "Samples~/QuiltPreview")
     sample = "Samples~/Windows" + ("UrpLit" if kind == "urp" else "HdrpLit")
     copy_component(bridge, target, sample, sample)
 
@@ -179,8 +168,9 @@ def build(kind: str, target: Path) -> None:
         "Install this folder from the repository using Unity Package Manager:\n\n"
         "    https://github.com/zabaglione/ViewWeave.git?path=/Distribution/" + kind + "#main\n\n"
         "Use Unity 6000.6.4f1 with the matching Unity " + kind.upper() + " render pipeline. "
-        "Import the included samples from Package Manager. The Windows sample requires the "
-        "Looking Glass Bridge runtime and D3D11.\n",
+        "The included Windows sample is not imported automatically. In Package Manager, "
+        "use the package Samples Import action, then install the Looking Glass Bridge runtime "
+        "and run the generated scene in a Windows D3D11 Player.\n",
     )
     package_path = target / "package.json"
     package_path.write_text(json.dumps(package_json(kind), indent=2, ensure_ascii=True) + "\n", encoding="utf-8", newline="\n")

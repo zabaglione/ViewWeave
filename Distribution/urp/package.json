@@ -18,11 +18,6 @@
   ],
   "samples": [
     {
-      "displayName": "Quilt Preview",
-      "description": "Bridge-free URP quilt preview.",
-      "path": "Samples~/QuiltPreview"
-    },
-    {
       "displayName": "Windows URP Lit",
       "description": "Generates a Windows D3D11 Bridge sample for URP.",
       "path": "Samples~/WindowsUrpLit"

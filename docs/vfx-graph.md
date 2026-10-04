@@ -8,7 +8,7 @@ VFX GraphはLinear color spaceで使用してください。Unity Editorの`Proj
 
 `UrpVfxCameraDriver`はGammaを黙って許可しません。Gamma時はCameraやRenderTextureを生成する前に停止し、`LastError`へ`VFX Graph requires Linear color space; URP Gamma is unsupported`を設定して同じ内容をASCIIのエラーログへ出力します。Linearへ変更してからdriverを有効にしてください。
 
-1. URPのBridge RigまたはQuilt Rigを作成し、Quilt用のsource Cameraを無効にします。source CameraはRigと同じGameObjectに置きます。
+1. URPのBridge Rigを作成し、Quilt用のsource Cameraを無効にします。source CameraはRigと同じGameObjectに置きます。
 2. 同じRig GameObjectへ`UrpVfxCameraDriver`を追加します。`enableDriver`を有効にし、`vfxLayers`をVFXオブジェクトのレイヤーに設定します。VFXレイヤーはsource Cameraのculling maskと重ねます。
 3. `driverFieldOfView`をVFXの範囲に合わせます。初期値は90度です。VFXのboundsが補助Cameraの視錐台に入ることを確認してください。
 4. 通常の自動描画では`QuiltRenderer.autoRender`を有効にします。`RenderQuilt()`を手動で呼ぶ場合は、`runWhenManualRendering`を有効にしてから呼び出します。

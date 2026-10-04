@@ -1,8 +1,5 @@
-using System;
 using System.Collections.Generic;
-using UnityEditor;
 using UnityEngine;
-using UnityEngine.Rendering;
 
 namespace ViewWeave.Editor
 {
@@ -30,35 +27,4 @@ namespace ViewWeave.Editor
         }
     }
 
-    public static class ViewWeaveRigMenu
-    {
-        [MenuItem("GameObject/ViewWeave/Quilt Rig", false, 10)]
-        static void CreateRig(MenuCommand command)
-        {
-            if (!ViewWeaveRigProviderRegistry.HasSupportedProvider())
-            {
-                Debug.LogError("ViewWeave Quilt Rig requires a supported URP or HDRP render pipeline.");
-                return;
-            }
-            GameObject parent = command.context as GameObject;
-            GameObject target = new GameObject("ViewWeave Quilt Rig");
-            if (parent != null) GameObjectUtility.SetParentAndAlign(target, parent);
-            Undo.RegisterCreatedObjectUndo(target, "Create ViewWeave Quilt Rig");
-            ViewWeaveRig rig = target.AddComponent<ViewWeaveRig>();
-            if (!ViewWeaveRigProviderRegistry.TryAddAdapter(target, out MonoBehaviour adapter))
-            {
-                Undo.DestroyObjectImmediate(target);
-                Debug.LogError("ViewWeave Quilt Rig requires a supported URP or HDRP render pipeline.");
-                return;
-            }
-            rig.SetGuard(adapter);
-            if (!rig.ConfigureComponents())
-            {
-                Undo.DestroyObjectImmediate(target);
-                Debug.LogError("ViewWeave Quilt Rig configuration failed.");
-                return;
-            }
-            Selection.activeGameObject = target;
-        }
-    }
 }

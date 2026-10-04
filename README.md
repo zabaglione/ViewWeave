@@ -1,16 +1,15 @@
 # ViewWeave
 
-Looking Glass向けの非公式Unity SDKです。専用のQuilt RenderTextureへ複数視点を描画し、Bridgeを使わないEditor preview、またはWindows D3D11 Playerから表示できます。
+Looking Glass向けの非公式Unity SDKです。専用のQuilt RenderTextureへ複数視点を描画し、Windows D3D11 PlayerからLooking Glass Bridge runtimeへ出力します。
 
 対象環境はUnity 6000.6.4f1、Windows、URPまたはHDRPです。実機表示には別途Looking Glass Bridge runtimeが必要です。macOS、D3D12 Bridge出力、複数機器の自動運用は対象外です。
 
-このprivate repositoryからUnity Package Managerで取得するにはGitHubのアクセス権が必要です。独自コードのライセンスは[Apache-2.0](LICENSE)です。
+このprivate repositoryからUnity Package Managerで取得するにはGitHubのアクセス権が必要です。独自コードのライセンスは[Apache-2.0](LICENSE)です。実機表示にはWindowsのLooking Glass Bridge runtimeが必要です。
 
 ## まず選ぶ使い方
 
 | 目的 | 必要なpackage | 入口 | 結果 |
 | --- | --- | --- | --- |
-| Bridgeなしで画面を確認 | URP package | `GameObject/ViewWeave/Quilt Rig` + `QuiltPreviewDemoGenerator` | `Quilt Preview` windowでQuilt preview |
 | URPで実機表示 | URP package | `GameObject/ViewWeave/Bridge Rig` + `BridgeUrpLitSampleGenerator` | Windows D3D11 Playerで赤い立方体と緑の球 |
 | HDRPで実機表示 | HDRP package | `GameObject/ViewWeave/Bridge Rig` + `BridgeHdrpLitSampleGenerator` | Windows D3D11 PlayerでHDRP Lit scene |
 
@@ -20,7 +19,7 @@ Looking Glass向けの非公式Unity SDKです。専用のQuilt RenderTextureへ
 2. GitHub private repositoryを読めるアカウントでGit Credential Managerを設定します。SSHを使う場合はSSH鍵とGitHubへの登録を済ませてください。認証tokenをURLへ埋め込まないでください。
 3. `Window > Package Management > Package Manager`を開き、左上の`+`から`Install package from git URL`を選びます。
 4. HTTPSを使う場合、URPは`https://github.com/zabaglione/ViewWeave.git?path=/Distribution/urp#main`、HDRPは`https://github.com/zabaglione/ViewWeave.git?path=/Distribution/hdrp#main`を入力します。SSHの場合は、それぞれ`ssh://git@github.com/zabaglione/ViewWeave.git?path=/Distribution/urp#main`、`ssh://git@github.com/zabaglione/ViewWeave.git?path=/Distribution/hdrp#main`を使います。
-5. 配布packageはCore、Bridge、選択したpipelineを含むため、別のCore/Bridge packageを追加しないでください。導入後、Package Managerの`Samples`から目的のsampleを`Import`します。
+5. 配布packageはCore、Bridge、選択したpipelineを含むため、別のCore/Bridge packageを追加しないでください。導入後、Package Managerの`Samples`から目的のWindows sampleを`Import`します。Samplesは自動的にAssetsへimportされません。
 
 Package ManagerではURP版を`ViewWeave for Looking Glass - URP (Unofficial)`、HDRP版を`ViewWeave for Looking Glass - HDRP (Unofficial)`として表示します。
 
@@ -28,28 +27,17 @@ URPとHDRPの配布packageは同じprojectへ同時に追加せず、projectのp
 
 この手順はローカルディスク上の`package.json`を選ぶ方法を使いません。開発者がsource packageを検証する場合だけ、`Tests/`のmanifestにあるローカル参照を使います。
 
-## Bridgeなしで最短確認する
-
-URPプロジェクトで次の操作を行います。
-
-1. `GameObject > ViewWeave > Quilt Rig`を作成します。専用Camera、`QuiltRenderer`、`ViewWeaveRig`、URP adapterが作成されます。
-2. Rigに`QuiltPreviewDemoGenerator`をAdd Componentします。
-3. Inspectorの`Preset`を`Preview`にして、コンポーネントのコンテキストメニューから`Generate Preview Rig`を実行します。
-4. `Window > ViewWeave > Quilt Preview`を開き、Rigの`QuiltRenderer`をRenderer欄へdragします。
-5. `Render Quilt`を押します。Bridge runtimeやLooking Glass本体は不要です。
-
-生成されるpreview sceneには`Preview Lit Cube`、`Preview Lit Sphere`、`Preview Directional Light`が含まれます。Quilt Preview windowに分割された複数視点画像が表示されれば成功です。`Balanced`または`Native`を使う場合はGeneratorの解像度とgridを実際のprofileに合わせます。Nativeは機器を自動検出しません。
-
 VFX Graphを使う場合はLinear color spaceを設定してください。HDRPもLinear color spaceと固定Exposureを必要とします。URPのMSAAはGamma/Linearの限定試験を実施しています。範囲と結果は[Windows validation](docs/windows-validation.md)を参照してください。
 
 ## Windows D3D11 Playerで実機表示する
 
-1. URPまたはHDRPの配布packageを追加したプロジェクトへ、Bridge runtimeをWindowsへインストールします。Bridge codeは配布packageに含まれます。
-2. `GameObject > ViewWeave > Bridge Rig`を作成します。専用Camera、`QuiltRenderer`、`ViewWeaveRig`、`BridgeWorkerQuiltOutput`、`ViewWeaveBridgeSession`、対応adapterが同じGameObjectに作成されます。
-3. URPなら`BridgeUrpLitSampleGenerator`、HDRPなら`BridgeHdrpLitSampleGenerator`を同じRigへAdd Componentします。`Generate On Start`は有効のままにします。
-4. Rigを配置したシーンを`File > Save As...`でAssetsへ保存します。
-5. `File > Build Profiles`を開き、Windows profileのScene Listへ保存したsceneを追加します。`Player Settings > Other Settings`でGraphics APIs for Windowsの自動選択を無効にし、Direct3D11を先頭にします。Playerが非フォーカスでも描画を続けるため`Run In Background`は常時有効を推奨します。
-6. `Build and Run`を実行します。通常はBridge runtimeを自動検出します。検出できない場合だけSessionの`Runtime Path`へDLLの絶対パスを設定します。
+1. URPまたはHDRPの配布packageを追加したプロジェクトへ、Looking Glass Bridge runtimeをWindowsへインストールします。Bridge codeは配布packageに含まれます。
+2. Package Managerの`Samples`から、使用するpipelineのWindows sampleを明示的に`Import`します。Importしない限りsampleのgeneratorはAssetsへ追加されません。
+3. `GameObject > ViewWeave > Bridge Rig`を作成します。専用Camera、`QuiltRenderer`、`ViewWeaveRig`、`BridgeWorkerQuiltOutput`、`ViewWeaveBridgeSession`、対応adapterが同じGameObjectに作成されます。
+4. URPなら`BridgeUrpLitSampleGenerator`、HDRPなら`BridgeHdrpLitSampleGenerator`を同じRigへAdd Componentします。`Generate On Start`は有効のままにします。
+5. Rigを配置したシーンを`File > Save As...`でAssetsへ保存します。
+6. `File > Build Profiles`を開き、Windows profileのScene Listへ保存したsceneを追加します。`Player Settings > Other Settings`でGraphics APIs for Windowsの自動選択を無効にし、Direct3D11を先頭にします。Playerが非フォーカスでも描画を続けるため`Run In Background`は常時有効を推奨します。
+7. `Build and Run`を実行します。通常はBridge runtimeを自動検出します。検出できない場合だけSessionの`Runtime Path`へDLLの絶対パスを設定します。
 
 URP sampleは赤い立方体、緑の球、ライトを生成します。HDRP sampleも基本形状に加えて固定ExposureとHDRPの制約設定を生成します。Editorの`Generate Lit Scene`は生成物確認用で、EditorからBridgeへ接続する操作ではありません。
 
@@ -57,11 +45,10 @@ URP sampleは赤い立方体、緑の球、ライトを生成します。HDRP sa
 
 | Sample | pipeline | Bridge | 生成操作 | 主な確認内容 |
 | --- | --- | --- | --- | --- |
-| `Quilt Preview` | URP | 不要 | `QuiltPreviewDemoGenerator > Generate Preview Rig` | EditorのQuilt Preview windowで立方体、球、Quilt描画を確認 |
 | `Windows URP Lit` | URP | 必要 | `BridgeUrpLitSampleGenerator > Generate Lit Scene` または`Generate On Start` | Windows D3D11 Playerの赤い立方体、緑の球、視差 |
 | `Windows HDRP Lit` | HDRP | 必要 | `BridgeHdrpLitSampleGenerator > Generate Lit Scene` または`Generate On Start` | Windows D3D11 PlayerのHDRP Lit表示 |
 
-Bridge sampleのmaterial resourceが見つからない場合は、`ViewWeave/Samples/Windows URP Lit/Create Material Resource`または`ViewWeave/Samples/Windows HDRP Lit/Create Material Resource`を実行してから再生成します。
+Bridge sampleのmaterial resourceが見つからない場合は、`ViewWeave/Samples/Windows URP Lit/Create Material Resource`または`ViewWeave/Samples/Windows HDRP Lit/Create Material Resource`を実行してから再生成します。Bridge sampleのEditor生成は生成物確認用で、EditorからBridgeへ接続しません。
 
 ## テストプロジェクトを開く
 

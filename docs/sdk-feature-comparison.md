@@ -7,13 +7,13 @@
 | 機能 | 公式3.x資料 | 公式4 beta/alpha資料 | 本SDK現状と計画 |
 | --- | --- | --- | --- |
 | Quilt capture / off-axis | 主要機能として説明 | Render Graph経路で説明 | Coreで実装。1台CameraをN回描画 |
-| still capture | 公式Unity pluginの機能 | 配布版の機能範囲に含まれる | 診断用PNGを確認。利用者向け保存APIは未確定 |
+| still capture | 公式Unity pluginの機能 | 配布版の機能範囲に含まれる | 開発用test fixtureで診断用PNGを確認。利用者向け保存APIは未確定 |
 | video / playback | 公式資料の機能範囲 | 資料の対象外部分を含む | 未実装または未検証 |
 | calibration | 公式pluginと機器経路で提供 | 公式pluginの設定を利用 | Coreでper-view render、GPU assemble、Bridge worker drawを接続。Profile、Registry、Rig menuはAPIテスト済み。vendorの光学変換条件と実機光学は未確認 |
 | device profile | 機器設定と表示経路を提供 | 機器設定を利用 | Profile、Registry、Locator、Rig menuを実装しAPIテスト済み。Windows D3D11のURP/HDRP PlayerでPreview、Balanced、NativeのGRD ON/OFF各6条件と品質cycleを確認。全機器hotplugは未検証 |
 | 複数機器 / hotplug | 資料の条件に依存 | 資料の条件に依存 | 未検証 |
 | head tracking / view interpolation | 公式pluginの設定対象 | depth interpolationと透明制約を記載 | 未実装または未検証。深度再投影は別研究 |
-| Editor preview | 公式pluginに機能あり | external preview等を記載 | Editor previewを確認。offline displayは未確定 |
+| Editor preview | 公式pluginに機能あり | external preview等を記載 | 製品向けEditor previewは提供しない。offline displayは未確定 |
 | runtime integration | Unity packageとBridge連携 | Unity 6000.0〜6000.1の条件 | Unity 6000.6.4f1のURP/HDRP adapterとSessionを提供。Windows D3D11の固定条件Sessionと品質切替を確認。機器一般運用は未検証 |
 | 入力、cursor、orbit、button | 公式pluginの利用機能 | 公式資料の範囲に依存 | 未実装または未検証 |
 | installer / package導入 | 公式配布物で提供 | beta/alpha配布物で提供 | UPM導入、Rig menu、optional Samplesを実装済み。ローカルcloneからURP/HDRP別clean projectで各2/2 API導入チェック済み。GitHub導入は未検証 |

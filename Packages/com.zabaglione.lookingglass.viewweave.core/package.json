@@ -7,12 +7,5 @@
   "unity": "6000.6",
   "author": { "name": "zabaglione" },
   "keywords": [ "looking-glass", "quilt", "holographic" ],
-  "dependencies": {},
-  "samples": [
-    {
-      "displayName": "Quilt Preview",
-      "description": "Bridge-free runtime Lit preview using the Core quilt RenderTexture.",
-      "path": "Samples~/QuiltPreview"
-    }
-  ]
+  "dependencies": {}
 }

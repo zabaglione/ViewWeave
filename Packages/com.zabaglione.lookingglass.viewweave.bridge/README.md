@@ -2,7 +2,7 @@
 
 ViewWeave is an independently developed, unofficial Unity SDK for Looking Glass displays. It is not an official Looking Glass Factory product.
 
-This optional package submits completed quilts to an installed Looking Glass Bridge runtime. The package does not include Bridge binaries, proprietary headers, or runtime assets.
+This package submits completed quilts to an installed Looking Glass Bridge runtime. The package does not include Bridge binaries, proprietary headers, or runtime assets. End users should install the self-contained URP or HDRP distribution package, which includes this adapter and its Windows sample.
 
 For end-user installation, use the self-contained URP or HDRP distribution package from the repository Git URL. Do not install this source package together with a distribution package because both contain the same runtime assemblies. This package path is intended for repository development and test projects.
 

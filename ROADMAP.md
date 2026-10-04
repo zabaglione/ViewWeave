@@ -16,7 +16,7 @@ call stack、thread ID、device context、fenceの収集、Unity render thread�
 
 ## M2: profile・Rig・導入性（限定通過、実機範囲を継続確認）
 
-高解像度profile、統合Rig、機器自動選択、installer、通常利用時のmanual DLL path不要化を整備します。Coreの`Quilt Preview` optional SampleとQuality profile（Preview/Balanced/Native）は登録済みです。ViewWeave RigはGameObjectメニューのprovider registryから対応URP/HDRP adapterを追加します。RigMenu providerは`ViewWeaveRigProviderRegistry.TryAddAdapter(target, out adapter)`を使用し、profile factoryは`QuiltQualityProfile.Preview(...)`など必要な引数を渡して呼び出します。M0のempty projectからUPM導入、setup wizard、Lit表示まで5分を目標とします。URP Sample PlayerはNative 48 view、全tile非空、赤緑の奥行き、移動、視差、124 draw、pending 0を確認しました。HDRP Sample PlayerもNative 48 view、全tile非空、赤緑の奥行き、移動、視差、125 draw、pending 0を確認しました。受入基準は、対応機器のprofile由来設定が一貫し、未対応機器を誤って対応表示しないことです。
+高解像度profile、統合Rig、機器自動選択、installer、通常利用時のmanual DLL path不要化を整備します。Quality profile（Preview/Balanced/Native）は登録済みです。ViewWeave Rigはprovider registryから対応URP/HDRP adapterを追加します。M0のempty projectからUPM導入、Bridge runtime設定、Lit表示まで5分を目標とします。URP Sample PlayerはNative 48 view、全tile非空、赤緑の奥行き、移動、視差、124 draw、pending 0を確認しました。HDRP Sample PlayerもNative 48 view、全tile非空、赤緑の奥行き、移動、視差、125 draw、pending 0を確認しました。受入基準は、対応機器のprofile由来設定が一貫し、未対応機器を誤って対応表示しないことです。
 
 ## M3: per-view互換性（限定通過、未通過条件あり）
 

@@ -27,7 +27,7 @@ VFX GraphはLinear color spaceが必須です。Unity Visual Effect Graph 17.6�
 | Quilt / off-axis | Coreで実装、single CameraをN回描画 | 高解像度profileとRig |
 | profile / quality / hotplug / 複数機器 | Preview/Balanced/NativeとGRD ON/OFFの6条件、48 view Playerを確認。hotplug、複数機器、Registryの一般運用は未検証 | profile由来の自動選択、hotplug、複数機器を再現可能にする |
 | depthiness / frustum / gizmo / camera conversion | Quilt mathとcamera変換の一部のみ | 統合RigとEditor操作を検証 |
-| Editor preview / offline display | Editor previewとPNG明示保存のみ | offline display経路を定義 |
+| Editor preview / offline display | 製品向けEditor previewとoffline displayは提供しない。Bridge接続のWindows D3D11 Playerを対象 | offline display経路を定義 |
 | still capture / video / quilt layer / RGBD | 未実装または未検証 | 保存形式、録画、RGBDの受入試験 |
 | 3D cursor / orbit / buttons | 未検証 | 入力と機器差を検証 |
 | URP | Unity 6000.6.4f1、SRP 17.6、D3D11でLit/Bloom smoke。Base cameraのみ、stackは拒否。M3の8 fixtureを確認済み | 残る視点別効果を個別に検証 |
