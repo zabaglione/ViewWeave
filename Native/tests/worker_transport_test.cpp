@@ -108,6 +108,10 @@ static bool WaitCompleted(void* handle, uint32_t target, uint32_t timeoutMs) {
     LkgWorkerStatus status{};
     while (GetTickCount64() - start < timeoutMs) {
         Check(lkg_worker_poll(handle, &status) == 0, "poll completion");
+        if (status.state == LKG_WORKER_FAULT || status.state == LKG_WORKER_CLOSED) {
+            std::fprintf(stderr, "completion stopped state=%u code=%u error=%s\n", status.state, status.lastErrorCode, status.error);
+            Fail("completion worker fault");
+        }
         if (status.completed >= target) return true;
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
@@ -203,17 +207,29 @@ static void TestTransferResetResize() {
     void* handle = nullptr;
     BeginContext(&handle);
     auto callback = reinterpret_cast<void (*)(int, void*)>(lkg_worker_render_event_func());
-    auto first = MakeTexture(DXGI_FORMAT_R8G8B8A8_UNORM, 24, 24);
-    auto data = lkg_worker_make_draw_data(handle, first.Get(), 4, 2, 1.0f, 1.0f);
-    Check(data != nullptr, "reset first token");
-    callback(0, data);
-    Check(WaitCompleted(handle, 1, 5000), "reset first completion");
-    Check(lkg_worker_reset_transfer(handle) == 0, "quiescent transfer reset");
-    auto second = MakeTexture(DXGI_FORMAT_R8G8B8A8_UNORM, 32, 16);
-    data = lkg_worker_make_draw_data(handle, second.Get(), 4, 2, 1.0f, 1.0f);
-    Check(data != nullptr, "reset second token");
-    callback(0, data);
-    Check(WaitCompleted(handle, 2, 5000), "reset second completion");
+    constexpr int kResetResizeCycles = 100;
+    for (int cycle = 0; cycle < kResetResizeCycles; ++cycle) {
+        LkgWorkerStatus before{};
+        Check(lkg_worker_poll(handle, &before) == 0, "reset cycle poll");
+        const uint32_t firstTarget = before.completed + 1;
+        auto first = MakeTexture(DXGI_FORMAT_R8G8B8A8_UNORM, 24, 24);
+        g_copyVerified.store(false);
+        auto data = lkg_worker_make_draw_data(handle, first.Get(), 4, 2, 1.0f, 1.0f);
+        Check(data != nullptr, "reset first token");
+        callback(0, data);
+        Check(WaitCompleted(handle, firstTarget, 5000), "reset first completion");
+        Check(g_copyVerified.load(), "reset first readback");
+        Check(lkg_worker_reset_transfer(handle) == 0, "quiescent transfer reset");
+        const uint32_t secondTarget = firstTarget + 1;
+        auto second = MakeTexture(DXGI_FORMAT_R8G8B8A8_UNORM, 32, 16);
+        g_copyVerified.store(false);
+        data = lkg_worker_make_draw_data(handle, second.Get(), 4, 2, 1.0f, 1.0f);
+        Check(data != nullptr, "reset second token");
+        callback(0, data);
+        Check(WaitCompleted(handle, secondTarget, 5000), "reset second completion");
+        Check(g_copyVerified.load(), "reset second readback");
+        Check(lkg_worker_reset_transfer(handle) == 0, "cycle transfer reset");
+    }
     Check(lkg_worker_close(handle) == 0, "reset close");
     Check(lkg_worker_reset_transfer(handle) == -3, "reset rejects closing worker");
     EndContext(handle);
@@ -383,8 +399,7 @@ void* lkg_bridge_make_close_data(uint64_t) { return nullptr; }
 int32_t lkg_bridge_smoke_draw(uint64_t, void* texture, uint32_t, uint32_t, float, float) {
     if (g_drawThrow.load()) throw std::runtime_error("stub draw exception");
     if (g_drawFailure.load()) return -202;
-    static std::atomic<bool> inspected{false};
-    if (!inspected.exchange(true)) VerifyWorkerTexture(texture);
+    VerifyWorkerTexture(texture);
     ++g_drawCount;
     return 0;
 }

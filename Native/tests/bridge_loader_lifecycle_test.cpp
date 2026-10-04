@@ -42,10 +42,12 @@ int main(int argc, char** argv) {
     if (!load_exports(module, &load, &unload, &initialize, &uninitialize, &lastError)) { FreeLibrary(module); return 5; }
     if (load(missing.c_str()) != -4) { FreeLibrary(module); return 6; }
     if (GetModuleHandleA("lkg_fake_bridge_missing.dll")) { FreeLibrary(module); return 10; }
-    if (load(good.c_str()) != 0) { FreeLibrary(module); return 7; }
-    if (initialize("loader-lifecycle-test") != 0) { unload(); FreeLibrary(module); return 11; }
-    uninitialize();
-    unload();
+    for (int cycle = 0; cycle < 100; ++cycle) {
+        if (load(good.c_str()) != 0) { FreeLibrary(module); return 7; }
+        if (initialize("loader-lifecycle-test") != 0) { unload(); FreeLibrary(module); return 11; }
+        uninitialize();
+        unload();
+    }
     if (load(good.c_str()) != 0) { FreeLibrary(module); return 8; }
     if (initialize("loader-lifecycle-test") != 0) { unload(); FreeLibrary(module); return 12; }
     uninitialize();

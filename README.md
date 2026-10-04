@@ -8,7 +8,7 @@ Looking Glass向けの非公式・独立したUnity SDKです。設計対象はU
 
 検証環境はUnity 6000.6.4f1、Windows、D3D11、SRP 17.6です。Coreは専用Camera 1台をN回描画し、視点ごとのRenderTextureを`Graphics.CopyTexture`でQuiltへ転送します。これは現在の実装方式であり、速度優位性を示すものではありません。URP互換性試験は透明alpha比較、Bloom、Particle Lit/Unlit、uGUI World Space、uGUI Screen Space Camera、UI Toolkit targetTexture、live particleの8件を確認済みです。HDRPも透明alpha比較、Bloom、Mesh Particle paused/live、uGUI World Space、uGUI Screen Space Camera、UI Toolkit targetTextureの7件を確認済みです。これは個別fixtureの結果であり、機能全体の対応やPlayer実行の保証を意味しません。
 
-最新のWindows D3D11統合は82件中71件pass、11件fail、skip 0です。Session 14/14、追加互換性12/12、Geometry 10/10、HDRP 7/7、URP 8/8、HDRP priming 0/1、SRP追加4/5、SRP拡張2/2、VFX 5/14、URP driver 5/5、Samples 4/4です。VFXとHDRP priming、MSAAの失敗は実験中のfixtureを含み、個別結果から機能全体の対応を宣言しません。詳細な内訳は [docs/compatibility.md](docs/compatibility.md) を参照してください。
+旧82/71/11の統合集計に代わる最終Windows D3D11 PlayModeは115件中101件pass、14件fail、skip 0です。Session 15/15、GRD 27/27、SRP追加6/6、URP MSAA 1/1（4x view RT、1x resolve、lifecycle、中心色一致）、VFX driver 5/5を確認しました。14件はHDRP priming 1件とVFX compatibility 13件で、未通過条件では十分な全tileの効果を確認できませんでした。詳細な内訳と再現条件は [docs/compatibility.md](docs/compatibility.md) と [docs/windows-validation.md](docs/windows-validation.md) を参照してください。
 
 Sessionの実機PlayerではURP/HDRPのPreview、Balanced、NativeとGRD ON/OFFの各6条件を48 viewで確認しました。各条件は120 completionを完了し、固定条件の品質切替では4段階を各122 completion、明示Stop/Start後120 draw、pending 0を確認しました。Worker Nativeは7680x4320の実機profileで確認しています。2026-10-04の限定実機確認では奥行きと画質は良好で、番号付きデモをユーザーが暫定受入としています。全視点・全視域の網羅的な光学検証は未実施です。
 
@@ -38,7 +38,7 @@ Coreには`Quilt Preview` optional Sampleを登録しています。Package Mana
 ## 主要な制約
 
 - HDRPはLinear color spaceと固定Exposureが必要です。TAAは一時的に無効化し、Motion Blur、SSR、SSGI、volumetric fog、cloudは未対応経路として扱います。
-- URPはBase cameraのみ対応し、camera stackは拒否します。FXAA/SMAAは限定fixtureで確認しました。MSAAはtile差分0の失敗があり、対応を確認できていません。TAAの視点間履歴は未検証です。
+- URPはBase cameraのみ対応し、camera stackは拒否します。FXAA/SMAAは限定fixtureで確認しました。MSAAは4x view RT、1x resolve、resize/disable lifecycle、中心色一致を限定URP fixtureで確認しました。一般素材、Player、性能は未検証です。TAAの視点間履歴は未検証です。
 - Bloomは個別fixtureで視点ごとの差を確認しています。Quilt全体へ一括適用した場合のtile seamや、他のpostprocessの視点間履歴は未検証です。
 - URP VFX Graphには`UrpVfxCameraDriver`による補助Camera経路があります。source Cameraは無効なままにし、VFXレイヤーとculling maskを合わせてください。追加の1x1描画負荷があり、HDRP driverはありません。詳細は [docs/vfx-graph.md](docs/vfx-graph.md) を参照してください。
 - 3840x2160の表示パネルとQuilt解像度は別物です。解像度プロファイルは機器由来であり、全機種共通の固定値ではありません。

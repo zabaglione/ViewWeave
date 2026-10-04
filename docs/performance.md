@@ -30,6 +30,8 @@ cache変更後の測定では48 viewのGRD OnがOffに対してCPU submission p5
 
 現在の実測sceneは約75 meshの代表 workloadです。別scene、mesh数、display、resolutionへ一般化できません。今回のcache変更後の測定はVolumeStack cache変更後の同条件で取得しています。異なるUnity/公式版との比較は条件差を明示した参考値に限り、直接のspeedup claimには使いません。
 
+今回のCoreではStopwatchの計時方法を変更しましたが、この変更後のCPU、GPU、GCベンチは再取得していません。既存の性能数値から計時変更による改善を主張しません。
+
 解像度のtradeoff例として、demo scale 0.25では1920x1080 Quilt、8x6、tile 240x180、profile 1.0では7680x4320、tile 960x720です。pixel数は16倍になり、RGBA32の7680x4320 Quiltは約126.56 MiBです。これはprofile例であり、全機種の固定値やfull-resolution実測結果ではありません。
 
 生のJSONとplayer logは内部検証用として管理しています。表の数値は、記載した機器・scene・設定・harness条件に限定した測定結果です。公開APIや製品全体の性能保証、公式speed比較を示すものではありません。公式speed比較は未実施です。

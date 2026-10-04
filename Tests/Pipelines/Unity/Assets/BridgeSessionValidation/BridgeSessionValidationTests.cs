@@ -125,6 +125,44 @@ namespace LookingGlass.BridgeSessionValidation
         }
 
         [Test]
+        public void ConnectingTimeoutFaultsWithoutForcingWorkerRelease()
+        {
+            GameObject host = CreateHost(true);
+            try
+            {
+                ViewWeaveBridgeSession session = host.GetComponent<ViewWeaveBridgeSession>();
+                BridgeWorkerQuiltOutput output = host.GetComponent<BridgeWorkerQuiltOutput>();
+                Type outputType = typeof(BridgeWorkerQuiltOutput);
+                FieldInfo outputState = outputType.GetField("state", BindingFlags.Instance | BindingFlags.NonPublic);
+                FieldInfo sessionState = typeof(ViewWeaveBridgeSession).GetField("<State>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic);
+                FieldInfo connectingSince = typeof(ViewWeaveBridgeSession).GetField("connectingSince", BindingFlags.Instance | BindingFlags.NonPublic);
+                FieldInfo rigAutoRender = typeof(ViewWeaveRig).GetField("autoRender", BindingFlags.Instance | BindingFlags.NonPublic);
+                MethodInfo update = typeof(ViewWeaveBridgeSession).GetMethod("Update", BindingFlags.Instance | BindingFlags.NonPublic);
+                Assert.IsNotNull(outputState);
+                Assert.IsNotNull(sessionState);
+                Assert.IsNotNull(connectingSince);
+                Assert.IsNotNull(rigAutoRender);
+                Assert.IsNotNull(update);
+                ViewWeaveRig rig = host.GetComponent<ViewWeaveRig>();
+                rigAutoRender.SetValue(rig, true);
+                outputState.SetValue(output, BridgeWorkerQuiltOutput.WorkerState.Connecting);
+                sessionState.SetValue(session, ViewWeaveBridgeSession.SessionState.Connecting);
+                connectingSince.SetValue(session, Time.realtimeSinceStartup - 11f);
+                update.Invoke(session, null);
+                Assert.AreEqual(ViewWeaveBridgeSession.SessionState.Fault, session.State);
+                StringAssert.Contains("connection timed out", session.LastError);
+                Assert.IsTrue(IsAscii(session.LastError));
+                Assert.IsFalse(rig.AutoRender);
+                Assert.AreEqual(BridgeWorkerQuiltOutput.WorkerState.Closed, output.State);
+                Assert.AreEqual(0, BridgeWorkerQuiltOutput.ShutdownPendingCount);
+            }
+            finally
+            {
+                Object.DestroyImmediate(host);
+            }
+        }
+
+        [Test]
         public void InvalidProfilePresetIsRejectedBeforeProfileUse()
         {
             Assert.Throws<System.ArgumentOutOfRangeException>(() => ViewWeaveBridgeSession.CreateQualityProfile(default, (QuiltQualityPreset)99));

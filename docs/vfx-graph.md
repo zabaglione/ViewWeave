@@ -1,6 +1,6 @@
-# URP VFX Graph の利用
+# URP/HDRP VFX Graph の利用
 
-URPのVFX Graphは、通常のQuilt用Cameraとは別の1x1補助Cameraで制御する実験的な経路を用意しています。`UrpVfxCameraDriver`はURP専用で、HDRP用driverはありません。現在確認したのは、URPのSimple Burst素材を通常制御Cameraで停止状態6条件と通常再生4条件で描画した範囲です。HDRPの診断fixtureは未通過で、SDKのHDRP driverは提供していません。独自のVFX Graph、sorting、soft depth、複雑な透明の対応は確認していません。
+URPのVFX Graphは、通常のQuilt用Cameraとは別の1x1補助Cameraで制御する実験的な経路を用意しています。`UrpVfxCameraDriver`はURP対応の実装です。補助CameraはVFXの通常のGPU simulationをフレームごとに一度だけ進めることを意図し、Quiltの視点ごとにsimulationを繰り返さない設計です。URPのSimple Burst driver経路は既存の検証範囲に含まれます。HDRPでは同等の補助Cameraを実験用fixtureで検証しましたが、Quilt画像の改善を確認できなかったため、runtime packageのHDRP driverは提供していません。HDRPのVFX描画、paused/live、GRD、8/48 viewsは未対応・未実証として扱います。独自のVFX Graph、sorting、soft depth、複雑な透明の対応は確認していません。
 
 ## 設定
 
@@ -9,10 +9,12 @@ URPのVFX Graphは、通常のQuilt用Cameraとは別の1x1補助Cameraで制御
 3. `driverFieldOfView`をVFXの範囲に合わせます。初期値は90度です。VFXのboundsが補助Cameraの視錐台に入ることを確認してください。
 4. 通常の自動描画では`QuiltRenderer.autoRender`を有効にします。`RenderQuilt()`を手動で呼ぶ場合は、`runWhenManualRendering`を有効にしてから呼び出します。
 
+HDRPのVFX Graphはruntime driverの対応範囲外です。HDRP側で通常CameraのVFX表示を確認する場合は、source Cameraを有効にした専用診断fixtureを使ってください。
+
 driverは視点ごとのQuilt Cameraを複製しません。source Cameraの位置と向きを補助Cameraへ反映し、VFXを通常の1x1描画で更新します。補助Cameraの生成には追加の描画負荷があります。source Cameraは無効なまま維持され、driverの終了時には補助CameraとRenderTextureを解放します。`IsRunning`と`LastError`で状態を確認できます。
 
 VFXのsimulationは視点ごとに実行しない設計を前提にします。再生中のVFXは通常のフレーム更新で一度だけ進め、`RenderQuilt()`の呼び出し回数に合わせて手動simulationを繰り返さないでください。停止状態の再現性が必要な場合は、素材側のseed、bounds、再生状態を固定して確認します。
 
-この経路はVFX全体の対応を保証しません。HDRPの診断fixtureは未通過で、SDKのHDRP driverは提供していないため、HDRP対応は未確認です。VFX Graphのsorting、透明、soft depth、GPU simulation、視点ごとの履歴を利用する効果は個別に確認してください。
+この経路はVFX全体の対応を保証しません。最終D3D11 PlayModeではVFX compatibility 18件中5件が通過し、13件は未通過でした。未通過条件では少数の差分が出る場合を含め、十分な全tileの効果を確認できませんでした。HDRP primingも1件未通過です。HDRPではMotion Blur、Screen Space Reflection、Screen Space Global Illumination、Volumetric Fog/Cloudsなど、HDRP側で時間的履歴を必要とする機能はQuilt用の制約対象です。VFX Graphのsorting、透明、soft depth、GPU simulation、視点ごとの履歴を利用する効果は個別に確認してください。HDRP driverは提供せず、未通過結果をpassやskipに置き換えないでください。
 
 詳細な実測範囲と未検証項目は[互換性表](compatibility.md)と[Unity機能対応表](unity-feature-coverage.md)を参照してください。

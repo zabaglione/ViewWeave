@@ -34,6 +34,7 @@ namespace LookingGlass.Community
         bool restartRequested;
         QuiltQualityPreset pendingQuality;
         float closingSince;
+        float connectingSince;
         bool initialized;
         bool pendingStart;
         bool profileApplied;
@@ -133,6 +134,10 @@ namespace LookingGlass.Community
             if (output.State == BridgeWorkerQuiltOutput.WorkerState.Connecting)
             {
                 State = SessionState.Connecting;
+                if (Time.realtimeSinceStartup - connectingSince > 10f)
+                {
+                    Fail("Bridge worker connection timed out after 10 seconds");
+                }
                 return;
             }
             if (output.State == BridgeWorkerQuiltOutput.WorkerState.Fault)
@@ -189,6 +194,7 @@ namespace LookingGlass.Community
             }
             LastError = string.Empty;
             profileApplied = false;
+            connectingSince = Time.realtimeSinceStartup;
             State = SessionState.Connecting;
             return true;
         }

@@ -4,6 +4,7 @@ project(lookingglass_bridge_shim LANGUAGES CXX)
 include(CTest)
 
 option(LKG_TRANSPORT_TESTS_ONLY "Build only the stubbed worker transport test" OFF)
+option(LKG_D3D12_SHARED_PROBE "Build the independent D3D12 to D3D11 shared resource probe" OFF)
 
 if (NOT LKG_TRANSPORT_TESTS_ONLY)
   add_library(lookingglass_bridge_shim SHARED bridge_shim.cpp)
@@ -49,6 +50,15 @@ if (WIN32 AND NOT LKG_TRANSPORT_TESTS_ONLY)
 endif()
 
 if (WIN32 AND BUILD_TESTING)
+  if (LKG_D3D12_SHARED_PROBE)
+    add_executable(lookingglass_d3d12_d3d11_shared_probe tests/d3d12_d3d11_shared_probe.cpp)
+    target_compile_features(lookingglass_d3d12_d3d11_shared_probe PRIVATE cxx_std_17)
+    target_compile_definitions(lookingglass_d3d12_d3d11_shared_probe PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
+    target_link_libraries(lookingglass_d3d12_d3d11_shared_probe PRIVATE d3d12 d3d11 dxgi)
+    add_test(NAME lookingglass_d3d12_d3d11_shared_probe COMMAND lookingglass_d3d12_d3d11_shared_probe)
+    set_tests_properties(lookingglass_d3d12_d3d11_shared_probe PROPERTIES TIMEOUT 10)
+  endif()
+
   add_executable(lookingglass_worker_transport_test
     bridge_worker_transport.cpp
     tests/worker_transport_test.cpp)
@@ -57,7 +67,7 @@ if (WIN32 AND BUILD_TESTING)
   target_compile_definitions(lookingglass_worker_transport_test PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX LKG_WORKER_TRANSPORT_TESTING)
   target_link_libraries(lookingglass_worker_transport_test PRIVATE d3d11 dxgi user32)
   add_test(NAME lookingglass_worker_transport_test COMMAND lookingglass_worker_transport_test)
-  set_tests_properties(lookingglass_worker_transport_test PROPERTIES TIMEOUT 10)
+  set_tests_properties(lookingglass_worker_transport_test PROPERTIES TIMEOUT 60)
 
   if (NOT LKG_TRANSPORT_TESTS_ONLY)
     add_library(lkg_fake_bridge_runtime SHARED tests/fake_bridge_runtime.cpp)

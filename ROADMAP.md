@@ -22,7 +22,7 @@ call stack、thread ID、device context、fenceの収集、Unity render thread�
 
 per-view postprocessing、UI、particles、VFXの互換性を検証します。consumer向けの経路はper-view処理、assemble、calibrateの順序を明示し、Quilt全体Bloomによるtile seamを避けます。受入基準は機能matrixと再現手順が揃うことです。
 
-最新のWindows D3D11 PlayMode統合は82件中71件が通過、11件が未通過、skip 0です。Session 14/14、追加互換性12/12、Geometry 10/10、HDRP 7/7、URP 8/8、HDRP priming 0/1、SRP追加4/5、SRP拡張2/2、VFX 5/14、URP driver 5/5、Samples 4/4を確認しました。HDRP priming、MSAA、VFXには未通過条件が残っています。個別fixtureの通過結果をすべての素材や効果への対応宣言には使いません。Bridge通常threadの光学確認、正式配布用native再構築は別のrelease gateです。
+最終Windows D3D11 PlayModeは115件中101件が通過、14件が未通過、skip 0です。Session 15/15、GRD 27/27、SRP追加6/6、URP MSAA 1/1、VFX driver 5/5を確認しました。未通過はHDRP priming 1件とVFX compatibility 13件で、未通過条件では十分な全tileの効果を確認できませんでした。D3D12 Player、網羅的な光学確認、署名付き正式配布は別のrelease gateとして残ります。個別fixtureの通過結果をすべての素材や効果への対応宣言には使いません。
 
 ## M4: 高速化研究（評価継続、production採用なし）
 

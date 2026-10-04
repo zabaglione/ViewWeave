@@ -28,8 +28,11 @@ namespace LookingGlass.Community
         public string LastAutoRenderError { get; private set; }
         public long LastCpuSubmissionTicks { get; private set; }
         public long LastViewCpuTicks { get; private set; }
+        public int ViewAntiAliasingSamples => viewTexture == null ? 0 : viewTexture.antiAliasing;
+        public int ResolveAntiAliasingSamples => resolveTexture == null ? 0 : resolveTexture.antiAliasing;
 
         RenderTexture viewTexture;
+        RenderTexture resolveTexture;
         RenderTexture previousActive;
 
         void OnEnable()
@@ -95,12 +98,11 @@ namespace LookingGlass.Community
                     if (!RenderPipeline.SupportsRenderRequest(sourceCamera, initializationRequest))
                         throw new NotSupportedException("active render pipeline does not support standard camera requests");
                 }
-                Stopwatch total = Stopwatch.StartNew();
-                Stopwatch viewTimer = new Stopwatch();
+                long totalStart = Stopwatch.GetTimestamp();
                 sourceCamera.enabled = false;
                 for (int i = 0; i < layout.ViewCount; ++i)
                 {
-                    viewTimer.Restart();
+                    long viewStart = Stopwatch.GetTimestamp();
                     RectInt tile = layout.GetTile(i);
                     float offset = QuiltMath.ViewOffset(i, layout.ViewCount, settings.viewCone, settings.cameraDistance);
                     sourceCamera.transform.position = state.position + state.rotation * Vector3.right * offset;
@@ -112,12 +114,10 @@ namespace LookingGlass.Community
                     IDisposable viewGuard = srp ? RenderGuard.Begin(sourceCamera) : null;
                     try { RenderOneView(); }
                     finally { if (viewGuard != null) viewGuard.Dispose(); }
-                    CopyTile(tile);
-                    viewTimer.Stop();
-                    LastViewCpuTicks = viewTimer.ElapsedTicks;
+                    CopyTile(tile, ResolveViewTexture());
+                    LastViewCpuTicks = Stopwatch.GetTimestamp() - viewStart;
                 }
-                total.Stop();
-                LastCpuSubmissionTicks = total.ElapsedTicks;
+                LastCpuSubmissionTicks = Stopwatch.GetTimestamp() - totalStart;
                 Output?.Submit(quiltTexture, layout);
             }
             finally
@@ -139,10 +139,19 @@ namespace LookingGlass.Community
             else sourceCamera.Render();
         }
 
-        void CopyTile(RectInt tile)
+        RenderTexture ResolveViewTexture()
+        {
+            if (viewTexture == null) throw new InvalidOperationException("view texture is unavailable");
+            if (viewTexture.antiAliasing <= 1) return viewTexture;
+            if (resolveTexture == null || !resolveTexture.IsCreated()) throw new InvalidOperationException("MSAA resolve texture is unavailable");
+            Graphics.Blit(viewTexture, resolveTexture);
+            return resolveTexture;
+        }
+
+        void CopyTile(RectInt tile, RenderTexture source)
         {
             if (!SystemInfo.copyTextureSupport.HasFlag(CopyTextureSupport.Basic)) throw new NotSupportedException("Graphics.CopyTexture is not supported");
-            Graphics.CopyTexture(viewTexture, 0, 0, 0, 0, tile.width, tile.height, quiltTexture, 0, 0, tile.x, tile.y);
+            Graphics.CopyTexture(source, 0, 0, 0, 0, tile.width, tile.height, quiltTexture, 0, 0, tile.x, tile.y);
         }
 
         void ClearQuilt()
@@ -164,18 +173,73 @@ namespace LookingGlass.Community
                 quiltTexture.Create();
                 if (!quiltTexture.IsCreated()) throw new InvalidOperationException("failed to create quilt render texture");
             }
-            if (viewTexture == null || viewTexture.width != layout.TileWidth || viewTexture.height != layout.TileHeight)
+            int viewSamples = GetRequestedMsaaSamples(sourceCamera, layout);
+            if (viewTexture == null || viewTexture.width != layout.TileWidth || viewTexture.height != layout.TileHeight || viewTexture.antiAliasing != viewSamples)
             {
                 ReleaseOwnedTexture(ref viewTexture);
-                viewTexture = new RenderTexture(layout.TileWidth, layout.TileHeight, 24, RenderTextureFormat.ARGB32) { name = "LookingGlass.View" };
+                if (viewSamples <= 1)
+                {
+                    viewTexture = new RenderTexture(layout.TileWidth, layout.TileHeight, 24, RenderTextureFormat.ARGB32)
+                    {
+                        name = "LookingGlass.View",
+                        useMipMap = false,
+                        autoGenerateMips = false
+                    };
+                }
+                else
+                {
+                    RenderTextureDescriptor descriptor = new RenderTextureDescriptor(layout.TileWidth, layout.TileHeight, RenderTextureFormat.ARGB32, 24)
+                    {
+                        msaaSamples = viewSamples,
+                        sRGB = quiltTexture != null && quiltTexture.sRGB,
+                        useMipMap = false,
+                        autoGenerateMips = false
+                    };
+                    viewTexture = new RenderTexture(descriptor) { name = "LookingGlass.View" };
+                }
                 viewTexture.Create();
                 if (!viewTexture.IsCreated()) throw new InvalidOperationException("failed to create view render texture");
             }
+            if (viewSamples > 1)
+            {
+                if (resolveTexture == null || resolveTexture.width != layout.TileWidth || resolveTexture.height != layout.TileHeight || resolveTexture.antiAliasing != 1)
+                {
+                    ReleaseOwnedTexture(ref resolveTexture);
+                    RenderTextureDescriptor descriptor = new RenderTextureDescriptor(layout.TileWidth, layout.TileHeight, RenderTextureFormat.ARGB32, 0)
+                    {
+                        msaaSamples = 1,
+                        sRGB = quiltTexture != null && quiltTexture.sRGB,
+                        useMipMap = false,
+                        autoGenerateMips = false
+                    };
+                    resolveTexture = new RenderTexture(descriptor) { name = "LookingGlass.ViewResolve" };
+                    resolveTexture.Create();
+                    if (!resolveTexture.IsCreated()) throw new InvalidOperationException("failed to create view resolve texture");
+                }
+            }
+            else ReleaseOwnedTexture(ref resolveTexture);
+        }
+
+        int GetRequestedMsaaSamples(Camera camera, QuiltLayout layout)
+        {
+            if (camera == null || !camera.allowMSAA) return 1;
+            IQuiltMsaaProvider provider = RenderGuard as IQuiltMsaaProvider;
+            if (provider == null) return 1;
+            int requested = provider.GetMsaaSampleCount(camera);
+            if (requested <= 1) return 1;
+            RenderTextureDescriptor probe = new RenderTextureDescriptor(layout.TileWidth, layout.TileHeight, RenderTextureFormat.ARGB32, 24)
+            {
+                msaaSamples = requested,
+                sRGB = quiltTexture != null && quiltTexture.sRGB
+            };
+            int supported = SystemInfo.GetRenderTextureSupportedMSAASampleCount(probe);
+            return supported == 2 || supported == 4 || supported == 8 ? supported : 1;
         }
 
         void ReleaseTextures()
         {
             ReleaseOwnedTexture(ref viewTexture);
+            ReleaseOwnedTexture(ref resolveTexture);
             ReleaseOwnedTexture(ref quiltTexture);
         }
 

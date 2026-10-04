@@ -27,7 +27,7 @@ Unity 6000.6.4f1、Windows、D3D11でURP/HDRPの基本Lit、Bloom、透明Lit、
 | Animator、SkinnedMeshRenderer、Terrain、LOD、影 | Geometry fixtureを個別確認。Animatorを含む一般素材への対応は未確定 |
 | Shader Graph、Renderer Feature、Decal、Reflection Probe、Light Probe | Shader GraphとRenderer Featureは限定fixture。Decal、Reflection Probe、Light Probeの一般利用は未検証 |
 | SSR、SSGI、霧、雲、Motion Blur、視点別temporal効果 | 現在のQuilt経路では拒否または未対応。代替仕様は未確定 |
-| FXAA、SMAA、色調補正、TAA履歴、Auto Exposure | FXAA/SMAAと一部色調補正は限定fixture。MSAAは未確認、TAA履歴とAuto Exposureは未検証 |
+| FXAA、SMAA、MSAA、色調補正、TAA履歴、Auto Exposure | FXAA/SMAAと一部色調補正は限定fixture。URP MSAA 1/1で4x view RT、1x resolve、resize/disable lifecycle、中心色一致を確認。HDRP MSAA、一般Player、性能は未検証。TAA履歴とAuto Exposureは未検証 |
 | RenderTextureを使うUI、入力ray map、VideoTexture | uGUIとUI Toolkitの個別fixtureを確認。入力ray mapとVideoTextureは未検証 |
 | LineRenderer、TrailRenderer、VFX Graph、複雑な透明ソート | Line/Trailは個別fixtureで限定確認。URP Simple Burstは停止6条件と通常再生4条件をPlayerで確認。HDRP、一般VFX、複雑なsortは未確定 |
 | 複数機器、hotplug、RGBD、quilt layer、録画 | 未実装または未検証 |

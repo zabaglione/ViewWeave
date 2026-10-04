@@ -10,6 +10,7 @@
 *.h text eol=lf
 *.cpp text eol=lf
 *.cmake text eol=lf
+CMakeLists.txt text eol=lf
 *.dll binary
 *.exe binary
 *.lib binary

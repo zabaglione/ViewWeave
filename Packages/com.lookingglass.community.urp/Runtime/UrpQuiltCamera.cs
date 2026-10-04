@@ -1,13 +1,14 @@
 using System;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 using LookingGlass.Community;
 
 namespace LookingGlass.Community.URP
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Camera))]
-    public sealed class UrpQuiltCamera : MonoBehaviour, IQuiltRenderGuard
+    public sealed class UrpQuiltCamera : MonoBehaviour, IQuiltRenderGuard, IQuiltMsaaProvider
     {
         VolumeStack validationStack;
         RenderPipelineAsset validationPipeline;
@@ -17,6 +18,16 @@ namespace LookingGlass.Community.URP
         public int ValidationStackCreationCount { get; private set; }
         Camera Camera => cachedCamera != null ? cachedCamera : (cachedCamera = GetComponent<Camera>());
         public void ValidateForQuilt() => UrpQuiltIntegration.Validate(Camera);
+        public int GetMsaaSampleCount(Camera camera)
+        {
+            if (camera == null || camera != Camera || !camera.allowMSAA) return 1;
+            UniversalRenderPipelineAsset pipeline = GraphicsSettings.currentRenderPipeline as UniversalRenderPipelineAsset;
+            if (pipeline == null) return 1;
+            UniversalAdditionalCameraData data = camera.GetComponent<UniversalAdditionalCameraData>();
+            if (data == null || data.scriptableRenderer == null || !data.scriptableRenderer.supportedRenderingFeatures.msaa) return 1;
+            int samples = pipeline.msaaSampleCount;
+            return samples == 2 || samples == 4 || samples == 8 ? samples : 1;
+        }
         public UrpQuiltIntegration.Scope PrepareForQuilt()
         {
             UrpQuiltIntegration.Validate(Camera);

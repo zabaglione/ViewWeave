@@ -908,7 +908,10 @@ LKG_EXPORT int32_t lkg_worker_reset_transfer(void* handle) {
         slot.producerMutex.Reset();
         slot.producerTexture.Reset();
         if (slot.sharedHandle) {
-            CloseHandle(slot.sharedHandle);
+            // GetSharedHandle returns a legacy shared handle owned by the
+            // resource. It must remain open until the resource references are
+            // released; calling CloseHandle here is invalid for this handle
+            // type and can break later transfer/reopen cycles.
             slot.sharedHandle = nullptr;
         }
     }

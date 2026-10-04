@@ -1,24 +1,25 @@
 {
   "artifact": "lookingglass_bridge_shim.dll",
-  "sha256": "C11A5C537A961AABBC80D28C1E09C50E24024CCD32D6055ECB9863C499D40EAE",
+  "sha256": "60DA142CA509E141A87B10DD08394148B555C2CF89F441B83A87E2EAD65D2F32",
   "nativeSourceHashes": {
     "Native/bridge_shim.cpp": "329F40FF7C2965BFD5EA07FA37A2F4F4EE286D12D007A51788DB36405CDA7354",
     "Native/bridge_shim.h": "121C7F485A5979E2B5005298D2ABADF2399FAA45CEE00373A894695B31E46BC7",
     "Native/bridge_worker_transport.h": "63F25BE76DAFDAFAFE63EDFAB04D13582D5BF45DC562FE51F726AC76AECC8EC1",
-    "Native/CMakeLists.txt": "314D3BF47F87815518EA395F5708FAA2F7F7152E49379925EBCC0320C3EE71F6",
-    "Native/tests/bridge_loader_lifecycle_test.cpp": "D7711DC5B479A13302C54275AF0B876D8C3B76EE6539EAADEAD2476520E4D8BB",
+    "Native/CMakeLists.txt": "3ED20A23CA6F1CEC8497A181016FCE2EFD0498E3B3AAF4FE2E3535F717CC64B4",
+    "Native/tests/bridge_loader_lifecycle_test.cpp": "45832EA702E51428BB06722ECF6E38B365225556D9F0281C760FD8B0CEF053D8",
     "Native/tests/fake_bridge_runtime.cpp": "03183CCC1D01732CDC74E52F2AFE682D900CF354E2846646B7949A890337FCA8",
     "Native/tests/fake_bridge_missing.cpp": "89D4BB907704FC1A8FE1FDAD152A983779F0CED85808B77DEA9263C0B5C05FD3",
-    "Native/bridge_worker_transport.cpp": "39ECE937E2942731E46AE04F2AA631F16B885E51B86C2C4AC1E2374FA4818444",
-    "Native/tests/worker_transport_test.cpp": "90881678BB88745A955C1BE7758CD6837CA6295190BBBE53B71F0779080F0B9B",
-    "Native/tests/bridge_worker_host_affinity_test.cpp": "FC23C98BF5259AEAF08AA502BD8FFAF3D0476DE299C15B9090300DCF1B753C95"
+    "Native/bridge_worker_transport.cpp": "EE4C8FAAA62E235ED04B5739B77C519446896EC53143DA9AC423DA6CEE67D0E7",
+    "Native/tests/worker_transport_test.cpp": "76B46B2151F5DD7706D04AC3293CA096E22881D28CE39F514DF7B224F26D4F9D",
+    "Native/tests/bridge_worker_host_affinity_test.cpp": "FC23C98BF5259AEAF08AA502BD8FFAF3D0476DE299C15B9090300DCF1B753C95",
+    "Native/tests/d3d12_d3d11_shared_probe.cpp": "8CDE21DAA564B3543C891770C6B382AAC18926E3E87EA9AB7B25031BD8242000"
   },
   "compilerVersion": "MSVC 19.44.35207",
   "targetArchitecture": "x64",
   "configuration": "Release",
   "pluginApiUnityVersion": "6000.6.4f1",
   "buildDirectory": "Native/build-worker-release",
-  "independentCTest": "lookingglass_worker_transport_test: 1/1 passed; lookingglass_bridge_loader_lifecycle_test: 1/1 passed",
+  "independentCTest": "release: lookingglass_worker_transport_test 1/1 passed; lookingglass_bridge_loader_lifecycle_test 1/1 passed (100 cycles); d3d12 probe 1/1 passed",
   "license": "Apache-2.0",
   "generatedAt": "2026-10-04"
 }

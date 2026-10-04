@@ -365,6 +365,8 @@ namespace LookingGlass.SrpAdditionalValidation
                 {
                     Assert.AreEqual(effectEnabled ? urpAaMode : AntialiasingMode.None, urpCameraData.antialiasing, "AA mode changed unexpectedly");
                     Assert.AreEqual(effectEnabled && urpMsaa, camera.allowMSAA, "MSAA state changed unexpectedly");
+                    Assert.AreEqual(effectEnabled && urpMsaa ? 4 : 1, quilt.ViewAntiAliasingSamples, "view RT MSAA sample count was not applied");
+                    Assert.AreEqual(effectEnabled && urpMsaa ? 1 : 0, quilt.ResolveAntiAliasingSamples, "resolve RT lifecycle was not applied");
                 }
                 Texture2D image = Read(quilt.QuiltTexture);
                 if (effectEnabled) after = image; else before = image;
@@ -391,12 +393,20 @@ namespace LookingGlass.SrpAdditionalValidation
                     counts[view] = changed;
                     Assert.Greater(visible, 20, "control image is blank in tile " + view);
                     Assert.Greater(changed, 20, "effect did not change tile " + view);
+                    if (urpMsaa)
+                    {
+                        Color control = a[(tile.y + tile.height / 2) * before.width + tile.x + tile.width / 2];
+                        Color antialiased = b[(tile.y + tile.height / 2) * after.width + tile.x + tile.width / 2];
+                        Assert.Greater(control.r + control.g + control.b, 0.06f, "MSAA control point is background in tile " + view);
+                        Assert.Greater(antialiased.r + antialiased.g + antialiased.b, 0.06f, "MSAA result point is background in tile " + view);
+                        Assert.Less(Mathf.Abs(control.r - antialiased.r) + Mathf.Abs(control.g - antialiased.g) + Mathf.Abs(control.b - antialiased.b), 6f / 255f, "MSAA changed interior color in tile " + view);
+                    }
                 }
                 string directory = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "..", "..", "..", ".local", "srp-additional-validation"));
                 Directory.CreateDirectory(directory);
                 File.WriteAllBytes(Path.Combine(directory, name + "-before.png"), before.EncodeToPNG());
                 File.WriteAllBytes(Path.Combine(directory, name + "-after.png"), after.EncodeToPNG());
-                File.WriteAllText(Path.Combine(directory, name + "-diagnostic.txt"), "views=" + ViewCount + " tileChanges=" + string.Join(",", counts) + "\n");
+                File.WriteAllText(Path.Combine(directory, name + "-diagnostic.txt"), "views=" + ViewCount + " tileChanges=" + string.Join(",", counts) + " viewMsaa=" + quilt.ViewAntiAliasingSamples + " resolveMsaa=" + quilt.ResolveAntiAliasingSamples + "\n");
             }
 
             static Texture2D Read(RenderTexture source)

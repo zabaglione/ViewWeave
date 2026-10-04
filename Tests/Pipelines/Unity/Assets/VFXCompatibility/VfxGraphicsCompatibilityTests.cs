@@ -52,6 +52,10 @@ namespace LookingGlass.VFXCompatibility
         [UnityTest] public IEnumerator HDRP_SimpleBurst_Separated1x1() => RunExperimental("hdrp", false, false, 1, 1, true);
         [UnityTest] public IEnumerator HDRP_SimpleBurst_SeparatedQuiltOnly() => RunExperimental("hdrp", false, true, 512, 384, true);
         [UnityTest] public IEnumerator HDRP_SimpleBurst_SeparatedNormalOnly() => RunNormalOnly();
+        [UnityTest] public IEnumerator HDRP_SimpleBurst_Driver8_GRD_Off() => RunDriver("hdrp", false, 8);
+        [UnityTest] public IEnumerator HDRP_SimpleBurst_Driver8_GRD_On() => RunDriver("hdrp", true, 8);
+        [UnityTest] public IEnumerator HDRP_SimpleBurst_Driver48_GRD_Off() => RunDriver("hdrp", false, 48);
+        [UnityTest] public IEnumerator HDRP_SimpleBurst_Driver48_GRD_On() => RunDriver("hdrp", true, 48);
 
         static IEnumerator Run(string pipelineName, bool grdEnabled)
         {
@@ -124,13 +128,34 @@ namespace LookingGlass.VFXCompatibility
             }
         }
 
+        static IEnumerator RunDriver(string pipelineName, bool grdEnabled, int viewCount)
+        {
+            Fixture fixture = null;
+            try
+            {
+                fixture = new Fixture(pipelineName, grdEnabled, false, 1, 1, true, false, false, viewCount, true);
+                fixture.Setup();
+                yield return null;
+                fixture.AssertDriverRunning();
+                yield return fixture.WarmupAndPause();
+                fixture.SetEffectEnabled(false);
+                yield return fixture.WaitForRender();
+                fixture.Capture("before");
+                fixture.SetEffectEnabled(true);
+                yield return fixture.WaitForRender();
+                fixture.Capture("after");
+                fixture.AssertEvidence();
+            }
+            finally
+            {
+                fixture?.Dispose();
+            }
+        }
+
         sealed class Fixture
         {
             const int TileWidth = 128;
             const int TileHeight = 96;
-            const int Columns = 4;
-            const int Rows = 2;
-            const int Views = 8;
             const int Seed = 17;
             readonly string pipelineName;
             readonly bool grdEnabled;
@@ -140,6 +165,10 @@ namespace LookingGlass.VFXCompatibility
             readonly bool separated;
             readonly bool extraPrepare;
             readonly bool normalOnly;
+            readonly int views;
+            readonly int columns;
+            readonly int rows;
+            readonly bool useDriver;
             readonly List<UnityEngine.Object> owned = new List<UnityEngine.Object>();
             readonly string evidenceDirectory;
             GameObject root;
@@ -162,6 +191,7 @@ namespace LookingGlass.VFXCompatibility
             Texture2D normalAfter;
             RenderTexture normalTarget;
             VFXRenderer vfxRenderer;
+            HdrpVfxCameraDriverExperimental hdrpDriver;
             VfxCameraPrepareBehaviour prepareBehaviour;
             RenderPipelineAsset oldDefaultPipeline;
             RenderPipelineAsset oldQualityPipeline;
@@ -179,6 +209,11 @@ namespace LookingGlass.VFXCompatibility
             }
 
             public Fixture(string pipeline, bool grd, bool onlyQuilt, int width, int height, bool useSeparatedGeometry, bool useExtraPrepare, bool useNormalOnly)
+                : this(pipeline, grd, onlyQuilt, width, height, useSeparatedGeometry, useExtraPrepare, useNormalOnly, 8, false)
+            {
+            }
+
+            public Fixture(string pipeline, bool grd, bool onlyQuilt, int width, int height, bool useSeparatedGeometry, bool useExtraPrepare, bool useNormalOnly, int viewCount, bool driver)
             {
                 pipelineName = pipeline;
                 grdEnabled = grd;
@@ -188,6 +223,10 @@ namespace LookingGlass.VFXCompatibility
                 separated = useSeparatedGeometry;
                 extraPrepare = useExtraPrepare;
                 normalOnly = useNormalOnly;
+                views = viewCount;
+                columns = viewCount == 48 ? 8 : 4;
+                rows = viewCount == 48 ? 6 : 2;
+                useDriver = driver;
                 evidenceDirectory = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "..", "..", "..", ".local", "vfx-compatibility"));
             }
 
@@ -241,6 +280,13 @@ namespace LookingGlass.VFXCompatibility
                     quilt = cameraObject.AddComponent<QuiltRenderer>();
                     HdrpQuiltCamera guard = cameraObject.AddComponent<HdrpQuiltCamera>();
                     quilt.GuardBehaviour = guard;
+                    if (useDriver)
+                    {
+                        hdrpDriver = cameraObject.AddComponent<HdrpVfxCameraDriverExperimental>();
+                        hdrpDriver.vfxLayers = 1 << 31;
+                        hdrpDriver.runWhenManualRendering = true;
+                        hdrpDriver.enableDriver = true;
+                    }
                 }
                 quilt.sourceCamera = camera;
                 quilt.autoRender = false;
@@ -257,11 +303,11 @@ namespace LookingGlass.VFXCompatibility
                 vfxRenderer = effectObject.GetComponent<VFXRenderer>();
                 if (vfxRenderer == null) vfxRenderer = effectObject.AddComponent<VFXRenderer>();
                 Assert.IsNotNull(vfxRenderer, "VFXRenderer is unavailable");
-                quilt.settings.quiltWidth = TileWidth * Columns;
-                quilt.settings.quiltHeight = TileHeight * Rows;
-                quilt.settings.columns = Columns;
-                quilt.settings.rows = Rows;
-                quilt.settings.views = Views;
+                quilt.settings.quiltWidth = TileWidth * columns;
+                quilt.settings.quiltHeight = TileHeight * rows;
+                quilt.settings.columns = columns;
+                quilt.settings.rows = rows;
+                quilt.settings.views = views;
                 quilt.settings.viewAspect = (float)TileWidth / TileHeight;
                 quilt.settings.cameraDistance = 3f;
                 quilt.settings.fieldOfView = 50f;
@@ -270,7 +316,7 @@ namespace LookingGlass.VFXCompatibility
                 controlObject.transform.SetParent(root.transform, false);
                 controlObject.transform.localPosition = separated ? new Vector3(0f, 0f, -4f) : Vector3.zero;
                 controlCamera = controlObject.AddComponent<Camera>();
-                controlCamera.enabled = !quiltOnly && !normalOnly;
+                controlCamera.enabled = !quiltOnly && !normalOnly && !useDriver;
                 controlCamera.clearFlags = CameraClearFlags.SolidColor;
                 controlCamera.backgroundColor = Color.black;
                 controlCamera.fieldOfView = 50f;
@@ -308,7 +354,7 @@ namespace LookingGlass.VFXCompatibility
                 camera.cullingMask = 1 << 31;
                 controlCamera.cullingMask = 1 << 31;
                 Directory.CreateDirectory(evidenceDirectory);
-                WriteEvidence("setup", "pipeline=" + pipelineName + "\ngrd=" + grdEnabled + "\ntestType=" + (normalOnly ? "normal-only" : (quiltOnly ? "quilt-only" : "control")) + "\ndriverWidth=" + driverWidth + "\ndriverHeight=" + driverHeight + "\nseparatedGeometry=" + separated + "\nasset=Packages/com.unity.visualeffectgraph/Editor/Templates/Simple_Burst.vfx\nseed=" + Seed + "\nviews=" + Views + "\npreviousScene=" + Sanitize(previousActiveScene.name) + "\nfixtureScene=" + Sanitize(fixtureScene.name) + "\nsavedLights=" + savedLights.Count + "\nsavedCameras=" + savedCameras.Count + "\npreviousSun=" + (previousSun == null ? "null" : Sanitize(previousSun.name)) + "\nsourceCameraEnabled=" + camera.enabled + "\ncontrolCameraEnabled=" + controlCamera.enabled + "\nvfxPrepareCameraUpdate=" + extraPrepare + "\nvfxPrepareCameraLate=" + extraPrepare + "\nlayer=31\n");
+                WriteEvidence("setup", "pipeline=" + pipelineName + "\ngrd=" + grdEnabled + "\ntestType=" + (normalOnly ? "normal-only" : (quiltOnly ? "quilt-only" : (useDriver ? "driver" : "control"))) + "\ndriverWidth=" + driverWidth + "\ndriverHeight=" + driverHeight + "\nseparatedGeometry=" + separated + "\nasset=Packages/com.unity.visualeffectgraph/Editor/Templates/Simple_Burst.vfx\nseed=" + Seed + "\nviews=" + views + "\npreviousScene=" + Sanitize(previousActiveScene.name) + "\nfixtureScene=" + Sanitize(fixtureScene.name) + "\nsavedLights=" + savedLights.Count + "\nsavedCameras=" + savedCameras.Count + "\npreviousSun=" + (previousSun == null ? "null" : Sanitize(previousSun.name)) + "\nsourceCameraEnabled=" + camera.enabled + "\ncontrolCameraEnabled=" + controlCamera.enabled + "\ndriverEnabled=" + (hdrpDriver != null) + "\nvfxPrepareCameraUpdate=" + extraPrepare + "\nvfxPrepareCameraLate=" + extraPrepare + "\nlayer=31\n");
             }
 
             void SetupPipeline()
@@ -484,6 +530,13 @@ namespace LookingGlass.VFXCompatibility
                 Assert.Greater(aliveCount, 0, "VFX warmup produced no live particles");
             }
 
+            public void AssertDriverRunning()
+            {
+                Assert.IsNotNull(hdrpDriver, "HDRP VFX driver was not created");
+                Assert.IsTrue(hdrpDriver.IsRunning, hdrpDriver.LastError);
+                Assert.IsFalse(camera.enabled, "source camera must remain disabled while the driver is active");
+            }
+
             public IEnumerator WarmupNormalOnly()
             {
                 yield return null;
@@ -633,7 +686,7 @@ namespace LookingGlass.VFXCompatibility
                     for (int i = 0; i < first.Length; ++i)
                         if (Mathf.Abs(first[i].r - second[i].r) + Mathf.Abs(first[i].g - second[i].g) + Mathf.Abs(first[i].b - second[i].b) > 0.01f) changed++;
                     allTilesChanged = true;
-                    for (int view = 0; view < Views; ++view)
+                    for (int view = 0; view < views; ++view)
                     {
                         RectInt tile = quilt.settings.GetLayout().GetTile(view);
                         int tileChanged = 0;
@@ -694,7 +747,7 @@ namespace LookingGlass.VFXCompatibility
             string FilePrefix()
             {
                 string experiment = extraPrepare ? "" : "-driver" + driverWidth + "x" + driverHeight + (separated ? "-separated" : "-normal") + "-noextra";
-                return pipelineName + "-grd-" + grdEnabled + experiment + (normalOnly ? "-normal-only" : "") + (quiltOnly ? "-quilt-only" : "");
+                return pipelineName + "-grd-" + grdEnabled + "-views" + views + experiment + (normalOnly ? "-normal-only" : "") + (quiltOnly ? "-quilt-only" : "") + (useDriver ? "-driver-enabled" : "");
             }
 
             static string Sanitize(string value)

@@ -15,6 +15,7 @@ namespace LookingGlass.BridgeWorkerValidation
     {
         const int RequiredFrames = 120;
         const double TimeoutSeconds = 120.0;
+        const double HoldCompletionWatchdogSeconds = 10.0;
         [SerializeField] QuiltRenderer quilt;
         [SerializeField] BridgeWorkerQuiltOutput output;
         [SerializeField] ViewWeaveRig rig;
@@ -50,10 +51,10 @@ namespace LookingGlass.BridgeWorkerValidation
             evidenceDirectory = Path.GetFullPath(evidenceDirectory);
             runtimePath = Argument("--runtime-path") ?? Environment.GetEnvironmentVariable("LKG_BRIDGE_PATH");
             string holdText = Argument("--hold-seconds");
-            if (!string.IsNullOrEmpty(holdText) && (!double.TryParse(holdText, NumberStyles.Float, CultureInfo.InvariantCulture, out holdSeconds) || double.IsNaN(holdSeconds) || double.IsInfinity(holdSeconds) || holdSeconds < 0.0 || holdSeconds > 300.0))
+            if (!string.IsNullOrEmpty(holdText) && (!double.TryParse(holdText, NumberStyles.Float, CultureInfo.InvariantCulture, out holdSeconds) || double.IsNaN(holdSeconds) || double.IsInfinity(holdSeconds) || holdSeconds < 0.0 || holdSeconds > 600.0))
             {
                 argumentsValid = false;
-                argumentError = "invalid --hold-seconds; expected 0..300 seconds";
+                argumentError = "invalid --hold-seconds; expected 0..600 seconds";
             }
             qualityName = (Argument("--quality") ?? "preview").ToLowerInvariant();
             grdName = (Argument("--grd") ?? "off").ToLowerInvariant();
@@ -200,6 +201,12 @@ namespace LookingGlass.BridgeWorkerValidation
             if (!evidence.ok) evidence.error = "insufficient submissions, completions, or view difference";
             WriteProgress();
             double holdStarted = Time.unscaledTimeAsDouble;
+            double lastCompletionProgress = holdStarted;
+            uint holdStartCompleted = output.Completed;
+            uint lastCompleted = holdStartCompleted;
+            uint lastProgressWrittenCompleted = holdStartCompleted;
+            evidence.holdStartedCompleted = holdStartCompleted;
+            evidence.holdWatchdogOk = true;
             while (Time.unscaledTimeAsDouble - holdStarted < holdSeconds)
             {
                 if (output.State == BridgeWorkerQuiltOutput.WorkerState.Fault || output.State == BridgeWorkerQuiltOutput.WorkerState.Closed)
@@ -207,8 +214,35 @@ namespace LookingGlass.BridgeWorkerValidation
                     RecordTextureDiagnostics();
                     throw new InvalidOperationException(FirstError(output.LastError, session.LastError, quilt.LastAutoRenderError, "Bridge worker stopped during hold"));
                 }
+                uint completed = output.Completed;
+                double now = Time.unscaledTimeAsDouble;
+                if (completed != lastCompleted)
+                {
+                    lastCompleted = completed;
+                    lastCompletionProgress = now;
+                    evidence.holdElapsedSeconds = now - holdStarted;
+                    evidence.holdCompleted = completed;
+                    evidence.holdCompletedDelta = completed - holdStartCompleted;
+                    evidence.submissions = output.Submissions;
+                    evidence.completed = completed;
+                    evidence.dropped = output.Dropped;
+                    if (completed != lastProgressWrittenCompleted)
+                    {
+                        WriteProgress();
+                        lastProgressWrittenCompleted = completed;
+                    }
+                }
+                if (holdSeconds > HoldCompletionWatchdogSeconds && now - lastCompletionProgress > HoldCompletionWatchdogSeconds)
+                {
+                    evidence.holdWatchdogOk = false;
+                    evidence.holdWatchdogSeconds = now - lastCompletionProgress;
+                    throw new TimeoutException("Bridge worker completion stopped during hold");
+                }
                 yield return null;
             }
+            evidence.holdElapsedSeconds = Time.unscaledTimeAsDouble - holdStarted;
+            evidence.holdCompleted = output.Completed;
+            evidence.holdCompletedDelta = output.Completed - holdStartCompleted;
             evidence.submissions = output.Submissions;
             evidence.completed = output.Completed;
             evidence.dropped = output.Dropped;
@@ -558,6 +592,9 @@ namespace LookingGlass.BridgeWorkerValidation
             public int nativeQuiltWidth, nativeQuiltHeight, nativeColumns, nativeRows, actualQuiltWidth, actualQuiltHeight, actualColumns, actualRows, actualViews, changedPixelCount, beforeEdgeChangedPixels, afterEdgeChangedPixels;
             public float nativeAspect, nativeViewcone, actualAspect, actualViewcone;
             public uint submissions, completed, dropped;
+            public uint holdStartedCompleted, holdCompleted, holdCompletedDelta;
+            public double holdElapsedSeconds, holdWatchdogSeconds;
+            public bool holdWatchdogOk;
             public long grdRenderers, visibleInstances;
             public uint restartCompleted;
             public int restartPending;

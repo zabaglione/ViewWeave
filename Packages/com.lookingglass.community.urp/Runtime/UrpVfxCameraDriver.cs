@@ -99,7 +99,7 @@ namespace LookingGlass.Community.URP
                 data.volumeLayerMask = 0;
                 data.requiresDepthOption = CameraOverrideOption.Off;
                 data.requiresColorOption = CameraOverrideOption.Off;
-                driverTexture = new RenderTexture(1, 1, 0, RenderTextureFormat.ARGB32) { name = "ViewWeave.URP.VfxDriver" };
+                driverTexture = new RenderTexture(1, 1, 24, RenderTextureFormat.ARGB32) { name = "ViewWeave.URP.VfxDriver" };
                 driverTexture.Create();
                 if (!driverTexture.IsCreated()) throw new InvalidOperationException("driver render texture creation failed");
                 driverCamera.targetTexture = driverTexture;
@@ -169,6 +169,7 @@ namespace LookingGlass.Community.URP
             if (driverCamera != null) driverCamera.targetTexture = null;
             if (driverTexture != null)
             {
+                if (RenderTexture.active == driverTexture) RenderTexture.active = null;
                 driverTexture.Release();
                 if (Application.isPlaying) Destroy(driverTexture); else DestroyImmediate(driverTexture);
                 driverTexture = null;
