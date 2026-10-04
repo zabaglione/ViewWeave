@@ -1,33 +1,70 @@
 # Getting started
 
-この手順はUnity 6000.6.4f1のWindows Player構成を対象にします。設計対象はURP/HDRPで、Bridge実行経路は実験的なWindows D3D11専用です。Core、Bridge、使用するURPまたはHDRP packageを各`package.json`から導入してください。Bridge runtimeは別途インストールします。macOS Metalは対象外です。
+このrepositoryをcheckoutするにはGitHubのprivate repositoryへのアクセス権が必要です。独自コードのライセンスは[Apache-2.0](../LICENSE)です。
 
-この手順はローカルcheckoutからの導入再現を確認した構成です。正式なrelease tagやregistry配布を前提にしません。Clean projectでCoreとBridge、使用するRP packageをPackage Managerへ追加し、provider registryが対応adapterを選べることを確認してからRigを作成します。
+この手順はUnity 6000.6.4f1のWindowsプロジェクトを対象にします。URPまたはHDRPのpackageを選び、BridgeなしのEditor previewから始めるか、Bridgeを追加してWindows D3D11 Playerを作ります。
 
-## Bridge Rigを使う主経路
+## 1. packageを追加する
 
-1. URPまたはHDRPを有効にしたUnity Editorで`GameObject/ViewWeave/Bridge Rig`を選びます。メニューは専用のdisabled Camera、`QuiltRenderer`、`ViewWeaveRig`、`BridgeWorkerQuiltOutput`、`ViewWeaveBridgeSession`、対応するURP/HDRP adapterを同じGameObjectへ作成します。adapterはGuardとして必須です。
-2. Bridge runtimeを自動検出できない場合は、`LKG_BRIDGE_PATH`へ絶対パスを設定するか、Sessionの`runtimePath`へ絶対パスを設定します。明示path、環境変数、Windows registryの順で解決し、registry候補はインストール済み`bridge_inproc.dll`だけを検証します。相対path、見つからないDLL、複数候補はASCII診断で停止します。
-3. Windows PlayerをDirect3D11で起動します。作成されたSessionはmenu生成時だけ`startOnEnable=true`です。手動構成では`startOnEnable=false`のまま、設定完了後に`StartSession()`を呼びます。EditorからBridgeへ接続することはできません。
+1. Unity HubでURPまたはHDRPの空プロジェクトを作成し、Unity Editorで開きます。
+2. `Window > Package Management > Package Manager`の`+ > Install package from disk`を選び、次の順に各`package.json`を追加します。
+   - 必須: `Packages/com.lookingglass.community.core/package.json`
+   - URP: `Packages/com.lookingglass.community.urp/package.json`
+   - HDRP: `Packages/com.lookingglass.community.hdrp/package.json`
+   - 実機Playerのみ: `Packages/com.lookingglass.community.bridge/package.json`
+3. URP previewを試す場合はCore packageのSamplesから`Quilt Preview`をImportします。実機用ならBridge packageの`Windows URP Lit`または`Windows HDRP Lit`もImportします。
 
-Sessionの主なAPIは`StartSession()`、`StopSession()`、`SetQuality(QuiltQualityPreset)`、`State`、`Quality`、`Profile`、`LastError`です。ReadyになるとBridge profileからPreview、Balanced、Nativeのprofileを作り、Rigへ適用して自動描画を開始します。実行中のquality変更は`Reconfiguring`状態で転送を静止させ、`TryResetTransfer`による同一host・windowの再設定を行います。明示的な`StopSession()`/`StartSession()`は別の再起動手段です。
+## 2. BridgeなしのEditor preview
 
-source Cameraは同じRig GameObjectに置き、`enabled=false`にします。`fieldOfView`、`cameraDistance`、near/far clip、background color、clear flagsはアプリケーション側で設定してください。Bridge profileが提供する解像度、grid、aspect、viewconeと混同しないでください。通常描画用Cameraとの共有は避けます。
+Coreの`Quilt Preview`はURP専用です。HDRPでこのsampleを生成しないでください。
 
-## Optional Bridge Samples
+1. `GameObject > ViewWeave > Quilt Rig`を作成します。
+2. Rigへ`QuiltPreviewDemoGenerator`をAdd Componentします。
+3. `Preset=Preview`のまま、コンテキストメニューの`Generate Preview Rig`を実行します。
+4. `Window > Looking Glass Community > Quilt Preview`を開き、Rigの`QuiltRenderer`をRenderer欄へdragします。
+5. `Render Quilt`を押します。Quilt Preview windowに分割された複数視点画像が表示されれば成功です。
 
-Bridge packageのSamplesからWindows URP LitまたはWindows HDRP Litを任意でImportできます。対応する`BridgeUrpLitSampleGenerator`または`BridgeHdrpLitSampleGenerator`をBridge Rigへ追加し、`Generate On Start`を有効にしてWindows D3D11 PlayerをBuild/Runしてください。生成物はsample所有のLit material resourceを使用します。Editorの`Generate Lit Scene`は生成物を確認する任意操作で、EditorからBridgeへ接続することはありません。詳細は[Windows URP Lit sample](../Packages/com.lookingglass.community.bridge/Samples~/WindowsUrpLit/README.md)と[Windows HDRP Lit sample](../Packages/com.lookingglass.community.bridge/Samples~/WindowsHdrpLit/README.md)を参照してください。`runInBackground=true`を使うBridge worker検証条件はBridge READMEに従います。
+生成される名前は`Preview Lit Cube`、`Preview Lit Sphere`、`Preview Directional Light`です。`Balanced`または`Native`を使う場合はGeneratorの`nativeQuiltWidth`、`nativeQuiltHeight`、`columns`、`rows`を実際のprofileに設定します。Bridge、Looking Glass本体、device auto detectionは不要です。
 
-## BridgeなしのEditor preview
+VFX Graphを使う場合はLinear color spaceを設定します。HDRPもLinear color spaceと固定Exposureを必要とします。これはURPの通常描画やMSAAの検証条件とは分けて扱います。
 
-Core導入後、Package ManagerのURP専用`Quilt Preview` sampleをImportできます。sampleには利用可能なLit materialが含まれます。`GameObject/ViewWeave/Quilt Rig`はprovider registryから現在のURPまたはHDRP adapterを選びます。Coreの`Quilt Preview` sample自体はURP専用です。`QuiltQualityProfile.Preview`、`Balanced`、`Native`を明示的に選択し、`RenderQuilt()`または`autoRender`を使用します。PreviewはEditorで動作しますが、Bridge runtime接続を意味しません。
+## 3. Windows D3D11 Player
 
-URP VFX Graphを試す場合は、Rigへ`UrpVfxCameraDriver`を追加し、`enableDriver`、`vfxLayers`、必要に応じて`runWhenManualRendering`を設定します。補助Cameraが追加されるため、VFXのbounds、FOV、simulation状態を確認してください。HDRPにはこのdriverはありません。詳しい制約は [docs/vfx-graph.md](vfx-graph.md) を参照してください。
+1. Bridge runtimeをWindowsへインストールし、Bridge packageを追加します。
+2. `GameObject > ViewWeave > Bridge Rig`を作成します。専用Camera、`QuiltRenderer`、`ViewWeaveRig`、`BridgeWorkerQuiltOutput`、`ViewWeaveBridgeSession`、pipeline adapterが作成されます。
+3. URPなら`BridgeUrpLitSampleGenerator`、HDRPなら`BridgeHdrpLitSampleGenerator`を同じRigへAdd Componentします。
+4. Rigを置いたシーンを`File > Save As...`でAssetsへ保存します。
+5. `File > Build Profiles`を開き、Windows profileのScene Listへ保存したsceneを追加します。`Player Settings > Other Settings`でGraphics APIs for Windowsの自動選択を無効にし、Direct3D11を先頭にします。Playerが非フォーカスでも描画を続けるため`Run In Background`は常時有効を推奨します。
+6. `Build and Run`を実行します。Play開始時に`Generate On Start`を有効にしたgeneratorがscene内容を作成します。
+7. Playerの画面でQuilt表示を確認します。Bridge runtimeが自動検出されない場合だけ、Sessionの`Runtime Path`へDLLの絶対パスを設定します。
 
-自動描画は`QuiltRenderer.autoRender`を使用します。描画はシーン描画後の`PostLateUpdate.FinishFrameRendering`直後に1フレーム1回実行されます。`renderInLateUpdate`は既存serialized scene向け互換propertyです。手動描画では`RenderQuilt()`をrender callbackの外側から呼びます。
+URP sampleは赤い立方体、緑の球、ライトを生成します。HDRP sampleはHDRP Lit条件と固定Exposureを使います。Editorの`Generate Lit Scene`は生成sceneの確認用で、EditorからBridgeへ接続しません。
 
-## 検証条件とlegacy Direct経路
+## 4. sample materialの修復
 
-Worker経路は実験的なWindows Player、D3D11専用経路です。同一プロセス再接続と48 viewの非空画像・視差・移動を確認済みです。2026-10-04の限定実機確認では奥行きと画質は良好で、番号付きデモをユーザーが暫定受入としています。全視点・全視域の網羅的な光学検証は未実施です。配布署名、hotplug、複数機器、全機器profile、D3D12、Vulkanは未確認です。固定条件のURP/HDRP品質切替ではPreview、Balanced、Native、Previewを各122 completionで完了し、明示Stop/Start後120 drawとpending 0を確認しました。これを全機器profileや一般的な光学品質の保証とは扱いません。HDRP検証ではLinear color space、固定Exposure、TAA/Motion Blur/SSR/SSGI/volumetric fog/cloud無効を使用します。
+material resourceが見つからない場合だけ、次のEditor menuを使います。
 
-既存のDirect経路はlegacy diagnostic用に維持しています。Directのvalidated条件はBridge package READMEを参照してください。Direct経路とWorker経路の状態、runtime path、初期化APIは共用しないでください。Bridge runtime、公式binary、headerは同梱・再配布しません。
+- `ViewWeave/Samples/Windows URP Lit/Create Material Resource`
+- `ViewWeave/Samples/Windows HDRP Lit/Create Material Resource`
+
+その後、generatorの`Generate Lit Scene`を再実行します。
+
+## 5. テストプロジェクト
+
+repository rootで`python tools/prepare_sample_tests.py`を実行してから、Unity Hubの`Add`で`Tests/Pipelines/Unity`を開きます。このコマンドはignoredなBridge sample copyだけを作成します。Editorで`Window > General > Test Runner > PlayMode > Run All`を実行します。Build Settingsには固定sceneを登録していません。PlayMode fixtureは実行時にsceneを作成して終了時に破棄します。Run Allには既知のVFX compatibility未通過条件が含まれます。
+
+Player用のgenerated sceneはEditor methodから作成します。
+
+- `LookingGlass.BridgeWorkerValidation.Editor.BridgeWorkerValidationBuilder.Build`: `Assets/BridgeWorkerValidationGenerated/BridgeWorkerValidation.unity`
+- `LookingGlass.BridgeWorkerValidation.Editor.BridgeWorkerValidationBuilder.BuildDemo`: `Assets/BridgeWorkerValidationGenerated/ViewWeaveDemo.unity`
+- `ViewWeave.SamplePlayerValidation.Editor.SamplePlayerValidationBuilder.BuildUrp`または`BuildHdrp`: `Assets/SamplePlayerValidationGenerated/SamplePlayerValidation.unity`
+- `LookingGlass.PlayerValidation.Editor.PlayerValidationBuilder.Build`: `Assets/PlayerValidationGenerated/PlayerValidation.unity`
+
+これらはBuild用の一時sceneです。Projectウィンドウから手動で編集するsceneとして扱いません。
+
+## 次に読む資料
+
+- [Windows validation](windows-validation.md): 実行コマンド、結果、未検証範囲
+- [Compatibility](compatibility.md): pipelineと機能の対応表
+- [VFX Graph](vfx-graph.md): URP driverとHDRP診断条件
+- [Pipeline smoke tests](../Tests/Pipelines/README.md): Editor testとgenerated sceneの入口

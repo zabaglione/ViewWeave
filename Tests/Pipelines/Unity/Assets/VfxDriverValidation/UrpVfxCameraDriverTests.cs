@@ -149,6 +149,44 @@ namespace LookingGlass.VfxDriverValidation
         }
 
         [UnityTest]
+        public IEnumerator DriverEnforcesActiveColorSpaceRequirement()
+        {
+            yield return null;
+            RequireUrp();
+            GameObject host = CreateHost();
+            try
+            {
+                UrpVfxCameraDriver driver = ConfigureDriver(host);
+                Camera source = host.GetComponent<Camera>();
+                bool gamma = QualitySettings.activeColorSpace == ColorSpace.Gamma;
+                const string expectedError = "VFX Graph requires Linear color space; URP Gamma is unsupported";
+                if (gamma)
+                    LogAssert.Expect(LogType.Error, "ViewWeave URP VFX driver stopped: " + expectedError);
+                host.SetActive(true);
+                yield return null;
+                if (gamma)
+                {
+                    Assert.IsFalse(driver.IsRunning, driver.LastError);
+                    Assert.IsNull(driver.DriverCamera);
+                    Assert.IsFalse(source.enabled);
+                    Assert.AreEqual(expectedError, driver.LastError);
+                    Assert.IsTrue(IsAscii(driver.LastError));
+                    yield return null;
+                    yield return null;
+                }
+                else
+                {
+                    Assert.IsTrue(driver.IsRunning, driver.LastError);
+                    Assert.IsNotNull(driver.DriverCamera);
+                    Assert.IsFalse(source.enabled);
+                    Assert.AreEqual(string.Empty, driver.LastError);
+                    yield return null;
+                }
+            }
+            finally { Object.DestroyImmediate(host); }
+        }
+
+        [UnityTest]
         public IEnumerator SimpleBurstUsesOneByOneDriverAtFieldOfView50()
         {
             yield return RunSimpleBurst(50f, "simple-burst-fov50");
@@ -345,6 +383,14 @@ namespace LookingGlass.VfxDriverValidation
         static void RequireUrp()
         {
             Assert.IsInstanceOf<UniversalRenderPipelineAsset>(GraphicsSettings.currentRenderPipeline, "URP pipeline is required");
+        }
+
+        static bool IsAscii(string value)
+        {
+            if (value == null) return false;
+            foreach (char character in value)
+                if (character < 0x20 || character > 0x7e) return false;
+            return true;
         }
     }
 }

@@ -1,5 +1,15 @@
 # Quilt Preview sample
 
-Import this optional sample from Unity Package Manager after importing the Core package. Configure a URP project and add the URP quilt adapter, then use `GameObject/ViewWeave/Quilt Rig` to create the rig. Add `QuiltPreviewDemoGenerator` to that rig and choose `Generate Preview Rig` manually. The sample explicitly supports URP; it reports an ASCII error in HDRP projects. The generator creates independent world-space Lit scene content and a directional light using the included `ViewWeave/CoreUrpPreviewLit` resource. The resource keeps the URP Lit shader in a Player build. The rig uses a disabled dedicated Camera and the Core quilt RenderTexture. It has no Bridge dependency and does not require a device.
+BridgeなしでURPのQuilt RenderTextureをEditorから確認するsampleです。Unity 6000.6.4f1のURP projectへCoreとURP packageを追加し、`Window > Package Management > Package Manager`のCore package Samplesから`Quilt Preview`をImportします。このsampleはURP専用です。
 
-Select `Preview`, `Balanced`, or `Native` for the explicit scale values 0.25, 0.5, or 1.0. Configure `nativeQuiltWidth` and `nativeQuiltHeight` from a real device profile before using `Native`; this sample does not auto-select a device or display. `autoRender` starts disabled; enable it on `QuiltRenderer` only after the rig and adapter are configured. Re-running the generator replaces its generated content and its owned material.
+## 使い方
+
+1. `GameObject > ViewWeave > Quilt Rig`を作成します。
+2. Rigへ`QuiltPreviewDemoGenerator`をAdd Componentします。
+3. `Preset=Preview`のまま、コンテキストメニュー`Generate Preview Rig`を実行します。
+4. `Window > Looking Glass Community > Quilt Preview`を開きます。
+5. Rigの`QuiltRenderer`をRenderer欄へdragし、`Render Quilt`を押します。
+
+Quilt Preview windowにQuilt画像が表示されることが確認結果です。SceneViewに生成物が見えるだけでは表示確認になりません。生成物は`Preview Lit Cube`、`Preview Lit Sphere`、`Preview Directional Light`です。Bridge runtimeやLooking Glass本体は不要です。
+
+`Balanced`または`Native`を選ぶ場合は`nativeQuiltWidth`、`nativeQuiltHeight`、`columns`、`rows`を実際のprofileに合わせます。Nativeは機器を自動検出しません。VFX Graphを使う場合はLinear color spaceを設定してください。

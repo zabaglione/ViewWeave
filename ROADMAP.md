@@ -22,7 +22,9 @@ call stack、thread ID、device context、fenceの収集、Unity render thread�
 
 per-view postprocessing、UI、particles、VFXの互換性を検証します。consumer向けの経路はper-view処理、assemble、calibrateの順序を明示し、Quilt全体Bloomによるtile seamを避けます。受入基準は機能matrixと再現手順が揃うことです。
 
-最終Windows D3D11 PlayModeは123件中108件が通過、15件が未通過、skip 0です。Session 18/18、GRD 27/27、SRP追加10/10、URP MSAA 1/1、VFX driver 5/5を確認しました。追加のLinear MSAA境界試験は10/10で、このRTX GPUでは2x/4x/8x要求が対応倍率と一致しました。1x経路はpipeline 1x、allowMSAA無効、Deferred fallbackで確認し、低MSAA能力GPUは未検証です。resize/cleanup、中心色一致と対応MSAAのedge差分も確認しました。Gammaと専用MSAA Player試験は対象外です。未通過はHDRP priming 1件とVFX compatibility 14件で、別実行のVFX matrixは20件中5件pass、15件failでした。未通過条件では十分な全tileの効果を確認できませんでした。D3D12 Player、網羅的な光学確認、署名付き正式配布は別のrelease gateとして残ります。個別fixtureの通過結果をすべての素材や効果への対応宣言には使いません。
+VFX GraphはLinear color spaceを必須条件とします。Unity Visual Effect Graph 17.6のURP Gamma非対応に従い、URP VFX driverはGamma時にresource生成前に停止します。Gamma VFX描画を対応範囲へ含めるには別のUnity公式対応変更が必要です。
+
+現行guard追加前のprevious full Windows D3D11 PlayModeは123件中108件が通過、15件が未通過、skip 0です。Session 18/18、GRD 27/27、SRP追加10/10、URP MSAA 1/1、VFX driver 5/5を確認しました。追加のLinear MSAA境界試験は10/10で、このRTX GPUでは2x/4x/8x要求が対応倍率と一致しました。1x経路はpipeline 1x、allowMSAA無効、Deferred fallbackで確認し、低MSAA能力GPUは未検証です。resize/cleanup、中心色一致と対応MSAAのedge差分も確認しました。専用MSAA Player試験は未実施です。今回のCore/SRP/VFX Editor targeted試験はGamma 8/8（MSAA 7件とGamma VFX拒否1件）、Linear 17/17（SRP 11件とVFX driver 6件）で、full125件の結果ではありません。Gamma MSAA/通常URPのBridge Player実行は未検証です。Gamma VFXは公式非対応です。未通過はHDRP priming 1件とVFX compatibility 14件で、別実行のVFX matrixは20件中5件pass、15件failでした。未通過条件では十分な全tileの効果を確認できませんでした。D3D12 Player、網羅的な光学確認、署名付き正式配布は別のrelease gateとして残ります。個別fixtureの通過結果をすべての素材や効果への対応宣言には使いません。
 
 ## M4: 高速化研究（評価継続、production採用なし）
 

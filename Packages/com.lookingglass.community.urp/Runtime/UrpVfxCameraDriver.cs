@@ -65,6 +65,8 @@ namespace LookingGlass.Community.URP
         {
             if (!(GraphicsSettings.currentRenderPipeline is UniversalRenderPipelineAsset))
                 return Fail("URP render pipeline asset is required");
+            if (QualitySettings.activeColorSpace == ColorSpace.Gamma)
+                return Fail("VFX Graph requires Linear color space; URP Gamma is unsupported");
             if (quiltRenderer == null)
                 return Fail("QuiltRenderer is required");
             sourceCamera = quiltRenderer.sourceCamera != null ? quiltRenderer.sourceCamera : GetComponent<Camera>();

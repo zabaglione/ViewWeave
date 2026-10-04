@@ -4,7 +4,7 @@
 
 ## 現在の検証集計
 
-最終Windows D3D11 PlayModeは123件中108件pass、15件fail、skip 0です。Session 18/18、互換性37/37、GRD 27/27、SRP追加10/10、SRP拡張2/2、VFX driver 5/5、Samples 4/4を確認しました。未通過はHDRP priming 1件とVFX compatibility 14件です。別実行のVFX matrixは20件中5件pass、15件failでした。詳細な正本集計は [docs/compatibility.md](compatibility.md) を参照してください。
+現行guard追加前のprevious full Windows D3D11 PlayModeは123件中108件pass、15件fail、skip 0です。今回のCore/SRP/VFX Editor targeted試験はGamma 8/8、Linear 17/17で、全件matrixやfull125件の結果ではありません。Gamma MSAA/通常URPのBridge Player実行は未検証です。Gamma VFXは公式非対応です。未通過はHDRP priming 1件とVFX compatibility 14件です。別実行のVFX matrixは20件中5件pass、15件failでした。詳細な正本集計は [docs/compatibility.md](compatibility.md) を参照してください。
 
 GRD の性能実測は URP normal multithreaded Player の範囲だけです。HDRP fixture で GRD 性能を測定した結果とは扱いません。自動描画 scheduler は scene rendering 後に実行しますが、機能固有の更新順序や一般的な描画対応を保証するものではありません。
 
@@ -35,7 +35,7 @@ GRD の性能実測は URP normal multithreaded Player の範囲だけです。H
 | 機能 | 状態 | 実測範囲と制約 |
 | --- | --- | --- |
 | Shuriken ParticleSystem | 限定実測 | URP paused Lit/Unlit/live 3 と HDRP mesh paused/live 2 の fixture。sorting、soft depth、culling の一般対応は未確定。 |
-| VFX Graph | URP限定実測 | URP Simple Burstの通常制御Cameraで停止6条件と通常再生4条件を確認。HDRP driverはなく、一般的なVFX、sorting、culling、soft depth、同一Camera primingは未確定。GPU simulationを一般対応と扱わない。 |
+| VFX Graph | URP限定実測、Linear必須 | URP Simple Burstの通常制御Cameraで停止6条件と通常再生4条件を確認。Unity VFX Graph 17.6の要件に従いGammaは非対応で、UrpVfxCameraDriverはGamma時にresource生成前に停止する。HDRP driverはなく、一般的なVFX、sorting、culling、soft depth、同一Camera primingは未確定。GPU simulationを一般対応と扱わない。 |
 | LineRenderer / TrailRenderer | 限定実測 | 個別Line/Trail fixtureで描画差を確認。camera依存幅、履歴、順序、深度の一般対応は未検証。 |
 | BillboardRenderer | 調査対象 | HDRPを含む複数視点表示は未検証。 |
 | Decal / Decal Projector | 調査対象 | URP Renderer Feature と HDRP Decal の投影、深度、透明物は未検証。 |
@@ -49,7 +49,7 @@ GRD の性能実測は URP normal multithreaded Player の範囲だけです。H
 | URP Bloom | 限定実測 | 個別Bloom fixtureで視点ごとの差を確認。一般のVolume継承、他の効果、tile seamは未検証。 |
 | Color Adjustments / Tonemapping / Exposure | 限定実測 | 個別Tone/Color fixtureで描画差を確認。HDRPはLinear + Fixed Exposureを要求し、Auto/非固定ExposureはGuardで拒否。一般の色管理は未検証。 |
 | Motion Blur | 非対応 | URP/HDRP Guard が temporal Motion Blur を拒否。 |
-| FXAA / SMAA / MSAA | FXAA/SMAAは限定確認。URP MSAA 1/1で4x view RT、1x resolve、resize/disable lifecycle、中心色一致を確認。追加のLinear境界試験10/10で、このRTX GPUの2x/4x/8x対応倍率、pipeline 1x、allowMSAA無効、Deferred fallback、中心色一致と対応MSAAのedge差分を確認。低MSAA能力GPU、専用Player、Gamma、HDRP MSAA、性能は未検証 | MSAAの一般素材、Unity/Player、画質、性能を検証。 |
+| FXAA / SMAA / MSAA | FXAA/SMAAは限定確認。URP MSAA 1/1で4x view RT、1x resolve、resize/disable lifecycle、中心色一致を確認。追加のLinear境界試験10/10で、このRTX GPUの2x/4x/8x対応倍率、pipeline 1x、allowMSAA無効、Deferred fallback、中心色一致と対応MSAAのedge差分を確認。Gamma側targeted MSAA 7件も確認したが専用MSAA Playerは未実施。低MSAA能力GPU、HDRP MSAA、性能は未検証 | MSAAの一般素材、Unity/Player、画質、性能を検証。 |
 | TAA / temporal history | 非対応 | view render 中は TAA を無効化して終了時に復元。独立した per-view temporal history は提供しない。 |
 | SSAO / SSGI / SSR | 非対応または未検証 | HDRP の SSGI/SSR は temporal としてGuardが拒否。URP/HDRPの他構成は未検証。 |
 | Fog / Volumetric Fog / Clouds | 非対応または未検証 | HDRP volumetric fog/cloud はGuardが拒否。一般の fog は未検証。 |

@@ -1,52 +1,75 @@
 # ViewWeave
 
-An unofficial Unity SDK for Looking Glass displays.
+Looking Glass向けの非公式Unity SDKです。専用のQuilt RenderTextureへ複数視点を描画し、Bridgeを使わないEditor preview、またはWindows D3D11 Playerから表示できます。
 
-Looking Glass向けの非公式・独立したUnity SDKです。設計対象はUnity 6.6系のURP/HDRPで、Windows D3D11実験版として検証しています。独自コードはApache-2.0で公開します。Looking Glass Factoryの公式SDK、商標、ソースコード、バイナリを同梱せず、公式製品との提携や互換性を保証するものではありません。
+対象環境はUnity 6000.6.4f1、Windows、URPまたはHDRPです。実機表示には別途Looking Glass Bridge runtimeが必要です。macOS、D3D12 Bridge出力、複数機器の自動運用は対象外です。
 
-## 現在の範囲
+このprivate repositoryをcheckoutするにはGitHubのアクセス権が必要です。取得例は`git clone https://github.com/zabaglione/ViewWeave.git`です。独自コードのライセンスは[Apache-2.0](LICENSE)です。
 
-検証環境はUnity 6000.6.4f1、Windows、D3D11、SRP 17.6です。Coreは専用Camera 1台をN回描画し、視点ごとのRenderTextureを`Graphics.CopyTexture`でQuiltへ転送します。これは現在の実装方式であり、速度優位性を示すものではありません。URP互換性試験は透明alpha比較、Bloom、Particle Lit/Unlit、uGUI World Space、uGUI Screen Space Camera、UI Toolkit targetTexture、live particleの8件を確認済みです。HDRPも透明alpha比較、Bloom、Mesh Particle paused/live、uGUI World Space、uGUI Screen Space Camera、UI Toolkit targetTextureの7件を確認済みです。これは個別fixtureの結果であり、機能全体の対応やPlayer実行の保証を意味しません。
+## まず選ぶ使い方
 
-旧82/71/11と前回115件の統合集計に代わる最終Windows D3D11 PlayModeは123件中108件pass、15件fail、skip 0です。Session 18/18、GRD 27/27、SRP追加10/10、従来のURP MSAA基準1/1（4x view RT、1x resolve、lifecycle、中心色一致）、VFX driver 5/5を確認しました。追加のLinear MSAA境界試験は10/10 passで、このRTX GPUでは2x/4x/8x要求が対応倍率と一致しました。1x経路はpipeline 1x、allowMSAA無効、Deferred fallbackで確認し、低MSAA能力GPUは未検証です。resize/cleanup、中心色一致と対応MSAAのedge差分も確認しました。Gammaと専用MSAA Player試験は対象外です。15件はHDRP priming 1件とVFX compatibility 14件で、別実行のVFX matrixは20件中5件pass、15件failでした。未通過条件では十分な全tileの効果を確認できませんでした。詳細な内訳と再現条件は [docs/compatibility.md](docs/compatibility.md) と [docs/windows-validation.md](docs/windows-validation.md) を参照してください。
+| 目的 | 必要なpackage | 入口 | 結果 |
+| --- | --- | --- | --- |
+| Bridgeなしで画面を確認 | Core + URP | `GameObject/ViewWeave/Quilt Rig` + `QuiltPreviewDemoGenerator` | `Quilt Preview` windowでQuilt preview |
+| URPで実機表示 | Core + URP + Bridge | `GameObject/ViewWeave/Bridge Rig` + `BridgeUrpLitSampleGenerator` | Windows D3D11 Playerで赤い立方体と緑の球 |
+| HDRPで実機表示 | Core + HDRP + Bridge | `GameObject/ViewWeave/Bridge Rig` + `BridgeHdrpLitSampleGenerator` | Windows D3D11 PlayerでHDRP Lit scene |
 
-Sessionの実機PlayerではURP/HDRPのPreview、Balanced、NativeとGRD ON/OFFの各6条件を48 viewで確認しました。各条件は120 completionを完了し、固定条件の品質切替では4段階を各122 completion、明示Stop/Start後120 draw、pending 0を確認しました。Worker Nativeは7680x4320の実機profileで確認しています。2026-10-04の限定実機確認では奥行きと画質は良好で、番号付きデモをユーザーが暫定受入としています。全視点・全視域の網羅的な光学検証は未実施です。
+## packageをローカルから追加する
 
-SDK Demoは自動検出したNative 7680x4320、8x6、48 viewで120 completionと全tileの赤緑表示を確認しました。これはWindows D3D11の限定実機結果です。視点番号デバッグ表示は左右の視点確認用で、一般機器や長時間運転の保証ではありません。
+1. Unity HubでUnity 6000.6.4f1の空のURPまたはHDRPプロジェクトを作成し、Unity Editorで開きます。
+2. `Window > Package Management > Package Manager`を開き、左上の`+`から`Install package from disk`を選びます。
+3. このcheckoutの`Packages/com.lookingglass.community.core/package.json`を先に追加します。
+4. URPなら`Packages/com.lookingglass.community.urp/package.json`、HDRPなら`Packages/com.lookingglass.community.hdrp/package.json`を追加します。
+5. 実機表示を行う場合だけ`Packages/com.lookingglass.community.bridge/package.json`を追加します。
+6. URP previewを試す場合はCoreの`Samples`から`Quilt Preview`を`Import`します。実機用の場合はBridgeの`Windows URP Lit`または`Windows HDRP Lit`も`Import`します。
 
-`BridgeQuiltOutput`は実験的なWindows D3D11 Direct経路です。`-force-gfx-direct`と`runInBackground=true`を指定した構成で、16インチ実機のLit 48-view表示、向き・前後関係、120フレーム後の終了コード0を確認しています。`BridgeWorkerQuiltOutput`はWindows Player D3D11通常thread向けの実験経路で、同一プロセス再接続を含む120 draw、終了保留0、同一host thread再利用を確認しました。接続・終了・completion watchdogは10秒で、専用fake runtimeによるinit/draw-release遅延のPlayer fault試験も通過しています。この試験は物理hotplugや任意の実機接続ハングを保証しません。Worker Nativeは7680x4320の実機profileで確認し、2026-10-04の限定実機確認で奥行きと画質は良好でした。独立native build、CTest、provenance監査は完了していますが、配布署名は未実施です。MacOS Metalは対象外です。
+## Bridgeなしで最短確認する
 
-対応状況、未検証事項、公式機能との比較は [docs/compatibility.md](docs/compatibility.md)、性能計測計画は [docs/performance.md](docs/performance.md)、導入手順は [docs/getting-started.md](docs/getting-started.md) を参照してください。開発計画は [ROADMAP.md](ROADMAP.md) にあります。
+URPプロジェクトで次の操作を行います。
 
-最新の統合互換性集計は [docs/compatibility.md](docs/compatibility.md) を正本とし、公式機能との比較は [docs/sdk-feature-comparison.md](docs/sdk-feature-comparison.md) に整理しています。
+1. `GameObject > ViewWeave > Quilt Rig`を作成します。専用Camera、`QuiltRenderer`、`ViewWeaveRig`、URP adapterが作成されます。
+2. Rigに`QuiltPreviewDemoGenerator`をAdd Componentします。
+3. Inspectorの`Preset`を`Preview`にして、コンポーネントのコンテキストメニューから`Generate Preview Rig`を実行します。
+4. `Window > Looking Glass Community > Quilt Preview`を開き、Rigの`QuiltRenderer`をRenderer欄へdragします。
+5. `Render Quilt`を押します。Bridge runtimeやLooking Glass本体は不要です。
 
-視点間の共通処理再利用を検証する8視点の共有culling試作は、限定Lit条件で画像差分と8本のRendererList実行を確認しています。固定マイクロベンチではCPU submission p50がbaseline 1.8023 ms、shared culling 0.3198 msでした。GPU性能、48視点、影、透明、post processing、VFXの対応は未確認で、量産経路へは採用していません。方式比較と条件は [docs/multiview-rendering.md](docs/multiview-rendering.md) に整理しています。
+生成されるpreview sceneには`Preview Lit Cube`、`Preview Lit Sphere`、`Preview Directional Light`が含まれます。Quilt Preview windowに分割された複数視点画像が表示されれば成功です。`Balanced`または`Native`を使う場合はGeneratorの解像度とgridを実際のprofileに合わせます。Nativeは機器を自動検出しません。
 
-最新のEditor GRD/VolumeStack回帰は27/27合格、skip 0です。URP通常thread PlayerのGRD OFF/ON・1/8/48視点6ケースも通過しています。CPU submissionとGCの参考計測はありますが、GPU時間とrender thread時間は取得できていません。別の固定条件の48視点測定では、GRD ONのCPU submission p50がOFFより約13.0%低い結果でした。GPU速度や公式実装との比較値ではないため、速度保証には使いません。詳細は [docs/gpu-resident-drawer.md](docs/gpu-resident-drawer.md) と [docs/performance.md](docs/performance.md) を参照してください。
+VFX Graphを使う場合はLinear color spaceを設定してください。HDRPもLinear color spaceと固定Exposureを必要とします。URPのMSAAはGamma/Linearの限定試験を実施しています。範囲と結果は[Windows validation](docs/windows-validation.md)を参照してください。
 
-## パッケージ
+## Windows D3D11 Playerで実機表示する
 
-現在は次の4 UPMパッケージを分離しています。導入順はCore、Bridge、必要に応じてURPまたはHDRPです。通常利用で利用者が別途用意するのはBridge runtimeです。native shimをビルドする場合だけ、Unity Plugin API headersを開発環境から参照します。
+1. URPまたはHDRP packageを追加したプロジェクトへBridge packageを追加し、Bridge runtimeをWindowsへインストールします。
+2. `GameObject > ViewWeave > Bridge Rig`を作成します。専用Camera、`QuiltRenderer`、`ViewWeaveRig`、`BridgeWorkerQuiltOutput`、`ViewWeaveBridgeSession`、対応adapterが同じGameObjectに作成されます。
+3. URPなら`BridgeUrpLitSampleGenerator`、HDRPなら`BridgeHdrpLitSampleGenerator`を同じRigへAdd Componentします。`Generate On Start`は有効のままにします。
+4. Rigを配置したシーンを`File > Save As...`でAssetsへ保存します。
+5. `File > Build Profiles`を開き、Windows profileのScene Listへ保存したsceneを追加します。`Player Settings > Other Settings`でGraphics APIs for Windowsの自動選択を無効にし、Direct3D11を先頭にします。Playerが非フォーカスでも描画を続けるため`Run In Background`は常時有効を推奨します。
+6. `Build and Run`を実行します。通常はBridge runtimeを自動検出します。検出できない場合だけSessionの`Runtime Path`へDLLの絶対パスを設定します。
 
-- `Packages/com.lookingglass.community.core` (`0.1.0`)
-- `Packages/com.lookingglass.community.bridge` (`0.1.0`)
-- `Packages/com.lookingglass.community.urp` (`0.1.0`)
-- `Packages/com.lookingglass.community.hdrp` (`0.1.0`)
+URP sampleは赤い立方体、緑の球、ライトを生成します。HDRP sampleも基本形状に加えて固定ExposureとHDRPの制約設定を生成します。Editorの`Generate Lit Scene`は生成物確認用で、EditorからBridgeへ接続する操作ではありません。
 
-Coreには`Quilt Preview` optional Sampleを登録しています。Package ManagerでCoreのSamplesからImportすると、Bridgeなしのruntime Lit previewを作成できます。権利とライセンスの確定前に、公式Bridgeや外部SDKをリポジトリへ追加しません。詳細は [docs/THIRD_PARTY_NOTICES.md](docs/THIRD_PARTY_NOTICES.md) を参照してください。
+## Samplesの比較
 
-## 主要な制約
+| Sample | pipeline | Bridge | 生成操作 | 主な確認内容 |
+| --- | --- | --- | --- | --- |
+| `Quilt Preview` | URP | 不要 | `QuiltPreviewDemoGenerator > Generate Preview Rig` | EditorのQuilt Preview windowで立方体、球、Quilt描画を確認 |
+| `Windows URP Lit` | URP | 必要 | `BridgeUrpLitSampleGenerator > Generate Lit Scene` または`Generate On Start` | Windows D3D11 Playerの赤い立方体、緑の球、視差 |
+| `Windows HDRP Lit` | HDRP | 必要 | `BridgeHdrpLitSampleGenerator > Generate Lit Scene` または`Generate On Start` | Windows D3D11 PlayerのHDRP Lit表示 |
 
-- HDRPはLinear color spaceと固定Exposureが必要です。TAAは一時的に無効化し、Motion Blur、SSR、SSGI、volumetric fog、cloudは未対応経路として扱います。
-- URPはBase cameraのみ対応し、camera stackは拒否します。FXAA/SMAAは限定fixtureで確認しました。MSAAは4x view RT、1x resolve、resize/disable lifecycle、中心色一致を限定URP fixtureで確認しました。一般素材、Player、性能は未検証です。TAAの視点間履歴は未検証です。
-- Bloomは個別fixtureで視点ごとの差を確認しています。Quilt全体へ一括適用した場合のtile seamや、他のpostprocessの視点間履歴は未検証です。
-- URP VFX Graphには`UrpVfxCameraDriver`による補助Camera経路があります。source Cameraは無効なままにし、VFXレイヤーとculling maskを合わせてください。追加の1x1描画負荷があり、HDRP driverはありません。詳細は [docs/vfx-graph.md](docs/vfx-graph.md) を参照してください。
-- 3840x2160の表示パネルとQuilt解像度は別物です。解像度プロファイルは機器由来であり、全機種共通の固定値ではありません。
+Bridge sampleのmaterial resourceが見つからない場合は、`ViewWeave/Samples/Windows URP Lit/Create Material Resource`または`ViewWeave/Samples/Windows HDRP Lit/Create Material Resource`を実行してから再生成します。
 
-ローカルcheckoutでは、Unity Package Managerから必要なpackageフォルダを順に追加します。導入順はCore、Bridge、使用するURPまたはHDRPです。Bridge runtimeは別途インストールし、通常利用では手動DLL pathを設定しません。Git URLやregistryを使う配布手順は、公開時のタグと依存関係に合わせて別途提示します。
+## テストプロジェクトを開く
 
-## 参考資料
+repository rootで`python tools/prepare_sample_tests.py`を実行してから、Unity Hubの`Add`で`Tests/Pipelines/Unity`を開きます。GPUを使うfixtureが含まれるため、GPUのあるWindows環境で実行します。Editorで`Window > General > Test Runner`を開き、`PlayMode`タブの`Run All`を実行してください。Run Allには既知のVFX compatibility未通過条件が含まれます。
 
-- [Looking Glass Unity Plugin](https://lookingglassfactory.com/software/looking-glass-unity-plugin)
-- [Looking Glass software documentation](https://lfdocs.lookingglassfactory.com/software/index)
-- [Unity Graphics plugin event](https://docs.unity.com/en-us/engine/6000.6/script-reference/unityengine/gl/issuepluginevent)
+このテストプロジェクトのBuild Settingsには固定のtest sceneを登録していません。通常のPlayModeテストは実行時にfixture sceneを作成し、終了時に破棄します。
+
+Player確認用のgenerated scene入口とTest Runnerの対象は[Pipeline smoke tests](Tests/Pipelines/README.md)にまとめています。詳細な結果と未検証範囲は[Windows validation](docs/windows-validation.md)、対応表は[compatibility](docs/compatibility.md)、導入補足は[getting started](docs/getting-started.md)を参照してください。
+
+## 知っておく制約
+
+- URPはBase cameraを使います。camera stack、一般的なtemporal history、VFX全体の対応は保証しません。
+- HDRPはLinear color spaceと固定Exposureを使います。VFX Graphを使う場合もLinear color spaceを設定します。詳細は[VFX Graph guide](docs/vfx-graph.md)を参照してください。
+- 実機の視点番号、奥行き、画質は限定条件で確認済みです。全視点と全視域の網羅的な光学確認は未実施です。
+
+公式SDKとの関係、ライセンス、詳細な制約は[compatibility](docs/compatibility.md)と[third-party notices](docs/THIRD_PARTY_NOTICES.md)を参照してください。

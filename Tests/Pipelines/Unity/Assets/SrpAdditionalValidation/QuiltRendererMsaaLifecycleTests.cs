@@ -12,6 +12,73 @@ namespace LookingGlass.SrpAdditionalValidation
 {
     public sealed class QuiltRendererMsaaLifecycleTests
     {
+        [UnityTest]
+        public IEnumerator UrpMsaaPreservesColorSpaceAcrossSamplesResizeAndCleanup()
+        {
+            ColorSpace activeColorSpace = QualitySettings.activeColorSpace;
+            Assert.IsTrue(activeColorSpace == ColorSpace.Gamma || activeColorSpace == ColorSpace.Linear, "Unexpected active color space");
+            bool expectedSrgb = activeColorSpace == ColorSpace.Linear;
+            RenderPipelineAsset oldPipeline = GraphicsSettings.defaultRenderPipeline;
+            RenderPipelineAsset oldQuality = QualitySettings.renderPipeline;
+            UniversalRendererData rendererData = ScriptableObject.CreateInstance<UniversalRendererData>();
+            UniversalRenderPipelineAsset pipeline = UniversalRenderPipelineAsset.Create(rendererData);
+            pipeline.msaaSampleCount = 1;
+            GraphicsSettings.defaultRenderPipeline = pipeline;
+            QualitySettings.renderPipeline = pipeline;
+            GameObject host = new GameObject("QuiltRendererGammaMsaa");
+            Camera camera = host.AddComponent<Camera>();
+            camera.enabled = false;
+            UniversalAdditionalCameraData cameraData = host.AddComponent<UniversalAdditionalCameraData>();
+            cameraData.renderType = CameraRenderType.Base;
+            UrpQuiltCamera guard = host.AddComponent<UrpQuiltCamera>();
+            QuiltRenderer quilt = host.AddComponent<QuiltRenderer>();
+            quilt.sourceCamera = camera;
+            quilt.GuardBehaviour = guard;
+            quilt.settings.quiltWidth = 256;
+            quilt.settings.quiltHeight = 192;
+            quilt.settings.columns = 2;
+            quilt.settings.rows = 2;
+            quilt.settings.views = 4;
+            quilt.settings.viewAspect = 4f / 3f;
+            camera.allowMSAA = true;
+            try
+            {
+                yield return null;
+                yield return null;
+                foreach (int requested in new[] { 1, 2, 4, 8 })
+                {
+                    pipeline.msaaSampleCount = requested;
+                    quilt.RenderQuilt();
+                    RenderTexture view = GetTexture(quilt, "viewTexture");
+                    RenderTexture resolve = GetTexture(quilt, "resolveTexture");
+                    int expected = requested <= 1 ? 1 : SupportedSamples(requested, 128, 96);
+                    Assert.AreEqual(expected, view.antiAliasing, "Gamma view sample mismatch for requested " + requested);
+                    Assert.AreEqual(quilt.QuiltTexture.sRGB, view.sRGB, "Gamma quilt/view sRGB mismatch for requested " + requested);
+                    Assert.AreEqual(expectedSrgb, quilt.QuiltTexture.sRGB, "Quilt sRGB does not match active color space for requested " + requested);
+                    Assert.AreEqual(expectedSrgb, view.sRGB, "View sRGB does not match active color space for requested " + requested);
+                    Assert.AreEqual(expected > 1 ? 1 : 0, resolve == null ? 0 : resolve.antiAliasing, "Gamma resolve mismatch for requested " + requested);
+                    if (resolve != null) { Assert.AreEqual(view.sRGB, resolve.sRGB, "Gamma view/resolve sRGB mismatch for requested " + requested); Assert.AreEqual(expectedSrgb, resolve.sRGB, "Resolve sRGB does not match active color space for requested " + requested); }
+                    Assert.AreEqual(activeColorSpace, QualitySettings.activeColorSpace, "MSAA changed active color space");
+                    Debug.Log("MSAA color validation requested=" + requested + " actual=" + view.antiAliasing + " quiltSrgb=" + quilt.QuiltTexture.sRGB + " viewSrgb=" + view.sRGB + " graphicsFormat=" + view.graphicsFormat + " colorSpace=" + QualitySettings.activeColorSpace);
+                }
+                quilt.settings.quiltWidth = 384;
+                quilt.settings.quiltHeight = 256;
+                quilt.RenderQuilt();
+                Assert.AreEqual(quilt.QuiltTexture.sRGB, GetTexture(quilt, "viewTexture").sRGB, "Gamma resize changed sRGB state");
+                quilt.enabled = false;
+                Assert.AreEqual(0, quilt.ViewAntiAliasingSamples);
+                Assert.AreEqual(0, quilt.ResolveAntiAliasingSamples);
+            }
+            finally
+            {
+                GraphicsSettings.defaultRenderPipeline = oldPipeline;
+                QualitySettings.renderPipeline = oldQuality;
+                Object.DestroyImmediate(host);
+                Object.DestroyImmediate(pipeline);
+                Object.DestroyImmediate(rendererData);
+            }
+        }
+
         static RenderTexture GetTexture(QuiltRenderer quilt, string fieldName)
         {
             FieldInfo field = typeof(QuiltRenderer).GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);

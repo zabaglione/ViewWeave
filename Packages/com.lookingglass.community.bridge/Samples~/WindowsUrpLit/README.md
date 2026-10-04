@@ -1,5 +1,16 @@
 # Windows URP Lit sample
 
-Import this optional sample into a Unity 6000.6 URP project that also contains the ViewWeave Core and Bridge packages. The primary flow is to create `GameObject/ViewWeave/Bridge Rig`, add `BridgeUrpLitSampleGenerator`, keep `Generate On Start` enabled, and build/run a Windows D3D11 Player. The Editor `Generate Lit Scene` context menu is optional for inspecting the generated geometry; Editor does not connect to Bridge.
+Windows D3D11 PlayerでURPの基本Lit表示を確認するsampleです。Unity 6000.6.4f1のURP projectへCore、URP、Bridge packageを追加し、`Window > Package Management > Package Manager`のBridge package Samplesから`Windows URP Lit`をImportします。
 
-The imported sample includes the sample-owned `Resources/ViewWeave/UrpLit.mat` resource. If a local sample copy is missing that resource, use `ViewWeave/Samples/Windows URP Lit/Create Material Resource` in the Editor as a repair step before building a Player. The generator reports an error if the resource is absent and does not silently fall back to `Shader.Find`. With `Generate On Start` enabled, the sample creates independent scene content beside the rig when Play mode starts; changing the rig camera does not move the sample objects. It uses the material resource for a red cube, a green sphere, and a directional light. Generation sets the rig camera to 50 degrees, 0.1 to 100 clip planes, and a 3 unit camera distance; these values are restored when the generator is disabled or destroyed. The Bridge session uses registry discovery by default; a manually assigned DLL path is not required for normal setup. Build a Windows Player with Direct3D11 for the experimental Bridge worker route.
+## 使い方
+
+1. `GameObject > ViewWeave > Bridge Rig`を作成します。
+2. 同じGameObjectへ`BridgeUrpLitSampleGenerator`をAdd Componentします。
+3. `Generate On Start`を有効にしてWindows Standalone PlayerをDirect3D11でBuild and Runします。
+4. Player起動後、赤いcube、緑のsphere、directional lightがQuilt表示されることを確認します。
+
+Editorで生成物だけを確認する場合は、generatorのコンテキストメニュー`Generate Lit Scene`を実行します。これはBridgeへ接続しません。通常のruntime discoveryでBridge DLLを見つけられない場合だけ、`ViewWeaveBridgeSession`の`Runtime Path`へDLLの絶対パスを設定します。
+
+## material resource
+
+sampleは`Resources/ViewWeave/UrpLit.mat`を使います。resourceが見つからない場合は`ViewWeave/Samples/Windows URP Lit/Create Material Resource`を実行してから`Generate Lit Scene`を再実行してください。shaderへのsilent fallbackは行いません。
