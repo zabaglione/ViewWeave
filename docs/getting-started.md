@@ -28,6 +28,6 @@ URP VFX Graphを試す場合は、Rigへ`UrpVfxCameraDriver`を追加し、`enab
 
 ## 検証条件とlegacy Direct経路
 
-Worker経路は実験的なWindows Player、D3D11専用経路です。同一プロセス再接続と48 viewの非空画像・視差・移動は確認済みですが、光学品質の人手確認、配布署名、hotplug、複数機器、全機器profile、D3D12、Vulkanは未確認です。固定条件のURP/HDRP品質切替ではPreview、Balanced、Native、Previewを各122 completionで完了し、明示Stop/Start後120 drawとpending 0を確認しました。これを全機器profileや光学品質の保証とは扱いません。HDRP検証ではLinear color space、固定Exposure、TAA/Motion Blur/SSR/SSGI/volumetric fog/cloud無効を使用します。
+Worker経路は実験的なWindows Player、D3D11専用経路です。同一プロセス再接続と48 viewの非空画像・視差・移動を確認済みです。2026-10-04の限定実機確認では奥行きと画質は良好で、番号付きデモをユーザーが暫定受入としています。全視点・全視域の網羅的な光学検証は未実施です。配布署名、hotplug、複数機器、全機器profile、D3D12、Vulkanは未確認です。固定条件のURP/HDRP品質切替ではPreview、Balanced、Native、Previewを各122 completionで完了し、明示Stop/Start後120 drawとpending 0を確認しました。これを全機器profileや一般的な光学品質の保証とは扱いません。HDRP検証ではLinear color space、固定Exposure、TAA/Motion Blur/SSR/SSGI/volumetric fog/cloud無効を使用します。
 
 既存のDirect経路はlegacy diagnostic用に維持しています。Directのvalidated条件はBridge package READMEを参照してください。Direct経路とWorker経路の状態、runtime path、初期化APIは共用しないでください。Bridge runtime、公式binary、headerは同梱・再配布しません。

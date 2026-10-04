@@ -2,6 +2,8 @@
 
 `Unity/Assets/Editor/QuiltPipelineSmokeTests.cs` is an Editor test/execute-method helper for a Unity 6.6.4f1 project that imports the core package and either URP or HDRP adapter. It creates a low resolution cube scene, renders a small quilt, and checks that tiles contain pixels and differ across views. The test also checks that the source camera transform and pipeline anti-aliasing setting are restored after the render scope. Run from Unity with `-executeMethod QuiltPipelineSmokeEntryPoints.RunUrp` or `-executeMethod QuiltPipelineSmokeEntryPoints.RunHdrp`.
 
+The BridgeWorker ViewWeave demo can overlay a large `00` through `47` index in each view tile with `--view-index-debug 1`; use `--view-index-debug 0` to restore the normal quilt. Run `LookingGlass.BridgeWorkerValidation.Editor.BridgeWorkerViewIndexDebugVerification.Run` in the Unity Editor to render all 48 tiles without Bridge, validate unique glyph hashes and coverage, and save `.local/windows-sdk-demo/view-index-debug-proof.png`. During optical review, record the index seen from the left and right physical sides, rather than assuming that view 0 or view 47 is a particular side.
+
 The smoke test requires a GPU and is intended for a local Editor batch invocation. macOS execution is unverified on this host.
 
 ## GPU Resident Drawer validation

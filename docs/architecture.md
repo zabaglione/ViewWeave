@@ -12,7 +12,7 @@ URP/HDRPでは専用Guardと`RenderPipeline.StandardRequest`を使います。`V
 
 ## 出力とBridge
 
-Sessionは機器のprofileを動的に選択し、自動検出を主経路とします。通常の利用ではBridge runtimeを別途用意します。`BridgeQuiltOutput`はWindows D3D11のDirect経路で確認済みです。`BridgeWorkerQuiltOutput`はWindows Playerの通常threadを対象にした実験経路です。worker own D3D11 device、Unity render threadからのcopy、3スロットの共有GPU ring bufferを使います。同一プロセス再接続を含む各120 draw、終了保留0、host thread再利用、48 view非空画像と視差・移動を確認しました。人手による光学品質、hotplug、複数機器、Metal、配布署名は未確認です。Direct経路のLit光学確認とは別の結果です。
+Sessionは機器のprofileを動的に選択し、自動検出を主経路とします。通常の利用ではBridge runtimeを別途用意します。`BridgeQuiltOutput`はWindows D3D11のDirect経路で確認済みです。`BridgeWorkerQuiltOutput`はWindows Playerの通常threadを対象にした実験経路です。worker own D3D11 device、Unity render threadからのcopy、3スロットの共有GPU ring bufferを使います。同一プロセス再接続を含む各120 draw、終了保留0、host thread再利用、48 view非空画像と視差・移動を確認しました。2026-10-04の限定実機確認では奥行き・画質は良好で、番号付きデモをユーザーが暫定受入としています。全視点・全視域の網羅的な光学検証は未実施です。hotplug、複数機器、Metal、配布署名は未確認です。Direct経路のLit光学確認とは別の結果です。
 
 Bridge経路ではUnity render threadからのcopy、Bridge workerの描画、WM message pump、終了時の非同期排出、resizeと再openを分離して扱います。共有GPU ring bufferは3スロットです。queueが満杯の場合は新しいsubmissionをdropし、投入済みsubmissionを保持します。Workerの同一プロセス再接続と終了保留0は実測済みですが、正式なBridge経路とするには光学品質、配布署名、hotplug、複数機器の受入が残っています。
 

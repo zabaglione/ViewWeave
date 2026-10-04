@@ -10,11 +10,11 @@ Looking Glass向けの非公式・独立したUnity SDKです。設計対象はU
 
 最新のWindows D3D11統合は82件中71件pass、11件fail、skip 0です。Session 14/14、追加互換性12/12、Geometry 10/10、HDRP 7/7、URP 8/8、HDRP priming 0/1、SRP追加4/5、SRP拡張2/2、VFX 5/14、URP driver 5/5、Samples 4/4です。VFXとHDRP priming、MSAAの失敗は実験中のfixtureを含み、個別結果から機能全体の対応を宣言しません。詳細な内訳は [docs/compatibility.md](docs/compatibility.md) を参照してください。
 
-Sessionの実機PlayerではURP/HDRPのPreview、Balanced、NativeとGRD ON/OFFの各6条件を48 viewで確認しました。各条件は120 completionを完了し、固定条件の品質切替では4段階を各122 completion、明示Stop/Start後120 draw、pending 0を確認しました。Worker Nativeは7680x4320の実機profileで確認していますが、光学品質の人手確認は未完了です。
+Sessionの実機PlayerではURP/HDRPのPreview、Balanced、NativeとGRD ON/OFFの各6条件を48 viewで確認しました。各条件は120 completionを完了し、固定条件の品質切替では4段階を各122 completion、明示Stop/Start後120 draw、pending 0を確認しました。Worker Nativeは7680x4320の実機profileで確認しています。2026-10-04の限定実機確認では奥行きと画質は良好で、番号付きデモをユーザーが暫定受入としています。全視点・全視域の網羅的な光学検証は未実施です。
 
-SDK Demoは自動検出したNative 7680x4320、8x6、48 viewで120 completionと全tileの赤緑表示を確認しました。これはWindows D3D11の限定実機結果で、光学品質の人手確認は未完了です。
+SDK Demoは自動検出したNative 7680x4320、8x6、48 viewで120 completionと全tileの赤緑表示を確認しました。これはWindows D3D11の限定実機結果です。視点番号デバッグ表示は左右の視点確認用で、一般機器や長時間運転の保証ではありません。
 
-`BridgeQuiltOutput`は実験的なWindows D3D11 Direct経路です。`-force-gfx-direct`と`runInBackground=true`を指定した構成で、16インチ実機のLit 48-view表示、向き・前後関係、120フレーム後の終了コード0を確認しています。`BridgeWorkerQuiltOutput`はWindows Player D3D11通常thread向けの実験経路で、同一プロセス再接続を含む120 draw、終了保留0、同一host thread再利用を確認しました。Worker Nativeは7680x4320の実機profileで確認していますが、光学品質の人手確認は未完了です。独立native build、CTest、provenance監査は完了していますが、配布署名は未実施です。MacOS Metalは対象外です。
+`BridgeQuiltOutput`は実験的なWindows D3D11 Direct経路です。`-force-gfx-direct`と`runInBackground=true`を指定した構成で、16インチ実機のLit 48-view表示、向き・前後関係、120フレーム後の終了コード0を確認しています。`BridgeWorkerQuiltOutput`はWindows Player D3D11通常thread向けの実験経路で、同一プロセス再接続を含む120 draw、終了保留0、同一host thread再利用を確認しました。Worker Nativeは7680x4320の実機profileで確認し、2026-10-04の限定実機確認で奥行きと画質は良好でした。独立native build、CTest、provenance監査は完了していますが、配布署名は未実施です。MacOS Metalは対象外です。
 
 対応状況、未検証事項、公式機能との比較は [docs/compatibility.md](docs/compatibility.md)、性能計測計画は [docs/performance.md](docs/performance.md)、導入手順は [docs/getting-started.md](docs/getting-started.md) を参照してください。開発計画は [ROADMAP.md](ROADMAP.md) にあります。
 

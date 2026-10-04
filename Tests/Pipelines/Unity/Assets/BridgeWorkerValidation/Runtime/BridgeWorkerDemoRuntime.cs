@@ -50,10 +50,13 @@ namespace LookingGlass.BridgeWorkerValidation
         [SerializeField] ViewWeaveBridgeSession session;
         [SerializeField] BridgeWorkerQuiltOutput output;
         [SerializeField] QuiltRenderer quilt;
+        [SerializeField] BridgeWorkerViewIndexOutput indexOutput;
+        [SerializeField] ViewWeaveRig rig;
         string evidencePath;
         string lastState;
         bool wroteLive;
         bool wroteExit;
+        bool indexOutputConnected;
 
         void Awake()
         {
@@ -67,6 +70,18 @@ namespace LookingGlass.BridgeWorkerValidation
         void Update()
         {
             if (session == null || output == null) return;
+            bool outputNeedsReconnect = indexOutput != null && (quilt == null || quilt.OutputBehaviour != indexOutput || (rig != null && rig.Renderer != null && rig.Renderer.OutputBehaviour != indexOutput));
+            if (session.State == ViewWeaveBridgeSession.SessionState.Rendering && indexOutput != null && (!indexOutputConnected || outputNeedsReconnect))
+            {
+                indexOutput.SetTarget(output);
+                if (rig != null) rig.SetOutput(indexOutput);
+                quilt.OutputBehaviour = indexOutput;
+                indexOutputConnected = true;
+            }
+            else if (session.State != ViewWeaveBridgeSession.SessionState.Rendering)
+            {
+                indexOutputConnected = false;
+            }
             if (session.State == ViewWeaveBridgeSession.SessionState.Rendering && quilt != null)
                 quilt.autoRender = true;
             if (!wroteLive && session.State == ViewWeaveBridgeSession.SessionState.Rendering && output.Completed >= 120u)
@@ -132,8 +147,29 @@ namespace LookingGlass.BridgeWorkerValidation
             receipt.graphicsMultiThreaded = SystemInfo.graphicsMultiThreaded;
             receipt.sourceEnabled = quilt == null || quilt.sourceCamera == null || quilt.sourceCamera.enabled;
             if (kind == "live" && quilt != null && quilt.QuiltTexture != null)
+            {
                 CaptureProof(receipt, quilt.QuiltTexture, quilt.settings.GetLayout());
+                if (indexOutput != null && indexOutput.IndexedQuilt != null) CaptureIndexedProof(indexOutput.IndexedQuilt);
+            }
             return receipt;
+        }
+
+        void CaptureIndexedProof(RenderTexture source)
+        {
+            RenderTexture previous = RenderTexture.active;
+            Texture2D image = new Texture2D(source.width, source.height, TextureFormat.RGBA32, false, false);
+            try
+            {
+                RenderTexture.active = source;
+                image.ReadPixels(new Rect(0, 0, source.width, source.height), 0, 0, false);
+                image.Apply(false, false);
+                File.WriteAllBytes(Path.Combine(evidencePath, "demo-live-indexed-quilt.png"), image.EncodeToPNG());
+            }
+            finally
+            {
+                RenderTexture.active = previous;
+                UnityEngine.Object.Destroy(image);
+            }
         }
 
         void CaptureProof(Receipt receipt, RenderTexture source, QuiltLayout layout)

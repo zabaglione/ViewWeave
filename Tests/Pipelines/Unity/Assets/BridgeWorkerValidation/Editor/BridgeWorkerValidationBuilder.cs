@@ -70,6 +70,14 @@ namespace LookingGlass.BridgeWorkerValidation.Editor
                 session.startOnEnable = true;
                 cameraObject.SetActive(true);
                 BridgeWorkerDemoRuntime demo = cameraObject.AddComponent<BridgeWorkerDemoRuntime>();
+                BridgeWorkerViewIndexOutput indexOutput = cameraObject.AddComponent<BridgeWorkerViewIndexOutput>();
+                indexOutput.SetTarget(outputComponent);
+                indexOutput.ViewIndexDebug = true;
+                SerializedObject indexSerialized = new SerializedObject(indexOutput);
+                Shader indexShader = Shader.Find("LookingGlass/BridgeWorkerViewIndexDebug");
+                if (indexShader == null) throw new InvalidOperationException("View index debug shader unavailable");
+                indexSerialized.FindProperty("indexShader").objectReferenceValue = indexShader;
+                indexSerialized.ApplyModifiedPropertiesWithoutUndo();
                 quilt.sourceCamera = source;
                 quilt.GuardBehaviour = guard;
                 quilt.OutputBehaviour = outputComponent;
@@ -85,6 +93,8 @@ namespace LookingGlass.BridgeWorkerValidation.Editor
                 demoSerialized.FindProperty("session").objectReferenceValue = session;
                 demoSerialized.FindProperty("output").objectReferenceValue = outputComponent;
                 demoSerialized.FindProperty("quilt").objectReferenceValue = quilt;
+                demoSerialized.FindProperty("indexOutput").objectReferenceValue = indexOutput;
+                demoSerialized.FindProperty("rig").objectReferenceValue = rig;
                 demoSerialized.ApplyModifiedPropertiesWithoutUndo();
                 GraphicsSettings.defaultRenderPipeline = pipeline;
                 QualitySettings.renderPipeline = pipeline;

@@ -29,7 +29,7 @@ URP driver対象試験は最新統合で5/5通過しました。これは通常�
 | URP | Unity 6000.6.4f1、SRP 17.6、D3D11でLit/Bloom smoke。Base cameraのみ、stackは拒否。M3の8 fixtureを確認済み | 残る視点別効果を個別に検証 |
 | HDRP | Linear/fixed Exposure条件でLit/Bloom smoke。volumetric fog、SSR、SSGI、cloudは拒否 | M3で対応範囲を定義 |
 | Built-in / Unity graphics | 製品サポート対象外。CoreはStandard RenderRequest経路を要求 | 対象外として扱う |
-| Bridge | Windows D3D11 Direct実機確認。Worker通常threadは同一プロセス再接続、各120 draw、終了保留0、host thread再利用、48 view非空画像と視差・移動を確認。人手による光学品質、配布署名、hotplug、複数機器、Metalは未検証 | 配布署名、光学確認、Windows/macOS実機、hotplug、複数機器を段階検証 |
+| Bridge | Windows D3D11 Direct実機確認。Worker通常threadは同一プロセス再接続、各120 draw、終了保留0、host thread再利用、48 view非空画像と視差・移動を確認。2026-10-04の限定実機確認で奥行き・画質は良好、番号付きデモをユーザーが暫定受入。全視点・全視域の網羅的な光学検証は未実施。配布署名、hotplug、複数機器、Metalは未検証 | 配布署名、Windows/macOS実機、hotplug、複数機器を段階検証 |
 | Bloom / Tonemapping / Color Adjustments | Lit/Bloom smokeのみ確認 | per-view処理とtile seamを検証 |
 | TAA / temporal / Auto Exposure | TAAは一時停止、履歴独立は未検証 | 履歴とメモリを別研究 |
 | Motion Blur / SSR / SSGI / fog / cloud | 現状経路では拒否 | fallbackと条件を検証 |
