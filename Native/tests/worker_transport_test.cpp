@@ -250,6 +250,39 @@ static void TestCloseDrainAndExclusiveBegin() {
     EndContext(handle);
 }
 
+static void TestCloseAllRetiresLateToken() {
+    void* handle = nullptr;
+    BeginContext(&handle);
+    auto texture = MakeTexture(DXGI_FORMAT_R8G8B8A8_UNORM, 16, 16);
+    void* stale = lkg_worker_make_draw_data(handle, texture.Get(), 2, 2, 1.0f, 1.0f);
+    Check(stale != nullptr, "close all token");
+    Check(lkg_worker_pending_count() == 0, "ready worker is not shutdown pending");
+    Check(lkg_worker_close_all() == 0, "close all");
+    auto callback = reinterpret_cast<void (*)(int, void*)>(lkg_worker_render_event_func());
+    callback(0, stale);
+    Check(WaitState(handle, LKG_WORKER_CLOSED, 2000) || WaitState(handle, LKG_WORKER_FAULT, 2000), "close all completion");
+    const auto deadline = GetTickCount64() + 2000;
+    while (GetTickCount64() < deadline && lkg_worker_pending_count() != 1) {
+        lkg_worker_collect_closed();
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    Check(lkg_worker_pending_count() == 1, "closed context remains pending until collect");
+    Check(lkg_worker_collect_closed() >= 1, "collect closed context");
+    Check(lkg_worker_pending_count() == 0, "close all pending drain");
+    LkgWorkerStatus status{};
+    Check(lkg_worker_poll(handle, &status) == -2, "poll after close all collect");
+
+    void* next = nullptr;
+    BeginContext(&next);
+    auto nextTexture = MakeTexture(DXGI_FORMAT_R8G8B8A8_UNORM, 16, 16);
+    void* nextToken = lkg_worker_make_draw_data(next, nextTexture.Get(), 2, 2, 1.0f, 1.0f);
+    Check(nextToken != nullptr, "new token after collect");
+    callback(0, stale);
+    Check(lkg_worker_pending_count() == 0, "stale token did not affect new ready context");
+    callback(0, nextToken);
+    EndContext(next);
+}
+
 static void TestFaultCases() {
     void* handle = nullptr;
     BeginContext(&handle);
@@ -424,6 +457,7 @@ int main() {
     TestDrawExceptionDrain();
     TestCloseAndPollResponsiveness();
     TestCloseDrainAndExclusiveBegin();
+    TestCloseAllRetiresLateToken();
 #if defined(LKG_WORKER_TRANSPORT_TESTING)
     TestPersistentHostThreadReuse();
     TestWorkerMessagePump();

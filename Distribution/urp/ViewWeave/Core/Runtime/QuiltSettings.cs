@@ -13,7 +13,7 @@ namespace ViewWeave
         [Min(1)] public int views = 48;
         [Min(0.001f)] public float viewAspect = 1f;
         [Min(0.001f)] public float fieldOfView = 50f;
-        [Min(0.001f)] public float cameraDistance = 1f;
+        [Min(0.001f)] [Tooltip("Zero-parallax distance (focus depth) from the source camera to the subject plane.")] public float cameraDistance = 1f;
         [Min(0f)] public float viewCone = 40f;
 
         public QuiltSettings Clone() => (QuiltSettings)MemberwiseClone();

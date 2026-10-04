@@ -1,6 +1,6 @@
 # Unity feature coverage
 
-このページは、Unity 6000.6.4f1、URP/HDRP 17.6、Windows D3D11 の ViewWeave 複数視点出力について、公開機能と実測範囲を分けて記載します。合格は個別 fixture の結果であり、同じ機能を含む全プロジェクトを保証するものではありません。
+このページは、Unity 6000.6.4f1、URP/HDRP 17.6、Windows D3D11のViewWeave複数視点出力について、公開機能と実測範囲を分けて記載します。Bridge出力はWindows D3D11 Editor PlayおよびPlayerが対象で、Edit Mode、D3D12、macOS出力は対象外です。合格は個別 fixture の結果であり、同じ機能を含む全プロジェクトを保証するものではありません。
 
 ## 現在の検証集計
 
@@ -45,15 +45,15 @@ GRD の性能実測は URP normal multithreaded Player の範囲だけです。H
 
 | 機能 | 状態 | 実測範囲と制約 |
 | --- | --- | --- |
-| HDRP Bloom | 限定実測 | HDRP fixed Exposure、Directional light、明示Volumeの fixture。一般のVolume継承や複雑なstackは未検証。 |
+| HDRP Bloom | 限定実測 | HDRP Linear条件のDirectional light、明示Volume fixture。adapterの一時overrideでquilt中も通常Bloomを維持。複雑なstackは未検証。 |
 | URP Bloom | 限定実測 | 個別Bloom fixtureで視点ごとの差を確認。一般のVolume継承、他の効果、tile seamは未検証。 |
-| Color Adjustments / Tonemapping / Exposure | 限定実測 | 個別Tone/Color fixtureで描画差を確認。HDRPはLinear + Fixed Exposureを要求し、Auto/非固定ExposureはGuardで拒否。一般の色管理は未検証。 |
-| Motion Blur | 非対応 | URP/HDRP Guard が temporal Motion Blur を拒否。 |
+| Color Adjustments / Tonemapping / Exposure | 限定実測 | 個別Tone/Color fixtureで描画差を確認。HDRPはLinear必須。quilt中のAuto Exposureは全view共通Fixed EV 12に変換し、元stackがFixedなら元EVを保つ。一般の色管理は未検証。 |
+| Motion Blur | HDRPはquilt中に一時抑制 | HDRP adapter既定の一時Volume overrideでquilt中だけ無効化。通常renderと元Volume設定は維持。URPの構成は別途。 |
 | FXAA / SMAA / MSAA | FXAA/SMAAは限定確認。URP MSAA 1/1で4x view RT、1x resolve、resize/disable lifecycle、中心色一致を確認。追加のLinear境界試験10/10で、このRTX GPUの2x/4x/8x対応倍率、pipeline 1x、allowMSAA無効、Deferred fallback、中心色一致と対応MSAAのedge差分を確認。Gamma側targeted MSAA 7件も確認したが専用MSAA Playerは未実施。低MSAA能力GPU、HDRP MSAA、性能は未検証 | MSAAの一般素材、Unity/Player、画質、性能を検証。 |
 | TAA / temporal history | 非対応 | view render 中は TAA を無効化して終了時に復元。独立した per-view temporal history は提供しない。 |
-| SSAO / SSGI / SSR | 非対応または未検証 | HDRP の SSGI/SSR は temporal としてGuardが拒否。URP/HDRPの他構成は未検証。 |
-| Fog / Volumetric Fog / Clouds | 非対応または未検証 | HDRP volumetric fog/cloud はGuardが拒否。一般の fog は未検証。 |
-| Depth of Field / Auto Exposure | Depth of FieldはURP/HDRPの固定条件fixtureで限定確認。HDRP Auto ExposureはGuardで拒否し、URP Auto Exposureは未検証 | 視点ごとの焦点、履歴、Exposure更新を検証。 |
+| SSAO / SSGI / SSR | HDRP SSGI/SSRはquilt中に一時抑制 | HDRP adapter既定のoverrideでquilt view中だけ無効化し、scope終了時に戻す。URP/他構成は未検証。 |
+| Fog / Volumetric Fog / Clouds | HDRP volumetric effectsはquilt中に一時抑制 | HDRP volumetric fog/cloudはquilt view中だけ無効化。通常のFogとSkyは維持する。 |
+| Depth of Field / Auto Exposure | Depth of Fieldは限定確認。HDRP Auto Exposureはquilt共通Fixed EVへ一時変換 | HDRPはEV 12を既定にし、元stackがFixedならそのEVを使う。URP Auto Exposureは未検証。 |
 
 ## UI とカメラ
 
@@ -80,7 +80,7 @@ GRD の性能実測は URP normal multithreaded Player の範囲だけです。H
 
 ## SRP と GRD の注意点
 
-CoreはSRPで標準 RenderRequest を使います。`useRenderRequests=false` はSRP adapter経路で拒否されます。URPはBase camera、Volume、Renderer Feature、camera stateをviewごとに検証します。HDRPはLinear、固定Exposure、temporalなVolume機能のGuardが必要です。
+CoreはSRPで標準 RenderRequest を使います。`useRenderRequests=false` はSRP adapter経路で拒否されます。URPはBase camera、Volume、Renderer Feature、camera stateをviewごとに検証します。HDRPはLinear必須です。adapterはquilt scope中に一時Volume overrideを使い、Motion Blur、SSR、SSGI、volumetric fog/cloudを抑えてAuto Exposureを全view共通Fixed EVにします。scope外のMainCameraとVolume設定は保たれます。
 
 GRDの機能有無はpipelineの公式対応と別に検証します。現在の性能証跡はURP normal multithreaded PlayerのMeshRendererに限定され、HDRPやVFX、ParticleSystem、SkinnedMeshRenderer、Terrain、DecalのGRD性能を意味しません。
 

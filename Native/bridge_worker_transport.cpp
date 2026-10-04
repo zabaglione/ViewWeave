@@ -17,6 +17,7 @@
 #include <stdexcept>
 #include <thread>
 #include <unordered_set>
+#include <unordered_map>
 #include <vector>
 
 using Microsoft::WRL::ComPtr;
@@ -94,6 +95,7 @@ static std::mutex hostRegistryMutex;
 static WorkerHost* persistentHost = nullptr;
 
 struct WorkerDrawData {
+    uint64_t id = 0;
     WorkerContext* context = nullptr;
     IUnknown* texture = nullptr;
     uint32_t columns = 0;
@@ -104,7 +106,8 @@ struct WorkerDrawData {
 };
 
 static std::mutex tokenMutex;
-static std::unordered_set<WorkerDrawData*> tokenRegistry;
+static std::unordered_map<uint64_t, std::unique_ptr<WorkerDrawData>> tokenRegistry;
+static std::atomic<uint64_t> nextTokenId{1};
 static thread_local WorkerContext* renderExceptionContext = nullptr;
 static thread_local uint32_t renderExceptionSlot = 3;
 static void SetFault(WorkerContext& context, uint32_t code, const char* text);
@@ -545,15 +548,16 @@ static void WorkerRenderEventImpl(int, WorkerDrawData* data) {
 }
 
 static void WorkerRenderEvent(int eventId, void* value) {
-    auto* data = static_cast<WorkerDrawData*>(value);
-    if (!data) return;
+    const uint64_t id = static_cast<uint64_t>(reinterpret_cast<uintptr_t>(value));
+    if (id == 0) return;
+    std::unique_ptr<WorkerDrawData> owned;
     {
         std::lock_guard<std::mutex> lock(tokenMutex);
-        const auto found = tokenRegistry.find(data);
+        const auto found = tokenRegistry.find(id);
         if (found == tokenRegistry.end()) return;
+        owned = std::move(found->second);
         tokenRegistry.erase(found);
     }
-    std::unique_ptr<WorkerDrawData> owned(data);
     try {
         WorkerRenderEventImpl(eventId, owned.get());
         renderExceptionContext = nullptr;
@@ -932,27 +936,32 @@ LKG_EXPORT void* lkg_worker_make_draw_data(void* handle, void* texture, uint32_t
         ++context->status.dropped;
         return nullptr;
     }
-    auto* data = new (std::nothrow) WorkerDrawData{ context, reinterpret_cast<IUnknown*>(texture), columns, rows, aspect, zoom };
+    auto data = std::unique_ptr<WorkerDrawData>(new (std::nothrow) WorkerDrawData{ 0, context, reinterpret_cast<IUnknown*>(texture), columns, rows, aspect, zoom });
     if (!data) return nullptr;
     data->texture->AddRef();
+    const uint64_t id = nextTokenId.fetch_add(1, std::memory_order_relaxed);
+    if (id == 0 || id == UINT64_MAX) return nullptr;
+    data->id = id;
     try {
         std::lock_guard<std::mutex> tokenLock(tokenMutex);
-        tokenRegistry.insert(data);
+        tokenRegistry.emplace(id, std::move(data));
     } catch (...) {
-        delete data;
         return nullptr;
     }
     ++context->pendingTokens;
-    return data;
+    return reinterpret_cast<void*>(static_cast<uintptr_t>(id));
 }
 
 LKG_EXPORT int32_t lkg_worker_cancel_draw_data(void* drawData) {
     if (!drawData) return -1;
-    auto* data = static_cast<WorkerDrawData*>(drawData);
+    const uint64_t id = static_cast<uint64_t>(reinterpret_cast<uintptr_t>(drawData));
+    if (id == 0) return -1;
+    std::unique_ptr<WorkerDrawData> data;
     {
         std::lock_guard<std::mutex> tokenLock(tokenMutex);
-        const auto found = tokenRegistry.find(data);
+        const auto found = tokenRegistry.find(id);
         if (found == tokenRegistry.end()) return -2;
+        data = std::move(found->second);
         tokenRegistry.erase(found);
     }
     WorkerContext* context = data->context;
@@ -965,8 +974,97 @@ LKG_EXPORT int32_t lkg_worker_cancel_draw_data(void* drawData) {
             context->condition.notify_all();
         }
     }
-    delete data;
     return 0;
+}
+
+static void RetireUnclaimedTokens() {
+    std::vector<std::unique_ptr<WorkerDrawData>> retired;
+    {
+        std::lock_guard<std::mutex> tokenLock(tokenMutex);
+        for (auto& entry : tokenRegistry) retired.push_back(std::move(entry.second));
+        tokenRegistry.clear();
+    }
+    if (retired.empty()) return;
+    std::lock_guard<std::mutex> registryLock(registryMutex);
+    for (const auto& token : retired) {
+        WorkerContext* context = token ? token->context : nullptr;
+        if (!context || registry.find(context) == registry.end()) continue;
+        std::lock_guard<std::mutex> lock(context->mutex);
+        if (context->pendingTokens) --context->pendingTokens;
+        ++context->status.dropped;
+        context->condition.notify_all();
+    }
+}
+
+LKG_EXPORT int32_t lkg_worker_close_all(void) {
+    {
+        std::lock_guard<std::mutex> registryLock(registryMutex);
+        for (WorkerContext* context : registry) {
+            if (!context) continue;
+            std::lock_guard<std::mutex> lock(context->mutex);
+            context->closeRequested.store(true, std::memory_order_release);
+            if (context->status.state == LKG_WORKER_CONNECTING || context->status.state == LKG_WORKER_READY)
+                context->status.state = LKG_WORKER_CLOSING;
+            context->condition.notify_all();
+        }
+    }
+    RetireUnclaimedTokens();
+    return 0;
+}
+
+LKG_EXPORT uint32_t lkg_worker_pending_count(void) {
+    uint32_t pending = 0;
+    std::lock_guard<std::mutex> registryLock(registryMutex);
+    for (WorkerContext* context : registry) {
+        if (!context) continue;
+        std::lock_guard<std::mutex> lock(context->mutex);
+        const bool closing = context->closeRequested.load(std::memory_order_acquire) ||
+            context->status.state == LKG_WORKER_CLOSING || context->status.state == LKG_WORKER_CLOSED ||
+            context->status.state == LKG_WORKER_FAULT;
+        if (closing) ++pending;
+    }
+    return pending;
+}
+
+LKG_EXPORT int32_t lkg_worker_collect_closed(void) {
+    std::vector<WorkerContext*> reclaim;
+    {
+        std::lock_guard<std::mutex> registryLock(registryMutex);
+        for (auto it = registry.begin(); it != registry.end();) {
+            WorkerContext* context = *it;
+            bool finished = false;
+            bool idleHost = true;
+            {
+                std::lock_guard<std::mutex> lock(context->mutex);
+                finished = context->finished.load(std::memory_order_acquire) && context->pendingTokens == 0 && context->jobCount == 0 && !context->inFlightJob;
+            }
+            if (context->hosted) {
+                WorkerHost* host = nullptr;
+                {
+                    std::lock_guard<std::mutex> hostLock(hostRegistryMutex);
+                    host = persistentHost;
+                }
+                if (host) {
+                    std::lock_guard<std::mutex> hostLock(host->mutex);
+                    idleHost = host->active != context && host->queued != context;
+                }
+            }
+            if (finished && idleHost) {
+                reclaim.push_back(context);
+                it = registry.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+    for (WorkerContext* context : reclaim) {
+        if (context->thread.joinable()) context->thread.join();
+#if defined(_WIN32)
+        if (context->moduleReference) FreeLibrary(context->moduleReference);
+#endif
+        delete context;
+    }
+    return static_cast<int32_t>(reclaim.size());
 }
 
 LKG_EXPORT void* lkg_worker_render_event_func(void) {

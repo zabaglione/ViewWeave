@@ -1,61 +1,54 @@
 # Getting started
 
-このprivate repositoryからUnity Package Managerで取得するにはGitHubへのアクセス権が必要です。独自コードのライセンスは[Apache-2.0](../LICENSE)です。
+この手順はUnity 6000.6.4f1、Windows、URPまたはHDRPを対象にします。Looking Glassへの出力にはWindowsのLooking Glass Bridge runtimeと接続済みの機器が必要です。
 
-この手順はUnity 6000.6.4f1のWindowsプロジェクトを対象にします。URPまたはHDRPのpackageを1つ選び、Looking Glass Bridge runtimeを使ってWindows D3D11 Playerを作ります。
+## Package Managerから追加する
 
-## 1. packageをGit URLから追加する
+1. Unity HubでURPまたはHDRPテンプレートからプロジェクトを作成し、Unity Editorで開きます。
+2. GitHub private repositoryへアクセスできるようGit Credential ManagerまたはSSHを設定します。認証tokenをGit URLに埋め込まないでください。
+3. `Window > Package Management > Package Manager`を開き、`+ > Install package from git URL`を選びます。
+4. 次のいずれか一つを追加します。
+   - URP: `https://github.com/zabaglione/ViewWeave.git?path=/Distribution/urp#main`
+   - HDRP: `https://github.com/zabaglione/ViewWeave.git?path=/Distribution/hdrp#main`
+5. 配布packageにCore、Bridge、選択したpipelineが含まれるため、別のViewWeave packageは追加しません。Samplesは任意です。Package ManagerのSamplesからImportするまでAssetsへ入りません。
 
-1. Unity HubでURPまたはHDRPの空プロジェクトを作成し、Unity Editorで開きます。
-2. GitHub private repositoryを読めるGit Credential Managerを設定します。SSHを使う場合はSSH鍵をGitHubへ登録してください。認証tokenをURLへ埋め込まないでください。
-3. `Window > Package Management > Package Manager`の`+ > Install package from git URL`を選びます。
-4. HTTPSではURPに`https://github.com/zabaglione/ViewWeave.git?path=/Distribution/urp#main`、HDRPに`https://github.com/zabaglione/ViewWeave.git?path=/Distribution/hdrp#main`を入力します。SSHではURPに`ssh://git@github.com/zabaglione/ViewWeave.git?path=/Distribution/urp#main`、HDRPに`ssh://git@github.com/zabaglione/ViewWeave.git?path=/Distribution/hdrp#main`を入力します。
-5. 配布packageにCore、Bridge、選択したpipelineが含まれるため、別packageを追加しません。付属sampleを使う場合だけ、Package Managerの`Samples`からURPでは`Windows URP Lit`、HDRPでは`Windows HDRP Lit`を明示的にImportします。Samplesは自動的にAssetsへimportされません。自分のsceneを使う場合はsampleのImportは不要です。
+同じprojectにURP版とHDRP版を同時に追加しないでください。Git URLの`#main`を更新する際にPackage Manager cacheが残る場合は、Removeしてから同じURLを再Addするか、特定commit hashをrefに指定します。
 
-Package ManagerではURP版を`ViewWeave for Looking Glass - URP (Unofficial)`、HDRP版を`ViewWeave for Looking Glass - HDRP (Unofficial)`として表示します。
+## 既存のCubeやBoxを表示する
 
-URPとHDRPの配布packageは同じprojectへ同時に追加せず、projectのpipelineに合う方を1つ選びます。`#main`を使うGit packageはPackage Managerのcacheが残ることがあるため、更新を確認するときは一度Removeしてから同じGit URLを再Addするか、検証用のcommit hashをURLのrefに指定します。
+1. UnityをWindows D3D11で起動します。Editor Play出力にもD3D11が必要です。起動引数に`-force-d3d11`を指定する方法、またはPlayer SettingsのWindows Graphics APIsでD3D11を優先してEditorを再起動する方法があります。実行中のGraphicsDeviceTypeを確認してください。
+2. WindowsへLooking Glass Bridge runtimeをインストールし、Looking Glassを接続します。
+3. 通常のCubeやBoxをシーンに置き、標準のURP/HDRP materialとlightを使います。CubeへViewWeave componentを追加する必要はありません。
+4. Rig作成前に被写体のRendererを選択してから`GameObject > ViewWeave > Bridge Rig`を実行します。作成される専用cameraはMainCameraの位置、rotation、FOV、near/far、culling maskを引き継ぎます。選択Renderer中心がMainCameraのnear/far範囲内かつ正面にある場合、その正のcamera forward距離をQuiltRendererのzero-parallax距離`cameraDistance`に設定します。範囲外、背面、Renderer未選択なら10mです。MainCameraがない場合は既定Rig位置を保ち、3mにします。
+5. Rendererを選択せず作成した場合、MainCameraがあればzero-parallax距離は10mです。MainCameraがない場合はRigの既定位置を維持し、距離は3mです。必要に応じてRigのcameraDistanceをInspectorで調整します。
+6. Rigのあるsceneを保存し、Unity EditorのPlayを押します。Bridge接続後、Bridge profileに応じたQuiltがLooking Glassへ送られます。EditorのGame viewは通常のMainCamera表示のままです。
 
-## 2. Windows D3D11 Player
+EditorがD3D12で起動している場合は、Player SettingsのGraphics APIsを変更してUnity Editorを再起動するか、`-force-d3d11`でEditorを起動してください。Edit Mode、macOS、D3D12ではBridge出力しません。Windows Playerで確認する場合はWindows向けGraphics APIsでD3D11を選び、Build and Runします。
 
-1. Bridge runtimeをWindowsへインストールします。Bridge codeは配布packageに含まれます。
-2. 付属sampleを使う場合だけ、Package Managerから使用するpipelineのWindows sampleをImportします。自分のsceneを使う場合はsampleのImport、generatorの追加、個別のobject scriptは不要です。
-3. `GameObject > ViewWeave > Bridge Rig`を作成します。専用Camera、`QuiltRenderer`、`ViewWeaveRig`、`BridgeWorkerQuiltOutput`、`ViewWeaveBridgeSession`、pipeline adapterが作成されます。
-4. 既存のCubeやmeshを通常のURPまたはHDRP materialとlightで配置し、Bridge Rigのsource Cameraのframing、culling mask、near/far clipに含めます。例えばCubeを`(0, 0, 0)`、Rigを`(0, 0, -3)`、Rigのrotationを`(0, 0, 0)`に置き、`QuiltRenderer`の`cameraDistance`を`3`から調整します。view aspect、quilt解像度、gridはBridgeのprofileを使います。
-5. URPならsampleを使う場合だけ`BridgeUrpLitSampleGenerator`をRigへAdd Componentします。HDRPなら`BridgeHdrpLitSampleGenerator`を使う場合だけ追加します。HDRPまたはVFX Graphを使う場合は、Build操作の前にColor SpaceをLinearに設定してください。HDRPでは固定Exposureを設定してください。sample使用時はgeneratorが固定Exposureを設定します。
-6. Rigを置いたsceneを`File > Save As...`でAssetsへ保存します。
-7. `File > Build Profiles`を開き、Windows profileのScene Listへ保存したsceneを追加します。`Player Settings > Other Settings`でGraphics APIs for Windowsの自動選択を無効にし、Direct3D11を先頭にします。Playerが非フォーカスでも描画を続けるため`Run In Background`は常時有効を推奨します。
-8. `Build and Run`を実行します。自分のsceneではgeneratorは不要です。Playerの画面でQuilt表示を確認します。Bridge runtimeが自動検出されない場合だけ、Sessionの`Runtime Path`へDLLの絶対パスを設定します。
+## HDRPテンプレート
 
-URP sampleは赤い立方体、緑の球、ライトを生成します。HDRP sampleはHDRP Lit条件と固定Exposureを使います。Editorの`Generate Lit Scene`は生成sceneの確認用で、EditorからBridgeへ接続しません。
+HDRPはLinear color spaceが必須です。`Project Settings > Player > Other Settings > Color Space`でLinearを選んでください。HDRPのquilt描画には専用adapterが働き、既定でquilt viewを妨げる一部temporal効果を一時的に抑えます。HDRP Auto Exposureは全view共通のFixed EV 12に変換されます。元のExposureがFixedならその値を保ちます。元のMainCamera、Volume Profile、Project Settingsは変更しません。通常Fog、Sky、Bloomなどは維持されます。
 
-Unity EditorのPlayでは現状実機表示を確認できません。Windows D3D11 Playerを`Build and Run`して確認してください。
+VFX Graphを使う場合もLinear color spaceにします。HDRP adapterの制約は[Compatibility](compatibility.md)を参照してください。
 
-## 3. sample materialの修復
+## 任意のSamplesをImportする
 
-material resourceが見つからない場合だけ、次のEditor menuを使います。
+確認用オブジェクトをgeneratorで作る場合だけ、Package ManagerでViewWeave packageを選び、Samples欄からpipelineに合うものをImportします。この操作はsceneをAssetsへコピーせず、generatorとmaterial resourceをImportします。
 
-- `ViewWeave/Samples/Windows URP Lit/Create Material Resource`
-- `ViewWeave/Samples/Windows HDRP Lit/Create Material Resource`
+1. シーンに`GameObject > ViewWeave > Bridge Rig`を作成します。
+2. RigにURPなら`BridgeUrpLitSampleGenerator`、HDRPなら`BridgeHdrpLitSampleGenerator`をAdd Componentします。
+3. Inspectorの`Generate On Start`を有効にしてPlayすると、起動時に確認用のCube、sphere、lightが生成されます。手動で作成する場合は、generatorのInspectorメニューから`Generate Lit Scene`を実行します。
+4. Bridge出力を確認するにはWindows D3D11でPlayします。HDRPはLinear color spaceが必要です。HDRP adapterと色空間の説明は上記[HDRPテンプレート](#hdrpテンプレート)を参照してください。
 
-その後、generatorの`Generate Lit Scene`を再実行します。
+標準Cubeや自分のsceneを表示するときはSamplesのImportもgeneratorも必要ありません。
 
-## 4. テストプロジェクト
+## Player build
 
-repository rootで`python tools/prepare_sample_tests.py`を実行してから、Unity Hubの`Add`で`Tests/Pipelines/Unity`を開きます。このコマンドはignoredなBridge sample copyだけを作成します。Editorで`Window > General > Test Runner > PlayMode > Run All`を実行します。Build Settingsには固定sceneを登録していません。PlayMode fixtureは実行時にsceneを作成して終了時に破棄します。Run Allには既知のVFX compatibility未通過条件が含まれます。
+1. sceneを保存します。
+2. `File > Build Profiles`でWindows profileにsceneを追加します。
+3. Windows Graphics APIsでDirect3D11を有効にし、必要なら自動選択を無効にします。
+4. `Build and Run`します。Bridge runtimeが自動検出されない場合だけ、Bridge SessionのRuntime Pathに`bridge_inproc.dll`の絶対パスを指定します。
 
-Player用のgenerated sceneはEditor methodから作成します。
+## テストプロジェクト
 
-- `ViewWeave.BridgeWorkerValidation.Editor.BridgeWorkerValidationBuilder.Build`: `Assets/BridgeWorkerValidationGenerated/BridgeWorkerValidation.unity`
-- `ViewWeave.BridgeWorkerValidation.Editor.BridgeWorkerValidationBuilder.BuildDemo`: `Assets/BridgeWorkerValidationGenerated/ViewWeaveDemo.unity`
-- `ViewWeave.SamplePlayerValidation.Editor.SamplePlayerValidationBuilder.BuildUrp`または`BuildHdrp`: `Assets/SamplePlayerValidationGenerated/SamplePlayerValidation.unity`
-- `ViewWeave.PlayerValidation.Editor.PlayerValidationBuilder.Build`: `Assets/PlayerValidationGenerated/PlayerValidation.unity`
-
-これらはBuild用の一時sceneです。Projectウィンドウから手動で編集するsceneとして扱いません。
-
-## 次に読む資料
-
-- [Windows validation](windows-validation.md): 実行コマンド、結果、未検証範囲
-- [Compatibility](compatibility.md): pipelineと機能の対応表
-- [VFX Graph](vfx-graph.md): URP driverとHDRP診断条件
-- [Pipeline smoke tests](../Tests/Pipelines/README.md): Editor testとgenerated sceneの入口
+repository rootで`python tools/prepare_sample_tests.py`を実行してから、Unity Hubの`Add`で`Tests/Pipelines/Unity`を開きます。GPUを使うfixtureが含まれます。Editorで`Window > General > Test Runner`から対象testを実行します。既知の未通過条件と試験結果は[Windows validation](windows-validation.md)を参照してください。

@@ -45,12 +45,7 @@ namespace ViewWeave
 
         void Awake()
         {
-            rig = GetComponent<ViewWeaveRig>();
-            output = GetComponent<BridgeWorkerQuiltOutput>();
-            output.initializeOnEnable = false;
-            output.applicationName = applicationName;
-            output.displayOrdinal = displayOrdinal;
-            rig.SetOutput(output);
+            ResolveDependencies();
             State = SessionState.Idle;
             LastError = string.Empty;
             initialized = true;
@@ -62,7 +57,24 @@ namespace ViewWeave
 
         void OnEnable()
         {
-            if (initialized && startOnEnable) pendingStart = true;
+            ResolveDependencies();
+            if (startOnEnable) pendingStart = true;
+        }
+
+        void ResolveDependencies()
+        {
+            if (rig == null) rig = GetComponent<ViewWeaveRig>();
+            if (output == null) output = GetComponent<BridgeWorkerQuiltOutput>();
+            if (output == null || rig == null)
+            {
+                initialized = false;
+                return;
+            }
+            output.initializeOnEnable = false;
+            output.applicationName = applicationName;
+            output.displayOrdinal = displayOrdinal;
+            rig.SetOutput(output);
+            initialized = true;
         }
 
         void Start()
@@ -73,7 +85,7 @@ namespace ViewWeave
         void Update()
         {
             if (output == null) return;
-            if (pendingStart && isActiveAndEnabled && State == SessionState.Idle)
+            if (pendingStart && isActiveAndEnabled && State == SessionState.Idle && !BridgeWorkerLifecycle.RecoveryPending && BridgeWorkerQuiltOutput.ShutdownPendingCount == 0)
             {
                 pendingStart = false;
                 StartSession();
@@ -186,10 +198,8 @@ namespace ViewWeave
             {
                 return Fail("Bridge worker shutdown is still pending");
             }
-            if (Application.isEditor)
-            {
-                return Fail("Bridge worker is supported in Windows Player only");
-            }
+            if (Application.isEditor && (!Application.isPlaying || BridgeWorkerLifecycle.RecoveryPending))
+                return Fail("Bridge worker requires Windows D3D11 Play mode in the Editor");
             if (!ValidateRig()) return false;
             rig.Renderer.ResetAutoRenderError();
             if (!ResolveRuntimePath(out string resolvedPath)) return false;

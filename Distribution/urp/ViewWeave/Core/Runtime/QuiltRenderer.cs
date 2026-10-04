@@ -85,6 +85,7 @@ namespace ViewWeave
             previousActive = RenderTexture.active;
             CameraState state = default;
             bool stateCaptured = false;
+            IDisposable quiltPreparation = null;
             try
             {
                 QuiltLayout layout = settings.GetLayout();
@@ -100,6 +101,8 @@ namespace ViewWeave
                 }
                 long totalStart = Stopwatch.GetTimestamp();
                 sourceCamera.enabled = false;
+                IQuiltRenderPreparation preparation = RenderGuard as IQuiltRenderPreparation;
+                if (preparation != null) quiltPreparation = preparation.PrepareQuilt(sourceCamera);
                 for (int i = 0; i < layout.ViewCount; ++i)
                 {
                     long viewStart = Stopwatch.GetTimestamp();
@@ -122,9 +125,16 @@ namespace ViewWeave
             }
             finally
             {
-                if (stateCaptured) state.Restore(sourceCamera);
-                RenderTexture.active = previousActive;
-                IsRendering = false;
+                try
+                {
+                    if (quiltPreparation != null) quiltPreparation.Dispose();
+                }
+                finally
+                {
+                    if (stateCaptured) state.Restore(sourceCamera);
+                    RenderTexture.active = previousActive;
+                    IsRendering = false;
+                }
             }
         }
 

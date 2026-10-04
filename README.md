@@ -1,75 +1,43 @@
 # ViewWeave
 
-Looking Glass向けの非公式Unity SDKです。専用のQuilt RenderTextureへ複数視点を描画し、Windows D3D11 PlayerからLooking Glass Bridge runtimeへ出力します。
+Looking Glass向けの非公式Unity SDKです。URPまたはHDRPの通常のシーンを複数視点で描画し、Windows上のLooking Glass Bridge runtimeへ送ります。
 
-対象環境はUnity 6000.6.4f1、Windows、URPまたはHDRPです。実機表示には別途Looking Glass Bridge runtimeが必要です。macOS、D3D12 Bridge出力、複数機器の自動運用は対象外です。
+対応環境はUnity 6000.6.4f1、Windows、URPまたはHDRP、D3D11です。Bridge runtimeとLooking Glass機器を別途用意してください。Windows D3D11のUnity Editor PlayとWindows D3D11 Playerで出力できます。Edit Mode、D3D12、macOS出力は対象外です。
 
-このprivate repositoryからUnity Package Managerで取得するにはGitHubのアクセス権が必要です。独自コードのライセンスは[Apache-2.0](LICENSE)です。実機表示にはWindowsのLooking Glass Bridge runtimeが必要です。
+このprivate repositoryからPackage Managerで取得するにはGitHubのアクセス権が必要です。独自コードのライセンスは[Apache-2.0](LICENSE)です。
 
-## まず選ぶ使い方
+## 使い始める
 
-| 目的 | 必要なpackage | 入口 | 結果 |
-| --- | --- | --- | --- |
-| URPで実機表示 | URP package | `GameObject/ViewWeave/Bridge Rig` + `BridgeUrpLitSampleGenerator` | Windows D3D11 Playerで赤い立方体と緑の球 |
-| HDRPで実機表示 | HDRP package | `GameObject/ViewWeave/Bridge Rig` + `BridgeHdrpLitSampleGenerator` | Windows D3D11 PlayerでHDRP Lit scene |
+1. Unity HubでUnity 6000.6.4f1のURPまたはHDRPテンプレートからプロジェクトを作り、Unity Editorで開きます。
+2. `Window > Package Management > Package Manager`の`+ > Install package from git URL`を選び、利用するpipelineのURLを追加します。
+   - URP: `https://github.com/zabaglione/ViewWeave.git?path=/Distribution/urp#main`
+   - HDRP: `https://github.com/zabaglione/ViewWeave.git?path=/Distribution/hdrp#main`
+3. 配布packageにはCore、Bridge、選択したpipelineが含まれます。追加のViewWeave packageは不要です。Package ManagerのSamplesは任意で、ImportするまでAssetsへ入りません。標準Cubeから試す場合はImport不要です。
+4. WindowsへLooking Glass Bridge runtimeをインストールして、対象機器を接続します。
+5. シーンに通常のCubeまたはBoxを置き、必要なmaterialとlightを設定します。特別なobject scriptやgeneratorは不要です。
+6. メニューから`GameObject > ViewWeave > Bridge Rig`を作成します。新しいRigはMainCameraの位置、向き、FOV、near/far、culling maskを引き継ぎます。Rig作成前に選択していたRendererの中心がMainCameraのnear/far範囲内かつ正面にあれば、その正のforward距離をzero-parallax距離にします。範囲外、背面、選択Rendererなしの場合は10m、MainCameraがない場合は3mです。
+7. HDRPではPlayer SettingsのColor SpaceをLinearにします。HDRP adapterは既定でquilt描画中の一時的な調整を行います。通常のMainCameraやVolume設定は変更しません。詳細は[Getting started](docs/getting-started.md)を参照してください。
+8. Editorから表示するには、Editor自体をD3D11で起動してからPlayします。起動引数`-force-d3d11`を使うか、Player SettingsのWindows Graphics APIsをD3D11優先にしてEditorを再起動してください。実際のAPIはGraphicsDeviceTypeで確認できます。D3D12やEdit ModeではBridge出力しません。
 
-## packageをGit URLから追加する
+Windows Playerで使う場合は、Windows Graphics APIsでD3D11を有効にしてBuild and Runします。Bridge runtimeが自動検出されない場合だけ、RigのSessionにRuntime Pathを設定します。
 
-1. Unity HubでUnity 6000.6.4f1の空のURPまたはHDRPプロジェクトを作成し、Unity Editorで開きます。
-2. GitHub private repositoryを読めるアカウントでGit Credential Managerを設定します。SSHを使う場合はSSH鍵とGitHubへの登録を済ませてください。認証tokenをURLへ埋め込まないでください。
-3. `Window > Package Management > Package Manager`を開き、左上の`+`から`Install package from git URL`を選びます。
-4. HTTPSを使う場合、URPは`https://github.com/zabaglione/ViewWeave.git?path=/Distribution/urp#main`、HDRPは`https://github.com/zabaglione/ViewWeave.git?path=/Distribution/hdrp#main`を入力します。SSHの場合は、それぞれ`ssh://git@github.com/zabaglione/ViewWeave.git?path=/Distribution/urp#main`、`ssh://git@github.com/zabaglione/ViewWeave.git?path=/Distribution/hdrp#main`を使います。
-5. 配布packageはCore、Bridge、選択したpipelineを含むため、別のCore/Bridge packageを追加しないでください。付属sampleを使う場合だけ、Package Managerの`Samples`から目的のWindows sampleを`Import`します。Samplesは自動的にAssetsへimportされません。自分のsceneを使う場合はsampleのImportは不要です。
+## 任意のサンプル
 
-Package ManagerではURP版を`ViewWeave for Looking Glass - URP (Unofficial)`、HDRP版を`ViewWeave for Looking Glass - HDRP (Unofficial)`として表示します。
+付属の`Windows URP Lit`と`Windows HDRP Lit`はPackage ManagerのViewWeave package詳細にあるSamplesから明示的にImportできます。Import後、既存のBridge RigへURPなら`BridgeUrpLitSampleGenerator`、HDRPなら`BridgeHdrpLitSampleGenerator`をAdd Componentし、`Generate On Start`を有効にするかInspectorの`Generate Lit Scene`を実行します。詳しくは[サンプル手順](docs/getting-started.md#任意のsamplesをimportする)を参照してください。packageを追加しただけではサンプルがAssetsへコピーされません。
 
-URPとHDRPの配布packageは同じprojectへ同時に追加せず、projectのpipelineに合う方を1つ選びます。`#main`を使うGit packageは、同じURLの再取得時にPackage Managerのcacheが残ることがあります。更新を確認するときはPackage Managerで一度Removeしてから同じGit URLを再Addするか、検証用のcommit hashをURLのrefに指定してください。
+## HDRPと色空間
 
-この手順はローカルディスク上の`package.json`を選ぶ方法を使いません。開発者がsource packageを検証する場合だけ、`Tests/`のmanifestにあるローカル参照を使います。
+HDRPとVFX GraphはLinear color spaceが必須です。HDRP adapterはquiltの描画中だけMotion Blur、SSR、SSGI、volumetric fog、volumetric cloudsを抑え、TAAを一時停止します。Auto Exposureは全quilt viewで同じFixed EV 12にし、元のVolume stackがFixedならそのEVを保ちます。通常のFog、Sky、Bloomなどは維持されます。HDRP adapterの詳細と制約は[Compatibility](docs/compatibility.md)を参照してください。
 
-VFX Graphを使う場合はLinear color spaceを設定してください。HDRPもLinear color spaceと固定Exposureを必要とします。URPのMSAAはGamma/Linearの限定試験を実施しています。範囲と結果は[Windows validation](docs/windows-validation.md)を参照してください。
+## テストプロジェクト
 
-## Windows D3D11 Playerで実機表示する
+テスト環境の準備は[Tests/Pipelines/README.md](Tests/Pipelines/README.md)、実行方法は[Getting startedのテストプロジェクト](docs/getting-started.md#テストプロジェクト)を参照してください。
 
-1. URPまたはHDRPの配布packageを追加したプロジェクトへ、Looking Glass Bridge runtimeをWindowsへインストールします。Bridge codeは配布packageに含まれます。
-2. 付属sampleを使う場合だけ、Package Managerの`Samples`から使用するpipelineのWindows sampleを明示的に`Import`します。自分のsceneを使う場合はsampleのImport、generatorの追加、個別のobject scriptは不要です。
-3. `GameObject > ViewWeave > Bridge Rig`を作成します。専用Camera、`QuiltRenderer`、`ViewWeaveRig`、`BridgeWorkerQuiltOutput`、`ViewWeaveBridgeSession`、対応adapterが同じGameObjectに作成されます。
-4. 付属sampleを使う場合だけ、URPなら`BridgeUrpLitSampleGenerator`、HDRPなら`BridgeHdrpLitSampleGenerator`を同じRigへAdd Componentし、`Generate On Start`を有効にします。自分のsceneではgeneratorを追加しません。
-5. Rigを配置したシーンを`File > Save As...`でAssetsへ保存します。
-6. `File > Build Profiles`を開き、Windows profileのScene Listへ保存したsceneを追加します。`Player Settings > Other Settings`でGraphics APIs for Windowsの自動選択を無効にし、Direct3D11を先頭にします。Playerが非フォーカスでも描画を続けるため`Run In Background`は常時有効を推奨します。
-7. `Build and Run`を実行します。通常はBridge runtimeを自動検出します。検出できない場合だけSessionの`Runtime Path`へDLLの絶対パスを設定します。
+## 検証資料
 
-URP sampleは赤い立方体、緑の球、ライトを生成します。HDRP sampleも基本形状に加えて固定ExposureとHDRPの制約設定を生成します。Editorの`Generate Lit Scene`は生成物確認用で、EditorからBridgeへ接続する操作ではありません。
-
-### 自分のsceneのCubeやmeshを表示する
-
-既存のCube、Box、meshを通常のURPまたはHDRP materialとlightで配置し、Bridge Rigのsource Cameraから見える位置、culling mask、near/far clipに含めます。各objectへViewWeave専用のscriptを追加したり、sample generatorを使ったりする必要はありません。通常のscene描画がQuiltの各viewへ使われます。
-
-例えばCubeを`(0, 0, 0)`、Bridge Rigを`(0, 0, -3)`、Rigのrotationを`(0, 0, 0)`に置き、`QuiltRenderer`の`cameraDistance`を`3`から調整します。view aspect、quiltの解像度、gridはBridgeから供給されたprofileを使います。
-
-Unity EditorのPlayでは現状実機表示を確認できません。Windows D3D11 Playerを`Build and Run`して確認してください。
-
-## Samplesの比較
-
-| Sample | pipeline | Bridge | 生成操作 | 主な確認内容 |
-| --- | --- | --- | --- | --- |
-| `Windows URP Lit` | URP | 必要 | `BridgeUrpLitSampleGenerator > Generate Lit Scene` または`Generate On Start` | Windows D3D11 Playerの赤い立方体、緑の球、視差 |
-| `Windows HDRP Lit` | HDRP | 必要 | `BridgeHdrpLitSampleGenerator > Generate Lit Scene` または`Generate On Start` | Windows D3D11 PlayerのHDRP Lit表示 |
-
-Bridge sampleのmaterial resourceが見つからない場合は、`ViewWeave/Samples/Windows URP Lit/Create Material Resource`または`ViewWeave/Samples/Windows HDRP Lit/Create Material Resource`を実行してから再生成します。Bridge sampleのEditor生成は生成物確認用で、EditorからBridgeへ接続しません。
-
-## テストプロジェクトを開く
-
-repository rootで`python tools/prepare_sample_tests.py`を実行してから、Unity Hubの`Add`で`Tests/Pipelines/Unity`を開きます。GPUを使うfixtureが含まれるため、GPUのあるWindows環境で実行します。Editorで`Window > General > Test Runner`を開き、`PlayMode`タブの`Run All`を実行してください。Run Allには既知のVFX compatibility未通過条件が含まれます。
-
-このテストプロジェクトのBuild Settingsには固定のtest sceneを登録していません。通常のPlayModeテストは実行時にfixture sceneを作成し、終了時に破棄します。
-
-Player確認用のgenerated scene入口とTest Runnerの対象は[Pipeline smoke tests](Tests/Pipelines/README.md)にまとめています。詳細な結果と未検証範囲は[Windows validation](docs/windows-validation.md)、対応表は[compatibility](docs/compatibility.md)、導入補足は[getting started](docs/getting-started.md)を参照してください。
-
-## 知っておく制約
-
-- URPはBase cameraを使います。camera stack、一般的なtemporal history、VFX全体の対応は保証しません。
-- HDRPはLinear color spaceと固定Exposureを使います。VFX Graphを使う場合もLinear color spaceを設定します。詳細は[VFX Graph guide](docs/vfx-graph.md)を参照してください。
-- 実機の視点番号、奥行き、画質は限定条件で確認済みです。全視点と全視域の網羅的な光学確認は未実施です。
-
-公式SDKとの関係、ライセンス、詳細な制約は[compatibility](docs/compatibility.md)と[third-party notices](docs/THIRD_PARTY_NOTICES.md)を参照してください。
+- [Getting started](docs/getting-started.md): Editor PlayとPlayerの手順
+- [Compatibility](docs/compatibility.md): 対応条件と既知の制約
+- [Windows validation](docs/windows-validation.md): 実行済み試験と結果
+- [Unity feature coverage](docs/unity-feature-coverage.md): Unity機能ごとの確認範囲
+- [VFX Graph](docs/vfx-graph.md): VFX Graph利用時の条件
+- [Third-party notices](docs/THIRD_PARTY_NOTICES.md): 外部ライセンス

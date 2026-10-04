@@ -1,6 +1,6 @@
 # Compatibility matrix
 
-現状はUnity 6000.6.4f1、Windows、D3D11での結果です。対応予定は未実装です。公式APIのsource互換は保証しません。
+対象はUnity 6000.6.4f1、Windows、URPまたはHDRP、D3D11です。Bridge出力はWindows D3D11 Editor PlayとWindows D3D11 Playerで利用できます。Edit Mode、D3D12、macOS出力は対象外です。公式APIのsource互換は保証しません。
 
 品質変更は転送を静止させ、同一host・windowで資源を再設定してから自動描画へ復帰します。明示的な`StopSession()`/`StartSession()`は独立した再起動手段です。
 
@@ -27,16 +27,16 @@ VFX GraphはLinear color spaceが必須です。Unity Visual Effect Graph 17.6�
 | Quilt / off-axis | Coreで実装、single CameraをN回描画 | 高解像度profileとRig |
 | profile / quality / hotplug / 複数機器 | Preview/Balanced/NativeとGRD ON/OFFの6条件、48 view Playerを確認。hotplug、複数機器、Registryの一般運用は未検証 | profile由来の自動選択、hotplug、複数機器を再現可能にする |
 | depthiness / frustum / gizmo / camera conversion | Quilt mathとcamera変換の一部のみ | 統合RigとEditor操作を検証 |
-| Editor preview / offline display | 製品向けEditor previewとoffline displayは提供しない。Bridge接続のWindows D3D11 Playerを対象 | offline display経路を定義 |
+| Editor / offline display | Windows D3D11 Editor PlayからBridgeへ出力可能。Edit Modeとoffline displayは提供しない | Editor Playの起動停止、再Play、reload時の終了処理を検証 |
 | still capture / video / quilt layer / RGBD | 未実装または未検証 | 保存形式、録画、RGBDの受入試験 |
 | 3D cursor / orbit / buttons | 未検証 | 入力と機器差を検証 |
 | URP | Unity 6000.6.4f1、SRP 17.6、D3D11でLit/Bloom smoke。Base cameraのみ、stackは拒否。M3の8 fixtureを確認済み | 残る視点別効果を個別に検証 |
-| HDRP | Linear/fixed Exposure条件でLit/Bloom smoke。volumetric fog、SSR、SSGI、cloudは拒否 | M3で対応範囲を定義 |
+| HDRP | Linear必須。quilt view中はadapter既定設定でMotion Blur、SSR、SSGI、volumetric fog/cloudを一時抑制。Auto Exposureは全view共通Fixed EV 12、元がFixedならその値を保持。通常Fog/Sky/Bloomと元設定は維持 | HDRP標準templateのCubeとEditor Playで起動・再起動を確認 |
 | Built-in / Unity graphics | 製品サポート対象外。CoreはStandard RenderRequest経路を要求 | 対象外として扱う |
 | Bridge | Windows D3D11 Direct実機確認。Worker通常threadは同一プロセス再接続、各120 draw、終了保留0、host thread再利用、48 view非空画像と視差・移動を確認。2026-10-04の限定実機確認で奥行き・画質は良好、番号付きデモをユーザーが暫定受入。全視点・全視域の網羅的な光学検証は未実施。配布署名、hotplug、複数機器、Metalは未検証 | 配布署名、Windows/macOS実機、hotplug、複数機器を段階検証 |
 | Bloom / Tonemapping / Color Adjustments | Lit/Bloom smokeのみ確認 | per-view処理とtile seamを検証 |
-| TAA / temporal / Auto Exposure | TAAは一時停止、履歴独立は未検証 | 履歴とメモリを別研究 |
-| Motion Blur / SSR / SSGI / fog / cloud | 現状経路では拒否 | fallbackと条件を検証 |
+| TAA / temporal / Auto Exposure | TAAはquilt view中のみ停止して復元。HDRP Auto Exposureはquilt全view共通Fixed exposureへ一時変換。一般的なview別履歴分離は未検証 | temporal履歴の独立は別研究 |
+| HDRP Motion Blur / SSR / SSGI / volumetric fog / clouds | adapter既定の一時overrideでquilt view中のみ抑制。通常render scopeでは元stackの設定を使う | 別のtemporal効果や複雑なVolume構成は個別検証 |
 | AA: FXAA / SMAA / MSAA | FXAA/SMAAは追加fixtureで8視点の差分を確認。URP MSAA 1/1で4x view RT、1x resolve、resize/disable lifecycle、中心色一致を確認。追加のLinear境界試験10/10で、このRTX GPUの2x/4x/8x対応倍率、pipeline 1x、allowMSAA無効、Deferred fallback、中心色一致と対応MSAAのedge差分を確認。Gamma側のtargeted MSAA 7件も通過したが、専用MSAA Playerは未実施。性能は未検証 | MSAAの一般素材、Player、性能を測定 |
 | Particles | M3のLit/Unlit表示fixtureを確認。一般的な粒子機能全体は未確定 | simulation once/frame、billboard、sort、culling、soft depthを検証 |
 | VFX | URP driver 5/5は通過。最終D3D11のVFX compatibilityは19件中5件通過、14件未通過。別実行のVFX matrixは20件中5件通過、15件未通過。HDRP primingは1件未通過。VFX GraphはLinear必須で、URP Gammaはdriverがresource生成前に拒否する。未通過条件では十分な全tileの効果を確認できず、HDRP driverは提供しない | 補助Camera条件、透明処理、sort、公式4資料の追加設定を検証 |

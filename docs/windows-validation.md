@@ -1,10 +1,14 @@
 # Windows validation status
 
-This document records the current Windows validation boundary. The 123-test D3D11 PlayMode run predates the current VFX color-space guard; current targeted results and experimental failures are listed separately.
+This document records the current Windows validation boundary. The 123-test D3D11 PlayMode run predates the current VFX color-space guard and the Editor Play / HDRP template adaptations; historical results remain labeled separately from current work.
 
 ## Confirmed
 
-- Target environment: Unity 6000.6.4f1, Windows D3D11.
+- Target environment: Unity 6000.6.4f1, Windows, URP or HDRP, D3D11. Bridge output is supported in Windows D3D11 Editor Play and Windows D3D11 Player. Edit Mode, D3D12 Bridge output, and macOS output are outside scope. The Unity Editor itself must be running D3D11; its active API should be checked through `GraphicsDeviceType`.
+- The current Bridge Editor route includes lifecycle cleanup for Play exit, assembly reload, and Editor quit. End-to-end Editor Play/replay, reload, and hardware output results are pending and are not claimed here.
+- HDRP requires Linear color space. With the default adapter option enabled, quilt rendering temporarily suppresses Motion Blur, SSR, SSGI, volumetric fog, and volumetric clouds; TAA is temporarily disabled. HDRP Auto Exposure is made consistent across views at Fixed EV 12 by default, while an existing Fixed EV is preserved. Normal Fog, Sky, Bloom, the original MainCamera, Volume Profiles, and Project Settings are intended to remain unchanged. This behavior is implemented but the final standard-template/user-project verification is pending.
+- Standard URP/HDRP Lit objects such as Cube and Box require no sample import or object-specific script. The optional Package Manager samples provide generator components only; they do not include a ready-made scene. Import and generator steps are in [Getting started](getting-started.md#任意のsamplesをimportする).
+- Native worker transport test: 323 draw cases passed, including close-all, ID-token ABA, late callback, finished-pending, and active-job coverage. Production shim build succeeded. The real Unity Bridge Rig menu validation passed. These results do not establish Editor rendering, HDRP template output, or hardware image quality.
 - Native transport loader lifecycle: 100-cycle test passed.
 - Native legacy close-handle cleanup: removed from the current transport path.
 - Native DLL provenance: synchronized with the current bridge shim.
@@ -19,12 +23,14 @@ This document records the current Windows validation boundary. The 123-test D3D1
 - The first Gamma batch had one unstable MSAA result: the interior RGB absolute-difference sum was 0.960784 against a tolerance of 6/255 (0.0235294), and was followed by an 8/8 rerun at the original threshold. The cause is not established; this record does not attribute it to warmup. The additional cold Gamma pixel check passed 3/3 for 4x, 2x, and 8x in `gamma-urp-msaa-cold.xml`; it covered pixel checks only, without lifecycle or Deferred cases, and did not reproduce the initial large color difference.
 - Core/SRP D3D12 targeted validation: 28/28 passed, consisting of SRP additional 10/10 and BridgeSessionValidation 18/18. This covers Core/SRP rendering and managed Session behavior only; the production Bridge D3D12 backend remains unimplemented.
 - Native transport CTest: 3/3 passed. The loader 100-cycle result and DLL provenance checks are also recorded in native evidence.
-- Historical final D3D11 PlayMode integration before the current guard: 108/123 passed, 15 failed, 0 skipped. Session 18/18, compatibility 37/37, GRD 27/27, SRP additional 10/10, SRP extension 2/2, VFX driver 5/5, and Samples 4/4 passed. The 15 failures are one HDRP same-camera priming case and 14 VFX compatibility cases; the VFX cases did not establish sufficient all-tile effect coverage. The separate final VFX matrix has 20 cases with 5 pass and 15 fail. The clone-request diagnostic recorded 4423 changed pixels for the isolated normal-camera measurement, while the same matrix run recorded 0 for StandardRequest and its enabled-during-submit variant; an isolated rerun passed both normal and StandardRequest at 4423, so the result remains execution-history dependent.
-- Final Bridge Player smoke after the production completion watchdog: 30.01309 seconds, completed delta 1787, quality cycle true, restart 120 true, cleanup pending 0, Idle/Closed state confirmed. The run used evidence build GUID `e5a91ffb8d45456aa87aecc2fbd0112f` and native DLL SHA256 `60DA142C...`.
-- Earlier Bridge Player soak reference: 600.013836 seconds, completed delta 36082, same native DLL SHA256 `60DA142C...`, quality cycle and restart 120 passed, cleanup pending 0, closed state confirmed. This run used the pre-fix Core Player.
+- Historical final D3D11 PlayMode integration before the current VFX guard, Editor Play route, and HDRP adapter changes: 108/123 passed, 15 failed, 0 skipped. Session 18/18, compatibility 37/37, GRD 27/27, SRP additional 10/10, SRP extension 2/2, VFX driver 5/5, and Samples 4/4 passed. The 15 failures are one HDRP same-camera priming case and 14 VFX compatibility cases; the VFX cases did not establish sufficient all-tile effect coverage. The separate final VFX matrix has 20 cases with 5 pass and 15 fail. The clone-request diagnostic recorded 4423 changed pixels for the isolated normal-camera measurement, while the same matrix run recorded 0 for StandardRequest and its enabled-during-submit variant; an isolated rerun passed both normal and StandardRequest at 4423, so the result remains execution-history dependent.
+- Historical Bridge Player smoke after the production completion watchdog: 30.01309 seconds, completed delta 1787, quality cycle true, restart 120 true, cleanup pending 0, Idle/Closed state confirmed. The run used evidence build GUID `e5a91ffb8d45456aa87aecc2fbd0112f` and native DLL SHA256 `60DA142C...`; it predates the Editor Play lifecycle and current HDRP adapter work.
+- Historical Bridge Player soak reference: 600.013836 seconds, completed delta 36082, same native DLL SHA256 `60DA142C...`, quality cycle and restart 120 passed, cleanup pending 0, closed state confirmed. This run used the pre-fix Core Player and predates the current Editor Play lifecycle and HDRP adapter work.
 
 ## Remaining limits
 
+- Editor Play integration and repeat/reload cleanup, including the final managed compile and cache-free standard Cube rendering fixture. Results are pending.
+- HDRP standard-template and user-project Editor Play/Bridge display verification, including a real Cube or Box on the Looking Glass. Results are pending.
 - Physical hotplug and arbitrary hardware connection-hang fault injection, plus full device coverage.
 
 The production Bridge D3D12 backend is not implemented. Unity/Bridge D3D12 Player execution is therefore out of scope until that backend exists.

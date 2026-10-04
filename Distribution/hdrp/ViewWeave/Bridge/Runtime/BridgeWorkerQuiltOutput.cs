@@ -36,7 +36,19 @@ namespace ViewWeave
         public uint Submissions { get; private set; }
         public uint Completed => status.completed;
         public uint Dropped => status.dropped;
-        public static int ShutdownPendingCount => BridgeWorkerReaper.PendingCount;
+        public static int ShutdownPendingCount
+        {
+            get
+            {
+                int managed = BridgeWorkerReaper.PendingCount;
+                try { return Math.Max(managed, checked((int)BridgeWorkerNative.lkg_worker_pending_count())); }
+                catch (DllNotFoundException) { return managed; }
+                catch (EntryPointNotFoundException) { return managed; }
+            }
+        }
+        internal static uint NativePendingCount => BridgeWorkerNative.lkg_worker_pending_count();
+        internal static int CloseAllNativeWorkers() => BridgeWorkerNative.lkg_worker_close_all();
+        internal static int CollectClosedNativeWorkers() => BridgeWorkerNative.lkg_worker_collect_closed();
         public string TransferGraphicsFormat => transferGraphicsFormatName ?? string.Empty;
         public string TransferFormat => transferFormatName ?? string.Empty;
         public bool TransferIsSrgb => transferSrgbDiagnostic;
@@ -75,8 +87,10 @@ namespace ViewWeave
                 LastError = "Bridge worker is already active";
                 return false;
             }
-            if (Application.platform != RuntimePlatform.WindowsPlayer || Application.isEditor)
+            if (Application.platform != RuntimePlatform.WindowsPlayer && !(Application.isEditor && Application.isPlaying && Application.platform == RuntimePlatform.WindowsEditor))
                 return Fail("Bridge worker is supported in Windows Player only");
+            if (BridgeWorkerLifecycle.RecoveryPending)
+                return Fail("Bridge worker shutdown recovery is still pending");
             if (SystemInfo.graphicsDeviceType != GraphicsDeviceType.Direct3D11)
                 return Fail("Bridge worker currently supports Direct3D11 only");
             if (string.IsNullOrWhiteSpace(runtimePath))

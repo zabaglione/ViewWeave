@@ -43,5 +43,11 @@ namespace ViewWeave
         internal static extern int lkg_worker_cancel_draw_data(IntPtr drawData);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr lkg_worker_render_event_func();
+        [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern int lkg_worker_close_all();
+        [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern int lkg_worker_collect_closed();
+        [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern uint lkg_worker_pending_count();
     }
 }

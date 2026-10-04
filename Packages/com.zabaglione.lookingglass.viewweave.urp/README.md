@@ -1,15 +1,13 @@
 # ViewWeave URP
 
-ViewWeave is an independently developed, unofficial Unity SDK for Looking Glass displays and is not an official Looking Glass Factory product.
+ViewWeave is an independently developed, unofficial Unity SDK for Looking Glass displays. It is not an official Looking Glass Factory product.
 
-正式対象はUnity 6.6系のURP（SRP 17.6）です。検証環境はUnity 6000.6.4f1、Windows、D3D11です。利用者向けの性能保証や光学品質保証はありません。
+This source package is for repository development and tests. End users should install the self-contained `Distribution/urp` Git package, which bundles Core, Bridge, and URP.
 
-独自コードのライセンスは[Apache-2.0](LICENSE.md)です。Unity、Bridge、商標、第三者権利は別条件です。
+The supported environment is Unity 6000.6.4f1, URP 17.6, Windows, and D3D11. Bridge output works in Windows D3D11 Editor Play and Windows D3D11 Player. Install the Looking Glass Bridge runtime separately and connect a display. Edit Mode, D3D12, and macOS output are unsupported.
 
-実機表示にはWindowsのLooking Glass Bridge runtimeとD3D11 Playerが必要です。利用者はリポジトリの`Distribution/urp`をGit URLから導入し、Package Managerの`Windows URP Lit` sampleをImportして`GameObject > ViewWeave > Bridge Rig`から始めてください。Samplesは自動的にAssetsへimportされません。このsource packageはリポジトリ開発・テスト用です。
+Standard URP Cube and Box objects render with their ordinary materials and lights. Create `GameObject > ViewWeave > Bridge Rig`; no sample import or object-specific script is needed. URP supports a Base camera; camera stacks are rejected. TAA is temporarily stopped during quilt rendering.
 
-Bridge Rigが作成する専用Camera、`QuiltRenderer`、`UrpQuiltCamera`、Bridge output、URP adapterを使用します。`QuiltRenderer.GuardBehaviour`へURP adapterを指定すると、各viewのBegin/Disposeを自動で利用します。利用者が外側で`PrepareForQuilt`を呼ぶ必要はありません。
+The optional Windows URP Lit example is available from Package Manager Samples and is not copied into project Assets until explicitly imported. Its generator is only a convenience for creating a demonstration scene.
 
-URPはBase cameraのみ対応し、camera stackは拒否します。LitとBloomのsmoke確認済みです。VolumeStackはvalidation用であり、render historyの独立は保証しません。TAAは一時停止します。Motion Blurは拒否します。
-
-macOSの実機検証は未実施です。
+See [Getting started](../../docs/getting-started.md) and [Compatibility](../../docs/compatibility.md).

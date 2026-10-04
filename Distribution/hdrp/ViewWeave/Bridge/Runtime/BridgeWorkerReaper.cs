@@ -20,6 +20,18 @@ namespace ViewWeave
         readonly List<Lease> leases = new List<Lease>();
         internal static int PendingCount => instance == null ? 0 : instance.leases.Count;
 
+        internal static void DetachOwnedResourcesForRecovery()
+        {
+            if (instance == null) return;
+            for (int i = instance.leases.Count - 1; i >= 0; --i)
+            {
+                Lease lease = instance.leases[i];
+                lease.handle = IntPtr.Zero;
+                DestroyLease(lease);
+            }
+            instance.leases.Clear();
+        }
+
         internal static void Enqueue(IntPtr handle, RenderTexture texture, CommandBuffer command, bool needsClose)
         {
             if (handle == IntPtr.Zero) return;
@@ -89,7 +101,7 @@ namespace ViewWeave
             if (lease.texture == null) return;
             if (RenderTexture.active == lease.texture) RenderTexture.active = null;
             if (lease.texture.IsCreated()) lease.texture.Release();
-            Destroy(lease.texture);
+            if (Application.isPlaying) Destroy(lease.texture); else DestroyImmediate(lease.texture);
         }
 
         static void Warn(Lease lease, string message)

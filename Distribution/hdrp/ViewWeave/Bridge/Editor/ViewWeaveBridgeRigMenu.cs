@@ -19,8 +19,9 @@ namespace ViewWeave.Editor
             target.SetActive(false);
             if (parent != null) GameObjectUtility.SetParentAndAlign(target, parent);
             Undo.RegisterCreatedObjectUndo(target, "Create ViewWeave Bridge Rig");
-            target.AddComponent<Camera>();
-            target.AddComponent<QuiltRenderer>();
+            Camera sourceCamera = target.AddComponent<Camera>();
+            QuiltRenderer quilt = target.AddComponent<QuiltRenderer>();
+            CopyMainCameraFraming(sourceCamera, quilt);
             ViewWeaveRig rig = target.AddComponent<ViewWeaveRig>();
             BridgeWorkerQuiltOutput output = target.AddComponent<BridgeWorkerQuiltOutput>();
             output.initializeOnEnable = false;
@@ -45,6 +46,33 @@ namespace ViewWeave.Editor
                 Undo.DestroyObjectImmediate(target);
                 Debug.LogError("ViewWeave Bridge Rig creation failed: " + Sanitize(exception.Message));
             }
+        }
+
+        static void CopyMainCameraFraming(Camera sourceCamera, QuiltRenderer quilt)
+        {
+            Camera mainCamera = Camera.main;
+            if (mainCamera == null)
+            {
+                quilt.settings.cameraDistance = 3f;
+                quilt.settings.fieldOfView = sourceCamera.fieldOfView;
+                return;
+            }
+            sourceCamera.transform.SetPositionAndRotation(mainCamera.transform.position, mainCamera.transform.rotation);
+            sourceCamera.fieldOfView = mainCamera.fieldOfView;
+            sourceCamera.nearClipPlane = mainCamera.nearClipPlane;
+            sourceCamera.farClipPlane = mainCamera.farClipPlane;
+            sourceCamera.cullingMask = mainCamera.cullingMask;
+            quilt.settings.fieldOfView = mainCamera.fieldOfView;
+            quilt.settings.cameraDistance = FocusDepthOrDefault(sourceCamera, Selection.activeGameObject, 10f);
+        }
+
+        static float FocusDepthOrDefault(Camera sourceCamera, GameObject selected, float fallback)
+        {
+            Renderer renderer = selected == null ? null : selected.GetComponent<Renderer>();
+            if (renderer == null || !renderer.enabled) return fallback;
+            float depth = Vector3.Dot(renderer.bounds.center - sourceCamera.transform.position, sourceCamera.transform.forward);
+            if (depth <= sourceCamera.nearClipPlane || depth >= sourceCamera.farClipPlane) return fallback;
+            return depth;
         }
 
         static string Sanitize(string value)

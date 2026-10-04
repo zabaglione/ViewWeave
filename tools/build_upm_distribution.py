@@ -102,7 +102,7 @@ def package_json(kind: str) -> dict:
     samples = [
         {
             "displayName": "Windows " + sample_label + " Lit",
-            "description": "Generates a Windows D3D11 Bridge sample for " + sample_label + ".",
+            "description": "Optional Windows D3D11 Bridge demo scene for " + sample_label + "; standard Cube and Box scenes need no sample import.",
             "path": "Samples~/" + sample_name,
         }
     ]
@@ -168,9 +168,10 @@ def build(kind: str, target: Path) -> None:
         "Install this folder from the repository using Unity Package Manager:\n\n"
         "    https://github.com/zabaglione/ViewWeave.git?path=/Distribution/" + kind + "#main\n\n"
         "Use Unity 6000.6.4f1 with the matching Unity " + kind.upper() + " render pipeline. "
-        "The included Windows sample is not imported automatically. In Package Manager, "
-        "use the package Samples Import action, then install the Looking Glass Bridge runtime "
-        "and run the generated scene in a Windows D3D11 Player.\n",
+        "Start with an ordinary Cube or Box and create GameObject > ViewWeave > Bridge Rig; "
+        "no sample import or object script is required. Bridge output supports Windows D3D11 "
+        "Editor Play and Player. Install the Looking Glass Bridge runtime separately. "
+        "The optional Windows sample is imported only through Package Manager Samples.\n",
     )
     package_path = target / "package.json"
     package_path.write_text(json.dumps(package_json(kind), indent=2, ensure_ascii=True) + "\n", encoding="utf-8", newline="\n")

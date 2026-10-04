@@ -16,9 +16,13 @@
 #include <unknwn.h>
 #include <d3d11.h>
 #include "IUnityInterface.h"
+#include "IUnityGraphics.h"
 #include "IUnityGraphicsD3D11.h"
 using Library = HMODULE;
 extern "C" int32_t lkg_worker_shutdown_host(uint32_t timeoutMilliseconds);
+extern "C" int32_t lkg_worker_close_all(void);
+extern "C" int32_t lkg_worker_collect_closed(void);
+extern "C" uint32_t lkg_worker_pending_count(void);
 #else
 #include <dlfcn.h>
 using Library = void*;
@@ -80,6 +84,9 @@ static uint32_t g_successful_draws = 0;
 static std::unordered_map<uint64_t, Session> g_sessions;
 static uint64_t g_next_session = 1;
 static IUnknown* g_unity_device = nullptr;
+static IUnityGraphics* g_unity_graphics = nullptr;
+static IUnityInterfaces* g_unity_interfaces = nullptr;
+static std::mutex g_unity_device_mutex;
 
 static std::string ascii_path(const char* path) {
     if (!path) return "";
@@ -112,6 +119,7 @@ static SaveTextureFn g_save_texture{};
 
 IUnknown* lkg_bridge_unity_device_addref() {
 #if defined(_WIN32)
+    std::lock_guard<std::mutex> lock(g_unity_device_mutex);
     if (!g_unity_device) return nullptr;
     g_unity_device->AddRef();
 #endif
@@ -547,11 +555,45 @@ LKG_EXPORT void* lkg_bridge_make_close_data(uint64_t session) {
 }
 
 #if defined(_WIN32)
+static void UNITY_INTERFACE_API OnGraphicsDeviceEvent(UnityGfxDeviceEventType eventType) {
+    if (eventType == kUnityGfxDeviceEventInitialize) {
+        std::lock_guard<std::mutex> lock(g_unity_device_mutex);
+        if (g_unity_device) { g_unity_device->Release(); g_unity_device = nullptr; }
+        IUnityGraphicsD3D11* d3d11 = g_unity_interfaces ? g_unity_interfaces->Get<IUnityGraphicsD3D11>() : nullptr;
+        if (d3d11) {
+            IUnknown* device = reinterpret_cast<IUnknown*>(d3d11->GetDevice());
+            if (device) {
+                device->AddRef();
+                g_unity_device = device;
+            }
+        }
+        return;
+    }
+    if (eventType != kUnityGfxDeviceEventShutdown) return;
+    lkg_worker_close_all();
+    const ULONGLONG deadline = GetTickCount64() + 1000;
+    while (lkg_worker_pending_count() != 0 && GetTickCount64() < deadline) {
+        Sleep(1);
+    }
+    {
+        std::lock_guard<std::mutex> lock(g_unity_device_mutex);
+        if (g_unity_device) { g_unity_device->Release(); g_unity_device = nullptr; }
+    }
+}
+
 extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginLoad(IUnityInterfaces* interfaces) {
-    if (!interfaces) return; IUnityGraphicsD3D11* d3d11 = interfaces->Get<IUnityGraphicsD3D11>(); g_unity_device = d3d11 ? reinterpret_cast<IUnknown*>(d3d11->GetDevice()) : nullptr;
+    if (!interfaces) return;
+    g_unity_interfaces = interfaces;
+    g_unity_graphics = interfaces->Get<IUnityGraphics>();
+    if (g_unity_graphics) g_unity_graphics->RegisterDeviceEventCallback(OnGraphicsDeviceEvent);
+    OnGraphicsDeviceEvent(kUnityGfxDeviceEventInitialize);
 }
 extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginUnload() {
+    OnGraphicsDeviceEvent(kUnityGfxDeviceEventShutdown);
+    if (g_unity_graphics) g_unity_graphics->UnregisterDeviceEventCallback(OnGraphicsDeviceEvent);
+    g_unity_graphics = nullptr;
     lkg_worker_shutdown_host(1000);
-    g_unity_device = nullptr;
+    lkg_worker_collect_closed();
+    g_unity_interfaces = nullptr;
 }
 #endif
