@@ -148,8 +148,8 @@ namespace LookingGlass.MultiviewSpikeValidation.Editor
                 PlayerSettings.MTRendering = oldMultithreadedRendering;
                 PlayerSettings.graphicsJobs = oldGraphicsJobs;
                 PlayerSettings.runInBackground = oldRunInBackground;
+                PlayerSettings.SetGraphicsAPIs(target, oldApis);
                 PlayerSettings.SetUseDefaultGraphicsAPIs(target, oldDefaultApis);
-                if (!oldDefaultApis) PlayerSettings.SetGraphicsAPIs(target, oldApis);
                 if (canRestoreSceneSetup) EditorSceneManager.RestoreSceneManagerSetup(oldSceneSetup);
                 else EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             }

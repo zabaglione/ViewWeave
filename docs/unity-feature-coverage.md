@@ -53,7 +53,7 @@ GRD の性能実測は URP normal multithreaded Player の範囲だけです。H
 | TAA / temporal history | 非対応 | view render 中は TAA を無効化して終了時に復元。独立した per-view temporal history は提供しない。 |
 | SSAO / SSGI / SSR | 非対応または未検証 | HDRP の SSGI/SSR は temporal としてGuardが拒否。URP/HDRPの他構成は未検証。 |
 | Fog / Volumetric Fog / Clouds | 非対応または未検証 | HDRP volumetric fog/cloud はGuardが拒否。一般の fog は未検証。 |
-| Depth of Field / Auto Exposure | Depth of FieldはURP/HDRPの固定条件fixtureで限定確認。Auto Exposureは未検証 | 視点ごとの焦点、履歴、Exposure更新を検証。 |
+| Depth of Field / Auto Exposure | Depth of FieldはURP/HDRPの固定条件fixtureで限定確認。HDRP Auto ExposureはGuardで拒否し、URP Auto Exposureは未検証 | 視点ごとの焦点、履歴、Exposure更新を検証。 |
 
 ## UI とカメラ
 

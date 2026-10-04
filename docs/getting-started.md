@@ -2,6 +2,8 @@
 
 この手順はUnity 6000.6.4f1のWindows Player構成を対象にします。設計対象はURP/HDRPで、Bridge実行経路は実験的なWindows D3D11専用です。Core、Bridge、使用するURPまたはHDRP packageを各`package.json`から導入してください。Bridge runtimeは別途インストールします。macOS Metalは対象外です。
 
+この手順はローカルcheckoutからの導入再現を確認した構成です。正式なrelease tagやregistry配布を前提にしません。Clean projectでCoreとBridge、使用するRP packageをPackage Managerへ追加し、provider registryが対応adapterを選べることを確認してからRigを作成します。
+
 ## Bridge Rigを使う主経路
 
 1. URPまたはHDRPを有効にしたUnity Editorで`GameObject/ViewWeave/Bridge Rig`を選びます。メニューは専用のdisabled Camera、`QuiltRenderer`、`ViewWeaveRig`、`BridgeWorkerQuiltOutput`、`ViewWeaveBridgeSession`、対応するURP/HDRP adapterを同じGameObjectへ作成します。adapterはGuardとして必須です。

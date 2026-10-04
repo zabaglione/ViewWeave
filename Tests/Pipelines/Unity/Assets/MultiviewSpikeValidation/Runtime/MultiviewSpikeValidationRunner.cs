@@ -5,6 +5,7 @@ using LookingGlass.Community;
 using LookingGlass.Community.URP;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 
 namespace LookingGlass.MultiviewSpikeValidation
 {
@@ -17,6 +18,7 @@ namespace LookingGlass.MultiviewSpikeValidation
         [SerializeField] Light keyLight;
         [SerializeField] Renderer edgeRenderer;
         RenderTexture requestTarget;
+        BenchmarkRun benchmarkResult;
         Texture2D referenceImage;
         Texture2D featureImage;
         Texture2D dimImage;
@@ -29,7 +31,7 @@ namespace LookingGlass.MultiviewSpikeValidation
 
         IEnumerator RunGuarded()
         {
-            IEnumerator iterator = Run();
+            IEnumerator iterator = Drive(Run());
             Exception failure = null;
             while (true)
             {
@@ -63,6 +65,27 @@ namespace LookingGlass.MultiviewSpikeValidation
                 File.WriteAllText(Path.Combine(directory, "error.txt"), Sanitize(failure.GetType().Name + ": " + failure.Message));
                 Application.Quit(1);
             }
+        }
+
+        IEnumerator Drive(IEnumerator iterator)
+        {
+            try
+            {
+                while (true)
+                {
+                    bool moved;
+                    object current = null;
+                    moved = iterator.MoveNext();
+                    if (moved) current = iterator.Current;
+                    if (!moved) yield break;
+                    IEnumerator nested = current as IEnumerator;
+                    if (nested == null) { yield return current; continue; }
+                    IEnumerator child = Drive(nested);
+                    try { while (child.MoveNext()) yield return child.Current; }
+                    finally { (child as IDisposable)?.Dispose(); }
+                }
+            }
+            finally { (iterator as IDisposable)?.Dispose(); }
         }
 
         IEnumerator Run()
@@ -145,13 +168,125 @@ namespace LookingGlass.MultiviewSpikeValidation
                     feature.SetActive(false);
                 }
             }
-            if (requestTarget != null) { requestTarget.Release(); Destroy(requestTarget); }
             bool proof = WriteEvidence(reference, featureImage, dimImage);
+            if (proof && Argument("--benchmark") == "1") yield return DriveBenchmark();
             Destroy(reference);
             Destroy(featureImage);
             if (dimImage != null) Destroy(dimImage);
             Application.Quit(proof ? 0 : 1);
         }
+
+        IEnumerator DriveBenchmark()
+        {
+            string directory = Argument("--evidence-dir");
+            if (string.IsNullOrEmpty(directory)) directory = Path.Combine(Application.dataPath, "..", "..", ".local", "multiview-spike", Application.buildGUID);
+            float oldFieldOfView = sourceCamera.fieldOfView;
+            float oldAspect = sourceCamera.aspect;
+            Matrix4x4 oldCullingMatrix = sourceCamera.cullingMatrix;
+            bool oldOcclusion = sourceCamera.useOcclusionCulling;
+            bool oldFeatureActive = feature.isActive;
+            const int gcCounterProbeBytes = 8192;
+            long gcCounterProbeBefore = GC.GetAllocatedBytesForCurrentThread();
+            byte[] gcCounterProbe = new byte[gcCounterProbeBytes];
+            long gcCounterProbeAfter = GC.GetAllocatedBytesForCurrentThread();
+            GC.KeepAlive(gcCounterProbe);
+            long gcCounterProbeDelta = gcCounterProbeAfter - gcCounterProbeBefore;
+            bool gcCounterValidated = gcCounterProbeDelta >= gcCounterProbeBytes;
+            try
+            {
+                sourceCamera.enabled = false;
+                sourceCamera.fieldOfView = 50f;
+                sourceCamera.aspect = TileWidth / (float)TileHeight;
+                SetConservativeCulling(sourceCamera, quilt.settings.viewCone, quilt.settings.cameraDistance);
+                BenchmarkRun[] baseline = new BenchmarkRun[3];
+                BenchmarkRun[] featureRuns = new BenchmarkRun[3];
+                for (int run = 0; run < 3; ++run)
+                {
+                    yield return MeasureBenchmark(false);
+                    baseline[run] = benchmarkResult;
+                    yield return MeasureBenchmark(true);
+                    featureRuns[run] = benchmarkResult;
+                    yield return null;
+                }
+                string grdMode = "unknown";
+                UniversalRenderPipelineAsset urpAsset = GraphicsSettings.currentRenderPipeline as UniversalRenderPipelineAsset;
+                if (urpAsset != null) grdMode = urpAsset.gpuResidentDrawerMode.ToString();
+                File.WriteAllText(Path.Combine(directory, "benchmark.json"), "{\n  \"buildGUID\": \"" + Application.buildGUID + "\",\n  \"graphicsDevice\": \"" + SystemInfo.graphicsDeviceType + "\",\n  \"graphicsMultiThreaded\": " + SystemInfo.graphicsMultiThreaded.ToString().ToLowerInvariant() + ",\n  \"actualUnityVersion\": \"" + Application.unityVersion + "\",\n  \"actualApplication.isEditor\": " + Application.isEditor.ToString().ToLowerInvariant() + ",\n  \"actualDebug.isDebugBuild\": " + Debug.isDebugBuild.ToString().ToLowerInvariant() + ",\n  \"renderThreadTimingAvailable\": false,\n  \"tileWidth\": 128,\n  \"tileHeight\": 96,\n  \"views\": 8,\n  \"rendererListCountFeature\": 8,\n  \"grdMode\": \"" + grdMode + "\",\n  \"gpuTimingAvailable\": false,\n  \"gcCounterProbeBytes\": " + gcCounterProbeBytes + ",\n  \"gcCounterProbeDelta\": " + gcCounterProbeDelta + ",\n  \"gcCounterValidated\": " + gcCounterValidated.ToString().ToLowerInvariant() + ",\n  \"baseline\": " + JsonUtility.ToJson(new BenchmarkRuns { runs = baseline, aggregate = Aggregate(baseline) }) + ",\n  \"feature\": " + JsonUtility.ToJson(new BenchmarkRuns { runs = featureRuns, aggregate = Aggregate(featureRuns) }) + "\n}\n");
+            }
+            finally
+            {
+                feature.SetActive(oldFeatureActive);
+                sourceCamera.enabled = false;
+                sourceCamera.fieldOfView = oldFieldOfView;
+                sourceCamera.aspect = oldAspect;
+                sourceCamera.cullingMatrix = oldCullingMatrix;
+                sourceCamera.useOcclusionCulling = oldOcclusion;
+            }
+        }
+
+        IEnumerator MeasureBenchmark(bool featureMode)
+        {
+            float[] samples = new float[1000];
+            long[] gcPerSample = new long[samples.Length];
+            float oldFov = sourceCamera.fieldOfView;
+            float oldAspect = sourceCamera.aspect;
+            Matrix4x4 oldCulling = sourceCamera.cullingMatrix;
+            bool oldOcclusion = sourceCamera.useOcclusionCulling;
+            sourceCamera.fieldOfView = 50f;
+            sourceCamera.aspect = TileWidth / (float)TileHeight;
+            sourceCamera.enabled = false;
+            if (featureMode) { SetConservativeCulling(sourceCamera, quilt.settings.viewCone, quilt.settings.cameraDistance); sourceCamera.useOcclusionCulling = false; feature.SetActive(true); }
+            else { sourceCamera.ResetCullingMatrix(); feature.SetActive(false); }
+            try
+            {
+                for (int i = 0; i < 120; ++i)
+                {
+                    if (featureMode) feature.ResetExecutionCount();
+                    SubmitBenchmark(featureMode);
+                    if (featureMode && feature.ExecutionCount != 1) throw new InvalidOperationException("benchmark warmup feature execution count was not one");
+                    yield return null;
+                }
+                long gcTotal = 0;
+                for (int i = 0; i < samples.Length; ++i)
+                {
+                    if (featureMode) feature.ResetExecutionCount();
+                    long gcBefore = GC.GetAllocatedBytesForCurrentThread();
+                    long start = System.Diagnostics.Stopwatch.GetTimestamp();
+                    SubmitBenchmark(featureMode);
+                    long end = System.Diagnostics.Stopwatch.GetTimestamp();
+                    long gcAfter = GC.GetAllocatedBytesForCurrentThread();
+                    samples[i] = (float)((end - start) * 1000.0 / System.Diagnostics.Stopwatch.Frequency);
+                    gcPerSample[i] = gcAfter - gcBefore;
+                    gcTotal += gcPerSample[i];
+                    if (featureMode && feature.ExecutionCount != 1) throw new InvalidOperationException("benchmark feature execution count was not one");
+                    yield return null;
+                }
+                float[] rawSamples = (float[])samples.Clone();
+                Array.Sort(samples);
+                benchmarkResult = new BenchmarkRun { samplesMs = rawSamples, gcBytesPerSample = gcPerSample, sampleCount = rawSamples.Length, warmupCount = 120, requestCount = featureMode ? 1 : 8, samplesMsSorted = samples, meanMs = Mean(samples), p50Ms = samples[500], p95Ms = samples[949], gcBytes = gcTotal };
+            }
+            finally { feature.SetActive(false); sourceCamera.enabled = false; sourceCamera.fieldOfView = oldFov; sourceCamera.aspect = oldAspect; sourceCamera.cullingMatrix = oldCulling; sourceCamera.useOcclusionCulling = oldOcclusion; }
+        }
+
+        void SubmitBenchmark(bool featureMode)
+        {
+            if (!featureMode) { quilt.RenderQuilt(); return; }
+            RenderPipeline.SubmitRenderRequest(sourceCamera, new RenderPipeline.StandardRequest { destination = requestTarget });
+        }
+
+        static float Mean(float[] values) { float sum = 0f; for (int i = 0; i < values.Length; ++i) sum += values[i]; return sum / values.Length; }
+
+        static BenchmarkAggregate Aggregate(BenchmarkRun[] runs)
+        {
+            float[] all = new float[runs.Length * 1000]; int offset = 0; long gc = 0;
+            for (int i = 0; i < runs.Length; ++i) { Array.Copy(runs[i].samplesMs, 0, all, offset, runs[i].samplesMs.Length); offset += runs[i].samplesMs.Length; gc += runs[i].gcBytes; }
+            Array.Sort(all);
+            return new BenchmarkAggregate { sampleCount = all.Length, meanMs = Mean(all), p50Ms = all[all.Length / 2], p95Ms = all[(int)(all.Length * .95f)], gcBytes = gc };
+        }
+
+        [Serializable] sealed class BenchmarkRun { public float[] samplesMs; public float[] samplesMsSorted; public long[] gcBytesPerSample; public int sampleCount; public int warmupCount; public int requestCount; public float meanMs; public float p50Ms; public float p95Ms; public long gcBytes; }
+        [Serializable] sealed class BenchmarkAggregate { public int sampleCount; public float meanMs; public float p50Ms; public float p95Ms; public long gcBytes; }
+        [Serializable] sealed class BenchmarkRuns { public BenchmarkRun[] runs; public BenchmarkAggregate aggregate; public int runCount = 3; public int samplesPerRun = 1000; public int warmupSamples = 120; public int requestCountBaseline = 8; public int requestCountFeature = 1; public bool gpuTimingAvailable; }
 
         static Texture2D Read(RenderTexture source)
         {

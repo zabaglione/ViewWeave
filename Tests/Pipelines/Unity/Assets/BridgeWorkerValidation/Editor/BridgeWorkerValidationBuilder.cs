@@ -482,14 +482,14 @@ namespace LookingGlass.BridgeWorkerValidation.Editor
             GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
             cube.name = "ViewWeaveDemo.ForegroundCube";
             cube.transform.SetParent(parent, false);
-            cube.transform.localPosition = new Vector3(0f, 0f, 2.4f);
-            cube.transform.localScale = new Vector3(1.4f, 1f, .6f);
+            cube.transform.localPosition = new Vector3(-.65f, 0f, 2.4f);
+            cube.transform.localScale = Vector3.one * .8f;
             cube.GetComponent<Renderer>().sharedMaterial = red;
             GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             sphere.name = "ViewWeaveDemo.BackgroundSphere";
             sphere.transform.SetParent(parent, false);
-            sphere.transform.localPosition = new Vector3(0f, .35f, 3.2f);
-            sphere.transform.localScale = Vector3.one * .75f;
+            sphere.transform.localPosition = new Vector3(.65f, .1f, 3.2f);
+            sphere.transform.localScale = Vector3.one * .9f;
             sphere.GetComponent<Renderer>().sharedMaterial = green;
         }
 

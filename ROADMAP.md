@@ -26,11 +26,11 @@ per-view postprocessing、UI、particles、VFXの互換性を検証します。c
 
 ## M4: 高速化研究（評価継続、production採用なし）
 
-URP公開extensionを基礎に、culling/shadow共有の成立条件、pooling、command reuse、GPU-instanced multiview、depth reprojection（transparent、occlusion、reflection fallbackを含む）を測定します。共有culling prototypeは限定Lit条件で合格しましたが、量産経路の性能は未計測です。独自開発目標として同品質20% GPU/frame time改善を置くことはできますが、実績や保証として記載しません。受入基準は固定条件3-run以上のベンチと画質確認です。現時点でproduction経路へ採用しません。
+URP公開extensionを基礎に、culling/shadow共有の成立条件、pooling、command reuse、GPU-instanced multiview、depth reprojection（transparent、occlusion、reflection fallbackを含む）を測定します。共有culling prototypeは限定Lit条件で合格し、8視点マイクロベンチのCPU submission p50はbaseline 1.8023 ms、shared culling 0.3198 msでした。GPU性能、48視点、影、透明、post processing、VFXは未確認です。独自開発目標として同品質20% GPU/frame time改善を置くことはできますが、実績や保証として記載しません。受入基準は固定条件3-run以上のベンチと画質確認です。現時点でproduction経路へ採用しません。
 
-## M5: alpha / beta / stable（未開始、release gate待ち）
+## M5: alpha / beta / stable（実験版の公開準備、正式タグ未発行）
 
-alphaは実験的なWindows経路を明示でき、通常threadや実機の未解決事項を公開文書に残すことをゲートとします。betaは通常threadの再現性、Windows実機、互換性matrix、性能計測、権利確認をゲートとします。stableは通常threadの安定化とWindows・macOS実機確認、配布再現性、権利確認、release blocker解消を必須とします。各段階で未達項目がrelease blockerとして残る場合は次段階へ進めません。
+現在はWindows実験版のローカル導入再現を確認した段階で、正式なrelease tagは発行していません。alphaは実験的なWindows経路を明示でき、通常threadや実機の未解決事項を公開文書に残すことをゲートとします。betaは通常threadの再現性、Windows実機、互換性matrix、性能計測、権利確認をゲートとします。stableは通常threadの安定化とWindows・macOS実機確認、配布再現性、権利確認、release blocker解消を必須とします。各段階で未達項目がrelease blockerとして残る場合は次段階へ進めません。
 
 SamplesはUPMの`Samples~`ディレクトリと`package.json`の`samples`定義によるoptional方式でCoreに登録済みです。monorepoのGit URLでは兄弟パッケージを`package.json`の依存関係へGit URLとして書けないため、初期導入ではproject manifestへ必要な各Git packageを列挙します。将来はregistryで依存解決します。
 

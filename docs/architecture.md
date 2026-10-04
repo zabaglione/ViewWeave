@@ -29,7 +29,7 @@ Unity 6000.6.4f1、Windows、D3D11でURP/HDRPの基本Lit、Bloom、透明Lit、
 | SSR、SSGI、霧、雲、Motion Blur、視点別temporal効果 | 現在のQuilt経路では拒否または未対応。代替仕様は未確定 |
 | FXAA、SMAA、色調補正、TAA履歴、Auto Exposure | FXAA/SMAAと一部色調補正は限定fixture。MSAAは未確認、TAA履歴とAuto Exposureは未検証 |
 | RenderTextureを使うUI、入力ray map、VideoTexture | uGUIとUI Toolkitの個別fixtureを確認。入力ray mapとVideoTextureは未検証 |
-| LineRenderer、TrailRenderer、VFX Graph、複雑な透明ソート | 未検証 |
+| LineRenderer、TrailRenderer、VFX Graph、複雑な透明ソート | Line/Trailは個別fixtureで限定確認。URP Simple Burstは停止6条件と通常再生4条件をPlayerで確認。HDRP、一般VFX、複雑なsortは未確定 |
 | 複数機器、hotplug、RGBD、quilt layer、録画 | 未実装または未検証 |
 
 ## 性能計測の扱い

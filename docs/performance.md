@@ -34,3 +34,14 @@ cache変更後の測定では48 viewのGRD OnがOffに対してCPU submission p5
 
 生のJSONとplayer logは内部検証用として管理しています。表の数値は、記載した機器・scene・設定・harness条件に限定した測定結果です。公開APIや製品全体の性能保証、公式speed比較を示すものではありません。公式speed比較は未実施です。
 
+## 共有culling試作の限定ベンチ
+
+Unity 6000.6.4f1、URP 17.6、Windows D3D11、RTX 3090 Ti、MT有効、GRD無効のDevelopment Playerで、8視点、4x2、128x96 tile、Lit Cube 2個の固定sceneを測定しました。baselineは8 StandardRequest、shared cullingは1 StandardRequestと8 RendererListです。各条件はbaseline/featureを交互に3 run、各120 frame warmup後に1000 samples、1 frame 1 sample、同一品質で取得しました。CPU submission elapsedには同期待ちが含まれる場合があります。
+
+| 経路 | p50 CPU submission (ms) | p95 (ms) | mean (ms) |
+| --- | ---: | ---: | ---: |
+| baseline 8 StandardRequest | 1.8023 | 2.0580 | 1.81632 |
+| shared culling 1 request + 8 RendererList | 0.3198 | 0.3987 | 0.330339 |
+
+これは2 Lit object、8視点のマイクロベンチです。GPU時間、render thread時間、48視点、影、透明、post processing、VFX、公式実装との比較は未計測です。GPU fpsや一般用途の速度向上を示す値ではなく、shared cullingは本体の量産経路へ採用していません。GC counterはこの測定では有効な値として扱っていません。
+

@@ -23,6 +23,6 @@ Geometry Shaderを一択にしません。D3D11の`SV_RenderTargetArrayIndex`は
 
 ## 段階ゲート
 
-GRD-MVPを先に実施し、Cの最小Litシーンへ進むための8視点共通culling prototypeを作成しました。限定Lit条件で6判定を通過し、feature実行1回、1回のcullingから8本のRendererListを各1 draw、depthは別attachmentであることを確認しました。これは画像品質の限定確認であり、GPU/CPU性能を測定した結果ではありません。48視点、影、透明、post processing、VFXは未確認です。再試験は合格しましたが、量産バックエンドには採用していません。C/DともA/B fallbackと比較し、静止・動的更新、影、透明、SSR、TAA、Shader Graph、VFX、UIの品質を個別に確認します。
+GRD-MVPを先に実施し、Cの最小Litシーンへ進むための8視点共通culling prototypeを作成しました。限定Lit条件で6判定を通過し、feature実行1回、1回のcullingから8本のRendererListを各1 draw、depthは別attachmentであることを確認しました。固定2 Lit objectのマイクロベンチでは、8 StandardRequestのbaseline p50 1.8023 msに対し、shared cullingのp50は0.3198 msでした。これはCPU submission区間の限定値で、GPU/CPU render thread性能ではありません。48視点、影、透明、post processing、VFXは未確認です。再試験は合格しましたが、量産バックエンドには採用していません。C/DともA/B fallbackと比較し、静止・動的更新、影、透明、SSR、TAA、Shader Graph、VFX、UIの品質を個別に確認します。
 
 参考資料: [Unity Single Pass Instancing](https://docs.unity3d.com/6000.6/Documentation/Manual/SinglePassInstancing.html)、[BatchRendererGroup](https://docs.unity3d.com/6000.6/Documentation/Manual/batch-renderer-group.html)、[Graphics.RenderMeshIndirect](https://docs.unity3d.com/6000.6/Documentation/ScriptReference/Graphics.RenderMeshIndirect.html)、[HLSL semantics](https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-semantics)、[公式4 alpha資料](https://lfdocs.lookingglassfactory.com/software/index/unity-plugin-4.0-alpha)。

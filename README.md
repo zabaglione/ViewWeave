@@ -2,7 +2,7 @@
 
 An unofficial Unity SDK for Looking Glass displays.
 
-Looking Glass向けの非公式・独立したUnity SDKです。正式対象はUnity 6.6系のURP/HDRPです。独自コードはApache-2.0で公開します。Looking Glass Factoryの公式SDK、商標、ソースコード、バイナリを同梱せず、公式製品との提携や互換性を保証するものではありません。
+Looking Glass向けの非公式・独立したUnity SDKです。設計対象はUnity 6.6系のURP/HDRPで、Windows D3D11実験版として検証しています。独自コードはApache-2.0で公開します。Looking Glass Factoryの公式SDK、商標、ソースコード、バイナリを同梱せず、公式製品との提携や互換性を保証するものではありません。
 
 ## 現在の範囲
 
@@ -12,13 +12,15 @@ Looking Glass向けの非公式・独立したUnity SDKです。正式対象はU
 
 Sessionの実機PlayerではURP/HDRPのPreview、Balanced、NativeとGRD ON/OFFの各6条件を48 viewで確認しました。各条件は120 completionを完了し、固定条件の品質切替では4段階を各122 completion、明示Stop/Start後120 draw、pending 0を確認しました。Worker Nativeは7680x4320の実機profileで確認していますが、光学品質の人手確認は未完了です。
 
+SDK Demoは自動検出したNative 7680x4320、8x6、48 viewで120 completionと全tileの赤緑表示を確認しました。これはWindows D3D11の限定実機結果で、光学品質の人手確認は未完了です。
+
 `BridgeQuiltOutput`は実験的なWindows D3D11 Direct経路です。`-force-gfx-direct`と`runInBackground=true`を指定した構成で、16インチ実機のLit 48-view表示、向き・前後関係、120フレーム後の終了コード0を確認しています。`BridgeWorkerQuiltOutput`はWindows Player D3D11通常thread向けの実験経路で、同一プロセス再接続を含む120 draw、終了保留0、同一host thread再利用を確認しました。Worker Nativeは7680x4320の実機profileで確認していますが、光学品質の人手確認は未完了です。独立native build、CTest、provenance監査は完了していますが、配布署名は未実施です。MacOS Metalは対象外です。
 
 対応状況、未検証事項、公式機能との比較は [docs/compatibility.md](docs/compatibility.md)、性能計測計画は [docs/performance.md](docs/performance.md)、導入手順は [docs/getting-started.md](docs/getting-started.md) を参照してください。開発計画は [ROADMAP.md](ROADMAP.md) にあります。
 
 最新の統合互換性集計は [docs/compatibility.md](docs/compatibility.md) を正本とし、公式機能との比較は [docs/sdk-feature-comparison.md](docs/sdk-feature-comparison.md) に整理しています。
 
-視点間の共通処理再利用を検証する8視点の共有culling試作は、限定Lit条件で画像差分と8本のRendererList実行を確認しています。量産経路への採用、性能改善、48視点、影、透明、post processing、VFXの対応は未確認です。方式比較と条件は [docs/multiview-rendering.md](docs/multiview-rendering.md) に整理しています。
+視点間の共通処理再利用を検証する8視点の共有culling試作は、限定Lit条件で画像差分と8本のRendererList実行を確認しています。固定マイクロベンチではCPU submission p50がbaseline 1.8023 ms、shared culling 0.3198 msでした。GPU性能、48視点、影、透明、post processing、VFXの対応は未確認で、量産経路へは採用していません。方式比較と条件は [docs/multiview-rendering.md](docs/multiview-rendering.md) に整理しています。
 
 最新のEditor GRD/VolumeStack回帰は27/27合格、skip 0です。URP通常thread PlayerのGRD OFF/ON・1/8/48視点6ケースも通過しています。CPU submissionとGCの参考計測はありますが、GPU時間とrender thread時間は取得できていません。別の固定条件の48視点測定では、GRD ONのCPU submission p50がOFFより約13.0%低い結果でした。GPU速度や公式実装との比較値ではないため、速度保証には使いません。詳細は [docs/gpu-resident-drawer.md](docs/gpu-resident-drawer.md) と [docs/performance.md](docs/performance.md) を参照してください。
 

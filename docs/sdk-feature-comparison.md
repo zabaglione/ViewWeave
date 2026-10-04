@@ -1,6 +1,6 @@
 # 公式機能との比較
 
-本表は、公式資料に記載された機能と、本SDKの現状を利用者向けに比較するものです。公式SDKとのsource互換性、商標上の関係、完全な機能互換性は保証しません。本SDKの正式対象はUnity 6000.6.4f1のURP/HDRPです。
+本表は、公式資料に記載された機能と、本SDKの現状を利用者向けに比較するものです。公式SDKとのsource互換性、商標上の関係、完全な機能互換性は保証しません。本SDKはUnity 6000.6.4f1のURP/HDRPを設計対象とするWindows D3D11実験版です。
 
 公式3.x資料はBuilt-inを主な対象とし、URPには制限があり、HDRPは未対応と説明されています。公式4 betaの配布物と4.0 alpha公開資料は、Unity 6000.0.39〜6000.1.5、URP 17.0.4〜17.1、Render Graphを対象とし、公式HDRPは未対応です。公式4資料の視点補間と透明表現には条件があり、VFXにも追加設定が必要です。本SDKの対応状況はこれらの資料から推測せず、個別fixtureと受入試験で判断します。
 
@@ -16,7 +16,7 @@
 | Editor preview | 公式pluginに機能あり | external preview等を記載 | Editor previewを確認。offline displayは未確定 |
 | runtime integration | Unity packageとBridge連携 | Unity 6000.0〜6000.1の条件 | Unity 6000.6.4f1のURP/HDRP adapterとSessionを提供。Windows D3D11の固定条件Sessionと品質切替を確認。機器一般運用は未検証 |
 | 入力、cursor、orbit、button | 公式pluginの利用機能 | 公式資料の範囲に依存 | 未実装または未検証 |
-| installer / package導入 | 公式配布物で提供 | beta/alpha配布物で提供 | UPM導入、Rig menu、optional Samplesを実装済み。導入再現性は継続検証中 |
+| installer / package導入 | 公式配布物で提供 | beta/alpha配布物で提供 | UPM導入、Rig menu、optional Samplesを実装済み。ローカルcloneからURP/HDRP別clean projectで各2/2 API導入チェック済み。GitHub導入は未検証 |
 | URP | 3.x資料では制限あり | URP 17.0.4〜17.1を対象 | Lit、Bloom、透明、粒子、uGUI、UI Toolkitを個別検証 |
 | HDRP | 未対応 | 未対応 | Lit、Bloom、透明、mesh粒子、uGUI、UI Toolkitを個別検証 |
 | Built-in | 主な比較対象 | 公式4対象外 | 製品サポート対象外。CoreはStandard RenderRequest経路を要求 |
