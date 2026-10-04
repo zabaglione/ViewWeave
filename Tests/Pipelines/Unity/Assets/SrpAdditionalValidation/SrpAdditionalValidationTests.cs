@@ -23,16 +23,18 @@ namespace LookingGlass.SrpAdditionalValidation
         [UnityTest] public IEnumerator UrpFxaa() => RunUrp("urp-fxaa", AntialiasingMode.FastApproximateAntialiasing, false, false);
         [UnityTest] public IEnumerator UrpSmaa() => RunUrp("urp-smaa", AntialiasingMode.SubpixelMorphologicalAntiAliasing, false, false);
         [UnityTest] public IEnumerator UrpMsaa() => RunUrp("urp-msaa", AntialiasingMode.None, true, false);
+        [UnityTest] public IEnumerator UrpMsaa2x() => RunUrp("urp-msaa-2x", AntialiasingMode.None, true, false, 2);
+        [UnityTest] public IEnumerator UrpMsaa8x() => RunUrp("urp-msaa-8x", AntialiasingMode.None, true, false, 8);
         [UnityTest] public IEnumerator UrpDepthOfField() => RunUrp("urp-dof", AntialiasingMode.None, false, true);
         [UnityTest] public IEnumerator HdrpDepthOfField() => RunHdrp("hdrp-dof");
 
-        IEnumerator RunUrp(string name, AntialiasingMode mode, bool msaa, bool dof)
+        IEnumerator RunUrp(string name, AntialiasingMode mode, bool msaa, bool dof, int msaaSamples = 4)
         {
             Fixture fixture = null;
             try
             {
                 fixture = new Fixture(name, false);
-                fixture.Setup(mode, msaa, dof);
+                fixture.Setup(mode, msaa, dof, msaaSamples);
                 yield return null;
                 yield return null;
                 fixture.Capture(false);
@@ -99,7 +101,10 @@ namespace LookingGlass.SrpAdditionalValidation
 
             public Fixture(string value, bool isHdrp) { name = value; hdrp = isHdrp; }
 
-            public void Setup(AntialiasingMode aa, bool msaa, bool dof)
+            int requestedMsaaSamples;
+            int expectedMsaaSamples;
+
+            public void Setup(AntialiasingMode aa, bool msaa, bool dof, int msaaSamples = 4)
             {
                 oldScene = SceneManager.GetActiveScene();
                 oldDefault = GraphicsSettings.defaultRenderPipeline;
@@ -113,6 +118,8 @@ namespace LookingGlass.SrpAdditionalValidation
                 root = new GameObject("SrpAdditionalValidation_" + name);
                 root.layer = 31;
                 SceneManager.MoveGameObjectToScene(root, fixtureScene);
+                requestedMsaaSamples = msaaSamples;
+                expectedMsaaSamples = msaa ? SupportedMsaaSamples(msaaSamples) : 1;
                 if (hdrp) SetupHdrp(); else SetupUrp(aa, msaa);
                 AddCamera(dof);
                 oldAllowMsaa = camera.allowMSAA;
@@ -131,7 +138,7 @@ namespace LookingGlass.SrpAdditionalValidation
 #endif
                 urp = UniversalRenderPipelineAsset.Create(data);
                 urp.supportsHDR = true;
-                urp.msaaSampleCount = msaa ? 4 : 1;
+                urp.msaaSampleCount = msaa ? requestedMsaaSamples : 1;
                 owned.Add(data);
                 owned.Add(urp);
                 GraphicsSettings.defaultRenderPipeline = urp;
@@ -352,7 +359,7 @@ namespace LookingGlass.SrpAdditionalValidation
                 {
                     urpCameraData.antialiasing = effectEnabled ? urpAaMode : AntialiasingMode.None;
                     camera.allowMSAA = effectEnabled && urpMsaa;
-                    if (urp != null) urp.msaaSampleCount = effectEnabled && urpMsaa ? 4 : 1;
+                    if (urp != null) urp.msaaSampleCount = effectEnabled && urpMsaa ? requestedMsaaSamples : 1;
                 }
                 if (!hdrp && urpDof != null) urpDof.active = effectEnabled;
                 if (hdrp && hdrpDof != null) hdrpDof.active = effectEnabled;
@@ -365,11 +372,19 @@ namespace LookingGlass.SrpAdditionalValidation
                 {
                     Assert.AreEqual(effectEnabled ? urpAaMode : AntialiasingMode.None, urpCameraData.antialiasing, "AA mode changed unexpectedly");
                     Assert.AreEqual(effectEnabled && urpMsaa, camera.allowMSAA, "MSAA state changed unexpectedly");
-                    Assert.AreEqual(effectEnabled && urpMsaa ? 4 : 1, quilt.ViewAntiAliasingSamples, "view RT MSAA sample count was not applied");
-                    Assert.AreEqual(effectEnabled && urpMsaa ? 1 : 0, quilt.ResolveAntiAliasingSamples, "resolve RT lifecycle was not applied");
+                    Assert.AreEqual(effectEnabled && urpMsaa ? expectedMsaaSamples : 1, quilt.ViewAntiAliasingSamples, "view RT MSAA sample count was not applied");
+                    Assert.AreEqual(effectEnabled && urpMsaa && expectedMsaaSamples > 1 ? 1 : 0, quilt.ResolveAntiAliasingSamples, "resolve RT lifecycle was not applied");
+                    Debug.Log("MSAA requested=" + requestedMsaaSamples + " expected=" + (effectEnabled && urpMsaa ? expectedMsaaSamples : 1) + " actual=" + quilt.ViewAntiAliasingSamples + " allowMSAA=" + camera.allowMSAA + " colorSpace=" + QualitySettings.activeColorSpace);
                 }
                 Texture2D image = Read(quilt.QuiltTexture);
                 if (effectEnabled) after = image; else before = image;
+            }
+
+            int SupportedMsaaSamples(int requested)
+            {
+                RenderTextureDescriptor descriptor = new RenderTextureDescriptor(TileWidth, TileHeight, RenderTextureFormat.ARGB32, 24) { msaaSamples = requested };
+                int supported = SystemInfo.GetRenderTextureSupportedMSAASampleCount(descriptor);
+                return supported == 2 || supported == 4 || supported == 8 ? supported : 1;
             }
 
             public void AssertChanged()
@@ -392,7 +407,8 @@ namespace LookingGlass.SrpAdditionalValidation
                     }
                     counts[view] = changed;
                     Assert.Greater(visible, 20, "control image is blank in tile " + view);
-                    Assert.Greater(changed, 20, "effect did not change tile " + view);
+                    if (!urpMsaa || expectedMsaaSamples > 1)
+                        Assert.Greater(changed, 20, "effect did not change tile " + view);
                     if (urpMsaa)
                     {
                         Color control = a[(tile.y + tile.height / 2) * before.width + tile.x + tile.width / 2];
@@ -400,6 +416,8 @@ namespace LookingGlass.SrpAdditionalValidation
                         Assert.Greater(control.r + control.g + control.b, 0.06f, "MSAA control point is background in tile " + view);
                         Assert.Greater(antialiased.r + antialiased.g + antialiased.b, 0.06f, "MSAA result point is background in tile " + view);
                         Assert.Less(Mathf.Abs(control.r - antialiased.r) + Mathf.Abs(control.g - antialiased.g) + Mathf.Abs(control.b - antialiased.b), 6f / 255f, "MSAA changed interior color in tile " + view);
+                        if (expectedMsaaSamples == 1)
+                            Assert.LessOrEqual(changed, 20, "unsupported MSAA request changed tile " + view);
                     }
                 }
                 string directory = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "..", "..", "..", ".local", "srp-additional-validation"));

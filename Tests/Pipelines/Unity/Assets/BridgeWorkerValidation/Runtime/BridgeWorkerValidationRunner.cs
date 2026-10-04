@@ -34,6 +34,8 @@ namespace LookingGlass.BridgeWorkerValidation
         string expectedPipeline = "urp";
         bool exerciseRestart;
         bool qualityCycleRequested;
+        string faultMode;
+        int faultDelayMs = 15000;
         int exitCode;
         Evidence evidence;
         static readonly ProfilerCategory GrdCategory = new ProfilerCategory("GPU Resident Drawer");
@@ -63,11 +65,15 @@ namespace LookingGlass.BridgeWorkerValidation
             exerciseRestart = restartText == "1";
             string qualityCycleText = Argument("--quality-cycle");
             qualityCycleRequested = qualityCycleText == "1";
+            faultMode = Argument("--fault-mode");
+            string faultDelayText = Argument("--fault-delay-ms");
+            if (!string.IsNullOrEmpty(faultDelayText) && (!int.TryParse(faultDelayText, NumberStyles.Integer, CultureInfo.InvariantCulture, out faultDelayMs) || faultDelayMs < 10000 || faultDelayMs > 30000)) { argumentsValid = false; argumentError = "invalid --fault-delay-ms; expected 10000..30000"; }
             if (qualityName != "preview" && qualityName != "balanced" && qualityName != "native") { argumentsValid = false; argumentError = "invalid --quality"; }
             if (grdName != "off" && grdName != "on") { argumentsValid = false; argumentError = "invalid --grd"; }
             if (expectedPipeline != "urp" && expectedPipeline != "hdrp") { argumentsValid = false; argumentError = "invalid --pipeline"; }
             if (restartText != null && restartText != "0" && restartText != "1") { argumentsValid = false; argumentError = "invalid --exercise-restart"; }
             if (qualityCycleText != null && qualityCycleText != "0" && qualityCycleText != "1") { argumentsValid = false; argumentError = "invalid --quality-cycle"; }
+            if (faultMode != null && faultMode != "init-delay" && faultMode != "draw-release") { argumentsValid = false; argumentError = "invalid --fault-mode"; }
             evidence = new Evidence { buildGUID = Application.buildGUID, quiltBuildGUID = Application.buildGUID, quality = qualityName, grd = grdName, isEditor = Application.isEditor, development = Debug.isDebugBuild, graphicsMultiThreaded = SystemInfo.graphicsMultiThreaded, graphicsDeviceType = SystemInfo.graphicsDeviceType.ToString(), graphicsDeviceVersion = SystemInfo.graphicsDeviceVersion, unityVersion = Application.unityVersion };
             Directory.CreateDirectory(evidenceDirectory);
         }
@@ -115,6 +121,11 @@ namespace LookingGlass.BridgeWorkerValidation
             evidence.outputIsActiveAndEnabled = output.isActiveAndEnabled;
             sourceCamera.enabled = false;
             quilt.autoRender = false;
+            if (!string.IsNullOrEmpty(faultMode))
+            {
+                yield return Drive(RunFaultScenario(requestedQuality));
+                yield break;
+            }
             if (!session.StartSession()) throw new InvalidOperationException(FirstError(session.LastError, output.LastError, quilt.LastAutoRenderError, "Bridge session begin failed"));
             double readyStarted = Time.realtimeSinceStartupAsDouble;
             while (session.State != ViewWeaveBridgeSession.SessionState.Rendering && !TimedOut(readyStarted))
@@ -260,6 +271,69 @@ namespace LookingGlass.BridgeWorkerValidation
                     evidence.error = evidence.error ?? "Bridge session restart failed";
                     throw new InvalidOperationException(evidence.error);
                 }
+            }
+        }
+
+        IEnumerator RunFaultScenario(QuiltQualityPreset quality)
+        {
+            string releaseFile = Path.Combine(evidenceDirectory, "fault-release.marker");
+            if (File.Exists(releaseFile)) File.Delete(releaseFile);
+            try
+            {
+                Environment.SetEnvironmentVariable("LKG_FAKE_BRIDGE_DELAY_MS", faultDelayMs.ToString(CultureInfo.InvariantCulture));
+                Environment.SetEnvironmentVariable("LKG_FAKE_BRIDGE_MODE", faultMode);
+                if (faultMode == "draw-release") Environment.SetEnvironmentVariable("LKG_FAKE_BRIDGE_RELEASE_FILE", releaseFile);
+            if (faultMode == "init-delay")
+            {
+                if (!session.StartSession()) throw new InvalidOperationException("fault session begin failed");
+                double started = Time.realtimeSinceStartupAsDouble;
+                while (session.State != ViewWeaveBridgeSession.SessionState.Fault && Time.realtimeSinceStartupAsDouble - started < 20.0) yield return null;
+                if (session.State != ViewWeaveBridgeSession.SessionState.Fault) throw new TimeoutException("fault init delay did not reach Fault");
+                if (string.IsNullOrEmpty(session.LastError) || session.LastError.IndexOf("timed out", StringComparison.OrdinalIgnoreCase) < 0) throw new InvalidOperationException("fault init delay did not produce timeout error");
+                if (rig.AutoRender) throw new InvalidOperationException("fault init delay did not stop auto render");
+                evidence.faultPendingBeforeRelease = BridgeWorkerReaperPending();
+                if (evidence.faultPendingBeforeRelease == 0) throw new InvalidOperationException("fault init delay did not retain pending cleanup");
+            }
+            else
+            {
+                Environment.SetEnvironmentVariable("LKG_FAKE_BRIDGE_MODE", "");
+                if (!session.StartSession()) throw new InvalidOperationException("fault baseline begin failed");
+                double ready = Time.realtimeSinceStartupAsDouble;
+                while (session.State != ViewWeaveBridgeSession.SessionState.Rendering && Time.realtimeSinceStartupAsDouble - ready < 20.0) yield return null;
+                if (session.State != ViewWeaveBridgeSession.SessionState.Rendering) throw new TimeoutException("fault baseline did not render");
+                Environment.SetEnvironmentVariable("LKG_FAKE_BRIDGE_MODE", "draw-release");
+                double faultStarted = Time.realtimeSinceStartupAsDouble;
+                while (session.State != ViewWeaveBridgeSession.SessionState.Fault && Time.realtimeSinceStartupAsDouble - faultStarted < 20.0) yield return null;
+                if (session.State != ViewWeaveBridgeSession.SessionState.Fault) throw new TimeoutException("draw stall did not reach Fault");
+                if (string.IsNullOrEmpty(session.LastError) || session.LastError.IndexOf("completion timed out", StringComparison.OrdinalIgnoreCase) < 0) throw new InvalidOperationException("draw stall did not produce completion timeout error");
+                if (rig.AutoRender) throw new InvalidOperationException("draw stall did not stop auto render");
+                evidence.faultPendingBeforeRelease = BridgeWorkerReaperPending();
+                if (evidence.faultPendingBeforeRelease == 0) throw new InvalidOperationException("draw stall did not retain pending cleanup");
+                File.WriteAllText(releaseFile, "release");
+            }
+            Environment.SetEnvironmentVariable("LKG_FAKE_BRIDGE_MODE", "");
+            Environment.SetEnvironmentVariable("LKG_FAKE_BRIDGE_RELEASE_FILE", "");
+            double drained = Time.realtimeSinceStartupAsDouble;
+            while (BridgeWorkerReaperPending() != 0 && Time.realtimeSinceStartupAsDouble - drained < 20.0) yield return null;
+            if (BridgeWorkerReaperPending() != 0) throw new TimeoutException("fault cleanup remained pending");
+            if (!session.StartSession()) throw new InvalidOperationException("fault reconnect begin failed");
+            double reconnect = Time.realtimeSinceStartupAsDouble;
+            while (session.State != ViewWeaveBridgeSession.SessionState.Rendering && Time.realtimeSinceStartupAsDouble - reconnect < 20.0) yield return null;
+            if (session.State != ViewWeaveBridgeSession.SessionState.Rendering) throw new TimeoutException("fault reconnect did not render");
+            double completedStarted = Time.realtimeSinceStartupAsDouble;
+            while (output.Completed == 0 && Time.realtimeSinceStartupAsDouble - completedStarted < 10.0) yield return null;
+            evidence.completed = output.Completed;
+            evidence.submissions = output.Submissions;
+            evidence.faultMode = faultMode;
+            evidence.faultInjectionOk = evidence.completed > 0 && BridgeWorkerReaperPending() == 0;
+                evidence.ok = evidence.faultInjectionOk;
+                if (!evidence.ok) throw new InvalidOperationException("fault injection reconnect validation failed");
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable("LKG_FAKE_BRIDGE_MODE", null);
+                Environment.SetEnvironmentVariable("LKG_FAKE_BRIDGE_DELAY_MS", null);
+                Environment.SetEnvironmentVariable("LKG_FAKE_BRIDGE_RELEASE_FILE", null);
             }
         }
 
@@ -583,11 +657,11 @@ namespace LookingGlass.BridgeWorkerValidation
         [Serializable]
         sealed class Evidence
         {
-            public string buildGUID, quiltBuildGUID, quality, grd, unityVersion, graphicsDeviceType, graphicsDeviceVersion, profile, error, cleanupState, sessionState, outputState, pipelineFamily, pipelineAssetName, colorSpace, sourceFormat, sourceGraphicsFormat, sourceDimension, transferFormat, transferGraphicsFormat, transferDimension;
+            public string buildGUID, quiltBuildGUID, quality, grd, unityVersion, graphicsDeviceType, graphicsDeviceVersion, profile, error, cleanupState, sessionState, outputState, pipelineFamily, pipelineAssetName, colorSpace, sourceFormat, sourceGraphicsFormat, sourceDimension, transferFormat, transferGraphicsFormat, transferDimension, faultMode;
             public bool isEditor, development, graphicsMultiThreaded, outputIsActiveAndEnabled, ok, viewDifference, movementDifference, beforeNonBlank, afterNonBlank, beforeAllTilesNonBlank, afterAllTilesNonBlank, beforeAllTilesColorEvidence, afterAllTilesColorEvidence, beforeEdgeDifference, afterEdgeDifference;
             public bool sourceSrgb, transferSrgb;
             public bool grdCounterAvailable;
-            public int beforeChecksum, afterChecksum, quiltWidth, quiltHeight, cleanupPending;
+            public int beforeChecksum, afterChecksum, quiltWidth, quiltHeight, cleanupPending, faultPendingBeforeRelease;
             public int sourceAntiAliasing, transferAntiAliasing;
             public int nativeQuiltWidth, nativeQuiltHeight, nativeColumns, nativeRows, actualQuiltWidth, actualQuiltHeight, actualColumns, actualRows, actualViews, changedPixelCount, beforeEdgeChangedPixels, afterEdgeChangedPixels;
             public float nativeAspect, nativeViewcone, actualAspect, actualViewcone;
@@ -598,7 +672,7 @@ namespace LookingGlass.BridgeWorkerValidation
             public long grdRenderers, visibleInstances;
             public uint restartCompleted;
             public int restartPending;
-            public bool restartOk, qualityCycleOk;
+            public bool restartOk, qualityCycleOk, faultInjectionOk;
             public QualityCycleStage[] qualityCycle;
         }
 

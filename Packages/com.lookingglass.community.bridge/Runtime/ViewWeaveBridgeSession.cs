@@ -38,6 +38,10 @@ namespace LookingGlass.Community
         bool initialized;
         bool pendingStart;
         bool profileApplied;
+        bool completionWatchdogArmed;
+        uint watchdogSubmissions;
+        uint watchdogCompleted;
+        float completionProgressSince;
 
         void Awake()
         {
@@ -119,6 +123,10 @@ namespace LookingGlass.Community
                 return;
             }
             if (State == SessionState.Idle || State == SessionState.Fault) return;
+            if (rig != null && !rig.AutoRender)
+            {
+                ResetCompletionWatchdog();
+            }
             if (rig != null && rig.Renderer != null && !string.IsNullOrEmpty(rig.Renderer.LastAutoRenderError))
             {
                 Fail(rig.Renderer.LastAutoRenderError);
@@ -153,8 +161,10 @@ namespace LookingGlass.Community
                     profileApplied = true;
                 }
                 State = SessionState.Rendering;
+                PollCompletionWatchdog();
                 return;
             }
+            PollCompletionWatchdog();
         }
 
         public bool StartSession()
@@ -194,6 +204,7 @@ namespace LookingGlass.Community
             }
             LastError = string.Empty;
             profileApplied = false;
+            ResetCompletionWatchdog();
             connectingSince = Time.realtimeSinceStartup;
             State = SessionState.Connecting;
             return true;
@@ -204,6 +215,7 @@ namespace LookingGlass.Community
             restartRequested = false;
             pendingStart = false;
             profileApplied = false;
+            ResetCompletionWatchdog();
             pendingQuality = quality;
             if (rig != null) rig.AutoRender = false;
             if (output == null)
@@ -241,6 +253,7 @@ namespace LookingGlass.Community
             {
                 pendingQuality = value;
                 if (rig != null) rig.AutoRender = false;
+                ResetCompletionWatchdog();
                 closingSince = Time.realtimeSinceStartup;
                 State = SessionState.Reconfiguring;
                 return true;
@@ -320,8 +333,52 @@ namespace LookingGlass.Community
             profileApplied = false;
             pendingStart = false;
             restartRequested = false;
+            ResetCompletionWatchdog();
             State = SessionState.Fault;
             return false;
+        }
+
+        void PollCompletionWatchdog()
+        {
+            if (State != SessionState.Rendering || rig == null || !rig.AutoRender || output == null)
+            {
+                ResetCompletionWatchdog();
+                return;
+            }
+            uint submissions = output.Submissions;
+            uint completed = output.Completed;
+            if (!completionWatchdogArmed)
+            {
+                if (submissions != watchdogSubmissions)
+                {
+                    watchdogSubmissions = submissions;
+                    watchdogCompleted = completed;
+                    completionProgressSince = Time.realtimeSinceStartup;
+                    completionWatchdogArmed = true;
+                }
+                return;
+            }
+            if (completed != watchdogCompleted)
+            {
+                watchdogCompleted = completed;
+                completionProgressSince = Time.realtimeSinceStartup;
+            }
+            if (submissions != watchdogSubmissions)
+            {
+                watchdogSubmissions = submissions;
+            }
+            if (completionWatchdogArmed && Time.realtimeSinceStartup - completionProgressSince > 10f)
+            {
+                Fail("Bridge worker completion timed out after 10 seconds");
+            }
+        }
+
+        void ResetCompletionWatchdog()
+        {
+            completionWatchdogArmed = false;
+            watchdogSubmissions = output == null ? 0u : output.Submissions;
+            watchdogCompleted = output == null ? 0u : output.Completed;
+            completionProgressSince = 0f;
         }
 
         void SetError(string message)

@@ -163,6 +163,122 @@ namespace LookingGlass.BridgeSessionValidation
         }
 
         [Test]
+        public void CompletionWatchdogFaultsOnlyAfterRenderingProgressStalls()
+        {
+            GameObject host = CreateHost(true);
+            try
+            {
+                ViewWeaveBridgeSession session = host.GetComponent<ViewWeaveBridgeSession>();
+                BridgeWorkerQuiltOutput output = host.GetComponent<BridgeWorkerQuiltOutput>();
+                ViewWeaveRig rig = host.GetComponent<ViewWeaveRig>();
+                Type outputType = typeof(BridgeWorkerQuiltOutput);
+                FieldInfo outputState = outputType.GetField("state", BindingFlags.Instance | BindingFlags.NonPublic);
+                FieldInfo submissions = outputType.GetField("<Submissions>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic);
+                FieldInfo sessionState = typeof(ViewWeaveBridgeSession).GetField("<State>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic);
+                FieldInfo watchdogArmed = typeof(ViewWeaveBridgeSession).GetField("completionWatchdogArmed", BindingFlags.Instance | BindingFlags.NonPublic);
+                FieldInfo watchdogSubmissions = typeof(ViewWeaveBridgeSession).GetField("watchdogSubmissions", BindingFlags.Instance | BindingFlags.NonPublic);
+                FieldInfo watchdogCompleted = typeof(ViewWeaveBridgeSession).GetField("watchdogCompleted", BindingFlags.Instance | BindingFlags.NonPublic);
+                FieldInfo progressSince = typeof(ViewWeaveBridgeSession).GetField("completionProgressSince", BindingFlags.Instance | BindingFlags.NonPublic);
+                MethodInfo update = typeof(ViewWeaveBridgeSession).GetMethod("Update", BindingFlags.Instance | BindingFlags.NonPublic);
+                Assert.IsNotNull(outputState); Assert.IsNotNull(submissions); Assert.IsNotNull(sessionState);
+                Assert.IsNotNull(watchdogArmed); Assert.IsNotNull(watchdogSubmissions); Assert.IsNotNull(watchdogCompleted); Assert.IsNotNull(progressSince); Assert.IsNotNull(update);
+                typeof(ViewWeaveRig).GetField("autoRender", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(rig, true);
+                typeof(ViewWeaveBridgeSession).GetField("profileApplied", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(session, true);
+                outputState.SetValue(output, BridgeWorkerQuiltOutput.WorkerState.Ready);
+                submissions.SetValue(output, 10u);
+                sessionState.SetValue(session, ViewWeaveBridgeSession.SessionState.Rendering);
+                watchdogArmed.SetValue(session, true);
+                watchdogSubmissions.SetValue(session, 10u);
+                watchdogCompleted.SetValue(session, 0u);
+                progressSince.SetValue(session, Time.realtimeSinceStartup - 11f);
+                update.Invoke(session, null);
+                Assert.AreEqual(ViewWeaveBridgeSession.SessionState.Fault, session.State);
+                StringAssert.Contains("completion timed out", session.LastError);
+                Assert.IsFalse(rig.AutoRender);
+                Assert.IsTrue(IsAscii(session.LastError));
+            }
+            finally
+            {
+                Object.DestroyImmediate(host);
+            }
+        }
+
+        [Test]
+        public void CompletionWatchdogIgnoresExistingSubmissionCounterWithoutNewSubmission()
+        {
+            GameObject host = CreateHost(true);
+            try
+            {
+                ViewWeaveBridgeSession session = host.GetComponent<ViewWeaveBridgeSession>();
+                BridgeWorkerQuiltOutput output = host.GetComponent<BridgeWorkerQuiltOutput>();
+                ViewWeaveRig rig = host.GetComponent<ViewWeaveRig>();
+                Type outputType = typeof(BridgeWorkerQuiltOutput);
+                outputType.GetField("state", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(output, BridgeWorkerQuiltOutput.WorkerState.Ready);
+                outputType.GetField("<Submissions>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(output, 20u);
+                typeof(ViewWeaveBridgeSession).GetField("<State>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(session, ViewWeaveBridgeSession.SessionState.Rendering);
+                typeof(ViewWeaveBridgeSession).GetField("watchdogSubmissions", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(session, 20u);
+                typeof(ViewWeaveBridgeSession).GetField("watchdogCompleted", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(session, 20u);
+                typeof(ViewWeaveBridgeSession).GetField("completionWatchdogArmed", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(session, false);
+                typeof(ViewWeaveBridgeSession).GetField("completionProgressSince", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(session, Time.realtimeSinceStartup - 11f);
+                typeof(ViewWeaveRig).GetField("autoRender", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(rig, true);
+                typeof(ViewWeaveBridgeSession).GetField("profileApplied", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(session, true);
+                typeof(ViewWeaveBridgeSession).GetMethod("Update", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(session, null);
+                Assert.AreEqual(ViewWeaveBridgeSession.SessionState.Rendering, session.State);
+                Assert.IsTrue(rig.AutoRender);
+            }
+            finally
+            {
+                Object.DestroyImmediate(host);
+            }
+        }
+
+        [Test]
+        public void CompletionWatchdogRefreshesOnProgressAndRearmsAfterAutoRenderResume()
+        {
+            GameObject host = CreateHost(true);
+            try
+            {
+                ViewWeaveBridgeSession session = host.GetComponent<ViewWeaveBridgeSession>();
+                BridgeWorkerQuiltOutput output = host.GetComponent<BridgeWorkerQuiltOutput>();
+                ViewWeaveRig rig = host.GetComponent<ViewWeaveRig>();
+                Type outputType = typeof(BridgeWorkerQuiltOutput);
+                Type statusType = typeof(BridgeWorkerQuiltOutput).Assembly.GetType("LookingGlass.Community.BridgeWorkerNative", true).GetNestedType("Status", BindingFlags.Public | BindingFlags.NonPublic);
+                FieldInfo status = outputType.GetField("status", BindingFlags.Instance | BindingFlags.NonPublic);
+                FieldInfo outputState = outputType.GetField("state", BindingFlags.Instance | BindingFlags.NonPublic);
+                FieldInfo submissions = outputType.GetField("<Submissions>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic);
+                FieldInfo sessionState = typeof(ViewWeaveBridgeSession).GetField("<State>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic);
+                FieldInfo armed = typeof(ViewWeaveBridgeSession).GetField("completionWatchdogArmed", BindingFlags.Instance | BindingFlags.NonPublic);
+                FieldInfo completedBaseline = typeof(ViewWeaveBridgeSession).GetField("watchdogCompleted", BindingFlags.Instance | BindingFlags.NonPublic);
+                FieldInfo since = typeof(ViewWeaveBridgeSession).GetField("completionProgressSince", BindingFlags.Instance | BindingFlags.NonPublic);
+                FieldInfo auto = typeof(ViewWeaveRig).GetField("autoRender", BindingFlags.Instance | BindingFlags.NonPublic);
+                MethodInfo update = typeof(ViewWeaveBridgeSession).GetMethod("Update", BindingFlags.Instance | BindingFlags.NonPublic);
+                object value = Activator.CreateInstance(statusType);
+                SetStatusField(statusType, value, "completed", 4u);
+                status.SetValue(output, value);
+                outputState.SetValue(output, BridgeWorkerQuiltOutput.WorkerState.Ready);
+                submissions.SetValue(output, 5u);
+                sessionState.SetValue(session, ViewWeaveBridgeSession.SessionState.Rendering);
+                typeof(ViewWeaveBridgeSession).GetField("profileApplied", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(session, true);
+                armed.SetValue(session, true); completedBaseline.SetValue(session, 3u); since.SetValue(session, Time.realtimeSinceStartup - 11f);
+                auto.SetValue(rig, true); float beforeRefresh = Time.realtimeSinceStartup; update.Invoke(session, null);
+                Assert.AreEqual(ViewWeaveBridgeSession.SessionState.Rendering, session.State);
+                Assert.IsTrue((bool)armed.GetValue(session));
+                Assert.Greater((float)since.GetValue(session), beforeRefresh - 0.1f);
+                since.SetValue(session, Time.realtimeSinceStartup - 11f);
+                auto.SetValue(rig, false); update.Invoke(session, null);
+                Assert.IsFalse((bool)armed.GetValue(session));
+                auto.SetValue(rig, true); update.Invoke(session, null);
+                Assert.IsFalse((bool)armed.GetValue(session));
+                submissions.SetValue(output, 6u); update.Invoke(session, null);
+                Assert.IsTrue((bool)armed.GetValue(session));
+            }
+            finally
+            {
+                Object.DestroyImmediate(host);
+            }
+        }
+
+        [Test]
         public void InvalidProfilePresetIsRejectedBeforeProfileUse()
         {
             Assert.Throws<System.ArgumentOutOfRangeException>(() => ViewWeaveBridgeSession.CreateQualityProfile(default, (QuiltQualityPreset)99));

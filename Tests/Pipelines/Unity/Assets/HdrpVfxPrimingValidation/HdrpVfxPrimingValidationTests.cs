@@ -33,6 +33,7 @@ namespace LookingGlass.HdrpVfxPrimingValidation
             try
             {
                 fixture.Setup();
+                yield return fixture.PrepareVfxAsset();
                 yield return fixture.WarmupNormalCamera();
                 fixture.SetRendererEnabled(false);
                 yield return null;
@@ -83,6 +84,8 @@ namespace LookingGlass.HdrpVfxPrimingValidation
             Texture2D normalAfter;
             Texture2D quiltBefore;
             Texture2D quiltAfter;
+            string clonedAssetPath;
+            bool clonedAssetOwned;
             bool disposed;
 
             public void Setup()
@@ -108,6 +111,28 @@ namespace LookingGlass.HdrpVfxPrimingValidation
                 CreateEffect();
                 Directory.CreateDirectory(evidenceDirectory);
                 WriteEvidence("setup.txt", "sameCamera=true\nnormalWidth=512\nnormalHeight=384\nquiltWidth=512\nquiltHeight=192\ntileWidth=128\ntileHeight=96\nseed=17\nprepareCamera=false\nlayer=31\n");
+            }
+
+            public IEnumerator PrepareVfxAsset()
+            {
+                yield return null;
+                yield return null;
+                bool pipelineActive = GraphicsSettings.currentRenderPipeline is HDRenderPipelineAsset;
+                WriteEvidence("asset-preparation.txt", "stage=pipeline-active\nactive=" + pipelineActive + "\n");
+                Assert.IsTrue(pipelineActive, "HDRP pipeline is not active before priming VFX asset import");
+                string sourceAssetPath = "Packages/com.unity.visualeffectgraph/Editor/Templates/Simple_Burst.vfx";
+                clonedAssetPath = AssetDatabase.GenerateUniqueAssetPath("Assets/HdrpVfxPrimingValidation/Simple_Burst_hdrp_priming.vfx");
+                bool copied = AssetDatabase.CopyAsset(sourceAssetPath, clonedAssetPath);
+                WriteEvidence("asset-preparation.txt", "stage=copy\nsource=" + sourceAssetPath + "\nclone=" + clonedAssetPath + "\ncopySucceeded=" + copied + "\n");
+                Assert.IsTrue(copied, "failed to copy priming VFX asset");
+                clonedAssetOwned = true;
+                AssetDatabase.ImportAsset(clonedAssetPath, ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
+                var clone = AssetDatabase.LoadAssetAtPath<VisualEffectAsset>(clonedAssetPath);
+                WriteEvidence("asset-preparation.txt", "stage=import\ncloneLoaded=" + (clone != null) + "\n");
+                Assert.IsNotNull(clone, "priming VFX clone did not import");
+                effect.visualEffectAsset = clone;
+                effect.Reinit();
+                yield return null;
             }
 
             void CreateCamera()
@@ -235,6 +260,16 @@ namespace LookingGlass.HdrpVfxPrimingValidation
                 Assert.IsNotNull(vfxRenderer, "VFXRenderer was not created by the VFX asset");
                 for (int frame = 0; frame < 60; ++frame)
                     yield return null;
+                Material material = vfxRenderer.sharedMaterial;
+                Shader shader = material == null ? null : material.shader;
+                string tag = material == null ? "null" : material.GetTag("RenderPipeline", false, "<missing>");
+                string shaderEvidence = "stage=shader\nmaterial=" + (material == null ? "null" : material.name) + "\nshader=" + (shader == null ? "null" : shader.name) + "\nshaderSupported=" + (shader != null && shader.isSupported) + "\nshaderPassCount=" + (material == null ? 0 : material.passCount) + "\nrenderPipelineTag=" + tag + "\n";
+                if (material != null)
+                    for (int pass = 0; pass < material.passCount; ++pass)
+                        shaderEvidence += "pass=" + pass + " name=" + material.GetPassName(pass) + "\n";
+                WriteEvidence("asset-shader.txt", shaderEvidence);
+                Assert.IsNotNull(material, "priming VFX material is unavailable");
+                Assert.AreEqual("HDRenderPipeline", tag, "priming VFX shader is not HDRP tagged");
                 effect.Reinit();
                 effect.Play();
                 effect.pause = false;
@@ -352,7 +387,20 @@ namespace LookingGlass.HdrpVfxPrimingValidation
 
             void WriteEvidence(string name, string content)
             {
-                File.WriteAllText(Path.Combine(evidenceDirectory, name), content);
+                File.WriteAllText(Path.Combine(evidenceDirectory, name), AsciiEvidence(content));
+            }
+
+            static string AsciiEvidence(string content)
+            {
+                if (content == null) return string.Empty;
+                char[] chars = content.ToCharArray();
+                for (int index = 0; index < chars.Length; ++index)
+                {
+                    char value = chars[index];
+                    if (value != '\n' && value != '\r' && value != '\t' && (value < 32 || value > 126))
+                        chars[index] = '?';
+                }
+                return new string(chars);
             }
 
             void DisableExternalRenderers()
@@ -402,6 +450,8 @@ namespace LookingGlass.HdrpVfxPrimingValidation
                 owned.Clear();
                 GraphicsSettings.defaultRenderPipeline = previousDefault;
                 QualitySettings.renderPipeline = previousQuality;
+                if (clonedAssetOwned && !string.IsNullOrEmpty(clonedAssetPath))
+                    AssetDatabase.DeleteAsset(clonedAssetPath);
                 foreach (var state in disabled)
                     if (state.component != null) state.component.enabled = state.enabled;
                 RenderSettings.sun = previousSun;

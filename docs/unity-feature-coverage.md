@@ -4,7 +4,7 @@
 
 ## 現在の検証集計
 
-最終Windows D3D11 PlayModeは115件中101件pass、14件fail、skip 0です。Session 15/15、互換性37/37、GRD 27/27、SRP追加6/6、SRP拡張2/2、VFX driver 5/5、Samples 4/4を確認しました。未通過はHDRP priming 1件とVFX compatibility 13件です。詳細な正本集計は [docs/compatibility.md](compatibility.md) を参照してください。
+最終Windows D3D11 PlayModeは123件中108件pass、15件fail、skip 0です。Session 18/18、互換性37/37、GRD 27/27、SRP追加10/10、SRP拡張2/2、VFX driver 5/5、Samples 4/4を確認しました。未通過はHDRP priming 1件とVFX compatibility 14件です。別実行のVFX matrixは20件中5件pass、15件failでした。詳細な正本集計は [docs/compatibility.md](compatibility.md) を参照してください。
 
 GRD の性能実測は URP normal multithreaded Player の範囲だけです。HDRP fixture で GRD 性能を測定した結果とは扱いません。自動描画 scheduler は scene rendering 後に実行しますが、機能固有の更新順序や一般的な描画対応を保証するものではありません。
 
@@ -49,7 +49,7 @@ GRD の性能実測は URP normal multithreaded Player の範囲だけです。H
 | URP Bloom | 限定実測 | 個別Bloom fixtureで視点ごとの差を確認。一般のVolume継承、他の効果、tile seamは未検証。 |
 | Color Adjustments / Tonemapping / Exposure | 限定実測 | 個別Tone/Color fixtureで描画差を確認。HDRPはLinear + Fixed Exposureを要求し、Auto/非固定ExposureはGuardで拒否。一般の色管理は未検証。 |
 | Motion Blur | 非対応 | URP/HDRP Guard が temporal Motion Blur を拒否。 |
-| FXAA / SMAA / MSAA | FXAA/SMAAは限定確認。URP MSAA 1/1で4x view RT、1x resolve、resize/disable lifecycle、中心色一致を確認。一般Player、HDRP MSAA、性能は未検証 | MSAAの一般素材、Unity/Player、画質、性能を検証。 |
+| FXAA / SMAA / MSAA | FXAA/SMAAは限定確認。URP MSAA 1/1で4x view RT、1x resolve、resize/disable lifecycle、中心色一致を確認。追加のLinear境界試験10/10で、このRTX GPUの2x/4x/8x対応倍率、pipeline 1x、allowMSAA無効、Deferred fallback、中心色一致と対応MSAAのedge差分を確認。低MSAA能力GPU、専用Player、Gamma、HDRP MSAA、性能は未検証 | MSAAの一般素材、Unity/Player、画質、性能を検証。 |
 | TAA / temporal history | 非対応 | view render 中は TAA を無効化して終了時に復元。独立した per-view temporal history は提供しない。 |
 | SSAO / SSGI / SSR | 非対応または未検証 | HDRP の SSGI/SSR は temporal としてGuardが拒否。URP/HDRPの他構成は未検証。 |
 | Fog / Volumetric Fog / Clouds | 非対応または未検証 | HDRP volumetric fog/cloud はGuardが拒否。一般の fog は未検証。 |

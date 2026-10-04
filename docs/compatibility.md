@@ -10,7 +10,7 @@
 
 URP driver対象試験は最新統合で5/5通過しました。これは通常制御Cameraと実験用driver条件に限定した結果で、VFX全体の対応を示しません。
 
-旧82/71/11のWindows D3D11 PlayMode統合に代わる最終実行は115件中101件通過、14件失敗、skip 0でした。Session 15/15、互換性37/37、GRD 27/27、SRP追加6/6、SRP拡張2/2、VFX driver 5/5、Samples 4/4を確認しました。未通過はHDRP priming 1件とVFX compatibility 13件で、未通過条件では十分な全tileの効果を確認できませんでした。Bridge接続のURP/HDRP PlayerはPreview、Balanced、NativeのGRD ON/OFF各6条件を固定条件で確認しています。これらは個別fixtureと固定条件の結果であり、機能全体の対応や一般機器でのPlayer実行の保証を意味しません。品質切替cycleも固定条件で通過しました。性能優位と光学品質の全視点人手確認、配布署名、hotplug、複数機器、Metalは未確定です。
+旧82/71/11と前回115件のWindows D3D11 PlayMode統合に代わる最終実行は123件中108件通過、15件失敗、skip 0でした。Session 18/18、互換性37/37、GRD 27/27、SRP追加10/10、SRP拡張2/2、VFX driver 5/5、Samples 4/4を確認しました。未通過はHDRP priming 1件とVFX compatibility 14件で、別実行のVFX matrixは20件中5件pass、15件failでした。未通過条件では十分な全tileの効果を確認できませんでした。Bridge接続のURP/HDRP PlayerはPreview、Balanced、NativeのGRD ON/OFF各6条件を固定条件で確認しています。これらは個別fixtureと固定条件の結果であり、機能全体の対応や一般機器でのPlayer実行の保証を意味しません。品質切替cycleも固定条件で通過しました。性能優位と光学品質の全視点人手確認、配布署名、hotplug、複数機器、Metalは未確定です。
 
 公式4 beta/alpha資料は、確認した範囲ではURP 17.0〜17.1、Unity 6000.0〜6000.1を対象とし、公式HDRPは未対応です。既定のdepth interpolationには透明表現上の制約があり、VFXには追加設定が必要です。公式iOS対象を対象外とは扱いません。本SDKの初期release範囲は別途定義します。
 
@@ -33,9 +33,9 @@ URP driver対象試験は最新統合で5/5通過しました。これは通常�
 | Bloom / Tonemapping / Color Adjustments | Lit/Bloom smokeのみ確認 | per-view処理とtile seamを検証 |
 | TAA / temporal / Auto Exposure | TAAは一時停止、履歴独立は未検証 | 履歴とメモリを別研究 |
 | Motion Blur / SSR / SSGI / fog / cloud | 現状経路では拒否 | fallbackと条件を検証 |
-| AA: FXAA / SMAA / MSAA | FXAA/SMAAは追加fixtureで8視点の差分を確認。URP MSAA 1/1で4x view RT、1x resolve、resize/disable lifecycle、中心色一致を確認。一般Player、画質、性能は未検証 | MSAAの一般素材、Player、性能を測定 |
+| AA: FXAA / SMAA / MSAA | FXAA/SMAAは追加fixtureで8視点の差分を確認。URP MSAA 1/1で4x view RT、1x resolve、resize/disable lifecycle、中心色一致を確認。追加のLinear境界試験10/10で、このRTX GPUの2x/4x/8x対応倍率、pipeline 1x、allowMSAA無効、Deferred fallback、中心色一致と対応MSAAのedge差分を確認。低MSAA能力GPU、専用Player、Gamma、性能は未検証 | MSAAの一般素材、Player、性能を測定 |
 | Particles | M3のLit/Unlit表示fixtureを確認。一般的な粒子機能全体は未確定 | simulation once/frame、billboard、sort、culling、soft depthを検証 |
-| VFX | URP driver 5/5は通過。VFX compatibilityは18件中5件通過、13件未通過。HDRP primingは1件未通過。未通過条件では十分な全tileの効果を確認できず、HDRP driverは提供しない | 補助Camera条件、透明処理、sort、公式4資料の追加設定を検証 |
+| VFX | URP driver 5/5は通過。最終D3D11のVFX compatibilityは19件中5件通過、14件未通過。別実行のVFX matrixは20件中5件通過、15件未通過。HDRP primingは1件未通過。未通過条件では十分な全tileの効果を確認できず、HDRP driverは提供しない | 補助Camera条件、透明処理、sort、公式4資料の追加設定を検証 |
 | uGUI | WorldSpaceとScreen Space CameraのM3試験を確認 | 各視点の入力、配置、合成条件を検証 |
 | UI Toolkit | Unity 6.6 WorldSpace/targetTexture APIはinstalled XMLで確認済み。M3 targetTexture fixtureを確認 | RT route、ray map、DPI、EventSystemを検証 |
 | Overlay / camera stacking | Overlayは通常画面へ描いても自動Quilt captureされない。URP stackは拒否 | 各viewと同じdepthで合成する方式を検証 |

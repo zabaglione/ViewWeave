@@ -56,6 +56,7 @@ namespace LookingGlass.VFXCompatibility
         [UnityTest] public IEnumerator HDRP_SimpleBurst_Driver8_GRD_On() => RunDriver("hdrp", true, 8);
         [UnityTest] public IEnumerator HDRP_SimpleBurst_Driver48_GRD_Off() => RunDriver("hdrp", false, 48);
         [UnityTest] public IEnumerator HDRP_SimpleBurst_Driver48_GRD_On() => RunDriver("hdrp", true, 48);
+        [UnityTest] public IEnumerator HDRP_SimpleBurst_SeparatedNormalOnly_CloneRequestDiagnostic() => RunHdrpCloneRequestDiagnostic();
 
         static IEnumerator Run(string pipelineName, bool grdEnabled)
         {
@@ -69,6 +70,7 @@ namespace LookingGlass.VFXCompatibility
             {
                 fixture = new Fixture(pipelineName, grdEnabled, quiltOnly);
                 fixture.Setup();
+                yield return fixture.PrepareVfxAsset();
                 yield return fixture.WarmupAndPause();
                 fixture.SetEffectEnabled(false);
                 yield return fixture.WaitForRender();
@@ -91,6 +93,7 @@ namespace LookingGlass.VFXCompatibility
             {
                 fixture = new Fixture(pipelineName, grdEnabled, quiltOnly, driverWidth, driverHeight, separated, false, false);
                 fixture.Setup();
+                yield return fixture.PrepareVfxAsset();
                 yield return fixture.WarmupAndPause();
                 fixture.SetEffectEnabled(false);
                 yield return fixture.WaitForRender();
@@ -113,6 +116,7 @@ namespace LookingGlass.VFXCompatibility
             {
                 fixture = new Fixture("hdrp", false, false, 512, 384, true, false, true);
                 fixture.Setup();
+                yield return fixture.PrepareVfxAsset();
                 yield return fixture.WarmupNormalOnly();
                 fixture.SetEffectEnabled(false);
                 yield return fixture.WaitForRender();
@@ -135,6 +139,7 @@ namespace LookingGlass.VFXCompatibility
             {
                 fixture = new Fixture(pipelineName, grdEnabled, false, 1, 1, true, false, false, viewCount, true);
                 fixture.Setup();
+                yield return fixture.PrepareVfxAsset();
                 yield return null;
                 fixture.AssertDriverRunning();
                 yield return fixture.WarmupAndPause();
@@ -150,6 +155,55 @@ namespace LookingGlass.VFXCompatibility
             {
                 fixture?.Dispose();
             }
+        }
+
+        static IEnumerator RunHdrpCloneRequestDiagnostic()
+        {
+#if !UNITY_EDITOR
+            Assert.Fail("VFX compatibility fixtures require the Unity Editor");
+            yield break;
+#else
+            Fixture fixture = null;
+            try
+            {
+                fixture = new Fixture("hdrp", false, false, 512, 384, true, false, true);
+                fixture.Setup();
+                yield return fixture.PrepareVfxAsset();
+                yield return fixture.WarmupNormalOnly();
+                fixture.WriteShaderEvidence("diagnostic-shader");
+                fixture.SetEffectEnabled(false);
+                yield return fixture.WaitForRender();
+                fixture.CaptureNormalOnly("diagnostic-normal-before");
+                fixture.SetEffectEnabled(true);
+                yield return fixture.WaitForRender();
+                fixture.CaptureNormalOnly("diagnostic-normal-after");
+                int normalChanged = fixture.CountNormalChanged();
+                fixture.WriteDiagnosticEvidence("diagnostic-normal-result", "stage=normal-camera\nchangedPixels=" + normalChanged + "\n");
+                Assert.Greater(normalChanged, 20, "HDRP normal camera clone control changed fewer than 20 pixels");
+                fixture.SetEffectEnabled(false);
+                yield return fixture.RenderStandardRequestFrames(3);
+                fixture.CaptureNormalOnly("diagnostic-request-before");
+                fixture.SetEffectEnabled(true);
+                yield return fixture.RenderStandardRequestFrames(3);
+                fixture.CaptureNormalOnly("diagnostic-request-after");
+                int requestChanged = fixture.CountNormalChanged();
+                fixture.WriteDiagnosticEvidence("diagnostic-request-result", "stage=standard-request\nframesBefore=3\nframesAfter=3\nchangedPixels=" + requestChanged + "\n");
+                fixture.SetEffectEnabled(false);
+                yield return fixture.RenderStandardRequestFrames(3, true);
+                fixture.CaptureNormalOnly("diagnostic-request-enabled-before");
+                fixture.SetEffectEnabled(true);
+                yield return fixture.RenderStandardRequestFrames(3, true);
+                fixture.CaptureNormalOnly("diagnostic-request-enabled-after");
+                int enabledRequestChanged = fixture.CountNormalChanged();
+                fixture.WriteDiagnosticEvidence("diagnostic-request-enabled-result", "stage=standard-request-camera-enabled-during-submit\nframesBefore=3\nframesAfter=3\nchangedPixels=" + enabledRequestChanged + "\ncameraEnabledDuringYield=false\n");
+                Assert.Greater(requestChanged, 20, "HDRP StandardRequest clone changed fewer than 20 pixels");
+                Assert.Greater(enabledRequestChanged, 20, "HDRP StandardRequest enabled-camera variant changed fewer than 20 pixels");
+            }
+            finally
+            {
+                fixture?.Dispose();
+            }
+#endif
         }
 
         sealed class Fixture
@@ -202,6 +256,10 @@ namespace LookingGlass.VFXCompatibility
             bool autoAdvanceDuringWarmup;
             int aliveCount;
             bool culled;
+            string clonedAssetPath;
+            bool clonedAssetOwned;
+            bool assetPrepared;
+            bool shaderEvidenceWritten;
 
             public Fixture(string pipeline, bool grd, bool onlyQuilt)
                 : this(pipeline, grd, onlyQuilt, 512, 384, false, true, false)
@@ -492,6 +550,39 @@ namespace LookingGlass.VFXCompatibility
                 owned.Add(material);
             }
 
+            public IEnumerator PrepareVfxAsset()
+            {
+#if !UNITY_EDITOR
+                yield break;
+#else
+                if (assetPrepared) yield break;
+                yield return null;
+                yield return null;
+                bool hdrp = pipelineName == "hdrp";
+                bool pipelineActive = hdrp ? GraphicsSettings.currentRenderPipeline is HDRenderPipelineAsset : GraphicsSettings.currentRenderPipeline is UniversalRenderPipelineAsset;
+                WriteEvidence("asset-preparation", "stage=pipeline-active\npipeline=" + pipelineName + "\nactive=" + pipelineActive + "\n");
+                Assert.IsTrue(pipelineActive, pipelineName + " pipeline is not active before VFX asset import");
+                if (quiltOnly)
+                {
+                    quilt.RenderQuilt();
+                    yield return null;
+                }
+                string sourceAssetPath = "Packages/com.unity.visualeffectgraph/Editor/Templates/Simple_Burst.vfx";
+                clonedAssetPath = AssetDatabase.GenerateUniqueAssetPath("Assets/VFXCompatibility/Simple_Burst_" + pipelineName + "_Diagnostic.vfx");
+                bool copied = AssetDatabase.CopyAsset(sourceAssetPath, clonedAssetPath);
+                WriteEvidence("asset-preparation", "stage=copy\npipeline=" + pipelineName + "\nsource=" + sourceAssetPath + "\nclone=" + clonedAssetPath + "\ncopySucceeded=" + copied + "\n");
+                Assert.IsTrue(copied, "failed to copy VFX asset for " + pipelineName);
+                clonedAssetOwned = true;
+                AssetDatabase.ImportAsset(clonedAssetPath, ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
+                VisualEffectAsset clone = AssetDatabase.LoadAssetAtPath<VisualEffectAsset>(clonedAssetPath);
+                WriteEvidence("asset-preparation", "stage=import\npipeline=" + pipelineName + "\ncloneLoaded=" + (clone != null) + "\n");
+                Assert.IsNotNull(clone, pipelineName + " VFX clone did not import");
+                ReplaceVisualEffectAsset(clone);
+                yield return null;
+                assetPrepared = true;
+#endif
+            }
+
             public IEnumerator WarmupAndPause()
             {
                 yield return null;
@@ -501,6 +592,7 @@ namespace LookingGlass.VFXCompatibility
                     quilt.RenderQuilt();
                     yield return null;
                 }
+                EnsureShaderEvidence();
                 effect.Reinit();
                 effect.Play();
                 effect.pause = false;
@@ -537,10 +629,75 @@ namespace LookingGlass.VFXCompatibility
                 Assert.IsFalse(camera.enabled, "source camera must remain disabled while the driver is active");
             }
 
+            public void ReplaceVisualEffectAsset(VisualEffectAsset asset)
+            {
+                Assert.IsNotNull(asset, "diagnostic VFX asset is null");
+                effect.visualEffectAsset = asset;
+                effect.Reinit();
+            }
+
+            public IEnumerator RenderStandardRequestFrames(int frameCount, bool enableDuringSubmit = false)
+            {
+                Assert.IsNotNull(normalTarget, "normal target is unavailable for StandardRequest");
+                camera.enabled = false;
+                RenderPipeline.StandardRequest request = new RenderPipeline.StandardRequest { destination = normalTarget };
+                Assert.IsTrue(RenderPipeline.SupportsRenderRequest(camera, request), "HDRP does not support StandardRequest for diagnostic camera");
+                for (int frame = 0; frame < frameCount; ++frame)
+                {
+                    camera.enabled = enableDuringSubmit;
+                    try
+                    {
+                        RenderPipeline.SubmitRenderRequest(camera, request);
+                    }
+                    finally
+                    {
+                        camera.enabled = false;
+                    }
+                    yield return null;
+                }
+            }
+
+            public int CountNormalChanged()
+            {
+                return CountChanged(normalBefore, normalAfter);
+            }
+
+            public void WriteShaderEvidence(string name)
+            {
+                WriteVfxShaderEvidence(name, "HDRenderPipeline");
+            }
+
+            public void WriteVfxShaderEvidence(string name, string expectedTag)
+            {
+                Material material = vfxRenderer == null ? null : vfxRenderer.sharedMaterial;
+                Shader shader = material == null ? null : material.shader;
+                string content = "stage=shader\nmaterial=" + (material == null ? "null" : Sanitize(material.name)) + "\nshader=" + (shader == null ? "null" : Sanitize(shader.name)) + "\nshaderSupported=" + (shader != null && shader.isSupported) + "\nshaderPassCount=" + (material == null ? 0 : material.passCount) + "\nrenderPipelineTag=" + (material == null ? "null" : Sanitize(material.GetTag("RenderPipeline", false, "<missing>"))) + "\n";
+                if (material != null)
+                    for (int pass = 0; pass < material.passCount; ++pass)
+                        content += "pass=" + pass + " name=" + Sanitize(material.GetPassName(pass)) + "\n";
+                WriteEvidence(name, content);
+                Assert.IsNotNull(material, "diagnostic VFX material is unavailable");
+                Assert.IsNotNull(shader, "diagnostic VFX shader is unavailable");
+                Assert.AreEqual(expectedTag, material.GetTag("RenderPipeline", false, "<missing>"), "diagnostic VFX shader has an unexpected RenderPipeline tag");
+                shaderEvidenceWritten = true;
+            }
+
+            void EnsureShaderEvidence()
+            {
+                if (!shaderEvidenceWritten)
+                    WriteVfxShaderEvidence("asset-shader", pipelineName == "hdrp" ? "HDRenderPipeline" : "UniversalPipeline");
+            }
+
+            public void WriteDiagnosticEvidence(string name, string content)
+            {
+                WriteEvidence(name, content);
+            }
+
             public IEnumerator WarmupNormalOnly()
             {
                 yield return null;
                 for (int cacheFrame = 0; cacheFrame < 60; ++cacheFrame) yield return null;
+                EnsureShaderEvidence();
                 effect.Reinit();
                 effect.Play();
                 effect.pause = false;
@@ -632,7 +789,16 @@ namespace LookingGlass.VFXCompatibility
             public void CaptureNormalOnly(string suffix)
             {
                 Texture2D image = ReadTargetImage(normalTarget);
-                if (suffix == "before") normalBefore = image; else normalAfter = image;
+                if (suffix.EndsWith("before"))
+                {
+                    if (normalBefore != null) UnityEngine.Object.DestroyImmediate(normalBefore);
+                    normalBefore = image;
+                }
+                else
+                {
+                    if (normalAfter != null) UnityEngine.Object.DestroyImmediate(normalAfter);
+                    normalAfter = image;
+                }
                 File.WriteAllBytes(Path.Combine(evidenceDirectory, FilePrefix() + "-" + suffix + ".png"), image.EncodeToPNG());
             }
 
@@ -780,6 +946,10 @@ namespace LookingGlass.VFXCompatibility
                 }
                 GraphicsSettings.defaultRenderPipeline = oldDefaultPipeline;
                 QualitySettings.renderPipeline = oldQualityPipeline;
+#if UNITY_EDITOR
+                if (clonedAssetOwned && !string.IsNullOrEmpty(clonedAssetPath))
+                    AssetDatabase.DeleteAsset(clonedAssetPath);
+#endif
                 if (ownedPipeline != null) UnityEngine.Object.DestroyImmediate(ownedPipeline);
                 if (ownedRendererData != null) UnityEngine.Object.DestroyImmediate(ownedRendererData);
                 foreach (LightState state in savedLights) if (state.component != null) state.component.enabled = state.enabled;
