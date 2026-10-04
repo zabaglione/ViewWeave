@@ -1,18 +1,20 @@
 # Getting started
 
-このrepositoryをcheckoutするにはGitHubのprivate repositoryへのアクセス権が必要です。独自コードのライセンスは[Apache-2.0](../LICENSE)です。
+このprivate repositoryからUnity Package Managerで取得するにはGitHubへのアクセス権が必要です。独自コードのライセンスは[Apache-2.0](../LICENSE)です。
 
 この手順はUnity 6000.6.4f1のWindowsプロジェクトを対象にします。URPまたはHDRPのpackageを選び、BridgeなしのEditor previewから始めるか、Bridgeを追加してWindows D3D11 Playerを作ります。
 
-## 1. packageを追加する
+## 1. packageをGit URLから追加する
 
 1. Unity HubでURPまたはHDRPの空プロジェクトを作成し、Unity Editorで開きます。
-2. `Window > Package Management > Package Manager`の`+ > Install package from disk`を選び、次の順に各`package.json`を追加します。
-   - 必須: `Packages/com.lookingglass.community.core/package.json`
-   - URP: `Packages/com.lookingglass.community.urp/package.json`
-   - HDRP: `Packages/com.lookingglass.community.hdrp/package.json`
-   - 実機Playerのみ: `Packages/com.lookingglass.community.bridge/package.json`
-3. URP previewを試す場合はCore packageのSamplesから`Quilt Preview`をImportします。実機用ならBridge packageの`Windows URP Lit`または`Windows HDRP Lit`もImportします。
+2. GitHub private repositoryを読めるGit Credential Managerを設定します。SSHを使う場合はSSH鍵をGitHubへ登録してください。認証tokenをURLへ埋め込まないでください。
+3. `Window > Package Management > Package Manager`の`+ > Install package from git URL`を選びます。
+4. HTTPSではURPに`https://github.com/zabaglione/ViewWeave.git?path=/Distribution/urp#main`、HDRPに`https://github.com/zabaglione/ViewWeave.git?path=/Distribution/hdrp#main`を入力します。SSHではURPに`ssh://git@github.com/zabaglione/ViewWeave.git?path=/Distribution/urp#main`、HDRPに`ssh://git@github.com/zabaglione/ViewWeave.git?path=/Distribution/hdrp#main`を入力します。
+5. 配布packageにCore、Bridge、選択したpipelineが含まれるため、別packageを追加しません。Package Managerの`Samples`からURPでは`Quilt Preview`または`Windows URP Lit`、HDRPでは`Windows HDRP Lit`をImportします。
+
+URPとHDRPの配布packageは同じprojectへ同時に追加せず、projectのpipelineに合う方を1つ選びます。`#main`を使うGit packageはPackage Managerのcacheが残ることがあるため、更新を確認するときは一度Removeしてから同じGit URLを再Addするか、検証用のcommit hashをURLのrefに指定します。
+
+旧`com.lookingglass.community.*` packageから移行する場合は、Rig sceneを保存してプロジェクトをバックアップし、Package Managerで旧URP/HDRP、Bridge、最後にCoreの順にRemoveしてから、新しいGit配布packageを1つAddします。旧packageをRemoveしてから新packageの導入が完了するまではRig sceneを上書き保存しないでください。導入後にConsoleとRig sceneのMissing Scriptを確認します。import済みSamplesは削除・再Importせず、そのまま利用してください。同名Sampleを旧場所に残したまま新しい場所からImportするとscript/class/GUIDが二重になるため避けてください。新しい`com.zabaglione.viewweave.*` modular packageと配布packageも同時に導入できません。source packageのローカル参照は、このrepositoryの開発用テストだけで使用します。
 
 ## 2. BridgeなしのEditor preview
 
@@ -30,7 +32,7 @@ VFX Graphを使う場合はLinear color spaceを設定します。HDRPもLinear 
 
 ## 3. Windows D3D11 Player
 
-1. Bridge runtimeをWindowsへインストールし、Bridge packageを追加します。
+1. Bridge runtimeをWindowsへインストールします。Bridge codeは配布packageに含まれます。
 2. `GameObject > ViewWeave > Bridge Rig`を作成します。専用Camera、`QuiltRenderer`、`ViewWeaveRig`、`BridgeWorkerQuiltOutput`、`ViewWeaveBridgeSession`、pipeline adapterが作成されます。
 3. URPなら`BridgeUrpLitSampleGenerator`、HDRPなら`BridgeHdrpLitSampleGenerator`を同じRigへAdd Componentします。
 4. Rigを置いたシーンを`File > Save As...`でAssetsへ保存します。

@@ -1,37 +1,5 @@
 {
   "dependencies": {
-    "com.lookingglass.community.bridge": {
-      "version": "file:../../../../Packages/com.lookingglass.community.bridge",
-      "depth": 0,
-      "source": "local",
-      "dependencies": {
-        "com.lookingglass.community.core": "0.1.0"
-      }
-    },
-    "com.lookingglass.community.core": {
-      "version": "file:../../../../Packages/com.lookingglass.community.core",
-      "depth": 0,
-      "source": "local",
-      "dependencies": {}
-    },
-    "com.lookingglass.community.hdrp": {
-      "version": "file:../../../../Packages/com.lookingglass.community.hdrp",
-      "depth": 0,
-      "source": "local",
-      "dependencies": {
-        "com.lookingglass.community.core": "0.1.0",
-        "com.unity.render-pipelines.high-definition": "17.6.0"
-      }
-    },
-    "com.lookingglass.community.urp": {
-      "version": "file:../../../../Packages/com.lookingglass.community.urp",
-      "depth": 0,
-      "source": "local",
-      "dependencies": {
-        "com.lookingglass.community.core": "0.1.0",
-        "com.unity.render-pipelines.universal": "17.6.0"
-      }
-    },
     "com.unity.burst": {
       "version": "2.0.0",
       "depth": 2,
@@ -192,6 +160,38 @@
       "dependencies": {
         "com.unity.shadergraph": "17.6.0",
         "com.unity.render-pipelines.core": "17.6.0"
+      }
+    },
+    "com.zabaglione.viewweave.bridge": {
+      "version": "file:../../../../Packages/com.zabaglione.viewweave.bridge",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {
+        "com.zabaglione.viewweave.core": "0.1.0"
+      }
+    },
+    "com.zabaglione.viewweave.core": {
+      "version": "file:../../../../Packages/com.zabaglione.viewweave.core",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {}
+    },
+    "com.zabaglione.viewweave.hdrp": {
+      "version": "file:../../../../Packages/com.zabaglione.viewweave.hdrp",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {
+        "com.zabaglione.viewweave.core": "0.1.0",
+        "com.unity.render-pipelines.high-definition": "17.6.0"
+      }
+    },
+    "com.zabaglione.viewweave.urp": {
+      "version": "file:../../../../Packages/com.zabaglione.viewweave.urp",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {
+        "com.zabaglione.viewweave.core": "0.1.0",
+        "com.unity.render-pipelines.universal": "17.6.0"
       }
     },
     "com.unity.modules.animation": {

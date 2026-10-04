@@ -1,0 +1,7 @@
+{
+  "name": "LookingGlass.Community.HDRP.Editor",
+  "rootNamespace": "LookingGlass.Community.HDRP.Editor",
+  "references": ["LookingGlass.Community.Core.Editor", "LookingGlass.Community.HDRP", "Unity.RenderPipelines.HighDefinition.Runtime"],
+  "includePlatforms": ["Editor"],
+  "autoReferenced": true
+}

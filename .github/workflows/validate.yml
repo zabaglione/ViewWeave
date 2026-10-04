@@ -12,6 +12,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Verify generated UPM distributions
+        run: python tools/build_upm_distribution.py all --check
       - name: Run repository validator
         run: python tools/validate_repository.py
 

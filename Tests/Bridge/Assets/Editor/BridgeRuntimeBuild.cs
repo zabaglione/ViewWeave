@@ -9,7 +9,7 @@ public static class BridgeRuntimeBuild
     public static void BuildWindows()
     {
         PlayerSettings.runInBackground = true;
-        const string pluginPath = "Packages/com.lookingglass.community.bridge/Plugins/x86_64/lookingglass_bridge_shim.dll";
+        const string pluginPath = "Packages/com.zabaglione.viewweave.bridge/Plugins/x86_64/lookingglass_bridge_shim.dll";
         var importer = AssetImporter.GetAtPath(pluginPath) as PluginImporter;
         if (importer != null) { importer.SetCompatibleWithAnyPlatform(false); importer.SetCompatibleWithEditor(true); importer.SetPlatformData("Editor", "OS", "Windows"); importer.SetPlatformData("Editor", "CPU", "x86_64"); importer.SetCompatibleWithPlatform(BuildTarget.StandaloneWindows, false); importer.SetCompatibleWithPlatform(BuildTarget.StandaloneWindows64, true); importer.SetCompatibleWithPlatform(BuildTarget.StandaloneLinux64, false); importer.SetCompatibleWithPlatform(BuildTarget.StandaloneOSX, false); importer.SetPlatformData(BuildTarget.StandaloneWindows64.ToString(), "CPU", "x86_64"); importer.SaveAndReimport(); }
         var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);

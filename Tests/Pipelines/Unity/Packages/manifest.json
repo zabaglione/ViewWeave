@@ -1,14 +1,14 @@
 {
   "dependencies": {
-    "com.lookingglass.community.bridge": "file:../../../../Packages/com.lookingglass.community.bridge",
-    "com.lookingglass.community.core": "file:../../../../Packages/com.lookingglass.community.core",
-    "com.lookingglass.community.hdrp": "file:../../../../Packages/com.lookingglass.community.hdrp",
-    "com.lookingglass.community.urp": "file:../../../../Packages/com.lookingglass.community.urp",
     "com.unity.inputsystem": "1.20.0",
     "com.unity.render-pipelines.high-definition": "17.6.0",
     "com.unity.render-pipelines.universal": "17.6.0",
     "com.unity.test-framework": "1.5.1",
     "com.unity.ugui": "2.6.0",
+    "com.zabaglione.viewweave.bridge": "file:../../../../Packages/com.zabaglione.viewweave.bridge",
+    "com.zabaglione.viewweave.core": "file:../../../../Packages/com.zabaglione.viewweave.core",
+    "com.zabaglione.viewweave.hdrp": "file:../../../../Packages/com.zabaglione.viewweave.hdrp",
+    "com.zabaglione.viewweave.urp": "file:../../../../Packages/com.zabaglione.viewweave.urp",
     "com.unity.modules.jsonserialize": "1.0.0",
     "com.unity.modules.particlesystem": "1.0.0",
     "com.unity.modules.physics": "1.0.0",

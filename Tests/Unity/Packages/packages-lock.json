@@ -1,11 +1,5 @@
 {
   "dependencies": {
-    "com.lookingglass.community.core": {
-      "version": "file:../../../Packages/com.lookingglass.community.core",
-      "depth": 0,
-      "source": "local",
-      "dependencies": {}
-    },
     "com.unity.ext.nunit": {
       "version": "2.1.0",
       "depth": 1,
@@ -49,6 +43,12 @@
         "com.unity.modules.imgui": "1.0.0",
         "com.unity.modules.jsonserialize": "1.0.0"
       }
+    },
+    "com.zabaglione.viewweave.core": {
+      "version": "file:../../../Packages/com.zabaglione.viewweave.core",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {}
     },
     "com.unity.modules.animation": {
       "version": "1.0.0",

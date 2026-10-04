@@ -1,0 +1,31 @@
+{
+  "name": "com.zabaglione.viewweave.urp",
+  "version": "0.1.0",
+  "displayName": "ViewWeave URP",
+  "description": "Self-contained ViewWeave URP package for Unity 6.",
+  "license": "Apache-2.0",
+  "unity": "6000.6",
+  "author": {
+    "name": "zabaglione"
+  },
+  "dependencies": {
+    "com.unity.render-pipelines.universal": "17.6.0"
+  },
+  "keywords": [
+    "looking-glass",
+    "quilt",
+    "urp"
+  ],
+  "samples": [
+    {
+      "displayName": "Quilt Preview",
+      "description": "Bridge-free URP quilt preview.",
+      "path": "Samples~/QuiltPreview"
+    },
+    {
+      "displayName": "Windows URP Lit",
+      "description": "Generates a Windows D3D11 Bridge sample for URP.",
+      "path": "Samples~/WindowsUrpLit"
+    }
+  ]
+}

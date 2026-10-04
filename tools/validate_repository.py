@@ -27,17 +27,17 @@ def valid_object(data, kind, path, report):
     if not isinstance(data, dict): report.error(f"{kind} must be a JSON object {path}"); return False
     return True
 
-def package_check(root, report):
+def package_check_profile(root, base, report, profile):
     packages, names = {}, set()
-    for path in root.glob("Packages/*/package.json"):
+    for path in sorted((root / base).glob("*/package.json")):
         try: data = json.loads(path.read_text(encoding="utf-8"))
-        except (OSError, UnicodeDecodeError, json.JSONDecodeError): report.error(f"invalid package json {path.relative_to(root)}"); continue
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError): report.error(f"invalid {profile} package json {path.relative_to(root)}"); continue
         if not valid_object(data, "package", path.relative_to(root), report): continue
         name, version = data.get("name"), data.get("version")
         if not isinstance(name, str) or not PACKAGE_NAME.fullmatch(name): report.error(f"invalid package name {path.relative_to(root)}")
         if not isinstance(version, str) or not SEMVER.fullmatch(version): report.error(f"invalid package version {path.relative_to(root)}")
         if isinstance(name, str):
-            if name in names: report.error(f"duplicate package name {name}")
+            if name in names: report.error(f"duplicate {profile} package name {name}")
             names.add(name); packages[name] = (path.parent, version)
     for name, (directory, _) in packages.items():
         try: data = json.loads((directory / "package.json").read_text(encoding="utf-8"))
@@ -49,15 +49,20 @@ def package_check(root, report):
                 report.error(f"invalid dependency {name} -> {dep}"); continue
             if dep in packages and constraint != packages[dep][1]: report.error(f"local dependency version mismatch {name} -> {dep}")
 
-def asmdef_check(root, report):
+def package_check(root, report):
+    package_check_profile(root, "Packages", report, "source")
+    if (root / "Distribution").is_dir():
+        package_check_profile(root, "Distribution", report, "distribution")
+
+def asmdef_check_profile(root, base, report, profile):
     names, entries = set(), []
-    for path in root.glob("Packages/**/*.asmdef"):
+    for path in sorted((root / base).glob("**/*.asmdef")):
         try: data = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, UnicodeDecodeError, json.JSONDecodeError): report.error(f"invalid asmdef {path.relative_to(root)}"); continue
         if not valid_object(data, "asmdef", path.relative_to(root), report): continue
         name = data.get("name")
         if not isinstance(name, str) or not name: report.error(f"asmdef has no name {path.relative_to(root)}")
-        elif name in names: report.error(f"duplicate asmdef name {name}")
+        elif name in names: report.error(f"duplicate {profile} asmdef name {name}")
         else: names.add(name)
         entries.append((path, data))
     for path, data in entries:
@@ -67,9 +72,16 @@ def asmdef_check(root, report):
             if not isinstance(ref, str): report.error(f"asmdef reference must be a string {path.relative_to(root)}"); continue
             if (ref.startswith("LookingGlass.") or ref.startswith("LookingGlassCommunity.")) and ref not in names: report.error(f"unknown local asmdef reference {ref} in {path.relative_to(root)}")
 
-def samples_check(root, report):
+def asmdef_check(root, report):
+    asmdef_check_profile(root, "Packages", report, "source")
+    distribution_root = root / "Distribution"
+    if distribution_root.is_dir():
+        for profile_root in sorted(path for path in distribution_root.iterdir() if path.is_dir()):
+            asmdef_check_profile(root, str(profile_root.relative_to(root)), report, "distribution-" + profile_root.name)
+
+def samples_check_profile(root, base, report, profile):
     found = False
-    for package in root.glob("Packages/*/package.json"):
+    for package in sorted((root / base).glob("*/package.json")):
         try: data = json.loads(package.read_text(encoding="utf-8"))
         except (OSError, UnicodeDecodeError, json.JSONDecodeError): report.error(f"invalid package json {package.relative_to(root)}"); continue
         if not isinstance(data, dict): report.error(f"package must be a JSON object {package.relative_to(root)}"); continue
@@ -85,8 +97,37 @@ def samples_check(root, report):
                 elif not candidate.is_dir(): report.error(f"missing sample path {package.parent / rel}")
                 else: found = True
             else: report.error(f"invalid sample entry in {package.relative_to(root)}")
-    if not found: report.warning("no distribution samples are registered")
+    if not found: report.warning("no " + profile + " samples are registered")
     return found
+
+def samples_check(root, report):
+    source_found = samples_check_profile(root, "Packages", report, "source")
+    distribution_found = samples_check_profile(root, "Distribution", report, "distribution") if (root / "Distribution").is_dir() else False
+    return source_found or distribution_found
+
+def meta_check_profile(root, base, report, profile):
+    base_path = root / base
+    if not base_path.is_dir():
+        return
+    for path in sorted(base_path.rglob("*")):
+        if path.is_file() and path.suffix.lower() in {".cs", ".asmdef", ".dll"}:
+            if not path.with_name(path.name + ".meta").is_file():
+                report.error(f"missing meta for {profile} asset {path.relative_to(root)}")
+    guids = {}
+    for path in sorted(base_path.rglob("*.meta")):
+        try:
+            text = path.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            continue
+        match = re.search(r"(?m)^guid:\s*([0-9a-fA-F]{32})\s*$", text)
+        if not match:
+            continue
+        guid = match.group(1).lower()
+        previous = guids.get(guid)
+        if previous is not None:
+            report.error(f"duplicate {profile} guid {guid}: {previous} and {path.relative_to(root)}")
+        else:
+            guids[guid] = path.relative_to(root).as_posix()
 
 def links_check(root, report):
     links = re.compile(r"!?\[[^\]]*\]\(([^)]+)\)")
@@ -111,6 +152,11 @@ def main():
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1]); parser.add_argument("--release", action="store_true")
     args, report = parser.parse_args(), Reporter(); root = args.root.resolve()
     package_check(root, report); asmdef_check(root, report); samples_found = samples_check(root, report); links_check(root, report); surface_check(root, report)
+    meta_check_profile(root, "Packages", report, "source")
+    distribution_root = root / "Distribution"
+    if distribution_root.is_dir():
+        for profile_root in sorted(path for path in distribution_root.iterdir() if path.is_dir()):
+            meta_check_profile(root, str(profile_root.relative_to(root)), report, "distribution-" + profile_root.name)
     if args.release:
         if not (root / "LICENSE").is_file() and not (root / "LICENSE.md").is_file(): report.error("release gate: license file is absent; legal clearance is manual")
         if not samples_found: report.error("release gate: distribution samples are absent")

@@ -4,24 +4,29 @@ Looking Glass向けの非公式Unity SDKです。専用のQuilt RenderTextureへ
 
 対象環境はUnity 6000.6.4f1、Windows、URPまたはHDRPです。実機表示には別途Looking Glass Bridge runtimeが必要です。macOS、D3D12 Bridge出力、複数機器の自動運用は対象外です。
 
-このprivate repositoryをcheckoutするにはGitHubのアクセス権が必要です。取得例は`git clone https://github.com/zabaglione/ViewWeave.git`です。独自コードのライセンスは[Apache-2.0](LICENSE)です。
+このprivate repositoryからUnity Package Managerで取得するにはGitHubのアクセス権が必要です。独自コードのライセンスは[Apache-2.0](LICENSE)です。
 
 ## まず選ぶ使い方
 
 | 目的 | 必要なpackage | 入口 | 結果 |
 | --- | --- | --- | --- |
-| Bridgeなしで画面を確認 | Core + URP | `GameObject/ViewWeave/Quilt Rig` + `QuiltPreviewDemoGenerator` | `Quilt Preview` windowでQuilt preview |
-| URPで実機表示 | Core + URP + Bridge | `GameObject/ViewWeave/Bridge Rig` + `BridgeUrpLitSampleGenerator` | Windows D3D11 Playerで赤い立方体と緑の球 |
-| HDRPで実機表示 | Core + HDRP + Bridge | `GameObject/ViewWeave/Bridge Rig` + `BridgeHdrpLitSampleGenerator` | Windows D3D11 PlayerでHDRP Lit scene |
+| Bridgeなしで画面を確認 | URP package | `GameObject/ViewWeave/Quilt Rig` + `QuiltPreviewDemoGenerator` | `Quilt Preview` windowでQuilt preview |
+| URPで実機表示 | URP package | `GameObject/ViewWeave/Bridge Rig` + `BridgeUrpLitSampleGenerator` | Windows D3D11 Playerで赤い立方体と緑の球 |
+| HDRPで実機表示 | HDRP package | `GameObject/ViewWeave/Bridge Rig` + `BridgeHdrpLitSampleGenerator` | Windows D3D11 PlayerでHDRP Lit scene |
 
-## packageをローカルから追加する
+## packageをGit URLから追加する
 
 1. Unity HubでUnity 6000.6.4f1の空のURPまたはHDRPプロジェクトを作成し、Unity Editorで開きます。
-2. `Window > Package Management > Package Manager`を開き、左上の`+`から`Install package from disk`を選びます。
-3. このcheckoutの`Packages/com.lookingglass.community.core/package.json`を先に追加します。
-4. URPなら`Packages/com.lookingglass.community.urp/package.json`、HDRPなら`Packages/com.lookingglass.community.hdrp/package.json`を追加します。
-5. 実機表示を行う場合だけ`Packages/com.lookingglass.community.bridge/package.json`を追加します。
-6. URP previewを試す場合はCoreの`Samples`から`Quilt Preview`を`Import`します。実機用の場合はBridgeの`Windows URP Lit`または`Windows HDRP Lit`も`Import`します。
+2. GitHub private repositoryを読めるアカウントでGit Credential Managerを設定します。SSHを使う場合はSSH鍵とGitHubへの登録を済ませてください。認証tokenをURLへ埋め込まないでください。
+3. `Window > Package Management > Package Manager`を開き、左上の`+`から`Install package from git URL`を選びます。
+4. HTTPSを使う場合、URPは`https://github.com/zabaglione/ViewWeave.git?path=/Distribution/urp#main`、HDRPは`https://github.com/zabaglione/ViewWeave.git?path=/Distribution/hdrp#main`を入力します。SSHの場合は、それぞれ`ssh://git@github.com/zabaglione/ViewWeave.git?path=/Distribution/urp#main`、`ssh://git@github.com/zabaglione/ViewWeave.git?path=/Distribution/hdrp#main`を使います。
+5. 配布packageはCore、Bridge、選択したpipelineを含むため、別のCore/Bridge packageを追加しないでください。導入後、Package Managerの`Samples`から目的のsampleを`Import`します。
+
+URPとHDRPの配布packageは同じprojectへ同時に追加せず、projectのpipelineに合う方を1つ選びます。`#main`を使うGit packageは、同じURLの再取得時にPackage Managerのcacheが残ることがあります。更新を確認するときはPackage Managerで一度Removeしてから同じGit URLを再Addするか、検証用のcommit hashをURLのrefに指定してください。
+
+この手順はローカルディスク上の`package.json`を選ぶ方法を使いません。開発者がsource packageを検証する場合だけ、`Tests/`のmanifestにあるローカル参照を使います。
+
+旧`com.lookingglass.community.*` packageから移行する場合は、Rig sceneを保存してプロジェクトをバックアップし、Package Managerで旧URP/HDRP、Bridge、最後にCoreの順にRemoveしてから、新しいGit配布packageを1つAddします。旧packageをRemoveしてから新packageの導入が完了するまではRig sceneを上書き保存しないでください。導入後にConsoleとRig sceneのMissing Scriptを確認します。import済みSamplesは削除・再Importせず、そのまま利用してください。同名Sampleを旧場所に残したまま新しい場所からImportすると、script/class/GUIDが二重になるため避けてください。新しい`com.zabaglione.viewweave.*` modular packageを使う場合も、配布packageとの同時導入はできません。
 
 ## Bridgeなしで最短確認する
 
@@ -39,7 +44,7 @@ VFX Graphを使う場合はLinear color spaceを設定してください。HDRP�
 
 ## Windows D3D11 Playerで実機表示する
 
-1. URPまたはHDRP packageを追加したプロジェクトへBridge packageを追加し、Bridge runtimeをWindowsへインストールします。
+1. URPまたはHDRPの配布packageを追加したプロジェクトへ、Bridge runtimeをWindowsへインストールします。Bridge codeは配布packageに含まれます。
 2. `GameObject > ViewWeave > Bridge Rig`を作成します。専用Camera、`QuiltRenderer`、`ViewWeaveRig`、`BridgeWorkerQuiltOutput`、`ViewWeaveBridgeSession`、対応adapterが同じGameObjectに作成されます。
 3. URPなら`BridgeUrpLitSampleGenerator`、HDRPなら`BridgeHdrpLitSampleGenerator`を同じRigへAdd Componentします。`Generate On Start`は有効のままにします。
 4. Rigを配置したシーンを`File > Save As...`でAssetsへ保存します。

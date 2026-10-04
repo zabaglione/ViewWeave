@@ -43,7 +43,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def validate_root(root: Path) -> None:
-    required = (root / "Packages", root / "Tests", root / "Packages" / "com.lookingglass.community.bridge")
+    required = (root / "Packages", root / "Tests", root / "Packages" / "com.zabaglione.viewweave.bridge")
     missing = [str(path) for path in required if not path.is_dir()]
     if missing:
         raise RuntimeError("repository root is invalid: " + ", ".join(ascii_text(path) for path in missing))
@@ -72,7 +72,7 @@ def main() -> int:
     args = parse_args()
     root = args.root.resolve()
     validate_root(root)
-    source_root = root / "Packages" / "com.lookingglass.community.bridge" / "Samples~"
+    source_root = root / "Packages" / "com.zabaglione.viewweave.bridge" / "Samples~"
     destination_root = root / "Tests" / "Pipelines" / "Unity" / "Assets" / "Samples" / "ViewWeaveBridge"
     total = 0
     for sample in SAMPLES:

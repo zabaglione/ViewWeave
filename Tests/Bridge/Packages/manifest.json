@@ -1,10 +1,10 @@
 {
   "dependencies": {
+    "com.unity.pipeline": "0.8.0-exp.1",
+    "com.zabaglione.viewweave.bridge": "file:../../../Packages/com.zabaglione.viewweave.bridge",
+    "com.zabaglione.viewweave.core": "file:../../../Packages/com.zabaglione.viewweave.core",
     "com.unity.modules.physics": "1.0.0",
     "com.unity.modules.ui": "1.0.0",
-    "com.unity.modules.unitywebrequest": "1.0.0",
-    "com.unity.pipeline": "0.8.0-exp.1",
-    "com.lookingglass.community.core": "file:../../../Packages/com.lookingglass.community.core",
-    "com.lookingglass.community.bridge": "file:../../../Packages/com.lookingglass.community.bridge"
+    "com.unity.modules.unitywebrequest": "1.0.0"
   }
 }

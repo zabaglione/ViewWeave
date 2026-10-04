@@ -34,6 +34,6 @@ URP公開extensionを基礎に、culling/shadow共有の成立条件、pooling�
 
 現在はWindows実験版のローカル導入再現を確認した段階で、正式なrelease tagは発行していません。alphaは実験的なWindows経路を明示でき、通常threadや実機の未解決事項を公開文書に残すことをゲートとします。betaは通常threadの再現性、Windows実機、互換性matrix、性能計測、権利確認をゲートとします。stableは通常threadの安定化とWindows・macOS実機確認、配布再現性、権利確認、release blocker解消を必須とします。各段階で未達項目がrelease blockerとして残る場合は次段階へ進めません。
 
-SamplesはUPMの`Samples~`ディレクトリと`package.json`の`samples`定義によるoptional方式でCoreに登録済みです。monorepoのGit URLでは兄弟パッケージを`package.json`の依存関係へGit URLとして書けないため、初期導入ではproject manifestへ必要な各Git packageを列挙します。将来はregistryで依存解決します。
+SamplesはUPMの`Samples~`ディレクトリと`package.json`の`samples`定義によるoptional方式で登録します。利用者向けには、Core、Bridge、選択したrender pipelineを含む自己完結したURPまたはHDRP配布packageをGit URLから導入します。開発用のsource packageはテストproject内のローカル参照として維持します。
 
 公式機能との差は、代替可能性を断定せず、機能matrixの検証結果で示します。

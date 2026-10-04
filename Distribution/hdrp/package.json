@@ -1,0 +1,26 @@
+{
+  "name": "com.zabaglione.viewweave.hdrp",
+  "version": "0.1.0",
+  "displayName": "ViewWeave HDRP",
+  "description": "Self-contained ViewWeave HDRP package for Unity 6.",
+  "license": "Apache-2.0",
+  "unity": "6000.6",
+  "author": {
+    "name": "zabaglione"
+  },
+  "dependencies": {
+    "com.unity.render-pipelines.high-definition": "17.6.0"
+  },
+  "keywords": [
+    "looking-glass",
+    "quilt",
+    "hdrp"
+  ],
+  "samples": [
+    {
+      "displayName": "Windows HDRP Lit",
+      "description": "Generates a Windows D3D11 Bridge sample for HDRP.",
+      "path": "Samples~/WindowsHdrpLit"
+    }
+  ]
+}

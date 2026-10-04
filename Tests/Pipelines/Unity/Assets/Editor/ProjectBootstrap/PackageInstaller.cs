@@ -19,7 +19,7 @@ namespace ProjectBootstrap
         };
         static readonly string[] BridgePackagesToAdd =
         {
-            "file:../../../../Packages/com.lookingglass.community.bridge"
+            "file:../../../../Packages/com.zabaglione.viewweave.bridge"
         };
         const double TimeoutSeconds = 300.0;
         const string ActiveKey = "ProjectBootstrap.PackageInstaller.Active";
