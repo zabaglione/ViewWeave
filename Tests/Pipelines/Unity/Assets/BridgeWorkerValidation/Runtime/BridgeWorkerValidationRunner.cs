@@ -1,13 +1,17 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Reflection;
 using System.Security.Cryptography;
+using System.Threading;
 using ViewWeave;
 using UnityEngine;
 using Unity.Profiling;
 using UnityEngine.Profiling;
 using UnityEngine.Rendering;
+using Process = System.Diagnostics.Process;
 
 namespace ViewWeave.BridgeWorkerValidation
 {
@@ -16,6 +20,11 @@ namespace ViewWeave.BridgeWorkerValidation
         const int RequiredFrames = 120;
         const double TimeoutSeconds = 120.0;
         const double HoldCompletionWatchdogSeconds = 10.0;
+        const double ProgressWriteIntervalSeconds = 2.0;
+        static readonly object warningLock = new object();
+        static readonly Queue<WarningOccurrence> pendingWarnings = new Queue<WarningOccurrence>();
+        static string currentStage = "before-scene";
+        static int warningSequence;
         [SerializeField] QuiltRenderer quilt;
         [SerializeField] BridgeWorkerQuiltOutput output;
         [SerializeField] ViewWeaveRig rig;
@@ -34,7 +43,9 @@ namespace ViewWeave.BridgeWorkerValidation
         string expectedPipeline = "urp";
         string expectedGraphicsApi = "d3d11";
         GraphicsDeviceType expectedGraphicsDeviceType = GraphicsDeviceType.Direct3D11;
-        bool exerciseRestart;
+        string buildKind = "development";
+        bool expectedDevelopment = true;
+        int restartCountRequested;
         bool qualityCycleRequested;
         string faultMode;
         int faultDelayMs = 15000;
@@ -47,9 +58,52 @@ namespace ViewWeave.BridgeWorkerValidation
         bool profilerWasEnabled;
         bool grdCategoryWasEnabled;
         bool profilerStateSaved;
+        ProfilerRecorder totalUsedMemoryRecorder;
+        ProfilerRecorder totalReservedMemoryRecorder;
+        ProfilerRecorder gfxUsedMemoryRecorder;
+        ProfilerRecorder gfxReservedMemoryRecorder;
+        double lastProgressWriteTime;
+        string effectiveGrdMode;
+        bool effectiveGrdModeAvailable;
+        string effectiveGrdModeError;
+        Vector3 originalSpherePosition;
+        bool spherePositionSaved;
+        bool captureWarnings = true;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        static void BeginWarningCapture()
+        {
+            Application.logMessageReceivedThreaded -= CaptureThreadedLog;
+            Application.logMessageReceivedThreaded += CaptureThreadedLog;
+            lock (warningLock)
+            {
+                pendingWarnings.Clear();
+                warningSequence = 0;
+            }
+            currentStage = "before-scene";
+        }
+
+        static void CaptureThreadedLog(string condition, string stackTrace, LogType type)
+        {
+            if (type != LogType.Warning) return;
+            string stageSnapshot = CurrentStage();
+            string utc = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture);
+            lock (warningLock)
+            {
+                pendingWarnings.Enqueue(new WarningOccurrence
+                {
+                    sequence = ++warningSequence,
+                    utc = utc,
+                    stage = stageSnapshot,
+                    message = condition ?? string.Empty,
+                    stackTrace = stackTrace ?? string.Empty
+                });
+            }
+        }
 
         void Awake()
         {
+            SetStage("awake");
             Application.runInBackground = true;
             evidenceDirectory = Argument("--evidence-dir") ?? Path.Combine(Application.dataPath, "..", "..", ".local", "bridge-worker-validation");
             evidenceDirectory = Path.GetFullPath(evidenceDirectory);
@@ -64,8 +118,25 @@ namespace ViewWeave.BridgeWorkerValidation
             grdName = (Argument("--grd") ?? "off").ToLowerInvariant();
             expectedPipeline = (Argument("--pipeline") ?? "urp").ToLowerInvariant();
             expectedGraphicsApi = (Argument("--graphics-api") ?? "d3d11").ToLowerInvariant();
+            buildKind = (Argument("--build-kind") ?? "development").ToLowerInvariant();
+            expectedDevelopment = buildKind == "development";
             string restartText = Argument("--exercise-restart");
-            exerciseRestart = restartText == "1";
+            string restartCountText = Argument("--restart-count");
+            int legacyRestartCount = restartText == "1" ? 1 : 0;
+            restartCountRequested = legacyRestartCount;
+            if (restartCountText != null)
+            {
+                if (!int.TryParse(restartCountText, NumberStyles.None, CultureInfo.InvariantCulture, out restartCountRequested) || restartCountRequested < 0 || restartCountRequested > 10)
+                {
+                    argumentsValid = false;
+                    argumentError = "invalid --restart-count; expected 0..10";
+                }
+                else if (restartText != null && restartCountRequested != legacyRestartCount)
+                {
+                    argumentsValid = false;
+                    argumentError = "--restart-count conflicts with --exercise-restart";
+                }
+            }
             string qualityCycleText = Argument("--quality-cycle");
             qualityCycleRequested = qualityCycleText == "1";
             faultMode = Argument("--fault-mode");
@@ -74,14 +145,18 @@ namespace ViewWeave.BridgeWorkerValidation
             if (qualityName != "preview" && qualityName != "balanced" && qualityName != "native") { argumentsValid = false; argumentError = "invalid --quality"; }
             if (grdName != "off" && grdName != "on") { argumentsValid = false; argumentError = "invalid --grd"; }
             if (expectedPipeline != "urp" && expectedPipeline != "hdrp") { argumentsValid = false; argumentError = "invalid --pipeline"; }
+            if (buildKind != "development" && buildKind != "release") { argumentsValid = false; argumentError = "invalid --build-kind; expected development or release"; }
             if (expectedGraphicsApi == "d3d11") expectedGraphicsDeviceType = GraphicsDeviceType.Direct3D11;
             else if (expectedGraphicsApi == "d3d12") expectedGraphicsDeviceType = GraphicsDeviceType.Direct3D12;
             else { argumentsValid = false; argumentError = "invalid --graphics-api; expected d3d11 or d3d12"; }
             if (restartText != null && restartText != "0" && restartText != "1") { argumentsValid = false; argumentError = "invalid --exercise-restart"; }
             if (qualityCycleText != null && qualityCycleText != "0" && qualityCycleText != "1") { argumentsValid = false; argumentError = "invalid --quality-cycle"; }
             if (faultMode != null && faultMode != "init-delay" && faultMode != "draw-release") { argumentsValid = false; argumentError = "invalid --fault-mode"; }
-            evidence = new Evidence { buildGUID = Application.buildGUID, quiltBuildGUID = Application.buildGUID, quality = qualityName, grd = grdName, expectedGraphicsApi = expectedGraphicsApi, expectedGraphicsDeviceType = expectedGraphicsDeviceType.ToString(), isEditor = Application.isEditor, development = Debug.isDebugBuild, graphicsMultiThreaded = SystemInfo.graphicsMultiThreaded, graphicsDeviceType = SystemInfo.graphicsDeviceType.ToString(), graphicsDeviceVersion = SystemInfo.graphicsDeviceVersion, unityVersion = Application.unityVersion };
+            evidence = new Evidence { buildGUID = Application.buildGUID, quiltBuildGUID = Application.buildGUID, quality = qualityName, grd = grdName, buildKind = buildKind, expectedDevelopment = expectedDevelopment, restartCountRequested = restartCountRequested, qualityCycleRequested = qualityCycleRequested, expectedGraphicsApi = expectedGraphicsApi, expectedGraphicsDeviceType = expectedGraphicsDeviceType.ToString(), isEditor = Application.isEditor, development = Debug.isDebugBuild, graphicsMultiThreaded = SystemInfo.graphicsMultiThreaded, graphicsDeviceType = SystemInfo.graphicsDeviceType.ToString(), graphicsDeviceVersion = SystemInfo.graphicsDeviceVersion, unityVersion = Application.unityVersion, warnings = new List<WarningEvidence>() };
             Directory.CreateDirectory(evidenceDirectory);
+            evidence.restartIterations = new List<RestartIteration>();
+            evidence.memory = new List<MemorySample>();
+            evidence.startedUtc = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture);
         }
 
         void Start()
@@ -94,23 +169,48 @@ namespace ViewWeave.BridgeWorkerValidation
             yield return Drive(RunBody());
             PrepareCleanup();
             yield return CleanupWait();
-            evidence.cleanupPending = BridgeWorkerReaperPending();
+            try { CaptureMemorySample("cleanup-complete"); }
+            catch (Exception error) { AppendFailure("memory evidence failed: " + Sanitize(error.GetType().Name + ": " + error.Message)); }
+            int shutdownPending;
+            uint nativePending;
+            string pendingError;
+            evidence.cleanupPendingAvailable = BridgeWorkerValidationDiagnostics.TryReadPendingCounts(out shutdownPending, out nativePending, out pendingError);
+            evidence.cleanupShutdownPending = evidence.cleanupPendingAvailable ? shutdownPending : -1;
+            evidence.cleanupNativePending = evidence.cleanupPendingAvailable ? nativePending : uint.MaxValue;
+            evidence.cleanupPending = evidence.cleanupPendingAvailable ? Math.Max(shutdownPending, nativePending > int.MaxValue ? int.MaxValue : (int)nativePending) : -1;
+            if (!evidence.cleanupPendingAvailable) AppendFailure("pending count unavailable: " + Sanitize(pendingError));
             evidence.cleanupState = output.State.ToString();
             evidence.sessionState = session.State.ToString();
             evidence.outputState = output.State.ToString();
+            evidence.finishedUtc = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture);
+            try { FlushWarnings(); }
+            catch (Exception error) { AppendFailure("warning evidence failed: " + Sanitize(error.GetType().Name + ": " + error.Message)); }
+            try { DisposeMemoryRecorders(); }
+            catch (Exception error) { AppendFailure("memory recorder cleanup failed: " + Sanitize(error.GetType().Name + ": " + error.Message)); }
+            try { DisposeGrdRecorders(); }
+            catch (Exception error) { AppendFailure("GRD recorder cleanup failed: " + Sanitize(error.GetType().Name + ": " + error.Message)); }
             if (evidence.cleanupPending != 0 || session.State != ViewWeaveBridgeSession.SessionState.Idle || output.State != BridgeWorkerQuiltOutput.WorkerState.Closed)
             {
                 AppendFailure("worker cleanup did not complete");
             }
             if (!evidence.ok) exitCode = 1;
-            WriteEvidence();
+            try { WriteEvidence(); }
+            catch (Exception error)
+            {
+                AppendFailure("summary write failed: " + Sanitize(error.GetType().Name + ": " + error.Message));
+                try { File.WriteAllText(Path.Combine(evidenceDirectory, "summary.json"), JsonUtility.ToJson(evidence, true)); }
+                catch { }
+            }
+            if (!evidence.ok) exitCode = 1;
             Application.Quit(exitCode);
         }
 
         IEnumerator RunBody()
         {
             if (!argumentsValid) throw new ArgumentException(argumentError);
-            if (Application.isEditor || !Debug.isDebugBuild || !SystemInfo.graphicsMultiThreaded || SystemInfo.graphicsDeviceType != expectedGraphicsDeviceType) throw new InvalidOperationException("Windows Development Player with " + expectedGraphicsDeviceType + " graphicsMultiThreaded is required");
+            if (Application.isEditor || Debug.isDebugBuild != expectedDevelopment || !SystemInfo.graphicsMultiThreaded || SystemInfo.graphicsDeviceType != expectedGraphicsDeviceType) throw new InvalidOperationException("Windows Player build-kind or graphics API mismatch");
+            evidence.actualDevelopment = Debug.isDebugBuild;
+            if (evidence.actualDevelopment != expectedDevelopment) throw new InvalidOperationException("Player build-kind mismatch expected=" + buildKind);
             GraphicsSettings.defaultRenderPipeline = grdName == "on" ? grdOnPipeline : grdOffPipeline;
             QualitySettings.renderPipeline = GraphicsSettings.defaultRenderPipeline;
             RenderPipelineAsset activePipeline = GraphicsSettings.currentRenderPipeline;
@@ -120,6 +220,8 @@ namespace ViewWeave.BridgeWorkerValidation
             evidence.pipelineAssetName = activePipeline == null ? "" : activePipeline.name;
             evidence.colorSpace = QualitySettings.activeColorSpace.ToString();
             if (actualPipeline != expectedPipeline) throw new InvalidOperationException("pipeline mismatch expected=" + expectedPipeline + " actual=" + actualPipeline);
+            CaptureEffectiveGrdMode(activePipeline);
+            StartMemoryRecorders();
             QuiltQualityPreset requestedQuality = qualityName == "native" ? QuiltQualityPreset.Native : qualityName == "balanced" ? QuiltQualityPreset.Balanced : QuiltQualityPreset.Preview;
             session.runtimePath = runtimePath;
             session.startOnEnable = false;
@@ -127,6 +229,9 @@ namespace ViewWeave.BridgeWorkerValidation
             evidence.outputIsActiveAndEnabled = output.isActiveAndEnabled;
             sourceCamera.enabled = false;
             quilt.autoRender = false;
+            originalSpherePosition = dynamicSphere.localPosition;
+            spherePositionSaved = true;
+            SetStage("initial-render");
             if (!string.IsNullOrEmpty(faultMode))
             {
                 yield return Drive(RunFaultScenario(requestedQuality));
@@ -164,10 +269,15 @@ namespace ViewWeave.BridgeWorkerValidation
             evidence.actualAspect = profile.Aspect;
             evidence.actualViewcone = profile.ViewCone;
             quilt.autoRender = true;
+            output.Poll();
+            if (session.State != ViewWeaveBridgeSession.SessionState.Rendering || output.State != BridgeWorkerQuiltOutput.WorkerState.Ready || !string.IsNullOrEmpty(session.LastError) || !string.IsNullOrEmpty(output.LastError) || !ProfileMatches(profile))
+                throw new InvalidOperationException(FirstError(session.LastError, output.LastError, quilt.LastAutoRenderError, "initial profile/readiness validation failed"));
+            uint initialCompletedBaseline = output.Completed;
             double renderStarted = Time.realtimeSinceStartupAsDouble;
-            for (int frame = 0; frame < RequiredFrames / 2 && !TimedOut(renderStarted); ++frame)
+            while (output.Completed < initialCompletedBaseline + (uint)(RequiredFrames / 2) && !TimedOut(renderStarted))
             {
-                if (output.State == BridgeWorkerQuiltOutput.WorkerState.Fault || output.State == BridgeWorkerQuiltOutput.WorkerState.Closed)
+                output.Poll();
+                if (output.State == BridgeWorkerQuiltOutput.WorkerState.Fault || output.State == BridgeWorkerQuiltOutput.WorkerState.Closed || !string.IsNullOrEmpty(output.LastError) || !string.IsNullOrEmpty(session.LastError))
                 {
                     RecordTextureDiagnostics();
                     throw new InvalidOperationException(FirstError(output.LastError, session.LastError, quilt.LastAutoRenderError, "Bridge worker stopped during render"));
@@ -184,7 +294,7 @@ namespace ViewWeave.BridgeWorkerValidation
             uint completionBeforeMove = output.Completed;
             dynamicSphere.localPosition += Vector3.right * 1.2f;
             int moveFrames = 0;
-            while ((moveFrames < 2 || output.Completed < completionBeforeMove + 2 || output.Completed < RequiredFrames) && !TimedOut(renderStarted))
+            while ((moveFrames < 2 || output.Completed < completionBeforeMove + 2 || output.Completed < initialCompletedBaseline + (uint)RequiredFrames) && !TimedOut(renderStarted))
             {
                 if (output.State == BridgeWorkerQuiltOutput.WorkerState.Fault || output.State == BridgeWorkerQuiltOutput.WorkerState.Closed)
                 {
@@ -195,7 +305,7 @@ namespace ViewWeave.BridgeWorkerValidation
                 yield return null;
             }
             RecordTextureDiagnostics();
-            if (output.Completed < RequiredFrames || moveFrames < 2) throw new TimeoutException("Bridge worker completion timeout");
+            if (output.Completed < initialCompletedBaseline + (uint)RequiredFrames || moveFrames < 2) throw new TimeoutException("Bridge worker completion timeout");
             FrameDigest after = CaptureDigest(quilt.QuiltTexture, "after.png", quilt.settings.GetLayout());
             evidence.afterChecksum = after.checksum;
             evidence.afterNonBlank = after.nonBlank;
@@ -206,6 +316,8 @@ namespace ViewWeave.BridgeWorkerValidation
             evidence.changedPixelCount = CountChangedPixels(before.pixels, after.pixels);
             evidence.movementDifference = evidence.changedPixelCount > 20;
             evidence.viewDifference = before.edgeDifference && after.edgeDifference;
+            before.pixels = null;
+            after.pixels = null;
             evidence.submissions = output.Submissions;
             evidence.completed = output.Completed;
             evidence.dropped = output.Dropped;
@@ -214,8 +326,10 @@ namespace ViewWeave.BridgeWorkerValidation
             evidence.grdRenderers = grdRenderers.Valid ? grdRenderers.LastValue : 0;
             evidence.visibleInstances = visibleInstances.Valid ? visibleInstances.LastValue : 0;
             evidence.grdCounterAvailable = !grdName.Equals("on", StringComparison.Ordinal) || (grdRecordersStarted && evidence.grdRenderers > 0 && evidence.visibleInstances > 0);
-            evidence.ok = evidence.submissions >= RequiredFrames && evidence.completed >= RequiredFrames && evidence.beforeNonBlank && evidence.afterNonBlank && evidence.beforeAllTilesNonBlank && evidence.afterAllTilesNonBlank && evidence.viewDifference && evidence.movementDifference && evidence.grdCounterAvailable && (!expectedPipeline.Equals("hdrp", StringComparison.Ordinal) || (evidence.beforeAllTilesColorEvidence && evidence.afterAllTilesColorEvidence));
+            evidence.ok = evidence.submissions >= RequiredFrames && output.Completed - initialCompletedBaseline >= RequiredFrames && evidence.beforeNonBlank && evidence.afterNonBlank && evidence.beforeAllTilesNonBlank && evidence.afterAllTilesNonBlank && evidence.beforeAllTilesColorEvidence && evidence.afterAllTilesColorEvidence && evidence.viewDifference && evidence.movementDifference && evidence.grdCounterAvailable;
             if (!evidence.ok) evidence.error = "insufficient submissions, completions, or view difference";
+            if (!evidence.ok) throw new InvalidOperationException(evidence.error);
+            CaptureMemorySample("post-render-warmup");
             WriteProgress();
             double holdStarted = Time.unscaledTimeAsDouble;
             double lastCompletionProgress = holdStarted;
@@ -243,12 +357,9 @@ namespace ViewWeave.BridgeWorkerValidation
                     evidence.submissions = output.Submissions;
                     evidence.completed = completed;
                     evidence.dropped = output.Dropped;
-                    if (completed != lastProgressWrittenCompleted)
-                    {
-                        WriteProgress();
-                        lastProgressWrittenCompleted = completed;
-                    }
                 }
+                if (completed != lastProgressWrittenCompleted) lastProgressWrittenCompleted = completed;
+                WriteProgressSafely();
                 if (holdSeconds > HoldCompletionWatchdogSeconds && now - lastCompletionProgress > HoldCompletionWatchdogSeconds)
                 {
                     evidence.holdWatchdogOk = false;
@@ -268,16 +379,173 @@ namespace ViewWeave.BridgeWorkerValidation
                 yield return Drive(RunQualityCycle());
                 if (!evidence.qualityCycleOk) throw new InvalidOperationException(evidence.error ?? "Bridge quality cycle failed");
             }
-            if (exerciseRestart)
+            if (effectiveGrdModeAvailable && !evidence.grdModeMatchesRequested) throw new InvalidOperationException("GPU Resident Drawer configured mode mismatch expected=" + grdName + " actual=" + effectiveGrdMode);
+            if (restartCountRequested > 0)
             {
-                yield return Drive(RestartSession(requestedQuality));
-                if (!evidence.restartOk || evidence.restartPending != 0)
+                yield return Drive(RunRestartCycles(requestedQuality));
+                if (!evidence.restartOk)
                 {
                     evidence.ok = false;
                     evidence.error = evidence.error ?? "Bridge session restart failed";
                     throw new InvalidOperationException(evidence.error);
                 }
             }
+        }
+
+        IEnumerator RunRestartCycles(QuiltQualityPreset quality)
+        {
+            evidence.restartOk = true;
+            for (int iteration = 0; iteration < restartCountRequested; ++iteration)
+            {
+                RestartIteration result = new RestartIteration { index = iteration + 1, startedUtc = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture), result = "running" };
+                evidence.restartIterations.Add(result);
+                SetStage("restart-" + result.index.ToString(CultureInfo.InvariantCulture));
+                CaptureMemorySample("restart-before-stop");
+                quilt.autoRender = false;
+                session.StopSession();
+                double stopStarted = Time.realtimeSinceStartupAsDouble;
+                bool pendingAvailable = false;
+                int shutdownPending = -1;
+                uint nativePending = uint.MaxValue;
+                string pendingError = string.Empty;
+                while (!TimedOut(stopStarted))
+                {
+                    pendingAvailable = BridgeWorkerValidationDiagnostics.TryReadPendingCounts(out shutdownPending, out nativePending, out pendingError);
+                    if (pendingAvailable && session.State == ViewWeaveBridgeSession.SessionState.Idle && output.State == BridgeWorkerQuiltOutput.WorkerState.Closed && shutdownPending == 0 && nativePending == 0) break;
+                    if (session.State == ViewWeaveBridgeSession.SessionState.Fault || output.State == BridgeWorkerQuiltOutput.WorkerState.Fault || !string.IsNullOrEmpty(session.LastError) || !string.IsNullOrEmpty(output.LastError))
+                    {
+                        result.error = FirstError(session.LastError, output.LastError, quilt.LastAutoRenderError, "restart stop fault");
+                        break;
+                    }
+                    yield return null;
+                }
+                result.stopShutdownPending = pendingAvailable ? shutdownPending : -1;
+                result.stopNativePending = pendingAvailable ? nativePending : uint.MaxValue;
+                result.stopPendingVerified = pendingAvailable && shutdownPending == 0 && nativePending == 0;
+                result.stopSessionState = session.State.ToString();
+                result.stopOutputState = output.State.ToString();
+                if (!pendingAvailable) result.error = "pending count unavailable: " + Sanitize(pendingError);
+                if (result.stopPendingVerified) CaptureMemorySample("restart-stopped");
+                if (!string.IsNullOrEmpty(result.error) || !result.stopPendingVerified || session.State != ViewWeaveBridgeSession.SessionState.Idle || output.State != BridgeWorkerQuiltOutput.WorkerState.Closed)
+                {
+                    result.ok = false;
+                    if (string.IsNullOrEmpty(result.error)) result.error = "restart stop did not reach Idle/Closed with zero pending counts";
+                    evidence.restartOk = false;
+                    evidence.error = result.error;
+                    result.finishedUtc = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture);
+                    yield break;
+                }
+
+                if (!session.SetQuality(quality) || !session.StartSession())
+                {
+                    result.ok = false;
+                    result.error = FirstError(session.LastError, output.LastError, quilt.LastAutoRenderError, "restart start failed");
+                    evidence.restartOk = false;
+                    evidence.error = result.error;
+                    result.finishedUtc = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture);
+                    yield break;
+                }
+                quilt.autoRender = true;
+                double readyStarted = Time.realtimeSinceStartupAsDouble;
+                QuiltQualityProfile expectedProfile = default;
+                while (!TimedOut(readyStarted))
+                {
+                    output.Poll();
+                    if (session.State == ViewWeaveBridgeSession.SessionState.Rendering && output.State == BridgeWorkerQuiltOutput.WorkerState.Ready && string.IsNullOrEmpty(session.LastError) && string.IsNullOrEmpty(output.LastError))
+                    {
+                        BridgeDisplayProfile display = session.Profile;
+                        expectedProfile = ViewWeaveBridgeSession.CreateQualityProfile(display, quality);
+                        if (ProfileMatches(expectedProfile)) break;
+                    }
+                    if (session.State == ViewWeaveBridgeSession.SessionState.Fault || output.State == BridgeWorkerQuiltOutput.WorkerState.Fault || !string.IsNullOrEmpty(session.LastError) || !string.IsNullOrEmpty(output.LastError))
+                    {
+                        result.error = FirstError(session.LastError, output.LastError, quilt.LastAutoRenderError, "restart render fault");
+                        break;
+                    }
+                    yield return null;
+                }
+                if (!string.IsNullOrEmpty(result.error) || !ProfileMatches(expectedProfile))
+                {
+                    result.ok = false;
+                    if (string.IsNullOrEmpty(result.error)) result.error = "restart profile did not become ready";
+                    evidence.restartOk = false;
+                    evidence.error = result.error;
+                    result.finishedUtc = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture);
+                    yield break;
+                }
+                output.Poll();
+                if (session.State != ViewWeaveBridgeSession.SessionState.Rendering || output.State != BridgeWorkerQuiltOutput.WorkerState.Ready || !string.IsNullOrEmpty(session.LastError) || !string.IsNullOrEmpty(output.LastError))
+                {
+                    result.ok = false;
+                    result.error = FirstError(session.LastError, output.LastError, quilt.LastAutoRenderError, "restart readiness changed before baseline");
+                    evidence.restartOk = false;
+                    evidence.error = result.error;
+                    result.finishedUtc = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture);
+                    yield break;
+                }
+                result.expectedWidth = expectedProfile.QuiltWidth;
+                result.expectedHeight = expectedProfile.QuiltHeight;
+                result.actualWidth = quilt.QuiltTexture == null ? 0 : quilt.QuiltTexture.width;
+                result.actualHeight = quilt.QuiltTexture == null ? 0 : quilt.QuiltTexture.height;
+                result.views = quilt.settings.views;
+                result.completedBaseline = output.Completed;
+                CaptureMemorySample("restart-ready");
+                double renderStarted = Time.realtimeSinceStartupAsDouble;
+                double lastRestartMemory = renderStarted;
+                while (output.Completed < result.completedBaseline + (uint)RequiredFrames && !TimedOut(renderStarted))
+                {
+                    if (output.State == BridgeWorkerQuiltOutput.WorkerState.Fault || session.State != ViewWeaveBridgeSession.SessionState.Rendering || !string.IsNullOrEmpty(session.LastError) || !string.IsNullOrEmpty(output.LastError))
+                    {
+                        result.error = FirstError(session.LastError, output.LastError, quilt.LastAutoRenderError, "restart completion fault");
+                        break;
+                    }
+                    if (Time.realtimeSinceStartupAsDouble - lastRestartMemory >= ProgressWriteIntervalSeconds)
+                    {
+                        CaptureMemorySample("restart-render");
+                        WriteProgressSafely();
+                        lastRestartMemory = Time.realtimeSinceStartupAsDouble;
+                    }
+                    yield return null;
+                }
+                result.completed = output.Completed;
+                result.completedDelta = result.completed - result.completedBaseline;
+                if (string.IsNullOrEmpty(result.error) && result.completedDelta >= RequiredFrames)
+                {
+                    FrameDigest first = CaptureDigest(quilt.QuiltTexture, "restart-" + result.index.ToString(CultureInfo.InvariantCulture) + "-before.png", quilt.settings.GetLayout());
+                    Vector3 originalPosition = dynamicSphere.localPosition;
+                    dynamicSphere.localPosition = originalPosition + Vector3.right * .1f;
+                    uint movementBaseline = output.Completed;
+                    double movementStarted = Time.realtimeSinceStartupAsDouble;
+                    while (output.Completed < movementBaseline + 2 && !TimedOut(movementStarted)) yield return null;
+                    FrameDigest second = CaptureDigest(quilt.QuiltTexture, "restart-" + result.index.ToString(CultureInfo.InvariantCulture) + "-after.png", quilt.settings.GetLayout());
+                    dynamicSphere.localPosition = originalPosition;
+                    result.allTilesNonBlank = first.allTilesNonBlank && second.allTilesNonBlank;
+                    result.allTilesColorEvidence = first.allTilesColorEvidence && second.allTilesColorEvidence;
+                    result.viewDifference = first.edgeDifference && second.edgeDifference;
+                    result.movementDifference = CountChangedPixels(first.pixels, second.pixels) > 20;
+                    first.pixels = null;
+                    second.pixels = null;
+                    if (!result.allTilesNonBlank || !result.allTilesColorEvidence || !result.viewDifference || !result.movementDifference || result.actualWidth != result.expectedWidth || result.actualHeight != result.expectedHeight || result.views != 48)
+                        result.error = "restart image/profile validation failed";
+                }
+                else if (string.IsNullOrEmpty(result.error)) result.error = "restart completion timeout";
+                result.ok = string.IsNullOrEmpty(result.error);
+                result.finishedUtc = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture);
+                CaptureMemorySample("restart-complete");
+                if (!result.ok)
+                {
+                    evidence.restartOk = false;
+                    evidence.error = result.error;
+                    yield break;
+                }
+                WriteProgressSafely();
+            }
+        }
+
+        bool ProfileMatches(QuiltQualityProfile expected)
+        {
+            RenderTexture texture = quilt.QuiltTexture;
+            return session.State == ViewWeaveBridgeSession.SessionState.Rendering && output.State == BridgeWorkerQuiltOutput.WorkerState.Ready && texture != null && texture.IsCreated() && texture.width == expected.QuiltWidth && texture.height == expected.QuiltHeight && quilt.settings.quiltWidth == expected.QuiltWidth && quilt.settings.quiltHeight == expected.QuiltHeight && quilt.settings.columns == expected.Columns && quilt.settings.rows == expected.Rows && quilt.settings.views == 48 && quilt.settings.views == expected.Views;
         }
 
         IEnumerator RunFaultScenario(QuiltQualityPreset quality)
@@ -343,51 +611,6 @@ namespace ViewWeave.BridgeWorkerValidation
             }
         }
 
-        IEnumerator RestartSession(QuiltQualityPreset quality)
-        {
-            quilt.autoRender = false;
-            session.StopSession();
-            double stopStarted = Time.realtimeSinceStartupAsDouble;
-            while ((session.State != ViewWeaveBridgeSession.SessionState.Idle || BridgeWorkerReaperPending() != 0) && !TimedOut(stopStarted))
-            {
-                if (session.State == ViewWeaveBridgeSession.SessionState.Fault || output.State == BridgeWorkerQuiltOutput.WorkerState.Fault || !string.IsNullOrEmpty(session.LastError) || !string.IsNullOrEmpty(output.LastError))
-                {
-                    evidence.restartOk = false;
-                    evidence.error = FirstError(session.LastError, output.LastError, quilt.LastAutoRenderError, "Bridge session restart stop fault");
-                    yield break;
-                }
-                yield return null;
-            }
-            if (session.State != ViewWeaveBridgeSession.SessionState.Idle || BridgeWorkerReaperPending() != 0) { evidence.restartOk = false; evidence.error = "Bridge session restart stop timeout"; yield break; }
-            if (!session.SetQuality(quality) || !session.StartSession()) { evidence.restartOk = false; evidence.error = FirstError(session.LastError, output.LastError, quilt.LastAutoRenderError, "Bridge session restart start failed"); yield break; }
-            double startStarted = Time.realtimeSinceStartupAsDouble;
-            while (session.State != ViewWeaveBridgeSession.SessionState.Rendering && !TimedOut(startStarted))
-            {
-                if (session.State == ViewWeaveBridgeSession.SessionState.Fault || output.State == BridgeWorkerQuiltOutput.WorkerState.Fault || output.State == BridgeWorkerQuiltOutput.WorkerState.Closed)
-                {
-                    evidence.restartOk = false;
-                    evidence.error = FirstError(session.LastError, output.LastError, quilt.LastAutoRenderError, "Bridge session restart start fault");
-                    yield break;
-                }
-                yield return null;
-            }
-            if (session.State != ViewWeaveBridgeSession.SessionState.Rendering) { evidence.restartOk = false; evidence.error = FirstError(session.LastError, output.LastError, quilt.LastAutoRenderError, "Bridge session restart start timeout"); yield break; }
-            double renderStarted = Time.realtimeSinceStartupAsDouble;
-            while (output.Completed < RequiredFrames && !TimedOut(renderStarted))
-            {
-                if (output.State == BridgeWorkerQuiltOutput.WorkerState.Fault || output.State == BridgeWorkerQuiltOutput.WorkerState.Closed)
-                {
-                    evidence.restartOk = false;
-                    evidence.error = FirstError(output.LastError, session.LastError, quilt.LastAutoRenderError, "Bridge worker restart render fault");
-                    yield break;
-                }
-                yield return null;
-            }
-            evidence.restartCompleted = output.Completed;
-            evidence.restartPending = BridgeWorkerQuiltOutput.ShutdownPendingCount;
-            evidence.restartOk = output.Completed >= RequiredFrames;
-        }
-
         IEnumerator RunQualityCycle()
         {
             QuiltQualityPreset[] stages = { QuiltQualityPreset.Preview, QuiltQualityPreset.Balanced, QuiltQualityPreset.Native, QuiltQualityPreset.Preview };
@@ -395,6 +618,7 @@ namespace ViewWeave.BridgeWorkerValidation
             evidence.qualityCycleOk = true;
             for (int index = 0; index < stages.Length; ++index)
             {
+                SetStage("quality-" + index.ToString(CultureInfo.InvariantCulture));
                 QuiltQualityPreset quality = stages[index];
                 if (session.State != ViewWeaveBridgeSession.SessionState.Rendering || !session.SetQuality(quality))
                 {
@@ -420,20 +644,34 @@ namespace ViewWeave.BridgeWorkerValidation
                     yield break;
                 }
                 quilt.autoRender = true;
-                BridgeDisplayProfile queriedProfile = session.Profile;
-                QuiltQualityProfile expectedProfile = ViewWeaveBridgeSession.CreateQualityProfile(queriedProfile, quality);
-                yield return null;
-                if (quilt.settings.quiltWidth != expectedProfile.QuiltWidth || quilt.settings.quiltHeight != expectedProfile.QuiltHeight || quilt.settings.columns != expectedProfile.Columns || quilt.settings.rows != expectedProfile.Rows || quilt.settings.views != expectedProfile.Views)
+                QuiltQualityProfile expectedProfile = ViewWeaveBridgeSession.CreateQualityProfile(session.Profile, quality);
+                bool profileReady = false;
+                double profileStarted = Time.realtimeSinceStartupAsDouble;
+                while (!TimedOut(profileStarted))
+                {
+                    output.Poll();
+                    if (!string.IsNullOrEmpty(session.LastError) || !string.IsNullOrEmpty(output.LastError) || session.State == ViewWeaveBridgeSession.SessionState.Fault || output.State == BridgeWorkerQuiltOutput.WorkerState.Fault) break;
+                    if (ProfileMatches(expectedProfile)) { profileReady = true; break; }
+                    yield return null;
+                }
+                if (!profileReady || session.State != ViewWeaveBridgeSession.SessionState.Rendering || output.State != BridgeWorkerQuiltOutput.WorkerState.Ready || !string.IsNullOrEmpty(session.LastError) || !string.IsNullOrEmpty(output.LastError))
                 {
                     evidence.qualityCycleOk = false;
-                    evidence.error = "quality cycle profile mismatch";
+                    evidence.error = FirstError(session.LastError, output.LastError, quilt.LastAutoRenderError, "quality cycle profile/readiness mismatch");
+                    yield break;
+                }
+                output.Poll();
+                if (session.State != ViewWeaveBridgeSession.SessionState.Rendering || output.State != BridgeWorkerQuiltOutput.WorkerState.Ready || !string.IsNullOrEmpty(session.LastError) || !string.IsNullOrEmpty(output.LastError))
+                {
+                    evidence.qualityCycleOk = false;
+                    evidence.error = FirstError(session.LastError, output.LastError, quilt.LastAutoRenderError, "quality cycle readiness changed before baseline");
                     yield break;
                 }
                 uint startCompleted = output.Completed;
                 double renderStarted = Time.realtimeSinceStartupAsDouble;
-                while (output.Completed < startCompleted + RequiredFrames && !TimedOut(renderStarted))
+                while (output.Completed < startCompleted + (uint)RequiredFrames && !TimedOut(renderStarted))
                 {
-                    if (output.State == BridgeWorkerQuiltOutput.WorkerState.Fault)
+                    if (output.State == BridgeWorkerQuiltOutput.WorkerState.Fault || session.State != ViewWeaveBridgeSession.SessionState.Rendering || !string.IsNullOrEmpty(output.LastError) || !string.IsNullOrEmpty(session.LastError))
                     {
                         evidence.qualityCycleOk = false;
                         evidence.error = FirstError(output.LastError, session.LastError, quilt.LastAutoRenderError, "quality cycle render fault");
@@ -441,7 +679,7 @@ namespace ViewWeave.BridgeWorkerValidation
                     }
                     yield return null;
                 }
-                if (output.Completed < startCompleted + RequiredFrames)
+                if (output.Completed < startCompleted + (uint)RequiredFrames)
                 {
                     evidence.qualityCycleOk = false;
                     evidence.error = "quality cycle completion timeout";
@@ -453,14 +691,19 @@ namespace ViewWeave.BridgeWorkerValidation
                 dynamicSphere.localPosition = originalPosition + Vector3.right * .1f;
                 uint moveStart = output.Completed;
                 int moveFrames = 0;
-                while ((moveFrames < 2 || output.Completed < moveStart + 2) && !TimedOut(renderStarted)) { moveFrames++; yield return null; }
+                double moveStarted = Time.realtimeSinceStartupAsDouble;
+                while ((moveFrames < 2 || output.Completed < moveStart + 2) && !TimedOut(moveStarted)) { moveFrames++; yield return null; }
                 FrameDigest after = CaptureDigest(quilt.QuiltTexture, "quality-cycle-" + label + "-after.png", quilt.settings.GetLayout());
                 dynamicSphere.localPosition = originalPosition;
                 int actualWidth = quilt.QuiltTexture == null ? 0 : quilt.QuiltTexture.width;
                 int actualHeight = quilt.QuiltTexture == null ? 0 : quilt.QuiltTexture.height;
-                QualityCycleStage stage = new QualityCycleStage { quality = quality.ToString(), expectedWidth = expectedProfile.QuiltWidth, expectedHeight = expectedProfile.QuiltHeight, actualWidth = actualWidth, actualHeight = actualHeight, actualViews = quilt.settings.views, actualColumns = quilt.settings.columns, actualRows = quilt.settings.rows, completedDelta = output.Completed - startCompleted, beforeAllTilesNonBlank = before.allTilesNonBlank, afterAllTilesNonBlank = after.allTilesNonBlank, movementDifference = CountChangedPixels(before.pixels, after.pixels) > 20, viewDifference = before.edgeDifference && after.edgeDifference };
+                QualityCycleStage stage = new QualityCycleStage { quality = quality.ToString(), expectedWidth = expectedProfile.QuiltWidth, expectedHeight = expectedProfile.QuiltHeight, actualWidth = actualWidth, actualHeight = actualHeight, actualViews = quilt.settings.views, actualColumns = quilt.settings.columns, actualRows = quilt.settings.rows, completedBaseline = startCompleted, completedAfter = output.Completed, completedDelta = output.Completed - startCompleted, beforeAllTilesNonBlank = before.allTilesNonBlank, afterAllTilesNonBlank = after.allTilesNonBlank, beforeAllTilesColorEvidence = before.allTilesColorEvidence, afterAllTilesColorEvidence = after.allTilesColorEvidence, movementDifference = CountChangedPixels(before.pixels, after.pixels) > 20, viewDifference = before.edgeDifference && after.edgeDifference };
+                before.pixels = null;
+                after.pixels = null;
                 evidence.qualityCycle[index] = stage;
-                if (stage.actualWidth != stage.expectedWidth || stage.actualHeight != stage.expectedHeight || stage.actualViews != stage.actualColumns * stage.actualRows || stage.completedDelta < RequiredFrames || !stage.beforeAllTilesNonBlank || !stage.afterAllTilesNonBlank || !stage.movementDifference || !stage.viewDifference) evidence.qualityCycleOk = false;
+                if (stage.actualWidth != stage.expectedWidth || stage.actualHeight != stage.expectedHeight || stage.actualViews != 48 || stage.actualViews != stage.actualColumns * stage.actualRows || stage.completedDelta < RequiredFrames || !stage.beforeAllTilesNonBlank || !stage.afterAllTilesNonBlank || !stage.beforeAllTilesColorEvidence || !stage.afterAllTilesColorEvidence || !stage.movementDifference || !stage.viewDifference) evidence.qualityCycleOk = false;
+                CaptureMemorySample("quality-stage-complete");
+                WriteProgressSafely();
                 if (!evidence.qualityCycleOk) { evidence.error = "quality cycle image/profile validation failed"; yield break; }
             }
         }
@@ -506,6 +749,7 @@ namespace ViewWeave.BridgeWorkerValidation
         {
             try { quilt.autoRender = false; DisposeGrdRecorders(); session.StopSession(); }
             catch (Exception error) { AppendFailure(Sanitize(error.GetType().Name + ": " + error.Message)); }
+            if (spherePositionSaved && dynamicSphere != null) dynamicSphere.localPosition = originalSpherePosition;
         }
 
         IEnumerator CleanupWait()
@@ -551,6 +795,127 @@ namespace ViewWeave.BridgeWorkerValidation
                 grdRecordersStarted = false;
                 AppendFailure(Sanitize(error.GetType().Name + ": " + error.Message));
             }
+        }
+
+        void CaptureEffectiveGrdMode(RenderPipelineAsset pipeline)
+        {
+            effectiveGrdModeAvailable = false;
+            effectiveGrdMode = string.Empty;
+            effectiveGrdModeError = string.Empty;
+            evidence.requestedGrdMode = grdName;
+            try
+            {
+                if (pipeline == null) throw new InvalidOperationException("active render pipeline is null");
+                Type type = pipeline.GetType();
+                PropertyInfo property = type.GetProperty("gpuResidentDrawerMode", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                object mode = property != null ? property.GetValue(pipeline, null) : null;
+                if (mode == null)
+                {
+                    FieldInfo field = type.GetField("m_GPUResidentDrawerMode", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                    if (field != null) mode = field.GetValue(pipeline);
+                }
+                if (mode == null) throw new MissingMemberException(type.FullName, "GPUResidentDrawerMode");
+                effectiveGrdMode = mode.ToString();
+                effectiveGrdModeAvailable = true;
+            }
+            catch (Exception error) { effectiveGrdModeError = Sanitize(error.GetType().Name + ": " + error.Message); }
+            evidence.configuredGrdMode = effectiveGrdModeAvailable ? effectiveGrdMode : string.Empty;
+            evidence.configuredGrdModeAvailable = effectiveGrdModeAvailable;
+            evidence.configuredGrdModeError = effectiveGrdModeError;
+            evidence.grdModeMatchesRequested = effectiveGrdModeAvailable && (grdName == "on" ? effectiveGrdMode == "InstancedDrawing" : effectiveGrdMode == "Disabled");
+            evidence.grdRuntimeEvidence = grdName == "on" ? "GRD profiler counters required" : "configured mode only; runtime disabled counter unavailable";
+        }
+
+        void StartMemoryRecorders()
+        {
+            StartMemoryRecorder(ref totalUsedMemoryRecorder, "Total Used Memory", out evidence.totalUsedMemoryAvailable, out evidence.totalUsedMemoryUnavailableReason);
+            StartMemoryRecorder(ref totalReservedMemoryRecorder, "Total Reserved Memory", out evidence.totalReservedMemoryAvailable, out evidence.totalReservedMemoryUnavailableReason);
+            StartMemoryRecorder(ref gfxUsedMemoryRecorder, "Gfx Used Memory", out evidence.gfxUsedMemoryAvailable, out evidence.gfxUsedMemoryUnavailableReason);
+            StartMemoryRecorder(ref gfxReservedMemoryRecorder, "Gfx Reserved Memory", out evidence.gfxReservedMemoryAvailable, out evidence.gfxReservedMemoryUnavailableReason);
+        }
+
+        static void StartMemoryRecorder(ref ProfilerRecorder recorder, string marker, out bool available, out string reason)
+        {
+            available = false;
+            reason = string.Empty;
+            try
+            {
+                recorder = ProfilerRecorder.StartNew(ProfilerCategory.Memory, marker, 1);
+                available = recorder.Valid;
+                if (!available) reason = "marker unavailable";
+            }
+            catch (Exception error) { reason = Sanitize(error.GetType().Name + ": " + error.Message); }
+        }
+
+        void CaptureMemorySample(string label)
+        {
+            long totalUsed = totalUsedMemoryRecorder.Valid ? totalUsedMemoryRecorder.LastValue : -1;
+            long totalReserved = totalReservedMemoryRecorder.Valid ? totalReservedMemoryRecorder.LastValue : -1;
+            long gfxUsed = gfxUsedMemoryRecorder.Valid ? gfxUsedMemoryRecorder.LastValue : -1;
+            long gfxReserved = gfxReservedMemoryRecorder.Valid ? gfxReservedMemoryRecorder.LastValue : -1;
+            int shutdownPending;
+            uint nativePending;
+            string pendingError;
+            bool pendingAvailable = BridgeWorkerValidationDiagnostics.TryReadPendingCounts(out shutdownPending, out nativePending, out pendingError);
+            long privateBytes = -1, workingSetBytes = -1, handles = -1;
+            int threadCount = -1;
+            bool processAvailable = false;
+            string processError = string.Empty;
+            try
+            {
+                using (Process process = Process.GetCurrentProcess())
+                {
+                    process.Refresh();
+                    privateBytes = process.PrivateMemorySize64;
+                    workingSetBytes = process.WorkingSet64;
+                    handles = process.HandleCount;
+                    threadCount = process.Threads.Count;
+                    processAvailable = true;
+                }
+            }
+            catch (Exception error) { processError = Sanitize(error.GetType().Name + ": " + error.Message); }
+            evidence.memory.Add(new MemorySample { utc = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture), stage = CurrentStage(), label = label, totalUsedBytes = totalUsed, totalReservedBytes = totalReserved, gfxUsedBytes = gfxUsed, gfxReservedBytes = gfxReserved, playerPrivateBytes = privateBytes, playerWorkingSetBytes = workingSetBytes, playerHandleCount = handles, playerThreadCount = threadCount, playerProcessStatsAvailable = processAvailable, playerProcessStatsError = processError, shutdownPending = pendingAvailable ? shutdownPending : -1, nativePending = pendingAvailable ? nativePending : uint.MaxValue, pendingAvailable = pendingAvailable, pendingError = pendingAvailable ? string.Empty : Sanitize(pendingError) });
+        }
+
+        void DisposeMemoryRecorders()
+        {
+            if (totalUsedMemoryRecorder.Valid) totalUsedMemoryRecorder.Dispose();
+            if (totalReservedMemoryRecorder.Valid) totalReservedMemoryRecorder.Dispose();
+            if (gfxUsedMemoryRecorder.Valid) gfxUsedMemoryRecorder.Dispose();
+            if (gfxReservedMemoryRecorder.Valid) gfxReservedMemoryRecorder.Dispose();
+        }
+
+        void SetStage(string stage)
+        {
+            lock (warningLock) currentStage = stage ?? string.Empty;
+            if (evidence != null) evidence.stage = stage ?? string.Empty;
+        }
+
+        static string CurrentStage()
+        {
+            lock (warningLock) return currentStage;
+        }
+
+        void FlushWarnings()
+        {
+            if (evidence == null || evidence.warnings == null) return;
+            List<WarningOccurrence> copy = new List<WarningOccurrence>();
+            lock (warningLock) while (pendingWarnings.Count > 0) copy.Add(pendingWarnings.Dequeue());
+            foreach (WarningOccurrence warning in copy)
+            {
+                evidence.warnings.Add(new WarningEvidence { sequence = warning.sequence, utc = warning.utc, stage = warning.stage, message = warning.message, stackTrace = warning.stackTrace });
+            }
+            evidence.warningCount = evidence.warnings.Count;
+        }
+
+        void WriteProgressSafely()
+        {
+            double now = Time.realtimeSinceStartupAsDouble;
+            if (now - lastProgressWriteTime < ProgressWriteIntervalSeconds) return;
+            lastProgressWriteTime = now;
+            FlushWarnings();
+            CaptureMemorySample("progress");
+            WriteProgress();
         }
 
         void DisposeGrdRecorders()
@@ -653,21 +1018,30 @@ namespace ViewWeave.BridgeWorkerValidation
         }
 
         bool TimedOut(double started) { return Time.realtimeSinceStartupAsDouble - started > TimeoutSeconds; }
-        void WriteEvidence() { File.WriteAllText(Path.Combine(evidenceDirectory, "summary.json"), JsonUtility.ToJson(evidence, true)); }
-        void WriteProgress() { File.WriteAllText(Path.Combine(evidenceDirectory, "progress.json"), JsonUtility.ToJson(evidence, true)); }
+        void WriteEvidence() { FlushWarnings(); File.WriteAllText(Path.Combine(evidenceDirectory, "summary.json"), JsonUtility.ToJson(evidence, true)); }
+        void WriteProgress() { FlushWarnings(); File.WriteAllText(Path.Combine(evidenceDirectory, "progress.json"), JsonUtility.ToJson(evidence, true)); }
         static string Argument(string key) { string[] args = Environment.GetCommandLineArgs(); for (int i = 0; i + 1 < args.Length; ++i) if (args[i] == key) return args[i + 1]; return null; }
         static string Sanitize(string value) { if (string.IsNullOrEmpty(value)) return "unknown error"; var chars = new System.Collections.Generic.List<char>(); foreach (char c in value) if (c >= 0x20 && c <= 0x7e) chars.Add(c); return new string(chars.ToArray()); }
 
         struct FrameDigest { public int checksum; public bool nonBlank; public bool allTilesNonBlank; public bool allTilesColorEvidence; public bool edgeDifference; public int edgeChangedPixels; public Color32[] pixels; }
 
+        sealed class WarningOccurrence
+        {
+            public int sequence;
+            public string utc, stage, message, stackTrace;
+        }
+
         [Serializable]
         sealed class Evidence
         {
-            public string buildGUID, quiltBuildGUID, quality, grd, expectedGraphicsApi, expectedGraphicsDeviceType, unityVersion, graphicsDeviceType, graphicsDeviceVersion, profile, error, cleanupState, sessionState, outputState, pipelineFamily, pipelineAssetName, colorSpace, sourceFormat, sourceGraphicsFormat, sourceDimension, transferFormat, transferGraphicsFormat, transferDimension, faultMode;
-            public bool isEditor, development, graphicsMultiThreaded, outputIsActiveAndEnabled, ok, viewDifference, movementDifference, beforeNonBlank, afterNonBlank, beforeAllTilesNonBlank, afterAllTilesNonBlank, beforeAllTilesColorEvidence, afterAllTilesColorEvidence, beforeEdgeDifference, afterEdgeDifference;
+            public string buildGUID, quiltBuildGUID, quality, grd, buildKind, expectedGraphicsApi, expectedGraphicsDeviceType, unityVersion, graphicsDeviceType, graphicsDeviceVersion, profile, error, cleanupState, sessionState, outputState, pipelineFamily, pipelineAssetName, colorSpace, sourceFormat, sourceGraphicsFormat, sourceDimension, transferFormat, transferGraphicsFormat, transferDimension, faultMode, requestedGrdMode, configuredGrdMode, configuredGrdModeError, grdRuntimeEvidence, stage, startedUtc, finishedUtc;
+            public bool isEditor, development, expectedDevelopment, actualDevelopment, graphicsMultiThreaded, outputIsActiveAndEnabled, ok, viewDifference, movementDifference, beforeNonBlank, afterNonBlank, beforeAllTilesNonBlank, afterAllTilesNonBlank, beforeAllTilesColorEvidence, afterAllTilesColorEvidence, beforeEdgeDifference, afterEdgeDifference;
             public bool sourceSrgb, transferSrgb;
-            public bool grdCounterAvailable;
-            public int beforeChecksum, afterChecksum, quiltWidth, quiltHeight, cleanupPending, faultPendingBeforeRelease;
+            public bool grdCounterAvailable, grdModeMatchesRequested, configuredGrdModeAvailable, cleanupPendingAvailable;
+            public bool totalUsedMemoryAvailable, totalReservedMemoryAvailable, gfxUsedMemoryAvailable, gfxReservedMemoryAvailable;
+            public string totalUsedMemoryUnavailableReason, totalReservedMemoryUnavailableReason, gfxUsedMemoryUnavailableReason, gfxReservedMemoryUnavailableReason;
+            public int beforeChecksum, afterChecksum, quiltWidth, quiltHeight, cleanupPending, cleanupShutdownPending, faultPendingBeforeRelease, restartCountRequested, warningCount;
+            public uint cleanupNativePending;
             public int sourceAntiAliasing, transferAntiAliasing;
             public int nativeQuiltWidth, nativeQuiltHeight, nativeColumns, nativeRows, actualQuiltWidth, actualQuiltHeight, actualColumns, actualRows, actualViews, changedPixelCount, beforeEdgeChangedPixels, afterEdgeChangedPixels;
             public float nativeAspect, nativeViewcone, actualAspect, actualViewcone;
@@ -678,8 +1052,11 @@ namespace ViewWeave.BridgeWorkerValidation
             public long grdRenderers, visibleInstances;
             public uint restartCompleted;
             public int restartPending;
-            public bool restartOk, qualityCycleOk, faultInjectionOk;
+            public bool restartOk, qualityCycleOk, faultInjectionOk, qualityCycleRequested;
             public QualityCycleStage[] qualityCycle;
+            public List<RestartIteration> restartIterations;
+            public List<WarningEvidence> warnings;
+            public List<MemorySample> memory;
         }
 
         [Serializable]
@@ -687,8 +1064,38 @@ namespace ViewWeave.BridgeWorkerValidation
         {
             public string quality;
             public int expectedWidth, expectedHeight, actualWidth, actualHeight, actualViews, actualColumns, actualRows;
-            public uint completedDelta;
-            public bool beforeAllTilesNonBlank, afterAllTilesNonBlank, movementDifference, viewDifference;
+            public uint completedBaseline, completedAfter, completedDelta;
+            public bool beforeAllTilesNonBlank, afterAllTilesNonBlank, beforeAllTilesColorEvidence, afterAllTilesColorEvidence, movementDifference, viewDifference;
+        }
+
+        [Serializable]
+        sealed class RestartIteration
+        {
+            public int index, stopShutdownPending, expectedWidth, expectedHeight, actualWidth, actualHeight, views;
+            public uint stopNativePending, completedBaseline, completed, completedDelta;
+            public bool stopPendingVerified, allTilesNonBlank, allTilesColorEvidence, movementDifference, viewDifference, ok;
+            public string startedUtc, finishedUtc, result, stopSessionState, stopOutputState, error;
+        }
+
+        [Serializable]
+        sealed class WarningEvidence
+        {
+            public int sequence;
+            public string utc, stage, message, stackTrace;
+        }
+
+        [Serializable]
+        sealed class MemorySample
+        {
+            public string utc, stage, label, pendingError;
+            public long totalUsedBytes, totalReservedBytes, gfxUsedBytes, gfxReservedBytes;
+            public long playerPrivateBytes, playerWorkingSetBytes, playerHandleCount;
+            public int playerThreadCount;
+            public bool playerProcessStatsAvailable;
+            public string playerProcessStatsError;
+            public int shutdownPending;
+            public uint nativePending;
+            public bool pendingAvailable;
         }
     }
 }

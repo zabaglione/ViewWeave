@@ -1,7 +1,7 @@
 {
   "name": "ViewWeave.BridgeWorkerValidation.Runtime",
   "rootNamespace": "ViewWeave.BridgeWorkerValidation",
-  "references": ["ViewWeave.Core", "ViewWeave.Bridge", "ViewWeave.URP", "Unity.RenderPipelines.Core.Runtime", "Unity.RenderPipelines.Universal.Runtime"],
+  "references": ["ViewWeave.Core", "ViewWeave.Bridge", "ViewWeave.URP", "ViewWeave.HDRP", "Unity.RenderPipelines.Core.Runtime", "Unity.RenderPipelines.Universal.Runtime", "Unity.RenderPipelines.HighDefinition.Runtime"],
   "includePlatforms": [],
   "excludePlatforms": [],
   "allowUnsafeCode": false,

@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Text;
+using System.Threading;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -36,6 +37,7 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
         const string OriginalEditorOptionsEnabledKey = "ViewWeave.BridgeWorkerEditorPlayLifecycle.originalEditorOptionsEnabled";
         const string OriginalEditorOptionsKey = "ViewWeave.BridgeWorkerEditorPlayLifecycle.originalEditorOptions";
         const string StateSavedKey = "ViewWeave.BridgeWorkerEditorPlayLifecycle.stateSaved";
+        const string EditorRecoveryWarningKey = "ViewWeave.BridgeWorkerEditorPlayLifecycle.editorRecoveryWarning";
         const double PlayTimeoutSeconds = 60.0;
         const double RecoveryTimeoutSeconds = 20.0;
         const int RequiredCompletions = 4;
@@ -88,6 +90,16 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
         static bool cycleCounterReset;
         static int previewWidth;
         static int previewHeight;
+        static readonly object warningLock = new object();
+        static readonly Queue<WarningTrace> warningQueue = new Queue<WarningTrace>();
+        static int traceStage;
+        static int traceCycle;
+        static int lastShutdownPending = int.MinValue;
+        static uint lastNativePending = uint.MaxValue;
+        static int warningSequence;
+        static bool editorRecoveryWarningWritten;
+        static bool nativePendingTenSecondWritten;
+        static bool subscribedToTraceEvents;
 
         static BridgeWorkerEditorPlayLifecycle()
         {
@@ -113,6 +125,8 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
                 phase = Phase.StoppingAfterFailure;
                 SetEvidenceFailure("context recovery failed: " + error.Message);
             }
+            SetTraceStage(phase == Phase.RecoveringFirst || phase == Phase.RecoveringSecond || phase == Phase.RecoveringFailure ? "recovering" : phase == Phase.StoppingAfterFailure ? "stopping" : phase == Phase.RenderingFirst || phase == Phase.RenderingSecond ? "rendering" : "waiting-play");
+            editorRecoveryWarningWritten = SessionState.GetBool(EditorRecoveryWarningKey, false);
             Subscribe();
         }
 
@@ -136,6 +150,7 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
                 ConfigureValidationScene(configuration);
                 phase = Phase.WaitingFirstPlay;
                 phaseStarted = EditorApplication.timeSinceStartup;
+                SetTraceStage("waiting-play");
                 PersistContext();
                 Subscribe();
                 Log("run-start");
@@ -282,6 +297,10 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
             subscribed = true;
             EditorApplication.update += Update;
             EditorApplication.playModeStateChanged += PlayModeStateChanged;
+            EditorApplication.quitting += EditorQuitting;
+            AssemblyReloadEvents.beforeAssemblyReload += BeforeAssemblyReload;
+            subscribedToTraceEvents = true;
+            Application.logMessageReceivedThreaded += LogMessageReceivedThreaded;
         }
 
         static void Unsubscribe()
@@ -290,6 +309,158 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
             subscribed = false;
             EditorApplication.update -= Update;
             EditorApplication.playModeStateChanged -= PlayModeStateChanged;
+            EditorApplication.quitting -= EditorQuitting;
+            AssemblyReloadEvents.beforeAssemblyReload -= BeforeAssemblyReload;
+            Application.logMessageReceivedThreaded -= LogMessageReceivedThreaded;
+            subscribedToTraceEvents = false;
+        }
+
+        static void LogMessageReceivedThreaded(string condition, string stackTrace, LogType type)
+        {
+            if (type != LogType.Warning || !subscribedToTraceEvents) return;
+            WarningTrace item = new WarningTrace
+            {
+                utc = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture),
+                cycle = Volatile.Read(ref traceCycle),
+                stage = Volatile.Read(ref traceStage),
+                raw = condition ?? string.Empty,
+                stack = stackTrace ?? string.Empty
+            };
+            lock (warningLock)
+            {
+                item.count = ++warningSequence;
+                warningQueue.Enqueue(item);
+            }
+        }
+
+        static void BeforeAssemblyReload()
+        {
+            TraceLifecycleEvent("before-assembly-reload");
+        }
+
+        static void EditorQuitting()
+        {
+            TraceLifecycleEvent("quitting");
+        }
+
+        static void TraceLifecycleEvent(string eventName)
+        {
+            if (!running) return;
+            RecordPendingSnapshot(eventName);
+            DrainWarnings();
+        }
+
+        static void SetTraceStage(string stage)
+        {
+            Volatile.Write(ref traceStage, StageId(stage));
+            Volatile.Write(ref traceCycle, cycle);
+        }
+
+        static int StageId(string stage)
+        {
+            if (stage == "waiting-play") return 1;
+            if (stage == "rendering") return 2;
+            if (stage == "stopping") return 3;
+            if (stage == "waiting-edit") return 4;
+            if (stage == "recovering") return 5;
+            if (stage == "finished") return 6;
+            return 0;
+        }
+
+        static string StageName(int stage)
+        {
+            switch (stage)
+            {
+                case 1: return "waiting-play";
+                case 2: return "rendering";
+                case 3: return "stopping";
+                case 4: return "waiting-edit";
+                case 5: return "recovering";
+                case 6: return "finished";
+                default: return "starting";
+            }
+        }
+
+        static void DrainWarnings()
+        {
+            if (string.IsNullOrEmpty(evidencePath)) return;
+            while (true)
+            {
+                WarningTrace item;
+                lock (warningLock)
+                {
+                    if (warningQueue.Count == 0) break;
+                    item = warningQueue.Dequeue();
+                }
+                string line = item.utc + " event=warning domainLocalSeq=" + item.count.ToString(CultureInfo.InvariantCulture) + " cycle=" + item.cycle.ToString(CultureInfo.InvariantCulture) + " stage=" + StageName(item.stage) + " raw=" + TraceEscape(item.raw) + " stack=" + TraceEscape(item.stack);
+                AppendTrace(line);
+                if (evidence != null) evidence.warningCount++;
+            }
+            if (evidence != null) evidence.traceFile = "lifecycle-trace.log";
+        }
+
+        static string TraceEscape(string value)
+        {
+            if (string.IsNullOrEmpty(value)) return string.Empty;
+            StringBuilder result = new StringBuilder(value.Length);
+            foreach (char character in value)
+            {
+                if (character >= 0x20 && character <= 0x7e && character != '\\') result.Append(character);
+                else if (character == '\\') result.Append("\\\\");
+                else result.Append("\\u").Append(((int)character).ToString("x4", CultureInfo.InvariantCulture));
+            }
+            return result.ToString();
+        }
+
+        static void AppendTrace(string line)
+        {
+            if (string.IsNullOrEmpty(evidencePath)) return;
+            try
+            {
+                Directory.CreateDirectory(evidencePath);
+                File.AppendAllText(Path.Combine(evidencePath, "lifecycle-trace.log"), line + Environment.NewLine, Encoding.ASCII);
+            }
+            catch (Exception error)
+            {
+                SetEvidenceFailure("lifecycle trace write failed: " + error.Message);
+            }
+        }
+
+        static bool RecordPendingSnapshot(string eventName)
+        {
+            int shutdownPending;
+            uint nativePending;
+            string error;
+            if (!BridgeWorkerValidationDiagnostics.TryReadPendingCounts(out shutdownPending, out nativePending, out error))
+            {
+                SetEvidenceFailure("pending count unavailable at " + eventName + ": " + error);
+                AppendTrace(DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture) + " event=pending-unavailable source=" + eventName + " error=" + TraceEscape(error));
+                return false;
+            }
+            string utc = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture);
+            if (eventName != "recovery-poll") AppendTrace(utc + " event=" + eventName + " cycle=" + cycle.ToString(CultureInfo.InvariantCulture) + " stage=" + StageName(traceStage));
+            if (shutdownPending != lastShutdownPending || nativePending != lastNativePending)
+            {
+                AppendTrace(utc + " event=pending-count source=" + eventName + " cycle=" + cycle.ToString(CultureInfo.InvariantCulture) + " shutdownPending=" + shutdownPending.ToString(CultureInfo.InvariantCulture) + " nativePending=" + nativePending.ToString(CultureInfo.InvariantCulture));
+                lastShutdownPending = shutdownPending;
+                lastNativePending = nativePending;
+            }
+            CycleEvidence cycleEvidence = cycle > 0 && evidence != null && evidence.cycles != null && evidence.cycles.Length >= cycle ? evidence.cycles[cycle - 1] : null;
+            if (cycleEvidence != null && eventName == "stop-start")
+            {
+                cycleEvidence.pendingBeforeStop = shutdownPending;
+                cycleEvidence.shutdownPendingBeforeStop = shutdownPending;
+                cycleEvidence.nativePendingBeforeStop = nativePending;
+            }
+            bool afterStop = phase == Phase.RecoveringFirst || phase == Phase.RecoveringSecond || phase == Phase.RecoveringFailure;
+            if (cycleEvidence != null && afterStop && shutdownPending == 0 && nativePending == 0 && string.IsNullOrEmpty(cycleEvidence.zeroCountsUtc))
+            {
+                cycleEvidence.zeroCountsUtc = utc;
+                cycleEvidence.zeroCountsAfterStop = true;
+                AppendTrace(utc + " event=pending-zero cycle=" + cycle.ToString(CultureInfo.InvariantCulture) + " shutdownPending=0 nativePending=0");
+            }
+            if (cycleEvidence != null && eventName == "stop-start" && shutdownPending == 0 && nativePending == 0) cycleEvidence.zeroCountsBeforeStop = true;
+            return true;
         }
 
         static void PlayModeStateChanged(PlayModeStateChange state)
@@ -302,7 +473,9 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
                     if (phase != Phase.WaitingFirstPlay && phase != Phase.WaitingSecondPlay) return;
                     cycle = phase == Phase.WaitingFirstPlay ? 1 : 2;
                     phase = cycle == 1 ? Phase.RenderingFirst : Phase.RenderingSecond;
+                    SetTraceStage("rendering");
                     phaseStarted = EditorApplication.timeSinceStartup;
+                    TraceLifecycleEvent("entered-playmode");
                     qualityStageIndex = 0;
                     qualityStageStarted = false;
                     qualityStageBaselineSet = false;
@@ -320,13 +493,19 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
                 else if (state == PlayModeStateChange.ExitingPlayMode)
                 {
                     Log("exiting-play cycle=" + cycle.ToString(CultureInfo.InvariantCulture));
+                    TraceLifecycleEvent("exiting-playmode");
                 }
                 else if (state == PlayModeStateChange.EnteredEditMode && (phase == Phase.WaitingFirstEdit || phase == Phase.WaitingSecondEdit || phase == Phase.StoppingAfterFailure))
                 {
                     phase = phase == Phase.StoppingAfterFailure ? Phase.RecoveringFailure : cycle == 1 ? Phase.RecoveringFirst : Phase.RecoveringSecond;
                     phaseStarted = EditorApplication.timeSinceStartup;
+                    SetTraceStage("recovering");
+                    editorRecoveryWarningWritten = false;
+                    nativePendingTenSecondWritten = false;
+                    SessionState.SetBool(EditorRecoveryWarningKey, false);
                     RefreshReferences();
                     Log("entered-edit cycle=" + cycle.ToString(CultureInfo.InvariantCulture));
+                    TraceLifecycleEvent("entered-editmode");
                     PersistContext();
                 }
             }
@@ -341,10 +520,11 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
             if (!running || finishing) return;
             try
             {
+                DrainWarnings();
                 if (phase == Phase.StoppingAfterFailure)
                 {
-                    if (Application.isPlaying) EditorApplication.isPlaying = false;
-                    else { phase = Phase.RecoveringFailure; phaseStarted = EditorApplication.timeSinceStartup; }
+                    if (Application.isPlaying) { SetTraceStage("stopping"); RecordPendingSnapshot("stop-start"); EditorApplication.isPlaying = false; }
+                    else { phase = Phase.RecoveringFailure; phaseStarted = EditorApplication.timeSinceStartup; SetTraceStage("recovering"); }
                 }
                 if (phase == Phase.RenderingFirst || phase == Phase.RenderingSecond) UpdateRendering();
                 else if (phase == Phase.WaitingFirstEdit || phase == Phase.WaitingSecondEdit) CheckTimeout(PlayTimeoutSeconds, "play exit timeout");
@@ -638,7 +818,6 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
             cycleEvidence.completed = output.Completed;
             cycleEvidence.submissions = output.Submissions;
             cycleEvidence.state = session.State.ToString();
-            cycleEvidence.pendingBeforeStop = BridgeWorkerQuiltOutput.ShutdownPendingCount;
             if (cycle == 1 && evidence.qualityStages != null)
             {
                 for (int index = 0; index < evidence.qualityStages.Length; ++index) cycleEvidence.completedDelta += evidence.qualityStages[index].completedDelta;
@@ -658,6 +837,8 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
             Log("rendering cycle=" + cycle.ToString(CultureInfo.InvariantCulture) + " completed=" + output.Completed.ToString(CultureInfo.InvariantCulture) + " views=" + cycleEvidence.views.ToString(CultureInfo.InvariantCulture) + " tile=" + cycleEvidence.tileWidth.ToString(CultureInfo.InvariantCulture) + "x" + cycleEvidence.tileHeight.ToString(CultureInfo.InvariantCulture) + " red=" + cycleEvidence.redDominantPixels.ToString(CultureInfo.InvariantCulture));
             phase = cycle == 1 ? Phase.WaitingFirstEdit : Phase.WaitingSecondEdit;
             phaseStarted = EditorApplication.timeSinceStartup;
+            SetTraceStage("waiting-edit");
+            RecordPendingSnapshot("stop-start");
             PersistContext();
             EditorApplication.isPlaying = false;
         }
@@ -671,17 +852,40 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
         {
             RefreshReferences();
             if (session == null || output == null) { Fail("Bridge session references disappeared after Play"); return; }
-            if (BridgeWorkerQuiltOutput.ShutdownPendingCount != 0 || session.State != ViewWeaveBridgeSession.SessionState.Idle || output.State != BridgeWorkerQuiltOutput.WorkerState.Closed) { CheckTimeout(RecoveryTimeoutSeconds, "Bridge cleanup timeout"); return; }
-            evidence.cycles[cycle - 1].pendingAfterStop = BridgeWorkerQuiltOutput.ShutdownPendingCount;
+            if (!RecordPendingSnapshot("recovery-poll")) { Fail("Bridge pending counts unavailable during Editor recovery"); return; }
+            if (lastShutdownPending != 0 || lastNativePending != 0)
+            {
+                double recoveryElapsed = EditorApplication.timeSinceStartup - phaseStarted;
+                if (recoveryElapsed >= 1.0 && !editorRecoveryWarningWritten)
+                {
+                    editorRecoveryWarningWritten = true;
+                    SessionState.SetBool(EditorRecoveryWarningKey, true);
+                    AppendTrace(DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture) + " event=shutdown-pending-over-1s thresholdSeconds=1 shutdownPending=" + lastShutdownPending.ToString(CultureInfo.InvariantCulture) + " nativePending=" + lastNativePending.ToString(CultureInfo.InvariantCulture));
+                }
+                if (recoveryElapsed >= 10.0 && lastNativePending > 0 && !nativePendingTenSecondWritten)
+                {
+                    nativePendingTenSecondWritten = true;
+                    AppendTrace(DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture) + " event=native-pending-over-10s thresholdSeconds=10 nativePending=" + lastNativePending.ToString(CultureInfo.InvariantCulture));
+                }
+                CheckTimeout(RecoveryTimeoutSeconds, "Bridge cleanup timeout");
+                return;
+            }
+            if (session.State != ViewWeaveBridgeSession.SessionState.Idle || output.State != BridgeWorkerQuiltOutput.WorkerState.Closed) { CheckTimeout(RecoveryTimeoutSeconds, "Bridge cleanup timeout"); return; }
+            CycleEvidence recoveredCycle = evidence.cycles[cycle - 1];
+            recoveredCycle.pendingAfterStop = lastShutdownPending;
+            recoveredCycle.shutdownPendingAfterStop = lastShutdownPending;
+            recoveredCycle.nativePendingAfterStop = lastNativePending;
             evidence.cycles[cycle - 1].cleanupVerified = true;
             evidence.cycles[cycle - 1].stoppedSessionState = session.State.ToString();
             evidence.cycles[cycle - 1].stoppedOutputState = output.State.ToString();
             Log("recovered cycle=" + cycle.ToString(CultureInfo.InvariantCulture) + " pending=0");
+            AppendTrace(DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture) + " event=recovered cycle=" + cycle.ToString(CultureInfo.InvariantCulture) + " shutdownPending=0 nativePending=0 zeroCountsUtc=" + TraceEscape(recoveredCycle.zeroCountsUtc));
             if (phase == Phase.RecoveringFailure) { Finish(false, failure); return; }
             if (cycle == 1)
             {
                 phase = Phase.WaitingSecondPlay;
                 phaseStarted = EditorApplication.timeSinceStartup;
+                SetTraceStage("waiting-play");
                 PersistContext();
                 EditorApplication.isPlaying = true;
             }
@@ -726,6 +930,8 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
             {
                 phase = Phase.StoppingAfterFailure;
                 phaseStarted = EditorApplication.timeSinceStartup;
+                SetTraceStage("stopping");
+                RecordPendingSnapshot("stop-start");
                 SafePersistContext();
                 EditorApplication.isPlaying = false;
             }
@@ -740,12 +946,15 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
                 if (!string.IsNullOrEmpty(error)) SetEvidenceFailure(error);
                 phase = Phase.StoppingAfterFailure;
                 phaseStarted = EditorApplication.timeSinceStartup;
+                SetTraceStage("stopping");
+                RecordPendingSnapshot("stop-start");
                 SafePersistContext();
                 try { EditorApplication.isPlaying = false; }
                 catch (Exception stopError) { SetEvidenceFailure("play stop failed: " + stopError.Message); }
                 return;
             }
             finishing = true;
+            SetTraceStage("finished");
             if (!string.IsNullOrEmpty(error)) SetEvidenceFailure(error);
             bool validationPassed = success && EvidenceHasRenderProof();
             bool exitWhenFinished = exitAfterLifecycle;
@@ -762,13 +971,15 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
             finally
             {
                 phase = Phase.Finished;
+                DrainWarnings();
+                Unsubscribe();
+                DrainWarnings();
                 try { WriteEvidence(); }
                 catch (Exception writeError) { SetEvidenceFailure("evidence write failed: " + writeError.Message); }
                 SafeLog(validationPassed && evidence != null && string.IsNullOrEmpty(evidence.error) ? "pass" : "fail");
                 if (evidence != null) evidence.ok = validationPassed && string.IsNullOrEmpty(evidence.error);
                 try { WriteEvidence(); }
                 catch (Exception writeError) { SetEvidenceFailure("evidence write failed: " + writeError.Message); }
-                Unsubscribe();
                 running = false;
                 ClearState();
                 exitAfterLifecycle = false;
@@ -883,6 +1094,7 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
             pipelineName = SessionState.GetString(PipelineKey, "urp");
             runtimePath = SessionState.GetString(RuntimePathKey, string.Empty);
             exitAfterLifecycle = SessionState.GetBool(ExitAfterLifecycleKey, false);
+            editorRecoveryWarningWritten = SessionState.GetBool(EditorRecoveryWarningKey, false);
             if (!string.IsNullOrEmpty(evidencePath) && File.Exists(Path.Combine(evidencePath, "summary.json"))) evidence = JsonUtility.FromJson<Evidence>(File.ReadAllText(Path.Combine(evidencePath, "summary.json")));
             if (evidence == null) evidence = new Evidence { expectedApi = expectedApi, expectedGraphicsDeviceType = expectedGraphicsDeviceType.ToString(), pipeline = pipelineName, exitAfterLifecycle = exitAfterLifecycle, processId = Process.GetCurrentProcess().Id, scenePath = ScenePath, unityVersion = Application.unityVersion };
             if (evidence.cycles == null || evidence.cycles.Length < 2) evidence.cycles = new[] { new CycleEvidence(), new CycleEvidence() };
@@ -955,7 +1167,7 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
 
         static void ClearState()
         {
-            SessionState.EraseBool(RunKey); SessionState.EraseString(OwnerKey); SessionState.EraseInt(PhaseKey); SessionState.EraseInt(CycleKey); SessionState.EraseString(StartedKey); SessionState.EraseString(EvidenceKey); SessionState.EraseString(ExpectedApiKey); SessionState.EraseString(PipelineKey); SessionState.EraseString(DomainReloadKey); SessionState.EraseString(RuntimePathKey); SessionState.EraseBool(ExitAfterLifecycleKey); SessionState.EraseString(OriginalGraphicsKey); SessionState.EraseString(OriginalQualityKey); SessionState.EraseString(OriginalScenesKey); SessionState.EraseBool(OriginalRunInBackgroundKey); SessionState.EraseBool(OriginalEditorOptionsEnabledKey); SessionState.EraseInt(OriginalEditorOptionsKey); SessionState.EraseBool(StateSavedKey);
+            SessionState.EraseBool(RunKey); SessionState.EraseString(OwnerKey); SessionState.EraseInt(PhaseKey); SessionState.EraseInt(CycleKey); SessionState.EraseString(StartedKey); SessionState.EraseString(EvidenceKey); SessionState.EraseString(ExpectedApiKey); SessionState.EraseString(PipelineKey); SessionState.EraseString(DomainReloadKey); SessionState.EraseString(RuntimePathKey); SessionState.EraseBool(ExitAfterLifecycleKey); SessionState.EraseBool(EditorRecoveryWarningKey); SessionState.EraseString(OriginalGraphicsKey); SessionState.EraseString(OriginalQualityKey); SessionState.EraseString(OriginalScenesKey); SessionState.EraseBool(OriginalRunInBackgroundKey); SessionState.EraseBool(OriginalEditorOptionsEnabledKey); SessionState.EraseInt(OriginalEditorOptionsKey); SessionState.EraseBool(StateSavedKey);
         }
 
         static string Argument(string key)
@@ -984,12 +1196,19 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
             public bool exitAfterLifecycle;
         }
 
+        sealed class WarningTrace
+        {
+            public string utc, raw, stack;
+            public int count, cycle, stage;
+        }
+
         [Serializable]
         sealed class Evidence
         {
             public bool ok, runtimePathExists, exitAfterLifecycle, exitSuppressed;
+            public int warningCount;
             public int processId;
-            public string expectedApi, expectedGraphicsDeviceType, pipeline, domainReload, scenePath, unityVersion, quality, grid, error;
+            public string expectedApi, expectedGraphicsDeviceType, pipeline, domainReload, scenePath, unityVersion, quality, grid, error, traceFile;
             public List<string> actualGraphicsDeviceTypes = new List<string>();
             public CycleEvidence[] cycles = { new CycleEvidence(), new CycleEvidence() };
             public QualityStageEvidence[] qualityStages = { new QualityStageEvidence(), new QualityStageEvidence(), new QualityStageEvidence() };
@@ -999,10 +1218,13 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
         sealed class CycleEvidence
         {
             public bool isEditor, isPlaying, readyObserved, cleanupVerified;
+            public bool zeroCountsBeforeStop, zeroCountsAfterStop;
             public string state, platform, tile, stoppedSessionState, stoppedOutputState, quality, image;
+            public string zeroCountsUtc;
             public uint completed, submissions;
             public uint completedDelta;
-            public int pendingAfterStop, pendingBeforeStop, expectedWidth, expectedHeight, actualWidth, actualHeight, tileWidth, tileHeight, views, redDominantPixels;
+            public int pendingAfterStop, pendingBeforeStop, shutdownPendingBeforeStop, shutdownPendingAfterStop, expectedWidth, expectedHeight, actualWidth, actualHeight, tileWidth, tileHeight, views, redDominantPixels;
+            public uint nativePendingBeforeStop, nativePendingAfterStop;
             public bool counterResetObserved;
         }
 

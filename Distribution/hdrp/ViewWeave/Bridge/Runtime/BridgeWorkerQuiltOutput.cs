@@ -34,6 +34,8 @@ namespace ViewWeave
         }
         public string LastError { get; private set; }
         public uint Submissions { get; private set; }
+        /// <summary>Counts Submit calls passing readiness, handle, texture, and complete-grid checks; it does not imply queue submission or native completion.</summary>
+        public uint SubmissionAttempts { get; private set; }
         public uint Completed => status.completed;
         public uint Dropped => status.dropped;
         public static int ShutdownPendingCount
@@ -99,6 +101,7 @@ namespace ViewWeave
             status = default;
             Profile = default;
             Submissions = 0;
+            SubmissionAttempts = 0;
             transferGraphicsFormatName = string.Empty;
             transferFormatName = string.Empty;
             transferSrgbDiagnostic = false;
@@ -181,6 +184,7 @@ namespace ViewWeave
                 LastError = "Bridge worker requires a complete quilt grid";
                 return;
             }
+            SubmissionAttempts++;
             if (!EnsureTransferTexture(quiltTexture)) return;
             RenderTexture previous = RenderTexture.active;
             try { Graphics.Blit(quiltTexture, transferTexture, new Vector2(1f, -1f), new Vector2(0f, 1f)); }

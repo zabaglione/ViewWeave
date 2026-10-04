@@ -10,6 +10,8 @@ namespace ViewWeave
     public sealed class QuiltRenderer : MonoBehaviour
     {
         public QuiltSettings settings = new QuiltSettings();
+        [Tooltip("The output quilt stays full size. Half and Quarter render ceil(view count / divisor) views, reuse the nearest rendered image for each output tile, and can reduce angular smoothness. At least the first and last views are rendered when view count is greater than one.")]
+        public QuiltViewRenderMode viewRenderMode = QuiltViewRenderMode.Full;
         public Camera sourceCamera;
         RenderTexture quiltTexture;
         public RenderTexture QuiltTexture => quiltTexture;
@@ -25,6 +27,7 @@ namespace ViewWeave
         public MonoBehaviour GuardBehaviour { get => guardBehaviour; set => guardBehaviour = value; }
         public bool useRenderRequests = true;
         public bool IsRendering { get; private set; }
+        public int LastRenderedViewCount { get; private set; }
         public string LastAutoRenderError { get; private set; }
         public long LastCpuSubmissionTicks { get; private set; }
         public long LastViewCpuTicks { get; private set; }
@@ -34,6 +37,11 @@ namespace ViewWeave
         RenderTexture viewTexture;
         RenderTexture resolveTexture;
         RenderTexture previousActive;
+        int[] renderedViewIndices = Array.Empty<int>();
+        int[] sourceViewAssignments = Array.Empty<int>();
+        int cachedSamplingViewCount;
+        QuiltViewRenderMode cachedSamplingMode;
+        bool hasSamplingCache;
 
         void OnEnable()
         {
@@ -82,12 +90,14 @@ namespace ViewWeave
             bool trustedSrpBoundary = trustedSchedulerBoundary && Application.isEditor && Application.isPlaying && srp;
             if (Camera.current != null && !trustedSrpBoundary) throw new InvalidOperationException("RenderQuilt must be called outside render callbacks");
             settings.Validate();
+            QuiltViewSampling.GetRenderCount(settings.views, viewRenderMode);
             if (sourceCamera == null) throw new InvalidOperationException("sourceCamera is required");
             if (sourceCamera.enabled) throw new InvalidOperationException("sourceCamera must be disabled and dedicated to quilt rendering");
             if (sourceCamera.orthographic) throw new InvalidOperationException("only perspective cameras are supported");
             if (srp && !useRenderRequests) throw new NotSupportedException("an SRP adapter and render request are required");
             if (srp && RenderGuard == null) throw new InvalidOperationException("an IQuiltRenderGuard is required for SRP rendering");
             IsRendering = true;
+            LastRenderedViewCount = 0;
             previousActive = RenderTexture.active;
             CameraState state = default;
             bool stateCaptured = false;
@@ -95,6 +105,7 @@ namespace ViewWeave
             try
             {
                 QuiltLayout layout = settings.GetLayout();
+                EnsureViewSampling(layout.ViewCount);
                 EnsureTextures(layout);
                 ClearQuilt();
                 state = new CameraState(sourceCamera);
@@ -109,11 +120,11 @@ namespace ViewWeave
                 sourceCamera.enabled = false;
                 IQuiltRenderPreparation preparation = RenderGuard as IQuiltRenderPreparation;
                 if (preparation != null) quiltPreparation = preparation.PrepareQuilt(sourceCamera);
-                for (int i = 0; i < layout.ViewCount; ++i)
+                for (int renderSlot = 0; renderSlot < renderedViewIndices.Length; ++renderSlot)
                 {
                     long viewStart = Stopwatch.GetTimestamp();
-                    RectInt tile = layout.GetTile(i);
-                    float offset = QuiltMath.ViewOffset(i, layout.ViewCount, settings.viewCone, settings.cameraDistance);
+                    int viewIndex = renderedViewIndices[renderSlot];
+                    float offset = QuiltMath.ViewOffset(viewIndex, layout.ViewCount, settings.viewCone, settings.cameraDistance);
                     sourceCamera.transform.position = state.position + state.rotation * Vector3.right * offset;
                     sourceCamera.transform.rotation = QuiltMath.ParallelViewRotation(state.rotation);
                     sourceCamera.projectionMatrix = QuiltMath.OffAxisProjection(settings.fieldOfView, settings.viewAspect, state.nearClip, state.farClip, offset, settings.cameraDistance);
@@ -121,9 +132,22 @@ namespace ViewWeave
                     sourceCamera.aspect = settings.viewAspect;
                     sourceCamera.rect = new Rect(0f, 0f, 1f, 1f);
                     IDisposable viewGuard = srp ? RenderGuard.Begin(sourceCamera) : null;
-                    try { RenderOneView(); }
+                    try
+                    {
+                        RenderOneView();
+                        LastRenderedViewCount++;
+                    }
                     finally { if (viewGuard != null) viewGuard.Dispose(); }
-                    CopyTile(tile, ResolveViewTexture());
+                    RenderTexture renderedView = ResolveViewTexture();
+                    if (renderedViewIndices.Length == layout.ViewCount)
+                    {
+                        CopyTile(layout.GetTile(viewIndex), renderedView);
+                    }
+                    else
+                    {
+                        for (int outputView = 0; outputView < layout.ViewCount; ++outputView)
+                            if (sourceViewAssignments[outputView] == viewIndex) CopyTile(layout.GetTile(outputView), renderedView);
+                    }
                     LastViewCpuTicks = Stopwatch.GetTimestamp() - viewStart;
                 }
                 LastCpuSubmissionTicks = Stopwatch.GetTimestamp() - totalStart;
@@ -153,6 +177,21 @@ namespace ViewWeave
                 RenderPipeline.SubmitRenderRequest(sourceCamera, request);
             }
             else sourceCamera.Render();
+        }
+
+        void EnsureViewSampling(int viewCount)
+        {
+            if (hasSamplingCache && cachedSamplingViewCount == viewCount && cachedSamplingMode == viewRenderMode) return;
+            int renderCount = QuiltViewSampling.GetRenderCount(viewCount, viewRenderMode);
+            renderedViewIndices = new int[renderCount];
+            sourceViewAssignments = new int[viewCount];
+            for (int slot = 0; slot < renderCount; ++slot)
+                renderedViewIndices[slot] = QuiltViewSampling.GetRenderedViewIndex(viewCount, viewRenderMode, slot);
+            for (int view = 0; view < viewCount; ++view)
+                sourceViewAssignments[view] = QuiltViewSampling.GetSourceViewIndex(viewCount, viewRenderMode, view);
+            cachedSamplingViewCount = viewCount;
+            cachedSamplingMode = viewRenderMode;
+            hasSamplingCache = true;
         }
 
         RenderTexture ResolveViewTexture()

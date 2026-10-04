@@ -10,6 +10,7 @@ public static class QuiltCoreBatchTests
         CheckLayout();
         CheckProjection();
         CheckSettingsValidation();
+        CheckViewSampling();
         Debug.Log("Quilt core batch tests passed");
     }
 
@@ -55,6 +56,54 @@ public static class QuiltCoreBatchTests
         bool nanFailed = false;
         try { s.views = 3; s.viewAspect = float.NaN; s.Validate(); } catch (ArgumentOutOfRangeException) { nanFailed = true; }
         Require(nanFailed, "nonfinite setting validation");
+    }
+
+    static void CheckViewSampling()
+    {
+        Require(QuiltViewSampling.GetRenderCount(48, QuiltViewRenderMode.Full) == 48, "full render count");
+        Require(QuiltViewSampling.GetRenderCount(47, QuiltViewRenderMode.Half) == 24, "odd half render count rounds up");
+        Require(QuiltViewSampling.GetRenderCount(48, QuiltViewRenderMode.Quarter) == 12, "quarter render count");
+        Require(QuiltViewSampling.GetRenderCount(1, QuiltViewRenderMode.Quarter) == 1, "single view render count");
+        Require(QuiltViewSampling.GetRenderCount(2, QuiltViewRenderMode.Quarter) == 2, "two views retain endpoints");
+        Require(QuiltViewSampling.GetRenderCount(3, QuiltViewRenderMode.Quarter) == 2, "three views retain endpoints");
+
+        int[] evenIndices = { 0, 2, 5, 7 };
+        for (int slot = 0; slot < evenIndices.Length; ++slot)
+            Require(QuiltViewSampling.GetRenderedViewIndex(8, QuiltViewRenderMode.Half, slot) == evenIndices[slot], "even uniform selection " + slot);
+        int[] oddIndices = { 0, 2, 4, 6 };
+        for (int slot = 0; slot < oddIndices.Length; ++slot)
+            Require(QuiltViewSampling.GetRenderedViewIndex(7, QuiltViewRenderMode.Half, slot) == oddIndices[slot], "odd uniform selection " + slot);
+        Require(QuiltViewSampling.GetRenderedViewIndex(8, QuiltViewRenderMode.Half, 0) == 0, "first endpoint selected");
+        Require(QuiltViewSampling.GetRenderedViewIndex(8, QuiltViewRenderMode.Half, 3) == 7, "last endpoint selected");
+        Require(QuiltViewSampling.GetSourceViewIndex(6, QuiltViewRenderMode.Half, 4) == 3, "nearest tie chooses lower index");
+        Require(QuiltViewSampling.GetSourceViewIndex(8, QuiltViewRenderMode.Half, 4) == 5, "nearest view selected");
+
+        foreach (QuiltViewRenderMode mode in new[] { QuiltViewRenderMode.Full, QuiltViewRenderMode.Half, QuiltViewRenderMode.Quarter })
+        {
+            int viewCount = 11;
+            int renderCount = QuiltViewSampling.GetRenderCount(viewCount, mode);
+            int[] assignments = new int[viewCount];
+            for (int slot = 0; slot < renderCount; ++slot)
+            {
+                int renderedView = QuiltViewSampling.GetRenderedViewIndex(viewCount, mode, slot);
+                for (int view = 0; view < viewCount; ++view)
+                    if (QuiltViewSampling.GetSourceViewIndex(viewCount, mode, view) == renderedView) assignments[view]++;
+            }
+            for (int view = 0; view < viewCount; ++view)
+                Require(assignments[view] == 1, "every output tile assigned once " + mode + " " + view);
+        }
+
+        RequireThrows(() => QuiltViewSampling.GetRenderCount(0, QuiltViewRenderMode.Full), "invalid view count rejected");
+        RequireThrows(() => QuiltViewSampling.GetRenderCount(4, (QuiltViewRenderMode)3), "invalid render mode rejected");
+        RequireThrows(() => QuiltViewSampling.GetRenderedViewIndex(4, QuiltViewRenderMode.Half, 2), "invalid render slot rejected");
+        RequireThrows(() => QuiltViewSampling.GetSourceViewIndex(4, QuiltViewRenderMode.Half, 4), "invalid output view rejected");
+    }
+
+    static void RequireThrows(Action action, string name)
+    {
+        bool failed = false;
+        try { action(); } catch (ArgumentOutOfRangeException) { failed = true; }
+        Require(failed, name);
     }
 
     static void Require(bool value, string name)
