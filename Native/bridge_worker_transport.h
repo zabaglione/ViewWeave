@@ -40,6 +40,7 @@ LKG_EXPORT int32_t lkg_worker_release(void* handle);
 LKG_EXPORT void* lkg_worker_make_draw_data(void* handle, void* texture, uint32_t columns, uint32_t rows, float aspect, float zoom);
 LKG_EXPORT int32_t lkg_worker_cancel_draw_data(void* drawData);
 LKG_EXPORT void* lkg_worker_render_event_func(void);
+LKG_EXPORT int32_t lkg_worker_render_event_id(int32_t* event_id);
 LKG_EXPORT int32_t lkg_worker_close_all(void);
 LKG_EXPORT int32_t lkg_worker_collect_closed(void);
 LKG_EXPORT uint32_t lkg_worker_pending_count(void);

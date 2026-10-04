@@ -15,9 +15,13 @@
 #include <windows.h>
 #include <unknwn.h>
 #include <d3d11.h>
+#include <d3d12.h>
+#include <dxgi1_6.h>
 #include "IUnityInterface.h"
 #include "IUnityGraphics.h"
 #include "IUnityGraphicsD3D11.h"
+#include "IUnityGraphicsD3D12.h"
+#include "bridge_d3d12_internal.h"
 using Library = HMODULE;
 extern "C" int32_t lkg_worker_shutdown_host(uint32_t timeoutMilliseconds);
 extern "C" int32_t lkg_worker_close_all(void);
@@ -84,6 +88,13 @@ static uint32_t g_successful_draws = 0;
 static std::unordered_map<uint64_t, Session> g_sessions;
 static uint64_t g_next_session = 1;
 static IUnknown* g_unity_device = nullptr;
+static std::atomic<uint32_t> g_unity_graphics_api{0};
+static std::atomic<uint64_t> g_unity_device_generation{0};
+static int32_t g_worker_render_event_id = 0;
+static bool g_worker_render_event_id_reserved = false;
+static IUnityGraphicsD3D12v8* g_unity_d3d12_v8 = nullptr;
+static IUnityGraphicsD3D12v7* g_unity_d3d12_v7 = nullptr;
+static ID3D12Device* g_unity_d3d12_device = nullptr;
 static IUnityGraphics* g_unity_graphics = nullptr;
 static IUnityInterfaces* g_unity_interfaces = nullptr;
 static std::mutex g_unity_device_mutex;
@@ -124,6 +135,70 @@ IUnknown* lkg_bridge_unity_device_addref() {
     g_unity_device->AddRef();
 #endif
     return g_unity_device;
+}
+
+uint32_t lkg_bridge_graphics_api() {
+    return g_unity_graphics_api.load(std::memory_order_acquire);
+}
+
+extern "C" uint64_t lkg_bridge_unity_device_generation() {
+    return g_unity_device_generation.load(std::memory_order_acquire);
+}
+
+extern "C" int32_t lkg_bridge_unity_device_snapshot(IUnknown** device, uint64_t* generation, uint32_t* graphicsApi) {
+    if (!device || !generation || !graphicsApi) return -1;
+    *device = nullptr;
+    std::lock_guard<std::mutex> lock(g_unity_device_mutex);
+    if (!g_unity_device) return -2;
+    g_unity_device->AddRef();
+    *device = g_unity_device;
+    *generation = g_unity_device_generation.load(std::memory_order_relaxed);
+    *graphicsApi = g_unity_graphics_api.load(std::memory_order_relaxed);
+    return 0;
+}
+
+extern "C" int32_t lkg_bridge_get_worker_render_event_id(int32_t* eventId) {
+    if (!eventId) return -1;
+    std::lock_guard<std::mutex> lock(g_unity_device_mutex);
+    if (!g_worker_render_event_id_reserved) return -2;
+    *eventId = g_worker_render_event_id;
+    return 0;
+}
+
+extern "C" int32_t lkg_bridge_d3d12_snapshot(LkgD3D12Snapshot* snapshot) {
+    if (!snapshot) return -1;
+    snapshot->device = nullptr;
+    snapshot->frameFence = nullptr;
+    // This accessor is render-thread-only because Unity permits GetFrameFence there.
+    std::lock_guard<std::mutex> lock(g_unity_device_mutex);
+    snapshot->generation = g_unity_device_generation.load(std::memory_order_relaxed);
+    IUnityGraphicsD3D12v8* v8 = g_unity_d3d12_v8;
+    ID3D12Device* device = g_unity_d3d12_device;
+    ID3D12Fence* fence = v8 ? v8->GetFrameFence() : (g_unity_d3d12_v7 ? g_unity_d3d12_v7->GetFrameFence() : nullptr);
+    if (!device || !fence) return -2;
+    fence->AddRef();
+    device->AddRef();
+    snapshot->device = device;
+    snapshot->frameFence = fence;
+    return 0;
+}
+
+extern "C" void lkg_bridge_d3d12_snapshot_release(LkgD3D12Snapshot* snapshot) {
+    if (!snapshot) return;
+    if (snapshot->frameFence) snapshot->frameFence->Release();
+    if (snapshot->device) snapshot->device->Release();
+    snapshot->frameFence = nullptr;
+    snapshot->device = nullptr;
+}
+
+extern "C" uint64_t lkg_bridge_d3d12_submit(ID3D12GraphicsCommandList* list, ID3D12Resource* source) {
+    if (!list || !source) return 0;
+    // Called only from the configured Unity render callback.
+    std::lock_guard<std::mutex> lock(g_unity_device_mutex);
+    UnityGraphicsD3D12ResourceState state{source, D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_COPY_SOURCE};
+    if (g_unity_d3d12_v8) return g_unity_d3d12_v8->ExecuteCommandList(list, 1, &state);
+    if (g_unity_d3d12_v7) return g_unity_d3d12_v7->ExecuteCommandList(list, 1, &state);
+    return 0;
 }
 
 static bool direct_call_rejected() {
@@ -558,13 +633,45 @@ LKG_EXPORT void* lkg_bridge_make_close_data(uint64_t session) {
 static void UNITY_INTERFACE_API OnGraphicsDeviceEvent(UnityGfxDeviceEventType eventType) {
     if (eventType == kUnityGfxDeviceEventInitialize) {
         std::lock_guard<std::mutex> lock(g_unity_device_mutex);
+        if (!g_worker_render_event_id_reserved && g_unity_graphics && g_unity_graphics->ReserveEventIDRange) {
+            g_worker_render_event_id = g_unity_graphics->ReserveEventIDRange(1);
+            g_worker_render_event_id_reserved = true;
+        }
         if (g_unity_device) { g_unity_device->Release(); g_unity_device = nullptr; }
-        IUnityGraphicsD3D11* d3d11 = g_unity_interfaces ? g_unity_interfaces->Get<IUnityGraphicsD3D11>() : nullptr;
-        if (d3d11) {
-            IUnknown* device = reinterpret_cast<IUnknown*>(d3d11->GetDevice());
-            if (device) {
-                device->AddRef();
-                g_unity_device = device;
+        if (g_unity_d3d12_device) { g_unity_d3d12_device->Release(); g_unity_d3d12_device = nullptr; }
+        g_unity_d3d12_v8 = nullptr;
+        g_unity_d3d12_v7 = nullptr;
+        g_unity_graphics_api = 0;
+        g_unity_device_generation.fetch_add(1, std::memory_order_release);
+        if (g_unity_graphics && g_unity_interfaces) {
+            const UnityGfxRenderer renderer = g_unity_graphics->GetRenderer();
+            if (renderer == kUnityGfxRendererD3D11) {
+                IUnityGraphicsD3D11* d3d11 = g_unity_interfaces->Get<IUnityGraphicsD3D11>();
+                IUnknown* device = d3d11 ? reinterpret_cast<IUnknown*>(d3d11->GetDevice()) : nullptr;
+                if (device) {
+                    device->AddRef();
+                    g_unity_device = device;
+                    g_unity_graphics_api = 1;
+                }
+            } else if (renderer == kUnityGfxRendererD3D12) {
+                g_unity_d3d12_v8 = g_unity_interfaces->Get<IUnityGraphicsD3D12v8>();
+                if (!g_unity_d3d12_v8) g_unity_d3d12_v7 = g_unity_interfaces->Get<IUnityGraphicsD3D12v7>();
+                ID3D12Device* device = g_unity_d3d12_v8 ? g_unity_d3d12_v8->GetDevice() : (g_unity_d3d12_v7 ? g_unity_d3d12_v7->GetDevice() : nullptr);
+                if (device) {
+                    device->AddRef();
+                    g_unity_d3d12_device = device;
+                    g_unity_device = reinterpret_cast<IUnknown*>(device);
+                    g_unity_device->AddRef();
+                    g_unity_graphics_api = 2;
+                    UnityD3D12PluginEventConfig config{};
+                    config.graphicsQueueAccess = kUnityD3D12GraphicsQueueAccess_DontCare;
+                    config.flags = kUnityD3D12EventConfigFlag_SyncWorkerThreads;
+                    config.ensureActiveRenderTextureIsBound = false;
+                    if (g_worker_render_event_id_reserved) {
+                        if (g_unity_d3d12_v8) g_unity_d3d12_v8->ConfigureEvent(g_worker_render_event_id, &config);
+                        else g_unity_d3d12_v7->ConfigureEvent(g_worker_render_event_id, &config);
+                    }
+                }
             }
         }
         return;
@@ -578,6 +685,11 @@ static void UNITY_INTERFACE_API OnGraphicsDeviceEvent(UnityGfxDeviceEventType ev
     {
         std::lock_guard<std::mutex> lock(g_unity_device_mutex);
         if (g_unity_device) { g_unity_device->Release(); g_unity_device = nullptr; }
+        if (g_unity_d3d12_device) { g_unity_d3d12_device->Release(); g_unity_d3d12_device = nullptr; }
+        g_unity_d3d12_v8 = nullptr;
+        g_unity_d3d12_v7 = nullptr;
+        g_unity_graphics_api = 0;
+        g_unity_device_generation.fetch_add(1, std::memory_order_release);
     }
 }
 

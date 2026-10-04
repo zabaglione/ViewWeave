@@ -1,16 +1,17 @@
 {
   "artifact": "lookingglass_bridge_shim.dll",
-  "sha256": "FCBCB6D1E97DBE81956F746E6327C7606F70E719D37FEF675BA6809927BBADAE",
+  "sha256": "65BA980780656CED04A4CECBC99FD716C6FC24C6A3DA70703FEA67F26EFB08B3",
   "nativeSourceHashes": {
-    "Native/bridge_shim.cpp": "10BB1D054D08A876684A1CA2E8373199FF5DB67CE93F42705B3B333529E37DC6",
-    "Native/bridge_shim.h": "121C7F485A5979E2B5005298D2ABADF2399FAA45CEE00373A894695B31E46BC7",
-    "Native/bridge_worker_transport.h": "33E58D539EAF2B88E0563985537DEDF469C80EB8CEB1763025D72C4702D07416",
-    "Native/CMakeLists.txt": "0904FB7EC2B714C75B76AECA5F0A6B5823AF03484FEC12EDED5B2B8472658F02",
+    "Native/bridge_shim.cpp": "90BD1576A8C217FC2025B7F6E172C77D55AFBD5D33A28BF01D56F616792525BE",
+    "Native/bridge_shim.h": "C2A2ECBB4C20FF815D1EEF2D7DDCC4B46CF7801FE1E809525DE7C196E9DFEF8D",
+    "Native/bridge_worker_transport.h": "4E099F940B5E184131A3FA49FC695CA6D10FFB3C105AC1068980EACE334541CE",
+    "Native/CMakeLists.txt": "7D19C6434A55EF93A185127BC0A411703A01CD8A85FF792A067A12F99E92E289",
+    "Native/bridge_worker_transport.cpp": "38EB71B0F7562ED57942201054CE13D935C7B3FC22B7708407CDD679CE55671B",
+    "Native/bridge_d3d12_internal.h": "6B06A4792E547BDAE65EE91908CB565ED5FA1B89AD5C6E7A6EE627D6933FE154",
     "Native/tests/bridge_loader_lifecycle_test.cpp": "45832EA702E51428BB06722ECF6E38B365225556D9F0281C760FD8B0CEF053D8",
     "Native/tests/fake_bridge_runtime.cpp": "03183CCC1D01732CDC74E52F2AFE682D900CF354E2846646B7949A890337FCA8",
     "Native/tests/fake_bridge_missing.cpp": "89D4BB907704FC1A8FE1FDAD152A983779F0CED85808B77DEA9263C0B5C05FD3",
-    "Native/bridge_worker_transport.cpp": "66DFEF95B74FE7271D54F4CE1CAC8D25BFD74513F370392A81E3836F5F46EE9A",
-    "Native/tests/worker_transport_test.cpp": "92CD895CBEA942988AB9F648BE7368193BCE26C3748F97E56BEC45CE2B57F3C6",
+    "Native/tests/worker_transport_test.cpp": "4C51B360E9C4DF1D69BCC7679AA630AB11A48532638A9086F8558A9771D389D7",
     "Native/tests/bridge_worker_host_affinity_test.cpp": "FC23C98BF5259AEAF08AA502BD8FFAF3D0476DE299C15B9090300DCF1B753C95",
     "Native/tests/d3d12_d3d11_shared_probe.cpp": "8CDE21DAA564B3543C891770C6B382AAC18926E3E87EA9AB7B25031BD8242000",
     "Native/tests/fake_bridge_fault_runtime.cpp": "D7AAE483C1808E447D52BC62060A7D1633D1766B6C29BF389022773476B24F77"
@@ -19,8 +20,11 @@
   "targetArchitecture": "x64",
   "configuration": "Release",
   "pluginApiUnityVersion": "6000.6.4f1",
-  "buildDirectory": "Native/build-worker-release",
-  "independentCTest": "release: lookingglass_worker_transport_test 1/1 passed; lookingglass_bridge_loader_lifecycle_test 1/1 passed (100 cycles); d3d12 probe 1/1 passed",
+  "buildDirectory": "Native/build-worker-release-vs",
+  "generator": "Visual Studio 17 2022",
+  "independentCTest": "Final native run: worker transport passed 349 draw cases including the D3D11 baseline; bridge loader lifecycle test passed 1/1 (100 cycles) using the fake Bridge runtime",
+  "d3d12HardwareValidation": "NVIDIA RTX 3090 Ti; D3D12 shared-resource handoff, ring reuse, typeless formats, timeout, late completion, device-removal seam, and generation coverage passed",
+  "validationLimits": "Windows CI skips hardware D3D12 tests; RTX 3090 Ti is the only tested GPU; WARP and other GPUs are untested; URP/HDRP D3D12 Editor Play passed with Domain Reload on and off (2 cycles per setting); URP/HDRP Windows D3D12 Development Players passed in Preview only; Player Native quality is untested; user HDRP project revalidation on the pending package snapshot is pending; GRD settings were not toggled in this matrix; Plug and Play/hotplug, multi-device coverage, and exhaustive human review of all 48 views are untested",
   "license": "Apache-2.0",
   "generatedAt": "2026-10-04"
 }

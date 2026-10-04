@@ -32,6 +32,8 @@ namespace ViewWeave.BridgeWorkerValidation
         string qualityName = "preview";
         string grdName = "off";
         string expectedPipeline = "urp";
+        string expectedGraphicsApi = "d3d11";
+        GraphicsDeviceType expectedGraphicsDeviceType = GraphicsDeviceType.Direct3D11;
         bool exerciseRestart;
         bool qualityCycleRequested;
         string faultMode;
@@ -61,6 +63,7 @@ namespace ViewWeave.BridgeWorkerValidation
             qualityName = (Argument("--quality") ?? "preview").ToLowerInvariant();
             grdName = (Argument("--grd") ?? "off").ToLowerInvariant();
             expectedPipeline = (Argument("--pipeline") ?? "urp").ToLowerInvariant();
+            expectedGraphicsApi = (Argument("--graphics-api") ?? "d3d11").ToLowerInvariant();
             string restartText = Argument("--exercise-restart");
             exerciseRestart = restartText == "1";
             string qualityCycleText = Argument("--quality-cycle");
@@ -71,10 +74,13 @@ namespace ViewWeave.BridgeWorkerValidation
             if (qualityName != "preview" && qualityName != "balanced" && qualityName != "native") { argumentsValid = false; argumentError = "invalid --quality"; }
             if (grdName != "off" && grdName != "on") { argumentsValid = false; argumentError = "invalid --grd"; }
             if (expectedPipeline != "urp" && expectedPipeline != "hdrp") { argumentsValid = false; argumentError = "invalid --pipeline"; }
+            if (expectedGraphicsApi == "d3d11") expectedGraphicsDeviceType = GraphicsDeviceType.Direct3D11;
+            else if (expectedGraphicsApi == "d3d12") expectedGraphicsDeviceType = GraphicsDeviceType.Direct3D12;
+            else { argumentsValid = false; argumentError = "invalid --graphics-api; expected d3d11 or d3d12"; }
             if (restartText != null && restartText != "0" && restartText != "1") { argumentsValid = false; argumentError = "invalid --exercise-restart"; }
             if (qualityCycleText != null && qualityCycleText != "0" && qualityCycleText != "1") { argumentsValid = false; argumentError = "invalid --quality-cycle"; }
             if (faultMode != null && faultMode != "init-delay" && faultMode != "draw-release") { argumentsValid = false; argumentError = "invalid --fault-mode"; }
-            evidence = new Evidence { buildGUID = Application.buildGUID, quiltBuildGUID = Application.buildGUID, quality = qualityName, grd = grdName, isEditor = Application.isEditor, development = Debug.isDebugBuild, graphicsMultiThreaded = SystemInfo.graphicsMultiThreaded, graphicsDeviceType = SystemInfo.graphicsDeviceType.ToString(), graphicsDeviceVersion = SystemInfo.graphicsDeviceVersion, unityVersion = Application.unityVersion };
+            evidence = new Evidence { buildGUID = Application.buildGUID, quiltBuildGUID = Application.buildGUID, quality = qualityName, grd = grdName, expectedGraphicsApi = expectedGraphicsApi, expectedGraphicsDeviceType = expectedGraphicsDeviceType.ToString(), isEditor = Application.isEditor, development = Debug.isDebugBuild, graphicsMultiThreaded = SystemInfo.graphicsMultiThreaded, graphicsDeviceType = SystemInfo.graphicsDeviceType.ToString(), graphicsDeviceVersion = SystemInfo.graphicsDeviceVersion, unityVersion = Application.unityVersion };
             Directory.CreateDirectory(evidenceDirectory);
         }
 
@@ -103,8 +109,8 @@ namespace ViewWeave.BridgeWorkerValidation
 
         IEnumerator RunBody()
         {
-            if (Application.isEditor || !Debug.isDebugBuild || !SystemInfo.graphicsMultiThreaded || SystemInfo.graphicsDeviceType != GraphicsDeviceType.Direct3D11) throw new InvalidOperationException("Windows Development Player with D3D11 graphicsMultiThreaded is required");
             if (!argumentsValid) throw new ArgumentException(argumentError);
+            if (Application.isEditor || !Debug.isDebugBuild || !SystemInfo.graphicsMultiThreaded || SystemInfo.graphicsDeviceType != expectedGraphicsDeviceType) throw new InvalidOperationException("Windows Development Player with " + expectedGraphicsDeviceType + " graphicsMultiThreaded is required");
             GraphicsSettings.defaultRenderPipeline = grdName == "on" ? grdOnPipeline : grdOffPipeline;
             QualitySettings.renderPipeline = GraphicsSettings.defaultRenderPipeline;
             RenderPipelineAsset activePipeline = GraphicsSettings.currentRenderPipeline;
@@ -657,7 +663,7 @@ namespace ViewWeave.BridgeWorkerValidation
         [Serializable]
         sealed class Evidence
         {
-            public string buildGUID, quiltBuildGUID, quality, grd, unityVersion, graphicsDeviceType, graphicsDeviceVersion, profile, error, cleanupState, sessionState, outputState, pipelineFamily, pipelineAssetName, colorSpace, sourceFormat, sourceGraphicsFormat, sourceDimension, transferFormat, transferGraphicsFormat, transferDimension, faultMode;
+            public string buildGUID, quiltBuildGUID, quality, grd, expectedGraphicsApi, expectedGraphicsDeviceType, unityVersion, graphicsDeviceType, graphicsDeviceVersion, profile, error, cleanupState, sessionState, outputState, pipelineFamily, pipelineAssetName, colorSpace, sourceFormat, sourceGraphicsFormat, sourceDimension, transferFormat, transferGraphicsFormat, transferDimension, faultMode;
             public bool isEditor, development, graphicsMultiThreaded, outputIsActiveAndEnabled, ok, viewDifference, movementDifference, beforeNonBlank, afterNonBlank, beforeAllTilesNonBlank, afterAllTilesNonBlank, beforeAllTilesColorEvidence, afterAllTilesColorEvidence, beforeEdgeDifference, afterEdgeDifference;
             public bool sourceSrgb, transferSrgb;
             public bool grdCounterAvailable;

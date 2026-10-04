@@ -1,8 +1,10 @@
 # Getting started
 
-この手順はUnity 6000.6.4f1、Windows、URPまたはHDRPを対象にします。Looking Glassへの出力にはWindowsのLooking Glass Bridge runtimeと接続済みの機器が必要です。
+この手順はUnity 6000.6.4f1、Windows、URPまたはHDRPを対象にします。標準のBridge Rig/Worker経路はWindows D3D11とD3D12のEditor PlayおよびPlayerで使えます。Looking Glassへの出力には公式Looking Glass Bridge runtimeと接続済みの機器が必要です。
 
 表示のために起動するのは、自分のUnity projectです。Unity EditorのPlay、またはビルドしたPlayerがsceneからQuiltを生成し、公式Looking Glass Bridge runtimeがそれを接続機器へ送ります。Bridge runtimeはインストールして起動しておきます。SDK内のTests/Bridge Unityプロジェクトやデモアプリを別途起動する必要はありません。
+
+標準のBridge Rig/Worker経路では、選択中のD3D11またはD3D12 graphics APIを使います。対応条件は[Compatibility](compatibility.md)を参照してください。
 
 ## Package Managerから追加する
 
@@ -15,18 +17,20 @@
 5. 配布packageにCore、Bridge、選択したpipelineが含まれるため、別のViewWeave packageは追加しません。Samplesは任意です。Package ManagerのSamplesからImportするまでAssetsへ入りません。
 
 同じprojectにURP版とHDRP版を同時に追加しないでください。Git URLの`#main`を更新する際にPackage Manager cacheが残る場合は、Removeしてから同じURLを再Addするか、特定commit hashをrefに指定します。
-Package Managerが更新を完了したら、Unity Editorを正常終了して`-force-d3d11`で起動し直してください。更新したmanaged assemblyとnative pluginを読み込むために必要です。
+Package Managerが更新を完了したら、Unity Editorを正常終了して起動し直してください。更新したmanaged assemblyとnative pluginを読み込むために必要です。起動後は、使用するGraphics APIを選びます。
 
 ## 既存のCubeやBoxを表示する
 
-1. UnityをWindows D3D11で起動します。Editor Play出力にもD3D11が必要です。起動引数に`-force-d3d11`を指定する方法、またはPlayer SettingsのWindows Graphics APIsでD3D11を優先してEditorを再起動する方法があります。実行中のGraphicsDeviceTypeを確認してください。
+1. UnityをWindows D3D11またはD3D12で起動します。標準のBridge Worker経路はどちらのAPIでもEditor Play出力できます。標準のGraphics API選択を使うか、必要な場合だけ起動引数`-force-d3d11`または`-force-d3d12`を指定します。実際のAPIは`SystemInfo.graphicsDeviceType`で確認してください。
 2. WindowsへLooking Glass Bridge runtimeをインストールし、Looking Glassを接続します。
 3. 通常のCubeやBoxをシーンに置き、標準のURP/HDRP materialとlightを使います。CubeへViewWeave componentを追加する必要はありません。
-4. Rig作成前に被写体のRendererを選択してから`GameObject > ViewWeave > Bridge Rig`を実行します。作成される専用cameraはMainCameraの位置、rotation、FOV、near/far、culling maskを引き継ぎます。選択Renderer中心がMainCameraのnear/far範囲内かつ正面にある場合、その正のcamera forward距離をQuiltRendererのzero-parallax距離`cameraDistance`に設定します。範囲外、背面、Renderer未選択なら10mです。MainCameraがない場合は既定Rig位置を保ち、3mにします。既存のMain Cameraの子としてRigを作る手順は[Cameraを親にする](#既存cameraの子にrigを作る)を参照してください。
-5. Rendererを選択せず作成した場合、MainCameraがあればzero-parallax距離は10mです。MainCameraがない場合はRigの既定位置を維持し、距離は3mです。必要に応じてRigのcameraDistanceをInspectorで調整します。
+4. CameraとRigを親子にする場合は、Hierarchyで`MainCamera`タグ付きの使用中Cameraを右クリックして`ViewWeave > Bridge Rig`を選びます。Rigはその子に追加され、Main Cameraのworld positionとrotationを基準に作成されるため、子のlocal position/rotationは0になります。Rigの専用CameraがQuiltを描画し、元のMain Cameraは有効なままです。操作の詳細は[既存Cameraの子にRigを作る](#既存cameraの子にrigを作る)を参照してください。
+5. RendererのあるCubeやBoxをCameraの前方に置きます。メニューでMain Cameraを右クリックした場合、zero-parallax距離は既定の10mから始まります。被写体に合わせたい場合は、Rigの`QuiltRenderer > Settings > Camera Distance`（`cameraDistance`）を調整します。
 6. Rigのあるsceneを保存し、Unity EditorのPlayを押します。Unity Editorがsceneを描画し、Bridge runtime接続後にBridge profileに応じたQuiltがLooking Glassへ送られます。EditorのGame viewは通常のMainCamera表示のままです。
 
-EditorがD3D12で起動している場合は、Player SettingsのGraphics APIsを変更してUnity Editorを再起動するか、`-force-d3d11`でEditorを起動してください。Edit Mode、macOS、D3D12ではBridge出力しません。Windows Playerで確認する場合はWindows向けGraphics APIsでD3D11を選び、Build and Runします。
+被写体Rendererを選択した状態でGameObject menuからRigを作るときは、選択中Rendererのbounds centerがMain Cameraの前方かつnear/far clipの間にある場合、そのforward距離を`Camera Distance`に設定します。Rendererがない、disabled、範囲外、背面なら10mです。Main Cameraがない場合はRigの既定位置と3mを使います。Hierarchy contextから作る場合は右クリックしたGameObjectが親になりますが、framing sourceは常に`Camera.main`です。MainCameraタグのないCameraを右クリックした場合、そのCameraのframingは継承されません。
+
+Edit ModeとmacOSではBridge出力しません。Windows Playerで確認する場合はWindows Graphics APIsでD3D11またはD3D12を選び、Build and Runします。Legacy Direct経路を使う場合はD3D11を選んでください。
 
 ## Qualityを変更する
 
@@ -40,7 +44,7 @@ Sessionは起動時に選択したQualityからquilt解像度とgridを適用し
 
 ## 既存Cameraの子にRigを作る
 
-既存のMain Cameraに追従させるには、HierarchyでそのCameraを右クリックし、`ViewWeave > Bridge Rig`を選びます。生成されたRigは右クリックしたGameObjectの子になり、Cameraが`MainCamera`タグ付きなら、そのworld positionとrotationを基準にframingをコピーします。そのため、Main Cameraを右クリックした場合はRigのlocal positionとrotationが0になり、親Cameraに追従します。既存Main Cameraは有効なままです。Rig上の専用CameraはQuilt描画用sourceCameraとして自動的に無効化されます。
+既存のMain Cameraに追従させるには、Hierarchyで`MainCamera`タグ付きのCameraを右クリックし、`ViewWeave > Bridge Rig`を選びます。生成されたRigは右クリックしたGameObjectの子になり、`Camera.main`のworld positionとrotationを基準にframingをコピーします。使用中のMain Cameraを右クリックすれば、Rigのlocal positionとrotationは0になり、親Cameraに追従します。既存Main Cameraは有効なままです。Rig上の専用CameraはQuilt描画用sourceCameraとして自動的に無効化されます。
 
 MainCameraタグのないCameraを右クリックしても、そのCameraのframingが選ばれるわけではありません。現在のメニューは親を右クリックしたGameObjectにしますが、framingは`Camera.main`からコピーします。
 
@@ -57,7 +61,7 @@ VFX Graphを使う場合もLinear color spaceにします。HDRP adapterの制�
 1. シーンに`GameObject > ViewWeave > Bridge Rig`を作成します。
 2. RigにURPなら`BridgeUrpLitSampleGenerator`、HDRPなら`BridgeHdrpLitSampleGenerator`をAdd Componentします。
 3. Inspectorの`Generate On Start`を有効にしてPlayすると、起動時に確認用のCube、sphere、lightが生成されます。手動で作成する場合は、generatorのInspectorメニューから`Generate Lit Scene`を実行します。
-4. Bridge出力を確認するにはWindows D3D11でPlayします。HDRPはLinear color spaceが必要です。HDRP adapterと色空間の説明は上記[HDRPテンプレート](#hdrpテンプレート)を参照してください。
+4. Bridge出力を確認するにはWindows D3D11またはD3D12でPlayします。HDRPはLinear color spaceが必要です。HDRP adapterと色空間の説明は上記[HDRPテンプレート](#hdrpテンプレート)を参照してください。
 
 標準Cubeや自分のsceneを表示するときはSamplesのImportもgeneratorも必要ありません。
 
@@ -65,7 +69,7 @@ VFX Graphを使う場合もLinear color spaceにします。HDRP adapterの制�
 
 1. sceneを保存します。
 2. `File > Build Profiles`でWindows profileにsceneを追加します。
-3. Windows Graphics APIsでDirect3D11を有効にし、必要なら自動選択を無効にします。
+3. Windows Graphics APIsでDirect3D11またはDirect3D12を有効にします。標準Bridge Worker経路はいずれも使えます。
 4. `Build and Run`します。Bridge runtimeが自動検出されない場合だけ、Bridge SessionのRuntime Pathに`bridge_inproc.dll`の絶対パスを指定します。
 
 ## テストプロジェクト

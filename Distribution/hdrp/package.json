@@ -19,7 +19,7 @@
   "samples": [
     {
       "displayName": "Windows HDRP Lit",
-      "description": "Optional Windows D3D11 Bridge demo scene for HDRP; standard Cube and Box scenes need no sample import.",
+      "description": "Optional Windows Bridge demo scene for HDRP; the Bridge Worker supports D3D11 and D3D12, and standard Cube and Box scenes need no sample import.",
       "path": "Samples~/WindowsHdrpLit"
     }
   ]

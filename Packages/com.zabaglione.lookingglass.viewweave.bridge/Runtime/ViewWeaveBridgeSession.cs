@@ -198,8 +198,12 @@ namespace ViewWeave
             {
                 return Fail("Bridge worker shutdown is still pending");
             }
-            if (Application.isEditor && (!Application.isPlaying || BridgeWorkerLifecycle.RecoveryPending))
-                return Fail("Bridge worker requires Windows D3D11 Play mode in the Editor");
+            if (Application.isEditor && (!Application.isPlaying || Application.platform != RuntimePlatform.WindowsEditor || BridgeWorkerLifecycle.RecoveryPending))
+                return Fail("Bridge worker requires Windows D3D11 or D3D12 Play mode in the Editor");
+            if (Application.platform != RuntimePlatform.WindowsPlayer && Application.platform != RuntimePlatform.WindowsEditor)
+                return Fail("Bridge worker requires Windows Player or Windows Editor Play mode");
+            if (UnityEngine.SystemInfo.graphicsDeviceType != UnityEngine.Rendering.GraphicsDeviceType.Direct3D11 && UnityEngine.SystemInfo.graphicsDeviceType != UnityEngine.Rendering.GraphicsDeviceType.Direct3D12)
+                return Fail("Bridge worker requires Direct3D11 or Direct3D12");
             if (!ValidateRig()) return false;
             rig.Renderer.ResetAutoRenderError();
             if (!ResolveRuntimePath(out string resolvedPath)) return false;

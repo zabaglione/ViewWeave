@@ -116,7 +116,8 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
         public static void Build()
         {
             string output = Arg("-buildOutput");
-            if (string.IsNullOrEmpty(output)) throw new InvalidOperationException("-buildOutput is required");
+            bool editorSceneOnly = Arg("-editorSceneOnly") == "1";
+            if (!editorSceneOnly && string.IsNullOrEmpty(output)) throw new InvalidOperationException("-buildOutput is required unless -editorSceneOnly 1 is set");
             SceneSetup[] oldSetup = EditorSceneManager.GetSceneManagerSetup();
             EditorBuildSettingsScene[] oldScenes = EditorBuildSettings.scenes;
             RenderPipelineAsset oldGraphics = GraphicsSettings.defaultRenderPipeline;
@@ -188,7 +189,7 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
                 EditorSceneManager.SaveScene(scene, ScenePath, false);
                 GraphicsSettings.defaultRenderPipeline = pipelineOn;
                 QualitySettings.renderPipeline = pipelineOn;
-                BuildPlayer(output);
+                if (!editorSceneOnly) BuildPlayer(output);
             }
             finally
             {
@@ -203,7 +204,8 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
         public static void BuildHdrp()
         {
             string output = Arg("-buildOutput");
-            if (string.IsNullOrEmpty(output)) throw new InvalidOperationException("-buildOutput is required");
+            bool editorSceneOnly = Arg("-editorSceneOnly") == "1";
+            if (!editorSceneOnly && string.IsNullOrEmpty(output)) throw new InvalidOperationException("-buildOutput is required unless -editorSceneOnly 1 is set");
             SceneSetup[] oldSetup = EditorSceneManager.GetSceneManagerSetup();
             EditorBuildSettingsScene[] oldScenes = EditorBuildSettings.scenes;
             RenderPipelineAsset oldGraphics = GraphicsSettings.defaultRenderPipeline;
@@ -285,7 +287,7 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
                 EditorSceneManager.SaveScene(scene, ScenePath, false);
                 GraphicsSettings.defaultRenderPipeline = pipelineOn;
                 QualitySettings.renderPipeline = pipelineOn;
-                BuildPlayer(output);
+                if (!editorSceneOnly) BuildPlayer(output);
             }
             finally
             {
@@ -305,6 +307,7 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
 
         static void BuildPlayer(string output, string scenePath)
         {
+            GraphicsDeviceType requestedGraphicsApi = RequestedGraphicsApi();
             EditorBuildSettingsScene[] oldScenes = EditorBuildSettings.scenes;
             bool oldMt = PlayerSettings.MTRendering;
             bool oldJobs = PlayerSettings.graphicsJobs;
@@ -329,7 +332,7 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
                 PlayerSettings.enableFrameTimingStats = true;
                 PlayerSettings.SetStaticBatchingForPlatform(BuildTarget.StandaloneWindows64, false);
                 PlayerSettings.SetUseDefaultGraphicsAPIs(BuildTarget.StandaloneWindows64, false);
-                PlayerSettings.SetGraphicsAPIs(BuildTarget.StandaloneWindows64, new[] { GraphicsDeviceType.Direct3D11 });
+                PlayerSettings.SetGraphicsAPIs(BuildTarget.StandaloneWindows64, new[] { requestedGraphicsApi });
                 brgStripping.intValue = (int)BatchRendererGroupStrippingMode.KeepAll;
                 graphicsSettings.ApplyModifiedPropertiesWithoutUndo();
                 BuildPlayerOptions options = new BuildPlayerOptions { scenes = new[] { scenePath }, locationPathName = output, target = BuildTarget.StandaloneWindows64, options = BuildOptions.Development };
@@ -515,6 +518,14 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
             string[] args = Environment.GetCommandLineArgs();
             for (int i = 0; i + 1 < args.Length; ++i) if (args[i] == key) return args[i + 1];
             return null;
+        }
+
+        static GraphicsDeviceType RequestedGraphicsApi()
+        {
+            string value = (Arg("-graphicsApi") ?? "d3d11").ToLowerInvariant();
+            if (value == "d3d11") return GraphicsDeviceType.Direct3D11;
+            if (value == "d3d12") return GraphicsDeviceType.Direct3D12;
+            throw new InvalidOperationException("invalid -graphicsApi; expected d3d11 or d3d12");
         }
     }
 }

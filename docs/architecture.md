@@ -12,9 +12,13 @@ URP/HDRPでは専用Guardと`RenderPipeline.StandardRequest`を使います。`V
 
 ## 出力とBridge
 
-Sessionは機器のprofileを動的に選択し、自動検出を主経路とします。通常の利用ではBridge runtimeを別途用意します。`BridgeQuiltOutput`はWindows D3D11のDirect経路で確認済みです。`BridgeWorkerQuiltOutput`はWindows D3D11のPlayerとEditor Playで使う経路です。Edit Mode、D3D12、macOSは対象外です。worker own D3D11 device、Unity render threadからのcopy、3スロットの共有GPU ring bufferを使います。同一プロセス再接続を含む各120 draw、終了保留0、host thread再利用、48 view非空画像と視差・移動を確認しました。接続、終了、completion watchdogは10秒で失敗処理します。専用fake runtimeによるinit/draw-release遅延のPlayer fault試験は通過しましたが、物理hotplugや任意の実機接続ハングを意味しません。2026-10-04の限定実機確認では奥行き・画質は良好で、番号付きデモをユーザーが暫定受入としています。全視点・全視域の網羅的な光学検証は未実施です。hotplug、複数機器、Metal、配布署名は未確認です。Direct経路のLit光学確認とは別の結果です。
+Sessionは機器のprofileを動的に選択し、自動検出を主経路とします。通常の利用では公式Bridge runtimeを別途用意します。`BridgeQuiltOutput`/Legacy DirectはWindows D3D11のみです。標準の`BridgeWorkerQuiltOutput`はWindows D3D11とD3D12のEditor PlayおよびPlayerで使う経路です。D3D12ではUnityのD3D12 deviceから同じGPU上のD3D11 workerへQuiltをGPU共有し、workerが公式Bridgeへ送ります。この経路はCPU画像readbackを使いません。Edit ModeとmacOSは対象外です。
 
-Bridge経路ではUnity render threadからのcopy、Bridge workerの描画、WM message pump、終了時の非同期排出、resizeと再openを分離して扱います。共有GPU ring bufferは3スロットです。queueが満杯の場合は新しいsubmissionをdropし、投入済みsubmissionを保持します。Workerの同一プロセス再接続と終了保留0は実測済みですが、正式なBridge経路とするには光学品質、配布署名、hotplug、複数機器の受入が残っています。
+WorkerはUnity render thread側のQuilt copyとworker所有のD3D11 device、3 slot共有GPU ring、worker側の描画、WM message pump、shutdown/reopenを分離します。RTX 3090 Tiでshared-resource handoff、ring reuse、typeless format、timeout、late completion、device-removal seam、generationを含むD3D11 baseline込み349 draw testを通過し、fake Bridge runtimeを使ったloader lifecycle 100 cycleも通過しました。Unity D3D12 Editor PlayはURP/HDRPのDomain Reload enabled/disabledで各2 cycleを確認し、URP/HDRP Windows Development PlayerもPreviewで検証済みです。このmatrixではGRD設定を切り替えていません。Player Native quality、ユーザーHDRP projectの更新packageでの再確認、WARP、他GPUは未検証です。Windows CIではhardware D3D12をskipします。
+
+失敗時はworkerを`Fault`にし、submission状態が確定しない間はGPU resource参照をshutdown完了まで保持します。保留中のnative shutdownが解決しない場合はUnity Editor/Playerを再起動して回復します。これは技術的なrecovery境界で、通常のセットアップ手順には不要です。物理hotplugや任意の実機接続hangをカバーしません。
+
+Bridge経路ではUnity render threadからのcopy、Bridge workerの描画、WM message pump、終了時の非同期排出、resizeと再openを分離して扱います。共有GPU ring bufferは3スロットです。queueが満杯の場合は新しいsubmissionをdropし、投入済みsubmissionを保持します。Workerの同一プロセス再接続と終了保留0は実測済みです。全48 viewの人手による光学確認、hotplug、複数機器の受入は未完了です。
 
 ## 確認済み範囲と未検証範囲
 

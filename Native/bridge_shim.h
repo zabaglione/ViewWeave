@@ -40,6 +40,7 @@ LKG_EXPORT int32_t lkg_bridge_is_idle(void);
 LKG_EXPORT int32_t lkg_bridge_last_error(char* utf8, uint32_t capacity);
 LKG_EXPORT uint32_t lkg_bridge_successful_draw_count(void);
 LKG_EXPORT int32_t lkg_bridge_is_initialized(void);
+LKG_EXPORT uint32_t lkg_bridge_graphics_api(void);
 LKG_EXPORT int32_t lkg_bridge_version(char* utf8, uint32_t capacity);
 LKG_EXPORT int32_t lkg_bridge_get_display_count(uint32_t* count);
 LKG_EXPORT int32_t lkg_bridge_get_display(uint32_t ordinal, LkgBridgeDisplayInfo* info);

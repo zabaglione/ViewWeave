@@ -1,6 +1,6 @@
 # Unity feature coverage
 
-このページは、Unity 6000.6.4f1、URP/HDRP 17.6、Windows D3D11のViewWeave複数視点出力について、公開機能と実測範囲を分けて記載します。Bridge出力はWindows D3D11 Editor PlayおよびPlayerが対象で、Edit Mode、D3D12、macOS出力は対象外です。合格は個別 fixture の結果であり、同じ機能を含む全プロジェクトを保証するものではありません。
+このページは、Unity 6000.6.4f1、URP/HDRP 17.6、Windows D3D11/D3D12のViewWeave複数視点出力について、公開機能と実測範囲を分けて記載します。Bridge Worker出力はWindows D3D11/D3D12 Editor PlayおよびPlayerが対象です。Legacy DirectはD3D11のみで、Edit ModeとmacOS出力は対象外です。合格は個別 fixture の結果であり、同じ機能を含む全プロジェクトを保証するものではありません。
 
 ## 現在の検証集計
 
@@ -76,7 +76,7 @@ GRD の性能実測は URP normal multithreaded Player の範囲だけです。H
 | Custom post-processing | 調査対象 | view間の履歴共有と順序は未検証。 |
 | XR single-pass / multipass | 未検証 | XRのstereo viewとquilt gridは別モデル。 |
 | DXR ray tracing / HDRP path tracing | 未検証 | ray/path tracingの履歴とN回render requestを保証しない。 |
-| D3D12 / Vulkan / Metal native output | 非対応または未検証 | 現行の対応範囲はWindows D3D11。 |
+| D3D12 Bridge Worker / Vulkan / Metal output | D3D12はWindows Bridge WorkerのEditor Play/Player経路に対応。VulkanとMetalは対象外または未検証 | D3D12 Workerは同一GPU上のD3D11 workerとGPU資源を共有する。Legacy DirectはD3D11のみ。 |
 
 ## SRP と GRD の注意点
 

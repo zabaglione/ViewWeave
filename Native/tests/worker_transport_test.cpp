@@ -1,6 +1,7 @@
 #include "bridge_worker_transport.h"
 #include <windows.h>
 #include <d3d11.h>
+#include "bridge_d3d12_internal.h"
 #include <wrl/client.h>
 #include <atomic>
 #include <chrono>
@@ -11,6 +12,9 @@
 #include <thread>
 #include <vector>
 #include <stdexcept>
+#include <deque>
+#include <mutex>
+#include <array>
 
 using Microsoft::WRL::ComPtr;
 
@@ -18,6 +22,10 @@ using Microsoft::WRL::ComPtr;
 uint32_t lkg_worker_test_thread_id(void* handle);
 HWND lkg_worker_test_window(void* handle);
 uint32_t lkg_worker_test_message_count(void* handle);
+int32_t lkg_worker_test_set_d3d12_timeout(void* handle, uint64_t timeoutMilliseconds);
+void lkg_worker_test_delay_d3d12_consumer(uint32_t pendingPolls);
+uint32_t lkg_worker_test_d3d12_consumer_pending_polls(void);
+void lkg_worker_test_d3d12_set_removed(bool removed);
 #endif
 
 static ComPtr<ID3D11Device> g_device;
@@ -29,6 +37,22 @@ static std::atomic<bool> g_workerClaimed{false};
 static std::atomic<unsigned long> g_producerThread{0};
 static std::atomic<unsigned long> g_workerThread{0};
 static std::atomic<bool> g_copyVerified{false};
+static std::atomic<bool> g_testingD3D12{false};
+static std::atomic<uint8_t> g_expectedRed{ 0x22 };
+static std::atomic<uint8_t> g_expectedGreen{ 0 };
+static std::atomic<uint8_t> g_expectedBlue{ 0 };
+static std::mutex g_expectedD3D12Mutex;
+static std::deque<std::array<uint8_t, 3>> g_expectedD3D12Pixels;
+static ComPtr<ID3D12Device> g_testD3D12Device;
+static ComPtr<ID3D12CommandQueue> g_testD3D12Queue;
+static ComPtr<ID3D12Fence> g_testD3D12Fence;
+static ComPtr<ID3D12Fence> g_testD3D12GateFence;
+static std::atomic<uint64_t> g_testD3D12FenceValue{ 0 };
+static std::atomic<uint64_t> g_testD3D12Generation{ 1 };
+static std::atomic<uint64_t> g_testD3D12SubmitOverride{ 0 };
+static std::atomic<bool> g_testD3D12SubmitOverrideActive{ false };
+static std::atomic<bool> g_testD3D12GateProducer{ false };
+static std::atomic<uint64_t> g_testD3D12GateValue{ 1 };
 static constexpr uint8_t kExpectedRed = 0x22;
 
 static void Fail(const char* message) {
@@ -404,7 +428,15 @@ static void VerifyWorkerTexture(void* texturePointer) {
     D3D11_MAPPED_SUBRESOURCE mapped{};
     Check(SUCCEEDED(context->Map(staging.Get(), 0, D3D11_MAP_READ, 0, &mapped)), "worker readback map");
     const auto* pixel = static_cast<const uint8_t*>(mapped.pData);
-    Check(pixel[0] == kExpectedRed, "worker readback content");
+    uint8_t expected[3] = { g_expectedRed.load(), g_expectedGreen.load(), g_expectedBlue.load() };
+    if (g_testingD3D12.load()) {
+        std::lock_guard<std::mutex> lock(g_expectedD3D12Mutex);
+        Check(!g_expectedD3D12Pixels.empty(), "D3D12 expected pixel queue");
+        const auto next = g_expectedD3D12Pixels.front();
+        g_expectedD3D12Pixels.pop_front();
+        expected[0] = next[0]; expected[1] = next[1]; expected[2] = next[2];
+    }
+    Check(pixel[0] == expected[0] && pixel[1] == expected[1] && pixel[2] == expected[2], "worker readback content");
     context->Unmap(staging.Get(), 0);
     g_copyVerified.store(true);
 }
@@ -442,13 +474,322 @@ IUnknown* lkg_bridge_unity_device_addref() {
     g_device->AddRef();
     return g_device.Get();
 }
+int32_t lkg_bridge_unity_device_snapshot(IUnknown** device, uint64_t* generation, uint32_t* graphicsApi) {
+    if (!device || !generation || !graphicsApi || !g_device) return -1;
+    g_device->AddRef();
+    *device = g_device.Get();
+    *generation = 1;
+    *graphicsApi = 1;
+    return 0;
+}
+int32_t lkg_bridge_d3d12_snapshot(LkgD3D12Snapshot* snapshot) {
+    if (!snapshot || !g_testD3D12Device || !g_testD3D12Fence) return -1;
+    snapshot->device = g_testD3D12Device.Get();
+    snapshot->frameFence = g_testD3D12Fence.Get();
+    snapshot->generation = g_testD3D12Generation.load();
+    snapshot->device->AddRef();
+    snapshot->frameFence->AddRef();
+    return 0;
+}
+void lkg_bridge_d3d12_snapshot_release(LkgD3D12Snapshot* snapshot) {
+    if (!snapshot) return;
+    if (snapshot->frameFence) snapshot->frameFence->Release();
+    if (snapshot->device) snapshot->device->Release();
+    snapshot->device = nullptr;
+    snapshot->frameFence = nullptr;
+}
+uint64_t lkg_bridge_d3d12_submit(ID3D12GraphicsCommandList* list, ID3D12Resource*) {
+    if (g_testD3D12SubmitOverrideActive.exchange(false)) return g_testD3D12SubmitOverride.load();
+    if (!list || !g_testD3D12Queue || !g_testD3D12Fence) return 0;
+    if (g_testD3D12GateProducer.load()) g_testD3D12Queue->Wait(g_testD3D12GateFence.Get(), g_testD3D12GateValue.load());
+    ID3D12CommandList* lists[] = { list };
+    g_testD3D12Queue->ExecuteCommandLists(1, lists);
+    const uint64_t value = g_testD3D12FenceValue.fetch_add(1) + 1;
+    if (FAILED(g_testD3D12Queue->Signal(g_testD3D12Fence.Get(), value))) return 0;
+    return value;
+}
+uint64_t lkg_bridge_unity_device_generation() { return 1; }
 bool lkg_bridge_worker_claim() { bool expected = false; return g_workerClaimed.compare_exchange_strong(expected, true); }
 void lkg_bridge_worker_release_claim() { g_workerClaimed.store(false); }
 void lkg_bridge_worker_enter() {}
 void lkg_bridge_worker_leave() {}
+int32_t lkg_bridge_get_worker_render_event_id(int32_t* eventId) { if (!eventId) return -1; *eventId = 0; return 0; }
+
+static bool WaitD3D12Fence(uint64_t value) {
+    if (!g_testD3D12Fence || g_testD3D12Fence->GetCompletedValue() >= value) return true;
+    HANDLE eventHandle = CreateEventW(nullptr, FALSE, FALSE, nullptr);
+    if (!eventHandle) return false;
+    const HRESULT result = g_testD3D12Fence->SetEventOnCompletion(value, eventHandle);
+    const DWORD waitResult = SUCCEEDED(result) ? WaitForSingleObject(eventHandle, 5000) : WAIT_FAILED;
+    CloseHandle(eventHandle);
+    return waitResult == WAIT_OBJECT_0;
+}
+
+static bool InitializeD3D12TestDevice() {
+    ComPtr<IDXGIFactory1> factory;
+    if (FAILED(CreateDXGIFactory1(IID_PPV_ARGS(&factory)))) return false;
+    for (UINT index = 0;; ++index) {
+        ComPtr<IDXGIAdapter1> adapter;
+        if (factory->EnumAdapters1(index, &adapter) == DXGI_ERROR_NOT_FOUND) break;
+        DXGI_ADAPTER_DESC1 desc{};
+        adapter->GetDesc1(&desc);
+        if ((desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) != 0) continue;
+        if (FAILED(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&g_testD3D12Device)))) continue;
+        D3D12_COMMAND_QUEUE_DESC queueDesc{};
+        queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+        if (FAILED(g_testD3D12Device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&g_testD3D12Queue))) ||
+            FAILED(g_testD3D12Device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&g_testD3D12Fence))) ||
+            FAILED(g_testD3D12Device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&g_testD3D12GateFence)))) {
+            g_testD3D12Device.Reset();
+            g_testD3D12Queue.Reset();
+            g_testD3D12Fence.Reset();
+            continue;
+        }
+        g_testD3D12FenceValue.store(0);
+        g_testD3D12GateProducer.store(false);
+        g_testD3D12GateValue.store(1);
+        return true;
+    }
+    return false;
+}
+
+static ComPtr<ID3D12Resource> MakeD3D12PatternTexture(const std::array<uint8_t, 3>& rgb,
+                                                       DXGI_FORMAT resourceFormat = DXGI_FORMAT_R8G8B8A8_UNORM) {
+    D3D12_HEAP_PROPERTIES heap{};
+    heap.Type = D3D12_HEAP_TYPE_DEFAULT;
+    heap.CreationNodeMask = 1;
+    heap.VisibleNodeMask = 1;
+    D3D12_RESOURCE_DESC desc{};
+    desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+    desc.Width = 32;
+    desc.Height = 16;
+    desc.DepthOrArraySize = 1;
+    desc.MipLevels = 1;
+    desc.Format = resourceFormat;
+    desc.SampleDesc.Count = 1;
+    desc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+    desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+    D3D12_CLEAR_VALUE clear{};
+    clear.Format = resourceFormat == DXGI_FORMAT_R8G8B8A8_TYPELESS ? DXGI_FORMAT_R8G8B8A8_UNORM : desc.Format;
+    clear.Color[0] = static_cast<float>(rgb[0]) / 255.0f;
+    clear.Color[1] = static_cast<float>(rgb[1]) / 255.0f;
+    clear.Color[2] = static_cast<float>(rgb[2]) / 255.0f;
+    clear.Color[3] = 1.0f;
+    ComPtr<ID3D12Resource> texture;
+    Check(SUCCEEDED(g_testD3D12Device->CreateCommittedResource(&heap, D3D12_HEAP_FLAG_NONE, &desc,
+        D3D12_RESOURCE_STATE_RENDER_TARGET, &clear, IID_PPV_ARGS(&texture))), "D3D12 pattern texture");
+    D3D12_DESCRIPTOR_HEAP_DESC rtvDesc{};
+    rtvDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+    rtvDesc.NumDescriptors = 1;
+    ComPtr<ID3D12DescriptorHeap> rtvHeap;
+    Check(SUCCEEDED(g_testD3D12Device->CreateDescriptorHeap(&rtvDesc, IID_PPV_ARGS(&rtvHeap))), "D3D12 RTV heap");
+    D3D12_RENDER_TARGET_VIEW_DESC viewDesc{};
+    viewDesc.Format = clear.Format;
+    viewDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+    g_testD3D12Device->CreateRenderTargetView(texture.Get(), &viewDesc, rtvHeap->GetCPUDescriptorHandleForHeapStart());
+    ComPtr<ID3D12CommandAllocator> allocator;
+    ComPtr<ID3D12GraphicsCommandList> list;
+    Check(SUCCEEDED(g_testD3D12Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&allocator))), "D3D12 setup allocator");
+    Check(SUCCEEDED(g_testD3D12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, allocator.Get(), nullptr, IID_PPV_ARGS(&list))), "D3D12 setup list");
+    g_testD3D12Queue->Wait(g_testD3D12Fence.Get(), g_testD3D12FenceValue.load());
+    const float color[] = { clear.Color[0], clear.Color[1], clear.Color[2], 1.0f };
+    list->ClearRenderTargetView(rtvHeap->GetCPUDescriptorHandleForHeapStart(), color, 0, nullptr);
+    D3D12_RESOURCE_BARRIER barrier{};
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barrier.Transition.pResource = texture.Get();
+    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_SOURCE;
+    list->ResourceBarrier(1, &barrier);
+    Check(SUCCEEDED(list->Close()), "D3D12 setup list close");
+    ID3D12CommandList* lists[] = { list.Get() };
+    g_testD3D12Queue->ExecuteCommandLists(1, lists);
+    const uint64_t fenceValue = g_testD3D12FenceValue.fetch_add(1) + 1;
+    Check(SUCCEEDED(g_testD3D12Queue->Signal(g_testD3D12Fence.Get(), fenceValue)), "D3D12 setup signal");
+    Check(WaitD3D12Fence(fenceValue), "D3D12 setup completion");
+    return texture;
+}
+
+static void TestD3D12RingColors() {
+    if (!InitializeD3D12TestDevice()) {
+        std::fprintf(stdout, "D3D12 ring test skipped: no hardware D3D12 adapter\n");
+        return;
+    }
+    g_testingD3D12.store(true);
+    void* handle = lkg_worker_begin("test-runtime", "worker-transport-d3d12-test", 0, g_testD3D12Device.Get());
+    Check(handle != nullptr, "D3D12 worker begin");
+    Check(WaitReady(handle), "D3D12 worker ready");
+    auto callback = reinterpret_cast<void (*)(int, void*)>(lkg_worker_render_event_func());
+    constexpr uint32_t targetDraws = 24;
+    uint32_t accepted = 0;
+    for (uint32_t sequence = 0; sequence < targetDraws * 4 && accepted < targetDraws; ++sequence) {
+        const std::array<uint8_t, 3> rgb = {
+            static_cast<uint8_t>(24 + (sequence * 37) % 208),
+            static_cast<uint8_t>(20 + (sequence * 61) % 216),
+            static_cast<uint8_t>(16 + (sequence * 83) % 224)
+        };
+        auto texture = MakeD3D12PatternTexture(rgb);
+        void* data = lkg_worker_make_draw_data(handle, texture.Get(), 4, 3, 1.0f, 1.0f);
+        if (!data) continue;
+        {
+            std::lock_guard<std::mutex> lock(g_expectedD3D12Mutex);
+            g_expectedD3D12Pixels.push_back(rgb);
+        }
+        LkgWorkerStatus before{};
+        Check(lkg_worker_poll(handle, &before) == 0, "D3D12 worker pre-submit poll");
+        callback(0, data);
+        LkgWorkerStatus after{};
+        Check(lkg_worker_poll(handle, &after) == 0, "D3D12 worker post-submit poll");
+        if (after.submitted > before.submitted) {
+            ++accepted;
+            if (accepted % 3 == 0) Check(WaitCompleted(handle, accepted, 5000), "D3D12 ring batch completion");
+        } else {
+            std::lock_guard<std::mutex> lock(g_expectedD3D12Mutex);
+            if (!g_expectedD3D12Pixels.empty()) g_expectedD3D12Pixels.pop_back();
+        }
+    }
+    Check(accepted == targetDraws, "D3D12 ring accepted sequence");
+    Check(WaitCompleted(handle, targetDraws, 5000), "D3D12 ring final completion");
+    Check(lkg_worker_reset_transfer(handle) == 0, "D3D12 ring drained reset");
+    EndContext(handle);
+    handle = lkg_worker_begin("test-runtime", "worker-transport-d3d12-typeless-test", 0, g_testD3D12Device.Get());
+    Check(handle != nullptr, "D3D12 typeless worker begin");
+    Check(WaitReady(handle), "D3D12 typeless worker ready");
+    const std::array<uint8_t, 3> typelessRgb = { 63, 127, 191 };
+    auto typelessTexture = MakeD3D12PatternTexture(typelessRgb, DXGI_FORMAT_R8G8B8A8_TYPELESS);
+    void* typelessData = lkg_worker_make_draw_data(handle, typelessTexture.Get(), 4, 3, 1.0f, 1.0f);
+    Check(typelessData != nullptr, "D3D12 typeless token");
+    {
+        std::lock_guard<std::mutex> lock(g_expectedD3D12Mutex);
+        g_expectedD3D12Pixels.push_back(typelessRgb);
+    }
+    callback(0, typelessData);
+    Check(WaitCompleted(handle, 1, 5000), "D3D12 typeless completion");
+    Check(lkg_worker_reset_transfer(handle) == 0, "D3D12 typeless drained reset");
+    EndContext(handle);
+    handle = lkg_worker_begin("test-runtime", "worker-transport-d3d12-gate-test", 0, g_testD3D12Device.Get());
+    Check(handle != nullptr, "D3D12 gate worker begin");
+    Check(WaitReady(handle), "D3D12 gate worker ready");
+    const std::array<uint8_t, 3> gatedRgb = { 91, 143, 207 };
+    auto gatedTexture = MakeD3D12PatternTexture(gatedRgb);
+    void* gatedData = lkg_worker_make_draw_data(handle, gatedTexture.Get(), 4, 3, 1.0f, 1.0f);
+    Check(gatedData != nullptr, "D3D12 gated token");
+    {
+        std::lock_guard<std::mutex> lock(g_expectedD3D12Mutex);
+        g_expectedD3D12Pixels.push_back(gatedRgb);
+    }
+    g_testD3D12GateProducer.store(true);
+    lkg_worker_test_delay_d3d12_consumer(8);
+    const ULONGLONG callbackStart = GetTickCount64();
+    callback(0, gatedData);
+    const ULONGLONG callbackDuration = GetTickCount64() - callbackStart;
+    g_testD3D12GateProducer.store(false);
+    Check(callbackDuration < 100, "D3D12 callback does not wait for producer fence");
+    Check(lkg_worker_reset_transfer(handle) == -2, "D3D12 reset waits for producer fence");
+    LkgWorkerStatus gatedStatus{};
+    Check(lkg_worker_poll(handle, &gatedStatus) == 0 && gatedStatus.submitted == 1 && gatedStatus.completed == 0,
+          "D3D12 producer fence remains pending");
+    Check(lkg_worker_close(handle) == 0, "D3D12 close with producer pending");
+    Check(lkg_worker_release(handle) == -2, "D3D12 release waits for producer fence");
+    Check(lkg_worker_pending_count() == 1, "D3D12 close remains pending");
+    Check(SUCCEEDED(g_testD3D12GateFence->Signal(1)), "D3D12 release producer gate");
+    Check(WaitState(handle, LKG_WORKER_CLOSED, 5000), "D3D12 close drains gated frame");
+    LkgWorkerStatus drainedGateStatus{};
+    Check(lkg_worker_poll(handle, &drainedGateStatus) == 0 && drainedGateStatus.completed == 1,
+          "D3D12 gated frame completion count");
+    EndContext(handle);
+    handle = lkg_worker_begin("test-runtime", "worker-transport-d3d12-consumer-timeout-test", 0, g_testD3D12Device.Get());
+    Check(handle != nullptr, "D3D12 consumer timeout worker begin");
+    Check(WaitReady(handle), "D3D12 consumer timeout worker ready");
+    Check(lkg_worker_test_set_d3d12_timeout(handle, 40) == 0, "D3D12 consumer timeout setup");
+    auto consumerTimeoutTexture = MakeD3D12PatternTexture({ 107, 149, 211 });
+    void* consumerTimeoutData = lkg_worker_make_draw_data(handle, consumerTimeoutTexture.Get(), 4, 3, 1.0f, 1.0f);
+    Check(consumerTimeoutData != nullptr, "D3D12 consumer timeout token");
+    lkg_worker_test_delay_d3d12_consumer(80);
+    callback(0, consumerTimeoutData);
+    const ULONGLONG consumerTimeoutDeadline = GetTickCount64() + 2000;
+    LkgWorkerStatus consumerTimeoutStatus{};
+    while (GetTickCount64() < consumerTimeoutDeadline) {
+        Check(lkg_worker_poll(handle, &consumerTimeoutStatus) == 0, "D3D12 consumer timeout poll");
+        if (consumerTimeoutStatus.state == LKG_WORKER_FAULT) break;
+        Sleep(1);
+    }
+    if (consumerTimeoutStatus.state != LKG_WORKER_FAULT) {
+        std::fprintf(stderr, "D3D12 consumer timeout state=%u submitted=%u completed=%u dropped=%u code=%u pendingPolls=%u error=%s\n",
+                     consumerTimeoutStatus.state, consumerTimeoutStatus.submitted, consumerTimeoutStatus.completed,
+                     consumerTimeoutStatus.dropped, consumerTimeoutStatus.lastErrorCode,
+                     lkg_worker_test_d3d12_consumer_pending_polls(), consumerTimeoutStatus.error);
+        Fail("D3D11 consumer query timeout fault");
+    }
+    Check(lkg_worker_release(handle) == -2, "D3D12 consumer timeout remains pending");
+    ReleaseAfterFault(handle, "D3D12 late consumer completion cleanup");
+    handle = lkg_worker_begin("test-runtime", "worker-transport-d3d12-timeout-test", 0, g_testD3D12Device.Get());
+    Check(handle != nullptr, "D3D12 timeout worker begin");
+    Check(WaitReady(handle), "D3D12 timeout worker ready");
+    Check(lkg_worker_test_set_d3d12_timeout(handle, 40) == 0, "D3D12 test timeout setup");
+    auto timeoutTexture = MakeD3D12PatternTexture({ 113, 157, 201 });
+    void* timeoutData = lkg_worker_make_draw_data(handle, timeoutTexture.Get(), 4, 3, 1.0f, 1.0f);
+    Check(timeoutData != nullptr, "D3D12 timeout token");
+    g_testD3D12GateValue.store(3);
+    g_testD3D12GateProducer.store(true);
+    callback(0, timeoutData);
+    g_testD3D12GateProducer.store(false);
+    const ULONGLONG timeoutDeadline = GetTickCount64() + 2000;
+    LkgWorkerStatus timeoutStatus{};
+    while (GetTickCount64() < timeoutDeadline) {
+        Check(lkg_worker_poll(handle, &timeoutStatus) == 0, "D3D12 timeout poll");
+        if (timeoutStatus.state == LKG_WORKER_FAULT) break;
+        Sleep(1);
+    }
+    Check(timeoutStatus.state == LKG_WORKER_FAULT, "D3D12 producer timeout fault");
+    Check(lkg_worker_release(handle) == -2, "D3D12 timed out slot quarantined");
+    Check(SUCCEEDED(g_testD3D12GateFence->Signal(3)), "D3D12 late producer completion");
+    ReleaseAfterFault(handle, "D3D12 late producer cleanup");
+    g_testD3D12GateValue.store(3);
+    g_testD3D12Generation.store(2);
+    handle = lkg_worker_begin("test-runtime", "worker-transport-d3d12-generation-test", 0, g_testD3D12Device.Get());
+    Check(handle != nullptr, "D3D12 generation worker begin");
+    Check(WaitReady(handle), "D3D12 generation worker ready");
+    auto staleTexture = MakeD3D12PatternTexture({ 71, 112, 183 });
+    void* staleData = lkg_worker_make_draw_data(handle, staleTexture.Get(), 4, 3, 1.0f, 1.0f);
+    Check(staleData != nullptr, "D3D12 generation token");
+    callback(0, staleData);
+    Check(WaitState(handle, LKG_WORKER_FAULT, 2000), "D3D12 generation mismatch fault");
+    ReleaseAfterFault(handle, "D3D12 generation mismatch release");
+    g_testD3D12Generation.store(1);
+    auto verifyUnknownSubmission = [&](uint64_t returnedValue, const char* name) {
+        void* unknownHandle = lkg_worker_begin("test-runtime", name, 0, g_testD3D12Device.Get());
+        Check(unknownHandle != nullptr, "D3D12 unknown worker begin");
+        Check(WaitReady(unknownHandle), "D3D12 unknown worker ready");
+        auto unknownTexture = MakeD3D12PatternTexture({ 137, 173, 219 });
+        void* unknownData = lkg_worker_make_draw_data(unknownHandle, unknownTexture.Get(), 4, 3, 1.0f, 1.0f);
+        Check(unknownData != nullptr, "D3D12 unknown token");
+        g_testD3D12SubmitOverride.store(returnedValue);
+        g_testD3D12SubmitOverrideActive.store(true);
+        callback(0, unknownData);
+        Check(WaitState(unknownHandle, LKG_WORKER_FAULT, 2000), "D3D12 unknown submission fault");
+        Check(lkg_worker_release(unknownHandle) == -2, "D3D12 unknown submission remains pending");
+        Sleep(25);
+        LkgWorkerStatus unknownStatus{};
+        Check(lkg_worker_poll(unknownHandle, &unknownStatus) == 0 && unknownStatus.state == LKG_WORKER_FAULT &&
+              unknownStatus.completed == 0 && unknownStatus.dropped == 0, "D3D12 invalid return is not treated as completion");
+        lkg_worker_test_d3d12_set_removed(true);
+        ReleaseAfterFault(unknownHandle, "D3D12 unknown submission removed-device retirement");
+        lkg_worker_test_d3d12_set_removed(false);
+        Check(lkg_worker_pending_count() == 0, "D3D12 unknown submission pending drained after removal");
+    };
+    verifyUnknownSubmission(0, "worker-transport-d3d12-return-zero-test");
+    verifyUnknownSubmission(UINT64_MAX, "worker-transport-d3d12-return-max-test");
+    g_testingD3D12.store(false);
+    g_testD3D12Device.Reset();
+    g_testD3D12Queue.Reset();
+    g_testD3D12Fence.Reset();
+    g_testD3D12GateFence.Reset();
+}
 
 int main() {
     BeginDevice();
+    TestD3D12RingColors();
     TestTypelessSource();
     TestTransferResetResize();
     TestBoundedCompletion();

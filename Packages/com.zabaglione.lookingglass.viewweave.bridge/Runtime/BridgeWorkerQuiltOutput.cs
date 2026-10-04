@@ -67,6 +67,7 @@ namespace ViewWeave
         int transferAntiAliasingDiagnostic;
         string transferDimensionName;
         CommandBuffer command;
+        int workerRenderEventId;
         BridgeWorkerNative.Status status;
 
         void OnEnable()
@@ -88,11 +89,11 @@ namespace ViewWeave
                 return false;
             }
             if (Application.platform != RuntimePlatform.WindowsPlayer && !(Application.isEditor && Application.isPlaying && Application.platform == RuntimePlatform.WindowsEditor))
-                return Fail("Bridge worker is supported in Windows Player only");
+                return Fail("Bridge worker requires Windows Player or Windows Editor Play mode");
             if (BridgeWorkerLifecycle.RecoveryPending)
                 return Fail("Bridge worker shutdown recovery is still pending");
-            if (SystemInfo.graphicsDeviceType != GraphicsDeviceType.Direct3D11)
-                return Fail("Bridge worker currently supports Direct3D11 only");
+            if (SystemInfo.graphicsDeviceType != GraphicsDeviceType.Direct3D11 && SystemInfo.graphicsDeviceType != GraphicsDeviceType.Direct3D12)
+                return Fail("Bridge worker requires Direct3D11 or Direct3D12");
             if (string.IsNullOrWhiteSpace(runtimePath))
                 return Fail("Set an absolute Bridge worker runtime path");
             status = default;
@@ -103,6 +104,14 @@ namespace ViewWeave
             transferSrgbDiagnostic = false;
             transferAntiAliasingDiagnostic = 0;
             transferDimensionName = string.Empty;
+            try
+            {
+                if (BridgeWorkerNative.lkg_worker_render_event_id(out workerRenderEventId) != 0)
+                    return Fail("Bridge worker render event ID is unavailable");
+            }
+            catch (DllNotFoundException) { return Fail("Bridge worker native library is missing"); }
+            catch (EntryPointNotFoundException) { return Fail("Bridge worker event ID ABI entry point is missing"); }
+            catch (Exception error) { return Fail(Sanitize(error.Message)); }
             try
             {
                 handle = BridgeWorkerNative.lkg_worker_begin(runtimePath, applicationName, displayOrdinal, IntPtr.Zero);
@@ -185,7 +194,7 @@ namespace ViewWeave
             {
                 if (command == null) command = new CommandBuffer { name = "ViewWeave Bridge Worker Draw" };
                 command.Clear();
-                command.IssuePluginEventAndData(BridgeWorkerNative.lkg_worker_render_event_func(), 0, drawData);
+                command.IssuePluginEventAndData(BridgeWorkerNative.lkg_worker_render_event_func(), workerRenderEventId, drawData);
                 executeAttempted = true;
                 Graphics.ExecuteCommandBuffer(command);
                 Submissions++;

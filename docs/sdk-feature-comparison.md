@@ -13,8 +13,8 @@
 | device profile | 機器設定と表示経路を提供 | 機器設定を利用 | Profile、Registry、Locator、Rig menuを実装しAPIテスト済み。Windows D3D11のURP/HDRP PlayerでPreview、Balanced、NativeのGRD ON/OFF各6条件と品質cycleを確認。全機器hotplugは未検証 |
 | 複数機器 / hotplug | 資料の条件に依存 | 資料の条件に依存 | 未検証 |
 | head tracking / view interpolation | 公式pluginの設定対象 | depth interpolationと透明制約を記載 | 未実装または未検証。深度再投影は別研究 |
-| Editor preview | 公式pluginに機能あり | external preview等を記載 | Windows D3D11 Editor PlayからBridgeへ出力可能。Edit Modeの表示とoffline displayは提供しない |
-| runtime integration | Unity packageとBridge連携 | Unity 6000.0〜6000.1の条件 | Unity 6000.6.4f1のURP/HDRP adapterとSessionを提供。Windows D3D11 Editor PlayとPlayerに対応。Edit Mode、D3D12、macOSは対象外 |
+| Editor preview | 公式pluginに機能あり | external preview等を記載 | Windows D3D11/D3D12 Editor PlayからBridgeへ出力可能。Edit Modeの表示とoffline displayは提供しない |
+| runtime integration | Unity packageとBridge連携 | Unity 6000.0〜6000.1の条件 | Unity 6000.6.4f1のURP/HDRP adapterとSessionを提供。Windows D3D11/D3D12 Editor PlayとPlayerに対応。Edit Mode、macOSは対象外 |
 | 入力、cursor、orbit、button | 公式pluginの利用機能 | 公式資料の範囲に依存 | 未実装または未検証 |
 | installer / package導入 | 公式配布物で提供 | beta/alpha配布物で提供 | UPM導入、Rig menu、optional Samplesを実装済み。ローカルcloneからURP/HDRP別clean projectで各2/2 API導入チェック済み。GitHub導入は未検証 |
 | URP | 3.x資料では制限あり | URP 17.0.4〜17.1を対象 | Lit、Bloom、透明、粒子、uGUI、UI Toolkitを個別検証 |
