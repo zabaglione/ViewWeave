@@ -2,6 +2,8 @@
 
 この手順はUnity 6000.6.4f1、Windows、URPまたはHDRPを対象にします。Looking Glassへの出力にはWindowsのLooking Glass Bridge runtimeと接続済みの機器が必要です。
 
+表示のために起動するのは、自分のUnity projectです。Unity EditorのPlay、またはビルドしたPlayerがsceneからQuiltを生成し、公式Looking Glass Bridge runtimeがそれを接続機器へ送ります。Bridge runtimeはインストールして起動しておきます。SDK内のTests/Bridge Unityプロジェクトやデモアプリを別途起動する必要はありません。
+
 ## Package Managerから追加する
 
 1. Unity HubでURPまたはHDRPテンプレートからプロジェクトを作成し、Unity Editorで開きます。
@@ -13,17 +15,34 @@
 5. 配布packageにCore、Bridge、選択したpipelineが含まれるため、別のViewWeave packageは追加しません。Samplesは任意です。Package ManagerのSamplesからImportするまでAssetsへ入りません。
 
 同じprojectにURP版とHDRP版を同時に追加しないでください。Git URLの`#main`を更新する際にPackage Manager cacheが残る場合は、Removeしてから同じURLを再Addするか、特定commit hashをrefに指定します。
+Package Managerが更新を完了したら、Unity Editorを正常終了して`-force-d3d11`で起動し直してください。更新したmanaged assemblyとnative pluginを読み込むために必要です。
 
 ## 既存のCubeやBoxを表示する
 
 1. UnityをWindows D3D11で起動します。Editor Play出力にもD3D11が必要です。起動引数に`-force-d3d11`を指定する方法、またはPlayer SettingsのWindows Graphics APIsでD3D11を優先してEditorを再起動する方法があります。実行中のGraphicsDeviceTypeを確認してください。
 2. WindowsへLooking Glass Bridge runtimeをインストールし、Looking Glassを接続します。
 3. 通常のCubeやBoxをシーンに置き、標準のURP/HDRP materialとlightを使います。CubeへViewWeave componentを追加する必要はありません。
-4. Rig作成前に被写体のRendererを選択してから`GameObject > ViewWeave > Bridge Rig`を実行します。作成される専用cameraはMainCameraの位置、rotation、FOV、near/far、culling maskを引き継ぎます。選択Renderer中心がMainCameraのnear/far範囲内かつ正面にある場合、その正のcamera forward距離をQuiltRendererのzero-parallax距離`cameraDistance`に設定します。範囲外、背面、Renderer未選択なら10mです。MainCameraがない場合は既定Rig位置を保ち、3mにします。
+4. Rig作成前に被写体のRendererを選択してから`GameObject > ViewWeave > Bridge Rig`を実行します。作成される専用cameraはMainCameraの位置、rotation、FOV、near/far、culling maskを引き継ぎます。選択Renderer中心がMainCameraのnear/far範囲内かつ正面にある場合、その正のcamera forward距離をQuiltRendererのzero-parallax距離`cameraDistance`に設定します。範囲外、背面、Renderer未選択なら10mです。MainCameraがない場合は既定Rig位置を保ち、3mにします。既存のMain Cameraの子としてRigを作る手順は[Cameraを親にする](#既存cameraの子にrigを作る)を参照してください。
 5. Rendererを選択せず作成した場合、MainCameraがあればzero-parallax距離は10mです。MainCameraがない場合はRigの既定位置を維持し、距離は3mです。必要に応じてRigのcameraDistanceをInspectorで調整します。
-6. Rigのあるsceneを保存し、Unity EditorのPlayを押します。Bridge接続後、Bridge profileに応じたQuiltがLooking Glassへ送られます。EditorのGame viewは通常のMainCamera表示のままです。
+6. Rigのあるsceneを保存し、Unity EditorのPlayを押します。Unity Editorがsceneを描画し、Bridge runtime接続後にBridge profileに応じたQuiltがLooking Glassへ送られます。EditorのGame viewは通常のMainCamera表示のままです。
 
 EditorがD3D12で起動している場合は、Player SettingsのGraphics APIsを変更してUnity Editorを再起動するか、`-force-d3d11`でEditorを起動してください。Edit Mode、macOS、D3D12ではBridge出力しません。Windows Playerで確認する場合はWindows向けGraphics APIsでD3D11を選び、Build and Runします。
+
+## Qualityを変更する
+
+1. Unity EditorのPlayを停止します。
+2. Rig上の`ViewWeaveBridgeSession` Inspectorにある`Quality`を`Balanced`または`Native`へ変更します。
+3. Playを押し、Bridgeへ送られる表示を確認します。
+
+Qualityは接続機器から取得したBridge profileの解像度を基準にします。`Preview`は1 viewあたりの縦横をprofileの1/4、`Balanced`は1/2にし、`Native`はprofile本来の解像度を使います。どのQualityでもview数はprofileの値のままです。たとえば、直前に確認した機器profileが7680x4320、8x6 viewsなら、1 viewあたりはPreviewが240x180、Balancedが480x360、Nativeが960x720です。この数値はそのprofileの例で、他の機器に共通する仕様値ではありません。48 viewsの場合、NativeはPreviewと比べて1 viewあたり縦横4倍、総pixel数16倍を描画するため、GPU負荷が増えます。
+
+Sessionは起動時に選択したQualityからquilt解像度とgridを適用します。`QuiltSettings`を直接編集してもSessionのprofileで上書きされるため、表示解像度を変える場合は`ViewWeaveBridgeSession`の`Quality`を使ってください。
+
+## 既存Cameraの子にRigを作る
+
+既存のMain Cameraに追従させるには、HierarchyでそのCameraを右クリックし、`ViewWeave > Bridge Rig`を選びます。生成されたRigは右クリックしたGameObjectの子になり、Cameraが`MainCamera`タグ付きなら、そのworld positionとrotationを基準にframingをコピーします。そのため、Main Cameraを右クリックした場合はRigのlocal positionとrotationが0になり、親Cameraに追従します。既存Main Cameraは有効なままです。Rig上の専用CameraはQuilt描画用sourceCameraとして自動的に無効化されます。
+
+MainCameraタグのないCameraを右クリックしても、そのCameraのframingが選ばれるわけではありません。現在のメニューは親を右クリックしたGameObjectにしますが、framingは`Camera.main`からコピーします。
 
 ## HDRPテンプレート
 

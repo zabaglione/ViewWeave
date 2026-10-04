@@ -302,12 +302,21 @@ namespace ViewWeave.GRDValidation
                 }
                 quilt.RenderQuilt();
                 Assert.That(urpGuard != null ? urpGuard.ValidationStackCreationCount : hdrpGuard.ValidationStackCreationCount, Is.EqualTo(first));
-                motionBlur.active = true;
-                Assert.Throws<NotSupportedException>(() => quilt.RenderQuilt());
-                Assert.That(urpGuard != null ? urpGuard.ValidationStackCreationCount : hdrpGuard.ValidationStackCreationCount, Is.EqualTo(first));
-                motionBlur.active = false;
-                quilt.RenderQuilt();
-                Assert.That(urpGuard != null ? urpGuard.ValidationStackCreationCount : hdrpGuard.ValidationStackCreationCount, Is.EqualTo(first));
+                bool previousAdaptUnsupportedEffects = hdrpGuard != null && hdrpGuard.adaptUnsupportedEffects;
+                if (hdrpGuard != null) hdrpGuard.adaptUnsupportedEffects = false;
+                try
+                {
+                    motionBlur.active = true;
+                    Assert.Throws<NotSupportedException>(() => quilt.RenderQuilt());
+                    Assert.That(urpGuard != null ? urpGuard.ValidationStackCreationCount : hdrpGuard.ValidationStackCreationCount, Is.EqualTo(first));
+                    motionBlur.active = false;
+                    quilt.RenderQuilt();
+                    Assert.That(urpGuard != null ? urpGuard.ValidationStackCreationCount : hdrpGuard.ValidationStackCreationCount, Is.EqualTo(first));
+                }
+                finally
+                {
+                    if (hdrpGuard != null) hdrpGuard.adaptUnsupportedEffects = previousAdaptUnsupportedEffects;
+                }
             }
 
             void SetupEditorBatchRendererGroupPolicy()

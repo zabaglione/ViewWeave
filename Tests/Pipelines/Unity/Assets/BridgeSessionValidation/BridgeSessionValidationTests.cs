@@ -50,25 +50,6 @@ namespace ViewWeave.BridgeSessionValidation
         }
 
         [Test]
-        public void EditorStartIsRejectedWithAsciiDiagnostic()
-        {
-            GameObject host = CreateHost(false);
-            try
-            {
-                ViewWeaveBridgeSession session = host.GetComponent<ViewWeaveBridgeSession>();
-                host.SetActive(true);
-                Assert.IsFalse(session.StartSession());
-                Assert.AreEqual(ViewWeaveBridgeSession.SessionState.Fault, session.State);
-                StringAssert.Contains("Windows Player", session.LastError);
-                Assert.IsTrue(IsAscii(session.LastError));
-            }
-            finally
-            {
-                Object.DestroyImmediate(host);
-            }
-        }
-
-        [Test]
         public void DisabledSessionCannotStart()
         {
             GameObject host = CreateHost(false);

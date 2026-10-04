@@ -2,6 +2,8 @@
 
 Looking Glass向けの非公式Unity SDKです。URPまたはHDRPの通常のシーンを複数視点で描画し、Windows上のLooking Glass Bridge runtimeへ送ります。
 
+Looking Glassに表示するときは、利用者自身のUnity projectをEditor PlayするかPlayerとして起動します。UnityがQuiltを描画し、インストール済みで起動中の公式Looking Glass Bridge runtimeが機器へ届けます。SDK内のTests/Bridge Unityプロジェクトやデモアプリを別途起動する必要はありません。
+
 対応環境はUnity 6000.6.4f1、Windows、URPまたはHDRP、D3D11です。Bridge runtimeとLooking Glass機器を別途用意してください。Windows D3D11のUnity Editor PlayとWindows D3D11 Playerで出力できます。Edit Mode、D3D12、macOS出力は対象外です。
 
 このprivate repositoryからPackage Managerで取得するにはGitHubのアクセス権が必要です。独自コードのライセンスは[Apache-2.0](LICENSE)です。
@@ -18,6 +20,8 @@ Looking Glass向けの非公式Unity SDKです。URPまたはHDRPの通常のシ
 6. メニューから`GameObject > ViewWeave > Bridge Rig`を作成します。新しいRigはMainCameraの位置、向き、FOV、near/far、culling maskを引き継ぎます。Rig作成前に選択していたRendererの中心がMainCameraのnear/far範囲内かつ正面にあれば、その正のforward距離をzero-parallax距離にします。範囲外、背面、選択Rendererなしの場合は10m、MainCameraがない場合は3mです。
 7. HDRPではPlayer SettingsのColor SpaceをLinearにします。HDRP adapterは既定でquilt描画中の一時的な調整を行います。通常のMainCameraやVolume設定は変更しません。詳細は[Getting started](docs/getting-started.md)を参照してください。
 8. Editorから表示するには、Editor自体をD3D11で起動してからPlayします。起動引数`-force-d3d11`を使うか、Player SettingsのWindows Graphics APIsをD3D11優先にしてEditorを再起動してください。実際のAPIはGraphicsDeviceTypeで確認できます。D3D12やEdit ModeではBridge出力しません。
+
+Git packageを更新した後はUnity Editorを正常終了し、`-force-d3d11`を付けて起動し直してください。新しいmanaged assemblyとnative pluginの読み込みに必要です。
 
 Windows Playerで使う場合は、Windows Graphics APIsでD3D11を有効にしてBuild and Runします。Bridge runtimeが自動検出されない場合だけ、RigのSessionにRuntime Pathを設定します。
 
