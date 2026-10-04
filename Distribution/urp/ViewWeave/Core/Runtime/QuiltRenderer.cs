@@ -47,19 +47,6 @@ namespace ViewWeave
             LastAutoRenderError = string.Empty;
         }
         bool autoRenderFailed;
-        internal void RenderAutoQuilt()
-        {
-            if (!autoRender || !isActiveAndEnabled || autoRenderFailed || IsRendering) return;
-            try { RenderQuilt(); }
-            catch (Exception error)
-            {
-                autoRenderFailed = true;
-                autoRender = false;
-                LastAutoRenderError = SanitizeAutoRenderError(error);
-                UnityEngine.Debug.LogError("Looking Glass quilt auto render stopped: " + LastAutoRenderError);
-            }
-        }
-
         static string SanitizeAutoRenderError(Exception error)
         {
             string value = error == null ? "unknown error" : error.GetType().Name + ": " + error.Message;
@@ -72,13 +59,32 @@ namespace ViewWeave
 
         public void RenderQuilt()
         {
+            RenderQuiltCore(false);
+        }
+
+        internal void RenderAutoQuiltAtBoundary()
+        {
+            if (!autoRender || !isActiveAndEnabled || autoRenderFailed || IsRendering) return;
+            try { RenderQuiltCore(true); }
+            catch (Exception error)
+            {
+                autoRenderFailed = true;
+                autoRender = false;
+                LastAutoRenderError = SanitizeAutoRenderError(error);
+                UnityEngine.Debug.LogError("Looking Glass quilt auto render stopped: " + LastAutoRenderError);
+            }
+        }
+
+        void RenderQuiltCore(bool trustedSchedulerBoundary)
+        {
             if (IsRendering) throw new InvalidOperationException("quilt render is already in progress");
-            if (Camera.current != null) throw new InvalidOperationException("RenderQuilt must be called outside render callbacks");
+            bool srp = GraphicsSettings.currentRenderPipeline != null;
+            bool trustedSrpBoundary = trustedSchedulerBoundary && Application.isEditor && Application.isPlaying && srp;
+            if (Camera.current != null && !trustedSrpBoundary) throw new InvalidOperationException("RenderQuilt must be called outside render callbacks");
             settings.Validate();
             if (sourceCamera == null) throw new InvalidOperationException("sourceCamera is required");
             if (sourceCamera.enabled) throw new InvalidOperationException("sourceCamera must be disabled and dedicated to quilt rendering");
             if (sourceCamera.orthographic) throw new InvalidOperationException("only perspective cameras are supported");
-            bool srp = GraphicsSettings.currentRenderPipeline != null;
             if (srp && !useRenderRequests) throw new NotSupportedException("an SRP adapter and render request are required");
             if (srp && RenderGuard == null) throw new InvalidOperationException("an IQuiltRenderGuard is required for SRP rendering");
             IsRendering = true;

@@ -92,7 +92,7 @@ namespace ViewWeave
             for (int i = 0; i < current.Length; ++i)
             {
                 QuiltRenderer renderer = current[i];
-                if (renderer != null) renderer.RenderAutoQuilt();
+                if (renderer != null) renderer.RenderAutoQuiltAtBoundary();
             }
         }
 
