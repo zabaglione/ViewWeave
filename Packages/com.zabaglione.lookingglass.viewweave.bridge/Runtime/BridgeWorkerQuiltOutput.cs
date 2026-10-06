@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
@@ -109,8 +110,14 @@ namespace ViewWeave
             transferDimensionName = string.Empty;
             try
             {
-                if (BridgeWorkerNative.lkg_worker_render_event_id(out workerRenderEventId) != 0)
-                    return Fail("Bridge worker render event ID is unavailable");
+                int eventIdResult = BridgeWorkerNative.lkg_worker_render_event_id(out workerRenderEventId);
+                if (eventIdResult != 0)
+                {
+                    string message = "Bridge worker render event ID is unavailable (code " + eventIdResult.ToString(CultureInfo.InvariantCulture) + ").";
+                    if (Application.isEditor)
+                        message += " If this followed a package update, restart the Unity Editor and retry.";
+                    return Fail(message);
+                }
             }
             catch (DllNotFoundException) { return Fail("Bridge worker native library is missing"); }
             catch (EntryPointNotFoundException) { return Fail("Bridge worker event ID ABI entry point is missing"); }
