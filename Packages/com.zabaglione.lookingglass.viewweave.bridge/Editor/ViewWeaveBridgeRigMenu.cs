@@ -55,6 +55,8 @@ namespace ViewWeave.Editor
 
         static void CopyCameraFraming(Camera sourceCamera, QuiltRenderer quilt, Camera framingCamera, GameObject selectedObject)
         {
+            quilt.referenceCamera = framingCamera;
+            quilt.followReferenceFieldOfView = true;
             if (framingCamera == null)
             {
                 quilt.settings.cameraDistance = 3f;

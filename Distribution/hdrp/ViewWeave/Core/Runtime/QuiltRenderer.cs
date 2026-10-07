@@ -12,7 +12,13 @@ namespace ViewWeave
         public QuiltSettings settings = new QuiltSettings();
         [Tooltip("The output quilt stays full size. Half and Quarter render ceil(view count / divisor) views, reuse the nearest rendered image for each output tile, and can reduce angular smoothness. At least the first and last views are rendered when view count is greater than one.")]
         public QuiltViewRenderMode viewRenderMode = QuiltViewRenderMode.Full;
+        [Tooltip("Disabled dedicated camera used only to render quilt views.")]
         public Camera sourceCamera;
+        [Tooltip("Optional live framing camera. Assign the rendered output camera, such as the Camera controlled by a Cinemachine Brain. Its world position and rotation are copied to the dedicated source camera before each quilt render.")]
+        public Camera referenceCamera;
+        [Tooltip("When enabled, the reference camera's vertical field of view updates Quilt Settings before each render. A manually entered value is replaced while this is enabled.")]
+        public bool followReferenceFieldOfView = true;
+        public Camera EffectiveCamera => referenceCamera != null ? referenceCamera : sourceCamera;
         RenderTexture quiltTexture;
         public RenderTexture QuiltTexture => quiltTexture;
         [SerializeField] MonoBehaviour outputBehaviour;
@@ -51,6 +57,11 @@ namespace ViewWeave
         long quiltRevision;
         bool hasCompletedQuilt;
         QuiltRenderSnapshot latestSnapshot;
+        Camera latestReferenceCamera;
+        bool latestSnapshotFollowedReferenceFieldOfView;
+        float latestReferenceFieldOfView;
+        Vector3 latestReferencePosition;
+        Quaternion latestReferenceRotation;
 
         void OnEnable()
         {
@@ -104,8 +115,22 @@ namespace ViewWeave
             if (sourceCamera == null) throw new InvalidOperationException("sourceCamera is required");
             if (sourceCamera.enabled) throw new InvalidOperationException("sourceCamera must be disabled and dedicated to quilt rendering");
             if (sourceCamera.orthographic) throw new InvalidOperationException("only perspective cameras are supported");
+            Camera framingCamera = EffectiveCamera;
+            ValidateReferenceCamera(sourceCamera, referenceCamera);
+            Vector3 renderReferencePosition = framingCamera.transform.position;
+            Quaternion renderReferenceRotation = framingCamera.transform.rotation;
+            float renderReferenceFieldOfView = framingCamera.fieldOfView;
             if (srp && !useRenderRequests) throw new NotSupportedException("an SRP adapter and render request are required");
             if (srp && RenderGuard == null) throw new InvalidOperationException("an IQuiltRenderGuard is required for SRP rendering");
+            if (framingCamera != sourceCamera)
+            {
+                sourceCamera.transform.SetPositionAndRotation(renderReferencePosition, renderReferenceRotation);
+                if (followReferenceFieldOfView)
+                {
+                    sourceCamera.fieldOfView = renderReferenceFieldOfView;
+                    settings.fieldOfView = renderReferenceFieldOfView;
+                }
+            }
             IsRendering = true;
             hasCompletedQuilt = false;
             LastRenderedViewCount = 0;
@@ -183,6 +208,11 @@ namespace ViewWeave
             if (renderSucceeded)
             {
                 latestSnapshot = new QuiltRenderSnapshot(layout, viewRenderMode, settings, LastRenderedViewCount, quiltRevision + 1, sourceCamera);
+                latestReferenceCamera = framingCamera;
+                latestSnapshotFollowedReferenceFieldOfView = framingCamera != sourceCamera && followReferenceFieldOfView;
+                latestReferenceFieldOfView = renderReferenceFieldOfView;
+                latestReferencePosition = renderReferencePosition;
+                latestReferenceRotation = renderReferenceRotation;
                 quiltRevision++;
                 hasCompletedQuilt = true;
                 NotifyQuiltRendered();
@@ -195,12 +225,23 @@ namespace ViewWeave
             if (quiltTexture.width != latestSnapshot.Layout.QuiltWidth || quiltTexture.height != latestSnapshot.Layout.QuiltHeight) return false;
             try
             {
+                ValidateReferenceCamera(sourceCamera, referenceCamera);
                 QuiltLayout currentLayout = settings.GetLayout();
                 QuiltCaptureSettings previous = latestSnapshot.Settings;
                 QuiltSettings current = settings;
                 if (currentLayout.QuiltWidth != latestSnapshot.Layout.QuiltWidth || currentLayout.QuiltHeight != latestSnapshot.Layout.QuiltHeight || currentLayout.Rows != latestSnapshot.Layout.Rows || currentLayout.Columns != latestSnapshot.Layout.Columns || currentLayout.ViewCount != latestSnapshot.Layout.ViewCount || viewRenderMode != latestSnapshot.ViewRenderMode) return false;
                 if (current.viewAspect != previous.viewAspect || current.fieldOfView != previous.fieldOfView || current.cameraDistance != previous.cameraDistance || current.viewCone != previous.viewCone) return false;
+                Camera framingCamera = EffectiveCamera;
+                if (framingCamera != latestReferenceCamera) return false;
+                if ((framingCamera != sourceCamera && followReferenceFieldOfView) != latestSnapshotFollowedReferenceFieldOfView) return false;
+                if (latestSnapshotFollowedReferenceFieldOfView && framingCamera.fieldOfView != latestReferenceFieldOfView) return false;
                 if (sourceCamera.nearClipPlane != latestSnapshot.Geometry.nearClip || sourceCamera.farClipPlane != latestSnapshot.Geometry.farClip) return false;
+                if (framingCamera != sourceCamera)
+                {
+                    Transform referenceTransform = framingCamera.transform;
+                    if (referenceTransform.position != latestReferencePosition) return false;
+                    return referenceTransform.rotation == latestReferenceRotation;
+                }
                 Transform cameraTransform = sourceCamera.transform;
                 if (cameraTransform.position.x != latestSnapshot.Geometry.cameraPositionX || cameraTransform.position.y != latestSnapshot.Geometry.cameraPositionY || cameraTransform.position.z != latestSnapshot.Geometry.cameraPositionZ) return false;
                 Quaternion rotation = cameraTransform.rotation;
@@ -208,6 +249,27 @@ namespace ViewWeave
             }
             catch { return false; }
         }
+
+        static void ValidateReferenceCamera(Camera dedicatedCamera, Camera framingCamera)
+        {
+            if (framingCamera == null) return;
+            if (framingCamera == dedicatedCamera) throw new InvalidOperationException("referenceCamera must be different from sourceCamera");
+            if (framingCamera.transform.IsChildOf(dedicatedCamera.transform))
+                throw new InvalidOperationException("referenceCamera cannot be a child or descendant of sourceCamera");
+            if (framingCamera.orthographic) throw new InvalidOperationException("referenceCamera must use perspective projection");
+            Transform framingTransform = framingCamera.transform;
+            Vector3 position = framingTransform.position;
+            Quaternion rotation = framingTransform.rotation;
+            if (!IsFinite(position.x) || !IsFinite(position.y) || !IsFinite(position.z)
+                || !IsFinite(rotation.x) || !IsFinite(rotation.y) || !IsFinite(rotation.z) || !IsFinite(rotation.w)
+                || rotation.x * rotation.x + rotation.y * rotation.y + rotation.z * rotation.z + rotation.w * rotation.w < 0.000001f)
+                throw new InvalidOperationException("referenceCamera pose must contain finite position and rotation values");
+            float fov = framingCamera.fieldOfView;
+            if (!IsFinite(fov) || fov <= 0f || fov >= 179f)
+                throw new InvalidOperationException("referenceCamera field of view must be finite and between 0 and 179 degrees");
+        }
+
+        static bool IsFinite(float value) => !float.IsNaN(value) && !float.IsInfinity(value);
 
         void NotifyQuiltRendered()
         {

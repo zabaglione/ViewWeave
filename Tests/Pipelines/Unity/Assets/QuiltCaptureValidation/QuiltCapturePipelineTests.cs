@@ -32,6 +32,182 @@ namespace ViewWeave.QuiltCaptureValidation
             return RunPipelineAndRecording(true);
         }
 
+        [UnityTest]
+        public IEnumerator UrpReferenceCameraSyncsWorldPoseAndFieldOfViewWithoutMutation()
+        {
+            return RunReferenceCameraSync(false);
+        }
+
+        [UnityTest]
+        public IEnumerator HdrpReferenceCameraSyncsWorldPoseAndFieldOfViewWithoutMutation()
+        {
+            return RunReferenceCameraSync(true);
+        }
+
+        IEnumerator RunReferenceCameraSync(bool hdrp)
+        {
+            Fixture fixture = null;
+            GameObject referenceParent = null;
+            GameObject referenceObject = null;
+            GameObject sourceParent = null;
+            RenderTexture referenceTarget = null;
+            try
+            {
+                fixture = new Fixture(hdrp);
+                fixture.Setup();
+                sourceParent = new GameObject("Capture.SourceParent");
+                sourceParent.transform.position = new Vector3(1f, 3f, -2f);
+                sourceParent.transform.rotation = Quaternion.Euler(4f, 15f, -3f);
+                sourceParent.transform.localScale = new Vector3(2f, 0.6f, 1.7f);
+                fixture.CameraObject.transform.SetParent(sourceParent.transform, true);
+                referenceParent = new GameObject("Capture.ReferenceParent");
+                referenceParent.transform.position = new Vector3(-3f, 2f, 5f);
+                referenceParent.transform.rotation = Quaternion.Euler(9f, -17f, 4f);
+                referenceParent.transform.localScale = new Vector3(3f, 0.5f, 2f);
+                referenceObject = new GameObject("Capture.ReferenceCamera");
+                referenceObject.transform.SetParent(referenceParent.transform, false);
+                Camera reference = referenceObject.AddComponent<Camera>();
+                reference.transform.SetPositionAndRotation(new Vector3(7f, 1.5f, -4f), Quaternion.Euler(13f, 41f, -8f));
+                reference.fieldOfView = 67f;
+                reference.nearClipPlane = 0.31f;
+                reference.farClipPlane = 177f;
+                reference.enabled = true;
+                referenceTarget = new RenderTexture(8, 8, 0);
+                reference.targetTexture = referenceTarget;
+                Vector3 originalPosition = reference.transform.position;
+                Quaternion originalRotation = reference.transform.rotation;
+                float originalFov = reference.fieldOfView;
+                float originalNear = reference.nearClipPlane;
+                float originalFar = reference.farClipPlane;
+                int originalMask = reference.cullingMask;
+                bool originalEnabled = reference.enabled;
+
+                fixture.Renderer.referenceCamera = reference;
+                fixture.Renderer.followReferenceFieldOfView = true;
+                fixture.Renderer.settings.fieldOfView = 42f;
+                fixture.Renderer.RenderQuilt();
+
+                Assert.That(Vector3.Distance(fixture.Camera.transform.position, originalPosition), Is.LessThan(0.0001f));
+                Assert.That(Quaternion.Angle(fixture.Camera.transform.rotation, originalRotation), Is.LessThan(0.001f));
+                Assert.That(fixture.Camera.fieldOfView, Is.EqualTo(originalFov).Within(0.001f));
+                Assert.That(fixture.Renderer.settings.fieldOfView, Is.EqualTo(originalFov).Within(0.001f));
+                Assert.That(reference.transform.position, Is.EqualTo(originalPosition));
+                Assert.That(reference.transform.rotation, Is.EqualTo(originalRotation));
+                Assert.That(reference.fieldOfView, Is.EqualTo(originalFov).Within(0.001f));
+                Assert.That(reference.nearClipPlane, Is.EqualTo(originalNear).Within(0.001f));
+                Assert.That(reference.farClipPlane, Is.EqualTo(originalFar).Within(0.001f));
+                Assert.That(reference.cullingMask, Is.EqualTo(originalMask));
+                Assert.That(reference.enabled, Is.EqualTo(originalEnabled));
+                Assert.That(reference.targetTexture, Is.SameAs(referenceTarget));
+                Assert.IsTrue(fixture.Renderer.IsLatestQuiltCurrent);
+
+                reference.transform.position += Vector3.right;
+                Assert.IsFalse(fixture.Renderer.IsLatestQuiltCurrent, "a moved reference camera invalidates the previous quilt");
+                fixture.Renderer.RenderQuilt();
+                Assert.That(Vector3.Distance(fixture.Camera.transform.position, reference.transform.position), Is.LessThan(0.0001f));
+                Assert.IsTrue(fixture.Renderer.IsLatestQuiltCurrent);
+                reference.fieldOfView = 71f;
+                Assert.IsFalse(fixture.Renderer.IsLatestQuiltCurrent, "a changed followed FOV invalidates the previous quilt");
+
+                fixture.Renderer.followReferenceFieldOfView = false;
+                fixture.Renderer.settings.fieldOfView = 53f;
+                fixture.Renderer.RenderQuilt();
+                Assert.That(fixture.Renderer.settings.fieldOfView, Is.EqualTo(53f).Within(0.001f));
+                Assert.That(fixture.Camera.fieldOfView, Is.EqualTo(67f).Within(0.001f), "the dedicated camera keeps its own lens unchanged when Quilt FOV following is disabled");
+                Assert.That(fixture.Renderer.LatestSnapshot.Settings.fieldOfView, Is.EqualTo(53f).Within(0.001f));
+                Assert.That(reference.fieldOfView, Is.EqualTo(71f).Within(0.001f));
+
+                fixture.Renderer.referenceCamera = null;
+                Vector3 sourcePosition = fixture.Camera.transform.position;
+                Quaternion sourceRotation = fixture.Camera.transform.rotation;
+                fixture.Renderer.RenderQuilt();
+                Assert.That(Vector3.Distance(fixture.Camera.transform.position, sourcePosition), Is.LessThan(0.0001f));
+                Assert.That(Quaternion.Angle(fixture.Camera.transform.rotation, sourceRotation), Is.LessThan(0.001f));
+            }
+            finally
+            {
+                if (referenceObject != null)
+                {
+                    Camera reference = referenceObject.GetComponent<Camera>();
+                    UnityEngine.Object.DestroyImmediate(referenceObject);
+                }
+                if (referenceTarget != null) UnityEngine.Object.DestroyImmediate(referenceTarget);
+                if (referenceParent != null) UnityEngine.Object.DestroyImmediate(referenceParent);
+                if (fixture != null) fixture.Dispose();
+                if (sourceParent != null) UnityEngine.Object.DestroyImmediate(sourceParent);
+            }
+            yield return null;
+        }
+
+        [Test]
+        public void QuiltFrustumFocusUsesWorldCameraPositionAndDistance()
+        {
+            GameObject parent = new GameObject("Frustum.Parent");
+            GameObject cameraObject = new GameObject("Frustum.Camera");
+            try
+            {
+                parent.transform.position = new Vector3(2f, -4f, 1f);
+                parent.transform.rotation = Quaternion.Euler(21f, 34f, -12f);
+                parent.transform.localScale = new Vector3(2f, 0.4f, 3f);
+                cameraObject.transform.SetParent(parent.transform, false);
+                cameraObject.transform.localPosition = new Vector3(1.2f, -0.5f, 0.7f);
+                cameraObject.transform.localRotation = Quaternion.Euler(-7f, 19f, 5f);
+                QuiltSettings settings = new QuiltSettings { fieldOfView = 73f, cameraDistance = 4.25f, viewAspect = 0.8f, viewCone = 30f, views = 48, rows = 6, columns = 8 };
+                Assert.IsTrue(QuiltFrustumGeometry.TryBuild(cameraObject.transform, settings, 0.1f, 100f, settings.fieldOfView, out QuiltFrustumGeometry.Geometry geometry));
+                Vector3 center = Vector3.zero;
+                foreach (Vector3 point in geometry.focusPlane) center += point;
+                center /= geometry.focusPlane.Length;
+                Assert.That(Vector3.Distance(center, cameraObject.transform.position + cameraObject.transform.forward * settings.cameraDistance), Is.LessThan(0.0001f));
+                Assert.That(Vector3.Distance(cameraObject.transform.position, center), Is.EqualTo(settings.cameraDistance).Within(0.0001f));
+                Assert.IsTrue(QuiltFrustumGeometry.TryBuild(cameraObject.transform, settings, 0.1f, 100f, 41f, out QuiltFrustumGeometry.Geometry referenceFovGeometry));
+                float wideFocusWidth = Vector3.Distance(geometry.focusPlane[0], geometry.focusPlane[3]);
+                float narrowFocusWidth = Vector3.Distance(referenceFovGeometry.focusPlane[0], referenceFovGeometry.focusPlane[3]);
+                Assert.That(narrowFocusWidth, Is.LessThan(wideFocusWidth), "Scene gizmo geometry should use the provided live reference FOV");
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(parent);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator ReferenceCameraRejectsSelfOrthographicAndDescendantReferences()
+        {
+            yield return null;
+            Fixture fixture = null;
+            GameObject referenceObject = null;
+            try
+            {
+                fixture = new Fixture(false);
+                fixture.Setup();
+                fixture.Renderer.RenderQuilt();
+                Assert.IsTrue(fixture.Renderer.IsLatestQuiltCurrent);
+                fixture.Renderer.referenceCamera = fixture.Camera;
+                Assert.IsFalse(fixture.Renderer.IsLatestQuiltCurrent, "switching from no reference to an invalid self-reference invalidates the prior snapshot");
+                InvalidOperationException self = Assert.Throws<InvalidOperationException>(() => fixture.Renderer.RenderQuilt());
+                StringAssert.Contains("different from sourceCamera", self.Message);
+
+                referenceObject = new GameObject("Capture.InvalidReference");
+                Camera reference = referenceObject.AddComponent<Camera>();
+                fixture.Renderer.referenceCamera = reference;
+                reference.orthographic = true;
+                InvalidOperationException orthographic = Assert.Throws<InvalidOperationException>(() => fixture.Renderer.RenderQuilt());
+                StringAssert.Contains("perspective", orthographic.Message);
+
+                reference.orthographic = false;
+                referenceObject.transform.SetParent(fixture.Camera.transform, false);
+                InvalidOperationException descendant = Assert.Throws<InvalidOperationException>(() => fixture.Renderer.RenderQuilt());
+                StringAssert.Contains("child or descendant", descendant.Message);
+
+            }
+            finally
+            {
+                if (fixture != null) fixture.Dispose();
+                if (referenceObject != null) UnityEngine.Object.DestroyImmediate(referenceObject);
+            }
+            yield return null;
+        }
+
         IEnumerator RunPipelineAndRecording(bool hdrp)
         {
             Fixture fixture = null;
@@ -424,6 +600,7 @@ namespace ViewWeave.QuiltCaptureValidation
 
             public GameObject CubeObject { get; private set; }
             public GameObject SphereObject { get; private set; }
+            public Camera Camera => CameraObject == null ? null : CameraObject.GetComponent<Camera>();
             public GameObject RecorderObject { get; private set; }
         }
 

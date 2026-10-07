@@ -117,6 +117,8 @@ namespace ViewWeave.RigCameraCreationValidation
             Assert.That(targetCamera.farClipPlane, Is.EqualTo(originalFar).Within(0.0001f));
             Assert.That(targetCamera.cullingMask, Is.EqualTo(originalCullingMask));
             Assert.That(renderer.settings.fieldOfView, Is.EqualTo(originalFov).Within(0.0001f));
+            Assert.That(renderer.referenceCamera, Is.SameAs(framingCamera));
+            Assert.That(renderer.followReferenceFieldOfView, Is.True);
             Assert.That(framingCamera.transform.position, Is.EqualTo(originalPosition));
             Assert.That(framingCamera.transform.rotation, Is.EqualTo(originalRotation));
             Assert.That(framingCamera.fieldOfView, Is.EqualTo(originalFov).Within(0.0001f));
@@ -162,6 +164,9 @@ namespace ViewWeave.RigCameraCreationValidation
                 Assert.That(rigCamera.nearClipPlane, Is.EqualTo(framingCamera.nearClipPlane).Within(0.0001f));
                 Assert.That(rigCamera.farClipPlane, Is.EqualTo(framingCamera.farClipPlane).Within(0.0001f));
                 Assert.That(rigCamera.cullingMask, Is.EqualTo(framingCamera.cullingMask));
+                QuiltRenderer quilt = rigObject.GetComponent<QuiltRenderer>();
+                Assert.That(quilt.referenceCamera, Is.SameAs(framingCamera));
+                Assert.That(quilt.followReferenceFieldOfView, Is.True);
                 UniversalAdditionalCameraData rigData = rigObject.GetComponent<UniversalAdditionalCameraData>();
                 Assert.That(GetRendererIndex(rigData), Is.EqualTo(1));
                 Assert.That(rigData.volumeLayerMask, Is.EqualTo(sourceData.volumeLayerMask));

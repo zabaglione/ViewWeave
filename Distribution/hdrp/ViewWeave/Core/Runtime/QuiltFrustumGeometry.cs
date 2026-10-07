@@ -18,11 +18,16 @@ namespace ViewWeave
 
         public static bool TryBuild(Transform cameraTransform, QuiltSettings settings, float nearClip, float farClip, out Geometry geometry)
         {
+            return TryBuild(cameraTransform, settings, nearClip, farClip, settings == null ? 0f : settings.fieldOfView, out geometry);
+        }
+
+        public static bool TryBuild(Transform cameraTransform, QuiltSettings settings, float nearClip, float farClip, float fieldOfView, out Geometry geometry)
+        {
             geometry = default;
             if (cameraTransform == null || settings == null || !IsFinite(nearClip) || !IsFinite(farClip) || nearClip <= 0f || farClip <= nearClip)
                 return false;
 
-            float fov = settings.fieldOfView;
+            float fov = fieldOfView;
             float aspect = settings.viewAspect;
             float focusDistance = settings.cameraDistance;
             float cone = settings.viewCone;

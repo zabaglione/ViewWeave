@@ -38,6 +38,7 @@ namespace ViewWeave.URP
             IsRunning = false;
             LastError = string.Empty;
             errorLogged = false;
+            RenderPipelineManager.beginCameraRendering += OnBeginCameraRendering;
         }
 
         void LateUpdate()
@@ -57,8 +58,24 @@ namespace ViewWeave.URP
                 StopRunning();
                 return;
             }
-            SyncDriver();
+            SyncDriverSettings();
             IsRunning = driverCamera != null && driverCamera.enabled && driverTexture != null;
+        }
+
+        void OnBeginCameraRendering(ScriptableRenderContext context, Camera camera)
+        {
+            if (camera != driverCamera || !IsRunning || !enableDriver) return;
+            try
+            {
+                Camera framingCamera = quiltRenderer.EffectiveCamera;
+                if (framingCamera == null) return;
+                driverObject.transform.SetPositionAndRotation(framingCamera.transform.position, framingCamera.transform.rotation);
+            }
+            catch (Exception error)
+            {
+                Fail("driver pose synchronization failed: " + Sanitize(error));
+                StopRunning();
+            }
         }
 
         bool ValidateConfiguration()
@@ -122,9 +139,11 @@ namespace ViewWeave.URP
             }
         }
 
-        void SyncDriver()
+        void SyncDriverSettings()
         {
-            driverObject.transform.SetPositionAndRotation(sourceCamera.transform.position, sourceCamera.transform.rotation);
+            Camera framingCamera = quiltRenderer.EffectiveCamera;
+            if (framingCamera != null)
+                driverObject.transform.SetPositionAndRotation(framingCamera.transform.position, framingCamera.transform.rotation);
             driverCamera.fieldOfView = driverFieldOfView;
             driverCamera.aspect = sourceCamera.aspect > 0f && float.IsFinite(sourceCamera.aspect) ? sourceCamera.aspect : 1f;
             driverCamera.nearClipPlane = sourceCamera.nearClipPlane;
@@ -156,12 +175,14 @@ namespace ViewWeave.URP
 
         void OnDisable()
         {
+            RenderPipelineManager.beginCameraRendering -= OnBeginCameraRendering;
             StopRunning();
             ReleaseDriver();
         }
 
         void OnDestroy()
         {
+            RenderPipelineManager.beginCameraRendering -= OnBeginCameraRendering;
             StopRunning();
             ReleaseDriver();
         }

@@ -1,3 +1,4 @@
+using System.Globalization;
 using UnityEditor;
 using UnityEngine;
 
@@ -34,17 +35,25 @@ namespace ViewWeave.Editor
             }
 
             serializedObject.Update();
-            DrawSetting("cameraDistance", "Focus Distance", "Zero-parallax plane distance from the source camera. This is not depth-of-field focus.");
-            DrawSetting("fieldOfView", "Vertical Field of View", null);
-            if (serializedObject.ApplyModifiedProperties()) SceneView.RepaintAll();
-
             QuiltRenderer renderer = (QuiltRenderer)target;
+            bool followsReferenceFov = renderer.referenceCamera != null && renderer.followReferenceFieldOfView;
+            DrawSetting("cameraDistance", "Focus Distance", "Distance in Unity units from the effective framing camera to the zero-parallax plane. This is not depth-of-field focus.");
+            DrawSetting("fieldOfView", "Vertical Field of View", followsReferenceFov ? "The reference camera's FOV replaces this value before every render while FOV following is enabled." : null);
+            if (serializedObject.ApplyModifiedProperties()) SceneView.RepaintAll();
+            if (followsReferenceFov)
+                EditorGUILayout.HelpBox("Vertical Field of View follows Reference Camera at render time. A manually entered value is replaced while this is enabled.", MessageType.Info);
             Camera sourceCamera = renderer.sourceCamera;
             if (sourceCamera == null)
             {
                 EditorGUILayout.HelpBox("Assign a source camera to edit the clip planes and view its capture volume.", MessageType.Warning);
                 return;
             }
+            if (renderer.referenceCamera == sourceCamera && renderer.referenceCamera != null)
+                EditorGUILayout.HelpBox("Reference Camera must be different from Source Camera. Source Camera is the disabled camera dedicated to Quilt rendering.", MessageType.Error);
+            else if (renderer.referenceCamera != null && renderer.referenceCamera.transform.IsChildOf(sourceCamera.transform))
+                EditorGUILayout.HelpBox("Reference Camera cannot be a child or descendant of Source Camera because copying the source pose would move the reference.", MessageType.Error);
+            else if (renderer.referenceCamera != null && renderer.referenceCamera.orthographic)
+                EditorGUILayout.HelpBox("Reference Camera must use perspective projection.", MessageType.Error);
             if (sourceCamera.orthographic)
                 EditorGUILayout.HelpBox("The quilt renderer and capture-volume gizmo require a perspective camera.", MessageType.Warning);
 
@@ -93,10 +102,16 @@ namespace ViewWeave.Editor
 
         void DrawFrustum(QuiltRenderer renderer)
         {
-            if (renderer == null || renderer.sourceCamera == null || renderer.sourceCamera.orthographic || renderer.settings == null)
+            if (renderer == null || renderer.sourceCamera == null || renderer.settings == null)
                 return;
-            Camera camera = renderer.sourceCamera;
-            if (!QuiltFrustumGeometry.TryBuild(camera.transform, renderer.settings, camera.nearClipPlane, camera.farClipPlane, out QuiltFrustumGeometry.Geometry geometry))
+            Camera framingCamera = renderer.EffectiveCamera;
+            if (framingCamera == null || framingCamera.orthographic)
+                return;
+            Camera sourceCamera = renderer.sourceCamera;
+            float fov = renderer.referenceCamera != null && renderer.followReferenceFieldOfView
+                ? renderer.referenceCamera.fieldOfView
+                : renderer.settings.fieldOfView;
+            if (!QuiltFrustumGeometry.TryBuild(framingCamera.transform, renderer.settings, sourceCamera.nearClipPlane, sourceCamera.farClipPlane, fov, out QuiltFrustumGeometry.Geometry geometry))
                 return;
 
             Color oldColor = Handles.color;
@@ -118,6 +133,9 @@ namespace ViewWeave.Editor
                 Handles.color = new Color(0.75f, 0.3f, 1f, 0.95f);
                 DrawPlane(geometry.focusPlane);
                 Handles.Label(Center(geometry.focusPlane), "Zero-parallax focus");
+                Vector3 focusCenter = Center(geometry.focusPlane);
+                Handles.DrawLine(framingCamera.transform.position, focusCenter);
+                Handles.Label((framingCamera.transform.position + focusCenter) * 0.5f, renderer.settings.cameraDistance.ToString("0.###", CultureInfo.InvariantCulture) + " units");
 
                 if (showExtremeViews)
                 {
@@ -138,7 +156,7 @@ namespace ViewWeave.Editor
                     Handles.color = new Color(0.8f, 0.8f, 0.8f, 0.55f);
                     DrawFrustumRays(geometry.nearPlane, geometry.farPlane);
                 }
-                DrawFocusDistanceHandle(renderer, geometry.focusPlane);
+                DrawFocusDistanceHandle(renderer, framingCamera.transform, geometry.focusPlane);
             }
             finally
             {
@@ -147,12 +165,10 @@ namespace ViewWeave.Editor
             }
         }
 
-        static void DrawFocusDistanceHandle(QuiltRenderer renderer, Vector3[] focusPlane)
+        static void DrawFocusDistanceHandle(QuiltRenderer renderer, Transform framingTransform, Vector3[] focusPlane)
         {
-            Camera camera = renderer.sourceCamera;
-            Transform transform = camera.transform;
-            Vector3 forward = transform.rotation * Vector3.forward;
-            Vector3 origin = transform.position;
+            Vector3 forward = framingTransform.rotation * Vector3.forward;
+            Vector3 origin = framingTransform.position;
             Vector3 center = Center(focusPlane);
             EditorGUI.BeginChangeCheck();
             Vector3 moved = Handles.Slider(center, forward, HandleUtility.GetHandleSize(center) * 0.12f, Handles.ArrowHandleCap, 0f);
