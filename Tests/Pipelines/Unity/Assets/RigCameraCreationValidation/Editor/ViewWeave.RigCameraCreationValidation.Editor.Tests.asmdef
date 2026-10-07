@@ -1,0 +1,20 @@
+{
+  "name": "ViewWeave.RigCameraCreationValidation.Editor.Tests",
+  "rootNamespace": "ViewWeave.RigCameraCreationValidation",
+  "references": [
+    "ViewWeave.Core",
+    "ViewWeave.Core.Editor",
+    "ViewWeave.Bridge",
+    "ViewWeave.Bridge.Editor",
+    "ViewWeave.URP",
+    "ViewWeave.URP.Editor",
+    "Unity.RenderPipelines.Universal.Runtime",
+    "UnityEngine.TestRunner",
+    "UnityEditor.TestRunner"
+  ],
+  "overrideReferences": true,
+  "precompiledReferences": ["nunit.framework.dll"],
+  "defineConstraints": ["UNITY_INCLUDE_TESTS"],
+  "includePlatforms": ["Editor"],
+  "autoReferenced": false
+}

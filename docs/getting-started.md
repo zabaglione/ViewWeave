@@ -24,11 +24,11 @@ Package Managerが更新を完了したら、Unity Editorを正常終了して�
 1. UnityをWindows D3D11またはD3D12で起動します。標準のBridge Worker経路はどちらのAPIでもEditor Play出力できます。標準のGraphics API選択を使うか、必要な場合だけ起動引数`-force-d3d11`または`-force-d3d12`を指定します。実際のAPIは`SystemInfo.graphicsDeviceType`で確認してください。
 2. WindowsへLooking Glass Bridge runtimeをインストールし、Looking Glassを接続します。
 3. 通常のCubeやBoxをシーンに置き、標準のURP/HDRP materialとlightを使います。CubeへViewWeave componentを追加する必要はありません。
-4. CameraとRigを親子にする場合は、Hierarchyで`MainCamera`タグ付きの使用中Cameraを右クリックして`ViewWeave > Bridge Rig`を選びます。Rigはその子に追加され、Main Cameraのworld positionとrotationを基準に作成されるため、子のlocal position/rotationは0になります。Rigの専用CameraがQuiltを描画し、元のMain Cameraは有効なままです。操作の詳細は[既存Cameraの子にRigを作る](#既存cameraの子にrigを作る)を参照してください。
+4. 使用中Camera、またはCameraを祖先に持つGameObjectをHierarchyで右クリックし、`ViewWeave > Bridge Rig`を選びます。Rigは右クリックしたGameObjectの子として作成されます。右クリック対象かその祖先にあるCameraが優先され、対象がない場合は選択中GameObjectとその祖先、最後に`Camera.main`が使われます。`MainCamera`タグは必須ではありません。元Cameraは有効なまま、専用Rig CameraがQuiltを描画します。詳しくは[既存CameraからRigを作る](#既存cameraからrigを作る)を参照してください。
 5. RendererのあるCubeやBoxをCameraの前方に置きます。メニューでMain Cameraを右クリックした場合、zero-parallax距離は既定の10mから始まります。被写体に合わせたい場合は、Rigの`QuiltRenderer > Settings > Camera Distance`（`cameraDistance`）を調整します。
 6. Rigのあるsceneを保存し、Unity EditorのPlayを押します。Unity Editorがsceneを描画し、Bridge runtime接続後にBridge profileに応じたQuiltがLooking Glassへ送られます。EditorのGame viewは通常のMainCamera表示のままです。
 
-被写体Rendererを選択した状態でGameObject menuからRigを作るときは、選択中Rendererのbounds centerがMain Cameraの前方かつnear/far clipの間にある場合、そのforward距離を`Camera Distance`に設定します。Rendererがない、disabled、範囲外、背面なら10mです。Main Cameraがない場合はRigの既定位置と3mを使います。Hierarchy contextから作る場合は右クリックしたGameObjectが親になりますが、framing sourceは常に`Camera.main`です。MainCameraタグのないCameraを右クリックした場合、そのCameraのframingは継承されません。
+被写体Rendererを選択した状態でRigを作るときは、選択中Rendererのbounds centerが解決したframing Cameraの前方かつnear/far clipの間にある場合、そのforward距離を`Camera Distance`に設定します。Rendererがない、disabled、範囲外、背面なら10mです。framing Cameraが見つからない場合はRigの既定位置と3mを使います。Cameraのpose、FOV、near/far、culling maskはRig作成時に一度コピーします。Cinemachineや後から変更したLens FOVへ常時追従する機能ではありません。
 
 Edit ModeとmacOSではBridge出力しません。Windows Playerで確認する場合はWindows Graphics APIsでD3D11またはD3D12を選び、Build and Runします。Legacy Direct経路を使う場合はD3D11を選んでください。
 
@@ -42,11 +42,11 @@ Qualityは接続機器から取得したBridge profileの解像度を基準に�
 
 Sessionは起動時に選択したQualityからquilt解像度とgridを適用します。`QuiltSettings`を直接編集してもSessionのprofileで上書きされるため、表示解像度を変える場合は`ViewWeaveBridgeSession`の`Quality`を使ってください。
 
-## 既存Cameraの子にRigを作る
+## 既存CameraからRigを作る
 
-既存のMain Cameraに追従させるには、Hierarchyで`MainCamera`タグ付きのCameraを右クリックし、`ViewWeave > Bridge Rig`を選びます。生成されたRigは右クリックしたGameObjectの子になり、`Camera.main`のworld positionとrotationを基準にframingをコピーします。使用中のMain Cameraを右クリックすれば、Rigのlocal positionとrotationは0になり、親Cameraに追従します。既存Main Cameraは有効なままです。Rig上の専用CameraはQuilt描画用sourceCameraとして自動的に無効化されます。
+既存CameraのGameObjectを右クリックして`ViewWeave > Bridge Rig`を選びます。`MainCamera`タグのないCameraも選択できます。メニューはRig作成前に右クリックしたGameObjectとその祖先を調べ、最初に見つけたCameraをframing sourceとして解決します。Hierarchyのcontextを持たないメニューを使う場合は、選択中GameObjectとその祖先を調べ、見つからなければ`Camera.main`を使います。
 
-MainCameraタグのないCameraを右クリックしても、そのCameraのframingが選ばれるわけではありません。現在のメニューは親を右クリックしたGameObjectにしますが、framingは`Camera.main`からコピーします。
+解決したCameraのworld pose、FOV、near/far clip、culling maskをRig Cameraへコピーし、URPではそのCameraのRenderer、Volume、post-processing等の追加設定も引き継ぎます。元Cameraは変更しません。Rigは右クリックしたGameObjectの子になります。Cameraそのものを右クリックすると作成直後のlocal poseは通常0です。Camera設定をコピーするのは作成時の一度だけで、後からのCinemachine pose/FOV変更を自動追従しません。Rig上の専用CameraはQuilt描画用に自動で無効になります。
 
 ## HDRPテンプレート
 

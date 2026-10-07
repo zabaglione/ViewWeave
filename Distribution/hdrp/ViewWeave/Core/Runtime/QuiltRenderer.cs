@@ -28,6 +28,11 @@ namespace ViewWeave
         public bool useRenderRequests = true;
         public bool IsRendering { get; private set; }
         public int LastRenderedViewCount { get; private set; }
+        public bool HasRenderedQuilt => hasCompletedQuilt;
+        public long QuiltRevision => quiltRevision;
+        public QuiltRenderSnapshot LatestSnapshot => latestSnapshot;
+        public bool IsLatestQuiltCurrent => IsSnapshotCurrent();
+        public event Action<QuiltRenderer> QuiltRendered;
         public string LastAutoRenderError { get; private set; }
         public long LastCpuSubmissionTicks { get; private set; }
         public long LastViewCpuTicks { get; private set; }
@@ -42,6 +47,10 @@ namespace ViewWeave
         int cachedSamplingViewCount;
         QuiltViewRenderMode cachedSamplingMode;
         bool hasSamplingCache;
+        bool notifyingRenderComplete;
+        long quiltRevision;
+        bool hasCompletedQuilt;
+        QuiltRenderSnapshot latestSnapshot;
 
         void OnEnable()
         {
@@ -85,6 +94,7 @@ namespace ViewWeave
 
         void RenderQuiltCore(bool trustedSchedulerBoundary)
         {
+            if (notifyingRenderComplete) throw new InvalidOperationException("quilt rendering cannot be started from a quilt completion callback");
             if (IsRendering) throw new InvalidOperationException("quilt render is already in progress");
             bool srp = GraphicsSettings.currentRenderPipeline != null;
             bool trustedSrpBoundary = trustedSchedulerBoundary && Application.isEditor && Application.isPlaying && srp;
@@ -97,14 +107,17 @@ namespace ViewWeave
             if (srp && !useRenderRequests) throw new NotSupportedException("an SRP adapter and render request are required");
             if (srp && RenderGuard == null) throw new InvalidOperationException("an IQuiltRenderGuard is required for SRP rendering");
             IsRendering = true;
+            hasCompletedQuilt = false;
             LastRenderedViewCount = 0;
             previousActive = RenderTexture.active;
             CameraState state = default;
             bool stateCaptured = false;
+            bool renderSucceeded = false;
+            QuiltLayout layout = default;
             IDisposable quiltPreparation = null;
             try
             {
-                QuiltLayout layout = settings.GetLayout();
+                layout = settings.GetLayout();
                 EnsureViewSampling(layout.ViewCount);
                 EnsureTextures(layout);
                 ClearQuilt();
@@ -152,6 +165,7 @@ namespace ViewWeave
                 }
                 LastCpuSubmissionTicks = Stopwatch.GetTimestamp() - totalStart;
                 Output?.Submit(quiltTexture, layout);
+                renderSucceeded = true;
             }
             finally
             {
@@ -166,6 +180,50 @@ namespace ViewWeave
                     IsRendering = false;
                 }
             }
+            if (renderSucceeded)
+            {
+                latestSnapshot = new QuiltRenderSnapshot(layout, viewRenderMode, settings, LastRenderedViewCount, quiltRevision + 1, sourceCamera);
+                quiltRevision++;
+                hasCompletedQuilt = true;
+                NotifyQuiltRendered();
+            }
+        }
+
+        bool IsSnapshotCurrent()
+        {
+            if (!HasRenderedQuilt || IsRendering || notifyingRenderComplete || quiltTexture == null || !quiltTexture.IsCreated() || sourceCamera == null || settings == null) return false;
+            if (quiltTexture.width != latestSnapshot.Layout.QuiltWidth || quiltTexture.height != latestSnapshot.Layout.QuiltHeight) return false;
+            try
+            {
+                QuiltLayout currentLayout = settings.GetLayout();
+                QuiltCaptureSettings previous = latestSnapshot.Settings;
+                QuiltSettings current = settings;
+                if (currentLayout.QuiltWidth != latestSnapshot.Layout.QuiltWidth || currentLayout.QuiltHeight != latestSnapshot.Layout.QuiltHeight || currentLayout.Rows != latestSnapshot.Layout.Rows || currentLayout.Columns != latestSnapshot.Layout.Columns || currentLayout.ViewCount != latestSnapshot.Layout.ViewCount || viewRenderMode != latestSnapshot.ViewRenderMode) return false;
+                if (current.viewAspect != previous.viewAspect || current.fieldOfView != previous.fieldOfView || current.cameraDistance != previous.cameraDistance || current.viewCone != previous.viewCone) return false;
+                if (sourceCamera.nearClipPlane != latestSnapshot.Geometry.nearClip || sourceCamera.farClipPlane != latestSnapshot.Geometry.farClip) return false;
+                Transform cameraTransform = sourceCamera.transform;
+                if (cameraTransform.position.x != latestSnapshot.Geometry.cameraPositionX || cameraTransform.position.y != latestSnapshot.Geometry.cameraPositionY || cameraTransform.position.z != latestSnapshot.Geometry.cameraPositionZ) return false;
+                Quaternion rotation = cameraTransform.rotation;
+                return rotation.x == latestSnapshot.Geometry.cameraRotationX && rotation.y == latestSnapshot.Geometry.cameraRotationY && rotation.z == latestSnapshot.Geometry.cameraRotationZ && rotation.w == latestSnapshot.Geometry.cameraRotationW;
+            }
+            catch { return false; }
+        }
+
+        void NotifyQuiltRendered()
+        {
+            Action<QuiltRenderer> listeners = QuiltRendered;
+            if (listeners == null) return;
+            notifyingRenderComplete = true;
+            try
+            {
+                Delegate[] invocationList = listeners.GetInvocationList();
+                for (int i = 0; i < invocationList.Length; ++i)
+                {
+                    try { ((Action<QuiltRenderer>)invocationList[i])(this); }
+                    catch (Exception error) { UnityEngine.Debug.LogError("ViewWeave quilt completion listener failed: " + SanitizeAutoRenderError(error)); }
+                }
+            }
+            finally { notifyingRenderComplete = false; }
         }
 
         void RenderOneView()
@@ -301,6 +359,7 @@ namespace ViewWeave
         void ReleaseOwnedTexture(ref RenderTexture texture)
         {
             if (texture == null) return;
+            if (ReferenceEquals(texture, quiltTexture)) hasCompletedQuilt = false;
             if (RenderTexture.active == texture) RenderTexture.active = null;
             if (previousActive == texture) previousActive = null;
             texture.Release();
