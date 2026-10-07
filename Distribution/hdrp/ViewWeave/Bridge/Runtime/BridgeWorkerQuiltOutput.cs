@@ -99,12 +99,20 @@ namespace ViewWeave
                 LastError = "Bridge worker is already active";
                 return false;
             }
-            if (Application.platform != RuntimePlatform.WindowsPlayer && !(Application.isEditor && Application.isPlaying && Application.platform == RuntimePlatform.WindowsEditor))
-                return Fail("Bridge worker requires Windows Player or Windows Editor Play mode");
             if (BridgeWorkerLifecycle.RecoveryPending)
                 return Fail("Bridge worker shutdown recovery is still pending");
-            if (SystemInfo.graphicsDeviceType != GraphicsDeviceType.Direct3D11 && SystemInfo.graphicsDeviceType != GraphicsDeviceType.Direct3D12)
-                return Fail("Bridge worker requires Direct3D11 or Direct3D12");
+            if (!BridgeGraphicsBackendPolicy.TrySelect(
+                BridgeGraphicsBackendRoute.Worker,
+                Application.platform,
+                Application.isEditor,
+                Application.isPlaying,
+                SystemInfo.graphicsDeviceType,
+                SystemInfo.renderingThreadingMode,
+                out BridgeGraphicsBackendDecision backend,
+                out string backendError))
+                return Fail(backendError);
+            if (backend.BridgeConsumer != BridgeGraphicsApi.Direct3D11)
+                return Fail("Bridge worker requires the Direct3D11 Bridge consumer route");
             if (string.IsNullOrWhiteSpace(runtimePath))
                 return Fail("Set an absolute Bridge worker runtime path");
             status = default;

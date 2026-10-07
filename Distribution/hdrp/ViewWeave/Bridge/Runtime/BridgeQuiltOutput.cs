@@ -99,11 +99,17 @@ namespace ViewWeave
         public bool TryInitialize()
         {
             Dispose();
-            if (Application.platform != RuntimePlatform.WindowsPlayer && Application.platform != RuntimePlatform.WindowsEditor) { LastError = "Bridge D3D11 output is currently Windows-only"; return false; }
-            if (SystemInfo.graphicsDeviceType != GraphicsDeviceType.Direct3D11) { LastError = "Bridge output currently supports Direct3D11 only"; return false; }
-            if (SystemInfo.renderingThreadingMode != RenderingThreadingMode.Direct)
+            if (!BridgeGraphicsBackendPolicy.TrySelect(
+                BridgeGraphicsBackendRoute.LegacyDirect,
+                Application.platform,
+                Application.isEditor,
+                Application.isPlaying,
+                SystemInfo.graphicsDeviceType,
+                SystemInfo.renderingThreadingMode,
+                out _,
+                out string backendError))
             {
-                LastError = "Bridge D3D11 interop requires Direct rendering threading; experimental support requires -force-gfx-direct";
+                LastError = backendError;
                 return false;
             }
             if (string.IsNullOrWhiteSpace(bridgeLibraryPath)) { LastError = "Set an absolute Bridge runtime library path"; return false; }

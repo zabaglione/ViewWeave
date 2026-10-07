@@ -6,6 +6,8 @@ Looking Glassに表示するときは、利用者自身のUnity projectをEditor
 
 対応環境はUnity 6000.6.4f1、Windows、URPまたはHDRPです。Bridge Worker経由ならD3D11またはD3D12のUnity Editor PlayとWindows Playerから出力できます。Legacy Direct経路はD3D11のみです。Edit ModeとmacOS出力は対象外です。Bridge runtimeとLooking Glass機器を別途用意してください。
 
+macOS Metalは調査・実験段階です。通常のSessionはMetalを受け付けず、macOS向けnative artifactも配布していません。最大3枚のtextureを保持するbounded実験であり、対応環境や利用手順はありません。詳しくは[Graphics backends](docs/graphics-backends.md)を参照してください。
+
 このprivate repositoryからPackage Managerで取得するにはGitHubのアクセス権が必要です。独自コードのライセンスは[Apache-2.0](LICENSE)です。
 
 ## 使い始める

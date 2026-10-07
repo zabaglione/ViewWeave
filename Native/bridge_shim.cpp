@@ -27,6 +27,12 @@ extern "C" int32_t lkg_worker_shutdown_host(uint32_t timeoutMilliseconds);
 extern "C" int32_t lkg_worker_close_all(void);
 extern "C" int32_t lkg_worker_collect_closed(void);
 extern "C" uint32_t lkg_worker_pending_count(void);
+#elif defined(__APPLE__)
+#include "IUnityInterface.h"
+#include "platform/macos/metal_provider_api.h"
+#include <dlfcn.h>
+using Library = void*;
+struct IUnknown;
 #else
 #include <dlfcn.h>
 using Library = void*;
@@ -87,16 +93,22 @@ static thread_local bool g_worker_scope = false;
 static uint32_t g_successful_draws = 0;
 static std::unordered_map<uint64_t, Session> g_sessions;
 static uint64_t g_next_session = 1;
+#if defined(_WIN32)
 static IUnknown* g_unity_device = nullptr;
+#endif
 static std::atomic<uint32_t> g_unity_graphics_api{0};
 static std::atomic<uint64_t> g_unity_device_generation{0};
 static int32_t g_worker_render_event_id = 0;
 static bool g_worker_render_event_id_reserved = false;
+#if defined(_WIN32)
+#if defined(LKG_UNITY_GRAPHICS_D3D12_V8)
 static IUnityGraphicsD3D12v8* g_unity_d3d12_v8 = nullptr;
+#endif
 static IUnityGraphicsD3D12v7* g_unity_d3d12_v7 = nullptr;
 static ID3D12Device* g_unity_d3d12_device = nullptr;
 static IUnityGraphics* g_unity_graphics = nullptr;
 static IUnityInterfaces* g_unity_interfaces = nullptr;
+#endif
 static std::mutex g_unity_device_mutex;
 
 static std::string ascii_path(const char* path) {
@@ -128,14 +140,14 @@ static ReleaseTextureFn g_release_texture{};
 static SaveTextureFn g_save_texture{};
 #endif
 
-IUnknown* lkg_bridge_unity_device_addref() {
 #if defined(_WIN32)
+IUnknown* lkg_bridge_unity_device_addref() {
     std::lock_guard<std::mutex> lock(g_unity_device_mutex);
     if (!g_unity_device) return nullptr;
     g_unity_device->AddRef();
-#endif
     return g_unity_device;
 }
+#endif
 
 uint32_t lkg_bridge_graphics_api() {
     return g_unity_graphics_api.load(std::memory_order_acquire);
@@ -145,6 +157,7 @@ extern "C" uint64_t lkg_bridge_unity_device_generation() {
     return g_unity_device_generation.load(std::memory_order_acquire);
 }
 
+#if defined(_WIN32)
 extern "C" int32_t lkg_bridge_unity_device_snapshot(IUnknown** device, uint64_t* generation, uint32_t* graphicsApi) {
     if (!device || !generation || !graphicsApi) return -1;
     *device = nullptr;
@@ -156,6 +169,7 @@ extern "C" int32_t lkg_bridge_unity_device_snapshot(IUnknown** device, uint64_t*
     *graphicsApi = g_unity_graphics_api.load(std::memory_order_relaxed);
     return 0;
 }
+#endif
 
 extern "C" int32_t lkg_bridge_get_worker_render_event_id(int32_t* eventId) {
     if (!eventId) return -1;
@@ -165,6 +179,7 @@ extern "C" int32_t lkg_bridge_get_worker_render_event_id(int32_t* eventId) {
     return 0;
 }
 
+#if defined(_WIN32)
 extern "C" int32_t lkg_bridge_d3d12_snapshot(LkgD3D12Snapshot* snapshot) {
     if (!snapshot) return -1;
     snapshot->device = nullptr;
@@ -172,9 +187,15 @@ extern "C" int32_t lkg_bridge_d3d12_snapshot(LkgD3D12Snapshot* snapshot) {
     // This accessor is render-thread-only because Unity permits GetFrameFence there.
     std::lock_guard<std::mutex> lock(g_unity_device_mutex);
     snapshot->generation = g_unity_device_generation.load(std::memory_order_relaxed);
+#if defined(LKG_UNITY_GRAPHICS_D3D12_V8)
     IUnityGraphicsD3D12v8* v8 = g_unity_d3d12_v8;
+#endif
     ID3D12Device* device = g_unity_d3d12_device;
+#if defined(LKG_UNITY_GRAPHICS_D3D12_V8)
     ID3D12Fence* fence = v8 ? v8->GetFrameFence() : (g_unity_d3d12_v7 ? g_unity_d3d12_v7->GetFrameFence() : nullptr);
+#else
+    ID3D12Fence* fence = g_unity_d3d12_v7 ? g_unity_d3d12_v7->GetFrameFence() : nullptr;
+#endif
     if (!device || !fence) return -2;
     fence->AddRef();
     device->AddRef();
@@ -196,10 +217,13 @@ extern "C" uint64_t lkg_bridge_d3d12_submit(ID3D12GraphicsCommandList* list, ID3
     // Called only from the configured Unity render callback.
     std::lock_guard<std::mutex> lock(g_unity_device_mutex);
     UnityGraphicsD3D12ResourceState state{source, D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_COPY_SOURCE};
+#if defined(LKG_UNITY_GRAPHICS_D3D12_V8)
     if (g_unity_d3d12_v8) return g_unity_d3d12_v8->ExecuteCommandList(list, 1, &state);
+#endif
     if (g_unity_d3d12_v7) return g_unity_d3d12_v7->ExecuteCommandList(list, 1, &state);
     return 0;
 }
+#endif
 
 static bool direct_call_rejected() {
     return g_worker_active.load(std::memory_order_acquire) && !g_worker_scope;
@@ -720,7 +744,9 @@ static void UNITY_INTERFACE_API OnGraphicsDeviceEvent(UnityGfxDeviceEventType ev
         }
         if (g_unity_device) { g_unity_device->Release(); g_unity_device = nullptr; }
         if (g_unity_d3d12_device) { g_unity_d3d12_device->Release(); g_unity_d3d12_device = nullptr; }
+#if defined(LKG_UNITY_GRAPHICS_D3D12_V8)
         g_unity_d3d12_v8 = nullptr;
+#endif
         g_unity_d3d12_v7 = nullptr;
         g_unity_graphics_api = 0;
         g_unity_device_generation.fetch_add(1, std::memory_order_release);
@@ -735,9 +761,14 @@ static void UNITY_INTERFACE_API OnGraphicsDeviceEvent(UnityGfxDeviceEventType ev
                     g_unity_graphics_api = 1;
                 }
             } else if (renderer == kUnityGfxRendererD3D12) {
+#if defined(LKG_UNITY_GRAPHICS_D3D12_V8)
                 g_unity_d3d12_v8 = g_unity_interfaces->Get<IUnityGraphicsD3D12v8>();
                 if (!g_unity_d3d12_v8) g_unity_d3d12_v7 = g_unity_interfaces->Get<IUnityGraphicsD3D12v7>();
                 ID3D12Device* device = g_unity_d3d12_v8 ? g_unity_d3d12_v8->GetDevice() : (g_unity_d3d12_v7 ? g_unity_d3d12_v7->GetDevice() : nullptr);
+#else
+                g_unity_d3d12_v7 = g_unity_interfaces->Get<IUnityGraphicsD3D12v7>();
+                ID3D12Device* device = g_unity_d3d12_v7 ? g_unity_d3d12_v7->GetDevice() : nullptr;
+#endif
                 if (device) {
                     device->AddRef();
                     g_unity_d3d12_device = device;
@@ -749,8 +780,12 @@ static void UNITY_INTERFACE_API OnGraphicsDeviceEvent(UnityGfxDeviceEventType ev
                     config.flags = kUnityD3D12EventConfigFlag_SyncWorkerThreads;
                     config.ensureActiveRenderTextureIsBound = false;
                     if (g_worker_render_event_id_reserved) {
+#if defined(LKG_UNITY_GRAPHICS_D3D12_V8)
                         if (g_unity_d3d12_v8) g_unity_d3d12_v8->ConfigureEvent(g_worker_render_event_id, &config);
                         else g_unity_d3d12_v7->ConfigureEvent(g_worker_render_event_id, &config);
+#else
+                        g_unity_d3d12_v7->ConfigureEvent(g_worker_render_event_id, &config);
+#endif
                     }
                 }
             }
@@ -767,7 +802,9 @@ static void UNITY_INTERFACE_API OnGraphicsDeviceEvent(UnityGfxDeviceEventType ev
         std::lock_guard<std::mutex> lock(g_unity_device_mutex);
         if (g_unity_device) { g_unity_device->Release(); g_unity_device = nullptr; }
         if (g_unity_d3d12_device) { g_unity_d3d12_device->Release(); g_unity_d3d12_device = nullptr; }
+#if defined(LKG_UNITY_GRAPHICS_D3D12_V8)
         g_unity_d3d12_v8 = nullptr;
+#endif
         g_unity_d3d12_v7 = nullptr;
         g_unity_graphics_api = 0;
         g_unity_device_generation.fetch_add(1, std::memory_order_release);
@@ -788,5 +825,12 @@ extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginUnload() {
     lkg_worker_shutdown_host(1000);
     lkg_worker_collect_closed();
     g_unity_interfaces = nullptr;
+}
+#elif defined(__APPLE__)
+extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginLoad(IUnityInterfaces* interfaces) {
+    lkg_metal_unity_plugin_load(interfaces);
+}
+extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginUnload() {
+    lkg_metal_unity_plugin_unload();
 }
 #endif

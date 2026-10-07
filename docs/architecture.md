@@ -12,7 +12,7 @@ URP/HDRPでは専用Guardと`RenderPipeline.StandardRequest`を使います。`V
 
 ## 出力とBridge
 
-Sessionは機器のprofileを動的に選択し、自動検出を主経路とします。通常の利用では公式Bridge runtimeを別途用意します。`BridgeQuiltOutput`/Legacy DirectはWindows D3D11のみです。標準の`BridgeWorkerQuiltOutput`はWindows D3D11とD3D12のEditor PlayおよびPlayerで使う経路です。D3D12ではUnityのD3D12 deviceから同じGPU上のD3D11 workerへQuiltをGPU共有し、workerが公式Bridgeへ送ります。この経路はCPU画像readbackを使いません。Edit ModeとmacOSは対象外です。
+Sessionは機器のprofileを動的に選択し、自動検出を主経路とします。通常の利用では公式Bridge runtimeを別途用意します。`BridgeQuiltOutput`/Legacy DirectはWindows D3D11のみです。標準の`BridgeWorkerQuiltOutput`はWindows D3D11とD3D12のEditor PlayおよびPlayerで使う経路です。D3D12ではUnityのD3D12 deviceから同じGPU上のD3D11 workerへQuiltをGPU共有し、workerが公式Bridgeへ送ります。この経路はCPU画像readbackを使いません。Edit Modeは対象外です。通常のSessionはWindowsのみで、実験中のMetal native pathは通常の出力経路ではありません。graphics backendの境界とMetalの未確定契約は[Graphics backends](graphics-backends.md)を参照してください。
 
 WorkerはUnity render thread側のQuilt copyとworker所有のD3D11 device、3 slot共有GPU ring、worker側の描画、WM message pump、shutdown/reopenを分離します。RTX 3090 Tiでshared-resource handoff、ring reuse、typeless format、timeout、late completion、device-removal seam、generationを含むD3D11 baseline込み349 draw testを通過し、fake Bridge runtimeを使ったloader lifecycle 100 cycleも通過しました。Unity D3D12 Editor PlayはURP/HDRPのDomain Reload enabled/disabledで各2 cycleを確認し、URP/HDRP Windows Development PlayerもPreviewで検証済みです。ユーザーHDRP VFX Learning Templates projectもsnapshot 8adda27cでNative 7680x4320・48 viewsのEditor PlayとIdle/Closed・pending 0の停止を確認しました。このmatrixではGRD設定を切り替えていません。Player Native quality、全48 viewsの人手光学確認、WARP、他GPUは未検証です。Windows CIではhardware D3D12をskipします。
 
@@ -22,7 +22,7 @@ Bridge経路ではUnity render threadからのcopy、Bridge workerの描画、WM
 
 ## 確認済み範囲と未検証範囲
 
-Unity 6000.6.4f1、Windows、D3D11でURP/HDRPの基本Lit、Bloom、透明Lit、uGUI、粒子、UI Toolkitの試験を行っています。これらの結果は個別のfixture条件に限られ、すべての素材や描画経路への対応を意味しません。HDRPではLinear color spaceが必須です。HDRP adapterはquilt viewのscopeだけ専用Volume overrideを有効にし、Motion Blur、SSR、SSGI、volumetric fog/cloudを抑え、Exposureをquilt全view共通のFixed EVにします。元stackがFixedならEVを保ち、通常Fog、Sky、BloomとMainCamera/元Volume/Project Settingsは変更しません。Mac Metal、長時間動作、性能の一般化は未確認です。
+Unity 6000.6.4f1、Windows、D3D11でURP/HDRPの基本Lit、Bloom、透明Lit、uGUI、粒子、UI Toolkitの試験を行っています。これらの結果は個別のfixture条件に限られ、すべての素材や描画経路への対応を意味しません。HDRPではLinear color spaceが必須です。HDRP adapterはquilt viewのscopeだけ専用Volume overrideを有効にし、Motion Blur、SSR、SSGI、volumetric fog/cloudを抑え、Exposureをquilt全view共通のFixed EVにします。元stackがFixedならEVを保ち、通常Fog、Sky、BloomとMainCamera/元Volume/Project Settingsは変更しません。通常SessionでのmacOS出力は未対応です。Metal native実験は物理Mac/Bridgeで未検証です。長時間動作と性能の一般化も未確認です。
 
 次の項目は対応範囲を決めるための検証対象です。
 
@@ -40,7 +40,7 @@ Unity 6000.6.4f1、Windows、D3D11でURP/HDRPの基本Lit、Bloom、透明Lit、
 
 `LastCpuSubmissionTicks`はCPU描画依頼区間だけを計時し、`BridgeSubmit`を含みません。GPU時間、render thread時間、transfer時間、present latencyを表しません。視点数を減らさずにGPU負荷が下がるとは限らないため、同一機器、同一scene、同一Quilt設定で個別に計測します。Quiltのタイル転送だけを理由に全体の遅さを説明しません。
 
-GPU Resident Drawerや視点間共通処理の再利用は独立した検証項目です。既存の1台Camera・N回描画を置き換えた実装ではなく、結果を確認した後に採用可否を判断します。
+性能最適化は検証待ちのため保留しています。既存のScene View Gizmoによるcamera authoringは維持し、QuiltへのGizmo overlayは対象外です。GPU Resident Drawerや視点間共通処理の再利用は独立した検証項目です。既存の1台Camera・N回描画を置き換えた実装ではなく、結果を確認した後に採用可否を判断します。
 
 ## 実装済みの検証と残るゲート
 

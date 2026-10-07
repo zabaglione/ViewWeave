@@ -73,11 +73,15 @@ namespace ViewWeave
         public static bool TryStart(ViewWeaveBridgeSession target, QuiltPlaybackSource playbackSource, out string error)
         {
             error = string.Empty;
-            if (!Application.isEditor || !Application.isPlaying || Application.platform != RuntimePlatform.WindowsEditor)
-            {
-                error = "Quilt playback requires Windows Editor Play mode.";
-                return false;
-            }
+            if (!BridgeGraphicsBackendPolicy.TrySelect(
+                BridgeGraphicsBackendRoute.PlaybackWindowsEditorPlay,
+                Application.platform,
+                Application.isEditor,
+                Application.isPlaying,
+                SystemInfo.graphicsDeviceType,
+                SystemInfo.renderingThreadingMode,
+                out _,
+                out error)) return false;
             if (active != null && active.State != LeaseState.Stopped)
             {
                 error = active.State == LeaseState.Retained
@@ -100,12 +104,6 @@ namespace ViewWeave
                 error = "Quilt playback requires graphics fences and async GPU readback for safe Editor cleanup.";
                 return false;
             }
-            if (SystemInfo.graphicsDeviceType != GraphicsDeviceType.Direct3D11 && SystemInfo.graphicsDeviceType != GraphicsDeviceType.Direct3D12)
-            {
-                error = "Quilt playback requires a Direct3D11 or Direct3D12 Editor graphics device.";
-                return false;
-            }
-
             ViewWeaveRig targetRig = target.GetComponent<ViewWeaveRig>();
             QuiltRenderer targetRenderer = targetRig == null ? null : targetRig.Renderer;
             if (targetRenderer == null || !targetRig.ValidateRig(out error)) return false;
