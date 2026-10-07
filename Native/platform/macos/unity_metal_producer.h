@@ -25,4 +25,3 @@ bool QueueProviderSubmit(const RenderRequest* request, void** renderEventData) n
 bool QueueProviderPump(void** renderEventData) noexcept;
 
 }
-

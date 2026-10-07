@@ -1,6 +1,6 @@
 # Compatibility matrix
 
-対象はUnity 6000.6.4f1、Windows、URPまたはHDRPです。Bridge Worker経路はD3D11/D3D12のEditor PlayとWindows Playerに対応します。Unity D3D12のQuiltは同じGPU上のD3D11 workerへ共有され、公式Looking Glass Bridge runtimeへ送られます。この経路は画像のCPU readbackを行いません。Legacy Direct経路はD3D11のみです。Edit ModeとmacOS出力は対象外です。対応の検証状況は下表と[Windows validation](windows-validation.md)を参照してください。公式APIのsource互換は保証しません。macOS Metalは通常Sessionで未対応です。最大3枚のtextureを保持するnative実験はbounded実験に限られ、通常利用のreadyを意味せず、macOS native artifactも配布していません。物理Mac/Bridgeの検証は未実施です。Windows Bridge終了時の過去access violation release gateも未解決で、main/releaseは保留です。
+対象はUnity 6000.6.4f1、Windows、URPまたはHDRPです。Bridge Worker経路はD3D11/D3D12のEditor PlayとWindows Playerに対応します。Unity D3D12のQuiltは同じGPU上のD3D11 workerへ共有され、公式Looking Glass Bridge runtimeへ送られます。この経路は画像のCPU readbackを行いません。Legacy Direct経路はD3D11のみです。Edit ModeとmacOS出力は対象外です。対応の検証状況は下表と[Windows validation](windows-validation.md)を参照してください。公式APIのsource互換は保証しません。macOS Metalは通常Sessionで未対応です。`BridgeMetalExperimentalOutput`は明示opt-inの最大3 quilt実験に限られ、Apple Silicon実機/Bridge検証は未実施です。macOS native shimはUPM未同梱で、取得できるCI artifactは手動配布物です。Windows Bridge終了時の過去access violation release gateも未解決で、main/releaseは保留です。手順と制約は[Graphics backends](graphics-backends.md)を参照してください。
 
 品質変更は転送を静止させ、同一host・windowで資源を再設定してから自動描画へ復帰します。明示的な`StopSession()`/`StartSession()`は独立した再起動手段です。
 

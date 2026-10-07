@@ -110,15 +110,37 @@ int main() {
     }
     if (bridgeCalls != lkg::metal::kSubmissionSlotCount) return 42;
 
-    lkg::metal::OneShotGate begin;
-    if (!begin.TryQueue()) return 43;
-    begin.Cancel();
-    if (begin.Consume(true) || begin.TryQueue()) return 44;
-    lkg::metal::OneShotGate validBegin;
-    if (!validBegin.TryQueue() || !validBegin.Consume(true) || validBegin.Consume(true) || validBegin.TryQueue()) return 45;
+    lkg::metal::BeginLifecycle cancelledBegin;
+    lkg::metal::BeginTicket cancelledTicket{};
+    if (!cancelledBegin.Queue(31, &cancelledTicket)) return 43;
+    if (!cancelledBegin.Start(cancelledTicket, 31, true)) return 44;
+    uint32_t fakeSdkCalls = 0;
+    bool runtimePublished = false;
+    // Model an SDK initializer that overlaps close/device reset. The external
+    // call runs with no BeginLifecycle lock held, then cancellation is observed
+    // before its result can be published.
+    ++fakeSdkCalls;
+    cancelledBegin.Cancel();
+    const lkg::metal::BeginFinish cancelledResult = cancelledBegin.Finish(cancelledTicket, 32, false, true);
+    runtimePublished = cancelledResult == lkg::metal::BeginFinish::Published;
+    if (fakeSdkCalls != 1 || runtimePublished || cancelledResult != lkg::metal::BeginFinish::Cancelled) return 45;
+    if (cancelledBegin.Start(cancelledTicket, 32, true)) return 46;
+
+    lkg::metal::BeginLifecycle validBegin;
+    lkg::metal::BeginTicket validTicket{};
+    if (!validBegin.Queue(41, &validTicket) || !validBegin.Start(validTicket, 41, true)) return 47;
+    if (validBegin.Finish(validTicket, 42, true, true) != lkg::metal::BeginFinish::Cancelled) return 48;
+    if (validBegin.Finish(validTicket, 41, true, true) != lkg::metal::BeginFinish::Cancelled) return 49;
+
+    lkg::metal::BeginLifecycle successfulBegin;
+    lkg::metal::BeginTicket successfulTicket{};
+    if (!successfulBegin.Queue(51, &successfulTicket) || !successfulBegin.Start(successfulTicket, 51, true)) return 50;
+    if (!successfulBegin.IsExecuting(successfulTicket, 51, true)) return 51;
+    if (successfulBegin.Finish(successfulTicket, 51, true, true) != lkg::metal::BeginFinish::Published) return 52;
+    if (successfulBegin.Finish(successfulTicket, 51, true, true) != lkg::metal::BeginFinish::Cancelled) return 53;
 
     for (lkg::metal::SourceLease* lease : leases) delete lease;
-    if (!fakeTexture.destroyed || fakeTexture.references != 0) return 46;
+    if (!fakeTexture.destroyed || fakeTexture.references != 0) return 54;
 
     std::puts("metal_submission_lifetime: PASS");
     return 0;

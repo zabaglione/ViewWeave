@@ -6,7 +6,6 @@
 namespace lkg::metal {
 namespace {
 
-constexpr unsigned long kFirstLookingGlassDevice = static_cast<unsigned long>(-1L);
 std::mutex g_apiMutex;
 void* g_pinnedModule = nullptr;
 BridgeMetalSymbols g_symbols{};
@@ -23,26 +22,32 @@ void* ResolveDlsym(void* context, const char* symbolName) {
 
 bool LoadAndInitializeBridgeMetal(const char* absoluteRuntimePath, const char* appName,
     void* metalDevice, unsigned long displayIndex, void* metalTextureDescriptor,
-    WindowHandle* window, void** transferTexture, const char** errorCode) noexcept {
+    WindowHandle* window, void** transferTexture, const char** errorCode,
+    ContinueCallback continueCallback, void* continueContext) noexcept {
     if (errorCode) *errorCode = "invalid_argument";
     if (absoluteRuntimePath == nullptr || absoluteRuntimePath[0] != '/' || appName == nullptr ||
-        metalDevice == nullptr || metalTextureDescriptor == nullptr || window == nullptr || transferTexture == nullptr) return false;
+        metalDevice == nullptr || metalTextureDescriptor == nullptr || window == nullptr || transferTexture == nullptr ||
+        continueCallback == nullptr) return false;
 
-    std::lock_guard<std::mutex> lock(g_apiMutex);
-    if (g_initialized) {
-        if (g_window != 0 && g_transferTexture != nullptr) {
-            *window = g_window;
-            *transferTexture = g_transferTexture;
-            if (errorCode) *errorCode = nullptr;
-            return true;
+    {
+        std::lock_guard<std::mutex> lock(g_apiMutex);
+        if (g_initialized) {
+            if (g_window != 0 && g_transferTexture != nullptr) {
+                *window = g_window;
+                *transferTexture = g_transferTexture;
+                if (errorCode) *errorCode = nullptr;
+                return true;
+            }
+            if (errorCode) *errorCode = "already_initialized_incomplete";
+            return false;
         }
-        if (errorCode) *errorCode = "already_initialized_incomplete";
-        return false;
+        if (g_lifecycleTouched) {
+            if (errorCode) *errorCode = "lifecycle_state_pinned";
+            return false;
+        }
     }
-    if (g_lifecycleTouched) {
-        if (errorCode) *errorCode = "lifecycle_state_pinned";
-        return false;
-    }
+
+    if (!continueCallback(continueContext)) { if (errorCode) *errorCode = "begin_cancelled"; return false; }
 
     void* module = dlopen(absoluteRuntimePath, RTLD_NOW | RTLD_LOCAL);
     if (module == nullptr) { if (errorCode) *errorCode = "dlopen_failed"; return false; }
@@ -60,40 +65,66 @@ bool LoadAndInitializeBridgeMetal(const char* absoluteRuntimePath, const char* a
     // Returned texture ownership is undocumented; callers retain and never release it.
     // appName is passed as UTF-8 as required by the non-Windows SDK declaration.
     // Pin before invoking init: a failed init may have partially established SDK state.
-    g_pinnedModule = module;
-    g_symbols = resolved;
-    g_lifecycleTouched = true;
-    const unsigned long selectedDisplay = displayIndex == kFirstLookingGlassDevice ? kFirstLookingGlassDevice : displayIndex;
-    if (!StartBridgeMetalWithSymbols(resolved, appName, metalDevice, selectedDisplay,
-        metalTextureDescriptor, &g_window, &g_transferTexture, errorCode)) return false;
-    g_initialized = true;
-    *window = g_window;
-    *transferTexture = g_transferTexture;
+    {
+        std::lock_guard<std::mutex> lock(g_apiMutex);
+        if (g_lifecycleTouched) {
+            if (errorCode) *errorCode = "lifecycle_state_pinned";
+            dlclose(module);
+            return false;
+        }
+        g_pinnedModule = module;
+        g_symbols = resolved;
+        g_lifecycleTouched = true;
+    }
+    WindowHandle createdWindow = 0;
+    void* createdTexture = nullptr;
+    if (!StartBridgeMetalWithSymbols(resolved, appName, metalDevice, displayIndex,
+        metalTextureDescriptor, &createdWindow, &createdTexture, errorCode, continueCallback, continueContext)) {
+        *window = createdWindow;
+        *transferTexture = createdTexture;
+        return false;
+    }
+    {
+        std::lock_guard<std::mutex> lock(g_apiMutex);
+        g_window = createdWindow;
+        g_transferTexture = createdTexture;
+        g_initialized = true;
+    }
+    *window = createdWindow;
+    *transferTexture = createdTexture;
     if (errorCode) *errorCode = nullptr;
     return true;
 }
 
 bool DrawBridgeMetalQuilt(WindowHandle window, void* texture, unsigned long columns,
     unsigned long rows, float aspect, float zoom) noexcept {
-    std::lock_guard<std::mutex> lock(g_apiMutex);
-    if (!g_initialized || g_pinnedModule == nullptr || g_symbols.drawInteropQuiltTextureMetal == nullptr ||
-        window == 0 || texture == nullptr || columns == 0 || rows == 0 || aspect <= 0.0f || zoom <= 0.0f) return false;
+    DrawInteropQuiltTextureMetalFn draw = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(g_apiMutex);
+        if (!g_initialized || g_pinnedModule == nullptr || g_symbols.drawInteropQuiltTextureMetal == nullptr ||
+            window == 0 || texture == nullptr || columns == 0 || rows == 0 || aspect <= 0.0f || zoom <= 0.0f) return false;
+        draw = g_symbols.drawInteropQuiltTextureMetal;
+    }
     // A true result means only that the SDK accepted the call. Consumer completion
     // is unknown; callers must transition the slot to ConsumerUnknownRetained.
-    return g_symbols.drawInteropQuiltTextureMetal(window, texture, columns, rows, aspect, zoom);
+    return draw(window, texture, columns, rows, aspect, zoom);
 }
 
 bool CreateBridgeMetalTextureForWindow(WindowHandle window, void* metalTextureDescriptor,
     void** transferTexture, const char** errorCode) noexcept {
     if (errorCode) *errorCode = "invalid_argument";
     if (window == 0 || metalTextureDescriptor == nullptr || transferTexture == nullptr) return false;
-    std::lock_guard<std::mutex> lock(g_apiMutex);
-    if (!g_initialized || g_symbols.createMetalTextureWithIOSurface == nullptr) {
-        if (errorCode) *errorCode = "bridge_metal_not_initialized";
-        return false;
+    CreateMetalTextureWithIOSurfaceFn createTexture = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(g_apiMutex);
+        if (!g_initialized || g_symbols.createMetalTextureWithIOSurface == nullptr) {
+            if (errorCode) *errorCode = "bridge_metal_not_initialized";
+            return false;
+        }
+        createTexture = g_symbols.createMetalTextureWithIOSurface;
     }
     void* createdTexture = nullptr;
-    if (!g_symbols.createMetalTextureWithIOSurface(window, metalTextureDescriptor, &createdTexture) || createdTexture == nullptr) {
+    if (!createTexture(window, metalTextureDescriptor, &createdTexture) || createdTexture == nullptr) {
         if (errorCode) *errorCode = "create_metal_texture_failed_pinned";
         return false;
     }

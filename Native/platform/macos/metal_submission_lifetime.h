@@ -70,6 +70,36 @@ private:
     State state_ = State::Idle;
 };
 
+struct BeginTicket {
+    uint64_t generation = 0;
+    uint64_t serial = 0;
+};
+
+enum class BeginFinish : uint32_t {
+    Cancelled = 0,
+    Published = 1,
+    Failed = 2
+};
+
+// Coordinates the one-shot begin callback without holding a mutex while an
+// external SDK call runs. Cancellation remains sticky for an executing call.
+class BeginLifecycle final {
+public:
+    bool Queue(uint64_t generation, BeginTicket* ticket) noexcept;
+    bool Start(const BeginTicket& ticket, uint64_t currentGeneration, bool pluginActive) noexcept;
+    bool IsExecuting(const BeginTicket& ticket, uint64_t currentGeneration, bool pluginActive) const noexcept;
+    BeginFinish Finish(const BeginTicket& ticket, uint64_t currentGeneration,
+        bool pluginActive, bool success) noexcept;
+    void Cancel() noexcept;
+
+private:
+    enum class State : uint32_t { Idle, Queued, Executing, Published, Failed, Cancelled };
+    mutable std::mutex mutex_;
+    State state_ = State::Idle;
+    BeginTicket ticket_{};
+    uint64_t nextSerial_ = 1;
+};
+
 // This model intentionally never retires an accepted Bridge texture. The SDK
 // exposes no consumer completion or release contract in the inspected header.
 class SubmissionLifetime final {

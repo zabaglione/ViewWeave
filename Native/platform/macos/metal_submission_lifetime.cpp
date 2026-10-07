@@ -60,6 +60,54 @@ void OneShotGate::Cancel() noexcept {
     if (state_ == State::Queued) state_ = State::Cancelled;
 }
 
+bool BeginLifecycle::Queue(uint64_t generation, BeginTicket* ticket) noexcept {
+    if (generation == 0 || ticket == nullptr) return false;
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (state_ != State::Idle) return false;
+    ticket_ = {generation, nextSerial_++};
+    if (nextSerial_ == 0) nextSerial_ = 1;
+    state_ = State::Queued;
+    *ticket = ticket_;
+    return true;
+}
+
+bool BeginLifecycle::Start(const BeginTicket& ticket, uint64_t currentGeneration, bool pluginActive) noexcept {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (state_ != State::Queued || ticket.serial == 0 || ticket.serial != ticket_.serial ||
+        ticket.generation != ticket_.generation) return false;
+    if (!pluginActive || currentGeneration != ticket_.generation) {
+        state_ = State::Cancelled;
+        return false;
+    }
+    state_ = State::Executing;
+    return true;
+}
+
+bool BeginLifecycle::IsExecuting(const BeginTicket& ticket, uint64_t currentGeneration,
+    bool pluginActive) const noexcept {
+    std::lock_guard<std::mutex> lock(mutex_);
+    return state_ == State::Executing && ticket.serial != 0 && ticket.serial == ticket_.serial &&
+        ticket.generation == ticket_.generation && currentGeneration == ticket_.generation && pluginActive;
+}
+
+BeginFinish BeginLifecycle::Finish(const BeginTicket& ticket, uint64_t currentGeneration,
+    bool pluginActive, bool success) noexcept {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (state_ != State::Executing || ticket.serial == 0 || ticket.serial != ticket_.serial ||
+        ticket.generation != ticket_.generation) return BeginFinish::Cancelled;
+    if (!pluginActive || currentGeneration != ticket_.generation) {
+        state_ = State::Cancelled;
+        return BeginFinish::Cancelled;
+    }
+    state_ = success ? State::Published : State::Failed;
+    return success ? BeginFinish::Published : BeginFinish::Failed;
+}
+
+void BeginLifecycle::Cancel() noexcept {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (state_ == State::Queued || state_ == State::Executing) state_ = State::Cancelled;
+}
+
 bool SubmissionLifetime::TryReserve(uint64_t generation, void* retainedSource, uint32_t* slotIndex) noexcept {
     std::lock_guard<std::mutex> lock(mutex_);
     if (!accepting_ || generation == 0 || retainedSource == nullptr || slotIndex == nullptr) return false;

@@ -124,6 +124,7 @@ if (BUILD_TESTING)
   if (APPLE)
     add_executable(lookingglass_metal_api_contract_test
       platform/macos/bridge_metal_api_contract.cpp
+      platform/macos/metal_submission_lifetime.cpp
       tests/metal_api_contract_test.cpp)
     target_compile_features(lookingglass_metal_api_contract_test PRIVATE cxx_std_17)
     target_compile_features(lookingglass_metal_api_contract_test PRIVATE cxx_std_17)

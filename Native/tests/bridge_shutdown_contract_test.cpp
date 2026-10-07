@@ -105,7 +105,7 @@ static int UNITY_INTERFACE_API ReserveEventIDRange(int count) {
 static ID3D11Device* UNITY_INTERFACE_API GetDevice() { return g_device; }
 
 IUnityGraphics g_graphics{{}, GetRenderer, RegisterDeviceEventCallback, UnregisterDeviceEventCallback, ReserveEventIDRange};
-IUnityGraphicsD3D11 g_graphicsD3D11{{}, GetDevice, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
+IUnityGraphicsD3D11 g_graphicsD3D11 = [] { IUnityGraphicsD3D11 value{}; value.GetDevice = GetDevice; return value; }();
 static IUnityInterfaces g_interfaces{GetInterface, RegisterInterface, GetInterfaceSplit, RegisterInterfaceSplit};
 
 static bool Check(bool passed, const char* message) {

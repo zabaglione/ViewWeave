@@ -23,28 +23,47 @@ bool ResolveRequiredBridgeMetalSymbols(SymbolResolver resolver, void* context,
 
 bool StartBridgeMetalWithSymbols(const BridgeMetalSymbols& symbols, const char* appName,
     void* metalDevice, unsigned long displayIndex, void* metalTextureDescriptor,
-    WindowHandle* window, void** transferTexture, const char** errorCode) noexcept {
+    WindowHandle* window, void** transferTexture, const char** errorCode,
+    ContinueCallback continueCallback, void* continueContext) noexcept {
     if (errorCode) *errorCode = "invalid_argument";
     if (symbols.initializeBridge == nullptr || symbols.instanceWindowMetal == nullptr ||
         symbols.createMetalTextureWithIOSurface == nullptr || symbols.drawInteropQuiltTextureMetal == nullptr ||
         appName == nullptr || metalDevice == nullptr || metalTextureDescriptor == nullptr ||
-        window == nullptr || transferTexture == nullptr) return false;
+        window == nullptr || transferTexture == nullptr || continueCallback == nullptr) return false;
+    if (!continueCallback(continueContext)) {
+        if (errorCode) *errorCode = "begin_cancelled";
+        return false;
+    }
     if (!symbols.initializeBridge(appName)) {
         if (errorCode) *errorCode = "initialize_bridge_failed_pinned";
         return false;
     }
+    if (!continueCallback(continueContext)) {
+        if (errorCode) *errorCode = "begin_cancelled";
+        return false;
+    }
     WindowHandle createdWindow = 0;
-    if (!symbols.instanceWindowMetal(metalDevice, &createdWindow, displayIndex) || createdWindow == 0) {
+    const bool windowCreated = symbols.instanceWindowMetal(metalDevice, &createdWindow, displayIndex);
+    if (createdWindow != 0) *window = createdWindow;
+    if (!windowCreated || createdWindow == 0) {
         if (errorCode) *errorCode = "instance_window_metal_failed_pinned";
         return false;
     }
+    if (!continueCallback(continueContext)) {
+        if (errorCode) *errorCode = "begin_cancelled";
+        return false;
+    }
     void* createdTexture = nullptr;
-    if (!symbols.createMetalTextureWithIOSurface(createdWindow, metalTextureDescriptor, &createdTexture) || createdTexture == nullptr) {
+    const bool textureCreated = symbols.createMetalTextureWithIOSurface(createdWindow, metalTextureDescriptor, &createdTexture);
+    if (createdTexture != nullptr) *transferTexture = createdTexture;
+    if (!textureCreated || createdTexture == nullptr) {
         if (errorCode) *errorCode = "create_metal_texture_failed_pinned";
         return false;
     }
-    *window = createdWindow;
-    *transferTexture = createdTexture;
+    if (!continueCallback(continueContext)) {
+        if (errorCode) *errorCode = "begin_cancelled";
+        return false;
+    }
     if (errorCode) *errorCode = nullptr;
     return true;
 }

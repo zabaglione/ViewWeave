@@ -9,7 +9,7 @@
     "Native/bridge_worker_common.cpp": "D57B45EA0B65FA2B3BD953853529E5005A629321D035C090C1C3D6C620C9E39B",
     "Native/bridge_worker_common.h": "DA185B952FF00288A361FBC4847B58424C540F83B3360700555BB8A3374C8168",
     "Native/bridge_d3d12_internal.h": "6B06A4792E547BDAE65EE91908CB565ED5FA1B89AD5C6E7A6EE627D6933FE154",
-    "Native/CMakeLists.txt": "45914253D8248BB13108A8ABD30565173F74F9BE2D47B8BDFA6AF8074F9D37EA",
+    "Native/CMakeLists.txt": "3C3F0DCE7D11FB3283A8289205BBD7BA8389387812699CE469A8B935C700126B",
     "Native/platform/windows/bridge_worker_transport_windows.inc": "9606B544E7CCE20F4FEBA926FA599DA3EBD2532093AEE7C7C5826533E741A712",
     "Native/platform/windows/backends/d3d11_backend.inc": "8358D013E24979837AF3419B23223675E211C51CAA667F78672194E5585ADDDF",
     "Native/platform/windows/backends/d3d12_backend.inc": "9E8897AABF8FDAA7F6A60647472F3253BAEE702AD0E0283258F5DE817918CAA1",
@@ -17,7 +17,7 @@
     "Native/tests/portable_common_test.cpp": "8FC86B3390C28ADF6CFC34FE85B13F769010C67A3B2BA3F82B7CB2DF4885A2AF",
     "Native/tests/worker_transport_test.cpp": "B924A34FEE9BCA5FFD712E406E1117DDF087A4F31C9677206FFA352948BAAFF9",
     "Native/tests/bridge_loader_lifecycle_test.cpp": "45832EA702E51428BB06722ECF6E38B365225556D9F0281C760FD8B0CEF053D8",
-    "Native/tests/bridge_shutdown_contract_test.cpp": "2A212A9649373E0C3A3BBA643BAD713FA01BF7623063EAB0425CEA917F23426F",
+    "Native/tests/bridge_shutdown_contract_test.cpp": "2F7DBF9CAD77E974592214D1708AB80D1999DF8BAAA6B81101FFAA82F5F2D542",
     "Native/tests/fake_bridge_runtime.cpp": "03183CCC1D01732CDC74E52F2AFE682D900CF354E2846646B7949A890337FCA8",
     "Native/tests/fake_bridge_missing.cpp": "89D4BB907704FC1A8FE1FDAD152A983779F0CED85808B77DEA9263C0B5C05FD3",
     "Native/tests/fake_bridge_shutdown_runtime.cpp": "B6C019D18D3222EF6D321ACEA3566A186076047FE1F120E82CAFB6C7EA8FA49F"
@@ -28,20 +28,39 @@
   "pluginApiUnityVersion": "6000.6.4f1",
   "buildDirectory": "Fresh local Windows Release regression build",
   "generator": "Visual Studio 17 2022",
-  "independentCTest": "Fresh Windows Release CTest with local Unity 6000.6.4f1 PluginAPI: 4/4 passed. Common validation was portable; the 349-draw transport test used D3D11 WARP and showed no D3D12 skip, so D3D12 hardware-path execution is inferred from the log and test source. Loader lifecycle used fake Bridge runtimes; shutdown contract used a fake Bridge runtime and WARP. This does not validate Unity runtime, official Bridge hardware, Metal, optical output, or shutdown access-violation resolution.",
+  "independentCTest": "Fresh local Windows Release CTest on the unchanged DLL: 4/4 passed. The common test was portable; the 349-draw transport test used D3D11 WARP and showed no D3D12 skip, so D3D12 hardware-path execution is inferred from the log and test source. Loader lifecycle used fake Bridge runtimes; shutdown contract used a fake Bridge runtime and WARP. This does not validate Unity runtime, official Bridge hardware, Metal, optical output, or shutdown access-violation resolution. The later fake-test initializer correction and macOS-only CMake test-source addition were not rerun as CTest.",
   "d3d12HardwareValidation": "Historical only: NVIDIA RTX 3090 Ti D3D12 shared-resource handoff, ring reuse, typeless formats, timeout, late completion, device-removal seam, and generation coverage were previously exercised. These observations are not fresh validation for this DLL.",
-  "validationLimits": "Fresh validation for this DLL is the Windows Release CTest described above. Hardware-path execution in worker_transport_test is inferred; no Unity runtime or official Bridge hardware/optical run was performed. Historical RTX 3090 Ti, Editor Play, Player, and user-project observations are not fresh results for this DLL. Windows CI is not run for this revision; the CI-pinned Unity interface is v7-only while the local Unity 6000.6.4f1 PluginAPI includes v8 and v7. WARP and other GPU coverage, macOS Metal runtime, hotplug, multi-device behavior, all-48-view optical review, and access-violation resolution remain unverified.",
+  "validationLimits": "The Windows DLL SHA-256 remains 9E81DF02D065DABE39DAACC3E5F90ABECEA401F6DAD5D2E68096CEE3D7B86DCE and the Windows implementation sources have not changed since it was built. Native/CMakeLists.txt was changed afterward only to add metal_submission_lifetime.cpp to the macOS metal_api_contract_test target; this does not affect the Windows DLL target. Current source hashes are listed, and the artifact-build CMake hash is recorded separately. A later local Windows all-target compile-only check with the updated v7 CI pin passed; it is not a CTest run. Follow-up CI is pending. No Apple Silicon runtime/Bridge/optical test was performed; macOS native artifacts are CI-only/manual and are not included in UPM. Historical GPU/Editor observations are not fresh validation for this DLL. Hotplug, multi-device behavior, all-48-view optical review, and access-violation resolution remain unverified.",
   "license": "Apache-2.0",
-  "generatedAt": "2026-10-04",
-  "unityD3D12InterfaceSelection": "Local Unity 6000.6.4f1 PluginAPI provides IUnityGraphicsD3D12v8 and v7; the build prefers v8. CI-pinned NativeRenderingPlugin revision 4c65c1ca19585b8b447693f7e577e51a58e8ef02 provides v7 only, so v8 code is compile-excluded there; CI for this revision has not run.",
+  "generatedAt": "2026-10-08",
+  "unityD3D12InterfaceSelection": "The local Unity 6000.6.4f1 PluginAPI has IUnityGraphicsD3D12v8 and v7; the Windows DLL was built with local v8 preferred. The initial CI pin 4c65c1ca19585b8b447693f7e577e51a58e8ef02 exposed older v5-only headers. The updated CI pin 522254181faf188efa8b50c3e3bf6fce720b26e4 provides v7 and the related ConfigureEvent APIs. The workflow rerun is pending.",
   "freshWindowsReleaseEvidence": {
     "artifactSha256": "9E81DF02D065DABE39DAACC3E5F90ABECEA401F6DAD5D2E68096CEE3D7B86DCE",
     "exportComparison": "33 export names and ordinals; base 66bc633 matches baseline DLL SHA-256 232C2364863333D5D4EF01D9D5C652F2EEAD1521855421C371345E2860E2805B",
     "ctestPassed": 4,
     "ctestTotal": 4,
     "ctestRunMode": "worker transport: D3D11 WARP; D3D12 hardware branch inferred from 349 draws, no skip line, and test source. shutdown contract: WARP D3D11 feature level 0xb100 plus fake Bridge runtime. Common test is portable; loader lifecycle uses fake Bridge runtimes.",
-    "runtimeValidation": "No Unity runtime or official Bridge device/optical validation was performed in this CTest run."
+    "runtimeValidation": "No Unity runtime or official Bridge device/optical validation was performed in this CTest run.",
+    "dllSha256": "9E81DF02D065DABE39DAACC3E5F90ABECEA401F6DAD5D2E68096CEE3D7B86DCE",
+    "artifactBuildCMakeListsSha256": "45914253D8248BB13108A8ABD30565173F74F9BE2D47B8BDFA6AF8074F9D37EA",
+    "currentCMakeListsSha256": "3C3F0DCE7D11FB3283A8289205BBD7BA8389387812699CE469A8B935C700126B",
+    "cMakeChangeAfterArtifactBuild": "Only the macOS metal_api_contract_test target gained platform/macos/metal_submission_lifetime.cpp after the Windows DLL build. The lookingglass_bridge_shim Windows target source list and compile definitions are unchanged; the DLL was not rebuilt.",
+    "postBuildTestSourceUpdate": "bridge_shutdown_contract_test.cpp was corrected to initialize the Unity v7 interface by named member after the recorded 4/4 CTest. A later local Windows all-target compile-only check passed; no repeat CTest result is claimed.",
+    "followUpCI": "pending",
+    "ctestSourceHashes": {
+      "Native/tests/portable_common_test.cpp": "8FC86B3390C28ADF6CFC34FE85B13F769010C67A3B2BA3F82B7CB2DF4885A2AF",
+      "Native/tests/worker_transport_test.cpp": "B924A34FEE9BCA5FFD712E406E1117DDF087A4F31C9677206FFA352948BAAFF9",
+      "Native/tests/bridge_loader_lifecycle_test.cpp": "45832EA702E51428BB06722ECF6E38B365225556D9F0281C760FD8B0CEF053D8",
+      "Native/tests/bridge_shutdown_contract_test.cpp": "2A212A9649373E0C3A3BBA643BAD713FA01BF7623063EAB0425CEA917F23426F",
+      "Native/tests/fake_bridge_runtime.cpp": "03183CCC1D01732CDC74E52F2AFE682D900CF354E2846646B7949A890337FCA8",
+      "Native/tests/fake_bridge_missing.cpp": "89D4BB907704FC1A8FE1FDAD152A983779F0CED85808B77DEA9263C0B5C05FD3",
+      "Native/tests/fake_bridge_shutdown_runtime.cpp": "B6C019D18D3222EF6D321ACEA3566A186076047FE1F120E82CAFB6C7EA8FA49F"
+    },
+    "postBuildTestSourceUpdateSha256": "2F7DBF9CAD77E974592214D1708AB80D1999DF8BAAA6B81101FFAA82F5F2D542",
+    "localWindowsCompileOnly": "All local Windows targets compiled with the updated v7 header pin after correcting the fake Unity interface initializer; no CTest or runtime result is implied."
   },
   "historicalGpuValidation": "Historical RTX 3090 Ti D3D12 shared-resource and Editor/Player observations are not fresh evidence for this DLL. The latest local validation above is the fresh Windows Release CTest only.",
-  "ciValidation": "Not run for this revision. The CI-pinned Unity NativeRenderingPlugin interface is v7 only; local Unity 6000.6.4f1 PluginAPI also provides v8, which the local build prefers."
+  "ciValidation": "Initial CI run passed static/portable/transport checks but failed to compile the macOS and full Windows targets. The old v5-only pin was replaced by 522254181faf188efa8b50c3e3bf6fce720b26e4 (v7); local Windows all-target compile-only checks passed after correcting the fake initializer, but the follow-up CI run is pending.",
+  "artifactBuildCMakeListsSha256": "45914253D8248BB13108A8ABD30565173F74F9BE2D47B8BDFA6AF8074F9D37EA",
+  "currentCMakeListsSha256": "3C3F0DCE7D11FB3283A8289205BBD7BA8389387812699CE469A8B935C700126B"
 }

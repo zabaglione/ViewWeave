@@ -1,16 +1,29 @@
 #import <Metal/Metal.h>
 #include "unity_metal_producer.h"
+#include "metal_submission_lifetime.h"
 #include "IUnityGraphics.h"
 
 #include <atomic>
+#include <cstddef>
 #include <cmath>
 #include <dlfcn.h>
 #include <limits>
 #include <mutex>
 #include <string>
+#include <utility>
 
 namespace lkg::metal {
 namespace {
+
+static_assert(sizeof(void*) == 8, "The experimental Metal provider requires LP64.");
+static_assert(sizeof(ProviderStatusV1) == 64, "ProviderStatusV1 ABI mismatch.");
+static_assert(offsetof(ProviderStatusV1, deviceGeneration) == 32, "ProviderStatusV1 offset mismatch.");
+static_assert(sizeof(BeginRequestV1) == 56, "BeginRequestV1 ABI mismatch.");
+static_assert(offsetof(BeginRequestV1, runtimePathUtf8) == 8, "BeginRequestV1 offset mismatch.");
+static_assert(sizeof(RenderRequest) == 48, "RenderRequest ABI mismatch.");
+static_assert(offsetof(RenderRequest, sourceTexture) == 8, "RenderRequest offset mismatch.");
+static_assert(offsetof(RenderRequest, generation) == 16, "RenderRequest generation offset mismatch.");
+static_assert(offsetof(RenderRequest, columns) == 24, "RenderRequest columns offset mismatch.");
 
 struct RetainedSlot {
     SourceLease* sourceLease = nullptr;
@@ -55,7 +68,10 @@ IUnityInterfaces* g_unityInterfaces = nullptr;
 IUnityGraphics* g_graphics = nullptr;
 IUnityGraphicsMetal* g_metal = nullptr;
 id<MTLDevice> g_unityDevice = nil;
+id<MTLDevice> g_unpublishedDevice = nil;
+id<MTLTexture> g_unpublishedTransferTextures[kSubmissionSlotCount] = {nil, nil, nil};
 WindowHandle g_window = 0;
+WindowHandle g_unpublishedWindow = 0;
 std::atomic<uint64_t> g_deviceGeneration{1};
 std::atomic<uint32_t> g_completedNotifications{0};
 std::atomic<uint32_t> g_failedNotifications{0};
@@ -68,9 +84,8 @@ std::atomic<uint32_t> g_lastError{kErrorNone};
 std::atomic<int32_t> g_renderEventId{0};
 std::atomic<bool> g_renderEventIdReserved{false};
 std::mutex g_providerMutex;
-OneShotGate g_beginGate;
-bool g_beginAttempted = false;
-uint64_t g_beginGeneration = 0;
+BeginLifecycle g_beginLifecycle;
+BeginTicket g_beginTicket{};
 int g_beginEventToken = 0;
 int g_pumpEventToken = 0;
 OwnedBeginRequest g_beginRequest;
@@ -88,7 +103,7 @@ bool PinProviderModule() {
 void UNITY_INTERFACE_API OnDeviceEvent(UnityGfxDeviceEventType eventType) {
     if (eventType == kUnityGfxDeviceEventShutdown || eventType == kUnityGfxDeviceEventBeforeReset) {
         std::lock_guard<std::mutex> lock(g_providerMutex);
-        g_beginGate.Cancel();
+        g_beginLifecycle.Cancel();
         g_deviceGeneration.fetch_add(1, std::memory_order_acq_rel);
         g_lifetime->CloseAdmission();
         g_runtimeAvailable.store(false, std::memory_order_release);
@@ -201,21 +216,55 @@ void QueueCopy(uint32_t slotIndex, const RenderRequest& request) {
     }];
 }
 
-bool InitializeOnRenderThread() {
-    if (g_metal == nullptr || g_metal->MetalDevice == nullptr || !g_pluginActive.load(std::memory_order_acquire)) {
-        g_lastError.store(kErrorPluginNotLoaded, std::memory_order_release);
+void PreserveUnpublishedResources(id<MTLDevice> device, WindowHandle window,
+    void* const transferTextures[kSubmissionSlotCount]) {
+    if (g_unpublishedDevice == nil && device != nil) g_unpublishedDevice = [device retain];
+    if (window != 0) g_unpublishedWindow = window;
+    if (transferTextures == nullptr) return;
+    for (uint32_t index = 0; index < kSubmissionSlotCount; ++index) {
+        if (g_unpublishedTransferTextures[index] == nil && transferTextures[index] != nullptr) {
+            g_unpublishedTransferTextures[index] = [((__bridge id<MTLTexture>)transferTextures[index]) retain];
+        }
+    }
+}
+
+void FinishBeginFailure(const BeginTicket& ticket, uint32_t errorCode) {
+    std::lock_guard<std::mutex> lock(g_providerMutex);
+    const BeginFinish result = g_beginLifecycle.Finish(ticket,
+        g_deviceGeneration.load(std::memory_order_acquire),
+        g_pluginActive.load(std::memory_order_acquire), false);
+    if (result == BeginFinish::Failed) {
+        g_runtimeAvailable.store(false, std::memory_order_release);
         g_providerState.store(static_cast<uint32_t>(ProviderState::Faulted), std::memory_order_release);
+        g_lastError.store(errorCode, std::memory_order_release);
+    }
+}
+
+bool IsBeginCurrent(const BeginTicket& ticket) {
+    std::lock_guard<std::mutex> lock(g_providerMutex);
+    return g_beginLifecycle.IsExecuting(ticket, g_deviceGeneration.load(std::memory_order_acquire),
+        g_pluginActive.load(std::memory_order_acquire));
+}
+
+bool ContinueProviderBegin(void* rawTicket) noexcept {
+    if (rawTicket == nullptr) return false;
+    return IsBeginCurrent(*static_cast<const BeginTicket*>(rawTicket));
+}
+
+bool InitializeOnRenderThread(const BeginTicket& ticket) {
+    if (!IsBeginCurrent(ticket)) return false;
+    if (g_metal == nullptr || g_metal->MetalDevice == nullptr) {
+        FinishBeginFailure(ticket, kErrorPluginNotLoaded);
         return false;
     }
+
     NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
-    id<MTLDevice> device = g_metal->MetalDevice();
+    id<MTLDevice> device = [g_metal->MetalDevice() retain];
     if (device == nil) {
         [pool drain];
-        g_lastError.store(kErrorPluginNotLoaded, std::memory_order_release);
-        g_providerState.store(static_cast<uint32_t>(ProviderState::Faulted), std::memory_order_release);
+        FinishBeginFailure(ticket, kErrorPluginNotLoaded);
         return false;
     }
-    g_unityDevice = [device retain];
     MTLTextureDescriptor* descriptor = [[MTLTextureDescriptor alloc] init];
     descriptor.textureType = MTLTextureType2D;
     descriptor.pixelFormat = static_cast<MTLPixelFormat>(g_beginRequest.metalPixelFormat);
@@ -229,17 +278,22 @@ bool InitializeOnRenderThread() {
     descriptor.usage = MTLTextureUsageShaderRead;
 
     void* transferTextures[kSubmissionSlotCount]{};
+    WindowHandle localWindow = 0;
     const char* error = nullptr;
     bool started = LoadAndInitializeBridgeMetal(g_beginRequest.runtimePath.c_str(),
         g_beginRequest.applicationName.c_str(), (__bridge void*)device,
-        g_beginRequest.displayIndex == std::numeric_limits<uint32_t>::max()
-            ? std::numeric_limits<unsigned long>::max()
-            : static_cast<unsigned long>(g_beginRequest.displayIndex),
+        static_cast<unsigned long>(g_beginRequest.displayIndex),
         (__bridge void*)descriptor,
-        &g_window, &transferTextures[0], &error);
+        &localWindow, &transferTextures[0], &error, ContinueProviderBegin,
+        const_cast<BeginTicket*>(&ticket));
+    if (started && !IsBeginCurrent(ticket)) started = false;
     if (started) {
         for (uint32_t index = 1; index < kSubmissionSlotCount; ++index) {
-            if (!CreateBridgeMetalTextureForWindow(g_window, (__bridge void*)descriptor, &transferTextures[index], &error)) {
+            if (!CreateBridgeMetalTextureForWindow(localWindow, (__bridge void*)descriptor, &transferTextures[index], &error)) {
+                started = false;
+                break;
+            }
+            if (!IsBeginCurrent(ticket)) {
                 started = false;
                 break;
             }
@@ -256,20 +310,41 @@ bool InitializeOnRenderThread() {
         }
     }
     [descriptor release];
-    if (started) started = ConfigureUnityMetalProducer(g_unityInterfaces, g_window, transferTextures,
-        g_deviceGeneration.load(std::memory_order_acquire));
-    [pool drain];
 
-    if (!started) {
-        g_lifetime->CloseAdmission();
-        g_lastError.store(kErrorAdditionalTexture, std::memory_order_release);
-        g_providerState.store(static_cast<uint32_t>(ProviderState::Faulted), std::memory_order_release);
-        return false;
+    bool published = false;
+    {
+        std::lock_guard<std::mutex> lock(g_providerMutex);
+        const uint64_t currentGeneration = g_deviceGeneration.load(std::memory_order_acquire);
+        const bool pluginActive = g_pluginActive.load(std::memory_order_acquire);
+        if (!g_beginLifecycle.IsExecuting(ticket, currentGeneration, pluginActive)) {
+            PreserveUnpublishedResources(device, localWindow, transferTextures);
+        } else if (started && ConfigureUnityMetalProducer(g_unityInterfaces, localWindow, transferTextures,
+            ticket.generation)) {
+            g_unityDevice = [device retain];
+            g_window = localWindow;
+            const BeginFinish result = g_beginLifecycle.Finish(ticket, currentGeneration, pluginActive, true);
+            if (result == BeginFinish::Published) {
+                g_runtimeAvailable.store(true, std::memory_order_release);
+                g_providerState.store(static_cast<uint32_t>(ProviderState::RuntimeInitialized), std::memory_order_release);
+                g_lastError.store(kErrorNone, std::memory_order_release);
+                published = true;
+            } else {
+                PreserveUnpublishedResources(device, localWindow, transferTextures);
+            }
+        } else {
+            PreserveUnpublishedResources(device, localWindow, transferTextures);
+            const BeginFinish result = g_beginLifecycle.Finish(ticket, currentGeneration, pluginActive, false);
+            if (result == BeginFinish::Failed) {
+                g_lifetime->CloseAdmission();
+                g_runtimeAvailable.store(false, std::memory_order_release);
+                g_providerState.store(static_cast<uint32_t>(ProviderState::Faulted), std::memory_order_release);
+                g_lastError.store(started ? kErrorAdditionalTexture : kErrorBridgeStart, std::memory_order_release);
+            }
+        }
     }
-    g_runtimeAvailable.store(true, std::memory_order_release);
-    g_providerState.store(static_cast<uint32_t>(ProviderState::RuntimeInitialized), std::memory_order_release);
-    g_lastError.store(kErrorNone, std::memory_order_release);
-    return true;
+    [device release];
+    [pool drain];
+    return published;
 }
 
 }
@@ -277,6 +352,7 @@ bool InitializeOnRenderThread() {
 bool ConfigureUnityMetalProducer(IUnityInterfaces* unityInterfaces, WindowHandle window,
     void* const transferTextures[3], uint64_t deviceGeneration) noexcept {
     if (unityInterfaces == nullptr || window == 0 || transferTextures == nullptr || deviceGeneration == 0 ||
+        deviceGeneration != g_deviceGeneration.load(std::memory_order_acquire) ||
         g_configured.load(std::memory_order_acquire)) return false;
     IUnityGraphicsMetal* metal = unityInterfaces->Get<IUnityGraphicsMetal>();
     if (metal == nullptr || metal->CurrentCommandBuffer == nullptr || metal->CurrentCommandEncoder == nullptr ||
@@ -287,15 +363,16 @@ bool ConfigureUnityMetalProducer(IUnityInterfaces* unityInterfaces, WindowHandle
     }
     g_metal = metal;
     g_window = window;
-    g_deviceGeneration.store(deviceGeneration, std::memory_order_release);
     g_configured.store(true, std::memory_order_release);
     return true;
 }
 
 void CloseUnityMetalProducerAdmission() noexcept {
     std::lock_guard<std::mutex> lock(g_providerMutex);
-    g_beginGate.Cancel();
+    g_beginLifecycle.Cancel();
     g_lifetime->CloseAdmission();
+    g_runtimeAvailable.store(false, std::memory_order_release);
+    g_providerState.store(static_cast<uint32_t>(ProviderState::Closing), std::memory_order_release);
 }
 
 uint32_t UnityMetalProducerRetainedCount() noexcept {
@@ -326,21 +403,26 @@ bool QueueProviderBegin(const BeginRequestV1* request, void** renderEventData) n
     const TextureConfiguration requested{request->width, request->height, request->metalPixelFormat,
         request->columns, request->rows};
     if (!IsValidBeginConfiguration(requested)) return false;
+    OwnedBeginRequest owned;
+    try {
+        owned.runtimePath = request->runtimePathUtf8;
+        owned.applicationName = request->applicationNameUtf8;
+    } catch (...) {
+        return false;
+    }
+    owned.displayIndex = request->displayIndex;
+    owned.width = request->width;
+    owned.height = request->height;
+    owned.metalPixelFormat = request->metalPixelFormat;
+    owned.columns = request->columns;
+    owned.rows = request->rows;
+    owned.aspect = request->aspect;
+    owned.zoom = request->zoom;
+
     std::lock_guard<std::mutex> lock(g_providerMutex);
-    if (!g_pluginActive.load(std::memory_order_acquire) || g_beginAttempted || !g_lifetime->IsAccepting() ||
-        !g_beginGate.TryQueue()) return false;
-    g_beginAttempted = true;
-    g_beginGeneration = g_deviceGeneration.load(std::memory_order_acquire);
-    g_beginRequest.runtimePath = request->runtimePathUtf8;
-    g_beginRequest.applicationName = request->applicationNameUtf8;
-    g_beginRequest.displayIndex = request->displayIndex;
-    g_beginRequest.width = request->width;
-    g_beginRequest.height = request->height;
-    g_beginRequest.metalPixelFormat = request->metalPixelFormat;
-    g_beginRequest.columns = request->columns;
-    g_beginRequest.rows = request->rows;
-    g_beginRequest.aspect = request->aspect;
-    g_beginRequest.zoom = request->zoom;
+    if (!g_pluginActive.load(std::memory_order_acquire) || !g_lifetime->IsAccepting() ||
+        !g_beginLifecycle.Queue(g_deviceGeneration.load(std::memory_order_acquire), &g_beginTicket)) return false;
+    g_beginRequest = std::move(owned);
     g_providerState.store(static_cast<uint32_t>(ProviderState::BeginQueued), std::memory_order_release);
     *renderEventData = &g_beginEventToken;
     return true;
@@ -389,14 +471,15 @@ extern "C" void UNITY_INTERFACE_API lkg_metal_unity_render_event(int, void* even
     if (!lkg::metal::g_pluginActive.load(std::memory_order_acquire) || eventData == nullptr) return;
     if (eventData == &lkg::metal::g_beginEventToken) {
         bool valid = false;
+        lkg::metal::BeginTicket ticket{};
         {
             std::lock_guard<std::mutex> lock(lkg::metal::g_providerMutex);
-            valid = lkg::metal::g_beginGate.Consume(
-                lkg::metal::g_lifetime->IsAccepting() &&
-                lkg::metal::g_pluginActive.load(std::memory_order_acquire) &&
-                lkg::metal::g_beginGeneration == lkg::metal::g_deviceGeneration.load(std::memory_order_acquire));
+            ticket = lkg::metal::g_beginTicket;
+            valid = lkg::metal::g_beginLifecycle.Start(ticket,
+                lkg::metal::g_deviceGeneration.load(std::memory_order_acquire),
+                lkg::metal::g_pluginActive.load(std::memory_order_acquire));
         }
-        if (valid) lkg::metal::InitializeOnRenderThread();
+        if (valid) lkg::metal::InitializeOnRenderThread(ticket);
         return;
     }
     if (eventData == &lkg::metal::g_pumpEventToken) {
@@ -443,9 +526,10 @@ extern "C" void UNITY_INTERFACE_API lkg_metal_unity_plugin_load(void* rawInterfa
 
 extern "C" void UNITY_INTERFACE_API lkg_metal_unity_plugin_unload(void) {
     lkg::metal::CloseUnityMetalProducerAdmission();
-    lkg::metal::g_runtimeAvailable.store(false, std::memory_order_release);
-    lkg::metal::g_providerState.store(static_cast<uint32_t>(lkg::metal::ProviderState::Closing), std::memory_order_release);
-    lkg::metal::g_pluginActive.store(false, std::memory_order_release);
+    {
+        std::lock_guard<std::mutex> lock(lkg::metal::g_providerMutex);
+        lkg::metal::g_pluginActive.store(false, std::memory_order_release);
+    }
     if (lkg::metal::g_graphics != nullptr) {
         lkg::metal::g_graphics->UnregisterDeviceEventCallback(lkg::metal::OnDeviceEvent);
     }

@@ -19,19 +19,22 @@ struct BridgeMetalSymbols {
 };
 
 using SymbolResolver = void* (*)(void* context, const char* symbolName);
+using ContinueCallback = bool (*)(void* context) noexcept;
 
 bool ResolveRequiredBridgeMetalSymbols(SymbolResolver resolver, void* context,
     BridgeMetalSymbols* symbols, const char** missingSymbol) noexcept;
 
 bool StartBridgeMetalWithSymbols(const BridgeMetalSymbols& symbols, const char* appName,
     void* metalDevice, unsigned long displayIndex, void* metalTextureDescriptor,
-    WindowHandle* window, void** transferTexture, const char** errorCode) noexcept;
+    WindowHandle* window, void** transferTexture, const char** errorCode,
+    ContinueCallback continueCallback, void* continueContext) noexcept;
 
 // Experimental entry point. It pins the SDK module and does not call the
 // undocumented uninitialize/release APIs during process lifetime.
 bool LoadAndInitializeBridgeMetal(const char* absoluteRuntimePath, const char* appName,
     void* metalDevice, unsigned long displayIndex, void* metalTextureDescriptor,
-    WindowHandle* window, void** transferTexture, const char** errorCode) noexcept;
+    WindowHandle* window, void** transferTexture, const char** errorCode,
+    ContinueCallback continueCallback, void* continueContext) noexcept;
 
 bool DrawBridgeMetalQuilt(WindowHandle window, void* texture, unsigned long columns,
     unsigned long rows, float aspect, float zoom) noexcept;
