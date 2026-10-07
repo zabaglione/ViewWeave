@@ -76,7 +76,10 @@ namespace ViewWeave.Editor
             using (new EditorGUI.DisabledScope(!current))
             {
                 if (GUILayout.Button("Save Latest Quilt PNG...")) SaveLatest();
+                if (GUILayout.Button("Save Central View PNG...")) SaveCentralView();
             }
+            if ((snapshot.Layout.ViewCount & 1) == 0)
+                EditorGUILayout.HelpBox("The central image uses logical view " + ((snapshot.Layout.ViewCount - 1) / 2) + " (the lower of the two middle views).", MessageType.Info);
         }
 
         void DrawRecorder()
@@ -115,7 +118,33 @@ namespace ViewWeave.Editor
             if (recorder.IsRecording)
             {
                 EditorGUILayout.LabelField("Completed frames", recorder.CompletedFrameCount + " / " + recorder.RequestedFrameCount);
+                EditorGUILayout.BeginHorizontal();
+                if (recorder.IsPaused)
+                {
+                    using (new EditorGUI.DisabledScope(!Application.isPlaying))
+                    {
+                        if (GUILayout.Button("Resume Recording"))
+                        {
+                            try
+                            {
+                                recorder.ResumeRecording();
+                                statusMessage = "Recording resumed. The resume frame is skipped.";
+                            }
+                            catch (Exception error) { statusMessage = Sanitize(error.GetType().Name + ": " + error.Message); }
+                        }
+                    }
+                }
+                else if (GUILayout.Button("Pause Recording"))
+                {
+                    try
+                    {
+                        recorder.PauseRecording();
+                        statusMessage = "Recording paused. Scene simulation continues without saving frames.";
+                    }
+                    catch (Exception error) { statusMessage = Sanitize(error.GetType().Name + ": " + error.Message); }
+                }
                 if (GUILayout.Button("Stop Recording")) recorder.StopRecording();
+                EditorGUILayout.EndHorizontal();
             }
             else
             {
@@ -148,6 +177,21 @@ namespace ViewWeave.Editor
                 QuiltCaptureUtility.SaveLatest(quiltRenderer, path);
                 string sidecar = Path.ChangeExtension(path, ".json");
                 statusMessage = "Saved PNG and JSON sidecar: " + Path.GetFileName(path) + " / " + Path.GetFileName(sidecar);
+            }
+            catch (Exception error) { statusMessage = Sanitize(error.GetType().Name + ": " + error.Message); }
+        }
+
+        void SaveCentralView()
+        {
+            QuiltRenderSnapshot snapshot = quiltRenderer.LatestSnapshot;
+            string fileName = Path.GetFileNameWithoutExtension(QuiltCaptureUtility.BuildFileName(quiltRenderer.gameObject.name, snapshot)) + "_central.png";
+            string path = EditorUtility.SaveFilePanel("Save Central View PNG", string.IsNullOrEmpty(outputRoot) ? Application.dataPath : outputRoot, Path.GetFileNameWithoutExtension(fileName), "png");
+            if (string.IsNullOrEmpty(path)) return;
+            try
+            {
+                QuiltCaptureUtility.SaveCentralViewLatest(quiltRenderer, path);
+                string sidecar = Path.ChangeExtension(path, ".json");
+                statusMessage = "Saved central view PNG and JSON sidecar: " + Path.GetFileName(path) + " / " + Path.GetFileName(sidecar);
             }
             catch (Exception error) { statusMessage = Sanitize(error.GetType().Name + ": " + error.Message); }
         }

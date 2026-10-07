@@ -14,6 +14,8 @@ jobs:
           python-version: '3.12'
       - name: Verify generated UPM distributions
         run: python tools/build_upm_distribution.py all --check
+      - name: Test repository validator
+        run: python -m unittest discover -s tools/tests -p 'test_*.py'
       - name: Run repository validator
         run: python tools/validate_repository.py
 

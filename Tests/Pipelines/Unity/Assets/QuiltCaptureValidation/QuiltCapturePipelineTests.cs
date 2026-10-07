@@ -259,6 +259,23 @@ namespace ViewWeave.QuiltCaptureValidation
                 Assert.IsTrue(fixture.Renderer.HasRenderedQuilt);
                 Assert.Greater(CountDistinctPixels(fixture.Renderer.QuiltTexture), 1, "real pipeline output contains visible RGB variation");
 
+                Directory.CreateDirectory(outputRoot);
+                foreach (QuiltViewRenderMode mode in new[] { QuiltViewRenderMode.Half, QuiltViewRenderMode.Quarter })
+                {
+                    fixture.Renderer.viewRenderMode = mode;
+                    fixture.Renderer.RenderQuilt();
+                    int logicalView = (fixture.Renderer.LatestSnapshot.Layout.ViewCount - 1) / 2;
+                    int renderedView = QuiltViewSampling.GetSourceViewIndex(fixture.Renderer.LatestSnapshot.Layout.ViewCount, mode, logicalView);
+                    string centralPath = Path.Combine(outputRoot, mode.ToString().ToLowerInvariant() + "_central.png");
+                    QuiltCaptureUtility.SaveCentralViewLatest(fixture.Renderer, centralPath);
+                    QuiltCentralViewCaptureMetadata centralMetadata = JsonUtility.FromJson<QuiltCentralViewCaptureMetadata>(File.ReadAllText(Path.ChangeExtension(centralPath, ".json")));
+                    Assert.AreEqual(logicalView, centralMetadata.logicalViewIndex, "central capture records its logical tile");
+                    Assert.AreEqual(renderedView, centralMetadata.renderedViewIndex, "central capture records its nearest rendered source tile");
+                    AssertCentralPngMatchesTile(centralPath, fixture.Renderer.QuiltTexture, fixture.Renderer.LatestSnapshot.Layout.GetTile(logicalView));
+                }
+                fixture.Renderer.viewRenderMode = QuiltViewRenderMode.Full;
+                fixture.Renderer.RenderQuilt();
+
                 RenderTexture sentinel = new RenderTexture(4, 4, 0, RenderTextureFormat.ARGB32);
                 sentinel.Create();
                 RenderTexture originalActive = RenderTexture.active;
@@ -367,6 +384,65 @@ namespace ViewWeave.QuiltCaptureValidation
                 Assert.AreEqual(0.04d, second25.simulationTime - first25.simulationTime, 0.001d);
                 Assert.AreEqual(0.04d, third25.simulationTime - second25.simulationTime, 0.001d);
 
+                recorder.StartRecording(outputRoot, 10, 5);
+                while (recorder.CompletedFrameCount == 0 && recorder.IsRecording) yield return null;
+                Assert.AreEqual(QuiltRecordingStatus.Recording, recorder.Status, "recording is active before pause");
+                int framesBeforePause = recorder.CompletedFrameCount;
+                recorder.PauseRecording();
+                Assert.AreEqual(QuiltRecordingStatus.Paused, recorder.Status);
+                Assert.IsTrue(recorder.IsRecording && recorder.IsPaused, "paused recorder keeps its active session ownership");
+                Assert.AreEqual(oldCaptureDelta, Time.captureDeltaTime, "pause restores the prior capture timestep");
+                QuiltRecordingManifest pausedManifest = JsonUtility.FromJson<QuiltRecordingManifest>(File.ReadAllText(Path.Combine(recorder.RecordingDirectory, "manifest.json")));
+                Assert.AreEqual("paused", pausedManifest.status);
+                Assert.IsTrue(string.IsNullOrEmpty(pausedManifest.finishedAtUtc), "paused manifest remains open");
+                Assert.Throws<InvalidOperationException>(() => fixture.SecondRecorder.StartRecording(outputRoot, 20, 3), "a paused recorder keeps exclusive ownership");
+                for (int wait = 0; wait < 3; ++wait) yield return null;
+                Assert.AreEqual(framesBeforePause, recorder.CompletedFrameCount, "paused recorder does not save frames");
+                recorder.ResumeRecording();
+                Assert.AreEqual(QuiltRecordingStatus.Recording, recorder.Status);
+                Assert.AreEqual(0.1f, Time.captureDeltaTime, 0.0001f, "resume reinstates the requested simulation timestep");
+                for (int wait = 0; wait < 240 && recorder.IsRecording; ++wait) yield return null;
+                Assert.AreEqual(QuiltRecordingStatus.Complete, recorder.Status, "resumed recording completes the original frame count: " + recorder.ErrorMessage);
+                Assert.AreEqual(5, recorder.CompletedFrameCount);
+                Assert.AreEqual(oldCaptureDelta, Time.captureDeltaTime, "completion after resume restores the original capture timestep");
+                string[] resumedRecords = File.ReadAllLines(Path.Combine(recorder.RecordingDirectory, "frames.jsonl"));
+                Assert.AreEqual(5, resumedRecords.Length);
+                QuiltRecordingFrame beforePause = JsonUtility.FromJson<QuiltRecordingFrame>(resumedRecords[framesBeforePause - 1]);
+                QuiltRecordingFrame afterResume = JsonUtility.FromJson<QuiltRecordingFrame>(resumedRecords[framesBeforePause]);
+                Assert.Greater(afterResume.unityFrame, beforePause.unityFrame + 1, "paused Unity frames are omitted from the recording");
+                Assert.AreEqual(0.1f, afterResume.deltaTime, 0.0001f, "the first post-resume saved frame uses the requested timestep");
+
+                recorder.StartRecording(outputRoot, 20, 10);
+                recorder.PauseRecording();
+                Time.captureDeltaTime = 0.04f;
+                float externalDeltaDuringPause = Time.captureDeltaTime;
+                Assert.Throws<InvalidOperationException>(() => recorder.ResumeRecording(), "resume rejects an externally owned capture timestep");
+                Assert.AreEqual(QuiltRecordingStatus.Error, recorder.Status);
+                Assert.AreEqual(externalDeltaDuringPause, Time.captureDeltaTime, "failed resume preserves the external capture timestep");
+                Time.captureDeltaTime = oldCaptureDelta;
+
+                recorder.StartRecording(outputRoot, 20, 10);
+                recorder.PauseRecording();
+                QuiltSettings settingsBeforePausedEdit = fixture.Renderer.settings.Clone();
+                fixture.Renderer.settings.cameraDistance += 0.25f;
+                Assert.Throws<InvalidOperationException>(() => recorder.ResumeRecording(), "resume rejects geometry changes made while paused");
+                Assert.AreEqual(QuiltRecordingStatus.Error, recorder.Status);
+                Assert.AreEqual(oldCaptureDelta, Time.captureDeltaTime, "failed geometry resume does not leave a capture timestep behind");
+                fixture.Renderer.settings = settingsBeforePausedEdit;
+
+                recorder.StartRecording(outputRoot, 20, 10);
+                recorder.PauseRecording();
+                recorder.StopRecording();
+                Assert.AreEqual(QuiltRecordingStatus.Cancelled, recorder.Status, "stopping a paused recording finalizes it as cancelled");
+                Assert.AreEqual(oldCaptureDelta, Time.captureDeltaTime, "stopping a paused recording leaves the restored timestep intact");
+
+                recorder.StartRecording(outputRoot, 20, 10);
+                recorder.PauseRecording();
+                recorder.enabled = false;
+                Assert.AreEqual(QuiltRecordingStatus.Cancelled, recorder.Status, "disabling a paused recorder cleans up the session");
+                Assert.AreEqual(oldCaptureDelta, Time.captureDeltaTime, "disabling a paused recorder leaves no owned timestep");
+                recorder.enabled = true;
+
                 if (!hdrp)
                 {
                     for (int testFps = 1; testFps <= 240; ++testFps)
@@ -468,6 +544,29 @@ namespace ViewWeave.QuiltCaptureValidation
                 AssertColor(decoded.GetPixel(expectedWidth - 2, expectedHeight - 2), new Color32(255, 255, 0, 255), "top-right pixel orientation");
             }
             finally { UnityEngine.Object.DestroyImmediate(decoded); }
+        }
+
+        static void AssertCentralPngMatchesTile(string path, RenderTexture quilt, RectInt tile)
+        {
+            RenderTexture previous = RenderTexture.active;
+            Texture2D expected = new Texture2D(tile.width, tile.height, TextureFormat.RGBA32, false, false);
+            Texture2D actual = new Texture2D(2, 2, TextureFormat.RGBA32, false, false);
+            try
+            {
+                RenderTexture.active = quilt;
+                expected.ReadPixels(new Rect(tile.x, tile.y, tile.width, tile.height), 0, 0, false);
+                expected.Apply(false, false);
+                Assert.IsTrue(ImageConversion.LoadImage(actual, File.ReadAllBytes(path), false));
+                Assert.AreEqual(tile.width, actual.width);
+                Assert.AreEqual(tile.height, actual.height);
+                CollectionAssert.AreEqual(expected.GetPixels32(), actual.GetPixels32(), "central PNG pixels equal the selected output tile");
+            }
+            finally
+            {
+                RenderTexture.active = previous;
+                UnityEngine.Object.DestroyImmediate(expected);
+                UnityEngine.Object.DestroyImmediate(actual);
+            }
         }
 
         static void AssertColor(Color actual, Color32 expected, string label)

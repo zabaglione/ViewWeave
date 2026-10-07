@@ -6,6 +6,8 @@
 
 旧package snapshotのWindows D3D11 PlayModeは、現行guard追加前に123件中108件pass、15件fail、skip 0でした。Core/SRP/VFX Editor targeted試験はGamma 8/8、Linear 17/17で、全件matrixの結果ではありません。Gamma MSAA/通常URPのBridge Player実行は未検証です。Gamma VFXは公式非対応です。旧D3D11統合の未通過はHDRP priming 1件とVFX compatibility 14件で、別の同時期VFX matrixは20件中5件pass、15件failでした。これらの履歴は現行D3D12 project統合や全VFX条件の成否を示しません。詳細な正本集計は [docs/compatibility.md](compatibility.md) を参照してください。
 
+既存のDX12 VFX/Particle validation suite（driver 7件、URP Particle 3件、HDRP Particle 2件）はまだ実行していません。旧15 failureは歴史的な結果として保持し、今回の未実行testの結果とは混同しません。Shadow OnDemandの動的初回capture sourceは修正済みでAstra review GO、semantic compile PASS（source SHA 800986...）ですが、GPU gateは未実行です。
+
 GRD の性能実測は URP normal multithreaded Player の範囲だけです。HDRP fixture で GRD 性能を測定した結果とは扱いません。自動描画 scheduler は scene rendering 後に実行しますが、機能固有の更新順序や一般的な描画対応を保証するものではありません。
 
 判定は次の意味です。
@@ -56,6 +58,14 @@ GRD の性能実測は URP normal multithreaded Player の範囲だけです。H
 | Fog / Volumetric Fog / Clouds | HDRP volumetric effectsはquilt中に一時抑制 | HDRP volumetric fog/cloudはquilt view中だけ無効化。通常のFogとSkyは維持する。 |
 | Depth of Field / Auto Exposure | Depth of Fieldは限定確認。HDRP Auto Exposureはquilt共通Fixed EVへ一時変換 | HDRPはEV 12を既定にし、元stackがFixedならそのEVを使う。URP Auto Exposureは未検証。 |
 
+## Quilt保存と録画
+
+| 機能 | 状態 | 実測範囲と制約 |
+| --- | --- | --- |
+| 静止Quilt PNGとmetadata | 実装済み、D3D11とDX12 fake-outputで限定実測 | Quilt PNG、JSON sidecar、中央view PNGを保存。既存D3D11 URP/HDRP PlayMode各2/2。DX12 Core smokeとURP/HDRP各1 capture testでcentral metadataとview mappingを確認。Bridge transport/実機保存は未検証。 |
+| Quilt PNG連番 | 実装済み、D3D11とDX12 fake-outputで限定実測 | Recorder suiteで10/25 fps各3枚、URP 1〜240 fpsの開始/停止とsimulation時間復元を確認。DX12 URP/HDRP各1 capture testではPause/Resumeを確認。追加renderは行わず、PNG読戻し/圧縮中はUnity frameが停止。Quilt file再生は未実装。 |
+| 中央2D PNG | 実装済み、DX12 fake-output限定実測 | 完成quiltの中央論理viewを保存し、sidecar/mappingをURP/HDRP testで確認。実Bridge中の保存と実機表示は未検証。 |
+| 無音MP4 export | 実装済み、fake process suite + FFmpeg 7.0.2 CPU-only smoke | 64x48の合成8x6/48-view quilt PNG 3枚を30fps H.264/yuv420pへ出力。ffprobe、Unicode/空白path、full-layout sidecar、no-overwriteを確認。実Quilt recordingからexportまでのend-to-endとEditor window操作は未確認。 |
 ## UI とカメラ
 
 | 機能 | 状態 | 実測範囲と制約 |
@@ -92,4 +102,3 @@ GRDの機能有無はpipelineの公式対応と別に検証します。現在の
 - [VisualEffect.AdvanceOneFrame](https://docs.unity3d.com/6000.6/Documentation/ScriptReference/VFX.VisualEffect.AdvanceOneFrame.html)
 - [URP rendering paths](https://docs.unity3d.com/6000.6/Documentation/Manual/urp/rendering-paths-set.html)
 - [Active render pipeline](https://docs.unity3d.com/6000.1/Documentation/Manual/srp-setting-render-pipeline-asset.html)
-
