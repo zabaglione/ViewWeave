@@ -193,6 +193,89 @@ static void TraceWorker(const char* stage) {
     std::fclose(file);
 }
 
+static bool NativeTraceEnabled() {
+    const char* path = std::getenv("LKG_NATIVE_TRACE");
+    return path && *path;
+}
+
+static void TraceDisplayCount(int32_t result, uint32_t count, uint32_t displayOrdinal) {
+    const char* path = std::getenv("LKG_NATIVE_TRACE");
+    if (!path || !*path) return;
+    FILE* file = nullptr;
+    if (fopen_s(&file, path, "a") != 0 || !file) return;
+    std::fprintf(file, "worker tid=%lu stage=display-count countResult=%d count=%u displayOrdinal=%u tick_ms=%llu\n",
+                 static_cast<unsigned long>(GetCurrentThreadId()), result, count, displayOrdinal,
+                 static_cast<unsigned long long>(GetTickCount64()));
+    std::fclose(file);
+}
+
+static void TraceWorkerShutdownEvent(const char* stage, uint64_t sessionId, int slotIndex = -1) {
+    const char* path = std::getenv("LKG_NATIVE_TRACE");
+    if (!path || !*path) return;
+    FILE* file = nullptr;
+    if (fopen_s(&file, path, "a") != 0 || !file) return;
+    std::fprintf(file,
+                 "shutdown pid=%lu tid=%lu tick_ms=%llu session_id=%llu stage=%s slot=%d\n",
+                 static_cast<unsigned long>(GetCurrentProcessId()),
+                 static_cast<unsigned long>(GetCurrentThreadId()),
+                 static_cast<unsigned long long>(GetTickCount64()),
+                 static_cast<unsigned long long>(sessionId),
+                 stage ? stage : "unknown", slotIndex);
+    std::fclose(file);
+}
+
+struct WorkerShutdownSnapshot {
+    struct SlotState {
+        bool inUse = false;
+        bool consumerCopyPending = false;
+        bool quarantined = false;
+    } slots[3];
+    uint32_t pendingTokens = 0;
+    uint32_t jobCount = 0;
+    bool inFlightJob = false;
+    uint64_t sessionId = 0;
+};
+
+// Caller must already hold context.mutex; this helper deliberately takes no lock.
+static WorkerShutdownSnapshot CaptureWorkerShutdownSnapshot(const WorkerContext& context, uint64_t sessionId) {
+    WorkerShutdownSnapshot snapshot{};
+    snapshot.pendingTokens = context.pendingTokens;
+    snapshot.jobCount = context.jobCount;
+    snapshot.inFlightJob = context.inFlightJob;
+    snapshot.sessionId = sessionId;
+    for (uint32_t i = 0; i < 3; ++i) {
+        snapshot.slots[i].inUse = context.slots[i].inUse;
+        snapshot.slots[i].consumerCopyPending = context.slots[i].consumerCopyPending;
+        snapshot.slots[i].quarantined = context.slots[i].quarantined;
+    }
+    return snapshot;
+}
+
+static void TraceWorkerShutdownSnapshot(const char* stage, const WorkerShutdownSnapshot& snapshot) {
+    const char* path = std::getenv("LKG_NATIVE_TRACE");
+    if (!path || !*path) return;
+    FILE* file = nullptr;
+    if (fopen_s(&file, path, "a") != 0 || !file) return;
+    std::fprintf(file,
+                 "shutdown pid=%lu tid=%lu tick_ms=%llu session_id=%llu stage=%s pendingTokens=%u jobCount=%u inFlightJob=%d slot0.inUse=%d slot0.consumerCopyPending=%d slot0.quarantined=%d slot1.inUse=%d slot1.consumerCopyPending=%d slot1.quarantined=%d slot2.inUse=%d slot2.consumerCopyPending=%d slot2.quarantined=%d\n",
+                 static_cast<unsigned long>(GetCurrentProcessId()),
+                 static_cast<unsigned long>(GetCurrentThreadId()),
+                 static_cast<unsigned long long>(GetTickCount64()),
+                 static_cast<unsigned long long>(snapshot.sessionId),
+                 stage ? stage : "unknown", snapshot.pendingTokens, snapshot.jobCount,
+                 snapshot.inFlightJob ? 1 : 0,
+                 snapshot.slots[0].inUse ? 1 : 0,
+                 snapshot.slots[0].consumerCopyPending ? 1 : 0,
+                 snapshot.slots[0].quarantined ? 1 : 0,
+                 snapshot.slots[1].inUse ? 1 : 0,
+                 snapshot.slots[1].consumerCopyPending ? 1 : 0,
+                 snapshot.slots[1].quarantined ? 1 : 0,
+                 snapshot.slots[2].inUse ? 1 : 0,
+                 snapshot.slots[2].consumerCopyPending ? 1 : 0,
+                 snapshot.slots[2].quarantined ? 1 : 0);
+    std::fclose(file);
+}
+
 static void RunWorker(WorkerContext* context);
 
 static WorkerHost* GetPersistentHost() {
@@ -1113,6 +1196,8 @@ static void RunWorker(WorkerContext* context) {
     const char* runtimePath = context->runtimePath.c_str();
 
     auto cleanup = [&]() {
+        const uint64_t cleanupSessionId = session;
+        TraceWorkerShutdownEvent("cleanup-begin", cleanupSessionId);
         if (session != 0) {
             void* closeData = lkg_bridge_make_close_data(session);
             auto callback = reinterpret_cast<void (*)(int, void*)>(lkg_bridge_render_event_func());
@@ -1132,12 +1217,24 @@ static void RunWorker(WorkerContext* context) {
             context->producerDevice->Release();
             context->producerDevice = nullptr;
         }
-        for (WorkerContext::Slot& slot : context->slots) if (slot.d3d12Slot) ClearD3D12Slot(slot);
+        for (uint32_t slotIndex = 0; slotIndex < 3; ++slotIndex) {
+            WorkerContext::Slot& slot = context->slots[slotIndex];
+            if (!slot.d3d12Slot) continue;
+            TraceWorkerShutdownEvent("clear-d3d12-slot-begin", cleanupSessionId, static_cast<int>(slotIndex));
+            ClearD3D12Slot(slot);
+            TraceWorkerShutdownEvent("clear-d3d12-slot-end", cleanupSessionId, static_cast<int>(slotIndex));
+        }
 #if defined(LKG_WORKER_TRANSPORT_TESTING)
         DestroyWorkerTestWindow(*context);
 #endif
-        std::lock_guard<std::mutex> lock(context->mutex);
-        if (context->status.state != LKG_WORKER_FAULT) context->status.state = LKG_WORKER_CLOSED;
+        WorkerShutdownSnapshot cleanupEndSnapshot{};
+        {
+            std::lock_guard<std::mutex> lock(context->mutex);
+            if (context->status.state != LKG_WORKER_FAULT) context->status.state = LKG_WORKER_CLOSED;
+            if (NativeTraceEnabled())
+                cleanupEndSnapshot = CaptureWorkerShutdownSnapshot(*context, cleanupSessionId);
+        }
+        TraceWorkerShutdownSnapshot("cleanup-end", cleanupEndSnapshot);
     };
     auto finish = [&]() noexcept {
         try {
@@ -1214,6 +1311,7 @@ static void RunWorker(WorkerContext* context) {
         uint32_t count = 0;
         LkgBridgeDisplayInfo display{};
         const int32_t countResult = lkg_bridge_get_display_count(&count);
+        if (NativeTraceEnabled()) TraceDisplayCount(countResult, count, context->displayOrdinal);
         const int32_t displayResult = countResult == 0 && context->displayOrdinal < count ? lkg_bridge_get_display(context->displayOrdinal, &display) : countResult;
         if (displayResult != 0 || context->displayOrdinal >= count) {
             SetBridgeFault(*context, 6, "bridge_display_profile", displayResult != 0 ? displayResult : -4);
@@ -1314,10 +1412,14 @@ static void RunWorker(WorkerContext* context) {
         }
         TraceWorker(completedDraw ? "draw-complete" : "draw-drop");
     }
+    WorkerShutdownSnapshot loopExitSnapshot{};
     {
         std::lock_guard<std::mutex> lock(context->mutex);
         if (context->status.state != LKG_WORKER_FAULT) context->status.state = LKG_WORKER_CLOSING;
+        if (NativeTraceEnabled())
+            loopExitSnapshot = CaptureWorkerShutdownSnapshot(*context, session);
     }
+    TraceWorkerShutdownSnapshot("worker-loop-exit", loopExitSnapshot);
     finish();
     } catch (...) {
         SetFault(*context, 8, "worker thread exception");

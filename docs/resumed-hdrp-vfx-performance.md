@@ -32,7 +32,58 @@ Both phases used 48 views, 60 warmup frames, and 120 measured samples; each had 
 
 The Editor exited unexpectedly after `Disabled_B` `StopSession` returned `Closing`; the next state read lost its command connection. Windows recorded `0xC0000005` in the official Looking Glass Bridge 2.6.3 `bridge_inproc.dll` at RVA `0xF8550` (SHA-256 `3BE0EBA96844688C2EB2E70FC512A5ADA3D53E3ED9C8810454AB0370B8241386`). No SDK shim root cause has been demonstrated. `InstancedDrawing_A2` was not run, and the Disabled_B Profiler output is absent. Further quality, Forward, and 300-second hold checks were not run after a Scene Backup Detected modal blocked recovery.
 
-Final cleanup restored the known temporary backup to its original path and retained the historical recovery copy. The saved scene was not changed; all six tracked settings/asset hashes match their pre-run values. The Editor is closed, and package revision 5892 remains installed. These checks do not convert the interrupted run into a complete validation.
+At the end of that interrupted pass, cleanup restored the known temporary backup to its original path and retained the historical recovery copy. The saved scene was not changed; all six tracked settings/asset hashes match their pre-run values. The Editor was closed at that point, and package revision 5892 remained installed. The user later recovered the project and reopened it for the continuation below. These checks do not convert the interrupted GRD run into a complete validation.
+
+## Recovery continued (2026-10-07)
+
+The user-recovered HDRP project was reopened in Unity 6000.6.4f1 on Direct3D12 with the same `5892baaf` HDRP package pin. The VFX Learning Templates scene remained clean, the original camera and Bridge Rig stayed in Play, and the saved scene plus all six HDRP/Graphics settings hashes matched the new pre-test snapshot. No scene or project settings were saved or changed. The earlier GRD A/B/A was not resumed after its native Bridge crash.
+
+### Quality and rendered dimensions
+
+The same Native → Preview → Balanced → Native sequence used the public quality API without stopping the Bridge worker. Each phase had 60 warmup frames and 120 measured records. All measured records showed Full 48 views, 120 unique positive GPU timestamps, and a zero dropped counter. The first measured record has a frame/attempt delta of 61 because the collector's first interval spans the 60 warmup frames; the remaining 119 measured intervals are contiguous. This is a collector boundary, not 60 lost measurement frames.
+
+| Quality | View texture | Quilt texture | Median Editor frame interval (ms) | Reciprocal FPS | Median CPU frame (ms) | Median GPU frame (ms) | Median CPU submission (ms) |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Native | 960×720 | 7680×4320 | 110.97 | 9.01 | 111.03 | 87.60 | 102.89 |
+| Preview | 240×180 | 1920×1080 | 112.45 | 8.89 | 112.59 | 89.21 | 103.68 |
+| Balanced | 480×360 | 3840×2160 | 116.74 | 8.57 | 116.71 | 92.96 | 107.38 |
+| Native return | 960×720 | 7680×4320 | 110.77 | 9.03 | 110.66 | 87.51 | 102.67 |
+
+Lowering per-view render resolution did not produce a material frame-rate gain at 48 views in this scene. These are Editor frame-rate measurements, not physical Looking Glass refresh measurements. Another Unity batchmode process remained present, although its CPU use was negligible in a short pre-run check; the available GPU activity check was only a point-in-time snapshot.
+
+A separate short probe read `QuiltRenderer.viewTexture` and an existing HDRP `HDCamera` via `TryGet` after a fresh completed quilt in each quality. Its `actualWidth`/`actualHeight` matched the view texture dimensions above. It captured one state per quality, not one callback per view, so it does not independently verify all 48 view renders. The separately named `lowResViewport` field is retained as such in the raw CSV; it is not labeled as a final viewport.
+
+### Conditional feature gates
+
+The source camera had occlusion culling enabled, but `StaticOcclusionCulling.umbraDataSize` was zero and there were no manual portals or active bake. No occlusion A/B/A was run because this scene had no baked occlusion data to exercise.
+
+The GPU supports async compute and the live HDRP `HDCamera.frameSettings` reported `AsyncCompute` and `LightListAsync` enabled, with `BuildLightListRunsAsync=True`. SSR, SSAO, contact shadows, and volume voxelization async flags were also enabled; high-quality lines async was disabled. Since LightList async was already effective, no setting override or comparison was made.
+
+### Three-frame D3D12 resource trace
+
+The CPU Profiler was temporarily enabled to collect three fresh consecutive frames on the current Editor session, with Deep Profile off, then all three original profiler flags were restored to false. In one Render Thread frame, the inclusive samples included 143 `BufferD3D12.InitializeResource` calls under `DepthPyramid` (about 3.1 ms), 192 under `BuildLightList` (about 3.7 ms), and 192 under `Push Global Camera Parameters` (about 4.1 ms). These markers are nested; `BufferD3D12.CreateBufferResource` is inside `InitializeResource`, so their times and counts must not be added. The raw capture also contains `self_total_ms` values from a collector bug; those values are invalid and excluded from this report. The raw file was retained unchanged, and no recapture was made. The work is distributed across multiple HDRP Render Graph passes. This trace does not prove that the same buffer is redundantly recreated, and it does not identify a safe local change that would remove the cost.
+
+The worker's dropped counter was zero during all four measured quality phases, but later readbacks in the same Play session reported a cumulative value of 9. The resumed session must therefore not be described as drop-free end to end. After the SDK test, `ViewWeaveRig.AutoRender` and the renderer's linked auto-render flag were restored to true without stopping the session. The final readback showed Native, Rendering, Ready, Full 48, a 7680×4320 quilt, 20,813 completed submissions, and no session, worker, or render error. The Editor remains in Play, and no `StopSession` was issued.
+
+The user's package remained on commit `5892baaf`; the updated native trace DLL was not installed or validated in the user's project. The isolated fixture pass is diagnostic and has not yet produced a product-side performance change.
+
+### SDK one-shot and restored Editor state
+
+The first SDK one-shot's hardware transport check passed 1/1, but its display-selection path used ordinal 2. It returned `TryBegin=True`, then the worker profile read returned `rc-4` before the worker became Ready; it completed zero quilts. Cleanup called Dispose and uninit once and reached cleanup end. The process exited naturally with code 1, with no crash. A corrected one-shot then used the live session's zero-based ordinal 0 and passed: `get_display_count` returned 1, the worker became Ready with a 3840×2160 display and 7680×4320 8×6 quilt, and five fresh completions advanced from 1 through 5 with zero worker drops. The runner stopped once and exited naturally with code 0, with no timeout or crash. The trace recorded unregister, texture release, device release, and uninit calls, each returning 1; cleanup ended with zero pending work and clear slot flags. These are diagnostic return values, not independent proof of vendor resource release. This validates the corrected selector and teardown path in the isolated SDK fixture; physical Looking Glass output was not rechecked. The detailed trace is in [native shutdown trace](native-shutdown-trace.md).
+
+The still-running user's Bridge session reports `displayOrdinal=0` on both its Session and Worker components. Its cached, valid profile reports `DisplayIndex=2`, 3840×2160, and a 7680×4320 8×6 quilt. `DisplayIndex` is a separate profile field and must not be read as the zero-based selector ordinal. No safe public profile-count enumeration API was found in the loaded ViewWeave assembly. The initial SDK request used ordinal 2, outside the available ordinal range; the corrected fixture used ordinal 0. No native init/uninit was called while reading the existing user session.
+
+At edit-mode preflight, the saved scene and host position were `(-51.04, 1.13, 4.68)`. During Play, the source camera and its `VFX_HDRP_Camera` host both read `(-51.04, 1.17, 3.46)`. The saved scene SHA-256 still matched its pre-test value, so the runtime transform observation is kept separate from saved scene state; no cause for the runtime position difference is inferred. All six settings/asset hashes also still match. The physical display was not rechecked after the SDK one-shot.
+
+### Continued-run evidence
+
+- [Quality samples](../.local/dx12-followup/continued-20261007/quality-native-preview-balanced-native.csv)
+- [Rendered viewport sizes](../.local/dx12-followup/continued-20261007/viewport-sizes.csv)
+- [Occlusion gate](../.local/dx12-followup/continued-20261007/occlusion-gate.txt) and [effective async-compute gate](../.local/dx12-followup/continued-20261007/async-gate-final.txt)
+- [Three-frame BufferD3D12 trace with parent paths and call counts](../.local/dx12-followup/continued-20261007/buffer-resource-profiler-3frames.txt) and [restored Profiler flags](../.local/dx12-followup/continued-20261007/profiler-final-flags.txt)
+- [Post-profiler runtime state](../.local/dx12-followup/continued-20261007/runtime-closeout.txt), [restored runtime state](../.local/dx12-followup/continued-20261007/runtime-restored-final.txt), and [final scene/settings hash verification](../.local/dx12-followup/continued-20261007/final-integrity-20261007.txt)
+- [Initial SDK one-shot result](../.local/dx12-followup/continued-20261007/sdk-one-shot-result.txt), [ordinal-zero SDK pass summary](../.local/dx12-followup/continued-20261007/sdk-ordinal0-pass-summary.txt), [live display ordinal/profile](../.local/dx12-followup/continued-20261007/bridge-display-ordinal.txt), and [pre-test recovery snapshot](../.local/dx12-followup/continued-20261007/recovery-preflight.json)
+- [Final runtime readback after the ordinal-zero test](../.local/dx12-followup/continued-20261007/runtime-post-ordinal0-final.txt), [final asset hashes and Profiler state](../.local/dx12-followup/continued-20261007/final-integrity-post-ordinal0-20261007.txt), and [post-test static checks](../.local/dx12-followup/continued-20261007/static-checks-post-ordinal0-20261007.txt)
 
 ## Retained evidence
 
