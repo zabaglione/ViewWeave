@@ -33,6 +33,10 @@ namespace ViewWeave.GraphicsCompatibility
             try
             {
                 fixture.Setup();
+                fixture.BeginPipelineWarmup();
+                yield return null;
+                yield return null;
+                fixture.CompletePipelineWarmupAndCapture();
                 fixture.AddBloom();
                 fixture.RefreshScope();
                 fixture.Guard.reuseCameraOwnedVolumeStackForQuilt = true;
@@ -53,9 +57,13 @@ namespace ViewWeave.GraphicsCompatibility
             try
             {
                 fixture.Setup();
+                SetPipelineVolumeUpdateMode(fixture.Pipeline, VolumeFrameworkUpdateMode.EveryFrame);
+                fixture.BeginPipelineWarmup();
+                yield return null;
+                yield return null;
+                fixture.CompletePipelineWarmupAndCapture();
                 fixture.AddBloom();
                 fixture.RefreshScope();
-                SetPipelineVolumeUpdateMode(fixture.Pipeline, VolumeFrameworkUpdateMode.EveryFrame);
                 fixture.Guard.reuseCameraOwnedVolumeStackForQuilt = true;
                 fixture.Camera.SetVolumeFrameworkUpdateMode(VolumeFrameworkUpdateMode.UsePipelineSettings);
                 fixture.CameraData.antialiasing = AntialiasingMode.TemporalAntiAliasing;
@@ -78,6 +86,10 @@ namespace ViewWeave.GraphicsCompatibility
             {
                 fixture.Setup();
                 SetPipelineVolumeUpdateMode(fixture.Pipeline, VolumeFrameworkUpdateMode.EveryFrame);
+                fixture.BeginPipelineWarmup();
+                yield return null;
+                yield return null;
+                fixture.CompletePipelineWarmupAndCapture();
                 fixture.Camera.SetVolumeFrameworkUpdateMode(VolumeFrameworkUpdateMode.UsePipelineSettings);
                 fixture.CameraData.volumeLayerMask = 1 << GraphicsFixtureScope.Layer;
                 fixture.CameraData.volumeTrigger = fixture.Camera.transform;
@@ -136,7 +148,7 @@ namespace ViewWeave.GraphicsCompatibility
                 values[count++] = current.intensity.value;
             };
             RenderPipelineManager.endCameraRendering += callback;
-            try { fixture.Quilt.RenderQuilt(); }
+            try { fixture.RenderQuilt(); }
             finally { RenderPipelineManager.endCameraRendering -= callback; }
             Assert.AreEqual(values.Length, count, "expected one Volume sample for each quilt view");
             return values;
@@ -169,6 +181,10 @@ namespace ViewWeave.GraphicsCompatibility
             try
             {
                 fixture.Setup();
+                fixture.BeginPipelineWarmup();
+                yield return null;
+                yield return null;
+                fixture.CompletePipelineWarmupAndCapture();
                 fixture.AddBloom();
                 fixture.RefreshScope();
                 fixture.Guard.reuseCameraOwnedVolumeStackForQuilt = true;
@@ -181,7 +197,7 @@ namespace ViewWeave.GraphicsCompatibility
                     if (camera == fixture.Camera) leaseObserved |= fixture.Guard.CameraOwnedVolumeStackLeaseActive;
                 };
                 RenderPipelineManager.beginCameraRendering += callback;
-                try { fixture.Quilt.RenderQuilt(); }
+                try { fixture.RenderQuilt(); }
                 finally { RenderPipelineManager.beginCameraRendering -= callback; }
 
                 Assert.AreEqual(1, fixture.Guard.ValidationStackCreationCount, "fallback should use the existing validation stack");
@@ -200,6 +216,10 @@ namespace ViewWeave.GraphicsCompatibility
             try
             {
                 fixture.Setup();
+                fixture.BeginPipelineWarmup();
+                yield return null;
+                yield return null;
+                fixture.CompletePipelineWarmupAndCapture();
                 fixture.Camera.SetVolumeFrameworkUpdateMode(VolumeFrameworkUpdateMode.ViaScripting);
                 fixture.Camera.UpdateVolumeStack();
                 existingStack = fixture.CameraData.volumeStack;
@@ -208,7 +228,7 @@ namespace ViewWeave.GraphicsCompatibility
                 VolumeFrameworkUpdateMode originalMode = fixture.Camera.GetVolumeFrameworkUpdateMode();
                 fixture.Guard.reuseCameraOwnedVolumeStackForQuilt = true;
 
-                fixture.Quilt.RenderQuilt();
+                fixture.RenderQuilt();
 
                 Assert.AreSame(existingStack, fixture.CameraData.volumeStack, "fallback replaced the pre-existing camera-owned stack");
                 Assert.AreEqual(1, fixture.Guard.ValidationStackCreationCount, "existing-stack condition should use the legacy validation stack");
@@ -231,6 +251,10 @@ namespace ViewWeave.GraphicsCompatibility
             try
             {
                 fixture.Setup();
+                fixture.BeginPipelineWarmup();
+                yield return null;
+                yield return null;
+                fixture.CompletePipelineWarmupAndCapture();
                 fixture.Guard.reuseCameraOwnedVolumeStackForQuilt = true;
                 fixture.Camera.SetVolumeFrameworkUpdateMode(VolumeFrameworkUpdateMode.EveryFrame);
                 fixture.CameraData.antialiasing = AntialiasingMode.TemporalAntiAliasing;
@@ -247,7 +271,7 @@ namespace ViewWeave.GraphicsCompatibility
                 volume.sharedProfile = profile;
                 VolumeStack originalManagerStack = VolumeManager.instance.stack;
 
-                Assert.Throws<NotSupportedException>(() => fixture.Quilt.RenderQuilt());
+                Assert.Throws<NotSupportedException>(() => fixture.RenderQuilt());
 
                 Assert.IsNull(fixture.CameraData.volumeStack, "rejected quilt retained its temporary camera-owned stack");
                 Assert.AreEqual(VolumeFrameworkUpdateMode.EveryFrame, fixture.Camera.GetVolumeFrameworkUpdateMode(), "rejection did not restore the camera update mode");
@@ -259,6 +283,79 @@ namespace ViewWeave.GraphicsCompatibility
                 fixture.Dispose();
                 if (volumeObject != null) UnityEngine.Object.DestroyImmediate(volumeObject);
                 if (profile != null) UnityEngine.Object.DestroyImmediate(profile);
+            }
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator CameraOwnedVolumeStackLeaseAbortsWhenPipelineAssetChangesDuringFinalView()
+        {
+            var fixture = new Fixture("volume-stack-reuse-pipeline-change");
+            VolumeStack unrelatedStack = null;
+            RenderPipelineAsset originalDefaultPipeline = null;
+            RenderPipelineAsset originalQualityPipeline = null;
+            int endCameraCallbacks = 0;
+            bool changedAsset = false;
+            int completionNotifications = 0;
+            Action<QuiltRenderer> onQuiltRendered = renderer => completionNotifications++;
+            Action<ScriptableRenderContext, Camera> onEndCameraRendering = (context, camera) =>
+            {
+                if (camera != fixture.Camera) return;
+                endCameraCallbacks++;
+                if (endCameraCallbacks != fixture.Quilt.settings.views) return;
+                unrelatedStack = VolumeManager.instance.CreateStack();
+                GraphicsSettings.defaultRenderPipeline = null;
+                QualitySettings.renderPipeline = null;
+                changedAsset = GraphicsSettings.currentRenderPipeline == null;
+            };
+
+            try
+            {
+                fixture.Setup();
+                fixture.BeginPipelineWarmup();
+                yield return null;
+                yield return null;
+                fixture.CompletePipelineWarmupAndCapture();
+                originalDefaultPipeline = GraphicsSettings.defaultRenderPipeline;
+                originalQualityPipeline = QualitySettings.renderPipeline;
+                fixture.Guard.reuseCameraOwnedVolumeStackForQuilt = true;
+                fixture.Camera.SetVolumeFrameworkUpdateMode(VolumeFrameworkUpdateMode.EveryFrame);
+                long initialRevision = fixture.Quilt.QuiltRevision;
+                fixture.Quilt.QuiltRendered += onQuiltRendered;
+                RenderPipelineManager.endCameraRendering += onEndCameraRendering;
+
+                InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() => fixture.Quilt.RenderQuilt());
+                Assert.That(exception.Message, Does.Contain("render pipeline or VolumeStack changed"));
+                Assert.AreEqual(fixture.Quilt.settings.views, endCameraCallbacks, "pipeline asset should change only during the final quilt view");
+                Assert.IsTrue(changedAsset, "the render pipeline asset did not change inside the final-view callback");
+                Assert.IsNull(fixture.CameraData.volumeStack, "failure cleanup retained its temporary camera-owned stack");
+                Assert.IsTrue(unrelatedStack.isValid, "failure cleanup destroyed an unrelated VolumeStack");
+                Assert.AreEqual(VolumeFrameworkUpdateMode.EveryFrame, fixture.Camera.GetVolumeFrameworkUpdateMode(), "pipeline-change failure did not restore the camera update mode");
+                Assert.AreEqual(initialRevision, fixture.Quilt.QuiltRevision, "a failed quilt advanced its completion revision");
+                Assert.AreEqual(0, completionNotifications, "a failed quilt emitted a completion notification");
+
+                GraphicsSettings.defaultRenderPipeline = originalDefaultPipeline;
+                QualitySettings.renderPipeline = originalQualityPipeline;
+                fixture.CameraData.volumeStack = null;
+                if (unrelatedStack != null && unrelatedStack.isValid && VolumeManager.instance.isInitialized)
+                    VolumeManager.instance.DestroyStack(unrelatedStack);
+                unrelatedStack = null;
+                yield return null;
+                yield return null;
+                fixture.CaptureStablePipeline();
+                fixture.RenderQuilt();
+                Assert.AreEqual(initialRevision + 1, fixture.Quilt.QuiltRevision, "the next quilt did not complete after pipeline restoration");
+                Assert.AreEqual(1, completionNotifications, "the recovered quilt did not emit exactly one completion notification");
+            }
+            finally
+            {
+                RenderPipelineManager.endCameraRendering -= onEndCameraRendering;
+                if (fixture.Quilt != null) fixture.Quilt.QuiltRendered -= onQuiltRendered;
+                if (unrelatedStack != null && unrelatedStack.isValid && VolumeManager.instance.isInitialized)
+                    VolumeManager.instance.DestroyStack(unrelatedStack);
+                if (originalDefaultPipeline != null) GraphicsSettings.defaultRenderPipeline = originalDefaultPipeline;
+                if (fixture.Pipeline != null) QualitySettings.renderPipeline = fixture.Pipeline;
+                fixture.Dispose();
             }
             yield return null;
         }
@@ -299,7 +396,7 @@ namespace ViewWeave.GraphicsCompatibility
             };
             RenderPipelineManager.beginCameraRendering += onBeginCameraRendering;
             RenderPipelineManager.endCameraRendering += onEndCameraRendering;
-            try { fixture.Quilt.RenderQuilt(); }
+            try { fixture.RenderQuilt(); }
             finally
             {
                 RenderPipelineManager.beginCameraRendering -= onBeginCameraRendering;
@@ -407,6 +504,9 @@ namespace ViewWeave.GraphicsCompatibility
             UniversalRenderPipelineAsset ownedPipeline;
             UniversalRendererData ownedRendererData;
             GraphicsFixtureScope scope;
+            RenderPipelineAsset stablePipelineAsset;
+            RenderPipeline stablePipelineInstance;
+            int pipelineCreatedAfterStabilization;
             Action<bool> featureToggle = enabled => { };
             bool featureEnabled;
 
@@ -438,11 +538,53 @@ namespace ViewWeave.GraphicsCompatibility
                 scope.Apply(camera);
             }
 
+            public void BeginPipelineWarmup()
+            {
+                quilt.autoRender = false;
+                camera.enabled = true;
+            }
+
+            public void CompletePipelineWarmupAndCapture()
+            {
+                camera.enabled = false;
+                if (CameraData.volumeStack != null) camera.DestroyVolumeStack();
+                CaptureStablePipeline();
+            }
+
             public Camera Camera => camera;
             public QuiltRenderer Quilt => quilt;
             public UrpQuiltCamera Guard => guard;
             public UniversalAdditionalCameraData CameraData => camera.GetComponent<UniversalAdditionalCameraData>();
             public UniversalRenderPipelineAsset Pipeline => ownedPipeline;
+
+            public void CaptureStablePipeline()
+            {
+                Assert.IsTrue(VolumeManager.instance.isInitialized, "URP VolumeManager was not initialized after the two-frame pipeline transition wait");
+                stablePipelineAsset = GraphicsSettings.currentRenderPipeline;
+                stablePipelineInstance = RenderPipelineManager.currentPipeline;
+                Assert.AreSame(ownedPipeline, stablePipelineAsset, "the expected URP asset was not active after the pipeline transition wait");
+                Assert.IsInstanceOf<UniversalRenderPipeline>(stablePipelineInstance, "an active UniversalRenderPipeline instance was not available after the transition wait");
+                pipelineCreatedAfterStabilization = 0;
+                RenderPipelineManager.activeRenderPipelineCreated -= OnActiveRenderPipelineCreated;
+                RenderPipelineManager.activeRenderPipelineCreated += OnActiveRenderPipelineCreated;
+            }
+
+            void OnActiveRenderPipelineCreated()
+            {
+                pipelineCreatedAfterStabilization++;
+            }
+
+            public void RenderQuilt()
+            {
+                try { quilt.RenderQuilt(); }
+                finally
+                {
+                    Assert.IsTrue(VolumeManager.instance.isInitialized, "URP VolumeManager was torn down during quilt rendering");
+                    Assert.AreSame(stablePipelineAsset, GraphicsSettings.currentRenderPipeline, "the active URP asset changed during quilt rendering");
+                    Assert.AreSame(stablePipelineInstance, RenderPipelineManager.currentPipeline, "the active URP instance changed during quilt rendering");
+                    Assert.AreEqual(0, pipelineCreatedAfterStabilization, "URP created another render-pipeline instance during the test quilt");
+                }
+            }
 
             void AddLitObject(string objectName, Vector3 position, Color color)
             {
@@ -540,6 +682,7 @@ namespace ViewWeave.GraphicsCompatibility
 
             public void Dispose()
             {
+                RenderPipelineManager.activeRenderPipelineCreated -= OnActiveRenderPipelineCreated;
                 GraphicsSettings.defaultRenderPipeline = previousDefaultPipeline; QualitySettings.renderPipeline = previousQualityPipeline;
                 RenderTexture.active = null; if (imageBefore != null) UnityEngine.Object.DestroyImmediate(imageBefore); if (imageAfter != null && imageAfter != imageBefore) UnityEngine.Object.DestroyImmediate(imageAfter); if (alphaFull != null) UnityEngine.Object.DestroyImmediate(alphaFull);
                 if (uiPanelSettings != null) UnityEngine.Object.DestroyImmediate(uiPanelSettings);

@@ -29,20 +29,60 @@ namespace ViewWeave.URP
             return pipeline != null && pipeline.volumeFrameworkUpdateMode == VolumeFrameworkUpdateMode.EveryFrame;
         }
 
+        internal static bool IsPipelineContextCurrent(VolumeManager manager, RenderPipelineAsset pipelineAsset, RenderPipeline pipelineInstance)
+        {
+            return manager != null && manager.isInitialized &&
+                GraphicsSettings.currentRenderPipeline == pipelineAsset &&
+                RenderPipelineManager.currentPipeline == pipelineInstance;
+        }
+
+        internal static void RestoreManagerStackSafely(VolumeManager manager, VolumeStack savedStack, RenderPipelineAsset pipelineAsset, RenderPipeline pipelineInstance)
+        {
+            if (manager == null || !manager.isInitialized) return;
+            if (IsPipelineContextCurrent(manager, pipelineAsset, pipelineInstance) && savedStack != null && savedStack.isValid)
+                manager.stack = savedStack;
+            else
+                manager.ResetMainStack();
+        }
+
+        static void ValidateScopeState(VolumeManager manager, RenderPipelineAsset pipelineAsset, RenderPipeline pipelineInstance, VolumeStack viewStack, UniversalAdditionalCameraData cameraData, VolumeStack expectedCameraStack)
+        {
+            bool valid = IsPipelineContextCurrent(manager, pipelineAsset, pipelineInstance) && viewStack != null && viewStack.isValid;
+            if (expectedCameraStack != null)
+                valid = valid && cameraData != null && cameraData.volumeStack == expectedCameraStack && expectedCameraStack.isValid;
+            if (!valid) throw new InvalidOperationException("URP render pipeline or VolumeStack changed during quilt rendering");
+        }
+
         public static Scope BeginViewRender(Camera camera)
         {
             Validate(camera);
-            var data = camera.GetComponent<UniversalAdditionalCameraData>();
-            VolumeStack stack = VolumeManager.instance.CreateStack();
+            UniversalAdditionalCameraData data = camera.GetComponent<UniversalAdditionalCameraData>();
+            VolumeManager manager = VolumeManager.instance;
+            RenderPipelineAsset pipelineAsset = GraphicsSettings.currentRenderPipeline;
+            RenderPipeline pipelineInstance = RenderPipelineManager.currentPipeline;
+            VolumeStack previousManagerStack = manager.stack;
+            VolumeStack stack = null;
             try
             {
+                if (!IsPipelineContextCurrent(manager, pipelineAsset, pipelineInstance))
+                    throw new InvalidOperationException("URP render pipeline changed before a quilt view began");
+                stack = manager.CreateStack();
                 Transform trigger = data.volumeTrigger != null ? data.volumeTrigger : camera.transform;
-                VolumeManager.instance.Update(stack, trigger, data.volumeLayerMask);
-                var motionBlur = stack.GetComponent<MotionBlur>();
-                if (motionBlur != null && motionBlur.IsActive()) throw new NotSupportedException("URP Motion Blur is temporal and is not supported for quilt views");
-                return new Scope(data, stack, true);
+                manager.Update(stack, trigger, data.volumeLayerMask);
+                ValidateScopeState(manager, pipelineAsset, pipelineInstance, stack, null, null);
+                ValidateMotionBlur(stack);
+                return new Scope(data, stack, true, null, manager, previousManagerStack, pipelineAsset, pipelineInstance, null);
             }
-            catch { VolumeManager.instance.DestroyStack(stack); throw; }
+            catch
+            {
+                try
+                {
+                    if (stack != null && stack.isValid && IsPipelineContextCurrent(manager, pipelineAsset, pipelineInstance))
+                        manager.DestroyStack(stack);
+                }
+                finally { RestoreManagerStackSafely(manager, previousManagerStack, pipelineAsset, pipelineInstance); }
+                throw;
+            }
         }
 
         internal static Scope BeginViewRender(Camera camera, VolumeStack borrowedStack)
@@ -54,36 +94,46 @@ namespace ViewWeave.URP
         {
             Validate(camera);
             if (borrowedStack == null || !borrowedStack.isValid) throw new InvalidOperationException("a valid cached volume stack is required");
-            var data = camera.GetComponent<UniversalAdditionalCameraData>();
-            Transform trigger = data.volumeTrigger != null ? data.volumeTrigger : camera.transform;
-            VolumeManager.instance.Update(borrowedStack, trigger, data.volumeLayerMask);
-            var motionBlur = borrowedStack.GetComponent<MotionBlur>();
-            if (motionBlur != null && motionBlur.IsActive()) throw new NotSupportedException("URP Motion Blur is temporal and is not supported for quilt views");
-            return new Scope(data, borrowedStack, false, onDispose);
+            UniversalAdditionalCameraData data = camera.GetComponent<UniversalAdditionalCameraData>();
+            VolumeManager manager = VolumeManager.instance;
+            RenderPipelineAsset pipelineAsset = GraphicsSettings.currentRenderPipeline;
+            RenderPipeline pipelineInstance = RenderPipelineManager.currentPipeline;
+            VolumeStack previousManagerStack = manager.stack;
+            try
+            {
+                if (!IsPipelineContextCurrent(manager, pipelineAsset, pipelineInstance))
+                    throw new InvalidOperationException("URP render pipeline changed before a quilt view began");
+                Transform trigger = data.volumeTrigger != null ? data.volumeTrigger : camera.transform;
+                manager.Update(borrowedStack, trigger, data.volumeLayerMask);
+                ValidateScopeState(manager, pipelineAsset, pipelineInstance, borrowedStack, null, null);
+                ValidateMotionBlur(borrowedStack);
+                return new Scope(data, borrowedStack, false, onDispose, manager, previousManagerStack, pipelineAsset, pipelineInstance, null);
+            }
+            catch
+            {
+                RestoreManagerStackSafely(manager, previousManagerStack, pipelineAsset, pipelineInstance);
+                throw;
+            }
         }
 
-        internal static Scope BeginViewRender(Camera camera, bool useCameraOwnedStack, Action onDispose)
+        internal static Scope BeginViewRender(Camera camera, VolumeStack expectedCameraStack, RenderPipelineAsset expectedPipelineAsset, RenderPipeline expectedPipelineInstance, Action onDispose)
         {
             Validate(camera);
-            if (!useCameraOwnedStack) throw new ArgumentException("camera-owned VolumeStack path must be enabled", nameof(useCameraOwnedStack));
-            var data = camera.GetComponent<UniversalAdditionalCameraData>();
-            VolumeStack stack = data.volumeStack;
-            if (stack == null || !stack.isValid) throw new InvalidOperationException("a valid camera-owned VolumeStack is required");
-
+            UniversalAdditionalCameraData data = camera.GetComponent<UniversalAdditionalCameraData>();
             VolumeManager manager = VolumeManager.instance;
             VolumeStack previousManagerStack = manager.stack;
             try
             {
+                ValidateScopeState(manager, expectedPipelineAsset, expectedPipelineInstance, expectedCameraStack, data, expectedCameraStack);
                 camera.UpdateVolumeStack();
-                stack = data.volumeStack;
-                if (stack == null || !stack.isValid) throw new InvalidOperationException("URP did not retain the camera-owned VolumeStack");
-                manager.stack = stack;
-                ValidateMotionBlur(stack);
-                return new Scope(data, stack, false, onDispose, manager, previousManagerStack);
+                ValidateScopeState(manager, expectedPipelineAsset, expectedPipelineInstance, expectedCameraStack, data, expectedCameraStack);
+                manager.stack = expectedCameraStack;
+                ValidateMotionBlur(expectedCameraStack);
+                return new Scope(data, expectedCameraStack, false, onDispose, manager, previousManagerStack, expectedPipelineAsset, expectedPipelineInstance, expectedCameraStack);
             }
             catch
             {
-                manager.stack = previousManagerStack;
+                RestoreManagerStackSafely(manager, previousManagerStack, expectedPipelineAsset, expectedPipelineInstance);
                 throw;
             }
         }
@@ -96,27 +146,58 @@ namespace ViewWeave.URP
 
         public readonly struct Scope : IDisposable
         {
-            readonly UniversalAdditionalCameraData data; readonly VolumeStack stack;
-            readonly AntialiasingMode antialiasing; readonly bool valid; readonly bool ownsStack; readonly Action onDispose;
-            readonly VolumeManager manager; readonly VolumeStack previousManagerStack;
-            internal Scope(UniversalAdditionalCameraData data, VolumeStack stack, bool ownsStack, Action onDispose = null, VolumeManager manager = null, VolumeStack previousManagerStack = null)
+            readonly UniversalAdditionalCameraData data;
+            readonly VolumeStack stack;
+            readonly AntialiasingMode antialiasing;
+            readonly bool valid;
+            readonly bool ownsStack;
+            readonly Action onDispose;
+            readonly VolumeManager manager;
+            readonly VolumeStack previousManagerStack;
+            readonly RenderPipelineAsset pipelineAsset;
+            readonly RenderPipeline pipelineInstance;
+            readonly VolumeStack expectedCameraStack;
+
+            internal Scope(UniversalAdditionalCameraData data, VolumeStack stack, bool ownsStack, Action onDispose, VolumeManager manager, VolumeStack previousManagerStack, RenderPipelineAsset pipelineAsset, RenderPipeline pipelineInstance, VolumeStack expectedCameraStack)
             {
-                this.data = data; this.stack = stack; this.ownsStack = ownsStack; this.onDispose = onDispose; this.manager = manager; this.previousManagerStack = previousManagerStack; antialiasing = data.antialiasing; valid = true;
+                this.data = data;
+                this.stack = stack;
+                this.ownsStack = ownsStack;
+                this.onDispose = onDispose;
+                this.manager = manager;
+                this.previousManagerStack = previousManagerStack;
+                this.pipelineAsset = pipelineAsset;
+                this.pipelineInstance = pipelineInstance;
+                this.expectedCameraStack = expectedCameraStack;
+                antialiasing = data.antialiasing;
+                valid = true;
                 if (antialiasing == AntialiasingMode.TemporalAntiAliasing) data.antialiasing = AntialiasingMode.None;
             }
+
             public void Dispose()
             {
                 if (!valid) return;
+                bool stateWasValid = manager != null && manager.isInitialized &&
+                    GraphicsSettings.currentRenderPipeline == pipelineAsset &&
+                    RenderPipelineManager.currentPipeline == pipelineInstance &&
+                    stack != null && stack.isValid;
+                if (expectedCameraStack != null)
+                    stateWasValid = stateWasValid && data != null && data.volumeStack == expectedCameraStack && expectedCameraStack.isValid;
                 try { if (data != null) data.antialiasing = antialiasing; }
                 finally
                 {
-                    try { if (ownsStack && stack != null) VolumeManager.instance.DestroyStack(stack); }
+                    try
+                    {
+                        if (ownsStack && stack != null && stack.isValid && IsPipelineContextCurrent(manager, pipelineAsset, pipelineInstance))
+                            manager.DestroyStack(stack);
+                    }
                     finally
                     {
-                        try { if (manager != null) manager.stack = previousManagerStack; }
+                        try { RestoreManagerStackSafely(manager, previousManagerStack, pipelineAsset, pipelineInstance); }
                         finally { onDispose?.Invoke(); }
                     }
                 }
+                if (!stateWasValid) throw new InvalidOperationException("URP render pipeline or VolumeStack changed during quilt rendering");
             }
         }
     }

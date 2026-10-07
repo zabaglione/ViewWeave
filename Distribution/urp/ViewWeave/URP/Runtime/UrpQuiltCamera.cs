@@ -14,7 +14,8 @@ namespace ViewWeave.URP
         public bool reuseCameraOwnedVolumeStackForQuilt;
 
         VolumeStack validationStack;
-        RenderPipelineAsset validationPipeline;
+        RenderPipelineAsset validationPipelineAsset;
+        RenderPipeline validationPipelineInstance;
         Camera cachedCamera;
         bool scopeActive;
         CameraVolumeStackLease cameraVolumeStackLease;
@@ -32,17 +33,25 @@ namespace ViewWeave.URP
             int samples = pipeline.msaaSampleCount;
             return samples == 2 || samples == 4 || samples == 8 ? samples : 1;
         }
+
         public UrpQuiltIntegration.Scope PrepareForQuilt()
         {
             UrpQuiltIntegration.Validate(Camera);
             if (!isActiveAndEnabled) throw new InvalidOperationException("URP quilt camera must be active and enabled");
             if (scopeActive) throw new InvalidOperationException("URP quilt camera view scope is already active");
-            var pipeline = GraphicsSettings.currentRenderPipeline;
-            if (validationStack == null || !validationStack.isValid || validationPipeline != pipeline)
+
+            RenderPipelineAsset pipelineAsset = GraphicsSettings.currentRenderPipeline;
+            RenderPipeline pipelineInstance = RenderPipelineManager.currentPipeline;
+            VolumeManager manager = VolumeManager.instance;
+            if (pipelineInstance == null || !manager.isInitialized)
+                throw new InvalidOperationException("URP render pipeline is not initialized");
+
+            if (validationStack == null || !validationStack.isValid || validationPipelineAsset != pipelineAsset || validationPipelineInstance != pipelineInstance)
             {
                 DestroyValidationStack();
-                validationStack = VolumeManager.instance.CreateStack();
-                validationPipeline = pipeline;
+                validationStack = manager.CreateStack();
+                validationPipelineAsset = pipelineAsset;
+                validationPipelineInstance = pipelineInstance;
                 ValidationStackCreationCount++;
             }
             scopeActive = true;
@@ -62,41 +71,63 @@ namespace ViewWeave.URP
             UniversalAdditionalCameraData data = Camera.GetComponent<UniversalAdditionalCameraData>();
             if (data.volumeStack != null || !UrpQuiltIntegration.UsesAutomaticVolumeUpdates(Camera, data)) return null;
 
+            VolumeManager manager = VolumeManager.instance;
+            RenderPipelineAsset pipelineAsset = GraphicsSettings.currentRenderPipeline;
+            RenderPipeline pipelineInstance = RenderPipelineManager.currentPipeline;
+            if (pipelineInstance == null || !manager.isInitialized)
+                throw new InvalidOperationException("URP render pipeline is not initialized");
+
             VolumeFrameworkUpdateMode originalUpdateMode = Camera.GetVolumeFrameworkUpdateMode();
-            VolumeStack originalManagerStack = VolumeManager.instance.stack;
+            VolumeStack originalManagerStack = manager.stack;
+            VolumeStack ownedStack = null;
             try
             {
                 Camera.SetVolumeFrameworkUpdateMode(VolumeFrameworkUpdateMode.ViaScripting);
-                VolumeStack ownedStack = data.volumeStack;
+                ownedStack = data.volumeStack;
+                AssertPipelineContext(manager, pipelineAsset, pipelineInstance);
                 if (ownedStack == null || !ownedStack.isValid)
                 {
                     try
                     {
-                        VolumeManager.instance.stack = originalManagerStack;
-                        if (data.volumeStack != null) Camera.DestroyVolumeStack();
+                        UrpQuiltIntegration.RestoreManagerStackSafely(manager, originalManagerStack, pipelineAsset, pipelineInstance);
+                        if (ownedStack != null && data.volumeStack == ownedStack)
+                            Camera.DestroyVolumeStack(data);
                     }
                     finally { Camera.SetVolumeFrameworkUpdateMode(originalUpdateMode); }
                     return null;
                 }
 
-                cameraVolumeStackLease = new CameraVolumeStackLease(this, Camera, data, ownedStack, originalUpdateMode, originalManagerStack);
+                AssertLeaseContext(Camera, data, ownedStack, manager, pipelineAsset, pipelineInstance);
+                cameraVolumeStackLease = new CameraVolumeStackLease(this, Camera, data, ownedStack, originalUpdateMode, originalManagerStack, pipelineAsset, pipelineInstance);
                 return cameraVolumeStackLease;
             }
             catch
             {
                 try
                 {
-                    VolumeManager.instance.stack = originalManagerStack;
-                    if (data.volumeStack != null) Camera.DestroyVolumeStack();
+                    UrpQuiltIntegration.RestoreManagerStackSafely(manager, originalManagerStack, pipelineAsset, pipelineInstance);
+                    if (ownedStack != null && data.volumeStack == ownedStack)
+                        Camera.DestroyVolumeStack(data);
                 }
                 finally { Camera.SetVolumeFrameworkUpdateMode(originalUpdateMode); }
                 throw;
             }
         }
 
-        public bool CameraOwnedVolumeStackLeaseActive => cameraVolumeStackLease != null && cameraVolumeStackLease.IsActive;
+        static void AssertPipelineContext(VolumeManager manager, RenderPipelineAsset pipelineAsset, RenderPipeline pipelineInstance)
+        {
+            if (!UrpQuiltIntegration.IsPipelineContextCurrent(manager, pipelineAsset, pipelineInstance))
+                throw new InvalidOperationException("URP render pipeline changed during quilt rendering");
+        }
 
-        bool IsUsingPreparedCameraStack => CameraOwnedVolumeStackLeaseActive;
+        static void AssertLeaseContext(Camera camera, UniversalAdditionalCameraData data, VolumeStack stack, VolumeManager manager, RenderPipelineAsset pipelineAsset, RenderPipeline pipelineInstance)
+        {
+            AssertPipelineContext(manager, pipelineAsset, pipelineInstance);
+            if (camera == null || data == null || stack == null || !stack.isValid || data.volumeStack != stack)
+                throw new InvalidOperationException("URP render pipeline or camera VolumeStack changed during quilt rendering");
+        }
+
+        public bool CameraOwnedVolumeStackLeaseActive => cameraVolumeStackLease != null && cameraVolumeStackLease.IsCurrent;
 
         void EndCameraVolumeStackLease(CameraVolumeStackLease lease)
         {
@@ -113,11 +144,20 @@ namespace ViewWeave.URP
             readonly VolumeStack ownedStack;
             readonly VolumeFrameworkUpdateMode originalUpdateMode;
             readonly VolumeStack originalManagerStack;
+            readonly RenderPipelineAsset pipelineAsset;
+            readonly RenderPipeline pipelineInstance;
             bool disposed;
 
-            public bool IsActive => !disposed;
+            public bool IsCurrent => !disposed && IsLeaseContextCurrent();
 
-            public CameraVolumeStackLease(UrpQuiltCamera owner, Camera camera, UniversalAdditionalCameraData data, VolumeStack ownedStack, VolumeFrameworkUpdateMode originalUpdateMode, VolumeStack originalManagerStack)
+            bool IsLeaseContextCurrent()
+            {
+                return camera != null && data != null && ownedStack != null && ownedStack.isValid &&
+                    data.volumeStack == ownedStack &&
+                    UrpQuiltIntegration.IsPipelineContextCurrent(VolumeManager.instance, pipelineAsset, pipelineInstance);
+            }
+
+            public CameraVolumeStackLease(UrpQuiltCamera owner, Camera camera, UniversalAdditionalCameraData data, VolumeStack ownedStack, VolumeFrameworkUpdateMode originalUpdateMode, VolumeStack originalManagerStack, RenderPipelineAsset pipelineAsset, RenderPipeline pipelineInstance)
             {
                 this.owner = owner;
                 this.camera = camera;
@@ -125,6 +165,21 @@ namespace ViewWeave.URP
                 this.ownedStack = ownedStack;
                 this.originalUpdateMode = originalUpdateMode;
                 this.originalManagerStack = originalManagerStack;
+                this.pipelineAsset = pipelineAsset;
+                this.pipelineInstance = pipelineInstance;
+            }
+
+            public void AssertCurrent()
+            {
+                if (!IsCurrent)
+                    throw new InvalidOperationException("URP render pipeline or camera VolumeStack changed during quilt rendering");
+            }
+
+            public UrpQuiltIntegration.Scope BeginViewRender(Camera targetCamera, Action onDispose)
+            {
+                AssertCurrent();
+                if (targetCamera != camera) throw new InvalidOperationException("guard camera does not match the camera VolumeStack lease");
+                return UrpQuiltIntegration.BeginViewRender(camera, ownedStack, pipelineAsset, pipelineInstance, onDispose);
             }
 
             public void Dispose()
@@ -137,13 +192,13 @@ namespace ViewWeave.URP
                 if (disposed) return;
                 disposed = true;
                 VolumeManager manager = VolumeManager.instance;
-                try { manager.stack = originalManagerStack; }
+                try { UrpQuiltIntegration.RestoreManagerStackSafely(manager, originalManagerStack, pipelineAsset, pipelineInstance); }
                 finally
                 {
                     try
                     {
                         if (camera != null && data != null && data.volumeStack == ownedStack)
-                            camera.DestroyVolumeStack();
+                            camera.DestroyVolumeStack(data);
                     }
                     finally
                     {
@@ -152,27 +207,35 @@ namespace ViewWeave.URP
                 }
             }
         }
+
         IDisposable IQuiltRenderGuard.Begin(Camera camera)
         {
             if (camera != Camera) throw new InvalidOperationException("guard camera does not match the quilt source camera");
-            if (!IsUsingPreparedCameraStack) return PrepareForQuilt();
+            CameraVolumeStackLease lease = cameraVolumeStackLease;
+            if (lease == null) return PrepareForQuilt();
             if (scopeActive) throw new InvalidOperationException("URP quilt camera view scope is already active");
             scopeActive = true;
             if (releaseScopeAction == null) releaseScopeAction = ReleaseScope;
             try
             {
-                return UrpQuiltIntegration.BeginViewRender(Camera, true, releaseScopeAction);
+                return lease.BeginViewRender(Camera, releaseScopeAction);
             }
             catch { scopeActive = false; throw; }
         }
+
         void ReleaseScope() { scopeActive = false; }
         void OnDisable() { scopeActive = false; cameraVolumeStackLease?.Dispose(); DestroyValidationStack(); }
         void OnDestroy() { scopeActive = false; cameraVolumeStackLease?.Dispose(); DestroyValidationStack(); cachedCamera = null; }
+
         void DestroyValidationStack()
         {
-            if (validationStack != null) VolumeManager.instance.DestroyStack(validationStack);
+            if (validationStack != null && validationStack.isValid && VolumeManager.instance.isInitialized &&
+                validationPipelineAsset == GraphicsSettings.currentRenderPipeline &&
+                validationPipelineInstance == RenderPipelineManager.currentPipeline)
+                VolumeManager.instance.DestroyStack(validationStack);
             validationStack = null;
-            validationPipeline = null;
+            validationPipelineAsset = null;
+            validationPipelineInstance = null;
         }
     }
 }
