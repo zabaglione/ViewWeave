@@ -12,6 +12,8 @@ URP driver対象試験は最新統合で5/5通過しました。これは通常�
 
 現行guard後のCore/SRP/VFX Editor targeted試験は、LinearのSRP/VFX 17/17（VFX driver 6件を含む）とGammaのMSAA/VFX 8/8（Gamma VFX拒否1件を含む）でした。これは全件matrixの更新ではなく、旧123件統合の結果とも混同しません。Gamma MSAA/通常URPのBridge Player実行は未検証です。Gamma VFXは公式非対応です。証跡は`.local/windows-improvement/bridge/linear-srp-vfx.xml`と`.local/windows-improvement/bridge/gamma-msaa-8-original-threshold.xml`です。
 
+別のprivate trial `codex/urp-volume-reuse` ではVolumeStack変更のPlayMode testが7/7通過しましたが、Garden A/B/A測定で性能改善は確認されず、採用していません。
+
 VFX GraphはLinear color spaceが必須です。Unity Visual Effect Graph 17.6の公式要件ではURPのGamma color spaceは非対応で、HDRPもLinear color spaceを要求します。UrpVfxCameraDriverはGamma時にCameraやRenderTextureを生成せず、`VFX Graph requires Linear color space; URP Gamma is unsupported`で停止します。GammaでのVFX描画は対応範囲に含めません。[Unity Visual Effect Graph 17.6 system requirements](https://docs.unity3d.com/Packages/com.unity.visualeffectgraph@17.6/manual/System-Requirements.html)、[Unity HDRP asset requirements](https://docs.unity3d.com/Packages/com.unity.render-pipelines.high-definition@17.6/manual/create-an-hdrp-asset.html)
 
 旧package snapshotのWindows D3D11 PlayMode統合は123件中108件通過、15件失敗、skip 0でした。Session 18/18、互換性37/37、GRD 27/27、SRP追加10/10、SRP拡張2/2、VFX driver 5/5、Samples 4/4を確認しました。未通過はHDRP priming 1件とVFX compatibility 14件で、別の同時期VFX matrixは20件中5件pass、15件failでした。未通過条件では十分な全tileの効果を確認できませんでした。この履歴は現行D3D12 project統合やすべてのVFX条件の成否を示すものではありません。Bridge接続のURP/HDRP PlayerはPreview、Balanced、NativeのGRD ON/OFF各6条件を固定条件で確認しています。これらは個別fixtureと固定条件の結果であり、機能全体の対応や一般機器でのPlayer実行の保証を意味しません。品質切替cycleも固定条件で通過しました。性能優位と光学品質の全視点人手確認、配布署名、hotplug、複数機器、Metalは未確定です。
@@ -28,12 +30,12 @@ VFX GraphはLinear color spaceが必須です。Unity Visual Effect Graph 17.6�
 | profile / quality / hotplug / 複数機器 | Preview/Balanced/NativeとGRD ON/OFFの6条件、48 view Playerを確認。hotplug、複数機器、Registryの一般運用は未検証 | profile由来の自動選択、hotplug、複数機器を再現可能にする |
 | depthiness / frustum / gizmo / camera conversion | Quilt mathとcamera変換の一部のみ | 統合RigとEditor操作を検証 |
 | Editor / offline display | Bridge Worker経路はWindows D3D11/D3D12 Editor Playに対応。Edit Modeとoffline displayは提供しない。D3D12 EditorはURP/HDRPのDomain Reload enabled/disabledで各2 cycleを確認。HDRP VFX Learning Templates projectもsnapshot 8adda27cでNative/48 viewsのPlayと停止cleanupを確認。GRDはこのmatrixで切り替えていない | 全48 viewsの人手光学レビュー、Editor再起動と一般機器条件を確認 |
-| still capture / video / quilt layer / RGBD | 未実装または未検証 | 保存形式、録画、RGBDの受入試験 |
+| still capture / video / quilt layer / RGBD | Central 2D PNGを含むQuilt PNG/PNG連番は実装済み。D3D11 URP/HDRP静止画suite各2/2。DX12 Core smoke、URP/HDRP各1 capture testはfake outputでpassし、central metadata、mapping、Pause/Resumeを確認。Bridge output未検証。静音MP4 exporterのfake suiteと実FFmpeg/ffprobe 7.0.2 CPU smokeはpass（合成3-frame input）。実録画からのexport end-to-endとEditor window操作は未確認。音声とQuilt playbackは未実装。RGBDは未検証。 | DX12 Bridge経路、実QuiltからMP4へのend-to-end、Editor window操作、音声、Quilt playback、RGBDの受入試験 |
 | 3D cursor / orbit / buttons | 未検証 | 入力と機器差を検証 |
 | URP | Unity 6000.6.4f1、SRP 17.6、D3D11でLit/Bloom smoke。Base cameraのみ、stackは拒否。M3の8 fixtureを確認済み | 残る視点別効果を個別に検証 |
 | HDRP | Linear必須。quilt view中はadapter既定設定でMotion Blur、SSR、SSGI、volumetric fog/cloudを一時抑制。Auto Exposureは全view共通Fixed EV 12、元がFixedならその値を保持。通常Fog/Sky/Bloomと元設定は維持 | HDRP標準templateのCubeとEditor Playで起動・再起動を確認 |
 | Built-in / Unity graphics | 製品サポート対象外。CoreはStandard RenderRequest経路を要求 | 対象外として扱う |
-| Bridge | WorkerはWindows D3D11/D3D12 Editor PlayとPlayerに対応。D3D12経路はUnity D3D12から同一GPU上のD3D11 workerへ共有して公式Bridgeへ送る。Native ring testはD3D11 baseline込み349 draw、loader 100-cycleはfake runtimeで確認。URP/HDRP Editor PlayのDomain Reload enabled/disabled各2 cycle、両pipelineのD3D12 Development Player Preview、HDRP user projectのsnapshot 8adda27cでのNative/48 views Editor Playを確認。GRD設定はこのmatrixで切り替えていない。Player Native qualityは未実施。Legacy Direct実機結果はD3D11のみ。全48 viewの人手確認、配布署名、hotplug、複数機器、Metalは未実施 | Player Native quality、全48 view光学品質、hotplug、複数機器を検証 |
+| Bridge | WorkerはWindows D3D11/D3D12 Editor PlayとPlayerに対応。D3D12経路はUnity D3D12から同一GPU上のD3D11 workerへ共有して公式Bridgeへ送る。Native ring testはD3D11 baseline込み349 draw、loader 100-cycleはfake runtimeで確認。URP/HDRP Editor PlayのDomain Reload enabled/disabled各2 cycle、両pipelineのD3D12 Development/Release PlayerでPreview/Balanced/Native/Previewを通る固定fixture matrix、DevelopmentのNative 10-cycle restartとGRD-on 600-second holdを確認。HDRP user project snapshot 8adda27cのNative/48 views Editor Playも確認。GRD設定を含む一般projectの性能・光学を保証しない。Legacy Direct実機結果はD3D11のみ。全48 viewの人手確認、配布署名、hotplug、複数機器、Metalは未実施 | 実scene光学品質、VFX長時間、hotplug、複数機器を検証 |
 | Bloom / Tonemapping / Color Adjustments | Lit/Bloom smokeのみ確認 | per-view処理とtile seamを検証 |
 | TAA / temporal / Auto Exposure | TAAはquilt view中のみ停止して復元。HDRP Auto Exposureはquilt全view共通Fixed exposureへ一時変換。一般的なview別履歴分離は未検証 | temporal履歴の独立は別研究 |
 | HDRP Motion Blur / SSR / SSGI / volumetric fog / clouds | adapter既定の一時overrideでquilt view中のみ抑制。通常render scopeでは元stackの設定を使う | 別のtemporal効果や複雑なVolume構成は個別検証 |
@@ -51,7 +53,6 @@ uGUI WorldSpaceとScreen Space CameraはM3試験で確認済みです。Overlay�
 
 FXAA/SMAAは追加fixtureで限定確認しました。URP MSAAは4x view RT、1x resolve、resize/disable lifecycle、中心色一致を確認しました。一般Player、性能、HDRP MSAAは未検証です。TAAは一時的に無効化しています。Auto Exposureとtemporal per-view historyは、履歴とメモリを分離した別研究です。
 
+## DX12 capture and shutdown evidence (2026-10-07)
 
-
-
-
+The current change set passed a DX12 Core capture smoke, one URP plus one HDRP capture pipeline test using fake output, and a CPU-only synthetic MP4 export with FFmpeg/ffprobe 7.0.2. These results do not verify official Bridge transport or physical display output. The exporter smoke did not render an actual Unity quilt; real recording-to-export end-to-end and Editor-window interaction remain unverified. A URP and earlier HDRP Editor-stop 0xC0000005 observation remains unresolved. The Native image guard PlayMode suite passed 6/6; it is preventive and does not establish the cause or fix of the vendor crash. GitHub distribution integration is in progress. See [Windows validation](windows-validation.md) and [the evidence report](benchmarks/remaining-work-validation-20261007.md).

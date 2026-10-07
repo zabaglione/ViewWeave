@@ -32,11 +32,15 @@ Hierarchyで`ViewWeave Bridge Rig`を選び、Inspectorの`QuiltRenderer > View 
 
 ## Quilt保存とカメラ調整
 
-Play中にHierarchyで`ViewWeave Bridge Rig`を選び、`Window > ViewWeave > Quilt Capture`から完成QuiltのPNGとJSONメタデータを保存できます。URP/HDRPのD3D11 PlayMode基本テストは各2/2通過し、追加Recorder suiteも通過しました。10fpsと25fpsで各3枚、URPで1〜240fpsの開始・停止とsimulation時間の復元を自動確認しています。PNG読み戻し・圧縮は同期処理のため、実時間では指定FPSに追いつかない場合があります。録画は追加Quilt描画を行わず、MP4や音声には対応しません。保存機能のD3D12と実機保存は未検証です。操作と保存条件は[Quilt保存と連番録画](docs/quilt-capture.md)を参照してください。
+Play中にHierarchyでViewWeave Bridge Rigを選び、Window > ViewWeave > Quilt Captureから完成Quilt PNG、JSON sidecar、中央view PNGを保存できます。RecorderはPNG連番のPause/Resumeに対応します。DX12 fake-output capture testはCore smokeとURP/HDRP各1/1通過し、中央PNG/sidecar、half/quarter view mapping、Pause/ResumeとUnity時間復元を確認しました。このtestはBridgeを使わず、実機表示の合格を意味しません。既存D3D11 test結果は別に記録しています。PNG圧縮は同期処理のため指定FPSに追いつかない場合があります。操作は[Quilt Capture](docs/quilt-capture.md)を参照してください。
 
-カメラ範囲は`QuiltRenderer`の`Camera Framing`とSceneビューで確認できます。紫の面がzero-parallax/focus plane、青緑と橙の面がNear/Farです。Camera Authoring test suiteは通過しています。Sceneビューでハンドルを直接ドラッグする操作、D3D12、実機の光学表示は未検証です。カメラのfocus/FOV/clip設定を変えても元カメラのposeは維持されます。録画中のカメラ移動は可能です。詳細は[Quiltのカメラ範囲とフォーカス](docs/quilt-authoring.md)を参照してください。
+カメラ範囲はQuiltRendererのCamera FramingとSceneビューで確認できます。紫の面がzero-parallax/focus plane、青緑と橙の面がNear/Farです。Camera Authoring test suiteは通過しています。Sceneビューでハンドルを直接ドラッグする操作と実機の光学表示は未検証です。capture suiteのDX12 fake-output試験は通過していますが、Bridge captureは未検証です。カメラのfocus/FOV/clip設定を変えても元カメラのposeは維持されます。録画中のカメラ移動は可能です。詳しくはdocs/quilt-authoring.mdを参照してください。
 
 対応条件と既知の制約は[Compatibility](docs/compatibility.md)、検証結果は[Windows validation](docs/windows-validation.md)を参照してください。
+
+## 動画出力
+
+PNG連番からの無音MP4書き出しはEditor専用の後処理機能です。FFmpeg/ffprobe 7.0.2を別途用意する必要があり、SDKはbinaryを同梱・downloadしません。空白・Unicodeを含むpathから3枚のQuilt PNGをH.264/yuv420p、30fpsで書き出し、ffprobeとfull-layout JSONを確認しました。これはCPU-onlyの合成素材テストで、Unity NUnitや実Quilt描画を使った検証ではありません。詳しくは[Quilt Video Export](docs/quilt-video-export.md)を参照してください。
 
 ## 任意のサンプル
 
@@ -55,6 +59,8 @@ HDRPとVFX GraphはLinear color spaceが必須です。HDRP Wizardの`Lightmap E
 - [Getting started](docs/getting-started.md): Editor PlayとPlayerの手順
 - [Compatibility](docs/compatibility.md): 対応条件と既知の制約
 - [Windows validation](docs/windows-validation.md): 実行済み試験と結果
+- [残作業と受け入れ計画](docs/remaining-work-plan.md): 次に行う作業と完了条件
+- [残作業の検証記録](docs/benchmarks/remaining-work-validation-20261007.md): 2026-10-07の限定DX12 captureと終了診断
 - [DX12 HDRP performance investigation](docs/dx12-performance-investigation.md): Profiler調査と視点数削減の実測
 - [公式SDK機能調査](docs/official-sdk-feature-research.md): Quilt保存、連番録画、カメラ操作の比較
 - [Unity多視点最適化調査](docs/unity-multiview-research.md): Unityと研究での描画最適化

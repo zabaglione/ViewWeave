@@ -123,10 +123,12 @@ def meta_check_profile(root, base, report, profile):
     for path in sorted(base_path.rglob("*.meta")):
         try:
             text = path.read_text(encoding="utf-8")
-        except (OSError, UnicodeDecodeError):
+        except (OSError, UnicodeDecodeError) as error:
+            report.error(f"unreadable {profile} meta {path.relative_to(root)}: {error}")
             continue
-        match = re.search(r"(?m)^guid:\s*([0-9a-fA-F]{32})\s*$", text)
+        match = re.search(r"(?m)^guid:[ \t]*([0-9a-fA-F]{32})[ \t]*\r?$", text)
         if not match:
+            report.error(f"missing or invalid {profile} guid in {path.relative_to(root)}")
             continue
         guid = match.group(1).lower()
         previous = guids.get(guid)

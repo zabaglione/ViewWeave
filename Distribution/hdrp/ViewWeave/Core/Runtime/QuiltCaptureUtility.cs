@@ -21,6 +21,17 @@ namespace ViewWeave
     }
 
     [Serializable]
+    public sealed class QuiltCentralViewCaptureMetadata
+    {
+        public QuiltCaptureMetadata quilt;
+        public int logicalViewIndex;
+        public int renderedViewIndex;
+        public int width;
+        public int height;
+        public string viewRenderMode;
+    }
+
+    [Serializable]
     public sealed class QuiltCaptureRect
     {
         public int x;
@@ -162,6 +173,89 @@ namespace ViewWeave
             RenderTexture quilt = renderer.QuiltTexture;
             if (quilt == null || !quilt.IsCreated()) throw new InvalidOperationException("The completed quilt texture is unavailable.");
             return Save(quilt, renderer.LatestSnapshot, filePath);
+        }
+
+        public static string SaveCentralViewLatest(QuiltRenderer renderer, string filePath)
+        {
+            if (renderer == null) throw new ArgumentNullException(nameof(renderer));
+            if (string.IsNullOrWhiteSpace(filePath)) throw new ArgumentException("A PNG file path is required.", nameof(filePath));
+            if (!renderer.HasRenderedQuilt) throw new InvalidOperationException("No completed quilt is available to save.");
+            if (!renderer.IsLatestQuiltCurrent) throw new InvalidOperationException("The quilt is stale because its layout, density, or geometry settings changed.");
+            RenderTexture quilt = renderer.QuiltTexture;
+            if (quilt == null || !quilt.IsCreated()) throw new InvalidOperationException("The completed quilt texture is unavailable.");
+            return SaveCentralView(quilt, renderer.LatestSnapshot, filePath);
+        }
+
+        public static string SaveCentralView(RenderTexture quilt, QuiltRenderSnapshot snapshot, string filePath)
+        {
+            if (quilt == null) throw new ArgumentNullException(nameof(quilt));
+            if (!quilt.IsCreated()) throw new InvalidOperationException("The quilt render texture is not created.");
+            ValidateSnapshot(quilt, snapshot);
+            if (string.IsNullOrWhiteSpace(filePath)) throw new ArgumentException("A PNG file path is required.", nameof(filePath));
+            string fullPath = Path.GetFullPath(filePath);
+            if (!string.Equals(Path.GetExtension(fullPath), ".png", StringComparison.OrdinalIgnoreCase))
+                throw new ArgumentException("The file extension must be .png.", nameof(filePath));
+            string sidecarPath = Path.ChangeExtension(fullPath, ".json");
+            if (File.Exists(fullPath) || File.Exists(sidecarPath)) throw new IOException("The output PNG or metadata sidecar already exists.");
+            string directory = Path.GetDirectoryName(fullPath);
+            Directory.CreateDirectory(directory);
+
+            int logicalView = (snapshot.Layout.ViewCount - 1) / 2;
+            int renderedView = QuiltViewSampling.GetSourceViewIndex(snapshot.Layout.ViewCount, snapshot.ViewRenderMode, logicalView);
+            RectInt tile = snapshot.Layout.GetTile(logicalView);
+            RenderTexture oldActive = RenderTexture.active;
+            Texture2D pixels = null;
+            string temporaryPng = fullPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
+            string temporaryJson = sidecarPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
+            bool pngCommitted = false;
+            try
+            {
+                pixels = new Texture2D(tile.width, tile.height, TextureFormat.RGBA32, false, false)
+                {
+                    name = "ViewWeave.CentralView.Readback"
+                };
+                RenderTexture.active = quilt;
+                pixels.ReadPixels(new Rect(tile.x, tile.y, tile.width, tile.height), 0, 0, false);
+                pixels.Apply(false, false);
+                byte[] png = ImageConversion.EncodeToPNG(pixels);
+                QuiltCentralViewCaptureMetadata metadata = new QuiltCentralViewCaptureMetadata
+                {
+                    quilt = snapshot.ToMetadata(),
+                    logicalViewIndex = logicalView,
+                    renderedViewIndex = renderedView,
+                    width = tile.width,
+                    height = tile.height,
+                    viewRenderMode = snapshot.ViewRenderMode.ToString()
+                };
+                byte[] json = System.Text.Encoding.UTF8.GetBytes(JsonUtility.ToJson(metadata, true) + "\n");
+                File.WriteAllBytes(temporaryPng, png);
+                File.WriteAllBytes(temporaryJson, json);
+                File.Move(temporaryPng, fullPath);
+                pngCommitted = true;
+                File.Move(temporaryJson, sidecarPath);
+                return fullPath;
+            }
+            catch
+            {
+                if (pngCommitted) TryDelete(fullPath);
+                throw;
+            }
+            finally
+            {
+                try { RenderTexture.active = oldActive; }
+                catch { }
+                try
+                {
+                    if (pixels != null)
+                    {
+                        if (Application.isPlaying) UnityEngine.Object.Destroy(pixels);
+                        else UnityEngine.Object.DestroyImmediate(pixels);
+                    }
+                }
+                catch { }
+                TryDelete(temporaryPng);
+                TryDelete(temporaryJson);
+            }
         }
 
         public static string Save(RenderTexture quilt, QuiltRenderSnapshot snapshot, string filePath)

@@ -12,7 +12,8 @@ namespace ViewWeave
         Recording,
         Complete,
         Cancelled,
-        Error
+        Error,
+        Paused
     }
 
     [Serializable]
@@ -82,7 +83,8 @@ namespace ViewWeave
         public int CompletedFrameCount => capturedFrames.Count;
         public int RequestedFrameCount => requestedFrameCount;
         public int FramesPerSecond => fps;
-        public bool IsRecording => Status == QuiltRecordingStatus.Recording;
+        public bool IsRecording => Status == QuiltRecordingStatus.Recording || Status == QuiltRecordingStatus.Paused;
+        public bool IsPaused => Status == QuiltRecordingStatus.Paused;
 
         void Reset()
         {
@@ -153,9 +155,57 @@ namespace ViewWeave
             Finish(capturedFrames.Count == requestedFrameCount ? QuiltRecordingStatus.Complete : QuiltRecordingStatus.Cancelled, string.Empty);
         }
 
+        public void PauseRecording()
+        {
+            if (Status != QuiltRecordingStatus.Recording) throw new InvalidOperationException("The recorder is not actively recording.");
+            string invalidState = GetRecordingStateError(true);
+            if (!string.IsNullOrEmpty(invalidState))
+            {
+                Finish(QuiltRecordingStatus.Error, invalidState);
+                throw new InvalidOperationException(invalidState);
+            }
+
+            if (ownsCaptureDeltaTime && Time.captureDeltaTime == ownedCaptureDeltaTime)
+                Time.captureDeltaTime = originalCaptureDeltaTime;
+            ownsCaptureDeltaTime = false;
+            Status = QuiltRecordingStatus.Paused;
+            try { WriteManifest(); }
+            catch (Exception error)
+            {
+                Fail(error);
+                throw;
+            }
+        }
+
+        public void ResumeRecording()
+        {
+            if (!IsPaused) throw new InvalidOperationException("The recorder is not paused.");
+            string invalidState = GetRecordingStateError(false);
+            if (!string.IsNullOrEmpty(invalidState))
+            {
+                Finish(QuiltRecordingStatus.Error, invalidState);
+                throw new InvalidOperationException(invalidState);
+            }
+
+            try
+            {
+                Time.captureDeltaTime = requestedCaptureDeltaTime;
+                ownedCaptureDeltaTime = Time.captureDeltaTime;
+                ownsCaptureDeltaTime = true;
+                startFrame = Time.frameCount;
+                Status = QuiltRecordingStatus.Recording;
+                WriteManifest();
+            }
+            catch (Exception error)
+            {
+                Fail(error);
+                throw;
+            }
+        }
+
         void Update()
         {
-            if (!IsRecording) return;
+            if (Status != QuiltRecordingStatus.Recording) return;
             if (Time.frameCount <= startFrame) return;
             if (Time.timeScale != 1f)
             {
@@ -188,21 +238,22 @@ namespace ViewWeave
                 Finish(QuiltRecordingStatus.Error, "The Quilt layout, view density, or geometry settings changed during recording.");
                 return;
             }
-            int watchdogFrame = lastCapturedUnityFrame < 0 ? startFrame + 1 : lastCapturedUnityFrame + 1;
+            int watchdogFrame = Math.Max(startFrame + 1, lastCapturedUnityFrame + 1);
             if (Time.frameCount > watchdogFrame)
                 Finish(QuiltRecordingStatus.Error, "No completed quilt arrived for a recording frame.");
         }
 
         void OnQuiltRendered(QuiltRenderer rendered)
         {
-            if (!IsRecording) return;
+            if (Status != QuiltRecordingStatus.Recording) return;
             try
             {
                 int frame = Time.frameCount;
                 if (frame <= startFrame) return;
                 if (!ReferenceEquals(rendered, subscribedRenderer) || !ReferenceEquals(rendered, quiltRenderer)) throw new InvalidOperationException("The selected Quilt Renderer changed during recording.");
                 if (frame == lastCapturedUnityFrame) throw new InvalidOperationException("Duplicate quilt completion was detected in one Unity frame.");
-                if (lastCapturedUnityFrame >= 0 && frame != lastCapturedUnityFrame + 1) throw new InvalidOperationException("A Unity frame completed without a quilt.");
+                int expectedFrame = Math.Max(startFrame, lastCapturedUnityFrame) + 1;
+                if (frame != expectedFrame) throw new InvalidOperationException("A Unity frame completed without a quilt.");
                 if (!ConfigurationMatchesStart()) throw new InvalidOperationException("The Quilt layout, view density, or geometry settings changed during recording.");
                 if (Time.timeScale != 1f || Time.captureDeltaTime != ownedCaptureDeltaTime) throw new InvalidOperationException("The capture time settings changed during recording.");
                 if (Math.Abs(Time.deltaTime - requestedCaptureDeltaTime) > Math.Max(0.000001f, requestedCaptureDeltaTime * 0.0001f))
@@ -270,6 +321,26 @@ namespace ViewWeave
                 && startingSourceCamera != null
                 && startingSourceCamera.nearClipPlane == startingNearClip
                 && startingSourceCamera.farClipPlane == startingFarClip;
+        }
+
+        string GetRecordingStateError(bool requireOwnedCaptureDelta)
+        {
+            if (!Application.isPlaying) return "Quilt recording requires Play mode.";
+            if (!isActiveAndEnabled) return "The recorder component must be enabled.";
+            if (!ReferenceEquals(activeRecorder, this)) return "This recorder no longer owns the active capture session.";
+            if (!ReferenceEquals(quiltRenderer, subscribedRenderer) || quiltRenderer == null || !quiltRenderer.isActiveAndEnabled)
+                return "The selected Quilt Renderer changed or was disabled.";
+            if (!quiltRenderer.autoRender) return "Auto Render stopped during recording.";
+            if (!ConfigurationMatchesStart()) return "The Quilt layout, view density, or geometry settings changed during recording.";
+            if (Time.timeScale != 1f) return "Quilt recording requires Time.timeScale == 1.";
+            if (requireOwnedCaptureDelta)
+            {
+                if (!ownsCaptureDeltaTime || Time.captureDeltaTime != ownedCaptureDeltaTime)
+                    return "Time.captureDeltaTime changed during recording.";
+            }
+            else if (ownsCaptureDeltaTime || Time.captureDeltaTime != 0f)
+                return "Time.captureDeltaTime is already controlled by another capture process.";
+            return string.Empty;
         }
 
         void Fail(Exception error)

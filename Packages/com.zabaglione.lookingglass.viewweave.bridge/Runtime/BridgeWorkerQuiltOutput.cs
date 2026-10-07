@@ -108,6 +108,9 @@ namespace ViewWeave
             transferSrgbDiagnostic = false;
             transferAntiAliasingDiagnostic = 0;
             transferDimensionName = string.Empty;
+#if UNITY_EDITOR
+            if (!BridgeNativeImageGuard.TryInspectEditorProcess(out string imageGuardError)) return Fail(imageGuardError);
+#endif
             try
             {
                 int eventIdResult = BridgeWorkerNative.lkg_worker_render_event_id(out workerRenderEventId);
@@ -122,6 +125,9 @@ namespace ViewWeave
             catch (DllNotFoundException) { return Fail("Bridge worker native library is missing"); }
             catch (EntryPointNotFoundException) { return Fail("Bridge worker event ID ABI entry point is missing"); }
             catch (Exception error) { return Fail(Sanitize(error.Message)); }
+#if UNITY_EDITOR
+            if (!BridgeNativeImageGuard.TryInspectEditorProcess(out imageGuardError)) return Fail(imageGuardError);
+#endif
             try
             {
                 handle = BridgeWorkerNative.lkg_worker_begin(runtimePath, applicationName, displayOrdinal, IntPtr.Zero);
