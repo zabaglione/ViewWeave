@@ -1,0 +1,7 @@
+phase,views,wall_p50_ms,wall_p95_ms,cpu_p50_ms,gpu_p50_ms,cpu_submission_p50_ms,last_view_cpu_p50_ms,cpu_valid_samples,gpu_valid_unique_samples,gpu_valid_fraction,wall_samples,rendered_views,proxy_unverified_frames,texture_size,max_camera_position_delta,max_camera_rotation_delta,max_camera_fov_delta,auto_render_error,volume_stack_reuse_requested,volume_stack_reuse_verified_samples
+"volume_reuse_a_off_p50",48,58.0546,58.0546,58.0279,44.116992,42.9142,0.8548,120,120,1,120,48,0,"7680x4320",0,0,0,"",false,0
+"volume_reuse_a_off_p95",48,64.6037,64.6037,64.6152,54.003712,45.9243,1.1702,120,120,1,120,48,0,"7680x4320",0,0,0,"",false,0
+"volume_reuse_b_on_p50",48,57.8416,57.8416,57.9385,46.159872,42.6464,0.8634,120,120,1,120,48,0,"7680x4320",0,0,0,"",true,120
+"volume_reuse_b_on_p95",48,66.595,66.595,66.4858,56.82176,46.1667,1.1148,120,120,1,120,48,0,"7680x4320",0,0,0,"",true,120
+"volume_reuse_a2_off_p50",48,58.474,58.474,58.4415,45.056,43.3535,0.8943,120,120,1,120,48,0,"7680x4320",0,0,0,"",false,0
+"volume_reuse_a2_off_p95",48,64.6549,64.6549,64.6232,55.79776,47.5987,1.0773,120,120,1,120,48,0,"7680x4320",0,0,0,"",false,0
