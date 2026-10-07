@@ -34,7 +34,8 @@ PNG の隣に同名の `.json` sidecar が作成されます。sidecar には画
 - 録画開始時と実行中は `Time.timeScale == 1` が必要です。別の capture が `Time.captureDeltaTime` を使用中の場合や、別の Recorder が録画中の場合は開始できません。停止・完了・失敗時には ViewWeave が設定した値のままなら開始前の値へ戻します。外部コードが値を変更していた場合はその値を上書きしません。
 - pause 中は Recorder が同じ録画 session と排他所有権を保持します。別 Recorder は開始できません。再開時には Play mode、renderer、Auto Render、録画開始時の Quilt geometry、`timeScale`、外部 capture timestep を再確認します。確認に失敗すると録画は error で終了し、イベント購読と所有権を解放します。
 - Quilt の寸法、行列、視点数、render density、FOV、focus distance、view cone、view aspect、source camera、near/far clip の変更、Auto Render の停止、renderer の無効化、アプリの pause は録画を止めて manifest に状態を残します。録画中のカメラ移動は許可され、各 PNG sidecar にその時点の位置と回転が記録されます。
-- 録画機能自体はPNG連番を作ります。別のEditor後処理windowで無音MP4へ変換するexporterは作業中です。操作と検証範囲は[Quilt Video Export](quilt-video-export.md)を参照してください。音声の記録、Timeline/VideoPlayer同期、既存録画への追加録画は未対応です。
+- [Quilt Video Export](quilt-video-export.md) は完成済みPNG連番を無音MP4へ後処理変換します。音声mux、Timeline/VideoPlayer同期、既存録画への追加録画は未対応です。
+- 音声を含める場合は **Start PNG Sequence + Audio** を明示的に選びます。Windows Editor Play と事前設定済み Mono 出力が必要です。既存3引数APIは引き続き無音PNG連番を作ります。詳細と検証境界は[Quilt audio recording](quilt-recording-audio.md)を参照してください。
 - PNG 保存は Bridge 転送完了を待たず、Quilt Renderer の描画完了を基準にします。通常の Bridge Rig で Looking Glass へ表示しながらそのまま使えます。
 
 ## 検証

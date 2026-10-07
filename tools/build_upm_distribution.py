@@ -117,6 +117,7 @@ def package_json(kind: str) -> dict:
         "dependencies": {
             "com.unity.render-pipelines." + rp: RP_VERSION,
             "com.unity.modules.imageconversion": "1.0.0",
+            "com.unity.modules.audio": "1.0.0",
             "com.unity.modules.jsonserialize": "1.0.0",
             "com.unity.modules.uielements": "1.0.0",
         },
@@ -215,6 +216,8 @@ def validate_target(target: Path) -> None:
         raise RuntimeError("wrong render pipeline dependency in %s" % target)
     if data.get("dependencies", {}).get("com.unity.modules.uielements") != "1.0.0":
         raise RuntimeError("missing UI Toolkit module dependency in %s" % target)
+    if data.get("dependencies", {}).get("com.unity.modules.audio") != "1.0.0":
+        raise RuntimeError("missing Audio module dependency in %s" % target)
 
 
 def target_path(kind: str) -> Path:

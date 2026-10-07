@@ -6,7 +6,7 @@
 
 旧package snapshotのWindows D3D11 PlayModeは、現行guard追加前に123件中108件pass、15件fail、skip 0でした。Core/SRP/VFX Editor targeted試験はGamma 8/8、Linear 17/17で、全件matrixの結果ではありません。Gamma MSAA/通常URPのBridge Player実行は未検証です。Gamma VFXは公式非対応です。旧D3D11統合の未通過はHDRP priming 1件とVFX compatibility 14件で、別の同時期VFX matrixは20件中5件pass、15件failでした。これらの履歴は現行D3D12 project統合や全VFX条件の成否を示しません。詳細な正本集計は [docs/compatibility.md](compatibility.md) を参照してください。
 
-既存のDX12 VFX/Particle validation suite（driver 7件、URP Particle 3件、HDRP Particle 2件）はまだ実行していません。旧15 failureは歴史的な結果として保持し、今回の未実行testの結果とは混同しません。Shadow OnDemandの動的初回capture sourceは修正済みでAstra review GO、semantic compile PASS（source SHA 800986...）ですが、GPU gateは未実行です。
+既存DX12 cold driver suiteは6/7 PASS（FOV50 Simple Burstはalive=0のfailureを保持）、URP Particle 3/3、HDRP Particle 2/2 PASS。同期CSV I/Oなしのmemory診断suiteは7/7 PASSし、FOV50/FOV90で各128 aliveを観測。元fully-qualified FOV50 caseを含む別filter runは3/3 PASSだが、cold suite failureは履歴として維持し恒久fixとはしない。旧D3D11 15 failureも保持する。Shadow OnDemandはEveryFrame baselineの自己比較がstrict image gateに届かず、OnDemand比較・性能測定未到達、未採用。
 
 GRD の性能実測は URP normal multithreaded Player の範囲だけです。HDRP fixture で GRD 性能を測定した結果とは扱いません。自動描画 scheduler は scene rendering 後に実行しますが、機能固有の更新順序や一般的な描画対応を保証するものではありません。
 
@@ -38,7 +38,7 @@ GRD の性能実測は URP normal multithreaded Player の範囲だけです。H
 | 機能 | 状態 | 実測範囲と制約 |
 | --- | --- | --- |
 | Shuriken ParticleSystem | 限定実測 | URP paused Lit/Unlit/live 3 と HDRP mesh paused/live 2 の fixture。sorting、soft depth、culling の一般対応は未確定。 |
-| VFX Graph | URP限定実測、Linear必須 | URP Simple Burstの通常制御Cameraで停止6条件と通常再生4条件を確認。Unity VFX Graph 17.6の要件に従いGammaは非対応で、UrpVfxCameraDriverはGamma時にresource生成前に停止する。HDRP driverはなく、一般的なVFX、sorting、culling、soft depth、同一Camera primingは未確定。GPU simulationを一般対応と扱わない。 |
+| VFX Graph | DX12限定実測、Linear必須 | 既存cold driver suite 6/7 PASSでFOV50 Simple Burstのalive=0 failureを保持。同期CSV I/Oなしmemory診断suiteは7/7 PASS（FOV50/FOV90は各128 alive）。元fully-qualified FOV50 caseを含む別filter runは3/3 PASSしたが恒久fix・cold/warm一般成功の証明ではない。Gammaは公式要件により非対応。一般的な透明、sorting、culling、soft depth、同一Camera primingは未確定。GPU simulationを一般対応と扱わない。 |
 | LineRenderer / TrailRenderer | 限定実測 | 個別Line/Trail fixtureで描画差を確認。camera依存幅、履歴、順序、深度の一般対応は未検証。 |
 | BillboardRenderer | 調査対象 | HDRPを含む複数視点表示は未検証。 |
 | Decal / Decal Projector | 調査対象 | URP Renderer Feature と HDRP Decal の投影、深度、透明物は未検証。 |
@@ -58,14 +58,19 @@ GRD の性能実測は URP normal multithreaded Player の範囲だけです。H
 | Fog / Volumetric Fog / Clouds | HDRP volumetric effectsはquilt中に一時抑制 | HDRP volumetric fog/cloudはquilt view中だけ無効化。通常のFogとSkyは維持する。 |
 | Depth of Field / Auto Exposure | Depth of Fieldは限定確認。HDRP Auto Exposureはquilt共通Fixed EVへ一時変換 | HDRPはEV 12を既定にし、元stackがFixedならそのEVを使う。URP Auto Exposureは未検証。 |
 
+今回の変更でcamera authoring、Quilt playback、Mono AudioRenderer recordingを追加しました。Camera authoringのDX12 targeted test/static reviewはPASSですが、Scene GUI interactive dragは未実測です。Playback safetyの12 scenariosは個別PASS、Core CPU boundary testもPASS。Native playbackとBridge送信は未実測です。限定Editor reload probeではserialized playback recovery recordと4x4 RenderTexture referenceの維持、post-reload fence/readback、test-only handoffを確認しましたが、Native Begin/Stopは0回でshutdown ordering/natural exitは未証明です。Audio fake suite 6/6とactual audio/legacy silent 8 casesはfocused rerun後に全件個別PASS（合計14 cases）。Mono URP/HDRP録画、Pause/Resume、stop/disable、AudioSource/scheduled clip保全を確認しました。Native Bridge audio deliveryとsample-accurate frame alignmentは未実測です。検証実行時の基準revisionは4230c4cです。最終integration revisionは未確定です。
+
 ## Quilt保存と録画
 
 | 機能 | 状態 | 実測範囲と制約 |
 | --- | --- | --- |
-| 静止Quilt PNGとmetadata | 実装済み、D3D11とDX12 fake-outputで限定実測 | Quilt PNG、JSON sidecar、中央view PNGを保存。既存D3D11 URP/HDRP PlayMode各2/2。DX12 Core smokeとURP/HDRP各1 capture testでcentral metadataとview mappingを確認。Bridge transport/実機保存は未検証。 |
-| Quilt PNG連番 | 実装済み、D3D11とDX12 fake-outputで限定実測 | Recorder suiteで10/25 fps各3枚、URP 1〜240 fpsの開始/停止とsimulation時間復元を確認。DX12 URP/HDRP各1 capture testではPause/Resumeを確認。追加renderは行わず、PNG読戻し/圧縮中はUnity frameが停止。Quilt file再生は未実装。 |
+| Camera framing / focus / orbit / cursor | 今回の変更で実装、DX12 targeted test + static review | focus距離設定、pivot保持orbit、既定OFFの3D cursorを確認。Scene GUI direct dragは未実測。 |
+| Quilt file playback | 今回の変更でCore実装、DX12 CPU smokeと12 safety scenarios個別PASS | Safety suiteはinitial 11/12後にfixture-only setup issueをfocused 1/1で通過し、全12 scenariosを個別に確認。Native file playbackと実Bridge送信は未検証。限定Editor reload probeはrecord/textureの維持とtest-only handoffまでで、production shutdown orderingは未検証。 |
+| AudioRenderer recording | 今回の変更でWindows Editor Mono opt-inを実装、fakeとactual integration限定実測 | Fake suite 6/6 PASS。Actual audio/legacy silent casesは初回7/8後、test-only fixのfocused 1/1を含め全8 cases individually PASS。URP/HDRP Quilt、Pause/Resume、Stop/disable、playing/scheduled AudioSource保全を確認。Stereo captureはunsupported; Native Bridge outputとper-frame sample-accurate alignmentは未検証。 |
+| 静止Quilt PNGとmetadata | main実装済み、D3D11とDX12 fake-outputで限定実測 | Quilt PNG、JSON sidecar、中央view PNGを保存。既存D3D11 URP/HDRP PlayMode各2/2。DX12 Core smokeとURP/HDRP各1 capture testでcentral metadata/view mappingを確認し、実URP recording-to-MP4 E2Eも1/1 PASS。Bridge transport/実機保存は未検証。 |
+| Quilt PNG連番 | main実装済み、D3D11/DX12 fake-outputで限定実測 | Recorder suiteで10/25 fps各3枚、URP 1〜240 fpsの開始/停止と時間復元を確認。DX12 URP/HDRP capture testではPause/Resumeを確認し、実URP DX12 recordingから無音MP4へのE2Eも3 frame/30fpsで1/1 PASS。Quilt playbackは今回の変更で実装し、12 safety scenariosは個別PASSしたがBridge/Native playbackは未実測。 |
 | 中央2D PNG | 実装済み、DX12 fake-output限定実測 | 完成quiltの中央論理viewを保存し、sidecar/mappingをURP/HDRP testで確認。実Bridge中の保存と実機表示は未検証。 |
-| 無音MP4 export | 実装済み、fake process suite + FFmpeg 7.0.2 CPU-only smoke | 64x48の合成8x6/48-view quilt PNG 3枚を30fps H.264/yuv420pへ出力。ffprobe、Unicode/空白path、full-layout sidecar、no-overwriteを確認。実Quilt recordingからexportまでのend-to-endとEditor window操作は未確認。 |
+| 無音MP4 export | main実装済み。fake process suite、合成CPU smoke、実録画E2Eを限定確認 | Synthetic 64x48 8x6/48-view PNG 3枚の30fps exportに加え、実URP DX12 QuiltRecorderから256x192 4x2/8-view PNG 3枚を30fps H.264/yuv420pへ変換するE2E 1/1 PASS。Native/Bridgeなし。manual Editor-window操作と実機出力は未確認。 |
 ## UI とカメラ
 
 | 機能 | 状態 | 実測範囲と制約 |

@@ -8,7 +8,7 @@
 
 旧package snapshotの別Windows D3D11 Player検証では、URP Simple Burstを通常制御Cameraで1/8/48視点、GRD ON/OFFの6条件で確認しました。HDRP primingは通常画像差分0で未通過でした。これは限定された素材と制御条件の歴史的結果で、現行D3D12 project統合やVFX全体の対応を示しません。
 
-URP driver対象試験は最新統合で5/5通過しました。これは通常制御Cameraと実験用driver条件に限定した結果で、VFX全体の対応を示しません。
+旧URP driver対象試験の5/5は通常制御Cameraと実験用driver条件に限定された過去結果です。現DX12 cold suiteは6/7で、FOV50 Simple Burstのalive=0 failureを保持しています。後続のmemory診断7/7とfocused filter 3/3は観測の追加であり、恒久修正やVFX全体の対応を示しません。
 
 現行guard後のCore/SRP/VFX Editor targeted試験は、LinearのSRP/VFX 17/17（VFX driver 6件を含む）とGammaのMSAA/VFX 8/8（Gamma VFX拒否1件を含む）でした。これは全件matrixの更新ではなく、旧123件統合の結果とも混同しません。Gamma MSAA/通常URPのBridge Player実行は未検証です。Gamma VFXは公式非対応です。証跡は`.local/windows-improvement/bridge/linear-srp-vfx.xml`と`.local/windows-improvement/bridge/gamma-msaa-8-original-threshold.xml`です。
 
@@ -28,10 +28,10 @@ VFX GraphはLinear color spaceが必須です。Unity Visual Effect Graph 17.6�
 | --- | --- | --- |
 | Quilt / off-axis / View Render Mode | Coreで実装。Fullは全viewを描画し、Half/Quarterは均等に選んだ視点をそれぞれ24/12回だけ描画して、全出力tileを最近傍画像で埋める。48 viewの出力Quiltとprofile解像度は維持する。補間は行わず、描画数を減らすと角度方向の滑らかさが下がる。2026-10-04のstatic HDRP fixtureでFull/Half/Quarter/Fullを計測し、全48出力tileのHalf/Quarter最近傍sourceとのRGBA画素差0を確認。Frame p50は254.76/53.17/23.31/254.68 ms。一般sceneの性能や実機光学品質は未確認。詳細は[DX12 HDRP performance investigation](dx12-performance-investigation.md)。 | HDRP/VFX user sceneと実機の視認品質、一般機器での性能を確認 |
 | profile / quality / hotplug / 複数機器 | Preview/Balanced/NativeとGRD ON/OFFの6条件、48 view Playerを確認。hotplug、複数機器、Registryの一般運用は未検証 | profile由来の自動選択、hotplug、複数機器を再現可能にする |
-| depthiness / frustum / gizmo / camera conversion | Quilt mathとcamera変換の一部のみ | 統合RigとEditor操作を検証 |
+| depthiness / frustum / gizmo / camera conversion | 今回の変更でfocus距離、near/far/framing表示、focus pivot orbit、3D cursorを実装。DX12 targeted authoring testとstatic review PASS。Scene GUI direct dragは未実測 | Editor interactive操作と48-view opticalを確認 |
 | Editor / offline display | Bridge Worker経路はWindows D3D11/D3D12 Editor Playに対応。Edit Modeとoffline displayは提供しない。D3D12 EditorはURP/HDRPのDomain Reload enabled/disabledで各2 cycleを確認。HDRP VFX Learning Templates projectもsnapshot 8adda27cでNative/48 viewsのPlayと停止cleanupを確認。GRDはこのmatrixで切り替えていない | 全48 viewsの人手光学レビュー、Editor再起動と一般機器条件を確認 |
-| still capture / video / quilt layer / RGBD | Central 2D PNGを含むQuilt PNG/PNG連番は実装済み。D3D11 URP/HDRP静止画suite各2/2。DX12 Core smoke、URP/HDRP各1 capture testはfake outputでpassし、central metadata、mapping、Pause/Resumeを確認。Bridge output未検証。静音MP4 exporterのfake suiteと実FFmpeg/ffprobe 7.0.2 CPU smokeはpass（合成3-frame input）。実録画からのexport end-to-endとEditor window操作は未確認。音声とQuilt playbackは未実装。RGBDは未検証。 | DX12 Bridge経路、実QuiltからMP4へのend-to-end、Editor window操作、音声、Quilt playback、RGBDの受入試験 |
-| 3D cursor / orbit / buttons | 未検証 | 入力と機器差を検証 |
+| still capture / video / quilt layer / RGBD | mainにCentral 2D PNG、Quilt PNG連番/Pause-Resume、無音MP4 exporterあり。DX12の実URP QuiltRecorder→FFmpeg/ffprobe E2Eは3 frame、256x192、4x2/8 views、30fps H.264/yuv420pでPASS（Native/Bridgeなし）。今回の変更のPlayback safety 12 scenariosとMono audio fake 6/6・actual/silent 8 casesは個別PASS。AudioはURP/HDRP録画、Pause/Resume、Stop/disable、AudioSource保全を確認。Native/Bridge playback、audio delivery、production reload/shutdown orderingとnatural exit、Editor window手操作と実機保存は未確認。限定Editor reload probeは別途行い、test-only handoffまでを確認。RGBD未検証。 | Bridge経路と実機保存、Editor UI、Native playback/audioとreload safety、RGBDを受入試験 |
+| 3D cursor / orbit / buttons | 今回の変更で実装、DX12 targeted testとstatic review PASS。Scene GUI interactive drag未実測 | Unity Editor上の直接操作を確認 |
 | URP | Unity 6000.6.4f1、SRP 17.6、D3D11でLit/Bloom smoke。Base cameraのみ、stackは拒否。M3の8 fixtureを確認済み | 残る視点別効果を個別に検証 |
 | HDRP | Linear必須。quilt view中はadapter既定設定でMotion Blur、SSR、SSGI、volumetric fog/cloudを一時抑制。Auto Exposureは全view共通Fixed EV 12、元がFixedならその値を保持。通常Fog/Sky/Bloomと元設定は維持 | HDRP標準templateのCubeとEditor Playで起動・再起動を確認 |
 | Built-in / Unity graphics | 製品サポート対象外。CoreはStandard RenderRequest経路を要求 | 対象外として扱う |
@@ -40,8 +40,8 @@ VFX GraphはLinear color spaceが必須です。Unity Visual Effect Graph 17.6�
 | TAA / temporal / Auto Exposure | TAAはquilt view中のみ停止して復元。HDRP Auto Exposureはquilt全view共通Fixed exposureへ一時変換。一般的なview別履歴分離は未検証 | temporal履歴の独立は別研究 |
 | HDRP Motion Blur / SSR / SSGI / volumetric fog / clouds | adapter既定の一時overrideでquilt view中のみ抑制。通常render scopeでは元stackの設定を使う | 別のtemporal効果や複雑なVolume構成は個別検証 |
 | AA: FXAA / SMAA / MSAA | FXAA/SMAAは追加fixtureで8視点の差分を確認。URP MSAA 1/1で4x view RT、1x resolve、resize/disable lifecycle、中心色一致を確認。追加のLinear境界試験10/10で、このRTX GPUの2x/4x/8x対応倍率、pipeline 1x、allowMSAA無効、Deferred fallback、中心色一致と対応MSAAのedge差分を確認。Gamma側のtargeted MSAA 7件も通過したが、専用MSAA Playerは未実施。性能は未検証 | MSAAの一般素材、Player、性能を測定 |
-| Particles | M3のLit/Unlit表示fixtureを確認。一般的な粒子機能全体は未確定 | simulation once/frame、billboard、sort、culling、soft depthを検証 |
-| VFX | URP driver 5/5は通過。19件中5件通過・14件未通過、および別matrix 20件中5件通過・15件未通過は旧package snapshotのWindows D3D11結果で、HDRP priming 1件未通過も同じ歴史的検証範囲。これらは現行D3D12 projectや全VFX条件の成否を示さない。VFX GraphはLinear必須で、URP Gammaはdriverがresource生成前に拒否する。HDRP driverは提供しない | 補助Camera条件、透明処理、sort、公式4資料の追加設定を検証 |
+| Particles | URP Particle 3/3、HDRP Particle 2/2のDX12限定fixtureを確認（Bridgeなし） | simulation once/frame、billboard、sort、culling、soft depthの一般条件を検証 |
+| VFX | 既存cold DX12 driver suite 6/7 PASSでFOV50 Simple Burstのalive=0 failureを保持。追加memory診断7/7 PASS、FOV50/FOV90は各128 alive。original fully-qualified FOV50を含むfilter run 3/3 PASSはあるが、恒久fixの証明ではない。古いD3D11 failureも歴史保持。VFX GraphはLinear必須、Gammaはresource生成前に拒否。HDRP driverは提供しない | 透明処理、sorting/culling、soft depth、temporal、全tileを検証し、元cold failureを別途解消 |
 | uGUI | WorldSpaceとScreen Space CameraのM3試験を確認 | 各視点の入力、配置、合成条件を検証 |
 | UI Toolkit | Unity 6.6 WorldSpace/targetTexture APIはinstalled XMLで確認済み。M3 targetTexture fixtureを確認 | RT route、ray map、DPI、EventSystemを検証 |
 | Overlay / camera stacking | Overlayは通常画面へ描いても自動Quilt captureされない。URP stackは拒否 | 各viewと同じdepthで合成する方式を検証 |
@@ -55,4 +55,4 @@ FXAA/SMAAは追加fixtureで限定確認しました。URP MSAAは4x view RT、1
 
 ## DX12 capture and shutdown evidence (2026-10-07)
 
-The current change set passed a DX12 Core capture smoke, one URP plus one HDRP capture pipeline test using fake output, and a CPU-only synthetic MP4 export with FFmpeg/ffprobe 7.0.2. These results do not verify official Bridge transport or physical display output. The exporter smoke did not render an actual Unity quilt; real recording-to-export end-to-end and Editor-window interaction remain unverified. A URP and earlier HDRP Editor-stop 0xC0000005 observation remains unresolved. The Native image guard PlayMode suite passed 6/6; it is preventive and does not establish the cause or fix of the vendor crash. GitHub distribution integration is in progress. See [Windows validation](windows-validation.md) and [the evidence report](benchmarks/remaining-work-validation-20261007.md).
+At the time of these tests, baseline revision `4230c4c` included PR #4 and CI run `37614129521` had passed. This change set passed the Playback safety 12 scenarios individually and the Mono Audio fake 6/6 plus actual/silent 8 cases individually (the latter after a focused test-only correction); Native playback/audio delivery and production reload/shutdown ordering remain open; a limited test-only Editor reload probe does not prove natural exit. The original cold DX12 VFX driver suite remains 6/7 with FOV50 `alive=0`; separate 7/7 memory diagnostics and a 3/3 focused filter run do not prove a permanent fix. URP and earlier HDRP Editor-stop `0xC0000005` observations remain unresolved. The Native image guard is preventive and does not establish the vendor-crash cause or fix. These targeted results do not establish physical 48-view quality. See [Windows validation](windows-validation.md) and [the evidence report](benchmarks/remaining-work-validation-20261007.md).

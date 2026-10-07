@@ -30,17 +30,20 @@ Windows Playerで使う場合は、Windows Graphics APIsでD3D11またはD3D12�
 
 Hierarchyで`ViewWeave Bridge Rig`を選び、Inspectorの`QuiltRenderer > View Render Mode`で`Full`、`Half`、`Quarter`を選べます。Fullが既定です。48視点の機器では、どのモードも48タイルのQuiltを出力し、実際に描画する視点数はFullが48、Halfが24、Quarterが12です。描画しないtileには最も近い描画済み視点の画像を使います。視点間の補間は行わないため、HalfとQuarterでは視点角度方向の滑らかさが下がることがあります。この設定はQuilt解像度やPreview/Balanced/Native profileとは別です。速度向上はシーンやGPUで変わるため、数値を保証しません。限定HDRP fixtureの測定と制約は[DX12 HDRP performance investigation](docs/dx12-performance-investigation.md)を参照してください。
 
-## Quilt保存とカメラ調整
+## Quiltの保存と再生
 
-Play中にHierarchyでViewWeave Bridge Rigを選び、Window > ViewWeave > Quilt Captureから完成Quilt PNG、JSON sidecar、中央view PNGを保存できます。RecorderはPNG連番のPause/Resumeに対応します。DX12 fake-output capture testはCore smokeとURP/HDRP各1/1通過し、中央PNG/sidecar、half/quarter view mapping、Pause/ResumeとUnity時間復元を確認しました。このtestはBridgeを使わず、実機表示の合格を意味しません。既存D3D11 test結果は別に記録しています。PNG圧縮は同期処理のため指定FPSに追いつかない場合があります。操作は[Quilt Capture](docs/quilt-capture.md)を参照してください。
+Play中に`Window > ViewWeave > Quilt Capture`を開き、完成QuiltのPNG、JSON sidecar、中央view PNGを保存できます。連番を作る場合は出力先とFPSを指定して記録を開始し、必要ならPause/Resumeを使って停止します。生成済みの完成Quilt PNGまたは記録済み連番は`Window > ViewWeave > Quilt Playback`から選び、再生・一時停止・再開できます。再生には、Play中の既存ViewWeave Bridge Rigが正常に映像を出力できる状態である必要があります。PlaybackはBridge sessionを作成しません。D3D11またはD3D12のWindows Editor Playで使います。
 
-カメラ範囲はQuiltRendererのCamera FramingとSceneビューで確認できます。紫の面がzero-parallax/focus plane、青緑と橙の面がNear/Farです。Camera Authoring test suiteは通過しています。Sceneビューでハンドルを直接ドラッグする操作と実機の光学表示は未検証です。capture suiteのDX12 fake-output試験は通過していますが、Bridge captureは未検証です。カメラのfocus/FOV/clip設定を変えても元カメラのposeは維持されます。録画中のカメラ移動は可能です。詳しくはdocs/quilt-authoring.mdを参照してください。
+音声を含める場合はQuilt Captureの`Start PNG Sequence + Audio`を明示的に選びます。対応するのはWindows Editor Play中の現在のMono音声設定です。SDKはUnityやOSの音声設定を自動変更せず、録音中は通常の音声出力がミュートされることがあります。音声はPNG連番と別のWAVファイルに保存され、MP4書き出しには含まれません。詳しい条件は[Quilt Capture](docs/quilt-capture.md)と[Quilt recording audio](docs/quilt-recording-audio.md)を参照してください。
 
-対応条件と既知の制約は[Compatibility](docs/compatibility.md)、検証結果は[Windows validation](docs/windows-validation.md)を参照してください。
+記録を完了したPNG連番から無音MP4を作るには、`Window > ViewWeave > Quilt Video Export`を使います。FFmpegとffprobe 7.0.2を別途用意してください。SDKはそれらを同梱またはダウンロードしません。詳しくは[Quilt Video Export](docs/quilt-video-export.md)を参照してください。
 
-## 動画出力
+## カメラの構図調整
 
-PNG連番からの無音MP4書き出しはEditor専用の後処理機能です。FFmpeg/ffprobe 7.0.2を別途用意する必要があり、SDKはbinaryを同梱・downloadしません。空白・Unicodeを含むpathから3枚のQuilt PNGをH.264/yuv420p、30fpsで書き出し、ffprobeとfull-layout JSONを確認しました。これはCPU-onlyの合成素材テストで、Unity NUnitや実Quilt描画を使った検証ではありません。詳しくは[Quilt Video Export](docs/quilt-video-export.md)を参照してください。
+QuiltRenderer InspectorのCamera FramingとScene Viewで描画範囲を確認できます。紫の面はzero-parallax/focus plane、青緑と橙の面はNear/Farです。構図を手動調整するときはEdit ModeでCamera Authoringの操作を使います。Inspectorをロックして対象objectを選び、選択objectからfocus距離を設定するか、Scene Viewをfocus面中央へ移動します。水平・垂直orbitはfocus点をpivotとしてカメラの位置と向きを一緒に回します。3D focus cursorは個別toggleで、既定ではOFFです。操作対象のEffective CameraをInspectorで確認してください。CinemachineやanimationはPlay中にcamera poseを上書きすることがあります。手順は[Quilt camera authoring](docs/quilt-authoring.md#明示的なカメラ制作操作)を参照してください。
+
+対応条件と既知の制約は[Compatibility](docs/compatibility.md)、Windows上の検証範囲は[Windows validation](docs/windows-validation.md)を参照してください。
+
 
 ## 任意のサンプル
 

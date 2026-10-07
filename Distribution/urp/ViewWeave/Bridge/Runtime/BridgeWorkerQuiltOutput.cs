@@ -9,6 +9,7 @@ namespace ViewWeave
     [DisallowMultipleComponent]
     public sealed class BridgeWorkerQuiltOutput : MonoBehaviour, IQuiltOutput
     {
+        static long nextSessionGeneration;
         public string runtimePath;
         public string applicationName = "ViewWeave";
         public uint displayOrdinal;
@@ -72,6 +73,13 @@ namespace ViewWeave
         CommandBuffer command;
         int workerRenderEventId;
         BridgeWorkerNative.Status status;
+        object playbackToken;
+        bool disposalInProgress;
+        long sessionGeneration;
+        long lastReaperHandoffGeneration;
+        public long SessionGeneration => sessionGeneration;
+        public long LastReaperHandoffGeneration => lastReaperHandoffGeneration;
+        public event Action<long> PlaybackReaperHandoff;
 
         void OnEnable()
         {
@@ -136,6 +144,7 @@ namespace ViewWeave
             catch (EntryPointNotFoundException) { return Fail("Bridge worker ABI entry point is missing"); }
             catch (Exception error) { return Fail(Sanitize(error.Message)); }
             if (handle == IntPtr.Zero) return Fail("Bridge worker begin failed");
+            sessionGeneration = ++nextSessionGeneration;
             state = WorkerState.Connecting;
             LastError = string.Empty;
             return true;
@@ -158,13 +167,7 @@ namespace ViewWeave
                     case 2: state = WorkerState.Fault; break;
                     case 3: state = WorkerState.Closing; break;
                     case 4:
-                        state = WorkerState.Closed;
-                        BridgeWorkerReaper.Enqueue(handle, transferTexture, command, false);
-                        handle = IntPtr.Zero;
-                        transferTexture = null;
-                        transferNativePtr = IntPtr.Zero;
-                        transferSrgb = false;
-                        command = null;
+                        TransferOwnedResourcesToReaper(false);
                         break;
                     default: Fail("Bridge worker returned an invalid state"); break;
                 }
@@ -189,23 +192,69 @@ namespace ViewWeave
 
         public void Submit(RenderTexture quiltTexture, QuiltLayout layout)
         {
+            if (playbackToken != null) return;
+            SubmitCore(quiltTexture, layout);
+        }
+
+        internal bool TryBeginPlaybackOutput(object token, out string error)
+        {
+            error = string.Empty;
+            if (token == null) { error = "A playback ownership token is required."; return false; }
+            if (playbackToken != null) { error = "The Bridge output is already owned by playback."; return false; }
+            if (state != WorkerState.Ready || handle == IntPtr.Zero) { error = "Playback requires the active Bridge output to be Ready."; return false; }
+            if (!string.IsNullOrEmpty(LastError)) { error = "Bridge output has an unresolved error: " + LastError; return false; }
+            playbackToken = token;
+            return true;
+        }
+
+        internal bool TrySubmitPlayback(object token, RenderTexture quiltTexture, QuiltLayout layout)
+        {
+            if (token == null || !ReferenceEquals(playbackToken, token)) return false;
+            return SubmitCore(quiltTexture, layout);
+        }
+
+        internal bool TryResetTransferForPlayback(object token)
+        {
+            if (token == null || !ReferenceEquals(playbackToken, token)) return false;
+            return TryResetTransfer();
+        }
+
+        internal void ClearPlaybackTexture(object token, RenderTexture expected)
+        {
+            if (token == null || !ReferenceEquals(playbackToken, token)) return;
+            if (ReferenceEquals(QuiltTexture, expected)) QuiltTexture = null;
+        }
+
+        internal void EndPlaybackOutput(object token)
+        {
+            if (token == null || !ReferenceEquals(playbackToken, token)) return;
+            playbackToken = null;
+        }
+
+        internal bool HasReaperHandoff(long generation)
+        {
+            return generation != 0 && lastReaperHandoffGeneration == generation;
+        }
+
+        bool SubmitCore(RenderTexture quiltTexture, QuiltLayout layout)
+        {
             QuiltTexture = quiltTexture;
             Layout = layout;
-            if (state != WorkerState.Ready || handle == IntPtr.Zero) return;
+            if (state != WorkerState.Ready || handle == IntPtr.Zero) return false;
             if (quiltTexture == null || layout.Columns <= 0 || layout.Rows <= 0 || layout.ViewCount != layout.Columns * layout.Rows)
             {
                 LastError = "Bridge worker requires a complete quilt grid";
-                return;
+                return false;
             }
             SubmissionAttempts++;
-            if (!EnsureTransferTexture(quiltTexture)) return;
+            if (!EnsureTransferTexture(quiltTexture)) return false;
             RenderTexture previous = RenderTexture.active;
             try { Graphics.Blit(quiltTexture, transferTexture, new Vector2(1f, -1f), new Vector2(0f, 1f)); }
             finally { RenderTexture.active = previous; }
             IntPtr drawData;
             try { drawData = BridgeWorkerNative.lkg_worker_make_draw_data(handle, transferNativePtr, (uint)layout.Columns, (uint)layout.Rows, layout.AspectRatio, zoom); }
-            catch (Exception error) { LastError = Sanitize(error.Message); return; }
-            if (drawData == IntPtr.Zero) return;
+            catch (Exception error) { LastError = Sanitize(error.Message); return false; }
+            if (drawData == IntPtr.Zero) return false;
             bool executeAttempted = false;
             try
             {
@@ -215,42 +264,61 @@ namespace ViewWeave
                 executeAttempted = true;
                 Graphics.ExecuteCommandBuffer(command);
                 Submissions++;
+                return true;
             }
             catch (Exception error)
             {
                 if (!executeAttempted) BridgeWorkerNative.lkg_worker_cancel_draw_data(drawData);
                 LastError = Sanitize(error.Message);
                 if (executeAttempted) Dispose();
+                return false;
             }
         }
 
         public void Dispose()
         {
-            if (handle == IntPtr.Zero) { ReleaseOwnedResources(); return; }
+            if (disposalInProgress) return;
+            disposalInProgress = true;
             try
             {
-                int closeResult = BridgeWorkerNative.lkg_worker_close(handle);
-                bool needsClose = closeResult != 0;
-                if (needsClose) LastError = "Bridge worker close pending (code " + closeResult + ")";
-                BridgeWorkerReaper.Enqueue(handle, transferTexture, command, needsClose);
-                handle = IntPtr.Zero;
-                transferTexture = null;
-                transferNativePtr = IntPtr.Zero;
-                transferSrgb = false;
-                command = null;
-                state = WorkerState.Closed;
+                if (handle == IntPtr.Zero) { ReleaseOwnedResources(); return; }
+                bool needsClose = false;
+                try
+                {
+                    int closeResult = BridgeWorkerNative.lkg_worker_close(handle);
+                    needsClose = closeResult != 0;
+                    if (needsClose) LastError = "Bridge worker close pending (code " + closeResult + ")";
+                }
+                catch (Exception error)
+                {
+                    LastError = Sanitize(error.Message);
+                    needsClose = true;
+                }
+                TransferOwnedResourcesToReaper(needsClose);
             }
-            catch (Exception error)
-            {
-                LastError = Sanitize(error.Message);
-                BridgeWorkerReaper.Enqueue(handle, transferTexture, command, true);
-                handle = IntPtr.Zero;
-                transferTexture = null;
-                transferNativePtr = IntPtr.Zero;
-                transferSrgb = false;
-                command = null;
-                state = WorkerState.Closed;
-            }
+            finally { disposalInProgress = false; }
+        }
+
+        void TransferOwnedResourcesToReaper(bool needsClose)
+        {
+            TransferOwnedResourcesToReaper(needsClose, BridgeWorkerReaper.Enqueue);
+        }
+
+        internal void TransferOwnedResourcesToReaper(bool needsClose, Action<IntPtr, RenderTexture, CommandBuffer, bool> enqueue)
+        {
+            if (enqueue == null) throw new ArgumentNullException(nameof(enqueue));
+            if (handle == IntPtr.Zero) return;
+            IntPtr ownedHandle = handle;
+            RenderTexture ownedTexture = transferTexture;
+            CommandBuffer ownedCommand = command;
+            handle = IntPtr.Zero;
+            transferTexture = null;
+            transferNativePtr = IntPtr.Zero;
+            transferSrgb = false;
+            command = null;
+            state = WorkerState.Closed;
+            enqueue(ownedHandle, ownedTexture, ownedCommand, needsClose);
+            RecordReaperHandoff(sessionGeneration);
         }
 
         void OnDisable() { Dispose(); }
@@ -328,6 +396,19 @@ namespace ViewWeave
             if (transferTexture.IsCreated()) transferTexture.Release();
             if (Application.isPlaying) Destroy(transferTexture); else DestroyImmediate(transferTexture);
             transferTexture = null; transferNativePtr = IntPtr.Zero; transferSrgb = false;
+        }
+
+        void RecordReaperHandoff(long generation)
+        {
+            if (generation == 0) return;
+            lastReaperHandoffGeneration = generation;
+            Action<long> handler = PlaybackReaperHandoff;
+            if (handler == null) return;
+            foreach (Action<long> callback in handler.GetInvocationList())
+            {
+                try { callback(generation); }
+                catch (Exception error) { Debug.LogError("[BridgeWorker] Playback handoff notification failed: " + Sanitize(error.Message)); }
+            }
         }
         static string Sanitize(string value)
         {

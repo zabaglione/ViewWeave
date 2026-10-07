@@ -30,6 +30,7 @@ namespace ViewWeave.Editor
         {
             try
             {
+                BridgeQuiltPlaybackLease.RecoverRetainedRecords();
                 BridgeWorkerQuiltOutput.CollectClosedNativeWorkers();
                 if (BridgeWorkerQuiltOutput.NativePendingCount != 0 || BridgeWorkerQuiltOutput.ShutdownPendingCount != 0) StartRecoveryPump();
                 else
@@ -62,6 +63,7 @@ namespace ViewWeave.Editor
                 deadline = EditorApplication.timeSinceStartup + 1.0;
             }
             ViewWeave.BridgeWorkerLifecycle.BeginRecovery();
+            BridgeQuiltPlaybackLease.PrepareForEditorTransitionAll("Editor Play exit, shutdown, or domain reload requested.");
             foreach (ViewWeaveBridgeSession session in Resources.FindObjectsOfTypeAll<ViewWeaveBridgeSession>())
             {
                 if (session != null && session.State != ViewWeaveBridgeSession.SessionState.Idle) session.StopSession();
@@ -74,6 +76,7 @@ namespace ViewWeave.Editor
             {
                 BridgeWorkerQuiltOutput.CloseAllNativeWorkers();
                 BridgeWorkerReaper.DetachOwnedResourcesForRecovery();
+                BridgeQuiltPlaybackLease.CompleteAfterBridgeShutdownAll();
             }
             catch (System.DllNotFoundException)
             {
@@ -95,6 +98,7 @@ namespace ViewWeave.Editor
 
         static void Update()
         {
+            BridgeQuiltPlaybackLease.PumpAll();
             if (!recovering) return;
             try
             {

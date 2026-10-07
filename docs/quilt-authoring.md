@@ -13,4 +13,16 @@ Bridge Rig作成メニューは、解決したframing Cameraを`Reference Camera
 
 Inspectorの`Show Near / Far`でクリップ面を表示／非表示にできます。クリップ距離が大きく、近くの範囲が見にくいときに切り替えてください。`Show Extreme Views`を有効にすると、左右端の視点のNear/Far面を表示します。これは設定した全視点範囲を示します。Half/Quarterの描画密度を選んだ場合も、ギズモは設定上の左右端を示します。
 
+## 明示的なカメラ制作操作
+
+`Camera Authoring`には、操作対象の`Effective Camera`と`Effective Camera Transform`が表示されます。`Reference Camera`が設定されていれば参照カメラが対象で、未設定なら`Source Camera`が対象です。参照カメラのTransformはQuilt描画前にSource Cameraへコピーされるため、手動操作も実際のフレーミングカメラに対して行います。
+
+`Set Focus From Selected Object Center`を使うには、先にQuiltRendererのInspectorをロックし、その後でシーン内のGameObjectを1つ選択します。ロックしたInspectorのボタンを押すと、Renderer boundsの中心、RendererがなければCollider boundsの中心をカメラ前方軸へ投影し、その距離をzero-parallaxの`Focus Distance`へ設定します。どちらのboundsもない場合はTransform位置を使います。カメラ後方や無効な値は拒否します。設定を変えるだけでCameraの位置・向きは変わりません。これは被写界深度のfocusではありません。
+
+`Frame Focus Plane Center in Scene View`は、Scene Viewの表示をzero-parallax面中央へ移動します。`Horizontal Orbit`または`Vertical Orbit`へ角度を入力し対応するApplyボタンを押すと、Effective Cameraの位置と向きをzero-parallax点をpivotとして一緒に回転します。pivot位置は維持され、水平角は±180度、垂直角は±89度に制限されます。これらの手動操作はUndoに記録され、Prefab instance上の変更も記録します。
+
+`Show 3D Focus Cursor`は既定で無効です。有効にすると従来の前後スライダーの代わりにfocus面中央へPosition Handleを表示します。ドラッグ位置をカメラ前方へ投影して距離だけを更新するため、横方向の移動は適用されずfocus面中央へ戻ります。CameraのTransformは変更しません。
+
+Camera authoring操作はPlay Mode中とPlay開始遷移中は無効です。CinemachineやAnimation previewが参照カメラを駆動している場合、後続更新で手動Transformを上書きすることがあるため、停止した状態で編集してください。複数の`QuiltRenderer`選択中はこれらの操作を表示・実行しません。
+
 ギズモはSceneビュー上の調整補助です。参照カメラが設定されていれば、その現在のworld poseと追従FOVを使って面を表示します。Edit Modeの表示更新ではカメラや設定値を書き換えません。表示機器のレンズ補正や視点割り当て、Volume効果、合成後の見え方まではプレビューしません。通常の透視カメラと有効な有限値の設定で表示されます。QuiltRendererはOrthographicカメラに対応しません。
