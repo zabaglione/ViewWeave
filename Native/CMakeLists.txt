@@ -72,13 +72,17 @@ if (WIN32 AND BUILD_TESTING)
   if (NOT LKG_TRANSPORT_TESTS_ONLY)
     add_library(lkg_fake_bridge_runtime SHARED tests/fake_bridge_runtime.cpp)
     add_library(lkg_fake_bridge_fault_runtime SHARED tests/fake_bridge_fault_runtime.cpp)
+    add_library(lkg_fake_bridge_shutdown_runtime SHARED tests/fake_bridge_shutdown_runtime.cpp)
     add_library(lkg_fake_bridge_missing SHARED tests/fake_bridge_missing.cpp)
     target_compile_definitions(lkg_fake_bridge_fault_runtime PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
+    target_compile_definitions(lkg_fake_bridge_shutdown_runtime PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
     target_link_libraries(lkg_fake_bridge_fault_runtime PRIVATE d3d11 dxgi)
+    target_link_libraries(lkg_fake_bridge_shutdown_runtime PRIVATE d3d11 dxgi)
     add_executable(lookingglass_bridge_loader_lifecycle_test tests/bridge_loader_lifecycle_test.cpp)
     target_compile_features(lookingglass_bridge_loader_lifecycle_test PRIVATE cxx_std_17)
     target_compile_definitions(lookingglass_bridge_loader_lifecycle_test PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
     target_link_libraries(lookingglass_bridge_loader_lifecycle_test PRIVATE user32)
+    add_dependencies(lookingglass_bridge_loader_lifecycle_test lookingglass_bridge_shim lkg_fake_bridge_runtime lkg_fake_bridge_missing)
     add_custom_command(TARGET lkg_fake_bridge_runtime POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "$<TARGET_FILE:lkg_fake_bridge_runtime>"
@@ -90,6 +94,20 @@ if (WIN32 AND BUILD_TESTING)
         "$<TARGET_FILE_DIR:lkg_fake_bridge_runtime>/lkg_fake_bridge_other.dll"
         "$<TARGET_FILE:lkg_fake_bridge_missing>")
     set_tests_properties(lookingglass_bridge_loader_lifecycle_test PROPERTIES TIMEOUT 10)
+
+    add_executable(lookingglass_bridge_shutdown_contract_test tests/bridge_shutdown_contract_test.cpp)
+    target_compile_features(lookingglass_bridge_shutdown_contract_test PRIVATE cxx_std_17)
+    target_include_directories(lookingglass_bridge_shutdown_contract_test PRIVATE
+      "${CMAKE_CURRENT_SOURCE_DIR}"
+      "${UNITY_PLUGIN_API_DIR}")
+    target_compile_definitions(lookingglass_bridge_shutdown_contract_test PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
+    target_link_libraries(lookingglass_bridge_shutdown_contract_test PRIVATE d3d11 dxgi user32)
+    add_dependencies(lookingglass_bridge_shutdown_contract_test lookingglass_bridge_shim lkg_fake_bridge_shutdown_runtime)
+    add_test(NAME lookingglass_bridge_shutdown_contract_test
+      COMMAND lookingglass_bridge_shutdown_contract_test
+        "$<TARGET_FILE:lookingglass_bridge_shim>"
+        "$<TARGET_FILE:lkg_fake_bridge_shutdown_runtime>")
+    set_tests_properties(lookingglass_bridge_shutdown_contract_test PROPERTIES TIMEOUT 60 RUN_SERIAL TRUE)
   endif()
 endif()
 
