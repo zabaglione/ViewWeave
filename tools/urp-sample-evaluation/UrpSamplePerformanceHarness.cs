@@ -27,13 +27,20 @@ public static class UrpSamplePerformanceHarness
     static readonly string[] SceneNames = { "TerminalScene", "GardenScene", "CockpitScene", "OasisScene" };
     static readonly Phase[] Phases =
     {
-        new Phase("off_before", null),
-        new Phase("full48", QuiltViewRenderMode.Full),
-        new Phase("off_after", null),
-        new Phase("half24", QuiltViewRenderMode.Half),
-        new Phase("quarter12", QuiltViewRenderMode.Quarter),
-        new Phase("full48_repeat", QuiltViewRenderMode.Full)
+        new Phase("off_before", null, false),
+        new Phase("full48", QuiltViewRenderMode.Full, false),
+        new Phase("off_after", null, false),
+        new Phase("half24", QuiltViewRenderMode.Half, false),
+        new Phase("quarter12", QuiltViewRenderMode.Quarter, false),
+        new Phase("full48_repeat", QuiltViewRenderMode.Full, false)
     };
+    static readonly Phase[] VolumeStackComparisonPhases =
+    {
+        new Phase("volume_reuse_a_off", QuiltViewRenderMode.Full, false),
+        new Phase("volume_reuse_b_on", QuiltViewRenderMode.Full, true),
+        new Phase("volume_reuse_a2_off", QuiltViewRenderMode.Full, false)
+    };
+    static Phase[] activePhases;
 
     static GameObject temporaryRoot;
     static Camera sampleCamera;
@@ -41,6 +48,7 @@ public static class UrpSamplePerformanceHarness
     static Camera sourceCamera;
     static UniversalAdditionalCameraData sourceCameraData;
     static UniversalAdditionalCameraData sampleCameraData;
+    static UrpQuiltCamera sampleUrpCamera;
     static StringBuilder csv;
     static StringBuilder summaryCsv;
     static string outputFile;
@@ -53,6 +61,15 @@ public static class UrpSamplePerformanceHarness
     static int cameraCallbackFrame = -1;
     static int cameraCallbackCount;
     static int currentFrameCameraCallbacks;
+    static int volumeStackCallbackFrame = -1;
+    static int volumeStackCallbacksThisFrame;
+    static VolumeStack volumeStackFirstThisFrame;
+    static bool volumeStackIdentityStableThisFrame;
+    static bool volumeManagerStackMatchedThisFrame;
+    static int volumeStackEndCallbacksThisFrame;
+    static bool volumeStackLeaseActiveAtBegin;
+    static bool volumeStackViaScriptingAtBegin;
+    static bool volumeStackBeginEndMatchedThisFrame;
     static int renderVerificationMisses;
     static int phaseExpectedViews;
     static float originalTimeScale;
@@ -82,6 +99,7 @@ public static class UrpSamplePerformanceHarness
     static int phaseWallSampleCount;
     static int phaseUnverifiedRenderFrames;
     static int phaseSettleFrames;
+    static int phaseCameraStackReuseVerifiedSamples;
     static bool running;
     static bool gateOnly;
     static float evaluationCameraDistance;
@@ -112,13 +130,16 @@ public static class UrpSamplePerformanceHarness
         public double nearClip;
         public double farClip;
         public double[] directors;
+        public bool cameraStackReuseRequested;
+        public bool cameraStackReuseVerified;
     }
 
     sealed class Phase
     {
         public readonly string name;
         public readonly QuiltViewRenderMode? mode;
-        public Phase(string name, QuiltViewRenderMode? mode) { this.name = name; this.mode = mode; }
+        public readonly bool? reuseCameraOwnedVolumeStack;
+        public Phase(string name, QuiltViewRenderMode? mode, bool? reuseCameraOwnedVolumeStack) { this.name = name; this.mode = mode; this.reuseCameraOwnedVolumeStack = reuseCameraOwnedVolumeStack; }
     }
 
     public static string Start(string outputDirectory)
@@ -131,6 +152,16 @@ public static class UrpSamplePerformanceHarness
         return StartInternal(outputDirectory, false, cameraDistance);
     }
 
+    public static string StartVolumeStackComparison(string outputDirectory)
+    {
+        return StartVolumeStackComparison(outputDirectory, 10f);
+    }
+
+    public static string StartVolumeStackComparison(string outputDirectory, float cameraDistance)
+    {
+        return StartInternal(outputDirectory, false, cameraDistance, VolumeStackComparisonPhases);
+    }
+
     public static string StartGate(string outputDirectory)
     {
         return StartGate(outputDirectory, 10f);
@@ -141,7 +172,7 @@ public static class UrpSamplePerformanceHarness
         return StartInternal(outputDirectory, true, cameraDistance);
     }
 
-    static string StartInternal(string outputDirectory, bool gate, float cameraDistance)
+    static string StartInternal(string outputDirectory, bool gate, float cameraDistance, Phase[] selectedPhases = null)
     {
         if (running) throw new InvalidOperationException("an evaluation is already running");
         if (cameraDistance <= 0f) throw new ArgumentOutOfRangeException(nameof(cameraDistance), "camera distance must be positive");
@@ -167,10 +198,11 @@ public static class UrpSamplePerformanceHarness
         outputFile = Path.Combine(outputDirectory, scene.name + "_" + DateTime.UtcNow.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture) + ".csv");
         csv = new StringBuilder(256 * 1024);
         summaryCsv = new StringBuilder(2048);
-        summaryCsv.AppendLine("phase,views,wall_p50_ms,wall_p95_ms,cpu_p50_ms,gpu_p50_ms,cpu_submission_p50_ms,last_view_cpu_p50_ms,cpu_valid_samples,gpu_valid_unique_samples,gpu_valid_fraction,wall_samples,rendered_views,proxy_unverified_frames,texture_size,max_camera_position_delta,max_camera_rotation_delta,max_camera_fov_delta,auto_render_error");
-        csv.AppendLine("scene,phase,phaseFrame,unityFrame,simulationTime,wallFrameMs,wallFps,captureDeltaTime,directorTimes,activeVfxCount,cameraPosition,cpuFrameMs,gpuFrameMs,gpuTimestamp,cpuSubmissionMs,lastViewCpuMs,renderedViews,cameraCallbacks,textureSize,gpuUniqueSamples,camera,renderer,rendererIndex,rendererType,volumeMask,volumeTrigger,nearClip,farClip,bridge,transport,cameraDistance");
+        summaryCsv.AppendLine("phase,views,wall_p50_ms,wall_p95_ms,cpu_p50_ms,gpu_p50_ms,cpu_submission_p50_ms,last_view_cpu_p50_ms,cpu_valid_samples,gpu_valid_unique_samples,gpu_valid_fraction,wall_samples,rendered_views,proxy_unverified_frames,texture_size,max_camera_position_delta,max_camera_rotation_delta,max_camera_fov_delta,auto_render_error,volume_stack_reuse_requested,volume_stack_reuse_verified_samples");
+        csv.AppendLine("scene,phase,phaseFrame,unityFrame,simulationTime,wallFrameMs,wallFps,captureDeltaTime,directorTimes,activeVfxCount,cameraPosition,cpuFrameMs,gpuFrameMs,gpuTimestamp,cpuSubmissionMs,lastViewCpuMs,renderedViews,cameraCallbacks,textureSize,gpuUniqueSamples,camera,renderer,rendererIndex,rendererType,volumeMask,volumeTrigger,nearClip,farClip,bridge,transport,cameraDistance,cameraStackReuseRequested,cameraStackReuseVerified");
         gateOnly = gate;
         evaluationCameraDistance = cameraDistance;
+        activePhases = selectedPhases ?? Phases;
         phaseIndex = gateOnly ? 1 : 0;
         phaseFrame = 0;
         measuredSamples = 0;
@@ -205,10 +237,10 @@ public static class UrpSamplePerformanceHarness
             EditorUtility.CopySerialized(sourceData, sampleData);
             sampleCameraData = sampleData;
             CacheSampleMetadata(sampleData);
-            var guard = temporaryRoot.AddComponent<UrpQuiltCamera>();
+            sampleUrpCamera = temporaryRoot.AddComponent<UrpQuiltCamera>();
             quiltRenderer = temporaryRoot.AddComponent<QuiltRenderer>();
             quiltRenderer.sourceCamera = sampleCamera;
-            quiltRenderer.GuardBehaviour = guard;
+            quiltRenderer.GuardBehaviour = sampleUrpCamera;
             quiltRenderer.OutputBehaviour = null;
             quiltRenderer.useRenderRequests = true;
             quiltRenderer.autoRender = false;
@@ -236,10 +268,11 @@ public static class UrpSamplePerformanceHarness
             Time.captureDeltaTime = FixedSimulationDelta;
             lastWallTicks = Stopwatch.GetTimestamp();
             running = true;
-            ConfigurePhase(Phases[phaseIndex]);
+            ConfigurePhase(activePhases[phaseIndex]);
             EditorApplication.update += Tick;
             EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
             RenderPipelineManager.endCameraRendering += OnEndCameraRendering;
+            RenderPipelineManager.beginCameraRendering += OnBeginCameraRendering;
             return "started scene=" + scene.name + " camera=" + sourceCamera.name + " tag=" + sourceCamera.tag + " position=" + FormatVector(sourceCamera.transform.position) + " fov=" + sourceCamera.fieldOfView.ToString("R", CultureInfo.InvariantCulture) + " clip=" + sourceCamera.nearClipPlane.ToString("R", CultureInfo.InvariantCulture) + ":" + sourceCamera.farClipPlane.ToString("R", CultureInfo.InvariantCulture) + " cullingMask=" + sourceCamera.cullingMask + " clearFlags=" + sourceCamera.clearFlags + " renderer=" + sampleData.scriptableRenderer?.GetType().Name + " rendererIndex=" + cachedRendererIndex + " volumeMask=" + cachedVolumeMask + " volumeTrigger=" + cachedVolumeTrigger + " quality=" + QualitySettings.GetQualityLevel() + " geometry=synthetic_7680x4320_8x6_focus" + cameraDistance.ToString("R", CultureInfo.InvariantCulture) + "_cone40 sourceAspect=" + sourceCamera.aspect.ToString("R", CultureInfo.InvariantCulture) + " tileAspect=" + ((float)(QuiltWidth / QuiltColumns) / (QuiltHeight / QuiltRows)).ToString("R", CultureInfo.InvariantCulture) + " output=" + outputFile;
         }
         catch
@@ -252,7 +285,7 @@ public static class UrpSamplePerformanceHarness
     public static string Status()
     {
         return running
-            ? "running scene=" + UnityEngine.SceneManagement.SceneManager.GetActiveScene().name + " phase=" + Phases[phaseIndex].name + " phaseFrame=" + phaseFrame + " measured=" + measuredSamples
+            ? "running scene=" + UnityEngine.SceneManagement.SceneManager.GetActiveScene().name + " phase=" + activePhases[phaseIndex].name + " phaseFrame=" + phaseFrame + " measured=" + measuredSamples
             : "idle";
     }
 
@@ -305,7 +338,7 @@ public static class UrpSamplePerformanceHarness
         maxCameraRotationDelta = Mathf.Max(maxCameraRotationDelta, Quaternion.Angle(initialCameraRotation, sourceRotation));
         maxCameraFovDelta = Mathf.Max(maxCameraFovDelta, Mathf.Abs(initialCameraFov - sourceCamera.fieldOfView));
 
-        var phase = Phases[phaseIndex];
+        var phase = activePhases[phaseIndex];
         if (!string.IsNullOrEmpty(quiltRenderer.LastAutoRenderError))
             throw new InvalidOperationException("auto render error: " + quiltRenderer.LastAutoRenderError);
         FrameTimingManager.CaptureFrameTimings();
@@ -374,9 +407,19 @@ public static class UrpSamplePerformanceHarness
                 cameraPosition = sourcePosition,
                 nearClip = sampleCamera.nearClipPlane,
                 farClip = sampleCamera.farClipPlane,
-                directors = sampleBuffer[measuredSamples].directors
+                directors = sampleBuffer[measuredSamples].directors,
+                cameraStackReuseRequested = phase.reuseCameraOwnedVolumeStack == true,
+                cameraStackReuseVerified = phase.reuseCameraOwnedVolumeStack == true &&
+                    volumeStackCallbackFrame == unityFrame &&
+                    volumeStackCallbacksThisFrame == phaseExpectedViews &&
+                    volumeStackFirstThisFrame != null &&
+                    volumeStackIdentityStableThisFrame &&
+                    volumeManagerStackMatchedThisFrame &&
+                    volumeStackEndCallbacksThisFrame == phaseExpectedViews &&
+                    volumeStackBeginEndMatchedThisFrame
             };
             Array.Copy(directorTimes, sample.directors, directorTimes.Length);
+            if (sample.cameraStackReuseVerified) phaseCameraStackReuseVerifiedSamples++;
             sampleBuffer[measuredSamples++] = sample;
             phaseWallSampleCount++;
             if (wallFrameMs > 0.0) wallFrames.Add(wallFrameMs);
@@ -388,6 +431,12 @@ public static class UrpSamplePerformanceHarness
         if (measuredSamples < SampleFrames) return;
         SerializeSamples(phase);
         AddSummary(phase, renderedViews, phase.mode.HasValue ? TextureSize() : "single-camera");
+        if (phase.reuseCameraOwnedVolumeStack == true && phaseCameraStackReuseVerifiedSamples != SampleFrames)
+        {
+            failure = "camera-owned VolumeStack path verified " + phaseCameraStackReuseVerifiedSamples + "/" + SampleFrames + " measured samples";
+            Finish();
+            return;
+        }
         phaseIndex++;
         phaseFrame = 0;
         measuredSamples = 0;
@@ -396,8 +445,8 @@ public static class UrpSamplePerformanceHarness
         phaseValidCpu = phaseValidGpu = phaseWallSampleCount = 0;
         phaseUnverifiedRenderFrames = 0;
         renderVerificationMisses = 0;
-        if (phaseIndex >= Phases.Length) Finish();
-        else ConfigurePhase(Phases[phaseIndex]);
+        if (phaseIndex >= activePhases.Length) Finish();
+        else ConfigurePhase(activePhases[phaseIndex]);
     }
 
     static void AddSummary(Phase phase, int renderedViews, string textureSize)
@@ -454,6 +503,18 @@ public static class UrpSamplePerformanceHarness
         quiltRenderer.autoRender = phase.mode.HasValue;
         phaseExpectedViews = phase.mode.HasValue ? 48 / (int)phase.mode.Value : 0;
         if (phase.mode.HasValue) quiltRenderer.viewRenderMode = phase.mode.Value;
+        if (phase.reuseCameraOwnedVolumeStack.HasValue && sampleUrpCamera != null)
+            sampleUrpCamera.reuseCameraOwnedVolumeStackForQuilt = phase.reuseCameraOwnedVolumeStack.Value;
+        volumeStackCallbackFrame = -1;
+        volumeStackCallbacksThisFrame = 0;
+        volumeStackEndCallbacksThisFrame = 0;
+        volumeStackFirstThisFrame = null;
+        volumeStackIdentityStableThisFrame = true;
+        volumeManagerStackMatchedThisFrame = true;
+        volumeStackBeginEndMatchedThisFrame = true;
+        volumeStackLeaseActiveAtBegin = false;
+        volumeStackViaScriptingAtBegin = false;
+        phaseCameraStackReuseVerifiedSamples = 0;
         phaseFrame = 0;
         lastObservedSubmissionTicks = quiltRenderer.LastCpuSubmissionTicks;
         lastObservedRenderedViews = quiltRenderer.LastRenderedViewCount;
@@ -480,7 +541,7 @@ public static class UrpSamplePerformanceHarness
                 Csv(FormatDirectorTimes(sample.directors)), I(sample.activeVfx), Csv(FormatVector(sample.cameraPosition)), F(sample.cpuMs), F(sample.gpuMs),
                 sample.gpuTimestamp.ToString(CultureInfo.InvariantCulture), F(sample.submissionMs), F(sample.viewMs), I(sample.renderedViews), I(sample.cameraCallbacks), Csv(phase.mode.HasValue ? textureSize : "single-camera"), I(gpuUnique),
                 Csv(sourceCamera.name), Csv(cachedRendererName), I(cachedRendererIndex), Csv(cachedRenderType), I(cachedVolumeMask), Csv(cachedVolumeTrigger),
-                F(sample.nearClip), F(sample.farClip), "not_started", "not_measured"
+                F(sample.nearClip), F(sample.farClip), "not_started", "not_measured", F(evaluationCameraDistance), B(sample.cameraStackReuseRequested), B(sample.cameraStackReuseVerified)
             }));
         }
     }
@@ -505,13 +566,15 @@ public static class UrpSamplePerformanceHarness
             Csv(UnityEngine.SceneManagement.SceneManager.GetActiveScene().name), Csv(phase.name + suffix), I(SampleFrames), I(Time.frameCount), F(Time.time),
             F(wallMs), F(wallMs > 0.0 ? 1000.0 / wallMs : 0.0), F(Time.captureDeltaTime), Csv(GetDirectorTimes()), I(CountActiveVfx()), Csv(FormatVector(sampleCamera.transform.position)),
             F(cpuMs), F(gpuMs), "", F(submissionMs), F(viewMs), I(renderedViews), Csv(textureSize), I(gpuUnique), Csv(sourceCamera.name), Csv(sampleDataRenderer()),
-            I(sampleDataRendererIndex()), Csv(sampleDataRenderType()), Csv(sampleDataVolumeMask()), Csv(sampleDataVolumeTrigger()), F(sampleCamera.nearClipPlane), F(sampleCamera.farClipPlane), "not_started", "not_measured", F(evaluationCameraDistance)
+            I(sampleDataRendererIndex()), Csv(sampleDataRenderType()), Csv(sampleDataVolumeMask()), Csv(sampleDataVolumeTrigger()), F(sampleCamera.nearClipPlane), F(sampleCamera.farClipPlane), "not_started", "not_measured", F(evaluationCameraDistance),
+            B(phase.reuseCameraOwnedVolumeStack == true), I(phaseCameraStackReuseVerifiedSamples)
         }));
         summaryCsv.AppendLine(string.Join(",", new[]
         {
             Csv(phase.name + suffix), I(phaseExpectedViews), F(wallMs), F(wallMs), F(cpuMs), F(gpuMs), F(submissionMs), F(viewMs),
             I(phaseValidCpu), I(phaseValidGpu), F(phaseValidGpu / (double)SampleFrames), I(phaseWallSampleCount), I(renderedViews), I(phaseUnverifiedRenderFrames), Csv(textureSize),
-            F(maxCameraPositionDelta), F(maxCameraRotationDelta), F(maxCameraFovDelta), Csv(quiltRenderer != null ? quiltRenderer.LastAutoRenderError : "")
+            F(maxCameraPositionDelta), F(maxCameraRotationDelta), F(maxCameraFovDelta), Csv(quiltRenderer != null ? quiltRenderer.LastAutoRenderError : ""),
+            B(phase.reuseCameraOwnedVolumeStack == true), I(phaseCameraStackReuseVerifiedSamples)
         }));
     }
 
@@ -534,6 +597,46 @@ public static class UrpSamplePerformanceHarness
             cameraCallbackCount = 0;
         }
         cameraCallbackCount++;
+
+        if (volumeStackCallbackFrame != frame) return;
+        volumeStackEndCallbacksThisFrame++;
+        VolumeStack current = sampleCameraData != null ? sampleCameraData.volumeStack : null;
+        bool leaseActive = sampleUrpCamera != null && sampleUrpCamera.CameraOwnedVolumeStackLeaseActive;
+        bool viaScripting = sampleCamera != null && sampleCamera.GetVolumeFrameworkUpdateMode() == VolumeFrameworkUpdateMode.ViaScripting;
+        if (current == null || current != volumeStackFirstThisFrame || !leaseActive || !volumeStackLeaseActiveAtBegin || !viaScripting || !volumeStackViaScriptingAtBegin || VolumeManager.instance.stack != current)
+            volumeStackBeginEndMatchedThisFrame = false;
+    }
+
+    static void OnBeginCameraRendering(ScriptableRenderContext context, Camera camera)
+    {
+        if (camera != sampleCamera) return;
+        int frame = Time.frameCount;
+        if (volumeStackCallbackFrame != frame)
+        {
+            volumeStackCallbackFrame = frame;
+            volumeStackCallbacksThisFrame = 0;
+            volumeStackEndCallbacksThisFrame = 0;
+            volumeStackFirstThisFrame = null;
+            volumeStackIdentityStableThisFrame = true;
+            volumeManagerStackMatchedThisFrame = true;
+            volumeStackBeginEndMatchedThisFrame = true;
+            volumeStackLeaseActiveAtBegin = sampleUrpCamera != null && sampleUrpCamera.CameraOwnedVolumeStackLeaseActive;
+            volumeStackViaScriptingAtBegin = sampleCamera.GetVolumeFrameworkUpdateMode() == VolumeFrameworkUpdateMode.ViaScripting;
+        }
+
+        volumeStackCallbacksThisFrame++;
+        VolumeStack current = sampleCameraData != null ? sampleCameraData.volumeStack : null;
+        if (current == null)
+        {
+            volumeStackIdentityStableThisFrame = false;
+            volumeManagerStackMatchedThisFrame = false;
+            volumeStackBeginEndMatchedThisFrame = false;
+            return;
+        }
+        if (volumeStackFirstThisFrame == null) volumeStackFirstThisFrame = current;
+        else if (volumeStackFirstThisFrame != current) volumeStackIdentityStableThisFrame = false;
+        if (VolumeManager.instance.stack != current) volumeManagerStackMatchedThisFrame = false;
+        if (!volumeStackLeaseActiveAtBegin || !volumeStackViaScriptingAtBegin) volumeStackBeginEndMatchedThisFrame = false;
     }
 
     static string sampleDataRenderer() => cachedRendererName;
@@ -563,6 +666,7 @@ public static class UrpSamplePerformanceHarness
         EditorApplication.update -= Tick;
         EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
         RenderPipelineManager.endCameraRendering -= OnEndCameraRendering;
+        RenderPipelineManager.beginCameraRendering -= OnBeginCameraRendering;
         try
         {
             if (quiltRenderer != null && quiltRenderer.QuiltTexture != null) SaveQuiltEvidence();
@@ -690,6 +794,7 @@ public static class UrpSamplePerformanceHarness
         EditorApplication.update -= Tick;
         EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
         RenderPipelineManager.endCameraRendering -= OnEndCameraRendering;
+        RenderPipelineManager.beginCameraRendering -= OnBeginCameraRendering;
 
         try { RestoreCaptureDeltaTime(); }
         catch (Exception error) { LogRestoreFailure("capture_delta_time", error); }
@@ -717,6 +822,7 @@ public static class UrpSamplePerformanceHarness
         sourceCamera = null;
         sourceCameraData = null;
         sampleCameraData = null;
+        sampleUrpCamera = null;
         gateOnly = false;
         cachedVfx = null;
         cachedDirectors = null;
@@ -747,4 +853,5 @@ public static class UrpSamplePerformanceHarness
     static string Ascii(string value) => new string((value ?? string.Empty).Where(character => character >= 0x20 && character <= 0x7e).ToArray());
     static string I(int value) => value.ToString(CultureInfo.InvariantCulture);
     static string F(double value) => value.ToString("R", CultureInfo.InvariantCulture);
+    static string B(bool value) => value ? "true" : "false";
 }

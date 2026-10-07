@@ -26,6 +26,330 @@ namespace ViewWeave.GraphicsCompatibility
         [UnityTest] public IEnumerator UIToolkitTargetTexture() => RunFeature("uitk-target", fixture => fixture.AddUiToolkit());
         [UnityTest] public IEnumerator BloomPerViewToggle() => RunFeature("bloom", fixture => fixture.AddBloom());
 
+        [UnityTest]
+        public IEnumerator CameraOwnedVolumeStackReuseUpdatesEveryViewAndRestoresCameraState()
+        {
+            var fixture = new Fixture("volume-stack-reuse-every-frame");
+            try
+            {
+                fixture.Setup();
+                fixture.AddBloom();
+                fixture.RefreshScope();
+                fixture.Guard.reuseCameraOwnedVolumeStackForQuilt = true;
+                fixture.Camera.SetVolumeFrameworkUpdateMode(VolumeFrameworkUpdateMode.EveryFrame);
+                fixture.CameraData.antialiasing = AntialiasingMode.TemporalAntiAliasing;
+                Assert.IsNull(fixture.CameraData.volumeStack, "test camera must not start with a camera-owned stack");
+
+                AssertCameraOwnedStackUsedForEveryView(fixture);
+            }
+            finally { fixture.Dispose(); }
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator CameraOwnedVolumeStackReuseHonorsPipelineEveryFrameSetting()
+        {
+            var fixture = new Fixture("volume-stack-reuse-pipeline-settings");
+            try
+            {
+                fixture.Setup();
+                fixture.AddBloom();
+                fixture.RefreshScope();
+                SetPipelineVolumeUpdateMode(fixture.Pipeline, VolumeFrameworkUpdateMode.EveryFrame);
+                fixture.Guard.reuseCameraOwnedVolumeStackForQuilt = true;
+                fixture.Camera.SetVolumeFrameworkUpdateMode(VolumeFrameworkUpdateMode.UsePipelineSettings);
+                fixture.CameraData.antialiasing = AntialiasingMode.TemporalAntiAliasing;
+                Assert.IsTrue(fixture.CameraData.requiresVolumeFrameworkUpdate, "pipeline EveryFrame mode should be effective for this camera");
+                Assert.IsNull(fixture.CameraData.volumeStack, "test camera must not start with a camera-owned stack");
+
+                AssertCameraOwnedStackUsedForEveryView(fixture);
+            }
+            finally { fixture.Dispose(); }
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator CameraOwnedVolumeStackReusePreservesPerViewLocalVolumeBlendAndRefreshesNextQuilt()
+        {
+            var fixture = new Fixture("volume-stack-reuse-local-volume");
+            GameObject volumeObject = null;
+            VolumeProfile profile = null;
+            try
+            {
+                fixture.Setup();
+                SetPipelineVolumeUpdateMode(fixture.Pipeline, VolumeFrameworkUpdateMode.EveryFrame);
+                fixture.Camera.SetVolumeFrameworkUpdateMode(VolumeFrameworkUpdateMode.UsePipelineSettings);
+                fixture.CameraData.volumeLayerMask = 1 << GraphicsFixtureScope.Layer;
+                fixture.CameraData.volumeTrigger = fixture.Camera.transform;
+                volumeObject = new GameObject("LocalBlendBoundaryVolume");
+                volumeObject.layer = GraphicsFixtureScope.Layer;
+                volumeObject.transform.position = Vector3.zero;
+                BoxCollider collider = volumeObject.AddComponent<BoxCollider>();
+                collider.size = new Vector3(0.35f, 4f, 4f);
+                Volume volume = volumeObject.AddComponent<Volume>();
+                volume.isGlobal = false;
+                volume.blendDistance = 1.2f;
+                volume.priority = 10f;
+                profile = ScriptableObject.CreateInstance<VolumeProfile>();
+                Bloom bloom = profile.Add<Bloom>(true);
+                bloom.active = true;
+                bloom.intensity.overrideState = true;
+                bloom.intensity.value = 0.4f;
+                volume.sharedProfile = profile;
+                fixture.RefreshScope();
+
+                float[] baseline = CapturePerViewBloom(fixture);
+                Assert.Greater(Maximum(baseline) - Minimum(baseline), 0.05f, "local Volume boundary did not produce distinct per-view blends");
+                if (fixture.CameraData.volumeStack != null) fixture.Camera.DestroyVolumeStack();
+
+                fixture.Guard.reuseCameraOwnedVolumeStackForQuilt = true;
+                float[] optimized = CapturePerViewBloom(fixture);
+                AssertPerViewValuesEqual(baseline, optimized, "optimized stack reuse changed local Volume blending");
+
+                bloom.intensity.value = 1.2f;
+                float[] nextQuilt = CapturePerViewBloom(fixture);
+                Assert.Greater(Maximum(nextQuilt) - Maximum(optimized), 0.2f, "the next quilt did not reflect the updated Volume profile");
+                Assert.Greater(Minimum(nextQuilt) - Minimum(optimized), 0.2f, "the next quilt did not refresh all view stack values");
+            }
+            finally
+            {
+                fixture.Dispose();
+                if (volumeObject != null) UnityEngine.Object.DestroyImmediate(volumeObject);
+                if (profile != null) UnityEngine.Object.DestroyImmediate(profile);
+            }
+            yield return null;
+        }
+
+        static float[] CapturePerViewBloom(Fixture fixture)
+        {
+            float[] values = new float[8];
+            int count = 0;
+            Camera camera = fixture.Camera;
+            Action<ScriptableRenderContext, Camera> callback = (context, renderedCamera) =>
+            {
+                if (renderedCamera != camera) return;
+                Assert.Less(count, values.Length, "more than eight view callbacks were received");
+                VolumeStack stack = VolumeManager.instance.stack;
+                Assert.IsNotNull(stack, "URP did not expose the active VolumeStack at endCameraRendering");
+                Bloom current = stack.GetComponent<Bloom>();
+                Assert.IsNotNull(current, "Bloom component was missing from the active per-view VolumeStack");
+                values[count++] = current.intensity.value;
+            };
+            RenderPipelineManager.endCameraRendering += callback;
+            try { fixture.Quilt.RenderQuilt(); }
+            finally { RenderPipelineManager.endCameraRendering -= callback; }
+            Assert.AreEqual(values.Length, count, "expected one Volume sample for each quilt view");
+            return values;
+        }
+
+        static void AssertPerViewValuesEqual(float[] expected, float[] actual, string message)
+        {
+            Assert.AreEqual(expected.Length, actual.Length, message);
+            for (int i = 0; i < expected.Length; i++) Assert.AreEqual(expected[i], actual[i], 0.01f, message + " at view " + i);
+        }
+
+        static float Maximum(float[] values)
+        {
+            float value = float.MinValue;
+            for (int i = 0; i < values.Length; i++) value = Mathf.Max(value, values[i]);
+            return value;
+        }
+
+        static float Minimum(float[] values)
+        {
+            float value = float.MaxValue;
+            for (int i = 0; i < values.Length; i++) value = Mathf.Min(value, values[i]);
+            return value;
+        }
+
+        [UnityTest]
+        public IEnumerator CameraOwnedVolumeStackReuseFallsBackWhenCameraUsesScriptingUpdates()
+        {
+            var fixture = new Fixture("volume-stack-reuse-scripting-fallback");
+            try
+            {
+                fixture.Setup();
+                fixture.AddBloom();
+                fixture.RefreshScope();
+                fixture.Guard.reuseCameraOwnedVolumeStackForQuilt = true;
+                fixture.Camera.SetVolumeFrameworkUpdateMode(VolumeFrameworkUpdateMode.ViaScripting);
+                VolumeFrameworkUpdateMode originalMode = fixture.Camera.GetVolumeFrameworkUpdateMode();
+                Assert.IsFalse(fixture.CameraData.requiresVolumeFrameworkUpdate, "scripting-driven camera must not enter the automatic-update fast path");
+                bool leaseObserved = false;
+                Action<ScriptableRenderContext, Camera> callback = (context, camera) =>
+                {
+                    if (camera == fixture.Camera) leaseObserved |= fixture.Guard.CameraOwnedVolumeStackLeaseActive;
+                };
+                RenderPipelineManager.beginCameraRendering += callback;
+                try { fixture.Quilt.RenderQuilt(); }
+                finally { RenderPipelineManager.beginCameraRendering -= callback; }
+
+                Assert.AreEqual(1, fixture.Guard.ValidationStackCreationCount, "fallback should use the existing validation stack");
+                Assert.IsFalse(leaseObserved, "scripting-driven fallback unexpectedly activated the camera-stack lease");
+                Assert.AreEqual(originalMode, fixture.Camera.GetVolumeFrameworkUpdateMode(), "fallback changed the camera update mode");
+            }
+            finally { fixture.Dispose(); }
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator CameraOwnedVolumeStackReusePreservesAnExistingCameraStack()
+        {
+            var fixture = new Fixture("volume-stack-reuse-existing-stack-fallback");
+            VolumeStack existingStack = null;
+            try
+            {
+                fixture.Setup();
+                fixture.Camera.SetVolumeFrameworkUpdateMode(VolumeFrameworkUpdateMode.ViaScripting);
+                fixture.Camera.UpdateVolumeStack();
+                existingStack = fixture.CameraData.volumeStack;
+                Assert.IsNotNull(existingStack, "test setup did not create the pre-existing camera-owned stack");
+                fixture.Camera.SetVolumeFrameworkUpdateMode(VolumeFrameworkUpdateMode.ViaScripting);
+                VolumeFrameworkUpdateMode originalMode = fixture.Camera.GetVolumeFrameworkUpdateMode();
+                fixture.Guard.reuseCameraOwnedVolumeStackForQuilt = true;
+
+                fixture.Quilt.RenderQuilt();
+
+                Assert.AreSame(existingStack, fixture.CameraData.volumeStack, "fallback replaced the pre-existing camera-owned stack");
+                Assert.AreEqual(1, fixture.Guard.ValidationStackCreationCount, "existing-stack condition should use the legacy validation stack");
+                Assert.AreEqual(originalMode, fixture.Camera.GetVolumeFrameworkUpdateMode(), "fallback changed the camera update mode");
+            }
+            finally
+            {
+                if (existingStack != null && fixture.Camera != null) fixture.Camera.DestroyVolumeStack();
+                fixture.Dispose();
+            }
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator CameraOwnedVolumeStackMotionBlurRejectionRestoresAllState()
+        {
+            var fixture = new Fixture("volume-stack-reuse-motion-blur");
+            GameObject volumeObject = null;
+            VolumeProfile profile = null;
+            try
+            {
+                fixture.Setup();
+                fixture.Guard.reuseCameraOwnedVolumeStackForQuilt = true;
+                fixture.Camera.SetVolumeFrameworkUpdateMode(VolumeFrameworkUpdateMode.EveryFrame);
+                fixture.CameraData.antialiasing = AntialiasingMode.TemporalAntiAliasing;
+                volumeObject = new GameObject("VolumeStackReuseMotionBlur");
+                volumeObject.transform.SetParent(fixture.Camera.transform, false);
+                volumeObject.layer = GraphicsFixtureScope.Layer;
+                var volume = volumeObject.AddComponent<Volume>();
+                volume.isGlobal = true;
+                profile = ScriptableObject.CreateInstance<VolumeProfile>();
+                MotionBlur motionBlur = profile.Add<MotionBlur>(true);
+                motionBlur.active = true;
+                motionBlur.intensity.value = 0.5f;
+                motionBlur.intensity.overrideState = true;
+                volume.sharedProfile = profile;
+                VolumeStack originalManagerStack = VolumeManager.instance.stack;
+
+                Assert.Throws<NotSupportedException>(() => fixture.Quilt.RenderQuilt());
+
+                Assert.IsNull(fixture.CameraData.volumeStack, "rejected quilt retained its temporary camera-owned stack");
+                Assert.AreEqual(VolumeFrameworkUpdateMode.EveryFrame, fixture.Camera.GetVolumeFrameworkUpdateMode(), "rejection did not restore the camera update mode");
+                Assert.AreSame(originalManagerStack, VolumeManager.instance.stack, "rejection did not restore the global VolumeManager stack");
+                Assert.AreEqual(AntialiasingMode.TemporalAntiAliasing, fixture.CameraData.antialiasing, "rejection changed camera antialiasing");
+            }
+            finally
+            {
+                fixture.Dispose();
+                if (volumeObject != null) UnityEngine.Object.DestroyImmediate(volumeObject);
+                if (profile != null) UnityEngine.Object.DestroyImmediate(profile);
+            }
+            yield return null;
+        }
+
+        static void AssertCameraOwnedStackUsedForEveryView(Fixture fixture)
+        {
+            int callbacks = 0;
+            VolumeStack firstStack = null;
+            bool sameStack = true;
+            bool managerUsedCameraStack = true;
+            bool antialiasingSuppressed = true;
+            bool leaseActiveAtBegin = true;
+            bool modeCorrectAtBegin = true;
+            Camera target = fixture.Camera;
+            UniversalAdditionalCameraData cameraData = fixture.CameraData;
+            VolumeFrameworkUpdateMode originalMode = target.GetVolumeFrameworkUpdateMode();
+            int endCallbacks = 0;
+            bool leaseActiveAtEnd = true;
+            bool modeCorrectAtEnd = true;
+            Action<ScriptableRenderContext, Camera> onEndCameraRendering = (context, camera) =>
+            {
+                if (camera != target) return;
+                endCallbacks++;
+                leaseActiveAtEnd &= fixture.Guard.CameraOwnedVolumeStackLeaseActive;
+                modeCorrectAtEnd &= camera.GetVolumeFrameworkUpdateMode() == VolumeFrameworkUpdateMode.ViaScripting;
+            };
+            Action<ScriptableRenderContext, Camera> onBeginCameraRendering = (context, camera) =>
+            {
+                if (camera != target) return;
+                callbacks++;
+                leaseActiveAtBegin &= fixture.Guard.CameraOwnedVolumeStackLeaseActive;
+                modeCorrectAtBegin &= camera.GetVolumeFrameworkUpdateMode() == VolumeFrameworkUpdateMode.ViaScripting;
+                VolumeStack current = cameraData.volumeStack;
+                if (current == null || (firstStack != null && current != firstStack)) sameStack = false;
+                if (firstStack == null) firstStack = current;
+                if (VolumeManager.instance.stack != current) managerUsedCameraStack = false;
+                if (cameraData.antialiasing != AntialiasingMode.None) antialiasingSuppressed = false;
+            };
+            RenderPipelineManager.beginCameraRendering += onBeginCameraRendering;
+            RenderPipelineManager.endCameraRendering += onEndCameraRendering;
+            try { fixture.Quilt.RenderQuilt(); }
+            finally
+            {
+                RenderPipelineManager.beginCameraRendering -= onBeginCameraRendering;
+                RenderPipelineManager.endCameraRendering -= onEndCameraRendering;
+            }
+
+            Assert.AreEqual(8, callbacks, "expected one render callback for each of the eight view requests");
+            Assert.IsNotNull(firstStack, "optimized path did not create a camera-owned VolumeStack");
+            Assert.IsTrue(sameStack, "the camera-owned VolumeStack identity changed between views");
+            Assert.IsTrue(managerUsedCameraStack, "the global VolumeManager did not use the camera-owned stack while rendering");
+            Assert.IsTrue(antialiasingSuppressed, "TAA was not suppressed during a quilt view");
+            Assert.IsTrue(leaseActiveAtBegin, "camera-owned VolumeStack lease was not active at beginCameraRendering");
+            Assert.IsTrue(modeCorrectAtBegin, "ViaScripting mode was not active at beginCameraRendering");
+            Assert.AreEqual(8, endCallbacks, "expected paired end callbacks for all views");
+            Assert.IsTrue(leaseActiveAtEnd, "camera-owned VolumeStack lease was not active through endCameraRendering");
+            Assert.IsTrue(modeCorrectAtEnd, "ViaScripting mode was not active through endCameraRendering");
+            Assert.AreEqual(0, fixture.Guard.ValidationStackCreationCount, "optimized path also created the legacy validation stack");
+            Assert.IsNull(cameraData.volumeStack, "temporary camera-owned VolumeStack was not released after the quilt");
+            Assert.AreEqual(originalMode, fixture.Camera.GetVolumeFrameworkUpdateMode(), "camera update mode was not restored");
+            Assert.AreEqual(AntialiasingMode.TemporalAntiAliasing, cameraData.antialiasing, "camera antialiasing was not restored");
+        }
+
+        static void SetPipelineVolumeUpdateMode(UniversalRenderPipelineAsset pipeline, VolumeFrameworkUpdateMode mode)
+        {
+#if UNITY_EDITOR
+            var serialized = new SerializedObject(pipeline);
+            SerializedProperty iterator = serialized.GetIterator();
+            SerializedProperty modeProperty = null;
+            bool enterChildren = true;
+            while (iterator.Next(enterChildren))
+            {
+                enterChildren = false;
+                if (iterator.propertyType != SerializedPropertyType.Enum) continue;
+                string[] names = iterator.enumNames;
+                if (names == null || Array.IndexOf(names, mode.ToString()) < 0) continue;
+                if (iterator.displayName.IndexOf("Volume", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    modeProperty = serialized.FindProperty(iterator.propertyPath);
+                    break;
+                }
+            }
+            Assert.IsNotNull(modeProperty, "URP asset's serialized Volume update mode was not found");
+            modeProperty.enumValueIndex = Array.IndexOf(modeProperty.enumNames, mode.ToString());
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            Assert.AreEqual(mode, pipeline.volumeFrameworkUpdateMode, "URP asset did not accept the Volume update mode");
+#else
+            Assert.Fail("Configuring the URP asset Volume update mode requires the Unity Editor");
+#endif
+        }
+
         IEnumerator RunFeature(string name, Action<Fixture> add)
         {
             Fixture fixture = null;
@@ -113,6 +437,12 @@ namespace ViewWeave.GraphicsCompatibility
                 scope = GraphicsFixtureScope.Create(root);
                 scope.Apply(camera);
             }
+
+            public Camera Camera => camera;
+            public QuiltRenderer Quilt => quilt;
+            public UrpQuiltCamera Guard => guard;
+            public UniversalAdditionalCameraData CameraData => camera.GetComponent<UniversalAdditionalCameraData>();
+            public UniversalRenderPipelineAsset Pipeline => ownedPipeline;
 
             void AddLitObject(string objectName, Vector3 position, Color color)
             {

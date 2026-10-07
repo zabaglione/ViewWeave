@@ -19,6 +19,16 @@ namespace ViewWeave.URP
             if (!VolumeManager.instance.isInitialized) throw new InvalidOperationException("URP VolumeManager is not initialized");
         }
 
+        internal static bool UsesAutomaticVolumeUpdates(Camera camera, UniversalAdditionalCameraData data)
+        {
+            if (camera == null || data == null || !data.requiresVolumeFrameworkUpdate) return false;
+            VolumeFrameworkUpdateMode cameraMode = camera.GetVolumeFrameworkUpdateMode();
+            if (cameraMode == VolumeFrameworkUpdateMode.EveryFrame) return true;
+            if (cameraMode != VolumeFrameworkUpdateMode.UsePipelineSettings) return false;
+            UniversalRenderPipelineAsset pipeline = GraphicsSettings.currentRenderPipeline as UniversalRenderPipelineAsset;
+            return pipeline != null && pipeline.volumeFrameworkUpdateMode == VolumeFrameworkUpdateMode.EveryFrame;
+        }
+
         public static Scope BeginViewRender(Camera camera)
         {
             Validate(camera);
@@ -52,21 +62,61 @@ namespace ViewWeave.URP
             return new Scope(data, borrowedStack, false, onDispose);
         }
 
+        internal static Scope BeginViewRender(Camera camera, bool useCameraOwnedStack, Action onDispose)
+        {
+            Validate(camera);
+            if (!useCameraOwnedStack) throw new ArgumentException("camera-owned VolumeStack path must be enabled", nameof(useCameraOwnedStack));
+            var data = camera.GetComponent<UniversalAdditionalCameraData>();
+            VolumeStack stack = data.volumeStack;
+            if (stack == null || !stack.isValid) throw new InvalidOperationException("a valid camera-owned VolumeStack is required");
+
+            VolumeManager manager = VolumeManager.instance;
+            VolumeStack previousManagerStack = manager.stack;
+            try
+            {
+                camera.UpdateVolumeStack();
+                stack = data.volumeStack;
+                if (stack == null || !stack.isValid) throw new InvalidOperationException("URP did not retain the camera-owned VolumeStack");
+                manager.stack = stack;
+                ValidateMotionBlur(stack);
+                return new Scope(data, stack, false, onDispose, manager, previousManagerStack);
+            }
+            catch
+            {
+                manager.stack = previousManagerStack;
+                throw;
+            }
+        }
+
+        static void ValidateMotionBlur(VolumeStack stack)
+        {
+            var motionBlur = stack.GetComponent<MotionBlur>();
+            if (motionBlur != null && motionBlur.IsActive()) throw new NotSupportedException("URP Motion Blur is temporal and is not supported for quilt views");
+        }
+
         public readonly struct Scope : IDisposable
         {
             readonly UniversalAdditionalCameraData data; readonly VolumeStack stack;
             readonly AntialiasingMode antialiasing; readonly bool valid; readonly bool ownsStack; readonly Action onDispose;
-            internal Scope(UniversalAdditionalCameraData data, VolumeStack stack, bool ownsStack, Action onDispose = null)
+            readonly VolumeManager manager; readonly VolumeStack previousManagerStack;
+            internal Scope(UniversalAdditionalCameraData data, VolumeStack stack, bool ownsStack, Action onDispose = null, VolumeManager manager = null, VolumeStack previousManagerStack = null)
             {
-                this.data = data; this.stack = stack; this.ownsStack = ownsStack; this.onDispose = onDispose; antialiasing = data.antialiasing; valid = true;
+                this.data = data; this.stack = stack; this.ownsStack = ownsStack; this.onDispose = onDispose; this.manager = manager; this.previousManagerStack = previousManagerStack; antialiasing = data.antialiasing; valid = true;
                 if (antialiasing == AntialiasingMode.TemporalAntiAliasing) data.antialiasing = AntialiasingMode.None;
             }
             public void Dispose()
             {
                 if (!valid) return;
-                if (data != null) data.antialiasing = antialiasing;
-                if (ownsStack && stack != null) VolumeManager.instance.DestroyStack(stack);
-                onDispose?.Invoke();
+                try { if (data != null) data.antialiasing = antialiasing; }
+                finally
+                {
+                    try { if (ownsStack && stack != null) VolumeManager.instance.DestroyStack(stack); }
+                    finally
+                    {
+                        try { if (manager != null) manager.stack = previousManagerStack; }
+                        finally { onDispose?.Invoke(); }
+                    }
+                }
             }
         }
     }
