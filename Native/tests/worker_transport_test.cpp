@@ -291,7 +291,26 @@ static void TestCloseAllRetiresLateToken() {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
     Check(lkg_worker_pending_count() == 1, "closed context remains pending until collect");
-    Check(lkg_worker_collect_closed() >= 1, "collect closed context");
+    const auto collectStart = std::chrono::steady_clock::now();
+    const auto collectDeadline = collectStart + std::chrono::milliseconds(2000);
+    int32_t lastCollect = 0;
+    for (;;) {
+        lastCollect = lkg_worker_collect_closed();
+        const auto now = std::chrono::steady_clock::now();
+        const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - collectStart).count();
+        if (lastCollect < 0) {
+            std::fprintf(stderr, "FAIL collect closed context elapsed_ms=%lld last_collect=%d pending=%u\n",
+                static_cast<long long>(elapsed), lastCollect, lkg_worker_pending_count());
+            std::exit(1);
+        }
+        if (lastCollect >= 1) break;
+        if (now >= collectDeadline) {
+            std::fprintf(stderr, "FAIL collect closed context timeout elapsed_ms=%lld last_collect=%d pending=%u\n",
+                static_cast<long long>(elapsed), lastCollect, lkg_worker_pending_count());
+            std::exit(1);
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
     Check(lkg_worker_pending_count() == 0, "close all pending drain");
     LkgWorkerStatus status{};
     Check(lkg_worker_poll(handle, &status) == -2, "poll after close all collect");
