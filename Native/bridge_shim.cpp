@@ -244,6 +244,25 @@ static unsigned long trace_thread_id() {
 }
 
 #if defined(_WIN32)
+static void trace_shutdownf(uint64_t sessionId, const char* format, ...) {
+    const char* path = std::getenv("LKG_NATIVE_TRACE");
+    if (!path || !*path) return;
+    char event[512]{};
+    va_list args;
+    va_start(args, format);
+    std::vsnprintf(event, sizeof(event), format, args);
+    va_end(args);
+    char line[768]{};
+    std::snprintf(line, sizeof(line),
+                  "shutdown pid=%lu tid=%lu tick_ms=%llu session_id=%llu event=%s",
+                  static_cast<unsigned long>(GetCurrentProcessId()), trace_thread_id(),
+                  static_cast<unsigned long long>(GetTickCount64()),
+                  static_cast<unsigned long long>(sessionId), event);
+    trace(line);
+}
+#endif
+
+#if defined(_WIN32)
 static bool IsR8G8B8A8TypeFamily(DXGI_FORMAT format) {
     return format == DXGI_FORMAT_R8G8B8A8_TYPELESS ||
            format == DXGI_FORMAT_R8G8B8A8_UNORM ||
@@ -290,15 +309,39 @@ static void trace_desc(const char* label, const D3D11_TEXTURE2D_DESC& desc) {
            desc.SampleDesc.Count, desc.SampleDesc.Quality);
 }
 
-static void release_bridge_texture(Session& session) {
+static void release_bridge_texture(uint64_t sessionId, Session& session, bool shutdownTrace) {
     if (session.registered && g_unregister_texture && session.bridgeTexture) {
         trace("unregister_begin");
+#if defined(_WIN32)
+        if (shutdownTrace) trace_shutdownf(sessionId, "unregister_texture_dx begin");
+#endif
         const bool ok = g_unregister_texture(session.window, session.bridgeTexture);
         tracef("unregister_end result=%d", ok ? 1 : 0);
+#if defined(_WIN32)
+        if (shutdownTrace) trace_shutdownf(sessionId, "unregister_texture_dx end result=%d", ok ? 1 : 0);
+#endif
+    } else {
+#if defined(_WIN32)
+        if (shutdownTrace) trace_shutdownf(sessionId,
+            "unregister_texture_dx skipped registered=%d texture=%d symbol=%d",
+            session.registered ? 1 : 0, session.bridgeTexture ? 1 : 0, g_unregister_texture ? 1 : 0);
+#endif
     }
     if (session.bridgeTexture && g_release_texture) {
         trace("release_texture");
-        g_release_texture(session.window, session.bridgeTexture);
+#if defined(_WIN32)
+        if (shutdownTrace) trace_shutdownf(sessionId, "release_texture_dx begin");
+#endif
+        const bool released = g_release_texture(session.window, session.bridgeTexture);
+#if defined(_WIN32)
+        if (shutdownTrace) trace_shutdownf(sessionId, "release_texture_dx end result=%d", released ? 1 : 0);
+#endif
+    } else {
+#if defined(_WIN32)
+        if (shutdownTrace) trace_shutdownf(sessionId,
+            "release_texture_dx skipped texture=%d symbol=%d",
+            session.bridgeTexture ? 1 : 0, g_release_texture ? 1 : 0);
+#endif
     }
     session.bridgeTexture = nullptr;
     session.registered = false;
@@ -459,7 +502,15 @@ LKG_EXPORT void lkg_bridge_unload(void) {
     std::lock_guard<std::mutex> lock(g_mutex);
     if (!g_sessions.empty()) return;
 #if defined(_WIN32)
-    if (g_initialized && g_uninitialize) { g_uninitialize(); g_initialized = false; }
+    if (g_initialized && g_uninitialize) {
+        trace_shutdownf(0, "uninitialize_bridge begin source=bridge_unload");
+        const bool result = g_uninitialize();
+        trace_shutdownf(0, "uninitialize_bridge end result=%d source=bridge_unload", result ? 1 : 0);
+        g_initialized = false;
+    } else {
+        trace_shutdownf(0, "uninitialize_bridge skipped initialized=%d symbol=%d source=bridge_unload",
+                        g_initialized ? 1 : 0, g_uninitialize ? 1 : 0);
+    }
     clear_symbols();
 #else
     if (g_initialized && g_uninitialize) { g_uninitialize(); g_initialized = false; }
@@ -492,7 +543,21 @@ LKG_EXPORT void lkg_bridge_uninitialize(void) {
     if (!g_sessions.empty()) return;
     tracef("uninitialize_begin thread_id=%lu", trace_thread_id());
     bool result = true;
-    if (g_uninitialize && g_initialized) { result = g_uninitialize(); g_initialized = false; }
+    if (g_uninitialize && g_initialized) {
+#if defined(_WIN32)
+        trace_shutdownf(0, "uninitialize_bridge begin source=bridge_uninitialize");
+#endif
+        result = g_uninitialize();
+        g_initialized = false;
+#if defined(_WIN32)
+        trace_shutdownf(0, "uninitialize_bridge end result=%d source=bridge_uninitialize", result ? 1 : 0);
+#endif
+    } else {
+#if defined(_WIN32)
+        trace_shutdownf(0, "uninitialize_bridge skipped initialized=%d symbol=%d source=bridge_uninitialize",
+                        g_initialized ? 1 : 0, g_uninitialize ? 1 : 0);
+#endif
+    }
     tracef("uninitialize_end result=%d thread_id=%lu", result ? 1 : 0, trace_thread_id());
     if (!result) g_last_error = "Bridge uninitialize returned false";
 }
@@ -559,12 +624,12 @@ LKG_EXPORT int32_t lkg_bridge_smoke_draw(uint64_t id, void* texture, uint32_t co
     D3D11_TEXTURE2D_DESC source{}; if (!get_texture_desc(reinterpret_cast<IUnknown*>(texture), &source)) { g_last_error = "Source is not a D3D11 texture2D"; return -2; }
     trace_desc("source_desc", source);
     if (!session.bridgeTexture) { trace("create_texture_begin"); if (!g_create_texture(session.window, source.Width, source.Height, &session.bridgeTexture)) { g_last_error = "Bridge compatible texture creation failed"; return -2; } trace("create_texture_end"); }
-    D3D11_TEXTURE2D_DESC destination{}; if (!get_texture_desc(session.bridgeTexture, &destination)) { g_last_error = "Bridge texture descriptor query failed"; release_bridge_texture(session); return -2; }
+    D3D11_TEXTURE2D_DESC destination{}; if (!get_texture_desc(session.bridgeTexture, &destination)) { g_last_error = "Bridge texture descriptor query failed"; release_bridge_texture(id, session, false); return -2; }
     trace_desc("dest_desc", destination);
     if (!IsCopyCompatible(source, destination)) {
         if ((source.Width != destination.Width || source.Height != destination.Height) && IsResizeCompatible(source, destination)) {
             trace("resize_bridge_texture_begin");
-            release_bridge_texture(session);
+            release_bridge_texture(id, session, false);
             if (!g_create_texture(session.window, source.Width, source.Height, &session.bridgeTexture)) {
                 g_last_error = "Bridge compatible texture resize failed";
                 return -2;
@@ -572,12 +637,12 @@ LKG_EXPORT int32_t lkg_bridge_smoke_draw(uint64_t id, void* texture, uint32_t co
             session.registered = false;
             if (!get_texture_desc(session.bridgeTexture, &destination) || !IsCopyCompatible(source, destination)) {
                 g_last_error = "Resized Bridge texture descriptors are incompatible";
-                release_bridge_texture(session);
+                release_bridge_texture(id, session, false);
                 return -2;
             }
             trace("resize_bridge_texture_end");
         } else {
-            trace("copy_validation_failed"); g_last_error = "Source and Bridge texture descriptors are incompatible"; release_bridge_texture(session); return -2;
+            trace("copy_validation_failed"); g_last_error = "Source and Bridge texture descriptors are incompatible"; release_bridge_texture(id, session, false); return -2;
         }
     }
     trace("copy_begin"); if (!g_copy_texture(session.window, reinterpret_cast<IUnknown*>(texture), session.bridgeTexture)) { g_last_error = "Bridge texture copy failed"; trace("copy_failed"); return -2; } trace("copy_end");
@@ -593,10 +658,26 @@ static void lkg_render_event(int eventId, void* data) {
         trace("close_begin"); std::lock_guard<std::mutex> lock(g_mutex); auto it = g_sessions.find(drawData->session);
         if (it != g_sessions.end() && it->second.pending == 0) {
             Session& session = it->second;
-            release_bridge_texture(session); if (g_release_device && session.device) { g_release_device(session.device); session.device = nullptr; }
+            release_bridge_texture(drawData->session, session, true);
+            if (g_release_device && session.device) {
+                trace_shutdownf(drawData->session, "release_device_dx begin");
+                const bool released = g_release_device(session.device);
+                trace_shutdownf(drawData->session, "release_device_dx end result=%d", released ? 1 : 0);
+                session.device = nullptr;
+            } else {
+                trace_shutdownf(drawData->session, "release_device_dx skipped device=%d symbol=%d",
+                                session.device ? 1 : 0, g_release_device ? 1 : 0);
+            }
             g_sessions.erase(it); if (g_sessions.empty() && g_initialized) {
                 tracef("uninitialize_begin thread_id=%lu", trace_thread_id());
-                const bool result = g_uninitialize ? g_uninitialize() : true;
+                bool result = true;
+                if (g_uninitialize) {
+                    trace_shutdownf(drawData->session, "uninitialize_bridge begin");
+                    result = g_uninitialize();
+                    trace_shutdownf(drawData->session, "uninitialize_bridge end result=%d", result ? 1 : 0);
+                } else {
+                    trace_shutdownf(drawData->session, "uninitialize_bridge skipped symbol=0");
+                }
                 g_initialized = false;
                 tracef("uninitialize_end result=%d thread_id=%lu", result ? 1 : 0, trace_thread_id());
                 if (!result) g_last_error = "Bridge uninitialize returned false";

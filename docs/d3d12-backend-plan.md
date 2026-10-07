@@ -22,8 +22,13 @@ The Unity results are targeted fixtures and project/runtime checks. They are not
 
 ## Remaining validation
 
-- Windows Player quality other than Preview.
-- WARP and other GPU vendors.
+- Four Windows Development Player runs: URP/HDRP x GRD on/off, each exercising Preview/Balanced/Native.
+- Native-quality 600-second URP and HDRP representative soaks, with memory observations reported as trends and no pass threshold assumed.
+- Ten Stop/Start iterations per URP and HDRP fixture, with per-iteration clean pending state.
+- Non-Development URP/HDRP Player runs on actual D3D12 with profile and cleanup evidence.
+- Editor lifecycle warning trace and production Worker operation on software WARP.
 - Full visual review across all 48 views and viewing regions, hotplug, and multi-device behavior.
 
-CI does not have D3D12 hardware and explicitly skips hardware D3D12 tests. WARP coverage has not been run.
+The D3D12 checks above are pending; acceptance evidence and the result table are maintained in [Windows validation](windows-validation.md#pending-d3d12-acceptance-matrix). No result is inferred from a planned run.
+
+CI does not have D3D12 hardware and explicitly skips hardware D3D12 tests. A standalone probe passed 9 D3D12-to-D3D11 shared-resource transfers on Microsoft Basic Render Driver, using three ring textures over three rounds and checking a slot/round-specific top-left sentinel. This capability probe is separate from production Worker or official Bridge support, which remains unverified on WARP.

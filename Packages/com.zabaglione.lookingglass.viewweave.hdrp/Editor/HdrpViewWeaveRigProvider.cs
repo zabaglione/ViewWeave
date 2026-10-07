@@ -13,7 +13,7 @@ namespace ViewWeave.HDRP.Editor
         sealed class Provider : IViewWeaveRigProvider
         {
             public bool IsSupported => GraphicsSettings.currentRenderPipeline is HDRenderPipelineAsset;
-            public MonoBehaviour AddAdapter(GameObject target)
+            public MonoBehaviour AddAdapter(GameObject target, Camera framingCamera)
             {
                 if (target.GetComponent<HDAdditionalCameraData>() == null) target.AddComponent<HDAdditionalCameraData>();
                 return target.GetComponent<HdrpQuiltCamera>() ?? target.AddComponent<HdrpQuiltCamera>();

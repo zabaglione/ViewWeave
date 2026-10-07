@@ -24,6 +24,7 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
 
         public static void BuildDemo()
         {
+            bool development = DevelopmentBuild();
             string output = Arg("-buildOutput");
             if (string.IsNullOrEmpty(output)) throw new InvalidOperationException("-buildOutput is required");
             SceneSetup[] oldSetup = EditorSceneManager.GetSceneManagerSetup();
@@ -100,7 +101,7 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
                 QualitySettings.renderPipeline = pipeline;
                 PlayerSettings.colorSpace = ColorSpace.Linear;
                 EditorSceneManager.SaveScene(scene, DemoScenePath, false);
-                BuildPlayer(output, DemoScenePath);
+                BuildPlayer(output, DemoScenePath, development);
             }
             finally
             {
@@ -115,6 +116,7 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
 
         public static void Build()
         {
+            bool development = DevelopmentBuild();
             string output = Arg("-buildOutput");
             bool editorSceneOnly = Arg("-editorSceneOnly") == "1";
             if (!editorSceneOnly && string.IsNullOrEmpty(output)) throw new InvalidOperationException("-buildOutput is required unless -editorSceneOnly 1 is set");
@@ -189,7 +191,7 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
                 EditorSceneManager.SaveScene(scene, ScenePath, false);
                 GraphicsSettings.defaultRenderPipeline = pipelineOn;
                 QualitySettings.renderPipeline = pipelineOn;
-                if (!editorSceneOnly) BuildPlayer(output);
+                if (!editorSceneOnly) BuildPlayer(output, ScenePath, development);
             }
             finally
             {
@@ -203,6 +205,7 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
 
         public static void BuildHdrp()
         {
+            bool development = DevelopmentBuild();
             string output = Arg("-buildOutput");
             bool editorSceneOnly = Arg("-editorSceneOnly") == "1";
             if (!editorSceneOnly && string.IsNullOrEmpty(output)) throw new InvalidOperationException("-buildOutput is required unless -editorSceneOnly 1 is set");
@@ -287,7 +290,7 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
                 EditorSceneManager.SaveScene(scene, ScenePath, false);
                 GraphicsSettings.defaultRenderPipeline = pipelineOn;
                 QualitySettings.renderPipeline = pipelineOn;
-                if (!editorSceneOnly) BuildPlayer(output);
+                if (!editorSceneOnly) BuildPlayer(output, ScenePath, development);
             }
             finally
             {
@@ -300,12 +303,7 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
             }
         }
 
-        static void BuildPlayer(string output)
-        {
-            BuildPlayer(output, ScenePath);
-        }
-
-        static void BuildPlayer(string output, string scenePath)
+        static void BuildPlayer(string output, string scenePath, bool development)
         {
             GraphicsDeviceType requestedGraphicsApi = RequestedGraphicsApi();
             EditorBuildSettingsScene[] oldScenes = EditorBuildSettings.scenes;
@@ -335,7 +333,7 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
                 PlayerSettings.SetGraphicsAPIs(BuildTarget.StandaloneWindows64, new[] { requestedGraphicsApi });
                 brgStripping.intValue = (int)BatchRendererGroupStrippingMode.KeepAll;
                 graphicsSettings.ApplyModifiedPropertiesWithoutUndo();
-                BuildPlayerOptions options = new BuildPlayerOptions { scenes = new[] { scenePath }, locationPathName = output, target = BuildTarget.StandaloneWindows64, options = BuildOptions.Development };
+                BuildPlayerOptions options = new BuildPlayerOptions { scenes = new[] { scenePath }, locationPathName = output, target = BuildTarget.StandaloneWindows64, options = development ? BuildOptions.Development : BuildOptions.None };
                 BuildReport report = BuildPipeline.BuildPlayer(options);
                 if (report.summary.result != BuildResult.Succeeded) throw new InvalidOperationException("Bridge worker player build failed: " + report.summary.result);
             }
@@ -518,6 +516,23 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
             string[] args = Environment.GetCommandLineArgs();
             for (int i = 0; i + 1 < args.Length; ++i) if (args[i] == key) return args[i + 1];
             return null;
+        }
+
+        static bool DevelopmentBuild()
+        {
+            string[] args = Environment.GetCommandLineArgs();
+            string value = null;
+            bool found = false;
+            for (int index = 0; index < args.Length; ++index)
+            {
+                if (!string.Equals(args[index], "-development", StringComparison.Ordinal)) continue;
+                if (found || index + 1 >= args.Length) throw new InvalidOperationException("invalid -development; expected 0 or 1");
+                found = true;
+                value = args[++index];
+            }
+            if (!found || value == "1") return true;
+            if (value == "0") return false;
+            throw new InvalidOperationException("invalid -development; expected 0 or 1");
         }
 
         static GraphicsDeviceType RequestedGraphicsApi()

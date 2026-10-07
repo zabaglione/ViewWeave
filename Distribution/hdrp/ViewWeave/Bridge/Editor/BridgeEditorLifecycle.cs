@@ -7,12 +7,13 @@ namespace ViewWeave.Editor
     internal static class BridgeEditorLifecycle
     {
         static bool recovering;
+        static bool shutdownStarted;
         static bool recoveryAbiUnavailable;
         static double deadline;
 
         static BridgeEditorLifecycle()
         {
-            ViewWeave.BridgeWorkerLifecycle.BeginRecovery();
+            StartRecoveryPump();
             EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
             AssemblyReloadEvents.beforeAssemblyReload += BeginRecovery;
             EditorApplication.quitting += BeginRecovery;
@@ -30,10 +31,11 @@ namespace ViewWeave.Editor
             try
             {
                 BridgeWorkerQuiltOutput.CollectClosedNativeWorkers();
-                if (BridgeWorkerQuiltOutput.NativePendingCount != 0) StartRecoveryPump();
+                if (BridgeWorkerQuiltOutput.NativePendingCount != 0 || BridgeWorkerQuiltOutput.ShutdownPendingCount != 0) StartRecoveryPump();
                 else
                 {
                     recovering = false;
+                    shutdownStarted = false;
                     ViewWeave.BridgeWorkerLifecycle.EndRecovery();
                 }
             }
@@ -51,10 +53,14 @@ namespace ViewWeave.Editor
 
         static void BeginRecovery()
         {
-            if (recovering) return;
-            recovering = true;
-            recoveryAbiUnavailable = false;
-            deadline = EditorApplication.timeSinceStartup + 1.0;
+            if (shutdownStarted) return;
+            shutdownStarted = true;
+            if (!recovering)
+            {
+                recovering = true;
+                recoveryAbiUnavailable = false;
+                deadline = EditorApplication.timeSinceStartup + 1.0;
+            }
             ViewWeave.BridgeWorkerLifecycle.BeginRecovery();
             foreach (ViewWeaveBridgeSession session in Resources.FindObjectsOfTypeAll<ViewWeaveBridgeSession>())
             {
@@ -74,6 +80,7 @@ namespace ViewWeave.Editor
                 Debug.LogWarning("[ViewWeave] Bridge worker native library is unavailable during shutdown");
                 recoveryAbiUnavailable = true;
                 recovering = false;
+                shutdownStarted = false;
                 ViewWeave.BridgeWorkerLifecycle.EndRecovery();
             }
             catch (System.EntryPointNotFoundException)
@@ -81,6 +88,7 @@ namespace ViewWeave.Editor
                 Debug.LogWarning("[ViewWeave] Bridge worker shutdown ABI is unavailable");
                 recoveryAbiUnavailable = true;
                 recovering = false;
+                shutdownStarted = false;
                 ViewWeave.BridgeWorkerLifecycle.EndRecovery();
             }
         }
@@ -94,6 +102,7 @@ namespace ViewWeave.Editor
                 if (BridgeWorkerQuiltOutput.NativePendingCount == 0 && BridgeWorkerQuiltOutput.ShutdownPendingCount == 0)
                 {
                     recovering = false;
+                    shutdownStarted = false;
                     ViewWeave.BridgeWorkerLifecycle.EndRecovery();
                     return;
                 }
@@ -103,6 +112,7 @@ namespace ViewWeave.Editor
                 if (!recoveryAbiUnavailable) Debug.LogWarning("[ViewWeave] Bridge worker native library is unavailable during recovery");
                 recoveryAbiUnavailable = true;
                 recovering = false;
+                shutdownStarted = false;
                 ViewWeave.BridgeWorkerLifecycle.EndRecovery();
                 return;
             }
@@ -111,6 +121,7 @@ namespace ViewWeave.Editor
                 if (!recoveryAbiUnavailable) Debug.LogWarning("[ViewWeave] Bridge worker recovery ABI is unavailable");
                 recoveryAbiUnavailable = true;
                 recovering = false;
+                shutdownStarted = false;
                 ViewWeave.BridgeWorkerLifecycle.EndRecovery();
                 return;
             }

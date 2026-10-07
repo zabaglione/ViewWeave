@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
@@ -34,6 +35,8 @@ namespace ViewWeave
         }
         public string LastError { get; private set; }
         public uint Submissions { get; private set; }
+        /// <summary>Counts Submit calls passing readiness, handle, texture, and complete-grid checks; it does not imply queue submission or native completion.</summary>
+        public uint SubmissionAttempts { get; private set; }
         public uint Completed => status.completed;
         public uint Dropped => status.dropped;
         public static int ShutdownPendingCount
@@ -99,6 +102,7 @@ namespace ViewWeave
             status = default;
             Profile = default;
             Submissions = 0;
+            SubmissionAttempts = 0;
             transferGraphicsFormatName = string.Empty;
             transferFormatName = string.Empty;
             transferSrgbDiagnostic = false;
@@ -106,8 +110,14 @@ namespace ViewWeave
             transferDimensionName = string.Empty;
             try
             {
-                if (BridgeWorkerNative.lkg_worker_render_event_id(out workerRenderEventId) != 0)
-                    return Fail("Bridge worker render event ID is unavailable");
+                int eventIdResult = BridgeWorkerNative.lkg_worker_render_event_id(out workerRenderEventId);
+                if (eventIdResult != 0)
+                {
+                    string message = "Bridge worker render event ID is unavailable (code " + eventIdResult.ToString(CultureInfo.InvariantCulture) + ").";
+                    if (Application.isEditor)
+                        message += " If this followed a package update, restart the Unity Editor and retry.";
+                    return Fail(message);
+                }
             }
             catch (DllNotFoundException) { return Fail("Bridge worker native library is missing"); }
             catch (EntryPointNotFoundException) { return Fail("Bridge worker event ID ABI entry point is missing"); }
@@ -181,6 +191,7 @@ namespace ViewWeave
                 LastError = "Bridge worker requires a complete quilt grid";
                 return;
             }
+            SubmissionAttempts++;
             if (!EnsureTransferTexture(quiltTexture)) return;
             RenderTexture previous = RenderTexture.active;
             try { Graphics.Blit(quiltTexture, transferTexture, new Vector2(1f, -1f), new Vector2(0f, 1f)); }

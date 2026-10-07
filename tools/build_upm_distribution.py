@@ -114,7 +114,11 @@ def package_json(kind: str) -> dict:
         "license": "Apache-2.0",
         "unity": UNITY,
         "author": {"name": "zabaglione"},
-        "dependencies": {"com.unity.render-pipelines." + rp: RP_VERSION},
+        "dependencies": {
+            "com.unity.render-pipelines." + rp: RP_VERSION,
+            "com.unity.modules.imageconversion": "1.0.0",
+            "com.unity.modules.jsonserialize": "1.0.0",
+        },
         "keywords": ["looking-glass", "quilt", kind],
         "samples": samples,
     }

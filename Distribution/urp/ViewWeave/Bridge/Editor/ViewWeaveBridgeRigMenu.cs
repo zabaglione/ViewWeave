@@ -9,31 +9,29 @@ namespace ViewWeave.Editor
         [MenuItem("GameObject/ViewWeave/Bridge Rig", false, 11)]
         static void CreateBridgeRig(MenuCommand command)
         {
+            GameObject commandContext = command.context as GameObject;
+            GameObject selectedObject = Selection.activeGameObject;
+            Camera framingCamera = ResolveFramingCamera(commandContext, selectedObject);
             if (!ViewWeaveRigProviderRegistry.HasSupportedProvider())
             {
                 Debug.LogError("ViewWeave Bridge Rig requires a supported URP or HDRP render pipeline.");
                 return;
             }
-            GameObject parent = command.context as GameObject;
             GameObject target = new GameObject("ViewWeave Bridge Rig");
-            target.SetActive(false);
-            if (parent != null) GameObjectUtility.SetParentAndAlign(target, parent);
-            Undo.RegisterCreatedObjectUndo(target, "Create ViewWeave Bridge Rig");
-            Camera sourceCamera = target.AddComponent<Camera>();
-            QuiltRenderer quilt = target.AddComponent<QuiltRenderer>();
-            CopyMainCameraFraming(sourceCamera, quilt);
-            ViewWeaveRig rig = target.AddComponent<ViewWeaveRig>();
-            BridgeWorkerQuiltOutput output = target.AddComponent<BridgeWorkerQuiltOutput>();
-            output.initializeOnEnable = false;
-            ViewWeaveBridgeSession session = target.AddComponent<ViewWeaveBridgeSession>();
-            if (!ViewWeaveRigProviderRegistry.TryAddAdapter(target, out MonoBehaviour adapter))
-            {
-                Undo.DestroyObjectImmediate(target);
-                Debug.LogError("ViewWeave Bridge Rig requires a supported URP or HDRP render pipeline.");
-                return;
-            }
             try
             {
+                target.SetActive(false);
+                if (commandContext != null) GameObjectUtility.SetParentAndAlign(target, commandContext);
+                Undo.RegisterCreatedObjectUndo(target, "Create ViewWeave Bridge Rig");
+                Camera sourceCamera = target.AddComponent<Camera>();
+                QuiltRenderer quilt = target.AddComponent<QuiltRenderer>();
+                CopyCameraFraming(sourceCamera, quilt, framingCamera, selectedObject);
+                ViewWeaveRig rig = target.AddComponent<ViewWeaveRig>();
+                BridgeWorkerQuiltOutput output = target.AddComponent<BridgeWorkerQuiltOutput>();
+                output.initializeOnEnable = false;
+                ViewWeaveBridgeSession session = target.AddComponent<ViewWeaveBridgeSession>();
+                if (!ViewWeaveRigProviderRegistry.TryAddAdapter(target, framingCamera, out MonoBehaviour adapter))
+                    throw new System.InvalidOperationException("ViewWeave Bridge Rig requires a supported URP or HDRP render pipeline");
                 rig.SetGuard(adapter);
                 rig.SetOutput(output);
                 if (!rig.ConfigureComponents()) throw new System.InvalidOperationException("ViewWeave Bridge Rig configuration failed");
@@ -48,22 +46,30 @@ namespace ViewWeave.Editor
             }
         }
 
-        static void CopyMainCameraFraming(Camera sourceCamera, QuiltRenderer quilt)
+        static Camera ResolveFramingCamera(GameObject commandContext, GameObject selectedObject)
         {
-            Camera mainCamera = Camera.main;
-            if (mainCamera == null)
+            GameObject cameraContext = commandContext != null ? commandContext : selectedObject;
+            Camera camera = cameraContext != null ? cameraContext.GetComponentInParent<Camera>(true) : null;
+            return camera != null ? camera : Camera.main;
+        }
+
+        static void CopyCameraFraming(Camera sourceCamera, QuiltRenderer quilt, Camera framingCamera, GameObject selectedObject)
+        {
+            quilt.referenceCamera = framingCamera;
+            quilt.followReferenceFieldOfView = true;
+            if (framingCamera == null)
             {
                 quilt.settings.cameraDistance = 3f;
                 quilt.settings.fieldOfView = sourceCamera.fieldOfView;
                 return;
             }
-            sourceCamera.transform.SetPositionAndRotation(mainCamera.transform.position, mainCamera.transform.rotation);
-            sourceCamera.fieldOfView = mainCamera.fieldOfView;
-            sourceCamera.nearClipPlane = mainCamera.nearClipPlane;
-            sourceCamera.farClipPlane = mainCamera.farClipPlane;
-            sourceCamera.cullingMask = mainCamera.cullingMask;
-            quilt.settings.fieldOfView = mainCamera.fieldOfView;
-            quilt.settings.cameraDistance = FocusDepthOrDefault(sourceCamera, Selection.activeGameObject, 10f);
+            sourceCamera.transform.SetPositionAndRotation(framingCamera.transform.position, framingCamera.transform.rotation);
+            sourceCamera.fieldOfView = framingCamera.fieldOfView;
+            sourceCamera.nearClipPlane = framingCamera.nearClipPlane;
+            sourceCamera.farClipPlane = framingCamera.farClipPlane;
+            sourceCamera.cullingMask = framingCamera.cullingMask;
+            quilt.settings.fieldOfView = framingCamera.fieldOfView;
+            quilt.settings.cameraDistance = FocusDepthOrDefault(sourceCamera, selectedObject, 10f);
         }
 
         static float FocusDepthOrDefault(Camera sourceCamera, GameObject selected, float fallback)

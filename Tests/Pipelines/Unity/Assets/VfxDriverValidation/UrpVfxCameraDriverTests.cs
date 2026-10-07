@@ -94,6 +94,51 @@ namespace ViewWeave.VfxDriverValidation
         }
 
         [UnityTest]
+        public IEnumerator DriverUsesReferenceCameraAtBeginRenderingAfterOtherCallbacks()
+        {
+            yield return null;
+            RequireUrp();
+            GameObject host = CreateHost();
+            GameObject referenceObject = new GameObject("UrpVfxCameraDriver.ReferenceCamera");
+            UrpVfxCameraDriver driver = null;
+            Camera reference = null;
+            Vector3 finalPosition = new Vector3(8f, -3f, 11f);
+            Quaternion finalRotation = Quaternion.Euler(17f, 62f, -5f);
+            int observedDriverCallbacks = 0;
+            try
+            {
+                reference = referenceObject.AddComponent<Camera>();
+                reference.enabled = false;
+                reference.transform.position = new Vector3(-2f, 1f, 6f);
+                QuiltRenderer renderer = host.GetComponent<QuiltRenderer>();
+                renderer.referenceCamera = reference;
+                driver = ConfigureDriver(host);
+                RenderPipelineManager.beginCameraRendering += SetFinalPose;
+                host.SetActive(true);
+                yield return null;
+                Assert.IsTrue(driver.IsRunning, driver.LastError);
+                Assert.Greater(observedDriverCallbacks, 0, "the enabled driver camera should reach beginCameraRendering");
+                Assert.That(Vector3.Distance(driver.DriverCamera.transform.position, finalPosition), Is.LessThan(0.0001f));
+                Assert.That(Quaternion.Angle(driver.DriverCamera.transform.rotation, finalRotation), Is.LessThan(0.001f));
+                Assert.That(reference.transform.position, Is.EqualTo(finalPosition));
+                Assert.That(reference.transform.rotation, Is.EqualTo(finalRotation));
+            }
+            finally
+            {
+                RenderPipelineManager.beginCameraRendering -= SetFinalPose;
+                Object.DestroyImmediate(host);
+                Object.DestroyImmediate(referenceObject);
+            }
+
+            void SetFinalPose(ScriptableRenderContext context, Camera camera)
+            {
+                if (driver == null || driver.DriverCamera == null || camera != driver.DriverCamera) return;
+                reference.transform.SetPositionAndRotation(finalPosition, finalRotation);
+                observedDriverCallbacks++;
+            }
+        }
+
+        [UnityTest]
         public IEnumerator DriverDisableReleasesTextureAndReenableRecreatesIt()
         {
             yield return null;

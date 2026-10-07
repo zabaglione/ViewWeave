@@ -4,7 +4,7 @@
 
 ## 現在の検証集計
 
-現行guard追加前のprevious full Windows D3D11 PlayModeは123件中108件pass、15件fail、skip 0です。今回のCore/SRP/VFX Editor targeted試験はGamma 8/8、Linear 17/17で、全件matrixやfull125件の結果ではありません。Gamma MSAA/通常URPのBridge Player実行は未検証です。Gamma VFXは公式非対応です。未通過はHDRP priming 1件とVFX compatibility 14件です。別実行のVFX matrixは20件中5件pass、15件failでした。詳細な正本集計は [docs/compatibility.md](compatibility.md) を参照してください。
+旧package snapshotのWindows D3D11 PlayModeは、現行guard追加前に123件中108件pass、15件fail、skip 0でした。Core/SRP/VFX Editor targeted試験はGamma 8/8、Linear 17/17で、全件matrixの結果ではありません。Gamma MSAA/通常URPのBridge Player実行は未検証です。Gamma VFXは公式非対応です。旧D3D11統合の未通過はHDRP priming 1件とVFX compatibility 14件で、別の同時期VFX matrixは20件中5件pass、15件failでした。これらの履歴は現行D3D12 project統合や全VFX条件の成否を示しません。詳細な正本集計は [docs/compatibility.md](compatibility.md) を参照してください。
 
 GRD の性能実測は URP normal multithreaded Player の範囲だけです。HDRP fixture で GRD 性能を測定した結果とは扱いません。自動描画 scheduler は scene rendering 後に実行しますが、機能固有の更新順序や一般的な描画対応を保証するものではありません。
 
@@ -20,6 +20,7 @@ GRD の性能実測は URP normal multithreaded Player の範囲だけです。H
 | 機能 | 状態 | 実測範囲と制約 |
 | --- | --- | --- |
 | MeshRenderer と Lit material | 限定実測 | URP/HDRP の基本 Lit fixture。HDRP は Linear color space と固定 Exposure 条件。 |
+| Quilt View Render Mode | 実装済み、static fixture限定実測 | Full/Half/Quarter。48-view出力Quiltを維持し、実描画数は48/24/12。未描画tileは最近傍viewを複製し、補間しない。2026-10-04 static HDRP fixtureで各modeを計測し、Half/Quarterの全48 tileは割当sourceとのRGBA画素差0。VFX/user sceneと実機光学品質は未確認。[測定範囲](dx12-performance-investigation.md)。 |
 | Shader Graph Lit/Unlit | 限定実測 | URP/HDRPの個別Shader Graph fixture。shader、keyword、depth、shadowの一般対応は未検証。 |
 | SkinnedMeshRenderer | 限定実測 | Geometry suite の URP/HDRP skinned 1-bone pose。複雑な skinning は未検証。 |
 | Animator / Transform 更新 | 調査対象 | 固定 fixture の pose 以外の animation state 同期は未検証。 |

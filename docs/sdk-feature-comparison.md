@@ -1,36 +1,26 @@
 # 公式機能との比較
 
-本表は、公式資料に記載された機能と、本SDKの現状を利用者向けに比較するものです。公式SDKとのsource互換性、商標上の関係、完全な機能互換性は保証しません。本SDKはUnity 6000.6.4f1のURP/HDRPを対象とするWindows D3D11版です。Editor PlayとPlayerでBridge出力します。
+この表はLooking Glass Factory公式資料に載る機能とViewWeaveの実装状況を、利用者向けに整理したものです。ViewWeaveは独立した非公式SDKであり、公式SDKとのソース互換性や完全な機能互換性を保証しません。詳細は[公式機能の調査](official-sdk-feature-research.md)、各機能の操作手順は[Quilt保存](quilt-capture.md)と[カメラ調整](quilt-authoring.md)を参照してください。
 
-公式3.x資料はBuilt-inを主な対象とし、URPには制限があり、HDRPは未対応と説明されています。公式4 betaの配布物と4.0 alpha公開資料は、Unity 6000.0.39〜6000.1.5、URP 17.0.4〜17.1、Render Graphを対象とし、公式HDRPは未対応です。公式4資料の視点補間と透明表現には条件があり、VFXにも追加設定が必要です。本SDKの対応状況はこれらの資料から推測せず、個別fixtureと受入試験で判断します。
+| 機能 | 公式資料で確認したこと | ViewWeaveの状況 |
+| --- | --- | --- |
+| Quilt描画・合成 | Hologram Cameraが多視点画像をQuiltとして出力する | 専用Cameraで各視点を個別描画し、GPU上でQuiltタイルへ組み立て、Bridgeへ送る。標準のCube/Rendererに個別スクリプトは不要。現在の経路は48個のStandardRequestで、視点間の描画共有やdepth補間はしない |
+| 機器profile・光学calibration | 公式SDKは機器profile/calibration情報を利用する | Bridgeから画面寸法、view cone、Quilt寸法・grid等のprofileを受け取る。Factory optical calibrationを編集するUIや独自補正系は提供しない。任意機器のprofile運用・光学品質は未検証 |
+| 静止画Quilt保存 | `QuiltCapture` APIはQuilt PNGと中央視点の2D画像を保存できる | Quilt PNGとJSON sidecarを保存。D3D11のURP/HDRP PlayModeテストは各2/2通過。中央視点2D保存は未実装 |
+| 動画・連番保存 | 公式資料は手動動画、時間区間、VideoPlayer同期、Pause/Resume、Take、codec/metadataを説明。Quilt画像からのH.264作成手順もある | 固定simulation FPSと枚数を指定したQuilt PNG連番を実装。10/25fpsで各3枚を確認し、URPの1〜240fpsで開始・停止後のsimulation時間復元を確認。MP4、音声、Timeline、VideoPlayer同期、既存録画の再開は未実装 |
+| 描画範囲・フォーカス | Hologram Cameraのvolume/focal plane gizmo、FOV、Near/Far、focus距離を調整できる | QuiltRendererのCamera FramingとNear/Far/左右端view表示を実装。Camera Authoring suite通過。Scene GUIハンドルの直接ドラッグは未検証。元source Cameraのposeは保持し、録画中の移動は許可 |
+| orbit / cursor / 再生操作 | 公式資料にorbit、drag framing、3D cursor等を記載 | 同じ操作系は未実装。Quilt Capture窓は最新Quilt確認と静止画保存を行い、Quiltファイルの読込・再生機能はない |
+| device registry / quality | 公式pluginはprofileに対応した機器設定を提供 | Session/Registry/Locator/Rig menuとPreview/Balanced/Nativeの品質選択を提供。一般のhotplug、複数機器、全profileは未検証 |
+| 合成・再生操作 | 公式資料はQuilt表示の合成や、orbit・drag framing・3D cursorなどのカメラ操作を説明 | Bridge profileに沿ったQuilt出力を行う。Quiltファイルの読込・再生やorbit/cursor操作は未実装 |
+| head tracking / depth interpolation | 4.0公開資料はdepthを用いた視点補間を説明する。公式版・機能によって条件が異なる | head trackingと画像からの視点補間は未実装。真の多視点描画を行う |
+| URP/HDRP・VFX | 公式4.0公開資料はURP/Render Graphを対象としHDRP未対応を明記。透明物とVFXには視点補間上の制約 | ViewWeaveはUnity 6000.6.4f1のURP/HDRP adapterを提供。個々のfeature coverageと既知制約は[Compatibility](compatibility.md)を参照 |
+| Editor / Player出力 | 公式Unity PluginがBridgeへ出力 | Windows D3D11/D3D12のEditor PlayとPlayer向け経路あり。今回のcapture機能検証はD3D11のみ。captureのD3D12、光学実機、Edit Mode、macOS、全機器hotplugは未検証または対象外 |
+| パッケージ導入 | 公式配布物とBridgeを利用 | UPMパッケージ、Rig menu、任意Samplesを用意。導入方法はREADMEを参照 |
 
-| 機能 | 公式3.x資料 | 公式4 beta/alpha資料 | 本SDK現状と計画 |
-| --- | --- | --- | --- |
-| Quilt capture / off-axis | 主要機能として説明 | Render Graph経路で説明 | Coreで実装。1台CameraをN回描画 |
-| still capture | 公式Unity pluginの機能 | 配布版の機能範囲に含まれる | 開発用test fixtureで診断用PNGを確認。利用者向け保存APIは未確定 |
-| video / playback | 公式資料の機能範囲 | 資料の対象外部分を含む | 未実装または未検証 |
-| calibration | 公式pluginと機器経路で提供 | 公式pluginの設定を利用 | Coreでper-view render、GPU assemble、Bridge worker drawを接続。Profile、Registry、Rig menuはAPIテスト済み。vendorの光学変換条件と実機光学は未確認 |
-| device profile | 機器設定と表示経路を提供 | 機器設定を利用 | Profile、Registry、Locator、Rig menuを実装しAPIテスト済み。Windows D3D11のURP/HDRP PlayerでPreview、Balanced、NativeのGRD ON/OFF各6条件と品質cycleを確認。全機器hotplugは未検証 |
-| 複数機器 / hotplug | 資料の条件に依存 | 資料の条件に依存 | 未検証 |
-| head tracking / view interpolation | 公式pluginの設定対象 | depth interpolationと透明制約を記載 | 未実装または未検証。深度再投影は別研究 |
-| Editor preview | 公式pluginに機能あり | external preview等を記載 | Windows D3D11/D3D12 Editor PlayからBridgeへ出力可能。Edit Modeの表示とoffline displayは提供しない |
-| runtime integration | Unity packageとBridge連携 | Unity 6000.0〜6000.1の条件 | Unity 6000.6.4f1のURP/HDRP adapterとSessionを提供。Windows D3D11/D3D12 Editor PlayとPlayerに対応。Edit Mode、macOSは対象外 |
-| 入力、cursor、orbit、button | 公式pluginの利用機能 | 公式資料の範囲に依存 | 未実装または未検証 |
-| installer / package導入 | 公式配布物で提供 | beta/alpha配布物で提供 | UPM導入、Rig menu、optional Samplesを実装済み。ローカルcloneからURP/HDRP別clean projectで各2/2 API導入チェック済み。GitHub導入は未検証 |
-| URP | 3.x資料では制限あり | URP 17.0.4〜17.1を対象 | Lit、Bloom、透明、粒子、uGUI、UI Toolkitを個別検証 |
-| HDRP | 未対応 | 未対応 | Lit、Bloom、透明、mesh粒子、uGUI、UI Toolkitを個別検証 |
-| Built-in | 主な比較対象 | 公式4対象外 | 製品サポート対象外。CoreはStandard RenderRequest経路を要求 |
-| post processing / AA | 公式資料の条件に依存 | Render Graphと視点補間の条件に依存 | HDRPではquilt view中にtemporal効果を一時抑制し、Auto Exposureを共通Fixed EVへ変換。Bloom等は維持。効果全般は個別fixtureの範囲 |
-| VFX / particles | 設定と素材条件に依存 | VFX追加設定と透明制約を記載 | URP Simple Burstの停止6条件と通常再生4条件を確認。HDRP driverはなく、一般対応、sorting、soft depth、同一Camera primingは未確定 |
-| cloud Blocks連携 | 公式サービス条件に依存 | 本SDK比較対象外 | 認証・契約確認後の別計画 |
-| Bridge runtime | 公式runtimeを利用 | 公式配布条件に依存 | runtimeは別途必要。独自adapterにbinary/headerを同梱しない |
+### 保存・カメラ調整の検証状況
 
-参照資料:
+Unity 6000.6.4f1、D3D11のURP/HDRP PlayMode smoke testは各2/2通過しています。追加Recorder suiteも通過し、PNG連番を10fpsと25fpsで各3枚、URPの1〜240fps設定における開始・停止とsimulation時間の復元を確認しました。Camera Authoring、Core、Qualityの各suiteも通過しています。
 
-- [公式Unity Plugin](https://lookingglassfactory.com/software/looking-glass-unity-plugin)
-- [公式3.x資料](https://lfdocs.lookingglassfactory.com/software/index)
-- [公式4.0 alpha資料](https://lfdocs.lookingglassfactory.com/software/index/unity-plugin-4.0-alpha)
-- [Unity render thread API](https://docs.unity.com/en-us/engine/6000.6/script-reference/unityengine/gl/issuepluginevent)
+PNGの向き・中間色などの画素確認は、URP/HDRPを実行した後に診断用patternをRenderTextureへBlitして行いました。実シーン全体の色精度や全48視点の光学品質を示す結果ではありません。Sceneビューでのギズモ直接操作、保存機能のD3D12、実機表示も未検証です。詳細は[Quilt保存](quilt-capture.md)、[カメラ調整](quilt-authoring.md)、[HDRP性能記録](resumed-hdrp-vfx-performance.md)を参照してください。
 
-公式資料にない機能の有無は、この表だけで断定しません。各機能の採否は、対応Unity、RP、機器profile、素材、画質、性能、Bridge条件を固定した受入試験で判断します。
-
+調査日: 2026-10-07。

@@ -10,6 +10,7 @@
     "com.zabaglione.lookingglass.viewweave.hdrp": "file:../../../../Packages/com.zabaglione.lookingglass.viewweave.hdrp",
     "com.zabaglione.lookingglass.viewweave.urp": "file:../../../../Packages/com.zabaglione.lookingglass.viewweave.urp",
     "com.unity.modules.jsonserialize": "1.0.0",
+    "com.unity.modules.imageconversion": "1.0.0",
     "com.unity.modules.particlesystem": "1.0.0",
     "com.unity.modules.physics": "1.0.0",
     "com.unity.modules.uielements": "1.0.0"

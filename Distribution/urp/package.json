@@ -9,7 +9,9 @@
     "name": "zabaglione"
   },
   "dependencies": {
-    "com.unity.render-pipelines.universal": "17.6.0"
+    "com.unity.render-pipelines.universal": "17.6.0",
+    "com.unity.modules.imageconversion": "1.0.0",
+    "com.unity.modules.jsonserialize": "1.0.0"
   },
   "keywords": [
     "looking-glass",

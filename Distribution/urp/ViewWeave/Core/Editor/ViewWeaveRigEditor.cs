@@ -6,7 +6,7 @@ namespace ViewWeave.Editor
     public interface IViewWeaveRigProvider
     {
         bool IsSupported { get; }
-        MonoBehaviour AddAdapter(GameObject target);
+        MonoBehaviour AddAdapter(GameObject target, Camera framingCamera);
     }
 
     public static class ViewWeaveRigProviderRegistry
@@ -18,11 +18,11 @@ namespace ViewWeave.Editor
             foreach (IViewWeaveRigProvider provider in providers) if (provider.IsSupported) return true;
             return false;
         }
-        public static bool TryAddAdapter(GameObject target, out MonoBehaviour adapter)
+        public static bool TryAddAdapter(GameObject target, Camera framingCamera, out MonoBehaviour adapter)
         {
             adapter = null;
             foreach (IViewWeaveRigProvider provider in providers)
-                if (provider.IsSupported) { adapter = provider.AddAdapter(target); return adapter != null; }
+                if (provider.IsSupported) { adapter = provider.AddAdapter(target, framingCamera); return adapter != null; }
             return false;
         }
     }
