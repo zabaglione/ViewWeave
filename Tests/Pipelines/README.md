@@ -60,4 +60,4 @@ This method temporarily creates `Assets/SamplePlayerValidationGenerated/SamplePl
 
 ## Player and Editor Boundaries
 
-Normal Test Runner execution runs in Unity Editor PlayMode. Hardware Player validation with a Bridge connection is a separate run using a Bridge sample or one of the generated scenes above. There is no procedure for connecting the Bridge from the Editor.
+Normal Test Runner execution runs in Unity Editor PlayMode. Hardware Player validation with a Bridge connection is a separate run using a Bridge sample or one of the generated scenes above. For Edit Mode authoring, an explicitly started `ViewWeaveRig` preview can display locally or send output to a device through the Windows D3D11/D3D12 Bridge route; it is separate from a regular Bridge Session, which still requires Editor Play or a Player. See the [Quilt authoring guide](../../docs/quilt-authoring.md) for its setup and support boundaries. The PlayMode suite does not validate this Editor preview.

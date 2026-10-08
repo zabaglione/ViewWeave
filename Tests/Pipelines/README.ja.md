@@ -60,4 +60,4 @@ unity run "$PWD/Tests/Pipelines/Unity" --editor-version 6000.6.4f1 -- -executeMe
 
 ## PlayerとEditorの境界
 
-通常のTest Runner実行はUnity EditorのPlayModeです。Bridge接続を使う実機Player確認は、Bridge sampleまたは上記generated sceneをBuildして別途実行します。EditorからBridgeへ接続する手順はありません。
+通常のTest Runner実行はUnity EditorのPlayModeです。Bridge接続を使う実機Player確認は、Bridge sampleまたは上記generated sceneをBuildして別途実行します。制作時はEdit Modeで`ViewWeaveRig` previewを明示的に開始し、Editor内表示またはWindows D3D11/D3D12 Bridge経路での機器表示ができます。これは通常Sessionとは別機能で、通常SessionのBridge出力にはEditor PlayまたはPlayerが必要です。設定と対応条件は[Quilt制作ガイド](../../docs/ja/quilt-authoring.md)を参照してください。PlayMode suiteはこのEditor previewを検証しません。
