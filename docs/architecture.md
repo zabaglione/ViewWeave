@@ -4,14 +4,14 @@ ViewWeaveは公式SDKとは独立して開発している非公式のUnity SDK�
 
 ## 現在のデータ経路
 
-次図は通常のWindows URP/HDRP Bridge Worker経路を示します。Coreがviewを順に制御し、URP/HDRP adapterが各viewのStandardRequestを実行してGPU上のtileへ転送します。Metal実験とファイル再生は別の経路です。
+次図は通常のWindows URP/HDRP Bridge Worker経路を示します。adapterで描画状態を整え、CoreがStandardRequestとGPU上のtile転送を行います。Metal実験とファイル再生は別の経路です。
 
 ```mermaid
-flowchart LR
+flowchart TB
     Camera["利用者Camera"] --> Core["Coreがviewを制御"]
-    Core --> Adapter["URP/HDRP adapter"]
-    Adapter --> Request["viewごとのStandardRequest"]
-    Request --> Copy["GPU上のtileへCopyTexture"]
+    Core --> Adapter["URP/HDRP adapterが描画状態を準備"]
+    Adapter --> Request["CoreがviewごとのStandardRequestを実行"]
+    Request --> Copy["CoreがGPU上のtileへCopyTexture"]
     Copy --> Quilt["完成Quilt texture"]
     Quilt --> Output["IQuiltOutput"]
     Output --> Worker["Bridge Worker"]
