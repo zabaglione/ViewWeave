@@ -4,6 +4,21 @@ This note records the Windows shutdown lifecycle changes and their current evide
 
 ## Shutdown behavior
 
+This diagram separates recoverable Play Mode Stop from the irreversible Windows process-quit gate. It summarizes the gate decision only; the gate uses bounded polling, native completion, and GPU ownership proofs described below.
+
+```mermaid
+flowchart TD
+    Stop["Play Mode Stop or restart"] --> Session["Drain recoverable session"]
+    Quit["Windows Editor or Player quit"] --> Gate["Close admission and stop outputs"]
+    Gate --> Native["Native contexts closed and host joined"]
+    Native --> Gpu["GPU ownership proof complete?"]
+    Gpu -->|"yes"| Release["Release resources and allow quit"]
+    Gpu -->|"no / timeout"| Cancel["Cancel quit and retain resources"]
+    Cancel --> Restart["Restart Editor before Bridge reuse"]
+```
+
+At the 2026-10-08 snapshot, URP Garden and HDRP VFX Editor runs each completed Play, Stop, and one original `File > Exit` request, then exited naturally with code 0. This confirms those two tested fixtures. Historical access violations remain unresolved; the runs do not prove a causal fix.
+
 Normal Play Mode Stop/restart uses the recoverable session path and does not set the process-wide final latch. Windows Editor and Player process quit use a separate final gate: close admission, stop active outputs, close and collect native contexts, join the persistent worker host, then release managed resources only after GPU proof. Legacy D3D11 textures additionally require a per-session `ClosedSafe` result, ACK, and GPU fence/readback proof; global SDK idle is insufficient. macOS Metal and unsupported platforms do not enter this Windows final drain.
 
 The Windows Editor quit callback has a monotonic 10-second polling budget measured from before the initial shutdown request. Individual Unity or native API calls are not preemptible, so the polling budget is not an absolute wall-clock completion guarantee. While the callback is active, it pumps only Bridge-owned worker, reaper, playback, and issued GPU-readback state, sleeping 1 ms between checks; it does not re-enter Unity's general Editor update or UI loop. Quit is allowed only after native completion/host join and all managed GPU ownership proofs complete. Timeout or an exception cancels quit and retains resources with admission closed. There is no automatic retry; a later explicit quit request rechecks status. Once final shutdown starts, admission is irreversible. If Unity's save confirmation is canceled after final completion, Bridge cannot restart in that Editor process; restart the Editor before using Bridge again.

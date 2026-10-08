@@ -18,6 +18,18 @@
 
 ## ViewWeaveで取り入れた投影行列の計算
 
+この図の範囲はCoreのCPU投影計算です。カメラ視点の描画要求数やGPU側の処理は変えません。
+
+```mermaid
+flowchart LR
+    Center["Quilt開始時に中央投影を計算"] --> Reuse["各viewで中心行列を再利用"]
+    Offset["viewごとの水平offset"] --> M02["m02だけ更新"]
+    Reuse --> M02
+    M02 --> Render["各viewを通常render requestで描画"]
+```
+
+基準行列を再利用して各viewで水平オフ軸成分を更新します。Full設定48 viewsでは引き続き48回の描画要求を行います。
+
 平行移動した各視点で毎回Frustumの上下左右と行列全体を作り直す代わりに、Quiltの中央視点で基準投影行列を一度計算します。そこから視点の水平offsetに応じて、行列の水平オフ軸成分だけを更新します。中心投影を`P`、視点の水平offsetを`eyeOffset`、焦点距離を`distance`とすると、更新式は次のとおりです。
 
 ```text
@@ -32,4 +44,10 @@ Pview.m02 = Pcenter.m02 + (-eyeOffset / distance) * Pcenter.m00
 
 ## 検証
 
-Unity Core batch testでは、FOV、aspect、near/far clip、distance、coneと1、2、奇数、48視点で、中央投影から作る行列が従来のFrustum式と許容誤差内で一致することを確認します。平行移動・回転した焦点面の投影位置も確認します。URP/HDRP distribution checkとリポジトリ検証は投影変更後に実行し、配布物の一致と検証エラーなしを確認しました。
+投影変更時の記録として、Unity Core batch testはFOV、aspect、near/far clip、distance、coneと1、2、奇数、48視点で、中央投影から作る行列と従来のFrustum式を比較し、平行移動・回転した焦点面の投影位置も検証する構成です。投影変更後にはURP/HDRP distribution checkとリポジトリ検証を実行し、配布物の一致と検証エラーなしを確認した記録があります。
+
+### 2026-10-08 統合後の確認
+
+静的な式の確認では、中心投影の水平成分`m00`とview offsetから更新する`m02`が、従来のFrustum水平shift式と一致することを確認しました。Core、URP、HDRPのソースにも同じ計算が反映されています。`python tools/build_upm_distribution.py all --check`はURP/HDRP両方で成功し、`python tools/validate_repository.py`は0 errors、0 warnings、Python validator suiteは5/5で成功しました。これらは静的・配布・Python検証であり、Unity実行結果とは別です。
+
+統合後のUnity Core batch再試行では、Unity CLIがLicenseClient IPCへ接続できず、初期化の60秒timeoutと接続喪失の後、Editorがcode `-536870911`で終了しました。独立Core projectのEditor logに`QuiltCoreBatchTests.Run`のpass markerはありません。テストmethodは実行されておらず、この試行は合格ではなく未実行です。

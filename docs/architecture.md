@@ -4,6 +4,23 @@ ViewWeaveは公式SDKとは独立して開発している非公式のUnity SDK�
 
 ## 現在のデータ経路
 
+次図は通常のWindows URP/HDRP Bridge Worker経路を示します。Coreがviewを順に制御し、URP/HDRP adapterが各viewのStandardRequestを実行してGPU上のtileへ転送します。Metal実験とファイル再生は別の経路です。
+
+```mermaid
+flowchart LR
+    Camera["利用者Camera"] --> Core["Coreがviewを制御"]
+    Core --> Adapter["URP/HDRP adapter"]
+    Adapter --> Request["viewごとのStandardRequest"]
+    Request --> Copy["GPU上のtileへCopyTexture"]
+    Copy --> Quilt["完成Quilt texture"]
+    Quilt --> Output["IQuiltOutput"]
+    Output --> Worker["Bridge Worker"]
+    Worker --> Bridge["公式Bridge runtime"]
+    Bridge --> Display["Looking Glass"]
+```
+
+adapterはQuilt完成前のview描画を担当し、`IQuiltOutput`は完成したQuiltを出力経路へ渡します。Bridge WorkerはGPU共有経路で公式Bridge runtimeへ送ります。Core描画はview数分のrender requestを行います。
+
 Coreは専用Camera 1台を一時的に制御し、各視点をN回レンダリングします。視点ごとに平行移動とオフ軸frustumを設定し、`Graphics.CopyTexture`でGPU上のQuiltタイルへ転送します。現在は視点間でフル描画を共有していないため、1台のCameraでもN回の描画、culling、影、post processingが発生します。CPU readbackは通常経路にありません。
 
 `IQuiltOutput`は公開Quilt RenderTextureと`QuiltLayout`を出力経路へ渡す境界です。QuiltはBridge入力仕様上必須であり、Quilt単独を低速原因とは判断できません。Coreはnative library、socket、Bridge protocolを直接扱わず、Bridgeやテスト用出力を交換できる構成を維持します。
@@ -14,7 +31,7 @@ URP/HDRPでは専用Guardと`RenderPipeline.StandardRequest`を使います。`V
 
 Sessionは機器のprofileを動的に選択し、自動検出を主経路とします。通常の利用では公式Bridge runtimeを別途用意します。`BridgeQuiltOutput`/Legacy DirectはWindows D3D11のみです。標準の`BridgeWorkerQuiltOutput`はWindows D3D11とD3D12のEditor PlayおよびPlayerで使う経路です。D3D12ではUnityのD3D12 deviceから同じGPU上のD3D11 workerへQuiltをGPU共有し、workerが公式Bridgeへ送ります。この経路はCPU画像readbackを使いません。Edit Modeは対象外です。通常のSessionはWindowsのみです。`BridgeMetalExperimentalOutput`は最大3 quiltに制限した独立componentですが、macOS native shimはUPM未同梱で、実機運用をサポートしません。ABI、手動artifact条件、未確定寿命契約は[Graphics backends](graphics-backends.md)を参照してください。
 
-WorkerはUnity render thread側のQuilt copyとworker所有のD3D11 device、3 slot共有GPU ring、worker側の描画、WM message pump、shutdown/reopenを分離します。RTX 3090 Tiでshared-resource handoff、ring reuse、typeless format、timeout、late completion、device-removal seam、generationを含むD3D11 baseline込み349 draw testを通過し、fake Bridge runtimeを使ったloader lifecycle 100 cycleも通過しました。Unity D3D12 Editor PlayはURP/HDRPのDomain Reload enabled/disabledで各2 cycleを確認し、URP/HDRP Windows Development PlayerもPreviewで検証済みです。ユーザーHDRP VFX Learning Templates projectもsnapshot 8adda27cでNative 7680x4320・48 viewsのEditor PlayとIdle/Closed・pending 0の停止を確認しました。このmatrixではGRD設定を切り替えていません。Player Native quality、全48 viewsの人手光学確認、WARP、他GPUは未検証です。Windows CIではhardware D3D12をskipします。
+WorkerはUnity render thread側のQuilt copyとworker所有のD3D11 device、3 slot共有GPU ring、worker側の描画、WM message pump、shutdown/reopenを分離します。RTX 3090 Tiでshared-resource handoff、ring reuse、typeless format、timeout、late completion、device-removal seam、generationを含むD3D11 baseline込み349 draw testを通過し、fake Bridge runtimeを使ったloader lifecycle 100 cycleも通過しました。Unity D3D12 Editor PlayはURP/HDRPのDomain Reload enabled/disabledで各2 cycleを確認しました。固定fixtureのD3D12 Player matrixではURP/HDRPのDevelopment/Release各runがPreview、Balanced、Native、Previewを完了し、Native qualityのPlayer実行もこのmatrix内で確認済みです。Developmentは各pipelineでNative restartを10回、Releaseは1回行いました。ユーザーHDRP VFX Learning Templates projectもsnapshot 8adda27cでNative 7680x4320・48 viewsのEditor PlayとIdle/Closed・pending 0の停止を確認しました。このmatrixではGRD設定を切り替えていません。任意projectの全48 views光学品質、WARP、他GPUは未検証です。Windows CIではhardware D3D12をskipします。
 
 失敗時はworkerを`Fault`にし、submission状態が確定しない間はGPU resource参照をshutdown完了まで保持します。保留中のnative shutdownが解決しない場合はUnity Editor/Playerを再起動して回復します。これは技術的なrecovery境界で、通常のセットアップ手順には不要です。物理hotplugや任意の実機接続hangをカバーしません。
 
@@ -34,7 +51,8 @@ Unity 6000.6.4f1、Windows、D3D11でURP/HDRPの基本Lit、Bloom、透明Lit、
 | FXAA、SMAA、MSAA、色調補正、TAA履歴、Auto Exposure | FXAA/SMAAと一部色調補正は限定fixture。URP MSAA 1/1の個別条件を確認。HDRP Auto Exposureはquilt view中に共通Fixed EVへ一時変換。独立TAA履歴、HDRP MSAA、性能は未検証 |
 | RenderTextureを使うUI、入力ray map、VideoTexture | uGUIとUI Toolkitの個別fixtureを確認。入力ray mapとVideoTextureは未検証 |
 | LineRenderer、TrailRenderer、VFX Graph、複雑な透明ソート | Line/Trailは個別fixtureで限定確認。URP Simple Burstは停止6条件と通常再生4条件をPlayerで確認。HDRP、一般VFX、複雑なsortは未確定 |
-| 複数機器、hotplug、RGBD、quilt layer、録画 | 未実装または未検証 |
+| 複数機器、hotplug、RGBD、quilt layer | 未実装または未検証 |
+| Quilt保存・連番録画・無音MP4 | Capture PNG/連番とsilent MP4 exportは実装済みで、限定fixtureを確認。Mono音声は別WAVへ保存。Bridge delivery、音声mux、実機品質は未検証 |
 
 ## 性能計測の扱い
 

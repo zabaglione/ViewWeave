@@ -1,6 +1,20 @@
 # 性能の実測と再現手順
 
-現在の実測は、BridgeなしのWindows Development Player、Unity 6000.6.4f1、URP 17.6、Direct3D11、NVIDIA GeForce RTX 3090 Ti、graphics multi-threading有効で取得しています。固定128x96 tile、共有Lit mesh約75個、120 frame warmup、1000 frameを3 run使用し、`QuiltRenderer.LastCpuSubmissionTicks`をCPU submission時間として記録しました。これはGPU frame timeやpresent latencyではありません。
+以下の数値は過去の固定harnessで得た結果です。現行製品のFPSや今回の投影計算変更による改善量を表しません。計測条件はBridgeなしのWindows Development Player、Unity 6000.6.4f1、URP 17.6、Direct3D11、NVIDIA GeForce RTX 3090 Ti、graphics multi-threading有効、固定128x96 tile、共有Lit mesh約75個、120 frame warmup、1000 frameを3 runです。`QuiltRenderer.LastCpuSubmissionTicks`をCPU submission時間として記録し、GPU frame timeやpresent latencyは計測していません。
+
+この図は、既存のVolumeStack cacheを含む固定harness測定と、別途行ったprivate Garden A/B/A trialを分けます。private trialでは計測誤差を超える改善がなく、採用していません。
+
+```mermaid
+flowchart LR
+    Harness["過去の固定75-mesh harness"] --> Cache["既存VolumeStack cache条件"]
+    Cache --> Cpu["CPU submissionのみを記録"]
+    Cpu --> Limitation["GPU time / FPSは未測定"]
+    A1["private trial A: reuse off"] --> B["B: camera-owned stackをreuse"]
+    B --> A2["A: reuse offで再測定"]
+    A2 -->|"改善が計測誤差内"| Reject["private追加案は不採用"]
+```
+
+図のA/B/Aはprivate trialの追加reuse案だけを示し、mainの既存VolumeStack cacheを変更した試験ではありません。以下のテーブルは固定harnessで測定したsnapshotです。
 
 | GRD | Views | p50 CPU submission (ms) | p95 (ms) | GRD Renderers | Visible Instances | GC bytes/frame |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -13,7 +27,7 @@
 
 6条件のsummaryはすべて成功しています。今回の各条件は120 frame warmup後に1000 frameを3 run、合計3000 samplesを取得し、build GUID `e3ae196fd1af4b6583ee9b27ee28b557`で揃えています。48視点のCPU submission p50はGRD Onが15.0732 ms、Offが17.3311 msです。これは固定harnessの観測値であり、公式SDKやGPU実装の高速化を示す比較ではありません。GPU timingとCPU render-thread timingは欠測で、0を実測値として扱いません。GPU Resident Drawerは48 viewを1 drawへ変換せず、Bridgeのスレッド停止を修正する機能でもありません。
 
-固定条件のGRD比較では、同じ75 mesh・128x96 tile・120 frame warmup・1000 frame x 3 run・Profiler instrumentation有効の条件で、VolumeStack cache変更前後を比較しました。
+固定条件のGRD比較では、同じ75 mesh・128x96 tile・120 frame warmup・1000 frame x 3 run・Profiler instrumentation有効の条件で、既存VolumeStack cache変更前後を比較しました。この歴史的なharness比較と、後続のprivate Garden A/B/A追加trialは別の実験です。
 
 | GRD | Views | cache前p50 (ms) | cache前p95 (ms) | cache前GC/frame | cache後p50 (ms) | cache後p95 (ms) | cache後GC/frame |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -28,7 +42,7 @@ cache変更後の測定では48 viewのGRD OnがOffに対してCPU submission p5
 
 再現時は同一の機器、scene、Quilt、native views、quality、postprocess、compiler、graphics mode、Bridge、VSync、GPU、Unity、render pipelineを固定してください。性能測定中はPNG保存、trace、CPU readbackを無効にし、画質確認やログ取得は別実行に分けます。GRD単体の適用確認と、独自multiviewや再投影の比較条件は [gpu-resident-drawer.md](gpu-resident-drawer.md) と [multiview-rendering.md](multiview-rendering.md) を参照してください。
 
-現在の実測sceneは約75 meshの代表 workloadです。別scene、mesh数、display、resolutionへ一般化できません。今回のcache変更後の測定はVolumeStack cache変更後の同条件で取得しています。異なるUnity/公式版との比較は条件差を明示した参考値に限り、直接のspeedup claimには使いません。
+このharnessの実測sceneは約75 meshの代表 workloadです。別scene、mesh数、display、resolutionへ一般化できません。cache変更後の測定はVolumeStack cache適用後の同条件で取得しています。異なるUnity/公式版との比較は条件差を明示した参考値に限り、直接のspeedup claimには使いません。
 
 今回のCoreではStopwatchの計時方法を変更しましたが、この変更後のCPU、GPU、GCベンチは再取得していません。既存の性能数値から計時変更による改善を主張しません。
 

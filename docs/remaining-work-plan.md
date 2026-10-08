@@ -2,6 +2,24 @@
 
 基準日: 2026-10-08 JST。新しい試験証跡の日付は各Unity XMLのUTC timestampを参照し、run folder名を実行時刻とみなしません。対象はUnity 6000.6.4f1、Windows、URP/HDRP、公式Looking Glass Bridge経路です。検証時baseline、今回の変更、限定fixture、実機表示の結果を分けます。作業は完了条件を満たす証拠が揃うまで未完了です。
 
+## 2026-10-08時点の状態
+
+2026-10-08に取得した`origin/main` snapshotは`74fe111`（PR #9を含む）です。このhashは取得時点の識別子であり、今後の`main`の先端を指すものではありません。このsnapshotに含まれるWindows shutdown修正を使い、URP GardenとHDRP VFXの各EditorでPlay、Stop、元の`File > Exit`操作1回を行い、両方でUnityが自然終了code 0となりました。これは2つのsample fixtureにおける終了経路の確認です。古いaccess violationは再現していませんが、原因の解消を示す因果証明ではありません。48視点の実scene表示品質、性能改善、保存確認Cancel、Native playbackの正常終了など個別のgateは下表の条件に従って評価します。
+
+下表の行2と行6にあるsource 1771af79、baseline 4230c4c、終了未実施、最終commit未確定の記述は2026-10-07に保存したhistorical snapshotです。そこに記録された一回のGarden soakは当時Stop/終了を行っていません。翌日の2 sample shutdown確認を反映した現在状態とは別の試験記録です。
+
+```mermaid
+flowchart LR
+    Main["取得時origin/main 74fe111"] --> Matrix["URP Garden / HDRP VFX sample"]
+    Matrix --> Stop["Play then Stop"]
+    Stop --> Exit["File > Exitを1回"]
+    Exit --> Result["自然終了 code 0"]
+    History["歴史的AV記録"] --> Open["原因と因果関係は未確定"]
+    Result --> Open
+```
+
+図は2026-10-08に確認した2 sampleのWindows終了経路を示します。Metal通常Sessionや過去AV原因、全Unity projectの終了を証明するものではありません。
+
 ## 実行順
 
 | 順 | 作業 | 現状 | 完了条件 |
@@ -11,7 +29,7 @@
 | 3 | 測定可能な描画改善とNativeの原因限定修正 | HDRP static fixtureではFull/Half/Quarterを測定済み。Private codex/urp-volume-reuseの7 PlayMode testは通過したがGarden A/B/Aの改善は計測誤差内で、採用していない。現GUI EditorはGraphics Jobs Split Threading。Natural Camera Batch試作は遅くなりEditor終了に至ったため再試行しない。 | 実効threadingが既にSplitならthreading切替仮説を終了する。次候補は必要時のみA/B/A。HDRP Spot/Point Shadow OnDemandとRequestShadowMapRenderingは別の最小fixtureで評価し、動く遮蔽物、view端、light入切、複数Cameraを含む全48画像と計測誤差を上回る改善、drop条件を満たす場合だけ採用する。Directional shadowは対象外。原因traceなしにNative sourceを変更しない。 |
 | 4 | VFX/Particleの透明・深度・temporal挙動 | DX12の既存VFX suiteは6/7 PASSで、FOV50 Simple Burstのalive=0 failureを保持。追加の同期I/Oなしmemory診断は7/7 PASSし、FOV50/FOV90とも128 aliveを観測した。元driver caseを含む別filter runは3/3でPASSしたが、元cold suiteのfailureは履歴として維持し、恒久修正やcold/warm一般成功の証明とはしない。URP Particle 3/3、HDRP Particle 2/2は限定fixtureでPASS。一般的な透明順序、soft depth、sort/culling、HDRP VFX全般は未完。古いD3D11 snapshotの15 failureとHDRP priming failureも履歴として保持する。 | URP/HDRPごとにeffect抑制と復元、透明順序、soft depth、particle billboard/sort/cullingを確認し、全48 tileと画質を確認する。古いfailureを現在の合否へ転用しない。 |
 | 5 | Optical確認、camera authoringと新機能 | 以前の人手確認では奥行き・画質は良好だったが、全48視点の端・継ぎ目確認は未完了。camera authoringはScene ViewのGizmoに実装済みで、DX12 testとstatic review PASSだがinteractive Scene GUI dragは未実測。Playback safetyの12ケースは個別にPASSし、Core CPU smokeもPASS。限られたEditor assembly reload probeはPASSし、serialized playback recovery recordとそのRenderTexture reference、post-reload fence/readback、test-only handoffを確認した。reload probeでのNative Begin/Stopは0回。別の初回Native playback integrationは旧auto-bootstrapで300秒を超えてEditor startupが停滞し失敗した。probe logとNative traceは作成されず、Native Beginの実行有無はunknown、natural exitも未検証。私有dumpを採取後、fixture identityを再確認して一度だけowned force cleanupし、exit 0とroot/記録済みchild不在を確認した。vendor原因は不明。後続GO準備はsource stagingの`File.Replace`不正backup pathでUnity起動前に失敗し、Editor PIDなし。claimed run rootは保全・再利用禁止、launcherは修正済み。後続の公式Native playback試行では、修正済みexplicit-start fixture source (SHA-256 D48B9B982CD61FBED9E10CE7FF85F319B5A10A9E776AC465D342A6BB7BE5A113) をfresh root E:/LookingGlassSDK/.local/remaining-work-validation/cdx12/wvk6-results/bridge-playback-integration-explicit-20261007T164753Z-78174c5a5ad441eaa99add7415f8e496で実行した。static PNG 1枚とsequence 3 frameの合計4 Native draw、Begin/Stop各1回、pending 0を記録した後、Editorは自然終了したがexit code 1でfixture全体はFAILだった。AstraはEOF観測とcleanupの間の1 frameで、復元されたAuto Renderがfixture no-render pipelineのunsupported StandardRequestを発生させ、LastAutoRenderErrorがsession faultを起こした後にReady assertionが失敗したと判定した。fixture限定のsame-call-EOF修正は次のrunで実行し、後述のfunctional body PASSを得た。Ready/generation/Auto Render復元/texture/lease/Stopのassertは維持し、product sourceは変更していない。 次のfixture-only same-call-EOF runはfresh root E:/LookingGlassSDK/.local/remaining-work-validation/cdx12/wvk6-results/bridge-playback-integration-explicit-20261007T165843Z-a4735f9101ce4b39b89cd1958e4f5215で実行した。functional bodyはPASSで、static PNGの1.25秒hold、Pause/Resume、sequence 3 submit/skip 0/natural EOF、same-generation Ready、leaseとRenderTextureの解放、Auto Render復元、Start/Stop各1回、pending 0、Idle、pipeline復元、INTEGRATION_PROBE_PASSを確認した。その後Editor processはexit -1073741819 (0xC0000005)となったため、functional PASSにもかかわらず正常exit code 0 gateはFAIL。WER/Event 1000 metadataはUnity.dll offset 0x44383df、exception 0xC0000005、2026-10-07T16:59:07.5552601Z、PID 56240 (process start 2026-10-07T16:58:43.7758213Z)、ReportId ad083598-f93d-4d81-b6fb-8631cd9c5967を記録した。threadとdump archiveはunavailable。原因はunknown。以前のbridge_inproc.dll RVA F8550とは別事象で、vendor causeを示すものではない。証跡: E:/LookingGlassSDK/.local/remaining-work-validation/cdx12/wvk6-results/bridge-playback-integration-explicit-20261007T165843Z-a4735f9101ce4b39b89cd1958e4f5215/shutdown-crash-metadata.json。actualLiveRender=unmeasured。product code変更なし。 証跡: `E:/LookingGlassSDK/.local/remaining-work-validation/cdx12/wvk6-results/bridge-playback-integration-20261008/run/startup-stall-preserved.json`。Native playback本体は限定fixtureでPASS。production shutdown orderingと正常なexit 0完了は未実証。Audio fake suite 6/6とactual audio/legacy silent 8ケースは、focused rerun後に個別PASS（合計14ケース）。MonoでのURP/HDRP統合、pause/resume、stop/disable、AudioSource/scheduled clip保全を確認した。head trackingはcapability不明でOFF。 | 実機利用可能時に番号付き48 viewの左右端、立体感、色、継ぎ目を記録する。Quilt再生、authoring input、tracking、audioは下表のmilestoneを個別に通す。 |
-| 6 | 文書同期と配布状態 | 本検証の基準revisionは4230c4c（PR #4、CI run 37614129521成功）。今回の変更でauthoring/playback/audio機能を追加・検証した。限定fixtureのNative playback bodyはPASSしたが、正常なexit 0には至っていない。別証拠のoriginal URP source 1771af79 GUI EditorではGarden Full48/D3D12の実描画が10分継続し、観測中crashはなかったがdrop 8でzero-drop条件は未達。これはNative playback fixtureの実描画測定ではない。Native audio、production reload/shutdown ordering、GUI EditorのStop/drain後自然終了、光学確認と性能改善は未完了で、integration/release gateを満たす証拠は未完了。これは承認待ちではなく検証未完了を示す。検証対象のfrozen sourceは1771af79、観測branch docs headは7dd961fe、mainは4230c4c9であり、別のrevision identityである。original URP projectのcold startと600秒watchは完了したが、Native normal-exit gateは未達。最終commit revisionは未確定のため記載しない。 | README、Compatibility、機能coverage、SDK比較、capture/video手順、validation reportの状態・pipeline・実行条件を揃え、未実施や過去失敗を消さずに更新する。 |
+| 6 | 文書同期と配布状態 | 2026-10-07 historical snapshot: 本検証の基準revisionは4230c4c（PR #4、CI run 37614129521成功）。今回の変更でauthoring/playback/audio機能を追加・検証した。限定fixtureのNative playback bodyはPASSしたが、正常なexit 0には至っていない。別証拠のoriginal URP source 1771af79 GUI EditorではGarden Full48/D3D12の実描画が10分継続し、観測中crashはなかったがdrop 8でzero-drop条件は未達。これはNative playback fixtureの実描画測定ではない。Native audio、production reload/shutdown ordering、GUI EditorのStop/drain後自然終了、光学確認と性能改善は未完了で、integration/release gateを満たす証拠は未完了。これは承認待ちではなく検証未完了を示す。検証対象のfrozen sourceは1771af79、観測branch docs headは7dd961fe、mainは4230c4c9であり、別のrevision identityである。original URP projectのcold startと600秒watchは完了したが、Native normal-exit gateは未達。最終commit revisionは未確定のため記載しない。 | README、Compatibility、機能coverage、SDK比較、capture/video手順、validation reportの状態・pipeline・実行条件を揃え、未実施や過去失敗を消さずに更新する。 |
 
 ## 残る検証と依存
 
@@ -44,4 +62,4 @@
 
 XR Plugin、Plug & Play/hotplug、複数機器/display、別GPU vendor、Gamma VFXは保留。Gamma VFXはUnity VFX Graph要件に従い非対応。optical 48-view確認は未検証。head tracking capabilityは不明のためOFF。
 
-VolumeStack reuseの7/7 testsとA/B/Aはprivate trialの成果で、改善は計測誤差内のため採用しない。実録画→MP4 E2EはURP DX12の限定fixtureでPASSしたが、Bridge output/実機表示を意味しない。fixed-texture Bridge shutdownの自然終了も48 camera/VFX shutdownの証明ではない。検証時baselineは4230c4c、PR #4、CI成功済み。
+2026-10-07 snapshotの注記: VolumeStack reuseの7/7 testsとA/B/Aはprivate trialの成果で、改善は計測誤差内のため採用しない。実録画→MP4 E2EはURP DX12の限定fixtureでPASSしたが、Bridge output/実機表示を意味しない。fixed-texture Bridge shutdownの自然終了も48 camera/VFX shutdownの証明ではない。検証時baselineは4230c4c、PR #4、CI成功済み。このbaseline識別子は2026-10-08に取得した`origin/main` snapshot `74fe111`と異なる歴史的な検証時点を指す。

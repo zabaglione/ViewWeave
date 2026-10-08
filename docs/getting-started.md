@@ -1,6 +1,20 @@
 # Getting started
 
-この手順はUnity 6000.6.4f1、Windows、URPまたはHDRPを対象にします。標準のBridge Rig/Worker経路はWindows D3D11とD3D12のEditor PlayおよびPlayerで使えます。Looking Glassへの出力には公式Looking Glass Bridge runtimeと接続済みの機器が必要です。
+この手順はUnity 6000.6.4f1、Windows、URPまたはHDRPを対象にします。標準のBridge Rig/Worker経路はWindows D3D11とD3D12のEditor PlayおよびPlayerで使えます。Looking Glassへの出力には公式Looking Glass Bridge runtimeと接続済みの機器が必要です。macOS Metalは通常Sessionに含まれず、別途明示opt-inの実験経路です。
+
+この図は、既存CameraからBridge表示を始める最短経路です。Quality profileの詳細設定と任意のMetal実験は含みません。
+
+```mermaid
+flowchart LR
+    Package["URPまたはHDRP package"] --> Rig["既存CameraからBridge Rigを作成"]
+    Rig --> Play["WindowsでPlayまたはPlayer起動"]
+    Play --> Render["Coreとpipeline adapterがQuiltを描画"]
+    Render --> Worker["Bridge WorkerへGPU共有"]
+    Worker --> Runtime["起動中の公式Bridge runtime"]
+    Runtime --> Device["接続済みLooking Glass"]
+```
+
+通常の導入では、利用者projectのUnity EditorまたはPlayerだけを起動し、公式Bridge runtimeを別途起動します。
 
 表示のために起動するのは、自分のUnity projectです。Unity EditorのPlay、またはビルドしたPlayerがsceneからQuiltを生成し、公式Looking Glass Bridge runtimeがそれを接続機器へ送ります。Bridge runtimeはインストールして起動しておきます。SDK内のTests/Bridge Unityプロジェクトやデモアプリを別途起動する必要はありません。
 
@@ -30,15 +44,30 @@ Package Managerが更新を完了したら、Unity Editorを正常終了して�
 
 被写体Rendererを選択した状態でRigを作るときは、選択中Rendererのbounds centerが解決したframing Cameraの前方かつnear/far clipの間にある場合、そのforward距離を`Camera Distance`に設定します。Rendererがない、disabled、範囲外、背面なら10 unitsです。framing Cameraが見つからない場合はRigの既定位置と3 unitsを使います。Cameraのnear/farとculling maskはRig作成時に初期値としてコピーします。poseと既定で有効なFOV追従は前段の説明どおり、実行中も参照Cameraから同期されます。
 
-Edit ModeとmacOSではBridge出力しません。Windows Playerで確認する場合はWindows Graphics APIsでD3D11またはD3D12を選び、Build and Runします。Legacy Direct経路を使う場合はD3D11を選んでください。
+Edit ModeとmacOS通常SessionではBridge出力しません。Metalは[Graphics backends](graphics-backends.md)に記載した明示opt-inの別実験です。Windows Playerで確認する場合はWindows Graphics APIsでD3D11またはD3D12を選び、Build and Runします。Legacy Direct経路を使う場合はD3D11を選んでください。
+
+## 視点描画数を変更する
+
+HierarchyでViewWeave Rigを選び、Inspectorの`QuiltRenderer > View Render Mode`から`Full`、`Half`、`Quarter`を選びます。この48-view profile例では出力Quiltは常に48 tileで、modeが実際にrender requestを出す視点数を決めます。
+
+```mermaid
+flowchart LR
+    Full["Full: 48 tile / 48 rendered views"] --> Quilt["48-tile output Quilt"]
+    Half["Half: 48 tile / 24 rendered views"] --> Quilt
+    Quarter["Quarter: 48 tile / 12 rendered views"] --> Quilt
+```
+
+未描画tileには最も近い描画済みviewを割り当てます。`View Render Mode`は表示解像度を変更せず、視点間の補間も行いません。`Quality`（Preview/Balanced/Native）とは別の設定です。
 
 ## Qualityを変更する
+
+`ViewWeaveBridgeSession` Inspectorの`Quality`は各viewの描画解像度を選びます。`Preview`はprofile解像度の1/4、`Balanced`は1/2、`Native`はprofile本来の解像度です。Qualityを変えてもprofileのview数と`View Render Mode`は変わりません。
 
 1. Unity EditorのPlayを停止します。
 2. Rig上の`ViewWeaveBridgeSession` Inspectorにある`Quality`を`Balanced`または`Native`へ変更します。
 3. Playを押し、Bridgeへ送られる表示を確認します。
 
-Qualityは接続機器から取得したBridge profileの解像度を基準にします。`Preview`は1 viewあたりの縦横をprofileの1/4、`Balanced`は1/2にし、`Native`はprofile本来の解像度を使います。どのQualityでもview数はprofileの値のままです。たとえば、直前に確認した機器profileが7680x4320、8x6 viewsなら、1 viewあたりはPreviewが240x180、Balancedが480x360、Nativeが960x720です。この数値はそのprofileの例で、他の機器に共通する仕様値ではありません。48 viewsの場合、NativeはPreviewと比べて1 viewあたり縦横4倍、総pixel数16倍を描画するため、GPU負荷が増えます。
+接続機器から取得したprofileが7680x4320、8x6 viewsなら、1 viewあたりはPreviewが240x180、Balancedが480x360、Nativeが960x720です。この数値はそのprofileの例で、他の機器に共通する仕様値ではありません。48 viewsの場合、NativeはPreviewと比べて1 viewあたり縦横4倍、総pixel数16倍を描画するため、GPU負荷が増えます。
 
 Sessionは起動時に選択したQualityからquilt解像度とgridを適用します。`QuiltSettings`を直接編集してもSessionのprofileで上書きされるため、表示解像度を変える場合は`ViewWeaveBridgeSession`の`Quality`を使ってください。
 

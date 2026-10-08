@@ -2,6 +2,21 @@
 
 ViewWeave can optionally record the Unity audio mix alongside a Quilt PNG sequence. Audio capture is opt-in; the existing `StartRecording(outputRoot, fps, frameCount)` API continues to create a silent PNG sequence. Call `StartRecordingWithAudio(...)` or choose **Start PNG Sequence + Audio** in **Window > ViewWeave > Quilt Capture** to request audio.
 
+この図は、選択可能な音声経路と保存物の対応を示します。音声を選ばない既存APIはPNG連番のみを作り、音声を含む選択では各Quilt frameとMono WAV sampleを対応付けて別ファイルへ保存します。
+
+```mermaid
+flowchart LR
+    Select["Audio recordingを明示選択"] --> Check["Windows Editor Play / Monoを確認"]
+    Check --> Frame["Quilt frameを保存"]
+    Check --> Samples["AudioRenderer sampleを取得"]
+    Frame --> Commit["PNG + sidecar + frame log"]
+    Samples --> Commit
+    Commit --> Wave["別ファイル audio.wav"]
+    Silent["既存silent API"] --> PngOnly["PNG連番のみ"]
+```
+
+Mono設定はUnity project全体へ影響します。SDKは音声設定を変更しないため、Monoを使わない場合はsilent recordingを選びます。
+
 Audio capture is currently limited to Windows Editor Play mode and an already active Mono speaker configuration. ViewWeave checks the current configuration and rejects unsupported settings before starting. It never calls `AudioSettings.Reset` or changes the operating system or project audio configuration.
 
 To record audio, stop Play mode and open **Edit > Project Settings > Audio**. Set **Default Speaker Mode** to **Mono**, then enter Play mode again and confirm that the current output configuration is Mono before starting audio capture. Mono is a one-channel speaker mode ([Unity Audio Manager settings](https://docs.unity3d.com/6000.6/Documentation/Manual/class-AudioManager.html), [AudioSpeakerMode.Mono](https://docs.unity3d.com/6000.6/Documentation/ScriptReference/AudioSpeakerMode.html)). This project setting affects audio throughout the project; it is only needed when you choose audio recording. If you prefer to keep the existing setting, use the regular silent PNG recording.

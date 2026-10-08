@@ -12,6 +12,21 @@ ViewWeaveのgraphics backendは、Unityが生成したQuiltをnative transport�
 | Metal experiment | Unity Metal texture | official Bridge Metal API via IOSurface | native実験のみ。通常Sessionでは未対応、macOS native artifact未配布 |
 | Vulkan | なし | なし | 実装・対応なし |
 
+次図はサポート対象の通常Sessionと、独立したMetal実験を区別します。Metal枝は通常Sessionへ接続せず、Windowsのshutdown gateにも入りません。
+
+```mermaid
+flowchart TD
+    Session["通常managed Session"] --> Windows["Windows D3D11 / D3D12"]
+    Windows --> Worker["Bridge Worker"]
+    Windows --> Legacy["D3D11 Legacy Direct"]
+    Worker --> Bridge["公式Bridge runtime"]
+    Legacy --> Bridge
+    Metal["macOS Metal component"] --> Gate["明示opt-in / 最大3 quilt"]
+    Gate --> Contract["consumer release契約は未確認"]
+```
+
+通常表示はWindowsのBridge WorkerまたはD3D11 Legacy Directを使います。Metal枝は手動artifactと実験専用componentを要し、連続運用やUPM配布を示しません。
+
 通常のmanaged policyはWindows D3D11/D3D12のWorkerと、D3D11のLegacy Directを対象にします。共通descriptor validationとBridge path判定もD3D11/D3D12 producerからD3D11 consumerへの経路を扱います。Windows backendはD3D11、D3D12、D3D11/D3D12 interopに分かれ、共通worker codeからtransport単位で呼ばれます。非対応platformのtransportはfailure stubです。
 
 ## Windows shutdown and package updates

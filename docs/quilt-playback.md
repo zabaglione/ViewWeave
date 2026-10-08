@@ -2,6 +2,23 @@
 
 The Bridge package provides an Editor window at **Window > ViewWeave > Quilt Playback**. It plays a validated full-quilt PNG or a completed QuiltRecorder output folder through an already-running Ready Bridge session. Playback is limited to Windows Editor Play mode on Direct3D 11 or Direct3D 12. It does not create or stop a Bridge session, call Native begin/stop, or modify Unity time settings.
 
+This flow uses the existing Ready session and a temporary output lease. The same session and unchanged ownership state are required before live rendering can resume.
+
+```mermaid
+flowchart LR
+    Source["Validated full Quilt PNG or sequence"] --> Lease["Acquire Renderer and output lease"]
+    Lease --> Ready["Submit through existing Ready Bridge session"]
+    Ready --> Hold["Pause holds last displayed image"]
+    Ready --> End["Stop or sequence EOF"]
+    Hold --> Ready
+    End --> Proof["Fence and transfer cleanup proof"]
+    Proof --> Same["Same generation and settings?"]
+    Same -->|"yes"| Resume["Restore live Auto Render"]
+    Same -->|"no"| Keep["Release lease without auto-restore"]
+```
+
+The diagram omits the fault-recovery record path: when GPU ownership cannot be proven, the texture and renderer guard are retained for Editor recovery.
+
 The source must match the active Renderer quilt dimensions, grid, view count, and view aspect. Camera lens metadata, when present, must also match the active Renderer. A PNG with a capture sidecar uses that sidecar for geometry. A sidecar-free PNG is accepted only when its filename contains a recognized `_qs<columns>x<rows>a<aspect>` tag; the source geometry is reported as filename-derived. Central 2D captures, incomplete recordings, malformed manifests, non-contiguous frame sequences, and ambiguous geometry are rejected. A single PNG is submitted once and held until Stop; a completed sequence releases playback at end of stream.
 
 Playback owns the Renderer operation guard and the existing Bridge session's output while active. Normal Bridge submissions are blocked before changing the output texture reference or blitting. The playback controller reuses one render texture, submits frames through the existing Ready worker, and skips frames when Editor frame time falls behind. Pause stops submissions and holds the last displayed image. Resume restarts the same validated source cursor. Playback does not alter `Time.captureDeltaTime` or `Time.timeScale`.

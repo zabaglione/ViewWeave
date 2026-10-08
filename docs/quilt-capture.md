@@ -2,6 +2,19 @@
 
 ViewWeave Core には、完成した Quilt を静止画として保存する機能と、Play 中に Auto Render が出力した Quilt を PNG 連番として保存する機能があります。録画のために追加の視点を描画することはありません。
 
+図はsilent PNG recordingと明示opt-inのMono audio recordingを示します。両方とも完成Quiltを共有しますが、音声は別WAVになりMP4 exporterへmuxされません。
+
+```mermaid
+flowchart LR
+    Render["Play中の完成Quilt"] --> Save["1枚PNG + JSON sidecar"]
+    Render --> Sequence["PNG連番 + frame metadata"]
+    Sequence --> Silent["無音MP4へ後処理"]
+    Audio["明示的なMono audio選択"] --> Wave["別WAV + sample metadata"]
+    Sequence --> Audio
+```
+
+静止画と連番は既存Auto Renderの出力を保存します。音声録音を選ばない通常連番はsilentです。
+
 ## 静止画を保存する
 
 1. Unity のメニューから **Window > ViewWeave > Quilt Capture** を開きます。
@@ -46,4 +59,4 @@ Unity 6000.6.4f1 の自動 PlayMode テストで URP と HDRP の両方を実描
 
 The current working branch passed CoreBuiltinCaptureSmoke on DX12 and one URP plus one HDRP QuiltCapturePipelineTests case. The Unity 6000.6.4f1 Editor used -force-d3d12 on an RTX 3090 Ti without -nographics; the tests covered central PNG/sidecar output, half/quarter source-view mapping, and Recorder Pause/Resume with capture-time restoration. They used fake output and did not connect to Bridge or a Looking Glass display. This is working-branch evidence, separate from the existing D3D11 results and not a claim that main or physical output has passed.
 
-The first test fixture under a 272-character path failed during Unity URT/UXML import with a missing-directory error. The same 420 source files, with matching hashes, were prepared under a 218-character fixture path; URT compute/ray-tracing shader assets and both pipeline Global Settings then imported with zero errors before the capture tests passed. This result is limited to the tested fixture layout. Two folder .meta files in the test project lacked a final LF and generated two YAML parse errors; only those final line feeds were repaired. A later run still needs to confirm zero parse errors after the repair.
+The first test fixture under a 272-character path failed during Unity URT/UXML import with a missing-directory error. The same 420 source files, with matching hashes, were prepared under a 218-character fixture path; URT compute/ray-tracing shader assets and both pipeline Global Settings then imported with zero errors before the capture tests passed. This result is limited to the tested fixture layout. Two folder `.meta` files were initially copied from stale 168-byte snapshots and generated two YAML parse errors. The fixture was re-synchronized from the 169-byte source files and imported synchronously. The final check found zero C# errors, zero YAML/meta errors, and both Folder GUIDs. The earlier failing copy and its correction remain part of the history; the final re-import is confirmed for this fixture only.

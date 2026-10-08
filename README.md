@@ -4,11 +4,22 @@ Looking Glass向けの非公式Unity SDKです。URPまたはHDRPの通常のシ
 
 Looking Glassに表示するときは、利用者自身のUnity projectをEditor PlayするかPlayerとして起動します。UnityがQuiltを描画し、インストール済みで起動中の公式Looking Glass Bridge runtimeが機器へ届けます。SDK内のTests/Bridge Unityプロジェクトやデモアプリを別途起動する必要はありません。
 
-対応環境はUnity 6000.6.4f1、Windows、URPまたはHDRPです。Bridge Worker経由ならD3D11またはD3D12のUnity Editor PlayとWindows Playerから出力できます。Legacy Direct経路はD3D11のみです。Edit ModeとmacOS出力は対象外です。Bridge runtimeとLooking Glass機器を別途用意してください。
+対応環境はUnity 6000.6.4f1、Windows、URPまたはHDRPです。Bridge Worker経由ならD3D11またはD3D12のUnity Editor PlayとWindows Playerから出力できます。Legacy Direct経路はD3D11のみです。Edit ModeとmacOS通常Sessionは対象外です。Bridge runtimeとLooking Glass機器を別途用意してください。
 
 macOS Metalは明示opt-inのbounded実験です。通常SessionはMetalを受け付けず、macOS native shimはUPMに含まれません。限定的な手順と未検証範囲は[Graphics backends](docs/graphics-backends.md)を参照してください。
 
-このprivate repositoryからPackage Managerで取得するにはGitHubのアクセス権が必要です。独自コードのライセンスは[Apache-2.0](LICENSE)です。
+このprivate repositoryからPackage Managerで取得するにはGitHubのアクセス権が必要です。独自コードのライセンスは[Apache-2.0](LICENSE)です。機能別の手順、設計、検証履歴は[ドキュメント目次](docs/index.md)から参照できます。
+
+次図は標準Windows Sessionの概要です。macOS Metal実験、保存したQuiltの再生、別WAVの作成は独立した手順を参照してください。
+
+```mermaid
+flowchart LR
+    Project["利用者のUnity project"] --> Rig["ViewWeave RigがQuiltを描画"]
+    Rig --> Bridge["公式Looking Glass Bridge runtime"]
+    Bridge --> Display["接続したLooking Glass"]
+```
+
+標準経路は既存のsceneとCameraを使い、再生とBridge接続の手順は[Getting started](docs/getting-started.md)に記載しています。
 
 ## 使い始める
 
@@ -62,6 +73,8 @@ HDRPとVFX GraphはLinear color spaceが必須です。HDRP Wizardの`Lightmap E
 テスト環境の準備は[Tests/Pipelines/README.md](Tests/Pipelines/README.md)、実行方法は[Getting startedのテストプロジェクト](docs/getting-started.md#テストプロジェクト)を参照してください。
 
 ## 検証資料
+
+- [ドキュメント目次](docs/index.md): 利用者向け、開発者向け、検証履歴の資料を目的別に案内します。
 
 - [Getting started](docs/getting-started.md): Editor PlayとPlayerの手順
 - [Compatibility](docs/compatibility.md): 対応条件と既知の制約
