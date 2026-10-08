@@ -19,6 +19,17 @@ jobs:
       - name: Run repository validator
         run: python tools/validate_repository.py
 
+  native-portable:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure portable native tests
+        run: cmake -S Native -B Native/build-portable-ci -DBUILD_TESTING=ON
+      - name: Build portable native targets
+        run: cmake --build Native/build-portable-ci --config Release --parallel
+      - name: Run portable native tests
+        run: ctest --test-dir Native/build-portable-ci -C Release --output-on-failure
+
   native-transport:
     runs-on: windows-2022
     steps:
@@ -26,6 +37,50 @@ jobs:
       - name: Configure transport tests
         run: cmake -S Native -B Native/build-transport-ci -G "Visual Studio 17 2022" -A x64 -DLKG_TRANSPORT_TESTS_ONLY=ON -DBUILD_TESTING=ON
       - name: Build transport tests
-        run: cmake --build Native/build-transport-ci --config Release --target lookingglass_worker_transport_test --parallel
+        run: cmake --build Native/build-transport-ci --config Release --target lookingglass_worker_transport_test lookingglass_worker_common_test --parallel
       - name: Run transport tests
         run: ctest --test-dir Native/build-transport-ci -C Release --output-on-failure
+
+  native-windows-fake-regressions:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: Unity-Technologies/NativeRenderingPlugin
+          ref: 522254181faf188efa8b50c3e3bf6fce720b26e4
+          path: unity-native-plugin-api
+      - name: Configure native fake-runtime regressions
+        run: cmake -S Native -B Native/build-windows-fake-ci -G "Visual Studio 17 2022" -A x64 -DUNITY_PLUGIN_API_DIR="${{ github.workspace }}/unity-native-plugin-api/PluginSource/source/Unity" -DBUILD_TESTING=ON
+      - name: Build native fake-runtime regressions
+        run: cmake --build Native/build-windows-fake-ci --config Release --parallel
+      - name: Run native fake-runtime regressions
+        run: ctest --test-dir Native/build-windows-fake-ci -C Release --output-on-failure
+
+  native-macos-metal:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      # Pinned upstream headers expose legacy IUnityGraphicsMetal; the provider uses MetalDevice,
+      # CurrentCommandBuffer, CurrentCommandEncoder, and EndCurrentCommandEncoder from that interface.
+      # Provider _v1 is its own size/version ABI, not a Unity interface version.
+      # This CI compile does not verify registry lookup on the installed Unity 6000.6 runtime.
+      - uses: actions/checkout@v4
+        with:
+          repository: Unity-Technologies/NativeRenderingPlugin
+          ref: 522254181faf188efa8b50c3e3bf6fce720b26e4
+          path: unity-native-plugin-api
+      - name: Configure macOS Metal native tests
+        run: cmake -S Native -B Native/build-macos-metal-ci -DUNITY_PLUGIN_API_DIR="${{ github.workspace }}/unity-native-plugin-api/PluginSource/source/Unity" -DBUILD_TESTING=ON
+      - name: Build macOS Metal native targets
+        run: cmake --build Native/build-macos-metal-ci --config Release --parallel
+      - name: Run macOS Metal native tests
+        run: ctest --test-dir Native/build-macos-metal-ci -C Release --output-on-failure
+      - name: Preserve macOS shim artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-macos-metal-shim
+          path: Native/build-macos-metal-ci/liblookingglass_bridge_shim.dylib
+          if-no-files-found: error
+          retention-days: 7

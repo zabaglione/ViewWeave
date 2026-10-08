@@ -1,30 +1,307 @@
 {
   "artifact": "lookingglass_bridge_shim.dll",
-  "sha256": "65BA980780656CED04A4CECBC99FD716C6FC24C6A3DA70703FEA67F26EFB08B3",
+  "sha256": "81CBF29737B1D1A13FBB3C1EEAB6265F3B0B076F41AB8C23B6E9229B17F0AEA9",
   "nativeSourceHashes": {
-    "Native/bridge_shim.cpp": "90BD1576A8C217FC2025B7F6E172C77D55AFBD5D33A28BF01D56F616792525BE",
-    "Native/bridge_shim.h": "C2A2ECBB4C20FF815D1EEF2D7DDCC4B46CF7801FE1E809525DE7C196E9DFEF8D",
-    "Native/bridge_worker_transport.h": "4E099F940B5E184131A3FA49FC695CA6D10FFB3C105AC1068980EACE334541CE",
-    "Native/CMakeLists.txt": "7D19C6434A55EF93A185127BC0A411703A01CD8A85FF792A067A12F99E92E289",
-    "Native/bridge_worker_transport.cpp": "38EB71B0F7562ED57942201054CE13D935C7B3FC22B7708407CDD679CE55671B",
+    "Native/bridge_shim.cpp": "2322BCCF377D24F3C32DE571B28BB680CC2F3C2A7E3C0CF33AB0189C6E546A21",
+    "Native/bridge_shim.h": "025DF518F036C150BE8F8B6E30E4595BF6EB45CFC0522CC5BF3769D6132AD4DE",
+    "Native/bridge_worker_transport.cpp": "C93D2945C4B12131C2D21C3123092011CD193D9FAD14A1F316D73787B96EF6A6",
+    "Native/bridge_worker_transport.h": "223A378AB740B9D26C46BEB476546C8E0C4667DFDCF2178DBD0D1A8D168AB96F",
+    "Native/bridge_worker_common.cpp": "D57B45EA0B65FA2B3BD953853529E5005A629321D035C090C1C3D6C620C9E39B",
+    "Native/bridge_worker_common.h": "DA185B952FF00288A361FBC4847B58424C540F83B3360700555BB8A3374C8168",
     "Native/bridge_d3d12_internal.h": "6B06A4792E547BDAE65EE91908CB565ED5FA1B89AD5C6E7A6EE627D6933FE154",
+    "Native/CMakeLists.txt": "2E4683DC270A1F55115555DC2F43377B854843012720AF880C454A03BF385B97",
+    "Native/platform/windows/bridge_worker_transport_windows.inc": "9D67DFD33E074CB0CA4779B1DB36804F97B70C61F3415818A267C4BF3B742FDE",
+    "Native/platform/windows/backends/d3d11_backend.inc": "8358D013E24979837AF3419B23223675E211C51CAA667F78672194E5585ADDDF",
+    "Native/platform/windows/backends/d3d12_backend.inc": "9E8897AABF8FDAA7F6A60647472F3253BAEE702AD0E0283258F5DE817918CAA1",
+    "Native/platform/windows/backends/d3d11_d3d12_interop.inc": "9ED91646E1CF456363B8EFC9E93BE9BF1430EBDA932D17CDBE5D5C18FA05055E",
+    "Native/tests/portable_common_test.cpp": "8FC86B3390C28ADF6CFC34FE85B13F769010C67A3B2BA3F82B7CB2DF4885A2AF",
+    "Native/tests/worker_transport_test.cpp": "0FFE10ED00C1D41896F5570F0A2760E1E76D320F5074B2DCD1898048D606F18B",
     "Native/tests/bridge_loader_lifecycle_test.cpp": "45832EA702E51428BB06722ECF6E38B365225556D9F0281C760FD8B0CEF053D8",
+    "Native/tests/bridge_shutdown_contract_test.cpp": "D7F23157F7DB811F372BF750CEA168D00B5F8E475BEDE0F233724713DAC32F6A",
+    "Native/tests/bridge_shutdown_contract.h": "407273B9AC0330ED817CD85B22BEF2070F1365BCD64B2398A9F6C638FE546B58",
     "Native/tests/fake_bridge_runtime.cpp": "03183CCC1D01732CDC74E52F2AFE682D900CF354E2846646B7949A890337FCA8",
     "Native/tests/fake_bridge_missing.cpp": "89D4BB907704FC1A8FE1FDAD152A983779F0CED85808B77DEA9263C0B5C05FD3",
-    "Native/tests/worker_transport_test.cpp": "4C51B360E9C4DF1D69BCC7679AA630AB11A48532638A9086F8558A9771D389D7",
-    "Native/tests/bridge_worker_host_affinity_test.cpp": "FC23C98BF5259AEAF08AA502BD8FFAF3D0476DE299C15B9090300DCF1B753C95",
-    "Native/tests/d3d12_d3d11_shared_probe.cpp": "8CDE21DAA564B3543C891770C6B382AAC18926E3E87EA9AB7B25031BD8242000",
-    "Native/tests/fake_bridge_fault_runtime.cpp": "D7AAE483C1808E447D52BC62060A7D1633D1766B6C29BF389022773476B24F77"
+    "Native/tests/fake_bridge_shutdown_runtime.cpp": "2FE78057114A09F1636951F71023C07A59384D357924529E8B5BDE53230D6D68"
   },
-  "compilerVersion": "MSVC 19.44.35207",
+  "compilerVersion": "MSVC 19.44.35217.0",
   "targetArchitecture": "x64",
   "configuration": "Release",
   "pluginApiUnityVersion": "6000.6.4f1",
-  "buildDirectory": "Native/build-worker-release-vs",
-  "generator": "Visual Studio 17 2022",
-  "independentCTest": "Final native run: worker transport passed 349 draw cases including the D3D11 baseline; bridge loader lifecycle test passed 1/1 (100 cycles) using the fake Bridge runtime",
-  "d3d12HardwareValidation": "NVIDIA RTX 3090 Ti; D3D12 shared-resource handoff, ring reuse, typeless formats, timeout, late completion, device-removal seam, and generation coverage passed",
-  "validationLimits": "Windows CI skips hardware D3D12 tests; RTX 3090 Ti is the only tested GPU; WARP and other GPUs are untested; URP/HDRP D3D12 Editor Play passed with Domain Reload on and off (2 cycles per setting); URP/HDRP Windows D3D12 Development Players passed in Preview only; Player Native quality is untested; the user's HDRP VFX Learning Templates project passed Editor Play on package Git revision 8adda27c at Native 7680x4320 across 48 views with completion progress and clean Idle/Closed stop; GRD settings were not toggled in this matrix; Plug and Play/hotplug, multi-device coverage, and exhaustive human review of all 48 views are untested",
+  "buildDirectory": ".local/native-backend-split-win-full-regression-2/Release",
+  "generator": "Visual Studio 17 2022; MSBuild 17.14.23",
+  "independentCTest": "Local Unity 6000.6.4f1 PluginAPI Release build and CTest: 6/6 passed; pinned NativeRenderingPlugin 5222541 header build and CTest: 6/6 passed. The cleanup exception retention case runs in a separate process after worker host join.",
+  "d3d12HardwareValidation": "Historical only: NVIDIA RTX 3090 Ti D3D12 shared-resource handoff, ring reuse, typeless formats, timeout, late completion, device-removal seam, and generation coverage were previously exercised. These observations are not fresh validation for this DLL.",
+  "validationLimits": "The Native artifact build and local CTest validation are scoped to the as-built source base 454ce3898a4999a347a13b605962731d1db6a277 plus retained working-tree Native changes; the as-built Windows DLL passed local and pinned-header CTest 6/6. Later fixture runtime lifecycle evidence is recorded separately in freshRuntimeEvidence and is candidate-specific. Case02 passed only under the previous frozen automatic-WM_CLOSE candidate; the newer manual-notice-only candidate has not been run. Scene/window GUI comparisons include aborted or unperformed cases and no additional pass. These results do not establish optical output, performance improvement, or Bridge consumer GPU acknowledgement. Earlier Windows access-violation causes remain unproven; the SDK-absent File/Exit access violation is a separate historical control, and the SDK-absent queued-close control does not prove full-Bridge shutdown behavior. Hotplug, multi-device behavior, all-48-view optical review, and the Windows access-violation release gate remain unresolved. The two non-Windows close-status stubs were added after this Windows artifact build from source commit cdb6933; the Windows preprocessor branch is unchanged and no Windows DLL rebuild was performed. Local unsupported-shim object compilation passed; Linux ABI runtime and macOS symbol-export CI verification are pending.",
   "license": "Apache-2.0",
-  "generatedAt": "2026-10-04"
+  "generatedAt": "2026-10-08T01:58:11.032816Z",
+  "unityD3D12InterfaceSelection": "The local Unity 6000.6.4f1 PluginAPI exposes IUnityGraphicsD3D12v8 and v7; the current packaged Windows DLL was built locally with v8 preferred. Historical CI at commit 054fffeb817ac8daae6ff68ed567ec7e69fe4798 used the NativeRenderingPlugin 522254181faf188efa8b50c3e3bf6fce720b26e4 v7 pin and did not rebuild this current worktree DLL.",
+  "freshWindowsReleaseEvidence": {
+    "artifactSha256": "81CBF29737B1D1A13FBB3C1EEAB6265F3B0B076F41AB8C23B6E9229B17F0AEA9",
+    "dllSha256": "81CBF29737B1D1A13FBB3C1EEAB6265F3B0B076F41AB8C23B6E9229B17F0AEA9",
+    "sourceBaseCommit": "454ce3898a4999a347a13b605962731d1db6a277",
+    "sourceState": "Uncommitted shared-worktree source on top of the base commit; no commit/stage. Artifact built from the current Native source hashes recorded at the top level.",
+    "compiler": "MSVC 19.44.35217.0",
+    "targetArchitecture": "x64",
+    "configuration": "Release",
+    "generator": "Visual Studio 17 2022 / MSBuild 17.14.23",
+    "unityPluginApi": "C:/Program Files/Unity/Hub/Editor/6000.6.4f1/Editor/Data/PluginAPI",
+    "buildDirectory": ".local/native-backend-split-win-full-regression-2",
+    "localCTest": {
+      "passed": 6,
+      "total": 6,
+      "elapsedSeconds": 17.71,
+      "evidencePath": ".local/native-backend-split-win-full-regression-2/Testing/Temporary/LastTest.log",
+      "tests": [
+        {
+          "name": "lookingglass_worker_common_test",
+          "seconds": 0.03
+        },
+        {
+          "name": "lookingglass_worker_transport_test",
+          "seconds": 6.89
+        },
+        {
+          "name": "lookingglass_worker_cleanup_exception_test",
+          "seconds": 0.09
+        },
+        {
+          "name": "lookingglass_bridge_loader_lifecycle_test",
+          "seconds": 0.06
+        },
+        {
+          "name": "lookingglass_bridge_shutdown_contract_test",
+          "seconds": 5.51
+        },
+        {
+          "name": "lookingglass_bridge_shutdown_exception_contract_test",
+          "seconds": 5.12
+        }
+      ]
+    },
+    "pinnedHeaderCTest": {
+      "headerPin": "NativeRenderingPlugin 522254181faf188efa8b50c3e3bf6fce720b26e4",
+      "passed": 6,
+      "total": 6,
+      "elapsedSeconds": 17.77,
+      "evidencePath": ".local/native-backend-split-win-pinned-5222541/Testing/Temporary/LastTest.log",
+      "tests": [
+        {
+          "name": "lookingglass_worker_common_test",
+          "seconds": 0.03
+        },
+        {
+          "name": "lookingglass_worker_transport_test",
+          "seconds": 6.91
+        },
+        {
+          "name": "lookingglass_worker_cleanup_exception_test",
+          "seconds": 0.09
+        },
+        {
+          "name": "lookingglass_bridge_loader_lifecycle_test",
+          "seconds": 0.07
+        },
+        {
+          "name": "lookingglass_bridge_shutdown_contract_test",
+          "seconds": 5.52
+        },
+        {
+          "name": "lookingglass_bridge_shutdown_exception_contract_test",
+          "seconds": 5.11
+        }
+      ]
+    },
+    "exports": {
+      "oldNameCount": 33,
+      "newNameCount": 38,
+      "oldNamesPreserved": 33,
+      "newNamesAdded": [
+        "lkg_bridge_ack_session_close_v1",
+        "lkg_bridge_get_session_close_status_v1",
+        "lkg_worker_get_final_shutdown_status_v1",
+        "lkg_worker_request_final_shutdown",
+        "lkg_worker_wait_final_shutdown_v1"
+      ],
+      "oldNamesRemoved": [],
+      "ordinalCompatibilityClaim": false,
+      "note": "All 33 prior export names remain and five named exports were added. PE export ordinals shifted for most entries; callers must bind by name. Ordinal compatibility is not claimed."
+    },
+    "cleanupExceptionCoverage": "A test-only worker cleanup throw is injected after vendor close/unload and before context resource release. The isolated process joins the host, then verifies retained producer references, release rejection, zero collected contexts, and an uncompleted final-shutdown status. This is not a test of the irreversible final-shutdown latch after a final request.",
+    "warnings": "MSVC C4297 is emitted by the intentional test exception seam; pinned Unity headers also emit C4819 under the local code page.",
+    "runtimeValidation": "At the as-built Native DLL and CTest stage, no Unity runtime or official Bridge device session was performed. Later fixture runtime lifecycle cases are listed in freshRuntimeEvidence. The case02 pass belongs to the previous frozen automatic-WM_CLOSE candidate and does not validate the newer manual-notice-only candidate; aborted or unperformed GUI comparisons are not passes. These fixture results do not establish optical output, performance, or consumer GPU acknowledgement.",
+    "limits": "The fake Bridge/WARP tests do not establish official vendor runtime behavior, hardware output, or resolve prior shutdown access violations. Mac CI artifact remains separate historical evidence and is not included in this Windows UPM DLL."
+  },
+  "historicalGpuValidation": "Historical RTX 3090 Ti D3D12 shared-resource and Editor/Player observations are not fresh evidence for this DLL. The latest local validation above is the fresh Windows Release CTest only.",
+  "ciValidation": "Historical CI for commit 054fffeb817ac8daae6ff68ed567ec7e69fe4798: workflow run 37705337066 and PR run 37705340768 succeeded with 5/5 jobs each. The jobs covered static checks, Linux portable/unsupported ABI, Windows transport, Windows fake regressions with Unity API v7, and the macOS ARM64 shim build/link plus native contract tests. These runs predate the current uncommitted final-shutdown source and do not validate or replace the current locally built Windows v8 DLL. No Unity runtime, official Bridge SDK load, physical display, or Metal consumer lifetime validation was performed.",
+  "artifactBuildCMakeListsSha256": "2E4683DC270A1F55115555DC2F43377B854843012720AF880C454A03BF385B97",
+  "currentCMakeListsSha256": "2E4683DC270A1F55115555DC2F43377B854843012720AF880C454A03BF385B97",
+  "macOSCIBuildArtifact": {
+    "workflowRunId": 37705337066,
+    "pullRequestRunId": 37705340768,
+    "sourceCommit": "054fffeb817ac8daae6ff68ed567ec7e69fe4798",
+    "workflowRunUrl": "https://github.com/zabaglione/ViewWeave/actions/runs/37705337066",
+    "pullRequestRunUrl": "https://github.com/zabaglione/ViewWeave/actions/runs/37705340768",
+    "jobsPassed": 5,
+    "jobsTotal": 5,
+    "runnerImage": "macos-14-arm64",
+    "compiler": "AppleClang 15.0.0.15000309 (CXX and ObjCXX)",
+    "buildResult": "full macOS shim compile and link passed",
+    "cmakeBuildType": "CMAKE_BUILD_TYPE was unset; no Release optimization claim is made",
+    "testsPassed": 3,
+    "testsTotal": 3,
+    "tests": [
+      "lookingglass_worker_common_test",
+      "lookingglass_metal_api_contract_test",
+      "lookingglass_metal_submission_lifetime_test"
+    ],
+    "artifactId": 11519112992,
+    "artifactName": "native-macos-metal-shim",
+    "artifactArchiveSizeBytes": 35839,
+    "artifactArchiveSha256": "0E250C63AB3F7553191F35BA44AC636A578E3DB3732B20A5C03FDC46182500EC",
+    "file": "liblookingglass_bridge_shim.dylib",
+    "fileSizeBytes": 179952,
+    "fileSha256": "C06464EEEBAA3D3B934437AD9242B6DFA4C5E37E26A3187D3BE131113213980B",
+    "machoMagic": "0xfeedfacf",
+    "machoCpuType": "0x0100000c (ARM64)",
+    "machoFileType": "MH_DYLIB",
+    "definedExternalSymbols": 101,
+    "verifiedExports": [
+      "UnityPluginLoad",
+      "UnityPluginUnload",
+      "lkg_metal_provider_query_v1",
+      "lkg_metal_provider_begin_v1",
+      "lkg_metal_provider_submit_v1",
+      "lkg_metal_provider_pump_v1",
+      "lkg_metal_provider_close",
+      "lkg_metal_provider_render_event_func",
+      "lkg_metal_provider_render_event_id"
+    ],
+    "linkedSystemLibraries": [
+      "Metal.framework",
+      "Foundation.framework",
+      "IOSurface.framework",
+      "libc++.1.dylib",
+      "libSystem.B.dylib",
+      "libobjc.A.dylib"
+    ],
+    "officialBridgeRuntimeBundled": false,
+    "includedInUPM": false,
+    "distribution": "GitHub Actions artifact; manual download only",
+    "runtimeTested": false,
+    "officialSdkLoaded": false,
+    "realDisplayTested": false,
+    "artifactContents": [
+      "liblookingglass_bridge_shim.dylib"
+    ],
+    "artifactContentsVerifiedNoVendorRuntime": true
+  },
+  "previousPackagedArtifactEvidence": {
+    "artifactSha256": "9E81DF02D065DABE39DAACC3E5F90ABECEA401F6DAD5D2E68096CEE3D7B86DCE",
+    "exportComparison": "33 export names and ordinals; base 66bc633 matches baseline DLL SHA-256 232C2364863333D5D4EF01D9D5C652F2EEAD1521855421C371345E2860E2805B",
+    "ctestPassed": 4,
+    "ctestTotal": 4,
+    "ctestRunMode": "worker transport: D3D11 WARP; D3D12 hardware branch inferred from 349 draws, no skip line, and test source. shutdown contract: WARP D3D11 feature level 0xb100 plus fake Bridge runtime. Common test is portable; loader lifecycle uses fake Bridge runtimes.",
+    "runtimeValidation": "No Unity runtime or official Bridge device/optical validation was performed in this CTest run.",
+    "dllSha256": "9E81DF02D065DABE39DAACC3E5F90ABECEA401F6DAD5D2E68096CEE3D7B86DCE",
+    "artifactBuildCMakeListsSha256": "45914253D8248BB13108A8ABD30565173F74F9BE2D47B8BDFA6AF8074F9D37EA",
+    "currentCMakeListsSha256": "3C3F0DCE7D11FB3283A8289205BBD7BA8389387812699CE469A8B935C700126B",
+    "cMakeChangeAfterArtifactBuild": "Only the macOS metal_api_contract_test target gained platform/macos/metal_submission_lifetime.cpp after the Windows DLL build. The lookingglass_bridge_shim Windows target source list and compile definitions are unchanged; the DLL was not rebuilt.",
+    "postBuildTestSourceUpdate": "bridge_shutdown_contract_test.cpp was corrected to initialize the Unity v7 interface by named member after the recorded 4/4 CTest. A later local Windows all-target compile-only check passed; no repeat CTest result is claimed.",
+    "followUpCI": "Final workflow and PR runs 37705337066/37705340768 both passed 5/5 jobs. Windows fake regressions 4/4 and transport tests 2/2 used the updated v7 header pin; they did not rebuild the packaged local v8 DLL.",
+    "ctestSourceHashes": {
+      "Native/tests/portable_common_test.cpp": "8FC86B3390C28ADF6CFC34FE85B13F769010C67A3B2BA3F82B7CB2DF4885A2AF",
+      "Native/tests/worker_transport_test.cpp": "B924A34FEE9BCA5FFD712E406E1117DDF087A4F31C9677206FFA352948BAAFF9",
+      "Native/tests/bridge_loader_lifecycle_test.cpp": "45832EA702E51428BB06722ECF6E38B365225556D9F0281C760FD8B0CEF053D8",
+      "Native/tests/bridge_shutdown_contract_test.cpp": "2A212A9649373E0C3A3BBA643BAD713FA01BF7623063EAB0425CEA917F23426F",
+      "Native/tests/fake_bridge_runtime.cpp": "03183CCC1D01732CDC74E52F2AFE682D900CF354E2846646B7949A890337FCA8",
+      "Native/tests/fake_bridge_missing.cpp": "89D4BB907704FC1A8FE1FDAD152A983779F0CED85808B77DEA9263C0B5C05FD3",
+      "Native/tests/fake_bridge_shutdown_runtime.cpp": "B6C019D18D3222EF6D321ACEA3566A186076047FE1F120E82CAFB6C7EA8FA49F"
+    },
+    "postBuildTestSourceUpdateSha256": "2F7DBF9CAD77E974592214D1708AB80D1999DF8BAAA6B81101FFAA82F5F2D542",
+    "localWindowsCompileOnly": "All local Windows targets compiled with the updated v7 header pin after correcting the fake Unity interface initializer; no CTest or runtime result is implied.",
+    "ciRunIds": [
+      37705337066,
+      37705340768
+    ],
+    "ciConclusion": "success; 5/5 jobs in each run",
+    "classification": "Historical prior packaged artifact; not the current DLL.",
+    "currentArtifact": false
+  },
+  "sourceBaseCommit": "454ce3898a4999a347a13b605962731d1db6a277",
+  "sourceState": "Built from the shared codex/graphics-backend-separation worktree at sourceBaseCommit plus uncommitted Native final-shutdown changes. Other concurrent Managed/docs WIP was present and was not reverted. No commit or stage was created.",
+  "freshRuntimeEvidence": [
+    {
+      "limits": "Visual and performance measurements were not made; native final trace corroboration and fake consumer GPU acknowledgement were not proven.",
+      "completedUtc": "2026-10-08T02:37:46.3962624Z",
+      "evidencePath": "E:/LookingGlassSDK/.local/shutdown-regression-fixed-c4bc909e73c14ffaac2b15e356d8efe1/Run/case01-observer-ep-fix1",
+      "case": "case01-observer-ep-fix1",
+      "result": "PASS: production PNG path and Native final status assertion passed; Unity Editor natural exit code 0."
+    },
+    {
+      "limits": "This runtime result does not validate the newer manual-notice-only candidate. Visual and performance measurements were not made; fake consumer GPU acknowledgement was not proven.",
+      "editorExit": "NATURAL_EXIT code 0",
+      "completedUtc": "2026-10-08T03:29:19.7532144Z",
+      "bridgeSdkVersion": "2.6.3",
+      "editorStartUtc": "2026-10-08T03:28:48.4888937Z",
+      "result": "PASS under the previous frozen automatic-WM_CLOSE candidate after two Play/Stop and domain-reload recovery cycles. Native final status ABI32/v1: result 0, state Complete (3), registered contexts 0, host running 0, host joined 1, last result 0. Managed release: Reaper 0, unproven false, handles 0, coordinator ready true.",
+      "evidencePath": "E:/LookingGlassSDK/.local/shutdown-regression-fixed-c4bc909e73c14ffaac2b15e356d8efe1/Run/case02-native-close1",
+      "unityVersion": "6000.6.4f1",
+      "editorPid": 88016,
+      "case": "case02-native-close1",
+      "candidate": "previous frozen automatic-WM_CLOSE candidate"
+    },
+    {
+      "limits": "Policy tests do not establish optical output or hardware consumer acknowledgement.",
+      "completedUtc": "2026-10-08T02:06:59.0874695Z",
+      "evidencePath": "E:/LookingGlassSDK/.local/shutdown-regression-fixed-c4bc909e73c14ffaac2b15e356d8efe1/Run/policy-playmode",
+      "case": "policy-playmode",
+      "result": "PASS, 7/7 policy PlayMode tests; Editor natural exit code 0."
+    },
+    {
+      "limits": "Native final trace corroboration and fake consumer GPU acknowledgement were not proven; visual and performance measurements were not made.",
+      "completedUtc": "2026-10-08T02:50:47.6071829Z",
+      "evidencePath": "E:/LookingGlassSDK/.local/shutdown-regression-fixed-c4bc909e73c14ffaac2b15e356d8efe1/Run/case03-quit-gate2",
+      "case": "case03-quit-gate2",
+      "result": "PASS; Editor and Player natural exit code 0. Player quit event, wants-to-quit observer, Native final join status, and managed finalization proof passed."
+    },
+    {
+      "limits": "Historical controls are separate from the full-Bridge runtime cases above.",
+      "evidencePath": "E:/LookingGlassSDK/.local/shutdown-regression-control-4193e7ab",
+      "case": "historical-controls",
+      "result": "Earlier access-violation cause remains unproven. An SDK-absent File/Exit control ended in an access violation. A separate SDK-absent queued WM_CLOSE control exited naturally, but it is not evidence for full-Bridge shutdown, optics, frame rate, or consumer GPU acknowledgement."
+    },
+    {
+      "note": "Existing artifact SHA, nativeSourceHashes, compiler, and build metadata fields were left unchanged; they remain the as-built Native provenance.",
+      "sourceBase": "454ce3898a4999a347a13b605962731d1db6a277 plus retained working-tree Native changes",
+      "case": "native-source-context",
+      "recordedUtc": "2026-10-08"
+    },
+    {
+      "case": "manual-notice-editor-close-candidate",
+      "limits": "Only the prior frozen automatic-WM_CLOSE candidate has the case02 runtime result above.",
+      "status": "Implemented; runtime not run. EditMode/runtime behavior is not established; no Editor runtime launch for this candidate has been performed.",
+      "result": "NOT RUN"
+    },
+    {
+      "case": "gui-close-comparison-status",
+      "limits": "These are not successful runtime evidence and do not establish a shutdown result.",
+      "status": "Scene 1 and windows 1/2 ended OWNER_ABORT with cancellation unobserved; prefab case not performed; window 3 retry was rejected by auto-review.",
+      "result": "NO PASS"
+    }
+  ],
+  "postBuildSourceChanges": {
+    "localValidation": "unsupported shim source compiled locally to an object and the two symbols were verified in the object; no local Linux dlsym/runtime test was run. Linux ABI test and macOS export verification are pending CI.",
+    "scope": "Non-Windows close-status ABI stubs only: unsupported shim exports query and ACK as safe Unsupported responses, and the non-Windows branch of bridge_shim.cpp exports the same stubs. The Windows preprocessor branch and packaged Windows DLL were not changed or rebuilt.",
+    "files": [
+      {
+        "path": "Native/platform/unsupported/bridge_shim_unsupported.cpp",
+        "sha256": "B70F18C443BBA6C3AB5197D89E1148166D36F64704D8E3C274884F3D5E265AFF"
+      },
+      {
+        "path": "Native/bridge_shim.cpp",
+        "sha256": "3F8CC4C04D2EBFE09A8E89A305FC8D9E3FCC8814EC9FF814EBD9010B4D33D1C1"
+      }
+    ],
+    "baseCommit": "cdb6933"
+  }
 }

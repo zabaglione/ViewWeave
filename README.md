@@ -6,6 +6,8 @@ Looking Glassに表示するときは、利用者自身のUnity projectをEditor
 
 対応環境はUnity 6000.6.4f1、Windows、URPまたはHDRPです。Bridge Worker経由ならD3D11またはD3D12のUnity Editor PlayとWindows Playerから出力できます。Legacy Direct経路はD3D11のみです。Edit ModeとmacOS出力は対象外です。Bridge runtimeとLooking Glass機器を別途用意してください。
 
+macOS Metalは明示opt-inのbounded実験です。通常SessionはMetalを受け付けず、macOS native shimはUPMに含まれません。限定的な手順と未検証範囲は[Graphics backends](docs/graphics-backends.md)を参照してください。
+
 このprivate repositoryからPackage Managerで取得するにはGitHubのアクセス権が必要です。独自コードのライセンスは[Apache-2.0](LICENSE)です。
 
 ## 使い始める
@@ -24,23 +26,28 @@ Looking Glassに表示するときは、利用者自身のUnity projectをEditor
 
 Git packageを更新した後はUnity Editorを正常終了して起動し直し、選択したGraphics APIでPlayします。新しいmanaged assemblyとnative pluginを読み込むために必要です。
 
+WindowsでPlay中にStopして再びStartする経路と、Unity Editor/Player自体を終了する経路は別のshutdown処理です。process終了時は新規Bridge開始を止め、native workerをdrain/joinし、GPU proof後にmanaged参照を解放します。完了できない場合はquitをキャンセルし、参照を保持したままadmissionを閉じます。Editorのshutdown完了後は通知が表示されるので、Editorをもう一度明示的に終了してください。自動でwindow closeを再送しないため、Unityのsave確認経路をアプリ側で操作しません。final shutdown開始後にsave確認をCancelすると同じEditor processではBridgeを再開できないため、次の利用前にEditorを再起動してください。現在の手動2回目終了とsave/cancel GUI確認は未完了で、古いaccess violationの原因も未確定です。詳細と現在の検証状況は[Shutdown validation](docs/shutdown-validation-20261008.md)を参照してください。
+
 Windows Playerで使う場合は、Windows Graphics APIsでD3D11またはD3D12を有効にしてBuild and Runします。Legacy Direct経路を明示的に使う場合はD3D11が必要です。Bridge runtimeが自動検出されない場合だけ、RigのSessionにRuntime Pathを設定します。
 
 ## 視点描画数を調整する
 
 Hierarchyで`ViewWeave Bridge Rig`を選び、Inspectorの`QuiltRenderer > View Render Mode`で`Full`、`Half`、`Quarter`を選べます。Fullが既定です。48視点の機器では、どのモードも48タイルのQuiltを出力し、実際に描画する視点数はFullが48、Halfが24、Quarterが12です。描画しないtileには最も近い描画済み視点の画像を使います。視点間の補間は行わないため、HalfとQuarterでは視点角度方向の滑らかさが下がることがあります。この設定はQuilt解像度やPreview/Balanced/Native profileとは別です。速度向上はシーンやGPUで変わるため、数値を保証しません。限定HDRP fixtureの測定と制約は[DX12 HDRP performance investigation](docs/dx12-performance-investigation.md)を参照してください。
 
-## Quilt保存とカメラ調整
+## Quiltの保存と再生
 
-Play中にHierarchyでViewWeave Bridge Rigを選び、Window > ViewWeave > Quilt Captureから完成Quilt PNG、JSON sidecar、中央view PNGを保存できます。RecorderはPNG連番のPause/Resumeに対応します。DX12 fake-output capture testはCore smokeとURP/HDRP各1/1通過し、中央PNG/sidecar、half/quarter view mapping、Pause/ResumeとUnity時間復元を確認しました。このtestはBridgeを使わず、実機表示の合格を意味しません。既存D3D11 test結果は別に記録しています。PNG圧縮は同期処理のため指定FPSに追いつかない場合があります。操作は[Quilt Capture](docs/quilt-capture.md)を参照してください。
+Play中に`Window > ViewWeave > Quilt Capture`を開き、完成QuiltのPNG、JSON sidecar、中央view PNGを保存できます。連番を作る場合は出力先とFPSを指定して記録を開始し、必要ならPause/Resumeを使って停止します。生成済みの完成Quilt PNGまたは記録済み連番は`Window > ViewWeave > Quilt Playback`から選び、再生・一時停止・再開できます。再生には、Play中の既存ViewWeave Bridge Rigが正常に映像を出力できる状態である必要があります。PlaybackはBridge sessionを作成しません。D3D11またはD3D12のWindows Editor Playで使います。
 
-カメラ範囲はQuiltRendererのCamera FramingとSceneビューで確認できます。紫の面がzero-parallax/focus plane、青緑と橙の面がNear/Farです。Camera Authoring test suiteは通過しています。Sceneビューでハンドルを直接ドラッグする操作と実機の光学表示は未検証です。capture suiteのDX12 fake-output試験は通過していますが、Bridge captureは未検証です。カメラのfocus/FOV/clip設定を変えても元カメラのposeは維持されます。録画中のカメラ移動は可能です。詳しくはdocs/quilt-authoring.mdを参照してください。
+音声を含める場合はQuilt Captureの`Start PNG Sequence + Audio`を明示的に選びます。対応するのはWindows Editor Play中の現在のMono音声設定です。SDKはUnityやOSの音声設定を自動変更せず、録音中は通常の音声出力がミュートされることがあります。音声はPNG連番と別のWAVファイルに保存され、MP4書き出しには含まれません。詳しい条件は[Quilt Capture](docs/quilt-capture.md)と[Quilt recording audio](docs/quilt-recording-audio.md)を参照してください。
 
-対応条件と既知の制約は[Compatibility](docs/compatibility.md)、検証結果は[Windows validation](docs/windows-validation.md)を参照してください。
+記録を完了したPNG連番から無音MP4を作るには、`Window > ViewWeave > Quilt Video Export`を使います。FFmpegとffprobe 7.0.2を別途用意してください。SDKはそれらを同梱またはダウンロードしません。詳しくは[Quilt Video Export](docs/quilt-video-export.md)を参照してください。
 
-## 動画出力
+## カメラの構図調整
 
-PNG連番からの無音MP4書き出しはEditor専用の後処理機能です。FFmpeg/ffprobe 7.0.2を別途用意する必要があり、SDKはbinaryを同梱・downloadしません。空白・Unicodeを含むpathから3枚のQuilt PNGをH.264/yuv420p、30fpsで書き出し、ffprobeとfull-layout JSONを確認しました。これはCPU-onlyの合成素材テストで、Unity NUnitや実Quilt描画を使った検証ではありません。詳しくは[Quilt Video Export](docs/quilt-video-export.md)を参照してください。
+QuiltRenderer InspectorのCamera FramingとScene Viewで描画範囲を確認できます。紫の面はzero-parallax/focus plane、青緑と橙の面はNear/Farです。構図を手動調整するときはEdit ModeでCamera Authoringの操作を使います。Inspectorをロックして対象objectを選び、選択objectからfocus距離を設定するか、Scene Viewをfocus面中央へ移動します。水平・垂直orbitはfocus点をpivotとしてカメラの位置と向きを一緒に回します。3D focus cursorは個別toggleで、既定ではOFFです。操作対象のEffective CameraをInspectorで確認してください。CinemachineやanimationはPlay中にcamera poseを上書きすることがあります。手順は[Quilt camera authoring](docs/quilt-authoring.md#明示的なカメラ制作操作)を参照してください。
+
+対応条件と既知の制約は[Compatibility](docs/compatibility.md)、Windows上の検証範囲は[Windows validation](docs/windows-validation.md)を参照してください。
+
 
 ## 任意のサンプル
 
@@ -59,6 +66,7 @@ HDRPとVFX GraphはLinear color spaceが必須です。HDRP Wizardの`Lightmap E
 - [Getting started](docs/getting-started.md): Editor PlayとPlayerの手順
 - [Compatibility](docs/compatibility.md): 対応条件と既知の制約
 - [Windows validation](docs/windows-validation.md): 実行済み試験と結果
+- [Shutdown validation](docs/shutdown-validation-20261008.md): Windows shutdown lifecycle、歴史的AV記録と現在の検証状態
 - [残作業と受け入れ計画](docs/remaining-work-plan.md): 次に行う作業と完了条件
 - [残作業の検証記録](docs/benchmarks/remaining-work-validation-20261007.md): 2026-10-07の限定DX12 captureと終了診断
 - [DX12 HDRP performance investigation](docs/dx12-performance-investigation.md): Profiler調査と視点数削減の実測

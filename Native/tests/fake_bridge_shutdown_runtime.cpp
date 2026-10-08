@@ -4,6 +4,7 @@
 #include <unknwn.h>
 #include <algorithm>
 #include <mutex>
+#include <stdexcept>
 #include <vector>
 #include "bridge_shutdown_contract.h"
 
@@ -15,8 +16,14 @@ uint64_t g_generation = 0;
 uint64_t g_sequence = 0;
 bool g_failDraw = false;
 bool g_blockDraw = false;
+bool g_failUninitialize = false;
+bool g_blockUninitialize = false;
+bool g_allowEmptyUninitialize = false;
+bool g_throwUninitialize = false;
 HANDLE g_drawEntered = nullptr;
 HANDLE g_drawRelease = nullptr;
+HANDLE g_uninitializeEntered = nullptr;
+HANDLE g_uninitializeRelease = nullptr;
 
 void Record(uint32_t type, const void* pointerValue, int32_t result) {
     std::lock_guard<std::mutex> lock(g_mutex);
@@ -35,6 +42,8 @@ extern "C" __declspec(dllexport) void __cdecl lkg_fake_bridge_reset() {
     ID3D11Device* device = nullptr;
     HANDLE entered = nullptr;
     HANDLE release = nullptr;
+    HANDLE uninitializeEntered = nullptr;
+    HANDLE uninitializeRelease = nullptr;
     {
         std::lock_guard<std::mutex> lock(g_mutex);
         g_events.clear();
@@ -42,16 +51,26 @@ extern "C" __declspec(dllexport) void __cdecl lkg_fake_bridge_reset() {
         g_generation = 0;
         g_failDraw = false;
         g_blockDraw = false;
+        g_failUninitialize = false;
+        g_blockUninitialize = false;
+        g_allowEmptyUninitialize = false;
+        g_throwUninitialize = false;
         device = g_device;
         g_device = nullptr;
         entered = g_drawEntered;
         release = g_drawRelease;
+        uninitializeEntered = g_uninitializeEntered;
+        uninitializeRelease = g_uninitializeRelease;
         g_drawEntered = nullptr;
         g_drawRelease = nullptr;
+        g_uninitializeEntered = nullptr;
+        g_uninitializeRelease = nullptr;
     }
     if (device) device->Release();
     if (entered) CloseHandle(entered);
     if (release) CloseHandle(release);
+    if (uninitializeEntered) CloseHandle(uninitializeEntered);
+    if (uninitializeRelease) CloseHandle(uninitializeRelease);
 }
 
 extern "C" __declspec(dllexport) void __cdecl lkg_fake_bridge_set_draw_mode(int32_t failDraw, int32_t blockDraw) {
@@ -71,6 +90,35 @@ extern "C" __declspec(dllexport) int32_t __cdecl lkg_fake_bridge_wait_draw_enter
 
 extern "C" __declspec(dllexport) void __cdecl lkg_fake_bridge_release_draw() {
     if (g_drawRelease) SetEvent(g_drawRelease);
+}
+
+extern "C" __declspec(dllexport) void __cdecl lkg_fake_bridge_set_uninitialize_mode(int32_t failUninitialize, int32_t blockUninitialize) {
+    std::lock_guard<std::mutex> lock(g_mutex);
+    g_failUninitialize = failUninitialize != 0;
+    g_blockUninitialize = blockUninitialize != 0;
+    if (g_uninitializeEntered) ResetEvent(g_uninitializeEntered);
+    if (g_uninitializeRelease) {
+        if (g_blockUninitialize) ResetEvent(g_uninitializeRelease);
+        else SetEvent(g_uninitializeRelease);
+    }
+}
+
+extern "C" __declspec(dllexport) void __cdecl lkg_fake_bridge_set_empty_uninitialize(int32_t allowEmptyUninitialize) {
+    std::lock_guard<std::mutex> lock(g_mutex);
+    g_allowEmptyUninitialize = allowEmptyUninitialize != 0;
+}
+
+extern "C" __declspec(dllexport) void __cdecl lkg_fake_bridge_set_uninitialize_throw(int32_t throwUninitialize) {
+    std::lock_guard<std::mutex> lock(g_mutex);
+    g_throwUninitialize = throwUninitialize != 0;
+}
+
+extern "C" __declspec(dllexport) int32_t __cdecl lkg_fake_bridge_wait_uninitialize_entered(uint32_t timeoutMilliseconds) {
+    return g_uninitializeEntered && WaitForSingleObject(g_uninitializeEntered, timeoutMilliseconds) == WAIT_OBJECT_0 ? 1 : 0;
+}
+
+extern "C" __declspec(dllexport) void __cdecl lkg_fake_bridge_release_uninitialize() {
+    if (g_uninitializeRelease) SetEvent(g_uninitializeRelease);
 }
 
 extern "C" __declspec(dllexport) uint32_t __cdecl lkg_fake_bridge_get_events(LkgFakeBridgeEvent* events, uint32_t capacity) {
@@ -96,15 +144,36 @@ extern "C" __declspec(dllexport) bool initialize_bridge(const wchar_t*) {
 }
 
 extern "C" __declspec(dllexport) bool uninitialize_bridge() {
+    bool failUninitialize = false;
+    bool blockUninitialize = false;
+    bool allowEmptyUninitialize = false;
+    bool throwUninitialize = false;
+    HANDLE entered = nullptr;
+    HANDLE release = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(g_mutex);
+        if (!g_uninitializeEntered) g_uninitializeEntered = CreateEventW(nullptr, TRUE, FALSE, nullptr);
+        if (!g_uninitializeRelease) g_uninitializeRelease = CreateEventW(nullptr, TRUE, TRUE, nullptr);
+        entered = g_uninitializeEntered;
+        release = g_uninitializeRelease;
+        failUninitialize = g_failUninitialize;
+        blockUninitialize = g_blockUninitialize;
+        allowEmptyUninitialize = g_allowEmptyUninitialize;
+        throwUninitialize = g_throwUninitialize;
+    }
+    if (!entered || !release) return false;
+    SetEvent(entered);
+    if (blockUninitialize) WaitForSingleObject(release, INFINITE);
     ID3D11Device* device = nullptr;
     {
         std::lock_guard<std::mutex> lock(g_mutex);
         device = g_device;
-        g_device = nullptr;
+        if (!throwUninitialize) g_device = nullptr;
     }
-    Record(LKG_FAKE_EVENT_UNINITIALIZE, device, 1);
+    Record(LKG_FAKE_EVENT_UNINITIALIZE, device, throwUninitialize ? -1 : (failUninitialize ? 0 : 1));
+    if (throwUninitialize) throw std::runtime_error("fake uninitialize exception");
     if (device) device->Release();
-    return device != nullptr;
+    return (device != nullptr || allowEmptyUninitialize) && !failUninitialize;
 }
 
 extern "C" __declspec(dllexport) bool get_bridge_version(unsigned long* major, unsigned long* minor, unsigned long* build, int* postfix, wchar_t*) {

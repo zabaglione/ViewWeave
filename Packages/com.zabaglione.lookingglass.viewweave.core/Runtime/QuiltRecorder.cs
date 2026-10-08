@@ -28,6 +28,15 @@ namespace ViewWeave
         public string startedAtUtc;
         public string finishedAtUtc;
         public string frameLog;
+        public bool audioEnabled;
+        public string audioFile;
+        public string audioFormat;
+        public int audioChannels;
+        public int audioSampleRate;
+        public long audioSampleCount;
+        public double audioDurationSeconds;
+        public double simulationDurationSeconds;
+        public double durationResidualSeconds;
     }
 
     [Serializable]
@@ -39,6 +48,9 @@ namespace ViewWeave
         public float deltaTime;
         public string fileName;
         public string timestampUtc;
+        public long audioFirstSample;
+        public int audioSampleCount;
+        public long audioLastSampleExclusive;
     }
 
     [DisallowMultipleComponent]
@@ -63,6 +75,15 @@ namespace ViewWeave
         int fps;
         int requestedFrameCount;
         bool ownsCaptureDeltaTime;
+        bool captureAudio;
+        bool skipNextQuilt;
+        bool pauseAfterPendingFrame;
+        bool stopAfterPendingFrame;
+        string pendingPngPath;
+        string pendingSidecarPath;
+        QuiltRecordingFrame pendingFrameRecord;
+        QuiltRecordingAudioCapture audioCapture;
+        QuiltRendererOperationLease operationLease;
         string manifestPath;
         string frameLogPath;
         string recordingDirectory;
@@ -85,6 +106,7 @@ namespace ViewWeave
         public int FramesPerSecond => fps;
         public bool IsRecording => Status == QuiltRecordingStatus.Recording || Status == QuiltRecordingStatus.Paused;
         public bool IsPaused => Status == QuiltRecordingStatus.Paused;
+        public bool IsAudioRecording => captureAudio && IsRecording;
 
         void Reset()
         {
@@ -97,6 +119,16 @@ namespace ViewWeave
         }
 
         public void StartRecording(string outputRoot, int framesPerSecond, int frameCount)
+        {
+            StartRecordingInternal(outputRoot, framesPerSecond, frameCount, false);
+        }
+
+        public void StartRecordingWithAudio(string outputRoot, int framesPerSecond, int frameCount)
+        {
+            StartRecordingInternal(outputRoot, framesPerSecond, frameCount, true);
+        }
+
+        void StartRecordingInternal(string outputRoot, int framesPerSecond, int frameCount, bool includeAudio)
         {
             if (!Application.isPlaying) throw new InvalidOperationException("Quilt recording is available only in Play mode.");
             if (!isActiveAndEnabled) throw new InvalidOperationException("The recorder component must be enabled.");
@@ -112,39 +144,66 @@ namespace ViewWeave
             if (string.IsNullOrWhiteSpace(outputRoot)) throw new ArgumentException("An output folder is required.", nameof(outputRoot));
             if (Time.timeScale != 1f) throw new InvalidOperationException("Quilt recording requires Time.timeScale == 1.");
             if (Time.captureDeltaTime != 0f) throw new InvalidOperationException("Time.captureDeltaTime is already controlled by another capture process.");
+            if (includeAudio)
+            {
+                string audioEnvironmentError = QuiltRecordingAudioCapture.ValidateEnvironment();
+                if (!string.IsNullOrEmpty(audioEnvironmentError)) throw new InvalidOperationException(audioEnvironmentError);
+            }
+            if (!QuiltRendererOperationLease.TryAcquire(quiltRenderer, QuiltRendererOperationKind.Recording, out operationLease, out string leaseError))
+                throw new InvalidOperationException(leaseError);
 
-            startingSettings = quiltRenderer.settings.Clone();
-            startingViewRenderMode = quiltRenderer.viewRenderMode;
-            startingSourceCamera = quiltRenderer.sourceCamera;
-            startingNearClip = startingSourceCamera.nearClipPlane;
-            startingFarClip = startingSourceCamera.farClipPlane;
-            fps = framesPerSecond;
-            requestedFrameCount = frameCount;
-            capturedFrames.Clear();
-            errorMessage = string.Empty;
-            recordingDirectory = CreateUniqueOutputDirectory(outputRoot);
-            manifestPath = Path.Combine(recordingDirectory, "manifest.json");
-            frameLogPath = Path.Combine(recordingDirectory, "frames.jsonl");
-            originalCaptureDeltaTime = Time.captureDeltaTime;
-            requestedCaptureDeltaTime = 1f / framesPerSecond;
-            startFrame = Time.frameCount;
-            startedAtUtc = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture);
-            lastCapturedUnityFrame = -1;
-            Status = QuiltRecordingStatus.Recording;
-            activeRecorder = this;
-            subscribedRenderer = quiltRenderer;
-            subscribedRenderer.QuiltRendered += OnQuiltRendered;
             try
             {
-                WriteManifest();
+                startingSettings = quiltRenderer.settings.Clone();
+                startingViewRenderMode = quiltRenderer.viewRenderMode;
+                startingSourceCamera = quiltRenderer.sourceCamera;
+                startingNearClip = startingSourceCamera.nearClipPlane;
+                startingFarClip = startingSourceCamera.farClipPlane;
+                fps = framesPerSecond;
+                requestedFrameCount = frameCount;
+                captureAudio = includeAudio;
+                skipNextQuilt = false;
+                pauseAfterPendingFrame = false;
+                stopAfterPendingFrame = false;
+                capturedFrames.Clear();
+                errorMessage = string.Empty;
+                recordingDirectory = CreateUniqueOutputDirectory(outputRoot);
+                manifestPath = Path.Combine(recordingDirectory, "manifest.json");
+                frameLogPath = Path.Combine(recordingDirectory, "frames.jsonl");
                 File.WriteAllText(frameLogPath, string.Empty);
-                Time.captureDeltaTime = requestedCaptureDeltaTime;
-                ownedCaptureDeltaTime = Time.captureDeltaTime;
-                ownsCaptureDeltaTime = true;
+                if (captureAudio) Directory.CreateDirectory(Path.Combine(recordingDirectory, "pending"));
+                originalCaptureDeltaTime = Time.captureDeltaTime;
+                requestedCaptureDeltaTime = 1f / framesPerSecond;
+                startFrame = Time.frameCount;
+                startedAtUtc = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture);
+                lastCapturedUnityFrame = -1;
+                Status = QuiltRecordingStatus.Recording;
+                activeRecorder = this;
+                subscribedRenderer = quiltRenderer;
+                subscribedRenderer.QuiltRendered += OnQuiltRendered;
+                try
+                {
+                    WriteManifest();
+                    Time.captureDeltaTime = requestedCaptureDeltaTime;
+                    ownedCaptureDeltaTime = Time.captureDeltaTime;
+                    ownsCaptureDeltaTime = true;
+                    if (captureAudio)
+                    {
+                        audioCapture = new QuiltRecordingAudioCapture(recordingDirectory, fps, requestedFrameCount,
+                            CommitAudioFrame, OnAudioBoundaryCompleted, OnAudioCaptureFailed);
+                        audioCapture.Start();
+                    }
+                }
+                catch (Exception error)
+                {
+                    Fail(error);
+                    throw;
+                }
             }
             catch (Exception error)
             {
-                Fail(error);
+                if (IsRecording) Fail(error);
+                else ReleaseOperationLease();
                 throw;
             }
         }
@@ -152,6 +211,11 @@ namespace ViewWeave
         public void StopRecording()
         {
             if (!IsRecording) return;
+            if (captureAudio && audioCapture != null && audioCapture.HasPendingFrame)
+            {
+                stopAfterPendingFrame = true;
+                return;
+            }
             Finish(capturedFrames.Count == requestedFrameCount ? QuiltRecordingStatus.Complete : QuiltRecordingStatus.Cancelled, string.Empty);
         }
 
@@ -165,16 +229,12 @@ namespace ViewWeave
                 throw new InvalidOperationException(invalidState);
             }
 
-            if (ownsCaptureDeltaTime && Time.captureDeltaTime == ownedCaptureDeltaTime)
-                Time.captureDeltaTime = originalCaptureDeltaTime;
-            ownsCaptureDeltaTime = false;
-            Status = QuiltRecordingStatus.Paused;
-            try { WriteManifest(); }
-            catch (Exception error)
+            if (captureAudio && audioCapture != null && audioCapture.HasPendingFrame)
             {
-                Fail(error);
-                throw;
+                pauseAfterPendingFrame = true;
+                return;
             }
+            ApplyPause();
         }
 
         public void ResumeRecording()
@@ -193,6 +253,9 @@ namespace ViewWeave
                 ownedCaptureDeltaTime = Time.captureDeltaTime;
                 ownsCaptureDeltaTime = true;
                 startFrame = Time.frameCount;
+                skipNextQuilt = true;
+                if (audioCapture == null && captureAudio)
+                    throw new InvalidOperationException("The audio capture session is no longer available.");
                 Status = QuiltRecordingStatus.Recording;
                 WriteManifest();
             }
@@ -203,8 +266,37 @@ namespace ViewWeave
             }
         }
 
+        void ApplyPause()
+        {
+            if (ownsCaptureDeltaTime && Time.captureDeltaTime == ownedCaptureDeltaTime)
+                Time.captureDeltaTime = originalCaptureDeltaTime;
+            ownsCaptureDeltaTime = false;
+            Status = QuiltRecordingStatus.Paused;
+            try { WriteManifest(); }
+            catch (Exception error)
+            {
+                Fail(error);
+                throw;
+            }
+        }
+
         void Update()
         {
+            if (!IsRecording) return;
+            if (captureAudio)
+            {
+                if (audioCapture == null)
+                {
+                    Finish(QuiltRecordingStatus.Error, "The audio capture session is no longer available.");
+                    return;
+                }
+                string audioBoundaryError = audioCapture.ValidateHookAndPreviousFrame(Time.frameCount);
+                if (!string.IsNullOrEmpty(audioBoundaryError))
+                {
+                    Finish(QuiltRecordingStatus.Error, audioBoundaryError);
+                    return;
+                }
+            }
             if (Status != QuiltRecordingStatus.Recording) return;
             if (Time.frameCount <= startFrame) return;
             if (Time.timeScale != 1f)
@@ -215,6 +307,11 @@ namespace ViewWeave
             if (Time.captureDeltaTime != ownedCaptureDeltaTime)
             {
                 Finish(QuiltRecordingStatus.Error, "Time.captureDeltaTime changed during recording.");
+                return;
+            }
+            if (audioCapture != null && !audioCapture.IsConfigurationValid(out string audioError))
+            {
+                Finish(QuiltRecordingStatus.Error, audioError);
                 return;
             }
             if (!ReferenceEquals(quiltRenderer, subscribedRenderer))
@@ -249,6 +346,12 @@ namespace ViewWeave
             try
             {
                 int frame = Time.frameCount;
+                if (skipNextQuilt)
+                {
+                    skipNextQuilt = false;
+                    startFrame = frame;
+                    return;
+                }
                 if (frame <= startFrame) return;
                 if (!ReferenceEquals(rendered, subscribedRenderer) || !ReferenceEquals(rendered, quiltRenderer)) throw new InvalidOperationException("The selected Quilt Renderer changed during recording.");
                 if (frame == lastCapturedUnityFrame) throw new InvalidOperationException("Duplicate quilt completion was detected in one Unity frame.");
@@ -264,7 +367,6 @@ namespace ViewWeave
                 string stem = "frame_" + index.ToString("D6", CultureInfo.InvariantCulture);
                 string fileName = QuiltCaptureUtility.BuildFileName(stem, snapshot);
                 string filePath = Path.Combine(recordingDirectory, fileName);
-                QuiltCaptureUtility.Save(rendered.QuiltTexture, snapshot, filePath);
                 QuiltRecordingFrame capturedFrame = new QuiltRecordingFrame
                 {
                     index = index,
@@ -274,6 +376,18 @@ namespace ViewWeave
                     fileName = fileName,
                     timestampUtc = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture)
                 };
+                if (captureAudio)
+                {
+                    if (audioCapture == null) throw new InvalidOperationException("The audio capture session is unavailable.");
+                    string pendingPath = Path.Combine(recordingDirectory, "pending", fileName);
+                    QuiltCaptureUtility.Save(rendered.QuiltTexture, snapshot, pendingPath);
+                    pendingPngPath = pendingPath;
+                    pendingSidecarPath = Path.ChangeExtension(pendingPath, ".json");
+                    pendingFrameRecord = capturedFrame;
+                    audioCapture.SetPendingFrame(index, frame);
+                    return;
+                }
+                QuiltCaptureUtility.Save(rendered.QuiltTexture, snapshot, filePath);
                 capturedFrames.Add(capturedFrame);
                 File.AppendAllText(frameLogPath, JsonUtility.ToJson(capturedFrame) + "\n");
                 lastCapturedUnityFrame = frame;
@@ -281,6 +395,81 @@ namespace ViewWeave
                     Finish(QuiltRecordingStatus.Complete, string.Empty);
             }
             catch (Exception error) { Fail(error); }
+        }
+
+        void CommitAudioFrame(int index, int unityFrame, long firstSample, int sampleCount)
+        {
+            if (pendingFrameRecord == null || pendingFrameRecord.index != index || pendingFrameRecord.unityFrame != unityFrame)
+                throw new InvalidOperationException("The pending quilt does not match the audio frame.");
+            string finalPng = Path.Combine(recordingDirectory, pendingFrameRecord.fileName);
+            string finalJson = Path.ChangeExtension(finalPng, ".json");
+            long originalLogLength = new FileInfo(frameLogPath).Length;
+            bool pngMoved = false;
+            bool jsonMoved = false;
+            try
+            {
+                if (File.Exists(finalPng) || File.Exists(finalJson)) throw new IOException("A recording frame output already exists.");
+                pendingFrameRecord.audioFirstSample = firstSample;
+                pendingFrameRecord.audioSampleCount = sampleCount;
+                pendingFrameRecord.audioLastSampleExclusive = checked(firstSample + sampleCount);
+                File.Move(pendingPngPath, finalPng);
+                pngMoved = true;
+                File.Move(pendingSidecarPath, finalJson);
+                jsonMoved = true;
+                File.AppendAllText(frameLogPath, JsonUtility.ToJson(pendingFrameRecord) + "\n");
+                capturedFrames.Add(pendingFrameRecord);
+                lastCapturedUnityFrame = unityFrame;
+                pendingPngPath = null;
+                pendingSidecarPath = null;
+                pendingFrameRecord = null;
+            }
+            catch
+            {
+                try
+                {
+                    using (FileStream log = new FileStream(frameLogPath, FileMode.OpenOrCreate, FileAccess.Write, FileShare.Read))
+                    {
+                        log.SetLength(originalLogLength);
+                        log.Flush(true);
+                    }
+                }
+                catch { }
+                if (jsonMoved) TryDelete(finalJson);
+                if (pngMoved) TryDelete(finalPng);
+                throw;
+            }
+        }
+
+        void OnAudioBoundaryCompleted(bool committed)
+        {
+            if (!IsRecording) return;
+            if (committed && capturedFrames.Count == requestedFrameCount)
+            {
+                Finish(QuiltRecordingStatus.Complete, string.Empty);
+                return;
+            }
+            if (pauseAfterPendingFrame)
+            {
+                pauseAfterPendingFrame = false;
+                ApplyPause();
+                return;
+            }
+            if (stopAfterPendingFrame)
+            {
+                stopAfterPendingFrame = false;
+                Finish(capturedFrames.Count == requestedFrameCount ? QuiltRecordingStatus.Complete : QuiltRecordingStatus.Cancelled, string.Empty);
+            }
+        }
+
+        void OnAudioCaptureFailed(string error)
+        {
+            if (IsRecording) Finish(QuiltRecordingStatus.Error, error);
+        }
+
+        static void TryDelete(string path)
+        {
+            try { if (!string.IsNullOrEmpty(path) && File.Exists(path)) File.Delete(path); }
+            catch { }
         }
 
         void OnDisable()
@@ -332,6 +521,11 @@ namespace ViewWeave
                 return "The selected Quilt Renderer changed or was disabled.";
             if (!quiltRenderer.autoRender) return "Auto Render stopped during recording.";
             if (!ConfigurationMatchesStart()) return "The Quilt layout, view density, or geometry settings changed during recording.";
+            if (captureAudio)
+            {
+                if (audioCapture == null) return "The audio capture session is no longer available.";
+                if (!audioCapture.IsConfigurationValid(out string audioError)) return audioError;
+            }
             if (Time.timeScale != 1f) return "Quilt recording requires Time.timeScale == 1.";
             if (requireOwnedCaptureDelta)
             {
@@ -354,12 +548,51 @@ namespace ViewWeave
             if (!IsRecording) return;
             Status = status;
             errorMessage = Sanitize(error);
+            QuiltRecordingAudioCapture completedAudio = audioCapture;
+            if (completedAudio != null)
+            {
+                string audioError = completedAudio.Complete(status == QuiltRecordingStatus.Complete && capturedFrames.Count == requestedFrameCount);
+                if (!string.IsNullOrEmpty(audioError))
+                {
+                    errorMessage = string.IsNullOrEmpty(errorMessage) ? audioError : errorMessage + " " + audioError;
+                    Status = QuiltRecordingStatus.Error;
+                }
+                try { WriteAudioMetadata(completedAudio); }
+                catch (Exception metadataError)
+                {
+                    string metadataFailure = "Audio metadata write failed: " + Sanitize(metadataError.Message);
+                    errorMessage = string.IsNullOrEmpty(errorMessage) ? metadataFailure : errorMessage + " " + metadataFailure;
+                    Status = QuiltRecordingStatus.Error;
+                }
+            }
+            TryDelete(pendingPngPath);
+            TryDelete(pendingSidecarPath);
+            pendingPngPath = null;
+            pendingSidecarPath = null;
+            pendingFrameRecord = null;
             if (subscribedRenderer != null) subscribedRenderer.QuiltRendered -= OnQuiltRendered;
             subscribedRenderer = null;
             if (ReferenceEquals(activeRecorder, this)) activeRecorder = null;
-            if (ownsCaptureDeltaTime && Time.captureDeltaTime == ownedCaptureDeltaTime)
-                Time.captureDeltaTime = originalCaptureDeltaTime;
-            ownsCaptureDeltaTime = false;
+            try
+            {
+                if (ownsCaptureDeltaTime && Time.captureDeltaTime == ownedCaptureDeltaTime)
+                    Time.captureDeltaTime = originalCaptureDeltaTime;
+            }
+            catch (Exception restoreError)
+            {
+                errorMessage = string.IsNullOrEmpty(errorMessage) ? "Capture delta restore failed: " + Sanitize(restoreError.Message) : errorMessage + " Capture delta restore failed: " + Sanitize(restoreError.Message);
+                Status = QuiltRecordingStatus.Error;
+            }
+            finally
+            {
+                ownsCaptureDeltaTime = false;
+                try { ReleaseOperationLease(); }
+                catch (Exception leaseError)
+                {
+                    errorMessage = string.IsNullOrEmpty(errorMessage) ? "Operation lease release failed: " + Sanitize(leaseError.Message) : errorMessage + " Operation lease release failed: " + Sanitize(leaseError.Message);
+                    Status = QuiltRecordingStatus.Error;
+                }
+            }
             try { WriteManifest(); }
             catch (Exception manifestError)
             {
@@ -367,6 +600,14 @@ namespace ViewWeave
                 errorMessage = string.IsNullOrEmpty(errorMessage) ? manifestFailure : errorMessage + " " + manifestFailure;
                 Status = QuiltRecordingStatus.Error;
             }
+            audioCapture = null;
+        }
+
+        void ReleaseOperationLease()
+        {
+            if (operationLease == null) return;
+            operationLease.Dispose();
+            operationLease = null;
         }
 
         void WriteManifest()
@@ -382,12 +623,61 @@ namespace ViewWeave
                 error = errorMessage,
                 startedAtUtc = startedAtUtc,
                 finishedAtUtc = IsRecording ? string.Empty : DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture),
-                frameLog = "frames.jsonl"
+                frameLog = "frames.jsonl",
+                audioEnabled = captureAudio,
+                audioFile = captureAudio && audioCapture != null ? (audioCapture.IsFinalizedComplete ? "audio.wav" : "audio.incomplete.wav") : string.Empty,
+                audioFormat = captureAudio ? "IEEE_FLOAT_32" : string.Empty,
+                audioChannels = captureAudio ? 1 : 0,
+                audioSampleRate = captureAudio && audioCapture != null ? audioCapture.SampleRate : 0,
+                audioSampleCount = captureAudio && audioCapture != null ? audioCapture.SavedSamples : 0,
+                audioDurationSeconds = captureAudio && audioCapture != null ? audioCapture.AudioDurationSeconds : 0d,
+                simulationDurationSeconds = captureAudio && audioCapture != null ? audioCapture.SimulationDurationSeconds : 0d,
+                durationResidualSeconds = captureAudio && audioCapture != null ? audioCapture.AudioDurationSeconds - audioCapture.SimulationDurationSeconds : 0d
             };
             string temporary = manifestPath + ".tmp";
             File.WriteAllText(temporary, JsonUtility.ToJson(manifest, true) + "\n");
             File.Copy(temporary, manifestPath, true);
             File.Delete(temporary);
+        }
+
+        void WriteAudioMetadata(QuiltRecordingAudioCapture capture)
+        {
+            if (capture == null || string.IsNullOrEmpty(recordingDirectory)) return;
+            double simulationSeconds = capturedFrames.Count / (double)fps;
+            double audioSeconds = capture.AudioDurationSeconds;
+            var metadata = new AudioRecordingMetadata
+            {
+                status = capture.IsFinalizedComplete ? "complete" : "incomplete",
+                file = capture.IsFinalizedComplete ? "audio.wav" : "audio.incomplete.wav",
+                format = "IEEE_FLOAT_32",
+                channels = 1,
+                sampleRate = capture.SampleRate,
+                completedFrames = capturedFrames.Count,
+                samplesPerChannel = capture.SavedSamples,
+                audioDurationSeconds = audioSeconds,
+                simulationDurationSeconds = simulationSeconds,
+                durationResidualSeconds = audioSeconds - simulationSeconds
+            };
+            string path = Path.Combine(recordingDirectory, "audio.json");
+            string temporary = path + ".tmp";
+            File.WriteAllText(temporary, JsonUtility.ToJson(metadata, true) + "\n");
+            if (File.Exists(path)) File.Delete(path);
+            File.Move(temporary, path);
+        }
+
+        [Serializable]
+        sealed class AudioRecordingMetadata
+        {
+            public string status;
+            public string file;
+            public string format;
+            public int channels;
+            public int sampleRate;
+            public int completedFrames;
+            public long samplesPerChannel;
+            public double audioDurationSeconds;
+            public double simulationDurationSeconds;
+            public double durationResidualSeconds;
         }
 
         static string CreateUniqueOutputDirectory(string outputRoot)
