@@ -9,7 +9,6 @@ namespace ViewWeave.Editor
         static bool recovering;
         static bool shutdownStarted;
         static bool recoveryAbiUnavailable;
-        static double deadline;
 
         static BridgeEditorLifecycle()
         {
@@ -72,7 +71,6 @@ namespace ViewWeave.Editor
         {
             recovering = true;
             recoveryAbiUnavailable = false;
-            deadline = EditorApplication.timeSinceStartup + 1.0;
             ViewWeave.BridgeWorkerLifecycle.BeginRecovery();
         }
 
@@ -89,7 +87,6 @@ namespace ViewWeave.Editor
             {
                 recovering = true;
                 recoveryAbiUnavailable = false;
-                deadline = EditorApplication.timeSinceStartup + 1.0;
             }
             ViewWeave.BridgeWorkerLifecycle.BeginRecovery();
             BridgeQuiltPlaybackLease.PrepareForEditorTransitionAll("Editor Play exit, shutdown, or domain reload requested.");
@@ -181,11 +178,6 @@ namespace ViewWeave.Editor
                     ViewWeave.BridgeWorkerLifecycle.EndRecovery();
                 }
                 return;
-            }
-            if (EditorApplication.timeSinceStartup > deadline)
-            {
-                Debug.LogWarning("[ViewWeave] Bridge worker shutdown is still pending; recovery will continue");
-                deadline = EditorApplication.timeSinceStartup + 1.0;
             }
         }
     }
