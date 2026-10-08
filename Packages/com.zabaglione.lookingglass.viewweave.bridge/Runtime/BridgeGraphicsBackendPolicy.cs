@@ -7,7 +7,8 @@ namespace ViewWeave
     {
         Worker,
         LegacyDirect,
-        PlaybackWindowsEditorPlay
+        PlaybackWindowsEditorPlay,
+        EditorPreview
     }
 
     internal enum BridgeGraphicsApi
@@ -15,6 +16,13 @@ namespace ViewWeave
         Unsupported,
         Direct3D11,
         Direct3D12
+    }
+
+    internal enum BridgeGpuProofMode
+    {
+        Unsupported,
+        ReadbackTail,
+        FenceAndReadback
     }
 
     internal readonly struct BridgeGraphicsBackendDecision
@@ -33,6 +41,25 @@ namespace ViewWeave
 
     internal static class BridgeGraphicsBackendPolicy
     {
+        internal static BridgeGpuProofMode SelectGpuProofMode(
+            GraphicsDeviceType graphicsDevice,
+            bool supportsGraphicsFence,
+            bool supportsAsyncCompute,
+            bool supportsAsyncGpuReadback)
+        {
+            if (!supportsAsyncGpuReadback) return BridgeGpuProofMode.Unsupported;
+            if (graphicsDevice == GraphicsDeviceType.Direct3D11) return BridgeGpuProofMode.ReadbackTail;
+            if (graphicsDevice == GraphicsDeviceType.Direct3D12 && supportsGraphicsFence && supportsAsyncCompute)
+                return BridgeGpuProofMode.FenceAndReadback;
+            return BridgeGpuProofMode.Unsupported;
+        }
+
+        internal static BridgeGpuProofMode SelectCurrentGpuProofMode()
+        {
+            return SelectGpuProofMode(SystemInfo.graphicsDeviceType, SystemInfo.supportsGraphicsFence,
+                SystemInfo.supportsAsyncCompute, SystemInfo.supportsAsyncGPUReadback);
+        }
+
         internal static bool TrySelect(
             BridgeGraphicsBackendRoute route,
             RuntimePlatform platform,
@@ -71,6 +98,13 @@ namespace ViewWeave
                         return false;
                     }
                     break;
+                case BridgeGraphicsBackendRoute.EditorPreview:
+                    if (!windowsEditor || isPlaying)
+                    {
+                        error = "Editor Rig Preview requires Windows Editor Edit mode.";
+                        return false;
+                    }
+                    break;
                 default:
                     error = "Bridge graphics route is unsupported";
                     return false;
@@ -87,6 +121,8 @@ namespace ViewWeave
                     ? "Bridge output currently supports Direct3D11 only"
                     : route == BridgeGraphicsBackendRoute.PlaybackWindowsEditorPlay
                         ? "Quilt playback requires a Direct3D11 or Direct3D12 Editor graphics device."
+                        : route == BridgeGraphicsBackendRoute.EditorPreview
+                            ? "Editor Rig Preview requires a Direct3D11 or Direct3D12 graphics device."
                         : "Bridge worker requires Direct3D11 or Direct3D12";
                 return false;
             }

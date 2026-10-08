@@ -24,6 +24,28 @@ namespace ViewWeave.Editor
             window.Show();
         }
 
+        public static bool OpenForRenderer(QuiltRenderer renderer)
+        {
+            if (renderer == null) return false;
+            QuiltCaptureWindow window = GetWindow<QuiltCaptureWindow>();
+            window.titleContent = new GUIContent("Quilt Capture");
+            window.minSize = new Vector2(360f, 420f);
+            if (window.quiltRenderer != null && window.quiltRenderer != renderer)
+            {
+                QuiltRecorder currentRecorder = window.quiltRenderer.GetComponent<QuiltRecorder>();
+                if (currentRecorder != null && currentRecorder.IsRecording)
+                {
+                    window.statusMessage = "Recording is active for " + window.quiltRenderer.name + ". The capture target was not changed.";
+                    window.Show();
+                    return false;
+                }
+            }
+            window.quiltRenderer = renderer;
+            window.statusMessage = string.Empty;
+            window.Show();
+            return true;
+        }
+
         void OnEnable()
         {
             EditorApplication.update += Repaint;

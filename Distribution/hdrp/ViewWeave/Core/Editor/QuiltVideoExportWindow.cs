@@ -20,6 +20,7 @@ namespace ViewWeave.Editor
         Button exportButton;
         Button cancelButton;
         QuiltVideoExportJob ownedJob;
+        string requestedRecordingDirectory;
 
         [MenuItem("Window/ViewWeave/Quilt Video Export")]
         static void Open()
@@ -28,6 +29,38 @@ namespace ViewWeave.Editor
             window.titleContent = new GUIContent("Quilt Video Export");
             window.minSize = new Vector2(480f, 420f);
             window.Show();
+        }
+
+        public static bool OpenForRenderer(QuiltRenderer renderer)
+        {
+            if (renderer == null) return false;
+            QuiltVideoExportWindow window = GetWindow<QuiltVideoExportWindow>();
+            window.titleContent = new GUIContent("Quilt Video Export");
+            window.minSize = new Vector2(480f, 420f);
+            QuiltVideoExportJob activeJob = window.ownedJob != null && !window.ownedJob.IsFinished ? window.ownedJob : QuiltVideoExporter.ActiveJob;
+            if (activeJob != null && !activeJob.IsFinished)
+            {
+                window.Show();
+                return false;
+            }
+
+            QuiltRecorder recorder = renderer.GetComponent<QuiltRecorder>();
+            if (recorder != null && recorder.IsRecording)
+            {
+                window.Show();
+                return false;
+            }
+            string recordingDirectory = recorder == null ? string.Empty : recorder.RecordingDirectory;
+            if (!string.IsNullOrEmpty(recordingDirectory))
+            {
+                if (window.recordingField != null)
+                {
+                    if (string.IsNullOrWhiteSpace(window.recordingField.value)) window.recordingField.value = recordingDirectory;
+                }
+                else window.requestedRecordingDirectory = recordingDirectory;
+            }
+            window.Show();
+            return true;
         }
 
         public void CreateGUI()
@@ -46,6 +79,11 @@ namespace ViewWeave.Editor
             rootVisualElement.Add(description);
 
             recordingField = AddPathField("Recording folder", "Select a folder containing manifest.json, frames.jsonl, and completed quilt frames.", false);
+            if (!string.IsNullOrWhiteSpace(requestedRecordingDirectory) && string.IsNullOrWhiteSpace(recordingField.value))
+            {
+                recordingField.value = requestedRecordingDirectory;
+                requestedRecordingDirectory = string.Empty;
+            }
             outputField = AddPathField("Output MP4", "Choose a new .mp4 file. Existing MP4 or JSON sidecar files are not overwritten.", true);
             outputNameGuidance = new Label { style = { whiteSpace = WhiteSpace.Normal, marginTop = 4 } };
             rootVisualElement.Add(outputNameGuidance);

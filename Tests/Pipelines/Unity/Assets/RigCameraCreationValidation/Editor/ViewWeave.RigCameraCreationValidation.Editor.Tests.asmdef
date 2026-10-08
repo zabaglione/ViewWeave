@@ -8,12 +8,11 @@
     "ViewWeave.Bridge.Editor",
     "ViewWeave.URP",
     "ViewWeave.URP.Editor",
-    "Unity.RenderPipelines.Universal.Runtime",
-    "UnityEngine.TestRunner",
-    "UnityEditor.TestRunner"
+    "Unity.RenderPipelines.Universal.Runtime"
   ],
   "overrideReferences": true,
   "precompiledReferences": ["nunit.framework.dll"],
+  "optionalUnityReferences": ["TestAssemblies"],
   "defineConstraints": ["UNITY_INCLUDE_TESTS"],
   "includePlatforms": ["Editor"],
   "autoReferenced": false

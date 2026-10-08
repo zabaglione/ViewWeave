@@ -23,6 +23,10 @@ namespace ViewWeave
         public RenderTexture QuiltTexture => quiltTexture;
         [SerializeField] MonoBehaviour outputBehaviour;
         [SerializeField] MonoBehaviour guardBehaviour;
+#if UNITY_EDITOR
+        [SerializeField, HideInInspector] UnityEngine.Object editorPreviewRetentionOwner;
+        [SerializeField, HideInInspector] bool editorPreviewRetentionRequired;
+#endif
         [FormerlySerializedAs("renderInLateUpdate")]
         public bool autoRender;
         [Obsolete("Use autoRender; automatic rendering now runs after scene rendering.")]
@@ -44,6 +48,61 @@ namespace ViewWeave
         public long LastViewCpuTicks { get; private set; }
         public int ViewAntiAliasingSamples => viewTexture == null ? 0 : viewTexture.antiAliasing;
         public int ResolveAntiAliasingSamples => resolveTexture == null ? 0 : resolveTexture.antiAliasing;
+
+#if UNITY_EDITOR
+        internal bool BeginEditorPreviewRetention(UnityEngine.Object ownerIdentity)
+        {
+            editorPreviewRetentionRequired = true;
+            if (ownerIdentity == null || !(ownerIdentity is IQuiltEditorResourceRetentionOwner)) return false;
+            if (editorPreviewRetentionOwner != null)
+            {
+                if (!ReferenceEquals(editorPreviewRetentionOwner, ownerIdentity)) return false;
+                return true;
+            }
+            editorPreviewRetentionOwner = ownerIdentity;
+            return true;
+        }
+#endif
+
+#if UNITY_EDITOR
+        internal RenderTexture[] DetachOwnedRenderTextures()
+        {
+            if (IsRendering) throw new InvalidOperationException("owned render textures cannot be detached while rendering");
+
+            if (quiltTexture == null && viewTexture == null && resolveTexture == null)
+                return Array.Empty<RenderTexture>();
+
+            var detached = new System.Collections.Generic.List<RenderTexture>(3);
+            AddDetachedTexture(detached, quiltTexture);
+            AddDetachedTexture(detached, viewTexture);
+            AddDetachedTexture(detached, resolveTexture);
+
+            quiltTexture = null;
+            viewTexture = null;
+            resolveTexture = null;
+            if (previousActive != null && detached.Contains(previousActive)) previousActive = null;
+            renderedViewIndices = Array.Empty<int>();
+            sourceViewAssignments = Array.Empty<int>();
+            cachedSamplingViewCount = 0;
+            hasSamplingCache = false;
+            hasCompletedQuilt = false;
+            latestSnapshot = default;
+            latestReferenceCamera = null;
+            latestSnapshotFollowedReferenceFieldOfView = false;
+            latestReferenceFieldOfView = 0f;
+            latestReferencePosition = default;
+            latestReferenceRotation = Quaternion.identity;
+            LastRenderedViewCount = 0;
+            return detached.ToArray();
+        }
+
+        static void AddDetachedTexture(System.Collections.Generic.List<RenderTexture> textures, RenderTexture texture)
+        {
+            if (texture == null || textures.Contains(texture)) return;
+            texture.hideFlags |= HideFlags.HideAndDontSave | HideFlags.DontUnloadUnusedAsset;
+            textures.Add(texture);
+        }
+#endif
 
         RenderTexture viewTexture;
         RenderTexture resolveTexture;
@@ -82,8 +141,8 @@ namespace ViewWeave
             foreach (char valueChar in value) if (valueChar >= 0x20 && valueChar <= 0x7e) chars.Add(valueChar);
             return new string(chars.ToArray());
         }
-        void OnDisable() { QuiltAutoRenderScheduler.Unregister(this); ReleaseTextures(); }
-        void OnDestroy() { QuiltAutoRenderScheduler.Unregister(this); ReleaseTextures(); }
+        void OnDisable() { QuiltAutoRenderScheduler.Unregister(this); ReleaseOrRetainTextures(); }
+        void OnDestroy() { QuiltAutoRenderScheduler.Unregister(this); ReleaseOrRetainTextures(); }
 
         public void RenderQuilt()
         {
@@ -346,18 +405,30 @@ namespace ViewWeave
                 throw new ArgumentOutOfRangeException("quilt dimensions exceed the device maximum texture size");
             if (quiltTexture == null || quiltTexture.width != layout.QuiltWidth || quiltTexture.height != layout.QuiltHeight)
             {
+                AbortPreviewTextureReplacement(quiltTexture, "quilt");
                 ReleaseOwnedTexture(ref quiltTexture);
-                quiltTexture = new RenderTexture(layout.QuiltWidth, layout.QuiltHeight, 0, RenderTextureFormat.ARGB32) { name = "ViewWeave.Quilt" };
+                RenderTexture created = new RenderTexture(layout.QuiltWidth, layout.QuiltHeight, 0, RenderTextureFormat.ARGB32)
+                {
+                    name = "ViewWeave.Quilt"
+                };
+                if (!TryTrackEditorPreviewTexture(created))
+                {
+                    DisposeTexture(created);
+                    throw new InvalidOperationException("Editor preview texture owner rejected the quilt render texture.");
+                }
+                quiltTexture = created;
                 quiltTexture.Create();
                 if (!quiltTexture.IsCreated()) throw new InvalidOperationException("failed to create quilt render texture");
             }
             int viewSamples = GetRequestedMsaaSamples(sourceCamera, layout);
             if (viewTexture == null || viewTexture.width != layout.TileWidth || viewTexture.height != layout.TileHeight || viewTexture.antiAliasing != viewSamples)
             {
+                AbortPreviewTextureReplacement(viewTexture, "view");
                 ReleaseOwnedTexture(ref viewTexture);
+                RenderTexture created;
                 if (viewSamples <= 1)
                 {
-                    viewTexture = new RenderTexture(layout.TileWidth, layout.TileHeight, 24, RenderTextureFormat.ARGB32)
+                    created = new RenderTexture(layout.TileWidth, layout.TileHeight, 24, RenderTextureFormat.ARGB32)
                     {
                         name = "ViewWeave.View",
                         useMipMap = false,
@@ -373,8 +444,14 @@ namespace ViewWeave
                         useMipMap = false,
                         autoGenerateMips = false
                     };
-                    viewTexture = new RenderTexture(descriptor) { name = "ViewWeave.View" };
+                    created = new RenderTexture(descriptor) { name = "ViewWeave.View" };
                 }
+                if (!TryTrackEditorPreviewTexture(created))
+                {
+                    DisposeTexture(created);
+                    throw new InvalidOperationException("Editor preview texture owner rejected the view render texture.");
+                }
+                viewTexture = created;
                 viewTexture.Create();
                 if (!viewTexture.IsCreated()) throw new InvalidOperationException("failed to create view render texture");
             }
@@ -382,6 +459,7 @@ namespace ViewWeave
             {
                 if (resolveTexture == null || resolveTexture.width != layout.TileWidth || resolveTexture.height != layout.TileHeight || resolveTexture.antiAliasing != 1)
                 {
+                    AbortPreviewTextureReplacement(resolveTexture, "resolve");
                     ReleaseOwnedTexture(ref resolveTexture);
                     RenderTextureDescriptor descriptor = new RenderTextureDescriptor(layout.TileWidth, layout.TileHeight, RenderTextureFormat.ARGB32, 0)
                     {
@@ -390,12 +468,25 @@ namespace ViewWeave
                         useMipMap = false,
                         autoGenerateMips = false
                     };
-                    resolveTexture = new RenderTexture(descriptor) { name = "ViewWeave.ViewResolve" };
+                    RenderTexture created = new RenderTexture(descriptor)
+                    {
+                        name = "ViewWeave.ViewResolve"
+                    };
+                    if (!TryTrackEditorPreviewTexture(created))
+                    {
+                        DisposeTexture(created);
+                        throw new InvalidOperationException("Editor preview texture owner rejected the resolve render texture.");
+                    }
+                    resolveTexture = created;
                     resolveTexture.Create();
                     if (!resolveTexture.IsCreated()) throw new InvalidOperationException("failed to create view resolve texture");
                 }
             }
-            else ReleaseOwnedTexture(ref resolveTexture);
+            else
+            {
+                AbortPreviewTextureReplacement(resolveTexture, "resolve");
+                ReleaseOwnedTexture(ref resolveTexture);
+            }
         }
 
         int GetRequestedMsaaSamples(Camera camera, QuiltLayout layout)
@@ -420,6 +511,60 @@ namespace ViewWeave
             ReleaseOwnedTexture(ref resolveTexture);
             ReleaseOwnedTexture(ref quiltTexture);
         }
+
+        void ReleaseOrRetainTextures()
+        {
+#if UNITY_EDITOR
+            if (!editorPreviewRetentionRequired)
+            {
+                ReleaseTextures();
+                return;
+            }
+
+            autoRender = false;
+            IQuiltEditorResourceRetentionOwner owner = editorPreviewRetentionOwner as IQuiltEditorResourceRetentionOwner;
+            if (owner == null)
+            {
+                UnityEngine.Debug.LogError("ViewWeave Editor preview retention owner is unavailable; textures remain unreleased.");
+                return;
+            }
+            try { owner.RequestStopAndTakeOwnership(this); }
+            catch (Exception error) { UnityEngine.Debug.LogError("ViewWeave Editor preview ownership transfer failed: " + SanitizeAutoRenderError(error)); }
+#else
+            ReleaseTextures();
+#endif
+        }
+
+#if UNITY_EDITOR
+        bool TryTrackEditorPreviewTexture(RenderTexture texture)
+        {
+            if (!editorPreviewRetentionRequired) return true;
+            if (texture != null) texture.hideFlags |= HideFlags.HideAndDontSave | HideFlags.DontUnloadUnusedAsset;
+            IQuiltEditorResourceRetentionOwner owner = editorPreviewRetentionOwner as IQuiltEditorResourceRetentionOwner;
+            if (owner == null) return false;
+            try { return owner.TrackTexture(texture); }
+            catch (Exception error)
+            {
+                UnityEngine.Debug.LogError("ViewWeave Editor preview texture tracking failed: " + SanitizeAutoRenderError(error));
+                return false;
+            }
+        }
+
+        void AbortPreviewTextureReplacement(RenderTexture current, string label)
+        {
+            if (!editorPreviewRetentionRequired || current == null) return;
+            IQuiltEditorResourceRetentionOwner owner = editorPreviewRetentionOwner as IQuiltEditorResourceRetentionOwner;
+            if (owner != null)
+            {
+                try { owner.RequestStopAndTakeOwnership(this); }
+                catch (Exception error) { UnityEngine.Debug.LogError("ViewWeave Editor preview resize stop failed: " + SanitizeAutoRenderError(error)); }
+            }
+            throw new InvalidOperationException("Editor preview " + label + " texture replacement requires stop, proof, and producer rebuild.");
+        }
+#else
+        bool TryTrackEditorPreviewTexture(RenderTexture texture) => true;
+        void AbortPreviewTextureReplacement(RenderTexture current, string label) { }
+#endif
 
         void ReleaseOwnedTexture(ref RenderTexture texture)
         {

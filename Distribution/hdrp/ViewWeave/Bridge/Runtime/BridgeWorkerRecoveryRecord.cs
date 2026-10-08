@@ -18,7 +18,11 @@ namespace ViewWeave
         [SerializeField] bool gpuFencePassed;
         [SerializeField] bool readbackCompleted;
         [SerializeField] bool readbackValid;
+        [SerializeField] BridgeGpuProofMode gpuProofMode;
         [SerializeField] string diagnostic = string.Empty;
+#if UNITY_EDITOR
+        [SerializeField] BridgeEditorPreviewRetentionRecord editorPreviewOwner;
+#endif
 
         internal long NativeHandle => nativeHandle;
         internal bool IsLegacySession => legacySession;
@@ -29,8 +33,10 @@ namespace ViewWeave
         internal bool HadTransferTexture => hadTransferTexture;
         internal bool NeedsClose { get => needsClose; set => needsClose = value; }
         internal bool NativeReleased { get => nativeReleased; set => nativeReleased = value; }
+        internal BridgeGpuProofMode GpuProofMode => gpuProofMode;
         internal bool HasGpuReleaseProof => !hadTransferTexture ||
-            (gpuFenceIssued && gpuFencePassed && readbackCompleted && readbackValid);
+            (gpuProofMode == BridgeGpuProofMode.ReadbackTail && readbackCompleted && readbackValid) ||
+            (gpuProofMode == BridgeGpuProofMode.FenceAndReadback && gpuFenceIssued && gpuFencePassed && readbackCompleted && readbackValid);
         internal bool CanRelease => nativeReleased && HasGpuReleaseProof;
         internal string Diagnostic => diagnostic;
 
@@ -61,6 +67,22 @@ namespace ViewWeave
             return record;
         }
 
+#if UNITY_EDITOR
+        internal bool AttachEditorPreviewOwner(BridgeEditorPreviewRetentionRecord owner)
+        {
+            if (owner == null) return false;
+            if (editorPreviewOwner != null && !ReferenceEquals(editorPreviewOwner, owner)) return false;
+            if (!owner.AttachWorkerRecoveryRecord(this)) return false;
+            editorPreviewOwner = owner;
+            return true;
+        }
+
+        internal bool NotifyEditorPreviewOwnerComplete()
+        {
+            return editorPreviewOwner == null || editorPreviewOwner.MarkWorkerRecoveryComplete(this);
+        }
+#endif
+
         internal IntPtr GetHandle() { return new IntPtr(nativeHandle); }
 
         internal void SetGpuProof(bool fenceIssued, bool fencePassed, bool requestDone, bool requestValid)
@@ -72,6 +94,15 @@ namespace ViewWeave
             diagnostic = HasGpuReleaseProof
                 ? "GPU completion was proven for the transfer texture."
                 : "GPU completion is unproven; transfer texture remains retained.";
+        }
+
+        internal void SetGpuProofMode(BridgeGpuProofMode mode)
+        {
+            gpuProofMode = mode;
+            gpuFenceIssued = false;
+            gpuFencePassed = false;
+            readbackCompleted = false;
+            readbackValid = false;
         }
 
         internal void SetDiagnostic(string value)

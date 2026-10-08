@@ -29,7 +29,11 @@ namespace ViewWeave
         object sessionToken;
         bool sessionAcquired;
         GraphicsFence tailFence;
+        BridgeGpuProofMode gpuProofMode;
         bool hasTailFence;
+        object tailReadbackIdentity;
+        BridgeEditorPreviewRetention.ReadbackCompletionLatch tailReadbackCompletion;
+        AsyncGPUReadbackRequest tailReadback;
         bool transitionProofRequired;
         bool readbackCompleted;
         bool readbackValid;
@@ -104,9 +108,10 @@ namespace ViewWeave
                 error = "Select a Bridge session and a validated quilt source.";
                 return false;
             }
-            if (!SystemInfo.supportsGraphicsFence || !SystemInfo.supportsAsyncGPUReadback)
+            BridgeGpuProofMode proofMode = BridgeGraphicsBackendPolicy.SelectCurrentGpuProofMode();
+            if (proofMode == BridgeGpuProofMode.Unsupported)
             {
-                error = "Quilt playback requires graphics fences and async GPU readback for safe Editor cleanup.";
+                error = "Quilt playback has no supported GPU ownership proof mode for safe Editor cleanup.";
                 return false;
             }
             ViewWeaveRig targetRig = target.GetComponent<ViewWeaveRig>();
@@ -151,6 +156,7 @@ namespace ViewWeave
             lease.initialApplicationName = target.applicationName;
             lease.initialDisplayOrdinal = target.displayOrdinal;
             lease.initialQuality = target.Quality;
+            lease.gpuProofMode = proofMode;
             lease.restoreAutoRender = true;
             lease.State = LeaseState.WaitingForDrain;
             lease.statusMessage = "Waiting for the Bridge queue and transfer texture to drain.";
@@ -180,6 +186,7 @@ namespace ViewWeave
                 lease.playbackTexture.Create();
                 if (!lease.playbackTexture.IsCreated()) throw new InvalidOperationException("Playback render texture could not be created.");
                 lease.recoveryRecord = BridgePlaybackRecoveryRecord.Create(lease.playbackTexture, lease.sessionGeneration);
+                lease.recoveryRecord.SetGpuProofMode(lease.gpuProofMode);
                 lease.cursor = new QuiltPlaybackCursor(playbackSource.Info.FramesPerSecond, playbackSource.Info.FrameCount);
                 lease.SetTailFence();
                 lease.lastRealtime = Time.realtimeSinceStartupAsDouble;
@@ -244,7 +251,7 @@ namespace ViewWeave
                     Retain("Bridge queue drain deadline expired without a transfer reset proof; playback resources remain retained.");
                     return;
                 }
-                if (!FencePassed()) return;
+                if (!TailProofPassed()) return;
                 if (!output.TryResetTransferForPlayback(sessionToken))
                 {
                     if (!string.IsNullOrEmpty(output.LastError)) BeginCleanup(false, "Bridge transfer reset failed: " + output.LastError);
@@ -329,10 +336,10 @@ namespace ViewWeave
                 return;
             }
             if (Time.realtimeSinceStartupAsDouble >= stateDeadline && cleanupProofAvailable) { CompleteCleanup(!invalidated); return; }
-            bool fencePassed = FencePassed();
-            if (!fencePassed) return;
+            bool tailProofPassed = TailProofPassed();
+            if (!tailProofPassed) return;
             if (recoveryRecord != null) recoveryRecord.SetTailFencePassed(true);
-            if (BridgePlaybackCleanupPolicy.ShouldWaitForFinalQuitProof(finalQuitPending, readbackCompleted, fencePassed)) return;
+            if (BridgePlaybackCleanupPolicy.ShouldWaitForFinalQuitProof(finalQuitPending, readbackCompleted, tailProofPassed)) return;
             if (output != null && output.Ready && session != null && session.State == ViewWeaveBridgeSession.SessionState.Rendering)
             {
                 if (!resetCompleted)
@@ -394,7 +401,7 @@ namespace ViewWeave
         bool CanReleaseTexture()
         {
             return BridgePlaybackCleanupPolicy.CanRelease(
-                FencePassed(), transitionProofRequired, readbackCompleted && readbackValid,
+                TailProofPassed(), transitionProofRequired, readbackCompleted && readbackValid,
                 output != null && output.Ready, resetCompleted,
                 handoffSeen || (output != null && output.HasReaperHandoff(sessionGeneration)));
         }
@@ -456,13 +463,28 @@ namespace ViewWeave
 
         void SetTailFence()
         {
+            if (gpuProofMode == BridgeGpuProofMode.Unsupported)
+            {
+                gpuProofMode = BridgeGraphicsBackendPolicy.SelectCurrentGpuProofMode();
+                if (recoveryRecord != null) recoveryRecord.SetGpuProofMode(gpuProofMode);
+            }
             hasTailFence = false;
             if (recoveryRecord != null)
-            {
-                recoveryRecord.SetTailFenceIssued(false);
-                recoveryRecord.SetTailFencePassed(false);
-            }
+                recoveryRecord.BeginTailProof();
             if (playbackTexture == null || !playbackTexture.IsCreated()) throw new InvalidOperationException("Playback texture is unavailable for a graphics fence.");
+            if (gpuProofMode == BridgeGpuProofMode.ReadbackTail)
+            {
+                object identity = new object();
+                tailReadbackIdentity = identity;
+                tailReadbackCompletion = new BridgeEditorPreviewRetention.ReadbackCompletionLatch(identity, 1);
+                tailReadback = AsyncGPUReadback.Request(playbackTexture, 0,
+                    request => RecordTailReadback(identity, !request.hasError));
+                hasTailFence = true;
+                if (recoveryRecord != null) recoveryRecord.SetTailFenceIssued(true);
+                return;
+            }
+            if (gpuProofMode != BridgeGpuProofMode.FenceAndReadback)
+                throw new InvalidOperationException("No supported playback GPU proof mode is selected.");
             var command = new CommandBuffer { name = "ViewWeave Playback Tail Fence" };
             try
             {
@@ -483,6 +505,41 @@ namespace ViewWeave
                 Retain("Graphics fence status is unknown: " + Sanitize(exception.Message));
                 return false;
             }
+        }
+
+        bool TailProofPassed()
+        {
+            if (gpuProofMode == BridgeGpuProofMode.FenceAndReadback) return FencePassed();
+            if (gpuProofMode != BridgeGpuProofMode.ReadbackTail || !hasTailFence || tailReadbackCompletion == null) return false;
+            try
+            {
+                if (tailReadbackCompletion.GetOutcome(0) == BridgeEditorPreviewRetention.ReadbackCompletionLatch.Outcome.Pending)
+                {
+                    tailReadback.Update();
+                    if (tailReadback.done) RecordTailReadback(tailReadbackIdentity, !tailReadback.hasError);
+                }
+                BridgeEditorPreviewRetention.ReadbackCompletionLatch.Outcome outcome = tailReadbackCompletion.GetOutcome(0);
+                bool succeeded = outcome == BridgeEditorPreviewRetention.ReadbackCompletionLatch.Outcome.Succeeded;
+                if (recoveryRecord != null)
+                {
+                    recoveryRecord.SetTailFencePassed(false);
+                    recoveryRecord.SetReadback(outcome != BridgeEditorPreviewRetention.ReadbackCompletionLatch.Outcome.Pending, succeeded);
+                }
+                if (outcome == BridgeEditorPreviewRetention.ReadbackCompletionLatch.Outcome.Failed)
+                    Retain("Playback graphics queue tail readback failed; source texture remains retained.");
+                return succeeded;
+            }
+            catch (Exception exception)
+            {
+                Retain("Playback graphics queue tail proof is unknown: " + Sanitize(exception.Message));
+                return false;
+            }
+        }
+
+        void RecordTailReadback(object identity, bool succeeded)
+        {
+            if (tailReadbackCompletion == null || !ReferenceEquals(identity, tailReadbackIdentity)) return;
+            tailReadbackCompletion.TryRecord(identity, 0, succeeded);
         }
 
         void OnSessionInvalidated(string reason)
@@ -594,7 +651,7 @@ namespace ViewWeave
                 readbackCompleted = request.done;
                 readbackValid = request.done && !request.hasError;
                 recoveryRecord.SetReadback(readbackCompleted, readbackValid);
-                if (!readbackValid || !FencePassed())
+                if (!readbackValid || !TailProofPassed())
                 {
                     Retain("Playback readback or final fence did not complete successfully during Editor transition.");
                     return;
@@ -707,8 +764,8 @@ namespace ViewWeave
                 State = LeaseState.Stopping;
             }
             if (output != null && output.HasReaperHandoff(sessionGeneration)) OnReaperHandoff(sessionGeneration);
-            bool fencePassed = FencePassed();
-            if (BridgePlaybackCleanupPolicy.ShouldWaitForFinalQuitProof(finalQuitPending, readbackCompleted, fencePassed)) return;
+            bool tailProofPassed = TailProofPassed();
+            if (BridgePlaybackCleanupPolicy.ShouldWaitForFinalQuitProof(finalQuitPending, readbackCompleted, tailProofPassed)) return;
             if (CanReleaseTexture()) CompleteCleanup(false);
             else if (State != LeaseState.Retained) Retain("Bridge shutdown did not provide a safe same-generation handoff; playback texture remains retained.");
         }
@@ -771,6 +828,7 @@ namespace ViewWeave
             foreach (BridgePlaybackRecoveryRecord record in records)
             {
                 if (record == null) continue;
+                if (!record.HasCompleteProof) record.TryReproveAfterDomainReload();
                 if (record.HasCompleteProof)
                 {
                     record.ReleaseProvenSource();

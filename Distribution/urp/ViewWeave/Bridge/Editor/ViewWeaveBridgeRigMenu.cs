@@ -1,4 +1,5 @@
 using UnityEditor;
+using UnityEditorInternal;
 using UnityEngine;
 using ViewWeave.Editor;
 
@@ -37,6 +38,12 @@ namespace ViewWeave.Editor
                 if (!rig.ConfigureComponents()) throw new System.InvalidOperationException("ViewWeave Bridge Rig configuration failed");
                 session.startOnEnable = true;
                 target.SetActive(true);
+                InternalEditorUtility.SetIsInspectorExpanded(sourceCamera, false);
+                InternalEditorUtility.SetIsInspectorExpanded(quilt, false);
+                InternalEditorUtility.SetIsInspectorExpanded(output, false);
+                InternalEditorUtility.SetIsInspectorExpanded(session, false);
+                InternalEditorUtility.SetIsInspectorExpanded(adapter, false);
+                InternalEditorUtility.SetIsInspectorExpanded(rig, true);
                 Selection.activeGameObject = target;
             }
             catch (System.Exception exception)

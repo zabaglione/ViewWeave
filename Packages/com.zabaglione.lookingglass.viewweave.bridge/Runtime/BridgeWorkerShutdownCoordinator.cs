@@ -20,14 +20,19 @@ namespace ViewWeave
         internal static bool WaitForFinalization()
         {
             bool enableEditorSubmission = Application.platform == RuntimePlatform.WindowsEditor;
-            if (enableEditorSubmission) BridgeWorkerEditorGpuFlush.BeginSynchronousWait();
+            if (enableEditorSubmission)
+            {
+                BridgeEditorPreviewRetention.RequestStop(false);
+                BridgeWorkerEditorGpuFlush.BeginSynchronousWait();
+            }
             try
             {
                 return BridgeWorkerQuitWait.WaitForFinalization(
                     RequestQuit,
                     PumpOnce,
                     () => finalizationReady && BridgeWorkerReaper.PendingCount == 0 &&
-                        !BridgeWorkerReaper.HasUnprovenResources && PlaybackQuitCleanupComplete(),
+                        !BridgeWorkerReaper.HasUnprovenResources && PlaybackQuitCleanupComplete() &&
+                        !BridgeEditorPreviewRetention.HasPending,
                     WarnOnce,
                     ShutdownTimeoutSeconds);
             }
@@ -53,6 +58,7 @@ namespace ViewWeave
         internal static bool RequestQuit()
         {
             if (Application.platform != RuntimePlatform.WindowsEditor && Application.platform != RuntimePlatform.WindowsPlayer) return true;
+            if (Application.platform == RuntimePlatform.WindowsEditor) BridgeEditorPreviewRetention.RequestStop(false);
             if (BridgeWorkerShutdownPolicy.CanQuitImmediately(finalizationReady, requestAttempted || HasPotentialWorkerActivity())) return true;
             EnsureHost();
             if (!requestAttempted)
@@ -121,7 +127,8 @@ namespace ViewWeave
                     BridgeWorkerReaper.MarkFinalShutdownCollected();
                     BridgeWorkerReaper.PrepareForDomainReload(true);
                     BridgeWorkerReaper.PumpNow();
-                    if (BridgeWorkerReaper.PendingCount == 0 && !BridgeWorkerReaper.HasUnprovenResources)
+                    BridgeEditorPreviewRetention.Pump(true);
+                    if (BridgeWorkerReaper.PendingCount == 0 && !BridgeWorkerReaper.HasUnprovenResources && !BridgeEditorPreviewRetention.HasPending)
                     {
                         finalizationReady = true;
                         BridgeWorkerLifecycle.EndFinalShutdown();
@@ -144,7 +151,7 @@ namespace ViewWeave
 #if UNITY_EDITOR
             if (Application.platform == RuntimePlatform.WindowsEditor && !BridgeQuiltPlaybackLease.FinalQuitCleanupComplete) return true;
 #endif
-            if (BridgeWorkerLifecycle.FinalShutdownPending || BridgeWorkerReaper.PendingCount != 0 || BridgeWorkerQuiltOutput.HasNativeHandle) return true;
+            if (BridgeWorkerLifecycle.FinalShutdownPending || BridgeWorkerReaper.PendingCount != 0 || BridgeWorkerQuiltOutput.HasNativeHandle || BridgeEditorPreviewRetention.HasPending) return true;
             foreach (BridgeQuiltOutput output in Resources.FindObjectsOfTypeAll<BridgeQuiltOutput>())
                 if (output != null && output.Session != 0) return true;
             try
@@ -215,6 +222,7 @@ namespace ViewWeave
                 BridgeQuiltPlaybackLease.PumpAll();
 #endif
             BridgeWorkerReaper.PumpNow();
+            if (Application.platform == RuntimePlatform.WindowsEditor) BridgeEditorPreviewRetention.Pump(false);
             if (timedOut) return;
             if (!finalStatusComplete) PumpNativeStatus();
             if (finalStatusComplete)
@@ -225,7 +233,8 @@ namespace ViewWeave
                 if (Application.platform == RuntimePlatform.WindowsEditor)
                     BridgeQuiltPlaybackLease.CompleteAfterBridgeShutdownAll();
 #endif
-                if (BridgeWorkerReaper.PendingCount == 0 && !BridgeWorkerReaper.HasUnprovenResources && PlaybackQuitCleanupComplete())
+                if (BridgeWorkerReaper.PendingCount == 0 && !BridgeWorkerReaper.HasUnprovenResources &&
+                    PlaybackQuitCleanupComplete() && !BridgeEditorPreviewRetention.HasPending)
                 {
                     finalizationReady = true;
                     BridgeWorkerLifecycle.EndFinalShutdown();

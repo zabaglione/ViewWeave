@@ -4,17 +4,52 @@ using UnityEngine;
 
 namespace ViewWeave.Editor
 {
-    [CustomEditor(typeof(QuiltRenderer))]
-    [CanEditMultipleObjects]
-    public sealed class QuiltRendererEditor : UnityEditor.Editor
+    public static class QuiltRendererSceneViewControls
     {
         const string ShowClippingKey = "ViewWeave.QuiltRenderer.ShowClippingPlanes";
         const string ShowExtremeViewsKey = "ViewWeave.QuiltRenderer.ShowExtremeViews";
         const string ShowFocusCursorKey = "ViewWeave.QuiltRenderer.ShowFocusCursor";
-        static bool showClipping = true;
-        static bool showExtremeViews;
-        static bool showFocusCursor;
 
+        public static bool ShowNearFar
+        {
+            get => EditorPrefs.GetBool(ShowClippingKey, true);
+            set => SetPreference(ShowClippingKey, true, value);
+        }
+
+        public static bool ShowExtremeViews
+        {
+            get => EditorPrefs.GetBool(ShowExtremeViewsKey, false);
+            set => SetPreference(ShowExtremeViewsKey, false, value);
+        }
+
+        public static bool Show3DFocusCursor
+        {
+            get => EditorPrefs.GetBool(ShowFocusCursorKey, false);
+            set => SetPreference(ShowFocusCursorKey, false, value);
+        }
+
+        public static bool FrameFocusPlaneCenter(QuiltRenderer renderer)
+        {
+            SceneView sceneView = SceneView.lastActiveSceneView;
+            if (renderer == null || sceneView == null ||
+                !QuiltRendererAuthoringOperations.TryGetFocusPoint(renderer, out _, out Vector3 focusPoint)) return false;
+            float size = Mathf.Max(renderer.settings.cameraDistance * 0.08f, 0.1f);
+            sceneView.Frame(new Bounds(focusPoint, Vector3.one * size), false);
+            return true;
+        }
+
+        static void SetPreference(string key, bool defaultValue, bool value)
+        {
+            if (EditorPrefs.GetBool(key, defaultValue) == value) return;
+            EditorPrefs.SetBool(key, value);
+            SceneView.RepaintAll();
+        }
+    }
+
+    [CustomEditor(typeof(QuiltRenderer))]
+    [CanEditMultipleObjects]
+    public sealed class QuiltRendererEditor : UnityEditor.Editor
+    {
         SerializedProperty settingsProperty;
         float horizontalOrbitDegrees;
         float verticalOrbitDegrees;
@@ -22,14 +57,29 @@ namespace ViewWeave.Editor
         void OnEnable()
         {
             settingsProperty = serializedObject.FindProperty("settings");
-            showClipping = EditorPrefs.GetBool(ShowClippingKey, true);
-            showExtremeViews = EditorPrefs.GetBool(ShowExtremeViewsKey, false);
-            showFocusCursor = EditorPrefs.GetBool(ShowFocusCursorKey, false);
         }
 
         public override void OnInspectorGUI()
         {
             DrawDefaultInspector();
+            if (targets.Length == 1)
+            {
+                ViewWeaveRig rig = ((QuiltRenderer)target).GetComponent<ViewWeaveRig>();
+                if (rig != null)
+                {
+                    EditorGUILayout.Space();
+                    EditorGUILayout.HelpBox("This QuiltRenderer belongs to a ViewWeaveRig. Use the Rig authoring panel for normal camera, preview, and Bridge operations.", MessageType.Info);
+                    if (ViewWeaveRigAuthoringLauncher.IsRegistered)
+                    {
+                        if (GUILayout.Button("Open ViewWeave Rig Authoring"))
+                            ViewWeaveRigAuthoringLauncher.Open(rig);
+                    }
+                    else
+                    {
+                        EditorGUILayout.HelpBox("The Rig authoring window is provided by the optional ViewWeave Bridge Editor package.", MessageType.Info);
+                    }
+                }
+            }
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Camera Framing", EditorStyles.boldLabel);
 
@@ -74,27 +124,9 @@ namespace ViewWeave.Editor
 
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Scene View", EditorStyles.boldLabel);
-            bool clipping = EditorGUILayout.Toggle("Show Near / Far", showClipping);
-            if (clipping != showClipping)
-            {
-                showClipping = clipping;
-                EditorPrefs.SetBool(ShowClippingKey, showClipping);
-                SceneView.RepaintAll();
-            }
-            bool extremes = EditorGUILayout.Toggle("Show Extreme Views", showExtremeViews);
-            if (extremes != showExtremeViews)
-            {
-                showExtremeViews = extremes;
-                EditorPrefs.SetBool(ShowExtremeViewsKey, showExtremeViews);
-                SceneView.RepaintAll();
-            }
-            bool focusCursor = EditorGUILayout.Toggle(new GUIContent("Show 3D Focus Cursor", "Shows a free-move Scene View handle at the focus-plane center. Only its forward-axis projection changes Focus Distance; camera position and rotation are unchanged."), showFocusCursor);
-            if (focusCursor != showFocusCursor)
-            {
-                showFocusCursor = focusCursor;
-                EditorPrefs.SetBool(ShowFocusCursorKey, showFocusCursor);
-                SceneView.RepaintAll();
-            }
+            QuiltRendererSceneViewControls.ShowNearFar = EditorGUILayout.Toggle("Show Near / Far", QuiltRendererSceneViewControls.ShowNearFar);
+            QuiltRendererSceneViewControls.ShowExtremeViews = EditorGUILayout.Toggle("Show Extreme Views", QuiltRendererSceneViewControls.ShowExtremeViews);
+            QuiltRendererSceneViewControls.Show3DFocusCursor = EditorGUILayout.Toggle(new GUIContent("Show 3D Focus Cursor", "Shows a free-move Scene View handle at the focus-plane center. Only its forward-axis projection changes Focus Distance; camera position and rotation are unchanged."), QuiltRendererSceneViewControls.Show3DFocusCursor);
         }
 
         void DrawAuthoringControls(QuiltRenderer renderer)
@@ -121,7 +153,7 @@ namespace ViewWeave.Editor
             {
                 if (GUILayout.Button(new GUIContent("Set Focus From Selected Object Center", "Projects the selected scene object's world bounds center onto the effective camera forward axis. Objects behind the camera are rejected.")))
                 {
-                    if (!TryGetSelectedSceneObjectCenter(out Vector3 center, out string reason))
+                    if (!TryGetSelectedSceneObjectCenter(renderer, out Vector3 center, out string reason))
                         ShowActionWarning(reason);
                     else if (!QuiltRendererAuthoringOperations.TrySetFocusFromWorldPoint(renderer, center, out _))
                         ShowActionWarning("The selected center is behind the effective camera or the camera framing references are invalid.");
@@ -133,12 +165,8 @@ namespace ViewWeave.Editor
                 {
                     if (GUILayout.Button("Frame Focus Plane Center in Scene View"))
                     {
-                        if (QuiltRendererAuthoringOperations.TryGetFocusPoint(renderer, out _, out Vector3 focusPoint))
-                        {
-                            float size = Mathf.Max(renderer.settings.cameraDistance * 0.08f, 0.1f);
-                            activeSceneView.Frame(new Bounds(focusPoint, Vector3.one * size), false);
-                        }
-                        else ShowActionWarning("The effective camera or focus distance is invalid.");
+                        if (!QuiltRendererSceneViewControls.FrameFocusPlaneCenter(renderer))
+                            ShowActionWarning("The effective camera or focus distance is invalid.");
                     }
                 }
 
@@ -166,46 +194,15 @@ namespace ViewWeave.Editor
             SceneView.RepaintAll();
         }
 
-        static bool TryGetSelectedSceneObjectCenter(out Vector3 center, out string reason)
+        static bool TryGetSelectedSceneObjectCenter(QuiltRenderer renderer, out Vector3 center, out string reason)
         {
-            center = Vector3.zero;
-            reason = "Select one scene object before setting the focus distance.";
-            if (Selection.transforms == null || Selection.transforms.Length != 1 || Selection.activeGameObject == null)
-                return false;
-            GameObject selected = Selection.activeGameObject;
-            if (EditorUtility.IsPersistent(selected) || !selected.scene.IsValid() || UnityEditor.SceneManagement.EditorSceneManager.IsPreviewSceneObject(selected))
+            if (Selection.transforms == null || Selection.transforms.Length != 1)
             {
-                reason = "The selected object must belong to a loaded scene.";
+                center = Vector3.zero;
+                reason = "Select one scene object before setting the focus distance.";
                 return false;
             }
-
-            Renderer[] renderers = selected.GetComponentsInChildren<Renderer>();
-            bool hasBounds = false;
-            Bounds bounds = default;
-            for (int i = 0; i < renderers.Length; ++i)
-            {
-                if (renderers[i] == null || !renderers[i].enabled) continue;
-                if (!hasBounds) { bounds = renderers[i].bounds; hasBounds = true; }
-                else bounds.Encapsulate(renderers[i].bounds);
-            }
-            if (!hasBounds)
-            {
-                Collider[] colliders = selected.GetComponentsInChildren<Collider>();
-                for (int i = 0; i < colliders.Length; ++i)
-                {
-                    if (colliders[i] == null || !colliders[i].enabled) continue;
-                    if (!hasBounds) { bounds = colliders[i].bounds; hasBounds = true; }
-                    else bounds.Encapsulate(colliders[i].bounds);
-                }
-            }
-            center = hasBounds ? bounds.center : selected.transform.position;
-            if (!IsFinite(center))
-            {
-                reason = "The selected object center is invalid.";
-                return false;
-            }
-            reason = string.Empty;
-            return true;
+            return QuiltRendererAuthoringOperations.TryGetSceneObjectCenter(renderer, Selection.activeGameObject, out center, out reason);
         }
 
         static void ShowActionWarning(string message)
@@ -251,7 +248,7 @@ namespace ViewWeave.Editor
             {
                 Handles.matrix = Matrix4x4.identity;
 
-                if (showClipping)
+                if (QuiltRendererSceneViewControls.ShowNearFar)
                 {
                     Handles.color = new Color(0.25f, 0.8f, 1f, 0.85f);
                     DrawPlane(geometry.nearPlane);
@@ -268,7 +265,7 @@ namespace ViewWeave.Editor
                 Handles.DrawLine(framingCamera.transform.position, focusCenter);
                 Handles.Label((framingCamera.transform.position + focusCenter) * 0.5f, renderer.settings.cameraDistance.ToString("0.###", CultureInfo.InvariantCulture) + " units");
 
-                if (showExtremeViews)
+                if (QuiltRendererSceneViewControls.ShowExtremeViews)
                 {
                     Handles.color = new Color(0.3f, 1f, 0.5f, 0.7f);
                     DrawPlane(geometry.leftNearPlane);
@@ -282,14 +279,14 @@ namespace ViewWeave.Editor
                     Handles.Label(Center(geometry.rightFarPlane), "Right extreme view");
                 }
 
-                if (showClipping)
+                if (QuiltRendererSceneViewControls.ShowNearFar)
                 {
                     Handles.color = new Color(0.8f, 0.8f, 0.8f, 0.55f);
                     DrawFrustumRays(geometry.nearPlane, geometry.farPlane);
                 }
                 if (!EditorApplication.isPlaying && !EditorApplication.isPlayingOrWillChangePlaymode)
                 {
-                    if (showFocusCursor) DrawFocusCursorHandle(renderer, framingCamera.transform, geometry.focusPlane);
+                    if (QuiltRendererSceneViewControls.Show3DFocusCursor) DrawFocusCursorHandle(renderer, framingCamera.transform, geometry.focusPlane);
                     else DrawFocusDistanceHandle(renderer, framingCamera.transform, geometry.focusPlane);
                 }
             }

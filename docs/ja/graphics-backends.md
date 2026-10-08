@@ -11,6 +11,7 @@ ViewWeaveのgraphics backendは、Unityが生成したQuiltをnative transport�
 | Legacy Direct | Windows D3D11 | Windows D3D11 / official Bridge | 既存のWindows D3D11経路 |
 | Bridge Worker | Windows D3D11 | worker所有D3D11 / official Bridge | Windows Editor PlayとPlayerの通常経路 |
 | Bridge Worker on D3D12 | Windows D3D12 resource | 同じGPU上のD3D11 worker / official Bridge | GPU共有で渡す。画像CPU readbackなし |
+| Edit Mode Rig preview | Windows Editor D3D11/D3D12 | LocalはEditor UI、deviceはBridge Worker / official Bridge | 明示開始するEditor専用経路。通常Sessionとは別。D3D11/D3D12のURP/HDRP device Start/Stop/Restart fixtureはPASS。手動の光学確認は保留中 |
 | Metal experiment | Unity Metal texture | official Bridge Metal API via IOSurface | native実験のみ。通常Sessionでは未対応、macOS native artifact未配布 |
 | Vulkan | なし | なし | 実装・対応なし |
 
@@ -27,9 +28,15 @@ flowchart TD
     Gate --> Contract["consumerのrelease契約は未確認"]
 ```
 
-通常表示はWindowsのBridge WorkerまたはD3D11 Legacy Directを使います。Metal枝は手動artifactと実験専用componentを要し、連続運用やUPM配布を示しません。
+通常Session表示はWindowsのBridge WorkerまたはD3D11 Legacy Directを使います。Edit Mode Rig previewは独立したEditor経路で、明示開始します。Local modeはpreview QuiltをEditor内へ表示し、device modeはWindows EditorのBridge Worker経路を使います。いずれもPlay Modeや対象Rigの通常Sessionを開始しません。Metal枝は手動artifactと実験専用componentを要し、連続運用やUPM配布を示しません。
 
 通常のmanaged policyはWindows D3D11/D3D12のWorkerと、D3D11のLegacy Directを対象にします。共通descriptor validationとBridge path判定もD3D11/D3D12 producerからD3D11 consumerへの経路を扱います。Windows backendはD3D11、D3D12、D3D11/D3D12 interopに分かれ、共通worker codeからtransport単位で呼ばれます。非対応platformのtransportはfailure stubです。
+
+## 明示的なEdit Mode Rig preview
+
+`Start Local Edit Mode Preview`と`Start Looking Glass Device Preview`は、利用者が開始を要求した場合だけEditor-owned producerを作ります。一時producerはsource Rig設定を使いますが、通常Bridge Sessionを開始したり所有したりしません。開始・停止によってsource Rigや保存sceneを変更しません。device previewはWindows Editor D3D11/D3D12に限られ、公式Bridge runtimeが必要です。D3D11/D3D12とURP/HDRPのdevice fixtureは各組み合わせで1/1 PASSしました。各fixtureは3840x2160 display profile、7680x4320 native output Quilt、8x6/48 viewsを使い、start/restartで各1 submit/1 completion、Stopでnative/retention pending 0を確認し、test processもexit code 0で終了しました。D3D11はReadbackTail、D3D12はFenceAndReadbackを使います。最終start-guard後の代表D3D12 fixtureも1/1 PASSし、実D3D12 producerからD3D11 consumerへの送信、Start/Restart各1 submission/1 completion、Stop後pending 0（0.4s/0.2s）を確認しました。手動の光学確認は未実施です。local previewのURP/HDRP GPU fixtureは2/2 PASSしました。source-controlled/hidden-producer両modeで8 viewのgreen geometryを描画し、layout変更時にproof後の旧RenderTexture retireと再構築、Stop/readback proof、retention pending 0を確認しています。local MSAA fixture設定はURP view=4/resolve=1、HDRP view=1/resolve=0でした。hidden Editor reload fixtureではDomain Reload前のactive preview texture、reload後のinactive/pending 0、明示restart成功を確認しました。previewなしURP control（同じ一時URP asset設定）、reloadなしactive preview、reload後restartしたactive previewの3本のFile > Exit probeでは、各fixture helperが`Stop()`と同期`RequestStop(true)`を先に呼び、その後`wantsToQuit` gateが`ready=true`、`pending=0`、`nativePending=0`を報告しました。これはhelper介入後のproof/recovery確認で、標準observer単独の自動停止確認ではありません。3本すべてUnity test processがteardown中（末尾の`Cleanup mono`/`CodeReloadManager destroyed`後）に同じ`0xC0000005`で終了し、normal exit code 0は未確認です。previewなしcontrolも同じcodeとなったため、共通症状の原因をpreviewに帰属しません。これらはFile > Exitの検証であり、own-window closeを直接試した証拠ではありません。自動更新は0.2秒周期を目標（5Hz）とします。明示的なrefreshやparameter編集は、それより早いrenderを要求することがあります。これはschedule設定であり、性能測定結果ではありません。
+
+preview停止、preview対象Rigから別RigへのAuthoring window切替、preview対象Rigを表示中のwindowのclose、またはPlay Mode遷移でsubmitを止め、preview専用render resourceのretirementを開始します。producer完了と必要なGPU/worker所有権proofが揃うまでGPU resourceを保持します。一時Play/Edit遷移fixtureは1/1 PASSし、Play移行後にpreview inactive・pending 0、Edit Mode復帰時に自動再開しないことを確認しました。Authoring windowのRig切替/close lifecycle-helper fixtureも1/1 PASSし、停止後inactive/pending 0でしたが、実window close callbackやFile > Exitを直接試した証拠ではありません。URP/HDRP local GPU fixtureではretirement、再構築、Stop/readback proof、retention pending 0を確認し、D3D11/D3D12 device fixtureではStop/Restart後のnative/retention pending 0を確認しました。hidden Editor fixtureではDomain Reload cleanup後の明示restartも確認しました。3本のFile > Exit probeではfixture helperが`Stop()`と同期`RequestStop(true)`を先に呼び、gateが`ready=true`、`pending=0`、`nativePending=0`を確認しました。これは標準observer単独の動作確認ではありません。previewなしcontrolを含め全processがteardown時に`0xC0000005`で終了し、正常終了code 0は未確認です。原因をpreviewへ断定せず、own-window closeの直接証拠とも扱いません。これはEditor preview固有のlifetimeで、下記の通常Session shutdown検証とは別です。
 
 ## Windowsのshutdownとpackage更新
 

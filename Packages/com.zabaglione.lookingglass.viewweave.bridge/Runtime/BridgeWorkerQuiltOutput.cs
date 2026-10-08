@@ -83,6 +83,10 @@ namespace ViewWeave
         int workerRenderEventId;
         BridgeWorkerNative.Status status;
         object playbackToken;
+#if UNITY_EDITOR
+        object editorPreviewOwner;
+        BridgeEditorPreviewRetentionRecord editorPreviewRetentionRecord;
+#endif
         bool disposalInProgress;
         long sessionGeneration;
         long lastReaperHandoffGeneration;
@@ -102,6 +106,48 @@ namespace ViewWeave
 
         public bool TryBegin()
         {
+            return TryBeginCore(BridgeGraphicsBackendRoute.Worker);
+        }
+
+#if UNITY_EDITOR
+        internal bool TryBeginEditorPreview(object owner, BridgeEditorPreviewRetentionRecord retentionRecord, out string error)
+        {
+            error = string.Empty;
+            if (owner == null || retentionRecord == null) { error = "An Editor preview owner and retention record are required."; return false; }
+            if (editorPreviewOwner != null || playbackToken != null) { error = "Bridge output is already owned."; return false; }
+            editorPreviewRetentionRecord = retentionRecord;
+            if (!TryBeginCore(BridgeGraphicsBackendRoute.EditorPreview))
+            {
+                error = LastError;
+                if (editorPreviewRetentionRecord.WorkerRecoveryRecord == null)
+                {
+                    editorPreviewRetentionRecord.SetWorkerProofExpected(false);
+                    editorPreviewRetentionRecord = null;
+                }
+                return false;
+            }
+            editorPreviewOwner = owner;
+            return true;
+        }
+
+        internal bool TrySubmitEditorPreview(object owner, RenderTexture quiltTexture, QuiltLayout layout)
+        {
+            if (owner == null || !ReferenceEquals(editorPreviewOwner, owner) || playbackToken != null) return false;
+            return SubmitCore(quiltTexture, layout);
+        }
+
+        internal bool EndEditorPreview(object owner, BridgeEditorPreviewRetentionRecord retentionRecord)
+        {
+            if (owner == null || retentionRecord == null || !ReferenceEquals(editorPreviewOwner, owner) || playbackToken != null ||
+                !ReferenceEquals(editorPreviewRetentionRecord, retentionRecord)) return false;
+            Dispose();
+            editorPreviewOwner = null;
+            return retentionRecord.WorkerHandoffComplete;
+        }
+#endif
+
+        bool TryBeginCore(BridgeGraphicsBackendRoute route)
+        {
             if (!isActiveAndEnabled) return Fail("Bridge worker must be active before begin");
             if (handle != IntPtr.Zero || state == WorkerState.Connecting || state == WorkerState.Ready || state == WorkerState.Closing)
             {
@@ -111,7 +157,7 @@ namespace ViewWeave
             if (BridgeWorkerLifecycle.RecoveryPending)
                 return Fail("Bridge worker shutdown recovery is still pending");
             if (!BridgeGraphicsBackendPolicy.TrySelect(
-                BridgeGraphicsBackendRoute.Worker,
+                route,
                 Application.platform,
                 Application.isEditor,
                 Application.isPlaying,
@@ -210,6 +256,9 @@ namespace ViewWeave
         public void Submit(RenderTexture quiltTexture, QuiltLayout layout)
         {
             if (playbackToken != null) return;
+#if UNITY_EDITOR
+            if (editorPreviewOwner != null) return;
+#endif
             SubmitCore(quiltTexture, layout);
         }
 
@@ -318,8 +367,35 @@ namespace ViewWeave
 
         void TransferOwnedResourcesToReaper(bool needsClose)
         {
+#if UNITY_EDITOR
+            if (editorPreviewRetentionRecord != null)
+            {
+                TransferOwnedResourcesToReaper(needsClose, BridgeWorkerReaper.EnqueueEditorPreview, editorPreviewRetentionRecord);
+                return;
+            }
+#endif
             TransferOwnedResourcesToReaper(needsClose, BridgeWorkerReaper.Enqueue);
         }
+
+#if UNITY_EDITOR
+        void TransferOwnedResourcesToReaper(bool needsClose, Action<IntPtr, RenderTexture, CommandBuffer, bool, BridgeEditorPreviewRetentionRecord> enqueue,
+            BridgeEditorPreviewRetentionRecord previewOwner)
+        {
+            if (enqueue == null) throw new ArgumentNullException(nameof(enqueue));
+            if (handle == IntPtr.Zero) return;
+            IntPtr ownedHandle = handle;
+            RenderTexture ownedTexture = transferTexture;
+            CommandBuffer ownedCommand = command;
+            handle = IntPtr.Zero;
+            transferTexture = null;
+            transferNativePtr = IntPtr.Zero;
+            transferSrgb = false;
+            command = null;
+            state = WorkerState.Closed;
+            enqueue(ownedHandle, ownedTexture, ownedCommand, needsClose, previewOwner);
+            RecordReaperHandoff(sessionGeneration);
+        }
+#endif
 
         internal void TransferOwnedResourcesToReaper(bool needsClose, Action<IntPtr, RenderTexture, CommandBuffer, bool> enqueue)
         {

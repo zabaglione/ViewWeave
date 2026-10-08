@@ -6,7 +6,7 @@ Looking Glass向けの非公式Unity SDKです。URPまたはHDRPの通常のシ
 
 Looking Glassに表示するときは、利用者自身のUnity projectをEditor PlayするかPlayerとして起動します。UnityがQuiltを描画し、インストール済みで起動中の公式Looking Glass Bridge runtimeが機器へ届けます。SDK内のTests/Bridge Unityプロジェクトやデモアプリを別途起動する必要はありません。
 
-対応環境はUnity 6000.6.4f1、Windows、URPまたはHDRPです。Bridge Worker経由ならD3D11またはD3D12のUnity Editor PlayとWindows Playerから出力できます。Legacy Direct経路はD3D11のみです。Edit ModeとmacOS通常Sessionは対象外です。Bridge runtimeとLooking Glass機器を別途用意してください。
+通常runtime Sessionの対応環境はUnity 6000.6.4f1、Windows、URPまたはHDRPです。Bridge WorkerはEditor PlayとWindows PlayerからD3D11またはD3D12で出力し、Legacy DirectはD3D11のみです。Rigの制作向けに、ViewWeaveRigから明示的に開始する別のEdit Mode previewもあります。これはPlay ModeやRigの通常Bridge Sessionを開始しません。D3D11/D3D12 deviceのURP/HDRP fixtureでStart/Stop/Restartとpending 0を確認しました。手動の光学確認は保留中です。隔離Editor fixtureではDomain Reload後のpreview cleanupと手動restartを確認しました。3本のFile > Exit probeではhelperによる停止・回収後にgateのpending 0を確認しましたが、Editor正常終了は未確認です。詳細は[Graphics backends](docs/ja/graphics-backends.md)を参照してください。通常のmacOS Sessionは対象外です。Bridge runtimeとLooking Glass機器を別途用意してください。
 
 macOS Metalは明示opt-inのbounded実験です。通常SessionはMetalを受け付けず、macOS native shimはUPMに含まれません。限定的な手順と未検証範囲は[Graphics backends](docs/ja/graphics-backends.md)を参照してください。
 
@@ -33,7 +33,7 @@ flowchart LR
 4. WindowsへLooking Glass Bridge runtimeをインストールして、対象機器を接続します。
 5. シーンに通常のCubeまたはBoxを置き、必要なmaterialとlightを設定します。特別なobject scriptやgeneratorは不要です。
 6. Hierarchyで使用中Camera、またはCameraを祖先に持つGameObjectを右クリックして`ViewWeave > Bridge Rig`を選びます。対象Cameraのposeと基本設定はRig作成時にコピーされます。`MainCamera`タグは不要です。
-7. CubeをCameraの前に置き、必要に応じてRigの`QuiltRenderer > Settings > Camera Distance`（`cameraDistance`）を調整します。詳しい焦点距離の決まり方は[Getting started](docs/ja/getting-started.md#既存のcubeやboxを表示する)を参照してください。
+7. CubeをCameraの前に置きます。InspectorをロックせずにRigを編集するには`Window > ViewWeave > Rig Authoring`を開くか、ViewWeaveRig Inspectorを使います。Focus Targetを割り当て、必要なら`Set Focus From Target Center`を明示的に実行します。手順は[Quiltカメラの調整](docs/ja/quilt-authoring.md#edit-mode-authoring-preview)を参照してください。
 8. HDRPではPlay前に`Window > Rendering > HDRP Wizard`を開き、HDRP/Global checksの`Lightmap Encoding`が赤い場合は`Fix All Platforms`を実行して`High Quality`にします。`Color Space`も`Linear`であることを確認し、必要ならWizardの`Fix`を実行してください。`Default Render Pipeline`、`Volume`、`Diffusion Profile`、`SRP Batcher`など他の項目が赤い場合も`Fix All`または各項目の`Fix`で設定を整えます。HDRP標準テンプレートでは通常これらの設定は済んでいます。Unityの[HDRP Wizard](https://docs.unity3d.com/Packages/com.unity.render-pipelines.high-definition@17.6/manual/Render-Pipeline-Wizard.html)の手順を参照してください。ViewWeaveは利用者projectのこれらの設定を変更しません。HDRP設定の詳細は[Getting started](docs/ja/getting-started.md)を参照してください。
 9. Unity EditorでPlayを押します。
 
@@ -57,7 +57,13 @@ Play中に`Window > ViewWeave > Quilt Capture`を開き、完成QuiltのPNG、JS
 
 ## カメラの構図調整
 
-QuiltRenderer InspectorのCamera FramingとScene Viewで描画範囲を確認できます。紫の面はzero-parallax/focus plane、青緑と橙の面はNear/Farです。構図を手動調整するときはEdit ModeでCamera Authoringの操作を使います。Inspectorをロックして対象objectを選び、選択objectからfocus距離を設定するか、Scene Viewをfocus面中央へ移動します。水平・垂直orbitはfocus点をpivotとしてカメラの位置と向きを一緒に回します。3D focus cursorは個別toggleで、既定ではOFFです。操作対象のEffective CameraをInspectorで確認してください。CinemachineやanimationはPlay中にcamera poseを上書きすることがあります。手順は[Quilt camera authoring](docs/ja/quilt-authoring.md#明示的なカメラ制作操作)を参照してください。
+ViewWeaveRig Inspectorまたは`Window > ViewWeave > Rig Authoring`を使うと、Rigを固定したままFocus Targetを選べます。紫の面はzero-parallax/focus plane、青緑と橙はNear/Farです。`Set Focus From Target Center`とorbit操作は明示的に行うEdit Modeの制作操作です。CinemachineやanimationはPlay中にReference Cameraのposeを上書きすることがあります。詳しくは[Quiltカメラの調整](docs/ja/quilt-authoring.md#edit-mode-authoring-preview)と[QuiltRenderer低レベル操作](docs/ja/quilt-authoring.md#明示的なカメラ制作操作)を参照してください。
+
+## Edit ModeでRigを制作・プレビューする
+
+Rigの`Preview`カテゴリには`Start Local Edit Mode Preview`と`Start Looking Glass Device Preview`があります。どちらも明示的に開始します。Local previewはEditor内にQuiltを表示し、device previewはWindows D3D11/D3D12のBridge Worker経路でQuiltを送ります。Unity Play ModeやRigの通常Bridge Sessionは開始しません。`Stop Preview`で停止できます。Authoring windowで別Rigへ切り替えた場合と、preview対象Rigを表示中のwindowを閉じた場合も停止を要求します。URP/HDRP local GPU fixtureは2/2 PASSし、layout再構築、旧textureのproof後retirement、Stop/readback proof、retention pending 0を確認しました。D3D11/D3D12 device fixtureもURP/HDRPで48 viewのStart/Stop/Restart後pending 0を確認しました。手動光学確認は保留中です。隔離hidden Editor fixtureでDomain Reload後のpreview cleanupと明示restartを確認しましたが、File > Exit quit gateの資源回収は3 probeで確認済みですが、全Editor processがteardown中に0xC0000005で終了し、正常終了は未確認です。詳細は[Graphics backends](graphics-backends.md)を参照してください。
+
+PreviewにはRig設定を基にした別のEditor-owned producerを使います。開始・停止だけでpreview状態が保存sceneへ書き戻されることはありません。`Camera & Focus`や`Rendering`などで行った通常の編集は、各設定の保存先へ反映されます。詳しくは[制作フロー](docs/ja/quilt-authoring.md#edit-mode-authoring-preview)を参照してください。
 
 対応条件と既知の制約は[Compatibility](docs/ja/compatibility.md)、Windows上の検証範囲は[Windows validation](docs/windows-validation.md)を参照してください。
 

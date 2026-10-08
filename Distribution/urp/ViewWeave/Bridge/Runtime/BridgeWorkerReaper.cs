@@ -14,6 +14,10 @@ namespace ViewWeave
             internal CommandBuffer command;
             internal GraphicsFence fence;
             internal AsyncGPUReadbackRequest readback;
+            internal BridgeEditorPreviewRetention.ReadbackCompletionLatch gpuReadbackCompletion;
+            internal object gpuReadbackIdentity;
+            internal BridgeGpuProofMode gpuProofMode;
+            internal bool gpuFencePassed;
             internal bool readbackIssued;
             internal bool flushAttempted;
             internal bool flushFailed;
@@ -103,6 +107,18 @@ namespace ViewWeave
 
         internal static void Enqueue(IntPtr handle, RenderTexture texture, CommandBuffer command, bool needsClose)
         {
+            EnqueueCore(handle, texture, command, needsClose, null);
+        }
+
+#if UNITY_EDITOR
+        internal static void EnqueueEditorPreview(IntPtr handle, RenderTexture texture, CommandBuffer command, bool needsClose, BridgeEditorPreviewRetentionRecord previewOwner)
+        {
+            EnqueueCore(handle, texture, command, needsClose, previewOwner);
+        }
+#endif
+
+        static void EnqueueCore(IntPtr handle, RenderTexture texture, CommandBuffer command, bool needsClose, BridgeEditorPreviewRetentionRecord previewOwner)
+        {
             if (handle == IntPtr.Zero) return;
             BridgeWorkerReaper reaper = Ensure();
             foreach (Lease lease in reaper.leases)
@@ -111,12 +127,20 @@ namespace ViewWeave
                 {
                     if (lease.command == null) lease.command = command;
                     lease.record.NeedsClose |= needsClose;
+#if UNITY_EDITOR
+                    if (previewOwner != null && !lease.record.AttachEditorPreviewOwner(previewOwner))
+                        throw new InvalidOperationException("Bridge preview recovery record is already associated with another owner.");
+#endif
                     return;
                 }
             }
             BridgeWorkerRecoveryRecord record = FindRecord(handle.ToInt64());
             if (record == null) record = BridgeWorkerRecoveryRecord.Create(handle, texture, needsClose, ++nextGeneration);
             else record.NeedsClose |= needsClose;
+#if UNITY_EDITOR
+            if (previewOwner != null && !record.AttachEditorPreviewOwner(previewOwner))
+                throw new InvalidOperationException("Bridge preview recovery record is already associated with another owner.");
+#endif
             var created = new Lease { record = record, command = command };
             reaper.leases.Add(created);
             reaper.RestoreRecords();
@@ -275,6 +299,13 @@ namespace ViewWeave
                     if (!lease.proofStarted) StartGpuProof(lease);
                     PumpGpuProof(lease);
                     if (!lease.record.CanRelease) continue;
+#if UNITY_EDITOR
+                    if (!lease.record.NotifyEditorPreviewOwnerComplete())
+                    {
+                        lease.record.SetDiagnostic("Editor preview owner did not confirm this exact worker recovery record; resources remain retained.");
+                        continue;
+                    }
+#endif
                     ReleaseCommand(lease);
                     lease.record.ReleaseProvenResources();
                     DestroyImmediate(lease.record);
@@ -353,16 +384,27 @@ namespace ViewWeave
             try
             {
                 if (!texture.IsCreated()) throw new InvalidOperationException("transfer texture is not created");
-                var fenceCommand = new CommandBuffer { name = "ViewWeave Bridge Reaper Fence" };
-                try
+                lease.gpuProofMode = BridgeGraphicsBackendPolicy.SelectCurrentGpuProofMode();
+                lease.record.SetGpuProofMode(lease.gpuProofMode);
+                if (lease.gpuProofMode == BridgeGpuProofMode.Unsupported)
+                    throw new InvalidOperationException("No safe GPU proof mode is supported for the transfer texture.");
+                if (lease.gpuProofMode == BridgeGpuProofMode.FenceAndReadback)
                 {
-                    lease.fence = fenceCommand.CreateGraphicsFence(GraphicsFenceType.AsyncQueueSynchronisation, SynchronisationStageFlags.AllGPUOperations);
-                    Graphics.ExecuteCommandBuffer(fenceCommand);
+                    var fenceCommand = new CommandBuffer { name = "ViewWeave Bridge Reaper Fence" };
+                    try
+                    {
+                        lease.fence = fenceCommand.CreateGraphicsFence(GraphicsFenceType.AsyncQueueSynchronisation, SynchronisationStageFlags.AllGPUOperations);
+                        Graphics.ExecuteCommandBuffer(fenceCommand);
+                    }
+                    finally { fenceCommand.Release(); }
                 }
-                finally { fenceCommand.Release(); }
-                lease.readback = AsyncGPUReadback.Request(texture, 0, 0, 1, 0, 1, 0, 1);
+                object readbackIdentity = new object();
+                lease.gpuReadbackIdentity = readbackIdentity;
+                lease.gpuReadbackCompletion = new BridgeEditorPreviewRetention.ReadbackCompletionLatch(readbackIdentity, 1);
+                lease.readback = AsyncGPUReadback.Request(texture, 0, 0, 1, 0, 1, 0, 1,
+                    request => RecordReadbackResult(lease, readbackIdentity, !request.hasError));
                 lease.readbackIssued = true;
-                lease.record.SetGpuProof(true, false, false, false);
+                lease.record.SetGpuProof(lease.gpuProofMode == BridgeGpuProofMode.FenceAndReadback, false, false, false);
             }
             catch (Exception error)
             {
@@ -389,11 +431,16 @@ namespace ViewWeave
             }
             try
             {
-                lease.readback.Update();
-                bool fencePassed = lease.fence.passed;
-                bool requestDone = lease.readback.done;
-                bool requestValid = requestDone && !lease.readback.hasError;
-                lease.record.SetGpuProof(true, fencePassed, requestDone, requestValid);
+                if (lease.gpuReadbackCompletion.GetOutcome(0) == BridgeEditorPreviewRetention.ReadbackCompletionLatch.Outcome.Pending)
+                {
+                    lease.readback.Update();
+                    if (lease.readback.done)
+                        RecordReadbackResult(lease, lease.gpuReadbackIdentity, !lease.readback.hasError);
+                }
+                if (lease.gpuProofMode == BridgeGpuProofMode.FenceAndReadback && !lease.gpuFencePassed)
+                    lease.gpuFencePassed = lease.fence.passed;
+                lease.record.SetGpuProof(lease.gpuProofMode == BridgeGpuProofMode.FenceAndReadback, lease.gpuFencePassed,
+                    lease.gpuReadbackCompletion.AllComplete, lease.gpuReadbackCompletion.AllSucceeded);
             }
             catch (Exception error)
             {
@@ -410,11 +457,16 @@ namespace ViewWeave
             if (lease.record.TransferTexture == null) return !lease.record.HadTransferTexture && lease.record.HasGpuReleaseProof;
             try
             {
-                if (!lease.readback.done) lease.readback.WaitForCompletion();
-                bool requestDone = lease.readback.done;
-                bool requestValid = requestDone && !lease.readback.hasError;
-                bool fencePassed = lease.fence.passed;
-                lease.record.SetGpuProof(true, fencePassed, requestDone, requestValid);
+                if (lease.gpuReadbackCompletion.GetOutcome(0) == BridgeEditorPreviewRetention.ReadbackCompletionLatch.Outcome.Pending)
+                {
+                    if (!lease.readback.done) lease.readback.WaitForCompletion();
+                    if (lease.readback.done)
+                        RecordReadbackResult(lease, lease.gpuReadbackIdentity, !lease.readback.hasError);
+                }
+                if (lease.gpuProofMode == BridgeGpuProofMode.FenceAndReadback && !lease.gpuFencePassed)
+                    lease.gpuFencePassed = lease.fence.passed;
+                lease.record.SetGpuProof(lease.gpuProofMode == BridgeGpuProofMode.FenceAndReadback, lease.gpuFencePassed,
+                    lease.gpuReadbackCompletion.AllComplete, lease.gpuReadbackCompletion.AllSucceeded);
                 return lease.record.HasGpuReleaseProof;
             }
             catch (Exception error)
@@ -422,6 +474,12 @@ namespace ViewWeave
                 lease.record.SetDiagnostic("Synchronous GPU proof failed: " + Sanitize(error.Message));
                 return false;
             }
+        }
+
+        static void RecordReadbackResult(Lease lease, object identity, bool succeeded)
+        {
+            if (lease == null || identity == null || !ReferenceEquals(lease.gpuReadbackIdentity, identity) || lease.gpuReadbackCompletion == null) return;
+            lease.gpuReadbackCompletion.TryRecord(identity, 0, succeeded);
         }
 
         static void ReleaseCommand(Lease lease)

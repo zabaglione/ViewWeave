@@ -1,0 +1,22 @@
+{
+  "name": "ViewWeave.BridgeEditorPreviewValidation.Editor.Tests",
+  "rootNamespace": "ViewWeave.BridgeEditorPreviewValidation",
+  "references": [
+    "ViewWeave.Core",
+    "ViewWeave.Core.Editor",
+    "ViewWeave.Bridge",
+    "ViewWeave.Bridge.Editor",
+    "ViewWeave.URP",
+    "ViewWeave.URP.Editor",
+    "ViewWeave.HDRP",
+    "ViewWeave.HDRP.Editor",
+    "Unity.RenderPipelines.Universal.Runtime",
+    "Unity.RenderPipelines.HighDefinition.Runtime"
+  ],
+  "overrideReferences": true,
+  "precompiledReferences": ["nunit.framework.dll"],
+  "optionalUnityReferences": ["TestAssemblies"],
+  "defineConstraints": ["UNITY_INCLUDE_TESTS"],
+  "includePlatforms": ["Editor"],
+  "autoReferenced": false
+}

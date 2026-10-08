@@ -19,6 +19,7 @@ namespace ViewWeave.Editor
         Button startButton;
         Button pauseButton;
         Button stopButton;
+        string openRequestMessage;
 
         [MenuItem("Window/ViewWeave/Quilt Playback")]
         static void OpenWindow()
@@ -26,6 +27,28 @@ namespace ViewWeave.Editor
             QuiltPlaybackWindow window = GetWindow<QuiltPlaybackWindow>();
             window.titleContent = new GUIContent("Quilt Playback");
             window.minSize = new Vector2(380f, 320f);
+        }
+
+        public static bool OpenForSession(ViewWeaveBridgeSession targetSession)
+        {
+            if (targetSession == null) return false;
+            QuiltPlaybackWindow window = GetWindow<QuiltPlaybackWindow>();
+            window.titleContent = new GUIContent("Quilt Playback");
+            window.minSize = new Vector2(380f, 320f);
+            BridgeQuiltPlaybackLease lease = BridgeQuiltPlaybackLease.Active;
+            if (lease != null && lease.IsBusy)
+            {
+                window.openRequestMessage = "Playback is active. The existing Bridge Session target was retained.";
+                if (window.errorLabel != null) window.errorLabel.text = window.openRequestMessage;
+                window.Show();
+                return false;
+            }
+
+            window.session = targetSession;
+            if (window.sessionField != null) window.sessionField.SetValueWithoutNotify(targetSession);
+            window.openRequestMessage = string.Empty;
+            window.Show();
+            return true;
         }
 
         public void CreateGUI()
@@ -79,6 +102,7 @@ namespace ViewWeave.Editor
 
             if (session == null && Selection.activeGameObject != null) session = Selection.activeGameObject.GetComponent<ViewWeaveBridgeSession>();
             if (sessionField != null) sessionField.value = session;
+            if (!string.IsNullOrEmpty(openRequestMessage) && errorLabel != null) errorLabel.text = openRequestMessage;
             RefreshControls();
         }
 
@@ -164,7 +188,7 @@ namespace ViewWeave.Editor
             if (lease != null)
             {
                 statusLabel.text = lease.StatusMessage;
-                errorLabel.text = lease.ErrorMessage;
+                errorLabel.text = string.IsNullOrEmpty(openRequestMessage) ? lease.ErrorMessage : openRequestMessage;
             }
         }
 

@@ -1,8 +1,27 @@
+using System;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 
 namespace ViewWeave.Editor
 {
+    /// <summary>Optional Core-to-Bridge Editor entry point for opening the integrated Rig authoring window.</summary>
+    public static class ViewWeaveRigAuthoringLauncher
+    {
+        static Action<ViewWeaveRig> openHandler;
+
+        public static bool IsRegistered => openHandler != null;
+
+        public static void Register(Action<ViewWeaveRig> handler) => openHandler = handler;
+
+        public static bool Open(ViewWeaveRig rig)
+        {
+            if (rig == null || openHandler == null) return false;
+            openHandler(rig);
+            return true;
+        }
+    }
+
     /// <summary>Editor-only math and explicit Undo-backed operations for camera framing authoring.</summary>
     public static class QuiltRendererAuthoringOperations
     {
@@ -89,10 +108,86 @@ namespace ViewWeave.Editor
             return IsFinite(focusPoint);
         }
 
+        public static bool TryGetSceneObjectCenter(QuiltRenderer renderer, UnityEngine.Object target, out Vector3 center, out string reason)
+        {
+            center = Vector3.zero;
+            reason = "Select one scene object before setting the focus distance.";
+            GameObject selected = target as GameObject;
+            if (selected == null && target is Component component) selected = component.gameObject;
+            if (selected == null) return false;
+            if (EditorUtility.IsPersistent(selected) || !selected.scene.IsValid() || !selected.scene.isLoaded)
+            {
+                reason = "The selected object must belong to a loaded scene.";
+                return false;
+            }
+            if (renderer != null)
+            {
+                GameObject rigObject = renderer.gameObject;
+                if (EditorUtility.IsPersistent(rigObject) || !rigObject.scene.IsValid() || !rigObject.scene.isLoaded)
+                {
+                    reason = "The ViewWeave Rig must belong to a loaded Scene or Prefab Stage.";
+                    return false;
+                }
+                bool rigIsPreviewObject = EditorSceneManager.IsPreviewSceneObject(rigObject);
+                bool targetIsPreviewObject = EditorSceneManager.IsPreviewSceneObject(selected);
+                bool sameStage;
+                if (rigIsPreviewObject || targetIsPreviewObject)
+                {
+                    PrefabStage rigPrefabStage = PrefabStageUtility.GetPrefabStage(rigObject);
+                    PrefabStage targetPrefabStage = PrefabStageUtility.GetPrefabStage(selected);
+                    sameStage = rigIsPreviewObject && targetIsPreviewObject && rigObject.scene == selected.scene &&
+                                rigPrefabStage != null && rigPrefabStage == targetPrefabStage;
+                }
+                else
+                {
+                    sameStage = StageUtility.GetStageHandle(rigObject) == StageUtility.GetStageHandle(selected);
+                }
+                if (!sameStage)
+                {
+                    reason = "The object must belong to the loaded Main Stage or the same Prefab Stage as the ViewWeave Rig. Isolated Preview Scenes are not supported.";
+                    return false;
+                }
+            }
+
+            Renderer[] renderers = selected.GetComponentsInChildren<Renderer>();
+            bool hasBounds = false;
+            Bounds bounds = default;
+            for (int i = 0; i < renderers.Length; ++i)
+            {
+                if (renderers[i] == null || !renderers[i].enabled) continue;
+                if (!hasBounds) { bounds = renderers[i].bounds; hasBounds = true; }
+                else bounds.Encapsulate(renderers[i].bounds);
+            }
+            if (!hasBounds)
+            {
+                Collider[] colliders = selected.GetComponentsInChildren<Collider>();
+                for (int i = 0; i < colliders.Length; ++i)
+                {
+                    if (colliders[i] == null || !colliders[i].enabled) continue;
+                    if (!hasBounds) { bounds = colliders[i].bounds; hasBounds = true; }
+                    else bounds.Encapsulate(colliders[i].bounds);
+                }
+            }
+            center = hasBounds ? bounds.center : selected.transform.position;
+            if (!IsFinite(center))
+            {
+                reason = "The selected object center is invalid.";
+                return false;
+            }
+            reason = string.Empty;
+            return true;
+        }
+
         static bool TryGetEditableFramingCamera(QuiltRenderer renderer, out Camera framingCamera)
         {
             framingCamera = null;
             if (EditorApplication.isPlaying || EditorApplication.isPlayingOrWillChangePlaymode || renderer == null || renderer.settings == null || renderer.sourceCamera == null)
+                return false;
+            if (EditorUtility.IsPersistent(renderer.gameObject) ||
+                !TryGetSceneObjectCenter(renderer, renderer.sourceCamera, out _, out _))
+                return false;
+            if (renderer.referenceCamera != null &&
+                !TryGetSceneObjectCenter(renderer, renderer.referenceCamera, out _, out _))
                 return false;
             framingCamera = renderer.EffectiveCamera;
             if (framingCamera == null || renderer.sourceCamera.orthographic || framingCamera.orthographic ||

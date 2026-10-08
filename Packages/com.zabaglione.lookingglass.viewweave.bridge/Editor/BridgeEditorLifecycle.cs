@@ -25,10 +25,15 @@ namespace ViewWeave.Editor
 
         static void OnPlayModeStateChanged(PlayModeStateChange state)
         {
+            if (state == PlayModeStateChange.ExitingEditMode) BridgeEditorPreviewRetention.RequestStop(false);
             if (state == PlayModeStateChange.ExitingPlayMode) BeginRecovery(false);
         }
 
-        static void OnBeforeAssemblyReload() { BeginRecovery(true); }
+        static void OnBeforeAssemblyReload()
+        {
+            BridgeEditorPreviewRetention.RequestStop(true);
+            BeginRecovery(true);
+        }
 
         static void ResumeRecovery()
         {

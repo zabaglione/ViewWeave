@@ -13,13 +13,13 @@ flowchart LR
 
 ## 利用者向け
 
-- [導入と使い方](getting-started.md): package導入、Rig作成、Cube表示、Player実行。
+- [導入と使い方](getting-started.md): package導入、Rig作成、Cube表示、Player実行、明示的なEdit Mode preview。
 - [対応条件](compatibility.md): 対応platform、Graphics API、pipeline、既知の制約。
 - [Quiltの保存と録画](quilt-capture.md): 完成Quiltの保存、PNG連番、Pause/Resume。
 - [Quiltの再生](../quilt-playback.md): 既存Bridge sessionから保存済みQuiltを再生。
 - [音声録音](quilt-recording-audio.md): Mono音声をPNG連番と別のWAVへ保存。
 - [動画書き出し](../quilt-video-export.md): 完成したPNG連番から無音MP4を作成。
-- [Quiltカメラの調整](quilt-authoring.md): focus距離、framing、Scene View操作。
+- [Quiltカメラの調整](quilt-authoring.md): Rigからのfocus、framing、Scene View操作、独立したEdit Mode preview。
 - [VFX Graph](vfx-graph.md): pipeline別のVFX Graph条件。
 
 ## 開発者向け

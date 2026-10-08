@@ -2,7 +2,7 @@
 
 # 導入と使い方
 
-この手順はUnity 6000.6.4f1、Windows、URPまたはHDRPを対象にします。標準のBridge Rig/Worker経路はWindows D3D11とD3D12のEditor PlayおよびPlayerで使えます。Looking Glassへの出力には公式Looking Glass Bridge runtimeと接続済みの機器が必要です。macOS Metalは通常Sessionに含まれず、別途明示opt-inの実験経路です。
+この手順はUnity 6000.6.4f1、Windows、URPまたはHDRPを対象にします。標準Bridge Rig/Worker SessionはWindows D3D11/D3D12のEditor PlayおよびPlayerで使えます。停止中のEdit Modeでは、ViewWeaveRigから明示的に開始する別のEditor-only previewを使えます。通常SessionはEdit Modeでは動作しません。Looking Glassへの出力には公式Looking Glass Bridge runtimeと接続済みの機器が必要です。macOS Metalは通常Sessionに含まれず、別途明示opt-inの実験経路です。
 
 この図は、既存CameraからBridge表示を始める最短経路です。Quality profileの詳細設定と任意のMetal実験は含みません。
 
@@ -41,16 +41,26 @@ Package Managerが更新を完了したら、Unity Editorを正常終了して�
 2. WindowsへLooking Glass Bridge runtimeをインストールし、Looking Glassを接続します。
 3. 通常のCubeやBoxをシーンに置き、標準のURP/HDRP materialとlightを使います。CubeへViewWeave componentを追加する必要はありません。
 4. 使用中Camera、またはCameraを祖先に持つGameObjectをHierarchyで右クリックし、`ViewWeave > Bridge Rig`を選びます。Rigは右クリックしたGameObjectの子として作成されます。右クリック対象かその祖先にあるCameraが優先され、対象がない場合は選択中GameObjectとその祖先、最後に`Camera.main`が使われます。`MainCamera`タグは必須ではありません。解決したCameraはRigの`Reference Camera`にも設定され、元Cameraは有効なまま、専用Rig CameraがQuiltを描画します。詳しくは[既存CameraからRigを作る](#既存cameraからrigを作る)を参照してください。
-5. RendererのあるCubeやBoxをCameraの前方に置きます。メニューでMain Cameraを右クリックした場合、zero-parallax距離は既定の10 Unity unitsから始まります。被写体に合わせたい場合は、Rigの`QuiltRenderer > Settings > Camera Distance`（`cameraDistance`）を調整します。
+5. RendererのあるCubeやBoxをCameraの前方に置きます。メニューでMain Cameraを右クリックした場合、zero-parallax距離は既定の10 Unity unitsから始まります。被写体に合わせてRigの`Camera & Focus`から`Focus Distance`を調整する方法は[Quiltカメラの調整](quilt-authoring.md)を参照してください。
 6. Rigのあるsceneを保存し、Unity EditorのPlayを押します。Unity Editorがsceneを描画し、Bridge runtime接続後にBridge profileに応じたQuiltがLooking Glassへ送られます。EditorのGame viewは通常のMainCamera表示のままです。
 
 被写体Rendererを選択した状態でRigを作るときは、選択中Rendererのbounds centerが解決したframing Cameraの前方かつnear/far clipの間にある場合、そのforward距離を`Camera Distance`に設定します。Rendererがない、disabled、範囲外、背面なら10 unitsです。framing Cameraが見つからない場合はRigの既定位置と3 unitsを使います。Cameraのnear/farとculling maskはRig作成時に初期値としてコピーします。poseと既定で有効なFOV追従は前段の説明どおり、実行中も参照Cameraから同期されます。
 
-Edit ModeとmacOS通常SessionではBridge出力しません。Metalは[Graphics backends](graphics-backends.md)に記載した明示opt-inの別実験です。Windows Playerで確認する場合はWindows Graphics APIsでD3D11またはD3D12を選び、Build and Runします。Legacy Direct経路を使う場合はD3D11を選んでください。
+通常SessionはEdit ModeではBridge出力しません。別機能のEdit Mode previewについては以下を参照してください。D3D11/D3D12 deviceのURP/HDRP fixtureではStart/Stop/Restartを確認しましたが、手動光学確認は未完了です。隔離hidden Editor fixtureでDomain Reload後のpreview cleanupと明示restartを確認しましたが、File > Exit quit gateの資源回収は3 probeで確認済みですが、全Editor processがteardown中に0xC0000005で終了し、正常終了は未確認です。詳細は[Graphics backends](graphics-backends.md)を参照してください。macOSの通常SessionもBridge出力しません。Metalは[Graphics backends](graphics-backends.md)に記載した明示opt-inの別実験です。Windows Playerで確認する場合はWindows Graphics APIsでD3D11またはD3D12を選び、Build and Runします。Legacy Direct経路を使う場合はD3D11を選んでください。
+
+## 任意のEdit Mode authoring preview
+
+`ViewWeaveRig`を選択して`Window > ViewWeave > Rig Authoring`を開くか、Rigの統合Inspectorを使います。Authoring windowはEditor selectionが変わっても設定対象Rigを維持するため、Inspector lockは不要です。`Camera & Focus`、`Rendering`、`Preview`、`Capture & Playback`、`Bridge`、`Advanced`の各sectionにそのRigの一般操作をまとめています。
+
+`Camera & Focus`では`Focus Target`を指定するか`Use Selection`を押します。`Set Focus From Target Center`を実行するとzero-parallax距離を変更します。Orbit操作は実際のframing Cameraを対象にします。`Follow Reference Camera FOV`が有効な場合、`Reference Vertical Field Of View`は割り当て済みReference Camera本体のFOVを編集します。後からCinemachineやanimationに上書きされる場合があります。`Source Near Clip`、`Source Far Clip`、`Source Culling Mask`はRig専用source Cameraを編集します。
+
+`Start Local Edit Mode Preview`はEditor内にQuiltを表示し、`Start Looking Glass Device Preview`はWindows D3D11/D3D12のBridge Worker経路で送信します。どちらも明示的に開始する別のEditor-owned producerで、Unity Play ModeやRigの通常Bridge Sessionは開始しません。先に通常Sessionを停止してください。preview開始・停止によってpreview状態がsceneへ書き戻されることはありません。URP/HDRP local GPU fixtureは2/2 PASSし、layout再構築とproofに基づくStop/readback、retention pending 0を確認しました。D3D11/D3D12 deviceのURP/HDRP fixtureも48 viewのStart/Stop/Restart後のpending 0を確認しました。手動光学確認は未完了です。隔離hidden Editor fixtureでDomain Reload後のpreview cleanupと明示restartを確認しましたが、File > Exit quit gateの資源回収は3 probeで確認済みですが、全Editor processがteardown中に0xC0000005で終了し、正常終了は未確認です。詳細は[Graphics backends](graphics-backends.md)を参照してください。`Stop Preview`で停止してください。Authoring windowで別Rigへ切り替えた場合とpreview対象Rigを表示中のwindowを閉じた場合も停止を要求します。
+
+`Capture & Playback`は対象RigのrendererまたはSession向けに既存のQuilt Capture、Quilt Playback、Quilt Video Exportを開きます。既存処理を再実装せず、録画、再生、書き出しを実行中に対象を無断で差し替えません。詳しくは[Quiltカメラ制作フロー](quilt-authoring.md#edit-mode-authoring-preview)を参照してください。
 
 ## 視点描画数を変更する
 
-HierarchyでViewWeave Rigを選び、Inspectorの`QuiltRenderer > View Render Mode`から`Full`、`Half`、`Quarter`を選びます。この48-view profile例では出力Quiltは常に48 tileで、modeが実際にrender requestを出す視点数を決めます。
+ViewWeave Rigを選択し、InspectorまたはRig Authoring windowの`Rendering > Quilt View Render Mode`から`Full`、`Half`、`Quarter`を選びます。この48-view profile例では出力Quiltは常に48 tileで、modeが実際にrender requestを出す視点数を決めます。
 
 ```mermaid
 flowchart LR
@@ -63,11 +73,11 @@ flowchart LR
 
 ## Qualityを変更する
 
-`ViewWeaveBridgeSession` Inspectorの`Quality`は各viewの描画解像度を選びます。`Preview`はprofile解像度の1/4、`Balanced`は1/2、`Native`はprofile本来の解像度です。Qualityを変えてもprofileのview数と`View Render Mode`は変わりません。
+`Rendering`の`Session Quality`は各viewの描画解像度を選びます。`Preview`はprofile解像度の1/4、`Balanced`は1/2、`Native`はprofile本来の解像度です。Qualityを変えてもprofileのview数と`View Render Mode`は変わりません。
 
-1. Unity EditorのPlayを停止します。
-2. Rig上の`ViewWeaveBridgeSession` Inspectorにある`Quality`を`Balanced`または`Native`へ変更します。
-3. Playを押し、Bridgeへ送られる表示を確認します。
+1. Rigを選択してInspectorまたは`Window > ViewWeave > Rig Authoring`を開きます。
+2. `Rendering`の`Session Quality`を`Balanced`または`Native`へ変更します。Play中はSessionのquality変更経路でactive workerを再設定します。
+3. Bridgeへ送られる表示を確認します。
 
 接続機器から取得したprofileが7680x4320、8x6 viewsなら、1 viewあたりはPreviewが240x180、Balancedが480x360、Nativeが960x720です。この数値はそのprofileの例で、他の機器に共通する仕様値ではありません。48 viewsの場合、NativeはPreviewと比べて1 viewあたり縦横4倍、総pixel数16倍を描画するため、GPU負荷が増えます。
 
@@ -77,7 +87,7 @@ Sessionは起動時に選択したQualityからquilt解像度とgridを適用し
 
 既存CameraのGameObjectを右クリックして`ViewWeave > Bridge Rig`を選びます。`MainCamera`タグのないCameraも選択できます。メニューはRig作成前に右クリックしたGameObjectとその祖先を調べ、最初に見つけたCameraをframing sourceとして解決します。Hierarchyのcontextを持たないメニューを使う場合は、選択中GameObjectとその祖先を調べ、見つからなければ`Camera.main`を使います。
 
-解決したCameraのworld pose、FOV、near/far clip、culling maskをRig Cameraへ初期値としてコピーし、`Reference Camera`にも設定します。標準の自動Quilt描画では各描画直前に参照Cameraのworld poseを読み取るため、Cinemachine Brainが出力するMain Cameraの位置・向きに追従します。`Follow Reference Field Of View`も既定で有効で、参照CameraのFOVが各描画でQuilt設定へ反映されます。手入力のFOVを使いたい場合はこのチェックを外してください。near/far clip、view aspect、focus distance、view coneは追従しません。元Cameraの設定は変更しません。Rigは右クリックしたGameObjectの子になり、専用CameraはQuilt描画用に自動で無効になります。
+解決したCameraのworld pose、FOV、near/far clip、culling maskをRig Cameraへ初期値としてコピーし、`Reference Camera`にも設定します。標準の自動Quilt描画では各描画直前に参照Cameraのworld poseを読み取るため、Cinemachine Brainが出力するMain Cameraの位置・向きに追従します。`Follow Reference Field Of View`も既定で有効です。Rig UIの`Reference Vertical Field Of View`は参照Camera本体のFOVを編集します。renderer側FOVは描画時に上書きされるため、手入力値を使う場合は追従を無効にしてください。near/far clip、culling mask、view aspect、focus distance、view coneは追従しません。`Source Near Clip`、`Source Far Clip`、`Source Culling Mask`はRig専用source Cameraを編集します。Rig作成やpreviewは元Camera設定を変更しません。Rigは右クリックしたGameObjectの子になり、専用CameraはQuilt描画用に自動で無効になります。
 
 `Camera Distance`は参照Cameraのworld位置から前方へ測るUnity unitsで、Sceneビューの紫のゼロ視差面がその位置を示します。1 unitを1mとするsceneなら距離をメートル相当として読めます。Cinemachine Virtual Camera自体ではなく、Brainが制御する実Cameraを参照してください。手動`RenderQuilt()`は呼び出し時の姿勢を使います。自動Quilt描画とURP VFX Graph用driverの姿勢同期については[Camera framingとFocus](quilt-authoring.md)を参照してください。
 

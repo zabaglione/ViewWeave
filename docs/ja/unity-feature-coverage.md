@@ -2,7 +2,7 @@
 
 # Unity feature coverage
 
-このページは、Unity 6000.6.4f1、URP/HDRP 17.6、Windows D3D11/D3D12のViewWeave複数視点出力について、公開機能と実測範囲を分けて記載します。Bridge Worker出力はWindows D3D11/D3D12 Editor PlayおよびPlayerが対象です。Legacy DirectはD3D11のみで、Edit ModeとmacOS出力は対象外です。合格は個別 fixture の結果であり、同じ機能を含む全プロジェクトを保証するものではありません。
+このページは、Unity 6000.6.4f1、URP/HDRP 17.6、Windows D3D11/D3D12のViewWeave複数視点出力について、公開機能と実測範囲を分けて記載します。Bridge Worker出力はWindows D3D11/D3D12 Editor PlayおよびPlayerが対象です。Legacy DirectはD3D11のみです。通常のBridge SessionはEdit Modeでは動作しません。制作向けの`ViewWeaveRig` Editor previewは明示的に開始します。URP/HDRP local GPU fixtureで8 view描画、layout再構築、proof後のtexture retirement、Stop/readback、retention pending 0を確認しました。D3D11/D3D12 device fixtureでURP/HDRPの3840x2160 display profile、7680x4320・8x6/48 view Quiltを使い、Start/Restart各1 submission/1 completion、Stop後native/retention pending 0を確認しました。一時Play/Edit遷移fixtureは1/1 PASSし、Play移行後にpreview inactive・pending 0、Edit Mode復帰時に自動再開しないことを確認しました。Core-only Unity 6000.6.4f1 projectでCore packageのimport/compileに成功し、`QuiltCoreBatchTests.Run`のlayout、projection、settings validation、view sampling検査がPASS、Editor自然終了code 0でした。手動光学確認は未完了です。隔離hidden Editor fixtureでDomain Reload後のpreview cleanupと明示restartを確認しましたが、File > Exit quit gateの資源回収は3 probeで確認済みですが、全Editor processがteardown中に0xC0000005で終了し、正常終了は未確認です。詳細は[Graphics backends](graphics-backends.md)を参照してください。macOS出力は対象外です。合格は個別 fixture の結果であり、同じ機能を含む全プロジェクトを保証するものではありません。
 
 ## 現在の検証集計
 

@@ -15,13 +15,13 @@ The links below are grouped by purpose.
 
 ## User guides
 
-- [Getting started](getting-started.md): install a package, create a Rig, display a Cube, and run a Player.
+- [Getting started](getting-started.md): install a package, create a Rig, display a Cube, and run a Player or start an explicit Edit Mode preview.
 - [Compatibility](compatibility.md): supported platforms, Graphics APIs, pipelines, and known limitations.
 - [Quilt capture](quilt-capture.md): save a completed Quilt, record a PNG sequence, and pause or resume.
 - [Quilt playback](quilt-playback.md): play saved Quilts through an existing Bridge session.
 - [Quilt recording audio](quilt-recording-audio.md): save Mono audio to a separate WAV alongside a PNG sequence.
 - [Quilt video export](quilt-video-export.md): create a silent MP4 from a completed PNG sequence.
-- [Quilt camera authoring](quilt-authoring.md): focus distance, framing, and Scene View controls.
+- [Quilt camera authoring](quilt-authoring.md): Rig-based focus, framing, Scene View controls, and the separate Edit Mode preview workflow.
 - [VFX Graph](vfx-graph.md): pipeline-specific VFX Graph conditions.
 
 ## Developer guides
