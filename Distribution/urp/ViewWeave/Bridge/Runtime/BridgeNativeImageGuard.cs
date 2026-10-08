@@ -326,13 +326,14 @@ namespace ViewWeave
                         error = RestartRequired("The Bridge package resolved path is unavailable");
                         return false;
                     }
-                    cachedExpectedPath = Path.GetFullPath(Path.Combine(package.resolvedPath, "Plugins", "x86_64", TargetModuleName));
-                    var file = new FileInfo(cachedExpectedPath);
-                    if (!file.Exists)
+                    if (!TryResolveExpectedNativePath(package.resolvedPath, File.Exists, out cachedExpectedPath, out error))
                     {
-                        error = RestartRequired("The expected package Bridge shim is missing");
+                        cacheValidationReady = false;
+                        cacheRefreshPending = false;
+                        cacheValidationError = error;
                         return false;
                     }
+                    var file = new FileInfo(cachedExpectedPath);
                     using (var stream = file.OpenRead())
                     using (SHA256 sha = SHA256.Create())
                         cachedFingerprint = NormalizePath(cachedExpectedPath) + "|" + BitConverter.ToString(sha.ComputeHash(stream)).Replace("-", string.Empty);
@@ -355,6 +356,46 @@ namespace ViewWeave
             {
                 expectedPath = string.Empty;
                 error = RestartRequired("The expected Bridge shim could not be inspected (" + exception.GetType().Name + ")");
+                return false;
+            }
+        }
+
+        internal static bool TryResolveExpectedNativePath(string packageRoot, Func<string, bool> fileExists,
+            out string expectedPath, out string error)
+        {
+            expectedPath = string.Empty;
+            error = string.Empty;
+            if (string.IsNullOrWhiteSpace(packageRoot) || fileExists == null)
+            {
+                error = RestartRequired("The Bridge package root or file lookup is unavailable");
+                return false;
+            }
+
+            try
+            {
+                string root = Path.GetFullPath(packageRoot);
+                string directCandidate = Path.GetFullPath(Path.Combine(root, "Plugins", "x86_64", TargetModuleName));
+                string bundledCandidate = Path.GetFullPath(Path.Combine(root, "ViewWeave", "Bridge", "Plugins", "x86_64", TargetModuleName));
+                bool directExists = fileExists(directCandidate);
+                bool bundledExists = fileExists(bundledCandidate);
+                if (directExists && bundledExists)
+                {
+                    error = RestartRequired("The Bridge shim exists at both direct and bundled package paths");
+                    return false;
+                }
+                if (!directExists && !bundledExists)
+                {
+                    error = RestartRequired("The expected package Bridge shim is missing from supported package paths");
+                    return false;
+                }
+
+                expectedPath = directExists ? directCandidate : bundledCandidate;
+                return true;
+            }
+            catch (Exception exception)
+            {
+                expectedPath = string.Empty;
+                error = RestartRequired("The expected package Bridge shim path could not be resolved (" + exception.GetType().Name + ")");
                 return false;
             }
         }

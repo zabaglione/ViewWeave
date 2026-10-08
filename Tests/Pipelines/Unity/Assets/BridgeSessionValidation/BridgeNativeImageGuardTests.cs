@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
@@ -54,6 +55,57 @@ namespace ViewWeave.BridgeSessionValidation
             Assert.IsFalse(ValidateOwner(new[] { owner }, @"E:\OldCache\lookingglass_bridge_shim.dll", owner));
             Assert.IsFalse(ValidateOwner(new[] { new ModuleRecord(ShimName, 0x2000, expected) }, expected, owner));
             Assert.IsFalse(ValidateOwner(Array.Empty<ModuleRecord>(), expected, owner));
+        }
+
+        [Test]
+        public void ExpectedShimResolverAcceptsDirectBridgePackageLayout()
+        {
+            const string root = @"E:\Packages\com.zabaglione.lookingglass.viewweave.bridge";
+            string expected = Path.GetFullPath(Path.Combine(root, "Plugins", "x86_64", ShimName));
+            var existing = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { expected };
+
+            Assert.IsTrue(BridgeNativeImageGuard.TryResolveExpectedNativePath(root, existing.Contains,
+                out string resolved, out string error), error);
+            Assert.AreEqual(expected, resolved);
+        }
+
+        [TestCase(@"E:\Packages\com.zabaglione.lookingglass.viewweave.urp")]
+        [TestCase(@"E:\Packages\com.zabaglione.lookingglass.viewweave.hdrp")]
+        public void ExpectedShimResolverAcceptsBundledPipelinePackageLayout(string root)
+        {
+            string expected = Path.GetFullPath(Path.Combine(root, "ViewWeave", "Bridge", "Plugins", "x86_64", ShimName));
+            var existing = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { expected };
+
+            Assert.IsTrue(BridgeNativeImageGuard.TryResolveExpectedNativePath(root, existing.Contains,
+                out string resolved, out string error), error);
+            Assert.AreEqual(expected, resolved);
+        }
+
+        [Test]
+        public void ExpectedShimResolverRejectsMissingCandidates()
+        {
+            Assert.IsFalse(BridgeNativeImageGuard.TryResolveExpectedNativePath(@"E:\Packages\empty",
+                _ => false, out string resolved, out string error));
+            Assert.AreEqual(string.Empty, resolved);
+            StringAssert.Contains("missing from supported package paths", error);
+            StringAssert.Contains("Restart the Unity Editor", error);
+        }
+
+        [Test]
+        public void ExpectedShimResolverRejectsAmbiguousCandidates()
+        {
+            const string root = @"E:\Packages\com.zabaglione.lookingglass.viewweave.urp";
+            var existing = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                Path.GetFullPath(Path.Combine(root, "Plugins", "x86_64", ShimName)),
+                Path.GetFullPath(Path.Combine(root, "ViewWeave", "Bridge", "Plugins", "x86_64", ShimName))
+            };
+
+            Assert.IsFalse(BridgeNativeImageGuard.TryResolveExpectedNativePath(root, existing.Contains,
+                out string resolved, out string error));
+            Assert.AreEqual(string.Empty, resolved);
+            StringAssert.Contains("both direct and bundled", error);
+            StringAssert.Contains("Restart the Unity Editor", error);
         }
 
         [Test]
