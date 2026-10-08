@@ -19,6 +19,18 @@ namespace ViewWeave
             return Matrix4x4.Frustum(-right + shift, right + shift, -top, top, nearClip, farClip);
         }
 
+        /// <summary>
+        /// Applies a horizontal eye offset to a centered perspective projection.
+        /// centerProjection must be the projection for eyeOffset == 0, with the same
+        /// field of view, aspect ratio, and clip planes used for the offset view.
+        /// </summary>
+        public static Matrix4x4 ProjectionWithViewOffset(Matrix4x4 centerProjection, float eyeOffset, float distance)
+        {
+            Matrix4x4 projection = centerProjection;
+            projection.m02 = centerProjection.m02 + (-eyeOffset / distance) * centerProjection.m00;
+            return projection;
+        }
+
         public static Quaternion ParallelViewRotation(Quaternion baseRotation) => baseRotation;
     }
 }
