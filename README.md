@@ -56,6 +56,7 @@ HDRPとVFX GraphはLinear color spaceが必須です。HDRP Wizardの`Lightmap E
 - [Compatibility](docs/compatibility.md): 対応条件と既知の制約
 - [Windows validation](docs/windows-validation.md): 実行済み試験と結果
 - [DX12 HDRP performance investigation](docs/dx12-performance-investigation.md): Profiler調査と視点数削減の実測
+- [Legacy render pipeline investigation](docs/legacy-render-pipeline-investigation.md): 旧Looking Glass専用pipelineの調査と採用した投影計算
 - [公式SDK機能調査](docs/official-sdk-feature-research.md): Quilt保存、連番録画、カメラ操作の比較
 - [Unity多視点最適化調査](docs/unity-multiview-research.md): Unityと研究での描画最適化
 - [XR Display Provider調査](docs/xr-provider-investigation.md): 既存Cameraを使うXR連携方式の調査（採用・試作は保留）
