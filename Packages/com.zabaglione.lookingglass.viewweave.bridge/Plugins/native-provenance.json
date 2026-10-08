@@ -31,7 +31,7 @@
   "generator": "Visual Studio 17 2022; MSBuild 17.14.23",
   "independentCTest": "Local Unity 6000.6.4f1 PluginAPI Release build and CTest: 6/6 passed; pinned NativeRenderingPlugin 5222541 header build and CTest: 6/6 passed. The cleanup exception retention case runs in a separate process after worker host join.",
   "d3d12HardwareValidation": "Historical only: NVIDIA RTX 3090 Ti D3D12 shared-resource handoff, ring reuse, typeless formats, timeout, late completion, device-removal seam, and generation coverage were previously exercised. These observations are not fresh validation for this DLL.",
-  "validationLimits": "The Native artifact build and local CTest validation are scoped to the as-built source base 454ce3898a4999a347a13b605962731d1db6a277 plus retained working-tree Native changes; the as-built Windows DLL passed local and pinned-header CTest 6/6. Later fixture runtime lifecycle evidence is recorded separately in freshRuntimeEvidence and is candidate-specific. Case02 passed only under the previous frozen automatic-WM_CLOSE candidate; the newer manual-notice-only candidate has not been run. Scene/window GUI comparisons include aborted or unperformed cases and no additional pass. These results do not establish optical output, performance improvement, or Bridge consumer GPU acknowledgement. Earlier Windows access-violation causes remain unproven; the SDK-absent File/Exit access violation is a separate historical control, and the SDK-absent queued-close control does not prove full-Bridge shutdown behavior. Hotplug, multi-device behavior, all-48-view optical review, and the Windows access-violation release gate remain unresolved.",
+  "validationLimits": "The Native artifact build and local CTest validation are scoped to the as-built source base 454ce3898a4999a347a13b605962731d1db6a277 plus retained working-tree Native changes; the as-built Windows DLL passed local and pinned-header CTest 6/6. Later fixture runtime lifecycle evidence is recorded separately in freshRuntimeEvidence and is candidate-specific. Case02 passed only under the previous frozen automatic-WM_CLOSE candidate; the newer manual-notice-only candidate has not been run. Scene/window GUI comparisons include aborted or unperformed cases and no additional pass. These results do not establish optical output, performance improvement, or Bridge consumer GPU acknowledgement. Earlier Windows access-violation causes remain unproven; the SDK-absent File/Exit access violation is a separate historical control, and the SDK-absent queued-close control does not prove full-Bridge shutdown behavior. Hotplug, multi-device behavior, all-48-view optical review, and the Windows access-violation release gate remain unresolved. The two non-Windows close-status stubs were added after this Windows artifact build from source commit cdb6933; the Windows preprocessor branch is unchanged and no Windows DLL rebuild was performed. Local unsupported-shim object compilation passed; Linux ABI runtime and macOS symbol-export CI verification are pending.",
   "license": "Apache-2.0",
   "generatedAt": "2026-10-08T01:58:11.032816Z",
   "unityD3D12InterfaceSelection": "The local Unity 6000.6.4f1 PluginAPI exposes IUnityGraphicsD3D12v8 and v7; the current packaged Windows DLL was built locally with v8 preferred. Historical CI at commit 054fffeb817ac8daae6ff68ed567ec7e69fe4798 used the NativeRenderingPlugin 522254181faf188efa8b50c3e3bf6fce720b26e4 v7 pin and did not rebuild this current worktree DLL.",
@@ -288,5 +288,20 @@
       "status": "Scene 1 and windows 1/2 ended OWNER_ABORT with cancellation unobserved; prefab case not performed; window 3 retry was rejected by auto-review.",
       "result": "NO PASS"
     }
-  ]
+  ],
+  "postBuildSourceChanges": {
+    "localValidation": "unsupported shim source compiled locally to an object and the two symbols were verified in the object; no local Linux dlsym/runtime test was run. Linux ABI test and macOS export verification are pending CI.",
+    "scope": "Non-Windows close-status ABI stubs only: unsupported shim exports query and ACK as safe Unsupported responses, and the non-Windows branch of bridge_shim.cpp exports the same stubs. The Windows preprocessor branch and packaged Windows DLL were not changed or rebuilt.",
+    "files": [
+      {
+        "path": "Native/platform/unsupported/bridge_shim_unsupported.cpp",
+        "sha256": "B70F18C443BBA6C3AB5197D89E1148166D36F64704D8E3C274884F3D5E265AFF"
+      },
+      {
+        "path": "Native/bridge_shim.cpp",
+        "sha256": "3F8CC4C04D2EBFE09A8E89A305FC8D9E3FCC8814EC9FF814EBD9010B4D33D1C1"
+      }
+    ],
+    "baseCommit": "cdb6933"
+  }
 }

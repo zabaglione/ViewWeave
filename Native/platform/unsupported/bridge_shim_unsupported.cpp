@@ -36,6 +36,18 @@ extern "C" LKG_EXPORT int32_t lkg_bridge_get_display(uint32_t, LkgBridgeDisplayI
     return -1;
 }
 extern "C" LKG_EXPORT uint64_t lkg_bridge_create_d3d11_session(void*, uint32_t) { return 0; }
+extern "C" LKG_EXPORT int32_t lkg_bridge_get_session_close_status_v1(uint64_t session, LkgBridgeSessionCloseStatusV1* status) {
+    if (!status || status->structSize != sizeof(LkgBridgeSessionCloseStatusV1) || status->version != 1) return -1;
+    status->structSize = sizeof(LkgBridgeSessionCloseStatusV1);
+    status->version = 1;
+    status->sessionId = session;
+    status->state = LKG_BRIDGE_SESSION_CLOSE_UNKNOWN;
+    status->lastResult = -2;
+    status->reserved0 = 0;
+    status->reserved1 = 0;
+    return -2;
+}
+extern "C" LKG_EXPORT int32_t lkg_bridge_ack_session_close_v1(uint64_t) { return -2; }
 extern "C" LKG_EXPORT int32_t lkg_bridge_destroy_session(uint64_t) { return -1; }
 extern "C" LKG_EXPORT void* lkg_bridge_render_event_func(void) { return nullptr; }
 extern "C" LKG_EXPORT void* lkg_bridge_make_draw_data(uint64_t, void*, uint32_t, uint32_t, float, float) { return nullptr; }
