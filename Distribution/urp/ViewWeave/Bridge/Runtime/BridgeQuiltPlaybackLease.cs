@@ -34,6 +34,8 @@ namespace ViewWeave
         bool readbackCompleted;
         bool readbackValid;
         bool transitionReadbackIssued;
+        bool transitionFlushAttempted;
+        bool transitionFlushFailed;
         bool finalQuitPending;
         AsyncGPUReadbackRequest transitionReadback;
         bool resetCompleted;
@@ -651,6 +653,8 @@ namespace ViewWeave
                 transitionReadback = AsyncGPUReadback.Request(playbackTexture, mipIndex: 0, x: 0, width: 1,
                     y: 0, height: 1, z: 0, depth: 1, dstFormat: TextureFormat.RGBA32);
                 transitionReadbackIssued = true;
+                transitionFlushAttempted = false;
+                transitionFlushFailed = false;
             }
             catch (Exception exception)
             {
@@ -663,7 +667,20 @@ namespace ViewWeave
 
         void PumpTransitionReadback()
         {
-            if (!transitionReadbackIssued || readbackCompleted) return;
+            if (!transitionReadbackIssued || readbackCompleted || transitionFlushFailed) return;
+            try
+            {
+                BridgeWorkerEditorGpuFlush.SubmitIfNeeded(ref transitionFlushAttempted);
+            }
+            catch (Exception exception)
+            {
+                transitionFlushFailed = true;
+                readbackCompleted = false;
+                readbackValid = false;
+                if (recoveryRecord != null) recoveryRecord.SetReadback(false, false);
+                Retain("Final quit GPU command submission failed: " + Sanitize(exception.Message));
+                return;
+            }
             try
             {
                 transitionReadback.Update();

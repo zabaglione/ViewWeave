@@ -19,13 +19,22 @@ namespace ViewWeave
 
         internal static bool WaitForFinalization()
         {
-            return BridgeWorkerQuitWait.WaitForFinalization(
-                RequestQuit,
-                PumpOnce,
-                () => finalizationReady && BridgeWorkerReaper.PendingCount == 0 &&
-                    !BridgeWorkerReaper.HasUnprovenResources && PlaybackQuitCleanupComplete(),
-                WarnOnce,
-                ShutdownTimeoutSeconds);
+            bool enableEditorSubmission = Application.platform == RuntimePlatform.WindowsEditor;
+            if (enableEditorSubmission) BridgeWorkerEditorGpuFlush.BeginSynchronousWait();
+            try
+            {
+                return BridgeWorkerQuitWait.WaitForFinalization(
+                    RequestQuit,
+                    PumpOnce,
+                    () => finalizationReady && BridgeWorkerReaper.PendingCount == 0 &&
+                        !BridgeWorkerReaper.HasUnprovenResources && PlaybackQuitCleanupComplete(),
+                    WarnOnce,
+                    ShutdownTimeoutSeconds);
+            }
+            finally
+            {
+                if (enableEditorSubmission) BridgeWorkerEditorGpuFlush.EndSynchronousWait();
+            }
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]

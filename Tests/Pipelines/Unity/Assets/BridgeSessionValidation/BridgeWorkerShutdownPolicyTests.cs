@@ -248,5 +248,51 @@ namespace ViewWeave.BridgeSessionValidation
             Assert.IsTrue(messages[0].Contains("GPU wait failed"));
             foreach (char character in messages[0]) Assert.LessOrEqual((int)character, 0x7e);
         }
+
+        [Test]
+        public void EditorGpuFlushSubmitsOnlyOnceInsideSynchronousWait()
+        {
+            bool attempted = false;
+            int submissions = 0;
+            int attemptsBefore = BridgeWorkerEditorGpuFlush.FlushAttempts;
+            int successesBefore = BridgeWorkerEditorGpuFlush.SuccessfulFlushes;
+
+            Assert.IsFalse(BridgeWorkerEditorGpuFlush.SubmitIfNeeded(ref attempted, () => submissions++));
+            Assert.IsFalse(attempted);
+            BridgeWorkerEditorGpuFlush.BeginSynchronousWait();
+            try
+            {
+                Assert.IsTrue(BridgeWorkerEditorGpuFlush.SynchronousWaitActive);
+                Assert.IsTrue(BridgeWorkerEditorGpuFlush.SubmitIfNeeded(ref attempted, () => submissions++));
+                Assert.IsTrue(attempted);
+                Assert.IsFalse(BridgeWorkerEditorGpuFlush.SubmitIfNeeded(ref attempted, () => submissions++));
+                Assert.AreEqual(1, submissions);
+                Assert.AreEqual(attemptsBefore + 1, BridgeWorkerEditorGpuFlush.FlushAttempts);
+                Assert.AreEqual(successesBefore + 1, BridgeWorkerEditorGpuFlush.SuccessfulFlushes);
+            }
+            finally { BridgeWorkerEditorGpuFlush.EndSynchronousWait(); }
+
+            Assert.IsFalse(BridgeWorkerEditorGpuFlush.SynchronousWaitActive);
+        }
+
+        [Test]
+        public void EditorGpuFlushFailureMarksProofAttemptAndDoesNotRetry()
+        {
+            bool attempted = false;
+            int attemptsBefore = BridgeWorkerEditorGpuFlush.FlushAttempts;
+            int successesBefore = BridgeWorkerEditorGpuFlush.SuccessfulFlushes;
+            BridgeWorkerEditorGpuFlush.BeginSynchronousWait();
+            try
+            {
+                Assert.Throws<System.InvalidOperationException>(() =>
+                    BridgeWorkerEditorGpuFlush.SubmitIfNeeded(ref attempted,
+                        () => throw new System.InvalidOperationException("flush failed")));
+                Assert.IsTrue(attempted);
+                Assert.IsFalse(BridgeWorkerEditorGpuFlush.SubmitIfNeeded(ref attempted, () => { }));
+                Assert.AreEqual(attemptsBefore + 1, BridgeWorkerEditorGpuFlush.FlushAttempts);
+                Assert.AreEqual(successesBefore, BridgeWorkerEditorGpuFlush.SuccessfulFlushes);
+            }
+            finally { BridgeWorkerEditorGpuFlush.EndSynchronousWait(); }
+        }
     }
 }

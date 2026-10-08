@@ -15,6 +15,8 @@ namespace ViewWeave
             internal GraphicsFence fence;
             internal AsyncGPUReadbackRequest readback;
             internal bool readbackIssued;
+            internal bool flushAttempted;
+            internal bool flushFailed;
             internal bool proofStarted;
             internal bool warned;
         }
@@ -373,6 +375,18 @@ namespace ViewWeave
         {
             if (lease.record == null || lease.record.HasGpuReleaseProof || !lease.proofStarted) return;
             if (!lease.readbackIssued) return;
+            if (lease.flushFailed) return;
+            try
+            {
+                BridgeWorkerEditorGpuFlush.SubmitIfNeeded(ref lease.flushAttempted);
+            }
+            catch (Exception error)
+            {
+                lease.flushFailed = true;
+                lease.record.SetDiagnostic("GPU command submission failed: " + Sanitize(error.Message));
+                Warn(lease, lease.record.Diagnostic);
+                return;
+            }
             try
             {
                 lease.readback.Update();
