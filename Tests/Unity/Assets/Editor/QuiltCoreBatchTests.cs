@@ -26,22 +26,80 @@ public static class QuiltCoreBatchTests
 
     static void CheckProjection()
     {
-        float a = QuiltMath.ViewOffset(0, 5, 40f, 1f);
-        float b = QuiltMath.ViewOffset(4, 5, 40f, 1f);
-        Require(Math.Abs(a + b) < 0.00001f, "symmetric view offsets");
-        Matrix4x4 p = QuiltMath.OffAxisProjection(50f, 1f, 0.01f, 100f, a, 1f);
-        Require(p.m02 > 0f, "off-axis projection sign");
-        GameObject go = new GameObject("focal-plane-test");
-        Camera c = go.AddComponent<Camera>();
-        c.nearClipPlane = 0.01f; c.farClipPlane = 100f; c.fieldOfView = 50f; c.aspect = 1f;
-        Vector3[] focalPoints = { new Vector3(0f, 0f, 1f), new Vector3(0f, 0.1f, 1f), new Vector3(0f, -0.1f, 1f) };
-        for (int i = 0; i < 2; ++i)
+        float[] fovs = { 20f, 50f, 95f, 135f };
+        float[] aspects = { 0.5f, 1f, 1.7777778f, 2.4f };
+        float[] nears = { 0.001f, 0.01f, 0.2f, 1f };
+        float[] fars = { 2f, 100f, 1000f, 5000f };
+        float[] distances = { 0.05f, 0.75f, 2f, 25f };
+        float[] cones = { 0f, 1f, 40f, 89f };
+        int[] counts = { 1, 2, 3, 7, 48 };
+        for (int sample = 0; sample < fovs.Length; ++sample)
         {
-            float offset = i == 0 ? a : b;
-            c.transform.position = new Vector3(offset, 0f, 0f);
-            c.projectionMatrix = QuiltMath.OffAxisProjection(50f, 1f, c.nearClipPlane, c.farClipPlane, offset, 1f);
-            foreach (Vector3 point in focalPoints)
-                Require(Math.Abs(c.WorldToViewportPoint(point).x - 0.5f) < 0.001f, "focal plane invariant");
+            float fov = fovs[sample];
+            float aspect = aspects[sample];
+            float nearClip = nears[sample];
+            float farClip = fars[sample];
+            float distance = distances[sample];
+            float cone = cones[sample];
+            Matrix4x4 center = QuiltMath.OffAxisProjection(fov, aspect, nearClip, farClip, 0f, distance);
+            foreach (int count in counts)
+            {
+                float maximumOffset = QuiltMath.ViewOffset(count - 1, count, cone, distance);
+                for (int index = 0; index < count; ++index)
+                {
+                    float normalized = count <= 1 ? 0f : index / (float)(count - 1) * 2f - 1f;
+                    float offset = maximumOffset * normalized;
+                    Matrix4x4 optimized = QuiltMath.ProjectionWithViewOffset(center, offset, distance);
+                    Matrix4x4 reference = LegacyFrustumProjection(fov, aspect, nearClip, farClip, offset, distance);
+                    RequireMatricesClose(optimized, reference, 0.00002f, "center-plus-offset equals frustum " + count + ":" + index);
+                }
+                Require(Math.Abs(QuiltMath.ViewOffset(0, count, cone, distance) + maximumOffset) < 0.00002f, "symmetric view offsets " + count);
+            }
+        }
+        CheckFocalPlaneInvariant(0.01f, 100f, 50f, 1f, 1f, Vector3.zero, Quaternion.identity);
+        CheckFocalPlaneInvariant(0.03f, 250f, 73f, 1.6f, 2.3f, new Vector3(4.2f, -1.7f, 8.1f), Quaternion.Euler(17f, 62f, -11f));
+        CheckFocalPlaneInvariant(0.2f, 900f, 112f, 0.72f, 0.65f, new Vector3(-15f, 2.4f, 0.3f), Quaternion.Euler(-31f, 178f, 24f));
+    }
+
+    static Matrix4x4 LegacyFrustumProjection(float fov, float aspect, float nearClip, float farClip, float offset, float distance)
+    {
+        float top = nearClip * Mathf.Tan(fov * Mathf.Deg2Rad * 0.5f);
+        float right = top * aspect;
+        float shift = -offset / distance * nearClip;
+        return Matrix4x4.Frustum(-right + shift, right + shift, -top, top, nearClip, farClip);
+    }
+
+    static void RequireMatricesClose(Matrix4x4 actual, Matrix4x4 expected, float tolerance, string name)
+    {
+        for (int row = 0; row < 4; ++row)
+            for (int column = 0; column < 4; ++column)
+                Require(Math.Abs(actual[row, column] - expected[row, column]) <= tolerance, name + " matrix[" + row + "," + column + "]");
+    }
+
+    static void CheckFocalPlaneInvariant(float nearClip, float farClip, float fov, float aspect, float distance, Vector3 origin, Quaternion rotation)
+    {
+        GameObject go = new GameObject("focal-plane-test");
+        Camera camera = go.AddComponent<Camera>();
+        camera.nearClipPlane = nearClip;
+        camera.farClipPlane = farClip;
+        camera.transform.SetPositionAndRotation(origin, rotation);
+        Vector3[] localPoints = { new Vector3(0f, 0f, distance), new Vector3(0.1f * distance, 0.07f * distance, distance), new Vector3(-0.13f * distance, -0.09f * distance, distance) };
+        Vector3[] focalPoints = new Vector3[localPoints.Length];
+        for (int point = 0; point < localPoints.Length; ++point) focalPoints[point] = camera.transform.TransformPoint(localPoints[point]);
+        Matrix4x4 center = QuiltMath.OffAxisProjection(fov, aspect, nearClip, farClip, 0f, distance);
+        camera.projectionMatrix = center;
+        Vector3[] baselineViewport = new Vector3[focalPoints.Length];
+        for (int point = 0; point < focalPoints.Length; ++point) baselineViewport[point] = camera.WorldToViewportPoint(focalPoints[point]);
+        float[] offsets = { -0.3f * distance, 0f, 0.3f * distance };
+        foreach (float offset in offsets)
+        {
+            camera.transform.position = origin + rotation * Vector3.right * offset;
+            camera.projectionMatrix = QuiltMath.ProjectionWithViewOffset(center, offset, distance);
+            for (int point = 0; point < focalPoints.Length; ++point)
+            {
+                Vector3 viewport = camera.WorldToViewportPoint(focalPoints[point]);
+                Require(Math.Abs(viewport.x - baselineViewport[point].x) < 0.001f && Math.Abs(viewport.y - baselineViewport[point].y) < 0.001f, "translated and rotated focal plane invariant");
+            }
         }
         UnityEngine.Object.DestroyImmediate(go);
     }
