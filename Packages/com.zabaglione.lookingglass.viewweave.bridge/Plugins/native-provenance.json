@@ -28,12 +28,12 @@
   "pluginApiUnityVersion": "6000.6.4f1",
   "buildDirectory": "Fresh local Windows Release regression build",
   "generator": "Visual Studio 17 2022",
-  "independentCTest": "Fresh local Windows Release CTest on the unchanged DLL: 4/4 passed. The common test was portable; the 349-draw transport test used D3D11 WARP and showed no D3D12 skip, so D3D12 hardware-path execution is inferred from the log and test source. Loader lifecycle used fake Bridge runtimes; shutdown contract used a fake Bridge runtime and WARP. This does not validate Unity runtime, official Bridge hardware, Metal, optical output, or shutdown access-violation resolution. The later fake-test initializer correction and macOS-only CMake test-source addition were not rerun as CTest.",
+  "independentCTest": "Fresh local Windows Release CTest on the unchanged v8-built DLL: 4/4 passed. The common test was portable; the 349-draw transport test used D3D11 WARP and showed no D3D12 skip, so D3D12 hardware-path execution is inferred from the log and test source. Loader lifecycle used fake Bridge runtimes; shutdown contract used a fake Bridge runtime and WARP. The later CI workflows passed static/portable/transport and Windows fake regressions using the v7 pin, but they did not rebuild or replace this packaged v8 DLL. No Unity runtime, official Bridge hardware, Metal runtime, optical output, or shutdown access-violation resolution is established.",
   "d3d12HardwareValidation": "Historical only: NVIDIA RTX 3090 Ti D3D12 shared-resource handoff, ring reuse, typeless formats, timeout, late completion, device-removal seam, and generation coverage were previously exercised. These observations are not fresh validation for this DLL.",
-  "validationLimits": "The Windows DLL SHA-256 remains 9E81DF02D065DABE39DAACC3E5F90ABECEA401F6DAD5D2E68096CEE3D7B86DCE and the Windows implementation sources have not changed since it was built. Native/CMakeLists.txt was changed afterward only to add metal_submission_lifetime.cpp to the macOS metal_api_contract_test target; this does not affect the Windows DLL target. Current source hashes are listed, and the artifact-build CMake hash is recorded separately. A later local Windows all-target compile-only check with the updated v7 CI pin passed; it is not a CTest run. Follow-up CI is pending. No Apple Silicon runtime/Bridge/optical test was performed; macOS native artifacts are CI-only/manual and are not included in UPM. Historical GPU/Editor observations are not fresh validation for this DLL. Hotplug, multi-device behavior, all-48-view optical review, and access-violation resolution remain unverified.",
+  "validationLimits": "The packaged Windows DLL SHA-256 remains 9E81DF02D065DABE39DAACC3E5F90ABECEA401F6DAD5D2E68096CEE3D7B86DCE; local DLL provenance used Unity 6000.6.4f1 v8-preferred headers. Current source hashes are listed, and the artifact-build CMake hash remains separately recorded because a later macOS-test-only source-list edit does not affect the Windows DLL target. Final CI runs passed all five jobs each, but their v7 Windows build does not replace or rebuild this local v8 DLL. The macOS job only built/linked an ARM64 shim and ran native contract tests; it did not launch Unity, load the official Bridge runtime, render to hardware, or prove consumer completion/release, thread, or shutdown contracts. The macOS artifact is manual-only and not included in UPM. Historical GPU/Editor observations are not fresh validation for this DLL. Hotplug, multi-device behavior, all-48-view optical review, and the Windows access-violation release gate remain unresolved.",
   "license": "Apache-2.0",
   "generatedAt": "2026-10-08",
-  "unityD3D12InterfaceSelection": "The local Unity 6000.6.4f1 PluginAPI has IUnityGraphicsD3D12v8 and v7; the Windows DLL was built with local v8 preferred. The initial CI pin 4c65c1ca19585b8b447693f7e577e51a58e8ef02 exposed older v5-only headers. The updated CI pin 522254181faf188efa8b50c3e3bf6fce720b26e4 provides v7 and the related ConfigureEvent APIs. The workflow rerun is pending.",
+  "unityD3D12InterfaceSelection": "The local Unity 6000.6.4f1 PluginAPI has IUnityGraphicsD3D12v8 and v7; this packaged Windows DLL was built locally with v8 preferred. CI now pins NativeRenderingPlugin commit 522254181faf188efa8b50c3e3bf6fce720b26e4 (v7). Both final workflow runs passed; CI validation remains separate from the locally built v8 artifact.",
   "freshWindowsReleaseEvidence": {
     "artifactSha256": "9E81DF02D065DABE39DAACC3E5F90ABECEA401F6DAD5D2E68096CEE3D7B86DCE",
     "exportComparison": "33 export names and ordinals; base 66bc633 matches baseline DLL SHA-256 232C2364863333D5D4EF01D9D5C652F2EEAD1521855421C371345E2860E2805B",
@@ -46,7 +46,7 @@
     "currentCMakeListsSha256": "3C3F0DCE7D11FB3283A8289205BBD7BA8389387812699CE469A8B935C700126B",
     "cMakeChangeAfterArtifactBuild": "Only the macOS metal_api_contract_test target gained platform/macos/metal_submission_lifetime.cpp after the Windows DLL build. The lookingglass_bridge_shim Windows target source list and compile definitions are unchanged; the DLL was not rebuilt.",
     "postBuildTestSourceUpdate": "bridge_shutdown_contract_test.cpp was corrected to initialize the Unity v7 interface by named member after the recorded 4/4 CTest. A later local Windows all-target compile-only check passed; no repeat CTest result is claimed.",
-    "followUpCI": "pending",
+    "followUpCI": "Final workflow and PR runs 37705337066/37705340768 both passed 5/5 jobs. Windows fake regressions 4/4 and transport tests 2/2 used the updated v7 header pin; they did not rebuild the packaged local v8 DLL.",
     "ctestSourceHashes": {
       "Native/tests/portable_common_test.cpp": "8FC86B3390C28ADF6CFC34FE85B13F769010C67A3B2BA3F82B7CB2DF4885A2AF",
       "Native/tests/worker_transport_test.cpp": "B924A34FEE9BCA5FFD712E406E1117DDF087A4F31C9677206FFA352948BAAFF9",
@@ -57,10 +57,75 @@
       "Native/tests/fake_bridge_shutdown_runtime.cpp": "B6C019D18D3222EF6D321ACEA3566A186076047FE1F120E82CAFB6C7EA8FA49F"
     },
     "postBuildTestSourceUpdateSha256": "2F7DBF9CAD77E974592214D1708AB80D1999DF8BAAA6B81101FFAA82F5F2D542",
-    "localWindowsCompileOnly": "All local Windows targets compiled with the updated v7 header pin after correcting the fake Unity interface initializer; no CTest or runtime result is implied."
+    "localWindowsCompileOnly": "All local Windows targets compiled with the updated v7 header pin after correcting the fake Unity interface initializer; no CTest or runtime result is implied.",
+    "ciRunIds": [
+      37705337066,
+      37705340768
+    ],
+    "ciConclusion": "success; 5/5 jobs in each run"
   },
   "historicalGpuValidation": "Historical RTX 3090 Ti D3D12 shared-resource and Editor/Player observations are not fresh evidence for this DLL. The latest local validation above is the fresh Windows Release CTest only.",
-  "ciValidation": "Initial CI run passed static/portable/transport checks but failed to compile the macOS and full Windows targets. The old v5-only pin was replaced by 522254181faf188efa8b50c3e3bf6fce720b26e4 (v7); local Windows all-target compile-only checks passed after correcting the fake initializer, but the follow-up CI run is pending.",
+  "ciValidation": "Final CI on 054fffeb817ac8daae6ff68ed567ec7e69fe4798: workflow run 37705337066 and PR run 37705340768 both succeeded with 5/5 jobs. Jobs: static passed; Linux portable/unsupported ABI 2/2; Windows transport 2/2; Windows fake regressions 4/4 using Unity API v7; macOS ARM64 shim build/link and native contract tests 3/3. This CI uses v7 and does not rebuild/replace the locally built v8 Windows DLL in this package. No Unity runtime, official Bridge SDK load, physical display, or Metal consumer lifetime validation was performed.",
   "artifactBuildCMakeListsSha256": "45914253D8248BB13108A8ABD30565173F74F9BE2D47B8BDFA6AF8074F9D37EA",
-  "currentCMakeListsSha256": "3C3F0DCE7D11FB3283A8289205BBD7BA8389387812699CE469A8B935C700126B"
+  "currentCMakeListsSha256": "3C3F0DCE7D11FB3283A8289205BBD7BA8389387812699CE469A8B935C700126B",
+  "macOSCIBuildArtifact": {
+    "workflowRunId": 37705337066,
+    "pullRequestRunId": 37705340768,
+    "sourceCommit": "054fffeb817ac8daae6ff68ed567ec7e69fe4798",
+    "workflowRunUrl": "https://github.com/zabaglione/ViewWeave/actions/runs/37705337066",
+    "pullRequestRunUrl": "https://github.com/zabaglione/ViewWeave/actions/runs/37705340768",
+    "jobsPassed": 5,
+    "jobsTotal": 5,
+    "runnerImage": "macos-14-arm64",
+    "compiler": "AppleClang 15.0.0.15000309 (CXX and ObjCXX)",
+    "buildResult": "full macOS shim compile and link passed",
+    "cmakeBuildType": "CMAKE_BUILD_TYPE was unset; no Release optimization claim is made",
+    "testsPassed": 3,
+    "testsTotal": 3,
+    "tests": [
+      "lookingglass_worker_common_test",
+      "lookingglass_metal_api_contract_test",
+      "lookingglass_metal_submission_lifetime_test"
+    ],
+    "artifactId": 11519112992,
+    "artifactName": "native-macos-metal-shim",
+    "artifactArchiveSizeBytes": 35839,
+    "artifactArchiveSha256": "0E250C63AB3F7553191F35BA44AC636A578E3DB3732B20A5C03FDC46182500EC",
+    "file": "liblookingglass_bridge_shim.dylib",
+    "fileSizeBytes": 179952,
+    "fileSha256": "C06464EEEBAA3D3B934437AD9242B6DFA4C5E37E26A3187D3BE131113213980B",
+    "machoMagic": "0xfeedfacf",
+    "machoCpuType": "0x0100000c (ARM64)",
+    "machoFileType": "MH_DYLIB",
+    "definedExternalSymbols": 101,
+    "verifiedExports": [
+      "UnityPluginLoad",
+      "UnityPluginUnload",
+      "lkg_metal_provider_query_v1",
+      "lkg_metal_provider_begin_v1",
+      "lkg_metal_provider_submit_v1",
+      "lkg_metal_provider_pump_v1",
+      "lkg_metal_provider_close",
+      "lkg_metal_provider_render_event_func",
+      "lkg_metal_provider_render_event_id"
+    ],
+    "linkedSystemLibraries": [
+      "Metal.framework",
+      "Foundation.framework",
+      "IOSurface.framework",
+      "libc++.1.dylib",
+      "libSystem.B.dylib",
+      "libobjc.A.dylib"
+    ],
+    "officialBridgeRuntimeBundled": false,
+    "includedInUPM": false,
+    "distribution": "GitHub Actions artifact; manual download only",
+    "runtimeTested": false,
+    "officialSdkLoaded": false,
+    "realDisplayTested": false,
+    "artifactContents": [
+      "liblookingglass_bridge_shim.dylib"
+    ],
+    "artifactContentsVerifiedNoVendorRuntime": true
+  }
 }
