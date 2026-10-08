@@ -10,7 +10,6 @@ namespace ViewWeave.Editor
         static bool shutdownStarted;
         static bool recoveryAbiUnavailable;
         static double deadline;
-        static bool finalQuitReissued;
 
         static BridgeEditorLifecycle()
         {
@@ -59,8 +58,8 @@ namespace ViewWeave.Editor
 
         static bool OnWantsToQuit()
         {
-            if (BridgeWorkerShutdownCoordinator.FinalizationReady) return true;
-            return BridgeWorkerShutdownCoordinator.RequestQuit();
+            if (Application.platform != RuntimePlatform.WindowsEditor) return true;
+            return BridgeWorkerShutdownCoordinator.WaitForFinalization();
         }
 
         static void OnEditorQuitting()
@@ -145,12 +144,6 @@ namespace ViewWeave.Editor
             BridgeQuiltPlaybackLease.PumpAll();
             BridgeWorkerShutdownCoordinator.PumpOnce();
             BridgeWorkerReaper.PumpNow();
-            if (BridgeWorkerShutdownCoordinator.FinalizationReady && !finalQuitReissued)
-            {
-                finalQuitReissued = true;
-                Debug.Log("[ViewWeave] Bridge shutdown is complete. Close the Unity Editor again to finish exiting.");
-                return;
-            }
             if (!recovering) return;
             try
             {

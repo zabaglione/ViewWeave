@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 using ViewWeave;
@@ -144,6 +145,154 @@ namespace ViewWeave.BridgeSessionValidation
                 Object.DestroyImmediate(noTexture);
                 Object.DestroyImmediate(hadTexture);
             }
+        }
+
+        [Test]
+        public void BoundedQuitWaitPumpsUntilNativeAndGpuProofAreBothComplete()
+        {
+            long ticks = 0;
+            int requestCount = 0;
+            int pumpCount = 0;
+            int sleepCount = 0;
+            bool nativeComplete = false;
+            bool gpuProofComplete = false;
+            var messages = new List<string>();
+
+            bool allowed = BridgeWorkerQuitWait.WaitForFinalization(
+                () => { requestCount++; ticks++; return false; },
+                () =>
+                {
+                    pumpCount++;
+                    ticks++;
+                    if (pumpCount == 2) nativeComplete = true;
+                    if (pumpCount == 4) gpuProofComplete = true;
+                },
+                () => nativeComplete && gpuProofComplete,
+                () => ticks,
+                1000,
+                milliseconds => { sleepCount++; ticks += milliseconds; },
+                messages.Add,
+                1.0);
+
+            Assert.IsTrue(allowed);
+            Assert.AreEqual(1, requestCount);
+            Assert.AreEqual(4, pumpCount);
+            Assert.AreEqual(3, sleepCount);
+            Assert.IsEmpty(messages);
+        }
+
+        [Test]
+        public void BoundedQuitWaitDeadlineIncludesTheInitialRequest()
+        {
+            long ticks = 0;
+            int pumpCount = 0;
+            var messages = new List<string>();
+
+            bool allowed = BridgeWorkerQuitWait.WaitForFinalization(
+                () => { ticks += 5; return true; },
+                () => pumpCount++,
+                () => true,
+                () => ticks,
+                100,
+                milliseconds => ticks += milliseconds,
+                messages.Add,
+                0.05);
+
+            Assert.IsFalse(allowed);
+            Assert.AreEqual(0, pumpCount);
+            Assert.AreEqual(1, messages.Count);
+            Assert.IsTrue(messages[0].Contains("quit was canceled"));
+        }
+
+        [Test]
+        public void BoundedQuitWaitCancelsAtDeadlineWhileResourcesRemainUnproven()
+        {
+            long ticks = 0;
+            int pumpCount = 0;
+            var messages = new List<string>();
+
+            bool allowed = BridgeWorkerQuitWait.WaitForFinalization(
+                () => false,
+                () => { pumpCount++; ticks += 20; },
+                () => false,
+                () => ticks,
+                1000,
+                milliseconds => ticks += milliseconds,
+                messages.Add,
+                0.01);
+
+            Assert.IsFalse(allowed);
+            Assert.AreEqual(1, pumpCount);
+            Assert.AreEqual(1, messages.Count);
+            Assert.IsTrue(messages[0].Contains("resources remain retained"));
+        }
+
+        [Test]
+        public void BoundedQuitWaitCancelsAndSanitizesPumpExceptions()
+        {
+            long ticks = 0;
+            var messages = new List<string>();
+
+            bool allowed = BridgeWorkerQuitWait.WaitForFinalization(
+                () => false,
+                () => { throw new System.InvalidOperationException("GPU wait failed 東京"); },
+                () => false,
+                () => ticks++,
+                1000,
+                milliseconds => { },
+                messages.Add,
+                1.0);
+
+            Assert.IsFalse(allowed);
+            Assert.AreEqual(1, messages.Count);
+            Assert.IsTrue(messages[0].Contains("GPU wait failed"));
+            foreach (char character in messages[0]) Assert.LessOrEqual((int)character, 0x7e);
+        }
+
+        [Test]
+        public void EditorGpuFlushSubmitsOnlyOnceInsideSynchronousWait()
+        {
+            bool attempted = false;
+            int submissions = 0;
+            int attemptsBefore = BridgeWorkerEditorGpuFlush.FlushAttempts;
+            int successesBefore = BridgeWorkerEditorGpuFlush.SuccessfulFlushes;
+
+            Assert.IsFalse(BridgeWorkerEditorGpuFlush.SubmitIfNeeded(ref attempted, () => submissions++));
+            Assert.IsFalse(attempted);
+            BridgeWorkerEditorGpuFlush.BeginSynchronousWait();
+            try
+            {
+                Assert.IsTrue(BridgeWorkerEditorGpuFlush.SynchronousWaitActive);
+                Assert.IsTrue(BridgeWorkerEditorGpuFlush.SubmitIfNeeded(ref attempted, () => submissions++));
+                Assert.IsTrue(attempted);
+                Assert.IsFalse(BridgeWorkerEditorGpuFlush.SubmitIfNeeded(ref attempted, () => submissions++));
+                Assert.AreEqual(1, submissions);
+                Assert.AreEqual(attemptsBefore + 1, BridgeWorkerEditorGpuFlush.FlushAttempts);
+                Assert.AreEqual(successesBefore + 1, BridgeWorkerEditorGpuFlush.SuccessfulFlushes);
+            }
+            finally { BridgeWorkerEditorGpuFlush.EndSynchronousWait(); }
+
+            Assert.IsFalse(BridgeWorkerEditorGpuFlush.SynchronousWaitActive);
+        }
+
+        [Test]
+        public void EditorGpuFlushFailureMarksProofAttemptAndDoesNotRetry()
+        {
+            bool attempted = false;
+            int attemptsBefore = BridgeWorkerEditorGpuFlush.FlushAttempts;
+            int successesBefore = BridgeWorkerEditorGpuFlush.SuccessfulFlushes;
+            BridgeWorkerEditorGpuFlush.BeginSynchronousWait();
+            try
+            {
+                Assert.Throws<System.InvalidOperationException>(() =>
+                    BridgeWorkerEditorGpuFlush.SubmitIfNeeded(ref attempted,
+                        () => throw new System.InvalidOperationException("flush failed")));
+                Assert.IsTrue(attempted);
+                Assert.IsFalse(BridgeWorkerEditorGpuFlush.SubmitIfNeeded(ref attempted, () => { }));
+                Assert.AreEqual(attemptsBefore + 1, BridgeWorkerEditorGpuFlush.FlushAttempts);
+                Assert.AreEqual(successesBefore, BridgeWorkerEditorGpuFlush.SuccessfulFlushes);
+            }
+            finally { BridgeWorkerEditorGpuFlush.EndSynchronousWait(); }
         }
     }
 }
