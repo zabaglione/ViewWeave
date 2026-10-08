@@ -45,3 +45,20 @@ extern "C" LKG_EXPORT int32_t lkg_worker_get_physical_display_v1(void*, LkgWorke
     info->valid = 0;
     return -2;
 }
+extern "C" LKG_EXPORT void* lkg_worker_begin_metadata_v1(const char*, const char*) { return nullptr; }
+extern "C" LKG_EXPORT int32_t lkg_worker_request_display_refresh_v1(void*, uint64_t*) { return -2; }
+extern "C" LKG_EXPORT int32_t lkg_worker_get_display_snapshot_v1(void*, LkgWorkerDisplaySnapshotStatusV1* status,
+    LkgWorkerDisplaySnapshotItemV1*, uint32_t, uint32_t* requiredCount) {
+    if (requiredCount) *requiredCount = 0;
+    if (!status || status->structSize != sizeof(LkgWorkerDisplaySnapshotStatusV1) || status->version != 1) return -1;
+    status->state = LKG_WORKER_FAULT;
+    status->itemCount = 0;
+    status->snapshotGeneration = 0;
+    status->requestedGeneration = 0;
+    status->pending = 0;
+    status->cleanupFinished = 1;
+    status->result = -2;
+    status->error[0] = '\0';
+    return -2;
+}
+extern "C" LKG_EXPORT int32_t lkg_worker_end_metadata_v1(void*) { return -2; }

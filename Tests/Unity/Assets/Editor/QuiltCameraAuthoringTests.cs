@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 using ViewWeave;
 using ViewWeave.Editor;
 using UnityEditor;
@@ -26,8 +27,94 @@ public static class QuiltCameraAuthoringTests
         CheckParentTransformUsesCameraPose();
         CheckInvalidInputsAreRejected();
         CheckPhysicalFramingResolution();
+        CheckAtomicFramingMutationApi();
         CheckInspectorPropertiesAndUndo();
         Debug.Log("Quilt camera authoring tests passed");
+    }
+
+    static void CheckAtomicFramingMutationApi()
+    {
+        GameObject go = new GameObject("atomic-framing-api-test");
+        try
+        {
+            Camera camera = go.AddComponent<Camera>();
+            camera.enabled = false;
+            QuiltRenderer renderer = go.AddComponent<QuiltRenderer>();
+            renderer.sourceCamera = camera;
+            Require(renderer.TryGetFraming(out QuiltCameraFraming original), "framing snapshot is available");
+
+            QuiltCameraFraming invalid = new QuiltCameraFraming(float.NaN, original.FocusDistance, false, 0f, 0f, 1f);
+            Require(!renderer.TrySetFraming(invalid, out _) && renderer.TryGetFraming(out QuiltCameraFraming afterInvalid) &&
+                afterInvalid == original, "invalid framing mutation is atomic");
+
+            QuiltCameraFraming physical = new QuiltCameraFraming(60f, original.FocusDistance, true, 800f, 450f, 1f);
+            Require(renderer.TrySetFraming(physical, out string physicalError), "valid physical framing is set: " + physicalError);
+            Require(renderer.TryGetEffectiveSettings(out QuiltSettings firstEffective, out _), "physical framing resolves effective settings");
+            float physicalPlaneHeight = 2f * firstEffective.cameraDistance * Mathf.Tan(firstEffective.fieldOfView * Mathf.Deg2Rad * 0.5f);
+            Require(Mathf.Abs(physicalPlaneHeight - 0.45f) < 0.00001f, "physical API resolves the requested aperture height");
+            float previousBaseDistance = renderer.settings.cameraDistance;
+            Require(!renderer.TrySetFraming(new QuiltCameraFraming(50f, previousBaseDistance + 1f, true, 800f, 450f, 1f), out _) &&
+                renderer.settings.cameraDistance == previousBaseDistance && renderer.settings.fieldOfView == 60f,
+                "changed stored base focus is rejected without erasing the requested FOV");
+            Require(renderer.TrySetFocusDistance(2f, out string focusError), "physical focus operation solves FOV: " + focusError);
+            Require(renderer.TryGetEffectiveSettings(out QuiltSettings secondEffective, out _), "updated physical framing resolves");
+            float secondPlaneHeight = 2f * secondEffective.cameraDistance * Mathf.Tan(secondEffective.fieldOfView * Mathf.Deg2Rad * 0.5f);
+            Require(Mathf.Abs(secondEffective.cameraDistance - 2f) < 0.00001f && Mathf.Abs(secondPlaneHeight - physicalPlaneHeight) < 0.00001f,
+                "physical focus edit changes effective distance while preserving plane height");
+
+            object allowOwner = new object();
+            object denyOwner = new object();
+            IDisposable allow = RegisterMutationOwner(renderer, allowOwner, _ => string.Empty);
+            IDisposable deny = RegisterMutationOwner(renderer, denyOwner, _ => "secondary owner blocks this edit");
+            Require(allow != null && deny != null, "multiple mutation owners register");
+            QuiltCameraFraming beforeOwners = renderer.TryGetFraming(out QuiltCameraFraming ownerSnapshot) ? ownerSnapshot : default;
+            Require(!renderer.TrySetViewRenderMode(QuiltViewRenderMode.Half, out string modeError) && modeError == "secondary owner blocks this edit" &&
+                renderer.viewRenderMode == QuiltViewRenderMode.Full, "all active owner policies must allow a sampling-mode mutation");
+            Require(!renderer.TrySetFraming(new QuiltCameraFraming(55f, beforeOwners.FocusDistance, true, 800f, 450f, 1f), out _) &&
+                renderer.TryGetFraming(out QuiltCameraFraming afterOwnerBlock) && afterOwnerBlock == beforeOwners,
+                "owner denial leaves framing unchanged");
+            Vector3 guardedPosition = camera.transform.position;
+            Quaternion guardedRotation = camera.transform.rotation;
+            Require(!QuiltRendererAuthoringOperations.TryOrbitEffectiveCamera(renderer, 10f, 5f) &&
+                camera.transform.position == guardedPosition && camera.transform.rotation == guardedRotation,
+                "Orbit camera authoring obeys the active framing mutation policy");
+            deny.Dispose();
+            Require(renderer.TrySetViewRenderMode(QuiltViewRenderMode.Half, out _), "remaining owner policy can allow sampling mode");
+            allow.Dispose();
+            Require(QuiltRendererOperationLease.TryAcquire(renderer, QuiltRendererOperationKind.Playback,
+                out QuiltRendererOperationLease playbackLease, out _), "playback operation lease can be acquired after test owners are removed");
+            Require(!renderer.TryCheckMutation(QuiltRendererMutationKind.AutoRender, true, out _) &&
+                renderer.TryCheckMutation(QuiltRendererMutationKind.AutoRender, false, out _),
+                "playback lease blocks re-enabling Auto Render but permits stopping it");
+            guardedPosition = camera.transform.position;
+            guardedRotation = camera.transform.rotation;
+            Require(!QuiltRendererAuthoringOperations.TryOrbitEffectiveCamera(renderer, 10f, 5f) &&
+                camera.transform.position == guardedPosition && camera.transform.rotation == guardedRotation,
+                "Orbit camera authoring is blocked by a playback lease");
+            playbackLease.Dispose();
+
+            FieldInfo ownerRequirement = typeof(QuiltRenderer).GetField("mutationOwnerRequired", BindingFlags.Instance | BindingFlags.NonPublic);
+            Require(ownerRequirement != null, "owner requirement safety latch exists");
+            Require(ownerRequirement.GetCustomAttribute<SerializeField>() == null,
+                "runtime mutation owner requirement is not serialized into a saved Scene");
+            ownerRequirement.SetValue(renderer, true);
+            Require(!renderer.TrySetViewRenderMode(QuiltViewRenderMode.Quarter, out string missingOwnerError) &&
+                missingOwnerError.Contains("no renderer mutation-policy registration"), "missing active-owner registration fails closed");
+            ownerRequirement.SetValue(renderer, false);
+            Require(renderer.TrySetViewRenderMode(QuiltViewRenderMode.Quarter, out _), "mutation resumes after owner requirement is cleared");
+        }
+        finally { UnityEngine.Object.DestroyImmediate(go); }
+    }
+
+    static IDisposable RegisterMutationOwner(QuiltRenderer renderer, object owner, Func<QuiltRendererMutationRequest, string> policy)
+    {
+        Type ownerPolicy = typeof(QuiltRenderer).Assembly.GetType("ViewWeave.QuiltRendererMutationPolicy");
+        MethodInfo register = ownerPolicy == null ? null : ownerPolicy.GetMethod("RegisterOwner", BindingFlags.Static | BindingFlags.NonPublic);
+        Require(register != null, "internal mutation owner registration exists");
+        object[] arguments = { renderer, owner, policy, null };
+        IDisposable result = register.Invoke(null, arguments) as IDisposable;
+        Require(result != null, "mutation owner registration succeeds: " + arguments[3]);
+        return result;
     }
 
     static void CheckPhysicalFramingResolution()

@@ -61,8 +61,32 @@ typedef struct LkgWorkerPhysicalDisplayInfoV1 {
     uint32_t valid;
 } LkgWorkerPhysicalDisplayInfoV1;
 
+typedef struct LkgWorkerDisplaySnapshotStatusV1 {
+    uint32_t structSize;
+    uint32_t version;
+    uint32_t state;
+    uint32_t itemCount;
+    uint64_t snapshotGeneration;
+    uint64_t requestedGeneration;
+    uint32_t pending;
+    uint32_t cleanupFinished;
+    int32_t result;
+    char error[256];
+} LkgWorkerDisplaySnapshotStatusV1;
+
+typedef struct LkgWorkerDisplaySnapshotItemV1 {
+    uint32_t structSize;
+    uint32_t version;
+    uint32_t displayOrdinal;
+    uint32_t reserved0;
+    LkgBridgeDisplayInfo profile;
+    LkgWorkerPhysicalDisplayInfoV1 physical;
+} LkgWorkerDisplaySnapshotItemV1;
+
 #if defined(__cplusplus)
 static_assert(sizeof(LkgWorkerFinalShutdownStatusV1) == 8 * sizeof(uint32_t), "final shutdown status ABI must be eight 32-bit fields");
+static_assert(sizeof(LkgWorkerDisplaySnapshotStatusV1) == 304, "display snapshot status V1 ABI size must remain stable");
+static_assert(sizeof(LkgWorkerDisplaySnapshotItemV1) == 76, "display snapshot item V1 ABI size must remain stable");
 #endif
 
 LKG_EXPORT void* lkg_worker_begin(const char* runtimePath, const char* applicationName, uint32_t displayOrdinal, void* producerDevice);
@@ -81,6 +105,11 @@ LKG_EXPORT int32_t lkg_worker_request_final_shutdown(void);
 LKG_EXPORT int32_t lkg_worker_get_final_shutdown_status_v1(LkgWorkerFinalShutdownStatusV1* status);
 LKG_EXPORT int32_t lkg_worker_wait_final_shutdown_v1(uint32_t timeoutMilliseconds, LkgWorkerFinalShutdownStatusV1* status);
 LKG_EXPORT int32_t lkg_worker_get_physical_display_v1(void* handle, LkgWorkerPhysicalDisplayInfoV1* info);
+LKG_EXPORT void* lkg_worker_begin_metadata_v1(const char* runtimePath, const char* applicationName);
+LKG_EXPORT int32_t lkg_worker_request_display_refresh_v1(void* handle, uint64_t* requestedGeneration);
+LKG_EXPORT int32_t lkg_worker_get_display_snapshot_v1(void* handle, LkgWorkerDisplaySnapshotStatusV1* status,
+    LkgWorkerDisplaySnapshotItemV1* items, uint32_t capacity, uint32_t* requiredCount);
+LKG_EXPORT int32_t lkg_worker_end_metadata_v1(void* handle);
 
 #ifdef __cplusplus
 }

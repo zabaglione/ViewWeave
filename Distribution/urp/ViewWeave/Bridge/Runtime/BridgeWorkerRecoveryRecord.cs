@@ -14,6 +14,8 @@ namespace ViewWeave
         [SerializeField] RenderTexture transferTexture;
         [SerializeField] bool needsClose;
         [SerializeField] bool nativeReleased;
+        [SerializeField] string nativeModulePath = string.Empty;
+        [SerializeField] long nativeModuleBaseAddress;
         [SerializeField] bool gpuFenceIssued;
         [SerializeField] bool gpuFencePassed;
         [SerializeField] bool readbackCompleted;
@@ -25,6 +27,8 @@ namespace ViewWeave
 #endif
 
         internal long NativeHandle => nativeHandle;
+        internal BridgeNativeModuleIdentity NativeModuleIdentity =>
+            new BridgeNativeModuleIdentity("lookingglass_bridge_shim.dll", new IntPtr(nativeModuleBaseAddress), nativeModulePath);
         internal bool IsLegacySession => legacySession;
         internal ulong LegacySessionId => unchecked((ulong)legacySessionIdBits);
         internal bool LegacyCloseQueued { get => legacyCloseQueued; set => legacyCloseQueued |= value; }
@@ -40,7 +44,8 @@ namespace ViewWeave
         internal bool CanRelease => nativeReleased && HasGpuReleaseProof;
         internal string Diagnostic => diagnostic;
 
-        internal static BridgeWorkerRecoveryRecord Create(IntPtr handle, RenderTexture texture, bool closePending, long generation)
+        internal static BridgeWorkerRecoveryRecord Create(IntPtr handle, RenderTexture texture, bool closePending, long generation,
+            BridgeNativeModuleIdentity moduleIdentity)
         {
             BridgeWorkerRecoveryRecord record = CreateInstance<BridgeWorkerRecoveryRecord>();
             record.hideFlags = HideFlags.HideAndDontSave | HideFlags.DontUnloadUnusedAsset;
@@ -49,11 +54,19 @@ namespace ViewWeave
             record.transferTexture = texture;
             record.needsClose = closePending;
             record.generation = generation;
+            record.nativeModulePath = moduleIdentity.FullPath;
+            record.nativeModuleBaseAddress = moduleIdentity.BaseAddress.ToInt64();
             record.diagnostic = "Native worker lease is retained until native and GPU completion are proven.";
             return record;
         }
 
-        internal static BridgeWorkerRecoveryRecord CreateLegacy(ulong session, RenderTexture texture, bool closeQueued, long generation)
+        internal static BridgeWorkerRecoveryRecord Create(IntPtr handle, RenderTexture texture, bool closePending, long generation)
+        {
+            return Create(handle, texture, closePending, generation, default);
+        }
+
+        internal static BridgeWorkerRecoveryRecord CreateLegacy(ulong session, RenderTexture texture, bool closeQueued, long generation,
+            BridgeNativeModuleIdentity moduleIdentity)
         {
             BridgeWorkerRecoveryRecord record = CreateInstance<BridgeWorkerRecoveryRecord>();
             record.hideFlags = HideFlags.HideAndDontSave | HideFlags.DontUnloadUnusedAsset;
@@ -63,8 +76,15 @@ namespace ViewWeave
             record.transferTexture = texture;
             record.legacyCloseQueued = closeQueued;
             record.generation = generation;
+            record.nativeModulePath = moduleIdentity.FullPath;
+            record.nativeModuleBaseAddress = moduleIdentity.BaseAddress.ToInt64();
             record.diagnostic = "Legacy Bridge session is retained until native close and GPU completion are proven.";
             return record;
+        }
+
+        internal static BridgeWorkerRecoveryRecord CreateLegacy(ulong session, RenderTexture texture, bool closeQueued, long generation)
+        {
+            return CreateLegacy(session, texture, closeQueued, generation, default);
         }
 
 #if UNITY_EDITOR

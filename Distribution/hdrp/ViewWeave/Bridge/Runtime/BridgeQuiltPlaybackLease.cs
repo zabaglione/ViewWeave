@@ -377,6 +377,7 @@ namespace ViewWeave
             bool restore = mayRestore && restoreAutoRender && !invalidated && SessionStillMatchesForRestore();
             if (output != null) output.ClearPlaybackTexture(sessionToken, playbackTexture);
             if (session != null) session.ReleasePlayback(sessionToken);
+            if (rendererLease != null) { rendererLease.Dispose(); rendererLease = null; }
             if (restore)
             {
                 try { rig.AutoRender = true; }
@@ -389,7 +390,6 @@ namespace ViewWeave
 
             if (output != null) output.PlaybackReaperHandoff -= OnReaperHandoff;
             ReleaseTexture();
-            if (rendererLease != null) { rendererLease.Dispose(); rendererLease = null; }
             if (recoveryRecord != null) { DestroyImmediate(recoveryRecord); recoveryRecord = null; }
             State = LeaseState.Stopped;
             statusMessage = restore ? "Playback stopped; live Auto Render resumed." : "Playback stopped; live Auto Render was not resumed.";
@@ -585,6 +585,7 @@ namespace ViewWeave
             invalidated = true;
             if (output != null) output.PlaybackReaperHandoff -= OnReaperHandoff;
             if (sessionAcquired && session != null) session.ReleasePlayback(sessionToken ?? this);
+            if (rendererLease != null) { rendererLease.Dispose(); rendererLease = null; }
             if (sessionAcquired && rig != null && session != null && session.State == ViewWeaveBridgeSession.SessionState.Rendering && output != null && output.Ready)
             {
                 try { rig.AutoRender = true; } catch { }
@@ -595,7 +596,6 @@ namespace ViewWeave
                 DestroyImmediate(playbackTexture);
                 playbackTexture = null;
             }
-            if (rendererLease != null) { rendererLease.Dispose(); rendererLease = null; }
             if (recoveryRecord != null) { DestroyImmediate(recoveryRecord); recoveryRecord = null; }
             State = LeaseState.Stopped;
             errorMessage = Sanitize(reason);

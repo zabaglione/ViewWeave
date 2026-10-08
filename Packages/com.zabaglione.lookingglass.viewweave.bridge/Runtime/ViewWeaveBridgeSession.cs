@@ -22,7 +22,7 @@ namespace ViewWeave
         public string runtimePath;
         public string applicationName = "ViewWeave";
         public uint displayOrdinal;
-        [SerializeField] QuiltQualityPreset quality = QuiltQualityPreset.Preview;
+        [SerializeField] QuiltQualityPreset quality = QuiltQualityPreset.Balanced;
 
         public SessionState State { get; private set; }
         public string LastError { get; private set; }
@@ -47,6 +47,15 @@ namespace ViewWeave
         float completionProgressSince;
         object playbackToken;
         Action<string> playbackInvalidated;
+        IDisposable mutationOwnerRegistration;
+        Camera sourceCameraAtStart;
+        Camera referenceCameraAtStart;
+        MonoBehaviour guardAtStart;
+        MonoBehaviour outputBehaviourAtStart;
+        bool useRenderRequestsAtStart;
+        string outputRuntimePathAtStart;
+        string outputApplicationNameAtStart;
+        uint outputDisplayOrdinalAtStart;
 
         void Awake()
         {
@@ -78,7 +87,7 @@ namespace ViewWeave
             output.initializeOnEnable = false;
             output.applicationName = applicationName;
             output.displayOrdinal = displayOrdinal;
-            rig.SetOutput(output);
+            if (!rig.HasOutputBinding(output)) rig.SetOutput(output);
             initialized = true;
         }
 
@@ -89,8 +98,22 @@ namespace ViewWeave
 
         void Update()
         {
+            ReleaseMutationOwnerIfStopped();
             if (output == null) return;
-            if (pendingStart && isActiveAndEnabled && State == SessionState.Idle && !BridgeWorkerLifecycle.RecoveryPending && BridgeWorkerQuiltOutput.ShutdownPendingCount == 0)
+            if ((State == SessionState.Connecting || State == SessionState.Rendering || State == SessionState.Reconfiguring) &&
+                mutationOwnerRegistration == null)
+            {
+                Fail("Bridge Session lost its renderer mutation ownership registration.");
+                return;
+            }
+            if ((State == SessionState.Connecting || State == SessionState.Rendering || State == SessionState.Reconfiguring) &&
+                HasUnsafeLiveConfigurationChange())
+            {
+                Fail("Bridge transport or renderer structure changed during the live Session. Stop the Session before changing those settings.");
+                return;
+            }
+            if (pendingStart && isActiveAndEnabled && State == SessionState.Idle && !BridgeWorkerLifecycle.RecoveryPending &&
+                !BridgeDisplayDiscovery.IsBusy && BridgeWorkerQuiltOutput.ShutdownPendingCount == 0)
             {
                 pendingStart = false;
                 StartSession();
@@ -142,6 +165,18 @@ namespace ViewWeave
             if (State == SessionState.Idle || State == SessionState.Fault) return;
             if (profileApplied && State == SessionState.Rendering)
             {
+                if (output.RequiresReconnect)
+                {
+                    Fail(string.IsNullOrEmpty(output.DisplayRefreshStatus)
+                        ? "The selected Looking Glass profile changed. Stop and reconnect before rendering."
+                        : output.DisplayRefreshStatus);
+                    return;
+                }
+                if (!IsFinite(output.zoom) || output.zoom <= 0f)
+                {
+                    Fail("Bridge zoom must remain finite and greater than zero while the Session is active.");
+                    return;
+                }
                 string physicalError = GetPhysicalOutputError();
                 if (!string.IsNullOrEmpty(physicalError)) { Fail(physicalError); return; }
             }
@@ -191,6 +226,7 @@ namespace ViewWeave
 
         public bool StartSession()
         {
+            ReleaseMutationOwnerIfStopped();
             if (playbackToken != null)
             {
                 SetError("Bridge playback cleanup is still holding this session.");
@@ -199,6 +235,11 @@ namespace ViewWeave
             if (State == SessionState.Connecting || State == SessionState.Rendering || State == SessionState.Reconfiguring || State == SessionState.Closing)
             {
                 SetError("Bridge session is already active");
+                return false;
+            }
+            if (BridgeDisplayDiscovery.IsBusy)
+            {
+                SetError("Bridge display metadata is still refreshing or cleaning up. Wait before starting a Session.");
                 return false;
             }
             if (!initialized || !isActiveAndEnabled || output == null || !output.isActiveAndEnabled)
@@ -235,6 +276,25 @@ namespace ViewWeave
             output.runtimePath = resolvedPath;
             output.applicationName = applicationName;
             output.displayOrdinal = displayOrdinal;
+            if (mutationOwnerRegistration == null)
+            {
+                rig.Renderer.SetMutationOwnerRequired(true);
+                mutationOwnerRegistration = QuiltRendererMutationPolicy.RegisterOwner(rig.Renderer, this,
+                    GetMutationBlockReason, out string registrationError);
+                if (mutationOwnerRegistration == null)
+                {
+                    rig.Renderer.SetMutationOwnerRequired(false);
+                    return Fail("Bridge Session could not register renderer ownership: " + Sanitize(registrationError));
+                }
+            }
+            sourceCameraAtStart = rig.Renderer.sourceCamera;
+            referenceCameraAtStart = rig.Renderer.referenceCamera;
+            guardAtStart = rig.Renderer.GuardBehaviour;
+            outputBehaviourAtStart = rig.Renderer.OutputBehaviour;
+            useRenderRequestsAtStart = rig.Renderer.useRenderRequests;
+            outputRuntimePathAtStart = output.runtimePath ?? string.Empty;
+            outputApplicationNameAtStart = output.applicationName ?? string.Empty;
+            outputDisplayOrdinalAtStart = output.displayOrdinal;
             profileRuntimePathAtStart = runtimePath ?? string.Empty;
             profileApplicationNameAtStart = applicationName ?? string.Empty;
             profileDisplayOrdinalAtStart = displayOrdinal;
@@ -327,12 +387,14 @@ namespace ViewWeave
             if (output == null)
             {
                 State = SessionState.Idle;
+                ReleaseMutationOwnerIfStopped();
                 return;
             }
             output.Dispose();
             if (BridgeWorkerQuiltOutput.ShutdownPendingCount == 0)
             {
                 State = SessionState.Idle;
+                ReleaseMutationOwnerIfStopped();
                 return;
             }
             closingSince = Time.realtimeSinceStartup;
@@ -349,6 +411,21 @@ namespace ViewWeave
             if (!Enum.IsDefined(typeof(QuiltQualityPreset), value))
             {
                 SetError("Bridge session quality preset is invalid");
+                return false;
+            }
+            if (BridgeDisplayDiscovery.IsBusy)
+            {
+                SetError("Bridge quality cannot change while connected display metadata is refreshing or cleaning up.");
+                return false;
+            }
+            ViewWeaveRig mutationRig = rig != null ? rig : GetComponent<ViewWeaveRig>();
+            QuiltRenderer mutationRenderer = mutationRig == null
+                ? GetComponent<QuiltRenderer>()
+                : mutationRig.Renderer != null ? mutationRig.Renderer : mutationRig.GetComponent<QuiltRenderer>();
+            if (mutationRenderer != null &&
+                !QuiltRendererMutationPolicy.TryCheck(mutationRenderer, QuiltRendererMutationKind.Quality, out string mutationError))
+            {
+                SetError(mutationError);
                 return false;
             }
             if (State == SessionState.Idle || State == SessionState.Fault)
@@ -393,9 +470,21 @@ namespace ViewWeave
             try
             {
                 QuiltQualityProfile selected = CreateQualityProfile(profile, quality);
-                rig.ApplyProfile(selected);
-                rig.SetOutput(output);
-                rig.AutoRender = true;
+                if (mutationOwnerRegistration != null)
+                {
+                    if (!rig.ApplyProfileForBridgeOwner(selected, this, out string profileError)) return Fail(Sanitize(profileError));
+                    if (!rig.SetOutputForBridgeOwner(output, this, out string outputError)) return Fail(Sanitize(outputError));
+                }
+                else
+                {
+                    rig.ApplyProfile(selected);
+                    rig.SetOutput(output);
+                }
+                if (mutationOwnerRegistration != null)
+                {
+                    if (!rig.SetAutoRenderForBridgeOwner(true, this, out string autoRenderError)) return Fail(Sanitize(autoRenderError));
+                }
+                else rig.AutoRender = true;
                 return true;
             }
             catch (Exception error)
@@ -418,6 +507,99 @@ namespace ViewWeave
             return string.Empty;
         }
 
+        string GetMutationBlockReason(QuiltRendererMutationRequest request)
+        {
+            if (rig == null || rig.Renderer == null || output == null)
+                return "The Bridge Session renderer owner is unavailable.";
+            if (request.Kind == QuiltRendererMutationKind.AutoRender && request.HasBooleanValue && !request.BooleanValue)
+                return string.Empty;
+            if (State == SessionState.Closing || State == SessionState.Fault)
+                return "The Bridge Session is stopping or recovering; wait until its worker cleanup completes.";
+
+            switch (request.Kind)
+            {
+                case QuiltRendererMutationKind.Framing:
+                    if (State != SessionState.Rendering || !profileApplied || !output.Ready)
+                        return "Framing can change only while the Bridge Session is Ready and rendering.";
+                    if (request.HasFraming && request.Framing.PhysicalFramingEnabled)
+                    {
+                        if (!IsFinite(output.zoom) || output.zoom != 1f)
+                            return "Physical 1:1 framing requires Bridge zoom to be exactly 1.";
+                        if (!output.Profile.IsValid || !output.Profile.MatchesPhysicalAspect(
+                                request.Framing.ApertureWidthMillimeters, request.Framing.ApertureHeightMillimeters))
+                            return "Physical aperture aspect must match the connected display profile.";
+                    }
+                    return string.Empty;
+                case QuiltRendererMutationKind.SamplingMode:
+                    return State == SessionState.Rendering && profileApplied && output.Ready
+                        ? string.Empty
+                        : "View sampling can change only while the Bridge Session is Ready and rendering.";
+                case QuiltRendererMutationKind.Quality:
+                    if (playbackToken != null) return "Bridge quality cannot change while playback owns the Session.";
+                    if (BridgeDisplayDiscovery.IsBusy) return "Bridge quality cannot change while connected display metadata is refreshing or cleaning up.";
+                    return State == SessionState.Closing || State == SessionState.Fault
+                        ? "Bridge quality cannot change while worker cleanup or recovery is pending."
+                        : string.Empty;
+                case QuiltRendererMutationKind.Recording:
+                    return State == SessionState.Rendering && output.Ready && playbackToken == null
+                        ? string.Empty
+                        : "Recording requires a Ready Bridge Session without another active playback owner.";
+                case QuiltRendererMutationKind.Playback:
+                    return State == SessionState.Rendering && output.Ready && playbackToken == null
+                        ? string.Empty
+                        : "Playback requires a Ready Bridge Session without an existing playback owner.";
+                case QuiltRendererMutationKind.AutoRender:
+                    if (!request.HasBooleanValue || !request.BooleanValue) return string.Empty;
+                    return State == SessionState.Rendering && output.Ready && playbackToken == null
+                        ? string.Empty
+                        : "Auto Render can be enabled only while the Bridge Session is Ready and not leased by playback.";
+                case QuiltRendererMutationKind.OutputZoom:
+                    if (!request.HasFloatValue || !IsFinite(request.FloatValue) || request.FloatValue <= 0f)
+                        return "Bridge zoom must be finite and greater than zero.";
+                    if (rig.Renderer.physicalFraming != null && rig.Renderer.physicalFraming.enabled && request.FloatValue != 1f)
+                        return "Physical 1:1 framing requires Bridge zoom to be exactly 1.";
+                    return State == SessionState.Rendering && output.Ready && playbackToken == null
+                        ? string.Empty
+                        : "Bridge zoom can change only while the Session is Ready and not leased by playback.";
+                default:
+                    return "The Bridge Session owns this renderer; stop the Session before changing its structure or transport.";
+            }
+        }
+
+        bool HasUnsafeLiveConfigurationChange()
+        {
+            if (rig == null || rig.Renderer == null || output == null) return true;
+            QuiltRenderer renderer = rig.Renderer;
+            return renderer.sourceCamera != sourceCameraAtStart || renderer.referenceCamera != referenceCameraAtStart ||
+                   renderer.GuardBehaviour != guardAtStart || renderer.OutputBehaviour != outputBehaviourAtStart ||
+                   renderer.useRenderRequests != useRenderRequestsAtStart ||
+                   !string.Equals(runtimePath ?? string.Empty, profileRuntimePathAtStart, StringComparison.Ordinal) ||
+                   !string.Equals(applicationName ?? string.Empty, profileApplicationNameAtStart, StringComparison.Ordinal) ||
+                   displayOrdinal != profileDisplayOrdinalAtStart ||
+                   !string.Equals(output.runtimePath ?? string.Empty, outputRuntimePathAtStart, StringComparison.Ordinal) ||
+                   !string.Equals(output.applicationName ?? string.Empty, outputApplicationNameAtStart, StringComparison.Ordinal) ||
+                   output.displayOrdinal != outputDisplayOrdinalAtStart;
+        }
+
+        void ReleaseMutationOwnerIfStopped()
+        {
+            bool settledState = State == SessionState.Idle || State == SessionState.Fault;
+            bool outputClosed = output == null || output.State == BridgeWorkerQuiltOutput.WorkerState.Closed;
+            if (mutationOwnerRegistration == null)
+            {
+                if (settledState && outputClosed && BridgeWorkerQuiltOutput.ShutdownPendingCount == 0 &&
+                    playbackToken == null && rig != null && rig.Renderer != null)
+                    rig.Renderer.SetMutationOwnerRequired(false);
+                return;
+            }
+            if (settledState && outputClosed && BridgeWorkerQuiltOutput.ShutdownPendingCount == 0 && playbackToken == null)
+            {
+                mutationOwnerRegistration.Dispose();
+                mutationOwnerRegistration = null;
+                if (rig != null && rig.Renderer != null) rig.Renderer.SetMutationOwnerRequired(false);
+            }
+        }
+
         internal bool TryGetEditorDisplayProfile(QuiltRenderer requestedRenderer, out BridgeDisplayProfile profile)
         {
             profile = default;
@@ -428,7 +610,7 @@ namespace ViewWeave
             bool outputConfigurationMatches = string.Equals(output.applicationName ?? string.Empty, profileApplicationNameAtStart, StringComparison.Ordinal) &&
                                               output.displayOrdinal == profileDisplayOrdinalAtStart;
             BridgeDisplayProfile current = output.Profile;
-            if (!IsEditorDisplayProfileCurrent(isActiveAndEnabled && State == SessionState.Rendering,
+            if (output.RequiresReconnect || !IsEditorDisplayProfileCurrent(isActiveAndEnabled && State == SessionState.Rendering,
                     profileApplied, rig.Renderer == requestedRenderer, output.isActiveAndEnabled && output.Ready,
                     current, configurationMatches, outputConfigurationMatches) ||
                 !string.IsNullOrEmpty(GetPhysicalOutputError(current))) return false;
@@ -449,12 +631,14 @@ namespace ViewWeave
             if (!Enum.IsDefined(typeof(QuiltQualityPreset), preset)) throw new ArgumentOutOfRangeException(nameof(preset));
             switch (preset)
             {
+                case QuiltQualityPreset.Preview:
+                    return QuiltQualityProfile.Preview(profile.QuiltWidth, profile.QuiltHeight, profile.Columns, profile.Rows, profile.Aspect, profile.Viewcone);
                 case QuiltQualityPreset.Balanced:
                     return QuiltQualityProfile.Balanced(profile.QuiltWidth, profile.QuiltHeight, profile.Columns, profile.Rows, profile.Aspect, profile.Viewcone);
                 case QuiltQualityPreset.Native:
                     return QuiltQualityProfile.Native(profile.QuiltWidth, profile.QuiltHeight, profile.Columns, profile.Rows, profile.Aspect, profile.Viewcone);
                 default:
-                    return QuiltQualityProfile.Preview(profile.QuiltWidth, profile.QuiltHeight, profile.Columns, profile.Rows, profile.Aspect, profile.Viewcone);
+                    return QuiltQualityProfile.Balanced(profile.QuiltWidth, profile.QuiltHeight, profile.Columns, profile.Rows, profile.Aspect, profile.Viewcone);
             }
         }
 
@@ -558,5 +742,7 @@ namespace ViewWeave
             foreach (char valueChar in value) if (valueChar >= 0x20 && valueChar <= 0x7e) chars.Add(valueChar);
             return new string(chars.ToArray());
         }
+
+        static bool IsFinite(float value) => !float.IsNaN(value) && !float.IsInfinity(value);
     }
 }

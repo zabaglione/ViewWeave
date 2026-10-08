@@ -9,6 +9,8 @@ using InitializeFn = int32_t (*)(const char*);
 using UninitializeFn = void (*)();
 using LastErrorFn = int32_t (*)(char*, uint32_t);
 using GetPhysicalDisplayFn = int32_t (*)(uint32_t, LkgBridgePhysicalDisplayInfoV1*);
+using GetDisplayFn = int32_t (*)(uint32_t, LkgBridgeDisplayInfo*);
+using SetFakeDisplayCountsFn = void (*)(int, int);
 
 static std::string full_path(const char* path) {
     char buffer[MAX_PATH]{};
@@ -52,6 +54,22 @@ int main(int argc, char** argv) {
     }
     if (load(good.c_str()) != 0) { FreeLibrary(module); return 8; }
     if (initialize("loader-lifecycle-test") != 0) { unload(); FreeLibrary(module); return 12; }
+    HMODULE fakeRuntime = GetModuleHandleA("lkg_fake_bridge_runtime.dll");
+    auto setDisplayCounts = fakeRuntime ? reinterpret_cast<SetFakeDisplayCountsFn>(GetProcAddress(fakeRuntime, "set_fake_display_counts")) : nullptr;
+    GetDisplayFn getDisplay = reinterpret_cast<GetDisplayFn>(GetProcAddress(module, "lkg_bridge_get_display"));
+    if (!setDisplayCounts || !getDisplay) { uninitialize(); unload(); FreeLibrary(module); return 16; }
+    LkgBridgeDisplayInfo display{};
+    setDisplayCounts(2, 2);
+    if (getDisplay(1, &display) != 0 || display.index != 101) { uninitialize(); unload(); FreeLibrary(module); return 17; }
+    setDisplayCounts(2, 1);
+    if (getDisplay(1, &display) != -3) { uninitialize(); unload(); FreeLibrary(module); return 18; }
+    setDisplayCounts(1, 2);
+    if (getDisplay(0, &display) != -3) { uninitialize(); unload(); FreeLibrary(module); return 19; }
+    setDisplayCounts(257, 257);
+    if (getDisplay(0, &display) != -2) { uninitialize(); unload(); FreeLibrary(module); return 20; }
+    setDisplayCounts(0, 0);
+    if (getDisplay(0, &display) != -2) { uninitialize(); unload(); FreeLibrary(module); return 21; }
+    setDisplayCounts(1, 1);
     GetPhysicalDisplayFn getPhysical = reinterpret_cast<GetPhysicalDisplayFn>(GetProcAddress(module, "lkg_bridge_get_physical_display_v1"));
     LkgBridgePhysicalDisplayInfoV1 physical{};
     physical.structSize = sizeof(physical);

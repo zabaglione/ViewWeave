@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEditor.UIElements;
@@ -21,6 +22,13 @@ namespace ViewWeave.BridgeEditorPreviewValidation
 {
     public sealed class BridgeEditorPreviewGpuTests
     {
+        const string DevicePlayTransitionRigName = "ViewWeave_DevicePreviewPlayTransition_Rig";
+        const string DevicePlayTransitionTargetName = "ViewWeave_DevicePreviewPlayTransition_Target";
+        const string DevicePlayTransitionPipelineName = "ViewWeave_DevicePreviewPlayTransition_Pipeline";
+        const string DevicePlayTransitionRendererDataName = "ViewWeave_DevicePreviewPlayTransition_RendererData";
+        const string DevicePlayTransitionStatePrefix = "ViewWeave.EditorPreview.DevicePlayTransition.";
+        const string DevicePlayTransitionAssetFolderPrefix = "Assets/__ViewWeaveDevicePlayTransition_";
+
         [Test]
         public void DisplayProfileSelectionRejectsUnavailableAndStalePreviewAndSessionSources()
         {
@@ -93,18 +101,19 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                 fixture.Setup();
                 var ui = new ViewWeaveRigInspectorUI(root, () => fixture.Rig, () => null, _ => { });
                 ui.Rebuild();
-                FieldInfo field = typeof(ViewWeaveRigInspectorUI).GetField("focusDistanceField", BindingFlags.Instance | BindingFlags.NonPublic);
+                FieldInfo field = typeof(ViewWeaveRigInspectorUI).GetField("focusDistanceInput", BindingFlags.Instance | BindingFlags.NonPublic);
                 Assert.NotNull(field);
-                PropertyField focusField = (PropertyField)field.GetValue(ui);
+                FloatField focusField = (FloatField)field.GetValue(ui);
                 Assert.NotNull(focusField);
                 for (int i = 0; i < 3; ++i) ui.Refresh();
-                Assert.AreSame(focusField, field.GetValue(ui), "Periodic refresh must retain the raw focus PropertyField instance.");
+                Assert.AreSame(focusField, field.GetValue(ui), "Periodic refresh must retain the focus input instance.");
 
                 fixture.Rig.Renderer.physicalFraming.enabled = true;
                 fixture.Rig.Renderer.physicalFraming.visibleApertureWidthMillimeters = 160f;
                 fixture.Rig.Renderer.physicalFraming.visibleApertureHeightMillimeters = 90f;
                 ui.Refresh();
                 Assert.AreSame(focusField, field.GetValue(ui), "Switching physical framing must not rebuild the focus field.");
+                Assert.AreEqual(DisplayStyle.None, focusField.style.display.value, "Stored base focus distance should be hidden while physical framing is enabled.");
             }
             finally
             {
@@ -166,15 +175,93 @@ namespace ViewWeave.BridgeEditorPreviewValidation
         }
 
         [UnityTest]
-        public IEnumerator UrpEditorPreviewRendersAndRebuildsItsOwnedTextures()
+        public IEnumerator UrpEditorPreviewRendersAndRejectsProfileMutationWhileOwned()
         {
             return RunLocalPreview(false);
         }
 
         [UnityTest]
-        public IEnumerator HdrpEditorPreviewRendersAndRebuildsItsOwnedTextures()
+        public IEnumerator HdrpEditorPreviewRendersAndRejectsProfileMutationWhileOwned()
         {
             return RunLocalPreview(true);
+        }
+
+        [UnityTest]
+        public IEnumerator UrpViewRenderDensityChangesAtFrameBoundaryAndPreservesLogicalQuiltResources()
+        {
+            var fixture = new Fixture(false);
+            bool previewAttempted = false;
+            bool callbackMutationAttempted = false;
+            bool callbackMutationAccepted = true;
+            string callbackMutationError = string.Empty;
+            QuiltRenderer producerRenderer = null;
+            Action<QuiltRenderer> completionCallback = renderer =>
+            {
+                if (callbackMutationAttempted) return;
+                callbackMutationAttempted = true;
+                callbackMutationAccepted = renderer.TrySetViewRenderMode(QuiltViewRenderMode.Half, out callbackMutationError);
+            };
+            try
+            {
+                fixture.Setup();
+                QuiltRenderer sourceRenderer = fixture.Rig.Renderer;
+                previewAttempted = true;
+                if (!PreviewApi.Start(fixture.Rig, false, out string startError))
+                    throw new AssertionException("The URP local preview did not start: " + startError);
+                producerRenderer = PreviewApi.ProducerRenderer;
+                Assert.IsNotNull(producerRenderer, "The preview producer should be constructed before its first frame.");
+                producerRenderer.QuiltRendered += completionCallback;
+                yield return WaitFor(() => PreviewApi.IsActive && IsCreated(PreviewApi.Texture) &&
+                    callbackMutationAttempted && producerRenderer.HasRenderedQuilt,
+                    "The initial Full preview frame and its completion callback did not run.");
+
+                Assert.IsFalse(callbackMutationAccepted, "Sampling changes must be rejected during completion notification.");
+                StringAssert.Contains("completion notification", callbackMutationError);
+                QuiltRenderSnapshot initialSnapshot = producerRenderer.LatestSnapshot;
+                Assert.AreEqual(QuiltViewRenderMode.Full, initialSnapshot.ViewRenderMode);
+                Assert.AreEqual(8, initialSnapshot.LastRenderedViewCount);
+                Assert.AreEqual(8, initialSnapshot.Layout.ViewCount);
+                Assert.AreEqual(4, initialSnapshot.Layout.Columns);
+                Assert.AreEqual(2, initialSnapshot.Layout.Rows);
+                RenderTexture quiltTexture = PreviewApi.Texture;
+                RenderTexture viewTexture = PreviewApi.ViewTexture;
+                Assert.IsNotNull(viewTexture);
+
+                QuiltViewRenderMode[] modes = { QuiltViewRenderMode.Half, QuiltViewRenderMode.Quarter };
+                int[] expectedCounts = { 4, 2 };
+                for (int i = 0; i < modes.Length; ++i)
+                {
+                    Assert.IsTrue(sourceRenderer.TrySetViewRenderMode(modes[i], out string modeError), modeError);
+                    long previousRevision = producerRenderer.LatestSnapshot.Revision;
+                    PreviewApi.RequestRefresh();
+                    QuiltViewRenderMode expectedMode = modes[i];
+                    yield return WaitFor(() => producerRenderer != null && producerRenderer.LatestSnapshot.IsValid &&
+                        producerRenderer.LatestSnapshot.Revision > previousRevision &&
+                        producerRenderer.LatestSnapshot.ViewRenderMode == expectedMode,
+                        "The preview did not apply " + expectedMode + " at the next requested frame boundary.");
+
+                    QuiltRenderSnapshot snapshot = producerRenderer.LatestSnapshot;
+                    Assert.AreEqual(expectedCounts[i], snapshot.LastRenderedViewCount, expectedMode + " should render its expected sparse view count.");
+                    Assert.AreEqual(initialSnapshot.Layout.QuiltWidth, snapshot.Layout.QuiltWidth);
+                    Assert.AreEqual(initialSnapshot.Layout.QuiltHeight, snapshot.Layout.QuiltHeight);
+                    Assert.AreEqual(initialSnapshot.Layout.Columns, snapshot.Layout.Columns);
+                    Assert.AreEqual(initialSnapshot.Layout.Rows, snapshot.Layout.Rows);
+                    Assert.AreEqual(initialSnapshot.Layout.ViewCount, snapshot.Layout.ViewCount,
+                        "Sampling density must preserve the logical quilt view count.");
+                    Assert.AreSame(quiltTexture, PreviewApi.Texture, "Changing sampling density should not rebuild the quilt texture.");
+                    Assert.AreSame(viewTexture, PreviewApi.ViewTexture, "Changing sampling density should not rebuild the view texture.");
+                }
+            }
+            finally
+            {
+                if (producerRenderer != null) producerRenderer.QuiltRendered -= completionCallback;
+                if (previewAttempted)
+                {
+                    PreviewApi.Stop();
+                    BridgeEditorPreviewRetention.RequestStop(true);
+                }
+                fixture.Dispose();
+            }
         }
 
         [UnityTest]
@@ -262,7 +349,17 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                     PreviewApi.Stop();
                     BridgeEditorPreviewRetention.RequestStop(true);
                 }
-                if (!crossedPlayMode) fixture.Dispose();
+                if (previewAttempted && !Application.isPlaying)
+                    Debug.Log("EDITOR_PREVIEW_DEVICE_CLEANUP active=" + PreviewApi.IsActive +
+                        ", stopping=" + PreviewApi.IsStopping +
+                        ", retentionPending=" + BridgeEditorPreviewRetention.PendingCount +
+                        ", nativePending=" + BridgeWorkerQuiltOutput.ShutdownPendingCount);
+                if (!crossedPlayMode)
+                {
+                    fixture.Dispose();
+                    SessionState.SetBool(DevicePlayTransitionStatePrefix + "captured", false);
+                    SessionState.SetBool(DevicePlayTransitionStatePrefix + "cleanupDone", true);
+                }
                 else Debug.Log("EDITOR_PREVIEW_PLAY_TRANSITION fixture_disposal_skipped_after_domain_reload=true");
             }
         }
@@ -324,6 +421,468 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                 }
                 fixture.Dispose();
             }
+        }
+
+        [UnityTest]
+        public IEnumerator DevicePreviewStopsBeforePlayAndRuntimeSessionRendersWhenExplicitlyEnabled()
+        {
+            if (Environment.GetEnvironmentVariable("VIEWWEAVE_EDITOR_PREVIEW_DEVICE_TEST") != "1")
+                Assert.Ignore("Set VIEWWEAVE_EDITOR_PREVIEW_DEVICE_TEST=1 only for the owned isolated project with Bridge and a connected display.");
+            if (SessionState.GetBool(DevicePlayTransitionStatePrefix + "captured", false) ||
+                SessionState.GetBool(DevicePlayTransitionStatePrefix + "assetFolderOwned", false))
+                throw new InvalidOperationException("A previous device-transition fixture still owns render-pipeline state or assets; refusing to overwrite its recovery record.");
+
+            bool previousOptionsEnabled = EditorSettings.enterPlayModeOptionsEnabled;
+            EnterPlayModeOptions previousOptions = EditorSettings.enterPlayModeOptions;
+            bool disableDomainAndSceneReload = Environment.GetEnvironmentVariable(
+                "VIEWWEAVE_EDITOR_PREVIEW_DISABLE_DOMAIN_AND_SCENE_RELOAD_TEST") == "1";
+            CaptureDeviceTransitionPlayOptions(previousOptionsEnabled, previousOptions);
+            EditorSettings.enterPlayModeOptionsEnabled = true;
+            EditorSettings.enterPlayModeOptions = disableDomainAndSceneReload
+                ? EnterPlayModeOptions.DisableDomainReload | EnterPlayModeOptions.DisableSceneReload
+                : EnterPlayModeOptions.None;
+
+            bool previewAttempted = false;
+            bool crossedPlayMode = false;
+            bool exitingEditModeObserved = false;
+            var fixture = new Fixture(false);
+            BridgeWorkerQuiltOutput sourceOutput = null;
+            ViewWeaveBridgeSession session = null;
+            Action<BridgeDisplaySnapshot> onSnapshot = null;
+            Action<PlayModeStateChange> playModeObserver = null;
+            try
+            {
+                string pipelineAssetDirectory = CreateOwnedDeviceTransitionAssetFolder();
+                fixture.Setup(pipelineAssetDirectory);
+                CaptureDeviceTransitionPipelineSettings(
+                    fixture.PreviousDefaultPipeline,
+                    fixture.PreviousQualityPipeline,
+                    previousOptionsEnabled,
+                    previousOptions);
+                fixture.Rig.gameObject.SetActive(false);
+                fixture.Rig.gameObject.name = DevicePlayTransitionRigName;
+                fixture.TargetObject.name = DevicePlayTransitionTargetName;
+                fixture.SetOwnedPipelineNames(DevicePlayTransitionPipelineName, DevicePlayTransitionRendererDataName);
+                sourceOutput = fixture.Rig.gameObject.AddComponent<BridgeWorkerQuiltOutput>();
+                sourceOutput.initializeOnEnable = false;
+                fixture.Rig.SetOutput(sourceOutput);
+                session = fixture.Rig.gameObject.AddComponent<ViewWeaveBridgeSession>();
+                session.startOnEnable = false;
+                if (!fixture.Rig.ConfigureComponents())
+                    throw new AssertionException("The DevicePreview-to-Play source Rig could not configure its Bridge output.");
+                fixture.Rig.gameObject.SetActive(true);
+
+                BridgeDisplaySnapshot refreshedSnapshot = null;
+                onSnapshot = value => refreshedSnapshot = value;
+                sourceOutput.ConnectedDisplaySnapshotChanged += onSnapshot;
+                if (!sourceOutput.TryRequestDisplayRefresh(out string refreshError))
+                    throw new AssertionException("The explicit pre-preview display refresh was rejected: " + refreshError);
+                double metadataDeadline = EditorApplication.timeSinceStartup + 30.0;
+                double nextMetadataLog = EditorApplication.timeSinceStartup + 5.0;
+                while (EditorApplication.timeSinceStartup < metadataDeadline &&
+                       !(refreshedSnapshot != null &&
+                         sourceOutput.CurrentConfigurationDisplaySnapshot == refreshedSnapshot &&
+                         !BridgeDisplayDiscovery.IsBusy))
+                {
+                    if (EditorApplication.timeSinceStartup >= nextMetadataLog)
+                    {
+                        Debug.Log("EDITOR_PREVIEW_DEVICE_METADATA_WAIT busy=" + BridgeDisplayDiscovery.IsBusy +
+                            ", status=" + (BridgeDisplayDiscovery.Status ?? string.Empty) +
+                            ", discoveryError=" + (BridgeDisplayDiscovery.LastError ?? string.Empty) +
+                            ", outputEnabled=" + sourceOutput.enabled +
+                            ", outputActive=" + sourceOutput.gameObject.activeInHierarchy +
+                            ", outputActiveAndEnabled=" + sourceOutput.isActiveAndEnabled +
+                            ", outputStatus=" + (sourceOutput.DisplayRefreshStatus ?? string.Empty) +
+                            ", outputError=" + (sourceOutput.LastError ?? string.Empty) +
+                            ", snapshot=" + (refreshedSnapshot != null) +
+                            ", rawSnapshot=" + (sourceOutput.ConnectedDisplaySnapshot != null) +
+                            ", currentSnapshot=" + (sourceOutput.CurrentConfigurationDisplaySnapshot != null) +
+                            ", shutdownPending=" + BridgeWorkerQuiltOutput.ShutdownPendingCount +
+                            ", native=" + ReadDiscoveryDiagnostic());
+                        nextMetadataLog += 5.0;
+                    }
+                    yield return null;
+                }
+                if (refreshedSnapshot == null || sourceOutput.CurrentConfigurationDisplaySnapshot != refreshedSnapshot ||
+                    BridgeDisplayDiscovery.IsBusy)
+                    throw new AssertionException("The explicit pre-preview display refresh did not publish a current configuration snapshot. " +
+                        "busy=" + BridgeDisplayDiscovery.IsBusy +
+                        ", status=" + (BridgeDisplayDiscovery.Status ?? string.Empty) +
+                        ", discoveryError=" + (BridgeDisplayDiscovery.LastError ?? string.Empty) +
+                        ", outputEnabled=" + sourceOutput.enabled +
+                        ", outputActive=" + sourceOutput.gameObject.activeInHierarchy +
+                        ", outputActiveAndEnabled=" + sourceOutput.isActiveAndEnabled +
+                        ", outputStatus=" + (sourceOutput.DisplayRefreshStatus ?? string.Empty) +
+                        ", outputError=" + (sourceOutput.LastError ?? string.Empty) +
+                        ", snapshot=" + (refreshedSnapshot != null) +
+                        ", rawSnapshot=" + (sourceOutput.ConnectedDisplaySnapshot != null) +
+                        ", currentSnapshot=" + (sourceOutput.CurrentConfigurationDisplaySnapshot != null) +
+                        ", shutdownPending=" + BridgeWorkerQuiltOutput.ShutdownPendingCount +
+                        ", native=" + ReadDiscoveryDiagnostic());
+                sourceOutput.ConnectedDisplaySnapshotChanged -= onSnapshot;
+                onSnapshot = null;
+                Assert.Greater(refreshedSnapshot.Displays.Count, 0, "Bridge should report the connected display.");
+                Assert.IsTrue(refreshedSnapshot.TryGetDisplay(sourceOutput.displayOrdinal, out BridgeDisplayProfile profile),
+                    "The selected display ordinal must be present in the refreshed snapshot.");
+                Assert.IsTrue(profile.IsValid, "The selected display profile must have valid geometry.");
+                Assert.IsTrue(profile.HasPhysicalCalibration, "The selected display must include physical calibration data.");
+                Debug.Log("EDITOR_PREVIEW_DEVICE_METADATA generation=" + refreshedSnapshot.Generation +
+                    ", displays=" + refreshedSnapshot.Displays.Count + ", calibration=true");
+
+                session.startOnEnable = true;
+                previewAttempted = true;
+                Debug.Log("EDITOR_PREVIEW_DEVICE playOptions=" + EditorSettings.enterPlayModeOptions);
+                StartDevicePreview(fixture.Rig);
+                yield return WaitForDeviceWorker("before-play");
+                BridgeWorkerQuiltOutput previewOutput = PreviewApi.ProducerOutput;
+                Assert.IsNotNull(previewOutput);
+                Assert.Greater(previewOutput.Submissions, 0);
+                Assert.Greater(previewOutput.Completed, 0);
+
+                playModeObserver = state =>
+                {
+                    if (state == PlayModeStateChange.ExitingEditMode) exitingEditModeObserved = true;
+                };
+                EditorApplication.playModeStateChanged += playModeObserver;
+                yield return new EnterPlayMode();
+                crossedPlayMode = true;
+                Assert.IsTrue(Application.isPlaying, "Unity must enter Play mode for the device transition check.");
+                ViewWeaveRig reloadedRig = FindSceneRig(DevicePlayTransitionRigName);
+                Assert.IsNotNull(reloadedRig,
+                    "Exactly one uniquely named device-transition Rig must survive the Editor scene reload. " + DescribeMatchingSceneObjects(DevicePlayTransitionRigName));
+                GameObject reloadedTarget = FindSceneObject(DevicePlayTransitionTargetName);
+                Assert.IsNotNull(reloadedTarget, "The uniquely named device-transition target must survive the Editor scene reload.");
+                session = reloadedRig.GetComponent<ViewWeaveBridgeSession>();
+                sourceOutput = reloadedRig.GetComponent<BridgeWorkerQuiltOutput>();
+                Assert.IsNotNull(session, "The reloaded device-transition Rig must retain its Bridge Session component.");
+                Assert.IsNotNull(sourceOutput, "The reloaded device-transition Rig must retain its Bridge output component.");
+                yield return WaitForDevicePreviewStop(session, sourceOutput, () => exitingEditModeObserved);
+                Debug.Log("EDITOR_PREVIEW_DEVICE_PLAY editorProducerStopped=true retentionPending=0 nativePending=0");
+
+                double runtimeStartedAt = EditorApplication.timeSinceStartup;
+                double runtimeDeadline = runtimeStartedAt + 45.0;
+                while (EditorApplication.timeSinceStartup < runtimeDeadline)
+                {
+                    if (session != null && session.State == ViewWeaveBridgeSession.SessionState.Rendering &&
+                        sourceOutput != null && sourceOutput.Ready && sourceOutput.Completed > 0) break;
+                    if (session != null && session.State == ViewWeaveBridgeSession.SessionState.Fault)
+                        Assert.Fail("The runtime Bridge Session faulted after the Editor preview stopped: " + session.LastError);
+                    yield return null;
+                }
+                Assert.IsNotNull(session);
+                Assert.AreEqual(ViewWeaveBridgeSession.SessionState.Rendering, session.State,
+                    "The runtime Bridge Session did not reach Rendering after the Editor preview stopped.");
+                Assert.IsTrue(sourceOutput.Ready, "The runtime Bridge worker must be Ready.");
+                Assert.Greater(sourceOutput.Completed, 0, "The runtime Bridge worker must complete a submission.");
+                Debug.Log("EDITOR_PREVIEW_DEVICE_PLAY runtimeState=" + session.State + ", submissions=" + sourceOutput.Submissions +
+                    ", completed=" + sourceOutput.Completed);
+
+                session.StopSession();
+                double stopDeadline = EditorApplication.timeSinceStartup + 30.0;
+                while (EditorApplication.timeSinceStartup < stopDeadline &&
+                       (session.State != ViewWeaveBridgeSession.SessionState.Idle ||
+                        sourceOutput.State != BridgeWorkerQuiltOutput.WorkerState.Closed ||
+                        BridgeWorkerQuiltOutput.ShutdownPendingCount != 0 || BridgeEditorPreviewRetention.PendingCount != 0))
+                    yield return null;
+                Assert.AreEqual(ViewWeaveBridgeSession.SessionState.Idle, session.State,
+                    "The runtime Session did not return to Idle after Stop.");
+                Assert.AreEqual(BridgeWorkerQuiltOutput.WorkerState.Closed, sourceOutput.State,
+                    "The runtime Bridge worker must close after Stop.");
+                Assert.AreEqual(0, BridgeWorkerQuiltOutput.ShutdownPendingCount,
+                    "Native cleanup must be complete after Stop.");
+                Assert.AreEqual(0, BridgeEditorPreviewRetention.PendingCount,
+                    "Preview retention proof must be complete after Stop.");
+                Debug.Log("EDITOR_PREVIEW_DEVICE_PLAY runtimeStopped=true nativePending=0 retentionPending=0");
+
+                yield return new ExitPlayMode();
+                Assert.IsFalse(Application.isPlaying, "The hardware test must return Unity to Edit Mode.");
+                Assert.IsFalse(PreviewApi.IsActive, "Returning to Edit Mode must not restart the Editor preview.");
+                ViewWeaveRig editModeRig = FindSceneRig(DevicePlayTransitionRigName);
+                Assert.IsNotNull(editModeRig, "The owned Rig fixture must be available for cleanup after returning to Edit Mode.");
+                GameObject editModeTarget = FindSceneObject(DevicePlayTransitionTargetName);
+                Assert.IsNotNull(editModeTarget, "The owned target fixture must be available for cleanup after returning to Edit Mode.");
+                CleanupDeviceTransitionFixture();
+                Debug.Log("EDITOR_PREVIEW_DEVICE_PLAY editModeReturned=true editorPreviewRestarted=false");
+            }
+            finally
+            {
+                if (playModeObserver != null) EditorApplication.playModeStateChanged -= playModeObserver;
+                if (onSnapshot != null && sourceOutput != null) sourceOutput.ConnectedDisplaySnapshotChanged -= onSnapshot;
+                if (Application.isPlaying && session == null)
+                {
+                    ViewWeaveRig currentRig = FindSceneRig(DevicePlayTransitionRigName);
+                    if (currentRig != null)
+                    {
+                        session = currentRig.GetComponent<ViewWeaveBridgeSession>();
+                        sourceOutput = currentRig.GetComponent<BridgeWorkerQuiltOutput>();
+                    }
+                }
+                if (session != null && Application.isPlaying && session.State != ViewWeaveBridgeSession.SessionState.Idle)
+                    session.StopSession();
+                if (previewAttempted && !Application.isPlaying &&
+                    (PreviewApi.IsActive || PreviewApi.IsStopping || BridgeEditorPreviewRetention.PendingCount != 0))
+                {
+                    PreviewApi.Stop();
+                    BridgeEditorPreviewRetention.RequestStop(true);
+                }
+                if (!crossedPlayMode)
+                {
+                    fixture.Dispose();
+                    CleanupDeviceTransitionFixture();
+                }
+                else if (!Application.isPlaying)
+                {
+                    CleanupDeviceTransitionFixture();
+                }
+                else Debug.Log("EDITOR_PREVIEW_DEVICE_PLAY fixtureCleanupDeferredUntilEditorExit=true");
+                RestoreDeviceTransitionPlayOptions();
+            }
+        }
+
+        static void CaptureDeviceTransitionPipelineSettings(
+            RenderPipelineAsset previousDefault,
+            RenderPipelineAsset previousQuality,
+            bool previousOptionsEnabled,
+            EnterPlayModeOptions previousOptions)
+        {
+            if ((previousDefault != null && !EditorUtility.IsPersistent(previousDefault)) ||
+                (previousQuality != null && !EditorUtility.IsPersistent(previousQuality)))
+                throw new InvalidOperationException("The device transition test requires persistent or null original render pipeline assets so it can restore them after domain reload.");
+            string defaultPath = previousDefault == null ? string.Empty : AssetDatabase.GetAssetPath(previousDefault);
+            string qualityPath = previousQuality == null ? string.Empty : AssetDatabase.GetAssetPath(previousQuality);
+            if ((previousDefault != null && string.IsNullOrEmpty(defaultPath)) ||
+                (previousQuality != null && string.IsNullOrEmpty(qualityPath)))
+                throw new InvalidOperationException("The device transition test cannot safely restore an original render pipeline asset without an AssetDatabase path.");
+            SessionState.SetBool(DevicePlayTransitionStatePrefix + "captured", true);
+            SessionState.SetBool(DevicePlayTransitionStatePrefix + "cleanupDone", false);
+            SessionState.SetBool(DevicePlayTransitionStatePrefix + "defaultNull", previousDefault == null);
+            SessionState.SetBool(DevicePlayTransitionStatePrefix + "qualityNull", previousQuality == null);
+            SessionState.SetString(DevicePlayTransitionStatePrefix + "defaultPath", defaultPath);
+            SessionState.SetString(DevicePlayTransitionStatePrefix + "qualityPath", qualityPath);
+            CaptureDeviceTransitionPlayOptions(previousOptionsEnabled, previousOptions);
+        }
+
+        static string CreateOwnedDeviceTransitionAssetFolder()
+        {
+            string folderName = "__ViewWeaveDevicePlayTransition_" + Guid.NewGuid().ToString("N");
+            string path = "Assets/" + folderName;
+            if (AssetDatabase.IsValidFolder(path))
+                throw new InvalidOperationException("A unique device-transition asset folder unexpectedly already exists.");
+            string guid = AssetDatabase.CreateFolder("Assets", folderName);
+            if (string.IsNullOrEmpty(guid) || !AssetDatabase.IsValidFolder(path))
+                throw new InvalidOperationException("The isolated device-transition asset folder could not be created.");
+            SessionState.SetString(DevicePlayTransitionStatePrefix + "assetFolder", path);
+            SessionState.SetBool(DevicePlayTransitionStatePrefix + "assetFolderOwned", true);
+            SessionState.SetBool(DevicePlayTransitionStatePrefix + "cleanupDone", false);
+            return path;
+        }
+
+        static void CleanupDeviceTransitionFixture()
+        {
+            if (SessionState.GetBool(DevicePlayTransitionStatePrefix + "cleanupDone", false)) return;
+            RestoreDeviceTransitionPipelineSettings();
+
+            GameObject target = FindSceneObject(DevicePlayTransitionTargetName);
+            if (target != null)
+            {
+                MeshRenderer renderer = target.GetComponent<MeshRenderer>();
+                Material material = renderer == null ? null : renderer.sharedMaterial;
+                if (material != null && !EditorUtility.IsPersistent(material)) Object.DestroyImmediate(material);
+                Object.DestroyImmediate(target);
+            }
+
+            ViewWeaveRig rig = FindSceneRig(DevicePlayTransitionRigName);
+            if (rig != null) Object.DestroyImmediate(rig.gameObject);
+
+            DestroyTransientAsset<UniversalRenderPipelineAsset>(DevicePlayTransitionPipelineName);
+            DestroyTransientAsset<UniversalRendererData>(DevicePlayTransitionRendererDataName);
+            DeleteOwnedDeviceTransitionAssetFolder();
+            SessionState.SetBool(DevicePlayTransitionStatePrefix + "cleanupDone", true);
+            Debug.Log("EDITOR_PREVIEW_DEVICE_PLAY fixtureCleanup=true");
+        }
+
+        static void DeleteOwnedDeviceTransitionAssetFolder()
+        {
+            if (!SessionState.GetBool(DevicePlayTransitionStatePrefix + "assetFolderOwned", false)) return;
+            string path = SessionState.GetString(DevicePlayTransitionStatePrefix + "assetFolder", string.Empty);
+            if (string.IsNullOrEmpty(path) || !path.StartsWith(DevicePlayTransitionAssetFolderPrefix, StringComparison.Ordinal))
+                throw new InvalidOperationException("Refusing to delete a device-transition asset folder outside the exact owned path prefix.");
+            if (AssetDatabase.IsValidFolder(path) && !AssetDatabase.DeleteAsset(path))
+                throw new InvalidOperationException("The owned device-transition pipeline asset folder could not be deleted.");
+            SessionState.SetBool(DevicePlayTransitionStatePrefix + "assetFolderOwned", false);
+            SessionState.SetString(DevicePlayTransitionStatePrefix + "assetFolder", string.Empty);
+        }
+
+        static void RestoreDeviceTransitionPipelineSettings()
+        {
+            if (!SessionState.GetBool(DevicePlayTransitionStatePrefix + "captured", false)) return;
+            RenderPipelineAsset defaultAsset = SessionState.GetBool(DevicePlayTransitionStatePrefix + "defaultNull", true)
+                ? null
+                : AssetDatabase.LoadAssetAtPath<RenderPipelineAsset>(SessionState.GetString(DevicePlayTransitionStatePrefix + "defaultPath", string.Empty));
+            RenderPipelineAsset qualityAsset = SessionState.GetBool(DevicePlayTransitionStatePrefix + "qualityNull", true)
+                ? null
+                : AssetDatabase.LoadAssetAtPath<RenderPipelineAsset>(SessionState.GetString(DevicePlayTransitionStatePrefix + "qualityPath", string.Empty));
+            if (!SessionState.GetBool(DevicePlayTransitionStatePrefix + "defaultNull", true) && defaultAsset == null)
+                throw new InvalidOperationException("The original default render pipeline asset could not be restored from its saved AssetDatabase path.");
+            if (!SessionState.GetBool(DevicePlayTransitionStatePrefix + "qualityNull", true) && qualityAsset == null)
+                throw new InvalidOperationException("The original quality render pipeline asset could not be restored from its saved AssetDatabase path.");
+            GraphicsSettings.defaultRenderPipeline = defaultAsset;
+            QualitySettings.renderPipeline = qualityAsset;
+            Assert.AreSame(defaultAsset, GraphicsSettings.defaultRenderPipeline, "The device transition test must restore the original default render pipeline.");
+            Assert.AreSame(qualityAsset, QualitySettings.renderPipeline, "The device transition test must restore the original quality render pipeline.");
+            RestoreDeviceTransitionPlayOptions();
+            SessionState.SetBool(DevicePlayTransitionStatePrefix + "captured", false);
+        }
+
+        static void CaptureDeviceTransitionPlayOptions(bool optionsEnabled, EnterPlayModeOptions options)
+        {
+            SessionState.SetBool(DevicePlayTransitionStatePrefix + "optionsStored", true);
+            SessionState.SetBool(DevicePlayTransitionStatePrefix + "optionsEnabled", optionsEnabled);
+            SessionState.SetInt(DevicePlayTransitionStatePrefix + "options", (int)options);
+        }
+
+        static IEnumerator WaitForDevicePreviewStop(
+            ViewWeaveBridgeSession session,
+            BridgeWorkerQuiltOutput sourceOutput,
+            Func<bool> exitingEditModeObserved)
+        {
+            const double timeoutSeconds = 30.0;
+            double startedAt = EditorApplication.timeSinceStartup;
+            double nextLogAt = startedAt + 5.0;
+            Func<bool> stopped = () => !PreviewApi.IsActive && !PreviewApi.IsStopping &&
+                BridgeEditorPreviewRetention.PendingCount == 0 && BridgeWorkerQuiltOutput.ShutdownPendingCount == 0;
+
+            while (!stopped() && EditorApplication.timeSinceStartup - startedAt < timeoutSeconds)
+            {
+                double elapsed = EditorApplication.timeSinceStartup - startedAt;
+                if (elapsed >= nextLogAt - startedAt)
+                {
+                    Debug.Log("EDITOR_PREVIEW_DEVICE_STOP_WAIT elapsed=" + elapsed.ToString("F1", System.Globalization.CultureInfo.InvariantCulture) +
+                        ", " + DescribeDevicePreviewStopState(session, sourceOutput, exitingEditModeObserved()));
+                    nextLogAt += 5.0;
+                }
+                yield return null;
+            }
+
+            if (!stopped())
+            {
+                string diagnostic = "elapsed=" + (EditorApplication.timeSinceStartup - startedAt).ToString("F1", System.Globalization.CultureInfo.InvariantCulture) +
+                    ", " + DescribeDevicePreviewStopState(session, sourceOutput, exitingEditModeObserved());
+                Debug.Log("EDITOR_PREVIEW_DEVICE_STOP_TIMEOUT " + diagnostic);
+                Assert.Fail("The Edit Mode device producer did not stop and prove its resources before runtime startup. " + diagnostic);
+            }
+        }
+
+        static string DescribeDevicePreviewStopState(
+            ViewWeaveBridgeSession session,
+            BridgeWorkerQuiltOutput sourceOutput,
+            bool exitingEditModeObserved)
+        {
+            Type tracker = typeof(QuiltRenderer).Assembly.GetType("ViewWeave.QuiltRendererEditorCallbackTracker");
+            object ReadTracker(string propertyName)
+            {
+                PropertyInfo property = tracker?.GetProperty(propertyName, BindingFlags.Static | BindingFlags.NonPublic);
+                return property == null ? "missing" : property.GetValue(null);
+            }
+
+            BridgeWorkerQuiltOutput producer = PreviewApi.ProducerOutput;
+            string summary = "exitingEditMode=" + exitingEditModeObserved +
+                ", previewActive=" + PreviewApi.IsActive +
+                ", previewStopping=" + PreviewApi.IsStopping +
+                ", previewStatus=" + PreviewApi.Status +
+                ", previewError=" + PreviewApi.LastError +
+                ", callbackReady=" + ReadTracker("IsReady") +
+                ", callbackInside=" + ReadTracker("IsInsideRenderCallback") +
+                ", contextDepth=" + ReadTracker("ContextDepth") +
+                ", cameraDepth=" + ReadTracker("CameraDepth") +
+                ", retentionPending=" + BridgeEditorPreviewRetention.PendingCount +
+                ", retentionRecords={" + PreviewApi.DescribeRetentionStateWithoutNativeCalls() + "}" +
+                ", nativePending=" + BridgeWorkerQuiltOutput.ShutdownPendingCount +
+                ", imageValidationPending=" + PreviewApi.NativeImageValidationPending +
+                ", sourceSession=" + (session == null ? "null" : session.State.ToString()) +
+                ", sourceSessionError=" + (session == null ? string.Empty : session.LastError) +
+                ", sourceOutput=" + DescribeOutputState(sourceOutput) +
+                ", producerOutput=" + DescribeOutputState(producer);
+            return ToAscii(summary);
+        }
+
+        static string DescribeOutputState(BridgeWorkerQuiltOutput output)
+        {
+            if (output == null) return "null";
+            return "ready=" + output.Ready + ", state=" + output.State +
+                ", submissions=" + output.Submissions + ", completed=" + output.Completed +
+                ", error=" + (output.LastError ?? string.Empty);
+        }
+
+        static string ToAscii(string value)
+        {
+            if (string.IsNullOrEmpty(value)) return string.Empty;
+            char[] characters = new char[value.Length];
+            int length = 0;
+            foreach (char character in value)
+                if (character >= 0x20 && character <= 0x7e) characters[length++] = character;
+            return new string(characters, 0, length);
+        }
+
+        static void RestoreDeviceTransitionPlayOptions()
+        {
+            if (!SessionState.GetBool(DevicePlayTransitionStatePrefix + "optionsStored", false)) return;
+            EditorSettings.enterPlayModeOptionsEnabled = SessionState.GetBool(
+                DevicePlayTransitionStatePrefix + "optionsEnabled", false);
+            EditorSettings.enterPlayModeOptions = (EnterPlayModeOptions)SessionState.GetInt(
+                DevicePlayTransitionStatePrefix + "options", (int)EnterPlayModeOptions.None);
+            SessionState.SetBool(DevicePlayTransitionStatePrefix + "optionsStored", false);
+        }
+
+        static void DestroyTransientAsset<T>(string exactName) where T : Object
+        {
+            T found = null;
+            foreach (T candidate in Resources.FindObjectsOfTypeAll<T>())
+            {
+                if (candidate == null || candidate.name != exactName || EditorUtility.IsPersistent(candidate)) continue;
+                if (found != null) return;
+                found = candidate;
+            }
+            if (found != null) Object.DestroyImmediate(found);
+        }
+
+        static ViewWeaveRig FindSceneRig(string exactName)
+        {
+            ViewWeaveRig found = null;
+            foreach (ViewWeaveRig candidate in Resources.FindObjectsOfTypeAll<ViewWeaveRig>())
+            {
+                if (candidate == null || candidate.gameObject.name != exactName || EditorUtility.IsPersistent(candidate)) continue;
+                if (!candidate.gameObject.scene.IsValid() || !candidate.gameObject.scene.isLoaded) continue;
+                if (found != null) return null;
+                found = candidate;
+            }
+            return found;
+        }
+
+        static GameObject FindSceneObject(string exactName)
+        {
+            GameObject found = null;
+            foreach (GameObject candidate in Resources.FindObjectsOfTypeAll<GameObject>())
+            {
+                if (candidate == null || candidate.name != exactName || EditorUtility.IsPersistent(candidate)) continue;
+                if (!candidate.scene.IsValid() || !candidate.scene.isLoaded) continue;
+                if (found != null) return null;
+                found = candidate;
+            }
+            return found;
+        }
+
+        static string DescribeMatchingSceneObjects(string exactName)
+        {
+            var matches = Resources.FindObjectsOfTypeAll<ViewWeaveRig>();
+            var summaries = new System.Collections.Generic.List<string>();
+            foreach (ViewWeaveRig candidate in matches)
+            {
+                if (candidate == null) continue;
+                summaries.Add(candidate.gameObject.name + "@" + candidate.gameObject.scene.name +
+                    ", loaded=" + candidate.gameObject.scene.isLoaded + ", persistent=" + EditorUtility.IsPersistent(candidate));
+            }
+            return "Expected=" + exactName + ", scene Rigs=" + string.Join("; ", summaries);
         }
 
         static void StartDevicePreview(ViewWeaveRig rig)
@@ -412,7 +971,7 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                 RenderTexture first = PreviewApi.Texture;
                 QuiltRenderer producerRenderer = PreviewApi.ProducerRenderer;
                 Assert.IsNotNull(producerRenderer);
-                Assert.IsTrue(QuiltDisplaySettingsResolver.TryResolve(producerRenderer, out QuiltSettings gizmoSettings,
+                Assert.IsTrue(QuiltDisplaySettingsResolver.TryResolve(sourceRenderer, out QuiltSettings gizmoSettings,
                     out QuiltEditorDisplayProfile displayProfile, out string framingError), framingError);
                 Assert.AreEqual(QuiltDisplaySettingsSource.LocalPreview, displayProfile.source);
                 AssertPhysicalSnapshot(producerRenderer.LatestSnapshot, 800f / 450f, 60f, 0.45f,
@@ -426,7 +985,10 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                 Assert.AreEqual(storedDistance, sourceRenderer.settings.cameraDistance, 0.0001f,
                     "Physical rendering must not write the derived distance into the source profile.");
                 long physicalRevision = producerRenderer.LatestSnapshot.Revision;
-                sourceRenderer.settings.fieldOfView = 45f;
+                Assert.IsTrue(sourceRenderer.TryGetFraming(out QuiltCameraFraming liveFraming));
+                Assert.IsTrue(sourceRenderer.TrySetFraming(new QuiltCameraFraming(45f, liveFraming.FocusDistance,
+                    liveFraming.PhysicalFramingEnabled, liveFraming.ApertureWidthMillimeters,
+                    liveFraming.ApertureHeightMillimeters, liveFraming.UnitsPerMeter), out string framingUpdateError), framingUpdateError);
                 BridgeEditorPreview.RequestRefresh();
                 yield return WaitFor(() => producerRenderer != null && producerRenderer.LatestSnapshot.IsValid &&
                     producerRenderer.LatestSnapshot.Revision > physicalRevision &&
@@ -451,21 +1013,21 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                 Debug.Log("EDITOR_PREVIEW_GPU pixels=" + pixelSummary);
                 Assert.IsTrue(hasGreenTargetPixels, "The quilt should contain green-dominant pixels from the unlit preview target. " + pixelSummary);
 
-                fixture.Rig.ApplyProfile(new QuiltQualityProfile(256, 128, 4, 2, 8, 1f, 20f));
-                yield return WaitFor(() => PreviewApi.IsActive && IsCreated(PreviewApi.Texture) &&
-                    !ReferenceEquals(PreviewApi.Texture, first) && PreviewApi.Texture.width == 256,
-                    "The preview did not stop, prove, and rebuild after a profile layout change.");
-                Assert.IsFalse(first != null && first.IsCreated(), "The old preview texture must retire only after proof.");
-                Assert.IsTrue(PreviewApi.ProducerRenderer.HasRenderedQuilt);
-                Assert.AreEqual(8, PreviewApi.ProducerRenderer.LastRenderedViewCount);
-                Assert.AreEqual(fixture.ExpectedViewSamples, PreviewApi.ProducerRenderer.ViewAntiAliasingSamples);
-                Assert.AreEqual(fixture.ExpectedViewSamples > 1 ? 1 : 0, PreviewApi.ProducerRenderer.ResolveAntiAliasingSamples);
-                Debug.Log("EDITOR_PREVIEW_GPU rebuild pipeline=" + (hdrp ? "HDRP" : "URP") + ", oldTextureRetired=true, newWidth=" + PreviewApi.Texture.width +
-                    ", samplesView=" + PreviewApi.ProducerRenderer.ViewAntiAliasingSamples + ", samplesResolve=" + PreviewApi.ProducerRenderer.ResolveAntiAliasingSamples);
+                QuiltQualityProfile originalProfile = fixture.Rig.Profile;
+                QuiltLayout originalLayout = producerRenderer.LatestSnapshot.Layout;
+                InvalidOperationException profileError = Assert.Throws<InvalidOperationException>(
+                    () => fixture.Rig.ApplyProfile(new QuiltQualityProfile(256, 128, 4, 2, 8, 1f, 20f)));
+                StringAssert.Contains("Editor preview owns this Rig", profileError.Message);
+                Assert.AreEqual(originalProfile.QuiltWidth, fixture.Rig.Profile.QuiltWidth);
+                Assert.AreEqual(originalProfile.QuiltHeight, fixture.Rig.Profile.QuiltHeight);
+                Assert.AreEqual(originalLayout.QuiltWidth, producerRenderer.LatestSnapshot.Layout.QuiltWidth);
+                Assert.AreEqual(originalLayout.QuiltHeight, producerRenderer.LatestSnapshot.Layout.QuiltHeight);
+                Assert.AreSame(first, PreviewApi.Texture, "A rejected structural change must not rebuild or replace preview textures.");
+                Debug.Log("EDITOR_PREVIEW_GPU profile_mutation pipeline=" + (hdrp ? "HDRP" : "URP") + ", rejected=true, profileUnchanged=true");
 
                 PreviewApi.Stop();
                 yield return WaitFor(() => !PreviewApi.IsActive && !PreviewApi.IsStopping &&
-                    BridgeEditorPreviewRetention.PendingCount == 0,
+                    BridgeEditorPreviewRetention.PendingCount == 0 && (!first || !first.IsCreated()),
                     "Editor preview resources did not complete stop and GPU proof.");
                 Assert.IsTrue(BridgeEditorPreviewRetention.RequestStop(true));
                 Assert.AreEqual(0, BridgeEditorPreviewRetention.PendingCount);
@@ -503,6 +1065,88 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                 yield return null;
             }
             Assert.Fail(failureMessage);
+        }
+
+        static string ReadDiscoveryDiagnostic()
+        {
+            try
+            {
+                Assembly bridgeAssembly = typeof(BridgeWorkerQuiltOutput).Assembly;
+                Type discoveryType = bridgeAssembly.GetType("ViewWeave.BridgeDisplayDiscovery");
+                Type nativeType = bridgeAssembly.GetType("ViewWeave.BridgeDisplayDiscoveryNative");
+                Type guardType = bridgeAssembly.GetType("ViewWeave.BridgeNativeImageGuard");
+                if (discoveryType == null || nativeType == null || guardType == null) return "reflectionTypesMissing";
+
+                const BindingFlags staticPrivate = BindingFlags.Static | BindingFlags.NonPublic;
+                object GetStatic(string name) => discoveryType.GetField(name, staticPrivate)?.GetValue(null);
+                object nativeHandle = GetStatic("handle");
+                object moduleIdentity = GetStatic("moduleIdentity");
+                double startedAt = GetStatic("requestStartedAt") is double started ? started : 0.0;
+                bool validationPending = guardType.GetProperty("IsValidationPending", staticPrivate)?.GetValue(null) is bool pending && pending;
+                bool identityValid = false;
+                string identityError = string.Empty;
+                int nativeResult = int.MinValue;
+                uint requiredCount = 0;
+                object nativeStatus = null;
+
+                if (nativeHandle is IntPtr handle && handle != IntPtr.Zero && moduleIdentity != null && !validationPending)
+                {
+                    MethodInfo validate = guardType.GetMethod("TryValidateOwnerIdentity", staticPrivate);
+                    if (validate != null)
+                    {
+                        object[] validateArgs = { moduleIdentity, null };
+                        identityValid = validate.Invoke(null, validateArgs) is bool valid && valid;
+                        identityError = validateArgs[1] as string ?? string.Empty;
+                    }
+                    if (identityValid)
+                    {
+                        Type statusType = nativeType.GetNestedType("SnapshotStatusV1", BindingFlags.NonPublic);
+                        object adapter = nativeType.GetProperty("Adapter", staticPrivate).GetValue(null);
+                        MethodInfo getSnapshot = adapter.GetType().GetMethod("GetDisplaySnapshot");
+                        nativeStatus = Activator.CreateInstance(statusType);
+                        statusType.GetField("structSize").SetValue(nativeStatus, (uint)Marshal.SizeOf(statusType));
+                        statusType.GetField("version").SetValue(nativeStatus, 1u);
+                        object[] queryArgs = { handle, nativeStatus, null, 0u, 0u };
+                        nativeResult = (int)getSnapshot.Invoke(adapter, queryArgs);
+                        nativeStatus = queryArgs[1];
+                        requiredCount = (uint)queryArgs[4];
+                    }
+                }
+
+                string nativeState = "notQueried";
+                if (nativeStatus != null)
+                {
+                    Type statusType = nativeStatus.GetType();
+                    object Read(string name) => statusType.GetField(name).GetValue(nativeStatus);
+                    nativeState = "nativeResult=" + nativeResult +
+                        ", state=" + Read("state") +
+                        ", generation=" + Read("snapshotGeneration") +
+                        ", requested=" + Read("requestedGeneration") +
+                        ", pending=" + Read("pending") +
+                        ", cleanup=" + Read("cleanupFinished") +
+                        ", result=" + Read("result") +
+                        ", count=" + Read("itemCount") +
+                        ", required=" + requiredCount +
+                        ", error=" + (Read("error") as string ?? string.Empty);
+                }
+
+                double elapsed = startedAt == 0.0 ? 0.0 : Time.realtimeSinceStartupAsDouble - startedAt;
+                object candidate = GetStatic("candidateSnapshot");
+                return "kind=" + GetStatic("requestKind") +
+                    ", candidate=" + (candidate != null) +
+                    ", closeRequested=" + GetStatic("closeRequested") +
+                    ", elapsed=" + elapsed.ToString("F2", System.Globalization.CultureInfo.InvariantCulture) +
+                    ", epoch=" + GetStatic("lastTickEditorEpoch") +
+                    ", validationPending=" + validationPending +
+                    ", identityValid=" + identityValid +
+                    ", identityError=" + identityError +
+                    ", recoveryPending=" + GetStatic("recoveryPending") +
+                    ", " + nativeState;
+            }
+            catch (Exception exception)
+            {
+                return "diagnosticException=" + exception.GetType().Name;
+            }
         }
 
         static bool IsCreated(RenderTexture texture) => texture != null && texture.IsCreated();
@@ -585,11 +1229,13 @@ namespace ViewWeave.BridgeEditorPreviewValidation
 
             internal ViewWeaveRig Rig => rig;
             internal GameObject TargetObject => targetObject;
+            internal RenderPipelineAsset PreviousDefaultPipeline => previousDefault;
+            internal RenderPipelineAsset PreviousQualityPipeline => previousQuality;
             internal int ExpectedViewSamples { get; private set; } = 1;
 
             internal Fixture(bool hdrp) => this.hdrp = hdrp;
 
-            internal void Setup()
+            internal void Setup(string persistentUrpAssetDirectory = null)
             {
                 previousDefault = GraphicsSettings.defaultRenderPipeline;
                 previousQuality = QualitySettings.renderPipeline;
@@ -599,9 +1245,23 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                 }
                 else
                 {
-                    urpRendererData = ScriptableObject.CreateInstance<UniversalRendererData>();
-                    urpPipeline = UniversalRenderPipelineAsset.Create(urpRendererData);
+                    if (string.IsNullOrEmpty(persistentUrpAssetDirectory))
+                    {
+                        urpRendererData = ScriptableObject.CreateInstance<UniversalRendererData>();
+                        urpPipeline = UniversalRenderPipelineAsset.Create(urpRendererData);
+                    }
+                    else
+                    {
+                        if (!AssetDatabase.IsValidFolder(persistentUrpAssetDirectory) ||
+                            !persistentUrpAssetDirectory.StartsWith(DevicePlayTransitionAssetFolderPrefix, StringComparison.Ordinal))
+                            throw new InvalidOperationException("Persistent URP assets require the test-owned device-transition folder.");
+                        urpRendererData = ScriptableObject.CreateInstance<UniversalRendererData>();
+                        AssetDatabase.CreateAsset(urpRendererData, persistentUrpAssetDirectory + "/RendererData.asset");
+                        urpPipeline = UniversalRenderPipelineAsset.Create(urpRendererData);
+                        AssetDatabase.CreateAsset(urpPipeline, persistentUrpAssetDirectory + "/Pipeline.asset");
+                    }
                     urpPipeline.msaaSampleCount = 4;
+                    if (!string.IsNullOrEmpty(persistentUrpAssetDirectory)) AssetDatabase.SaveAssets();
                     pipeline = urpPipeline;
                 }
                 GraphicsSettings.defaultRenderPipeline = pipeline;
@@ -668,6 +1328,12 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                 Assert.IsTrue(visible, "The source Rig control should render green target pixels. " + summary);
             }
 
+            internal void SetOwnedPipelineNames(string pipelineName, string rendererDataName)
+            {
+                if (pipeline != null) pipeline.name = pipelineName;
+                if (urpRendererData != null) urpRendererData.name = rendererDataName;
+            }
+
             internal void Dispose()
             {
                 GraphicsSettings.defaultRenderPipeline = previousDefault;
@@ -675,8 +1341,8 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                 if (targetObject != null) Object.DestroyImmediate(targetObject);
                 if (targetMaterial != null) Object.DestroyImmediate(targetMaterial);
                 if (rigObject != null) Object.DestroyImmediate(rigObject);
-                if (pipeline != null) Object.DestroyImmediate(pipeline);
-                if (urpRendererData != null) Object.DestroyImmediate(urpRendererData);
+                if (pipeline != null && !EditorUtility.IsPersistent(pipeline)) Object.DestroyImmediate(pipeline);
+                if (urpRendererData != null && !EditorUtility.IsPersistent(urpRendererData)) Object.DestroyImmediate(urpRendererData);
             }
         }
 
@@ -685,18 +1351,31 @@ namespace ViewWeave.BridgeEditorPreviewValidation
             static readonly Type Service = Type.GetType("ViewWeave.Editor.BridgeEditorPreview, ViewWeave.Bridge.Editor", true);
             static readonly PropertyInfo ActiveProperty = Service.GetProperty("IsActive", BindingFlags.Static | BindingFlags.NonPublic);
             static readonly PropertyInfo StoppingProperty = Service.GetProperty("IsStopping", BindingFlags.Static | BindingFlags.NonPublic);
+            static readonly PropertyInfo StatusProperty = Service.GetProperty("Status", BindingFlags.Static | BindingFlags.NonPublic);
+            static readonly PropertyInfo LastErrorProperty = Service.GetProperty("LastError", BindingFlags.Static | BindingFlags.NonPublic);
             static readonly PropertyInfo TextureProperty = Service.GetProperty("Texture", BindingFlags.Static | BindingFlags.NonPublic);
+            static readonly PropertyInfo LayoutProperty = Service.GetProperty("Layout", BindingFlags.Static | BindingFlags.NonPublic);
             static readonly FieldInfo ProducerRendererField = Service.GetField("producerRenderer", BindingFlags.Static | BindingFlags.NonPublic);
+            static readonly FieldInfo ViewTextureField = typeof(QuiltRenderer).GetField("viewTexture", BindingFlags.Instance | BindingFlags.NonPublic);
             static readonly FieldInfo ProducerOutputField = Service.GetField("producerOutput", BindingFlags.Static | BindingFlags.NonPublic);
             static readonly FieldInfo ProducerCameraField = Service.GetField("producerCamera", BindingFlags.Static | BindingFlags.NonPublic);
             static readonly MethodInfo StartMethod = Service.GetMethod("Start", BindingFlags.Static | BindingFlags.NonPublic);
             static readonly MethodInfo StopMethod = Service.GetMethod("Stop", BindingFlags.Static | BindingFlags.NonPublic);
+            static readonly MethodInfo RequestRefreshMethod = Service.GetMethod("RequestRefresh", BindingFlags.Static | BindingFlags.NonPublic);
             static readonly Type RetentionRecord = Type.GetType("ViewWeave.BridgeEditorPreviewRetentionRecord, ViewWeave.Bridge", true);
+            static readonly PropertyInfo ValidationPendingProperty = typeof(BridgeWorkerQuiltOutput).Assembly
+                .GetType("ViewWeave.BridgeNativeImageGuard", true)
+                .GetProperty("IsValidationPending", BindingFlags.Static | BindingFlags.NonPublic);
 
             internal static bool IsActive => (bool)ActiveProperty.GetValue(null);
             internal static bool IsStopping => (bool)StoppingProperty.GetValue(null);
+            internal static string Status => (string)StatusProperty.GetValue(null) ?? string.Empty;
+            internal static string LastError => (string)LastErrorProperty.GetValue(null) ?? string.Empty;
+            internal static bool NativeImageValidationPending => (bool)ValidationPendingProperty.GetValue(null);
             internal static RenderTexture Texture => (RenderTexture)TextureProperty.GetValue(null);
+            internal static QuiltLayout Layout => (QuiltLayout)LayoutProperty.GetValue(null);
             internal static QuiltRenderer ProducerRenderer => (QuiltRenderer)ProducerRendererField.GetValue(null);
+            internal static RenderTexture ViewTexture => (RenderTexture)ViewTextureField.GetValue(ProducerRenderer);
             internal static BridgeWorkerQuiltOutput ProducerOutput => (BridgeWorkerQuiltOutput)ProducerOutputField.GetValue(null);
             internal static string DescribeCameras(Camera sourceCamera, GameObject targetObject)
             {
@@ -726,6 +1405,8 @@ namespace ViewWeave.BridgeEditorPreviewValidation
 
             internal static bool Stop() => (bool)StopMethod.Invoke(null, null);
 
+            internal static void RequestRefresh() => RequestRefreshMethod.Invoke(null, null);
+
             internal static string DescribeRetentionRecords()
             {
                 var records = Resources.FindObjectsOfTypeAll(RetentionRecord);
@@ -742,6 +1423,37 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                         ",gpu=" + GetRecordProperty(type, record, "GpuProofComplete") +
                         ",diagnostic=" + GetRecordProperty(type, record, "Diagnostic") +
                         ",recovery=" + DescribeRecoveryRecord(type, record);
+                }
+                return string.Join("|", summaries);
+            }
+
+            internal static string DescribeRetentionStateWithoutNativeCalls()
+            {
+                var records = Resources.FindObjectsOfTypeAll(RetentionRecord);
+                var summaries = new string[records.Length];
+                for (int i = 0; i < records.Length; i++)
+                {
+                    object record = records.GetValue(i);
+                    Type type = record.GetType();
+                    object recovery = GetRecordProperty(type, record, "WorkerRecoveryRecord");
+                    string recoveryState = "null";
+                    if (recovery != null && !(recovery is string))
+                    {
+                        Type recoveryType = recovery.GetType();
+                        recoveryState = "nativeReleased=" + GetRecordProperty(recoveryType, recovery, "NativeReleased") +
+                            ",needsClose=" + GetRecordProperty(recoveryType, recovery, "NeedsClose") +
+                            ",gpuProof=" + GetRecordProperty(recoveryType, recovery, "HasGpuReleaseProof") +
+                            ",canRelease=" + GetRecordProperty(recoveryType, recovery, "CanRelease") +
+                            ",diagnostic=" + GetRecordProperty(recoveryType, recovery, "Diagnostic");
+                    }
+                    summaries[i] = "stop=" + GetRecordProperty(type, record, "StopRequested") +
+                        ",detached=" + GetRecordProperty(type, record, "Detached") +
+                        ",gpuProof=" + GetRecordProperty(type, record, "GpuProofComplete") +
+                        ",handoff=" + GetRecordProperty(type, record, "WorkerHandoffComplete") +
+                        ",workerComplete=" + GetRecordProperty(type, record, "WorkerRecoveryComplete") +
+                        ",canRelease=" + GetRecordProperty(type, record, "CanRelease") +
+                        ",diagnostic=" + GetRecordProperty(type, record, "Diagnostic") +
+                        ",recovery={" + recoveryState + "}";
                 }
                 return string.Join("|", summaries);
             }

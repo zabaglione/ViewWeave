@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
@@ -25,6 +26,9 @@ namespace ViewWeave.Editor
         readonly Func<ViewWeaveRig> rigProvider;
         readonly Func<UnityEngine.Object> focusTargetProvider;
         readonly Action<UnityEngine.Object> setFocusTarget;
+        readonly List<PropertyField> structuralMutationFields = new List<PropertyField>();
+        readonly List<PropertyField> transportMutationFields = new List<PropertyField>();
+        FloatField zoomField;
         ViewWeaveRig rig;
         QuiltRenderer renderer;
         ViewWeaveBridgeSession session;
@@ -37,7 +41,7 @@ namespace ViewWeave.Editor
         SerializedObject guardObject;
         ObjectField focusTargetField;
         ObjectField referenceCameraField;
-        PropertyField followReferenceFieldOfViewField;
+        Toggle followReferenceFieldOfViewField;
         HelpBox referenceCameraWarning;
         EnumField qualityField;
         EnumField previewModeField;
@@ -48,9 +52,17 @@ namespace ViewWeave.Editor
         Label actionStatus;
         Label sessionStatus;
         Label sessionError;
+        Button refreshConnectedDisplaysButton;
+        Label connectedDisplaysStatus;
         VisualElement fieldOfViewContainer;
         VisualElement focusDistanceContainer;
         PropertyField focusDistanceField;
+        FloatField focusDistanceInput;
+        FloatField fieldOfViewInput;
+        FloatField apertureWidthInput;
+        FloatField apertureHeightInput;
+        FloatField unitsPerMeterInput;
+        EnumField viewRenderModeField;
         Label effectiveFocusDistanceLabel;
         HelpBox physicalFocusError;
         Label physicalFramingStatus;
@@ -70,6 +82,26 @@ namespace ViewWeave.Editor
         SelectedView selectedView = SelectedView.Center;
         bool playModeTransitioning;
         bool referenceCameraWasEditable;
+        bool updatingFramingControls;
+        bool pendingCalibrationCopy;
+        QuiltRenderer pendingCopyRenderer;
+        ViewWeaveRig pendingCopyRig;
+        BridgeWorkerQuiltOutput pendingCopyOutput;
+        BridgeWorkerQuiltOutput pendingCopyRequestOutput;
+        ViewWeaveBridgeSession pendingCopySession;
+        QuiltCameraFraming pendingCopyFraming;
+        uint pendingCopyOrdinal;
+        float pendingCopyZoom;
+        long pendingCopyRequestToken;
+        string pendingCopySessionRuntimePath;
+        string pendingCopySessionApplicationName;
+        string pendingCopyOutputRuntimePath;
+        string pendingCopyOutputApplicationName;
+        uint pendingCopyOutputOrdinal;
+        BridgeDisplaySnapshot lastRenderedDisplaySnapshot;
+        string lastRenderedDisplayStatus;
+        string lastRenderedDisplayText;
+        string framingStatusOverride = string.Empty;
 
         public ViewWeaveRigInspectorUI(VisualElement root, Func<ViewWeaveRig> rigProvider,
             Func<UnityEngine.Object> focusTargetProvider, Action<UnityEngine.Object> setFocusTarget)
@@ -82,6 +114,9 @@ namespace ViewWeave.Editor
 
         public void Rebuild()
         {
+            CancelPendingCalibrationCopy();
+            structuralMutationFields.Clear();
+            transportMutationFields.Clear();
             rig = rigProvider == null ? null : rigProvider();
             renderer = rig == null ? null : rig.Renderer != null ? rig.Renderer : rig.GetComponent<QuiltRenderer>();
             session = rig == null ? null : rig.GetComponent<ViewWeaveBridgeSession>();
@@ -112,6 +147,11 @@ namespace ViewWeave.Editor
             Refresh();
         }
 
+        public void Dispose()
+        {
+            CancelPendingCalibrationCopy();
+        }
+
         public void Refresh(bool updateSelectionTarget = false)
         {
             UpdateSerializedObjects();
@@ -126,7 +166,9 @@ namespace ViewWeave.Editor
             RefreshReferenceCameraState();
             RefreshPreview();
             RefreshSessionStatus();
+            RefreshConnectedDisplays();
             RefreshPhysicalFramingState();
+            RefreshMutationControlStates();
         }
 
         public void OnPlayModeStateChanged(PlayModeStateChange state)
@@ -157,15 +199,19 @@ namespace ViewWeave.Editor
             referenceCameraWarning = new HelpBox(string.Empty, HelpBoxMessageType.Warning) { name = "referenceCameraWarning" };
             referenceCameraWarning.style.whiteSpace = WhiteSpace.Normal;
             foldout.Add(referenceCameraWarning);
-            followReferenceFieldOfViewField = AddBoundProperty(foldout, rendererObject, "followReferenceFieldOfView", "Follow Reference Camera FOV", () =>
+            followReferenceFieldOfViewField = new Toggle("Follow Reference Camera FOV")
             {
-                RebuildFieldOfView();
-                BridgeEditorPreview.RequestRefresh();
-            });
+                name = "followReferenceFieldOfView",
+                value = renderer != null && renderer.followReferenceFieldOfView
+            };
+            followReferenceFieldOfViewField.RegisterValueChangedCallback(OnFollowReferenceFovChanged);
+            foldout.Add(followReferenceFieldOfViewField);
             RefreshReferenceCameraState();
             focusDistanceContainer = new VisualElement();
             foldout.Add(focusDistanceContainer);
-            focusDistanceField = AddBoundProperty(focusDistanceContainer, rendererObject, "settings.cameraDistance", "Focus Distance", BridgeEditorPreview.RequestRefresh);
+            focusDistanceInput = new FloatField("Focus Distance") { name = "focusDistance" };
+            focusDistanceInput.RegisterValueChangedCallback(evt => OnFocusDistanceChanged(evt.newValue));
+            focusDistanceContainer.Add(focusDistanceInput);
             effectiveFocusDistanceLabel = new Label { name = "effectiveFocusDistance" };
             focusDistanceContainer.Add(effectiveFocusDistanceLabel);
             physicalFocusError = new HelpBox(string.Empty, HelpBoxMessageType.Error) { name = "physicalFocusError" };
@@ -182,9 +228,15 @@ namespace ViewWeave.Editor
             };
             physicalFramingEnabledToggle.RegisterValueChangedCallback(evt => SetPhysicalFramingEnabled(evt.newValue));
             physicalFoldout.Add(physicalFramingEnabledToggle);
-            AddBoundProperty(physicalFoldout, rendererObject, "physicalFraming.visibleApertureWidthMillimeters", "Visible Aperture Width (mm)", PhysicalFramingChanged);
-            AddBoundProperty(physicalFoldout, rendererObject, "physicalFraming.visibleApertureHeightMillimeters", "Visible Aperture Height (mm)", PhysicalFramingChanged);
-            AddBoundProperty(physicalFoldout, rendererObject, "physicalFraming.unitsPerMeter", "Unity Units per Meter", PhysicalFramingChanged);
+            apertureWidthInput = new FloatField("Visible Aperture Width (mm)") { name = "apertureWidthMillimeters" };
+            apertureHeightInput = new FloatField("Visible Aperture Height (mm)") { name = "apertureHeightMillimeters" };
+            unitsPerMeterInput = new FloatField("Unity Units per Meter") { name = "unitsPerMeter" };
+            apertureWidthInput.RegisterValueChangedCallback(_ => OnPhysicalDimensionsChanged());
+            apertureHeightInput.RegisterValueChangedCallback(_ => OnPhysicalDimensionsChanged());
+            unitsPerMeterInput.RegisterValueChangedCallback(_ => OnPhysicalDimensionsChanged());
+            physicalFoldout.Add(apertureWidthInput);
+            physicalFoldout.Add(apertureHeightInput);
+            physicalFoldout.Add(unitsPerMeterInput);
             physicalFramingStatus = new Label { name = "physicalFramingStatus" };
             physicalFramingStatus.style.whiteSpace = WhiteSpace.Normal;
             physicalFoldout.Add(physicalFramingStatus);
@@ -267,8 +319,13 @@ namespace ViewWeave.Editor
 
         void BuildRenderingSection()
         {
-            Foldout foldout = AddFoldout("Rendering", false);
-            AddBoundProperty(foldout, rendererObject, "viewRenderMode", "Quilt View Render Mode", BridgeEditorPreview.RequestRefresh);
+            Foldout foldout = AddFoldout("Rendering", true);
+            viewRenderModeField = new EnumField("Quilt View Render Mode", renderer == null ? QuiltViewRenderMode.Full : renderer.viewRenderMode)
+            {
+                name = "viewRenderMode"
+            };
+            viewRenderModeField.RegisterValueChangedCallback(OnViewRenderModeChanged);
+            foldout.Add(viewRenderModeField);
             SerializedProperty profile = rigObject == null ? null : rigObject.FindProperty("profile");
             if (profile != null)
             {
@@ -276,14 +333,15 @@ namespace ViewWeave.Editor
                 profileField.Bind(rigObject);
                 profileField.TrackPropertyValue(profile, _ => BridgeEditorPreview.RequestRefresh());
                 foldout.Add(profileField);
-                foldout.Add(new HelpBox("Local preview uses this Rig profile for quilt geometry. Device preview uses the connected device profile and attached Session Quality (Preview when no Session is attached).", HelpBoxMessageType.Info));
+                structuralMutationFields.Add(profileField);
+                foldout.Add(new HelpBox("Local preview uses this Rig profile for quilt geometry. Device preview uses the connected device profile and attached Session Quality (Balanced when no Session is attached).", HelpBoxMessageType.Info));
             }
             if (session != null)
             {
                 qualityField = new EnumField("Session Quality", session.Quality) { name = "sessionQuality" };
                 qualityField.RegisterValueChangedCallback(OnQualityChanged);
                 foldout.Add(qualityField);
-                var qualityHelp = new HelpBox("Quality changes in Play Mode use ViewWeaveBridgeSession.SetQuality so a live worker is reconfigured through its normal shutdown and restart path.", HelpBoxMessageType.Info);
+                var qualityHelp = new HelpBox("Quality changes use ViewWeaveBridgeSession.SetQuality. A Ready worker is quiesced, its transfer is reset, and the new profile is applied without reconnecting the Bridge Session.", HelpBoxMessageType.Info);
                 foldout.Add(qualityHelp);
             }
         }
@@ -337,22 +395,105 @@ namespace ViewWeave.Editor
             if (session == null)
             {
                 foldout.Add(new HelpBox("No Bridge Session is attached. Local Edit Mode preview remains available when the active render pipeline supports this Rig.", HelpBoxMessageType.Info));
+            }
+            else
+            {
+                transportMutationFields.Add(AddBoundProperty(foldout, sessionObject, "startOnEnable", "Start Session On Enable"));
+                transportMutationFields.Add(AddBoundProperty(foldout, sessionObject, "runtimePath", "Bridge Runtime Path"));
+                transportMutationFields.Add(AddBoundProperty(foldout, sessionObject, "applicationName", "Application Name"));
+                transportMutationFields.Add(AddBoundProperty(foldout, sessionObject, "displayOrdinal", "Display Ordinal"));
+            }
+            if (output != null)
+            {
+                zoomField = new FloatField("Bridge Worker Zoom") { name = "bridgeWorkerZoom", value = output.zoom };
+                zoomField.RegisterValueChangedCallback(OnZoomChanged);
+                foldout.Add(zoomField);
+                refreshConnectedDisplaysButton = new Button(RequestConnectedDisplayRefresh)
+                {
+                    name = "refreshConnectedDisplays",
+                    text = "Refresh Connected Displays"
+                };
+                foldout.Add(refreshConnectedDisplaysButton);
+                connectedDisplaysStatus = new Label { name = "connectedDisplaysStatus" };
+                connectedDisplaysStatus.style.whiteSpace = WhiteSpace.Normal;
+                foldout.Add(connectedDisplaysStatus);
+            }
+            if (session != null)
+            {
+                sessionStatus = new Label(string.Empty);
+                sessionStatus.style.whiteSpace = WhiteSpace.Normal;
+                foldout.Add(sessionStatus);
+                sessionError = new Label(string.Empty);
+                sessionError.style.whiteSpace = WhiteSpace.Normal;
+                sessionError.style.color = new Color(1f, 0.45f, 0.35f);
+                foldout.Add(sessionError);
+                RefreshSessionStatus();
+            }
+            RefreshConnectedDisplays();
+        }
+
+        void RequestConnectedDisplayRefresh()
+        {
+            if (output == null) return;
+            if (!BridgeEditorPreview.TryRequestDisplayRefresh(output, out string error)) SetActionStatus(error);
+            RefreshConnectedDisplays();
+        }
+
+        void RefreshConnectedDisplays()
+        {
+            if (output == null) return;
+            if (refreshConnectedDisplaysButton != null)
+                refreshConnectedDisplaysButton.SetEnabled(!BridgeDisplayDiscovery.IsBusy &&
+                    output.State != BridgeWorkerQuiltOutput.WorkerState.Connecting &&
+                    output.State != BridgeWorkerQuiltOutput.WorkerState.Closing &&
+                    output.State != BridgeWorkerQuiltOutput.WorkerState.Fault);
+            if (connectedDisplaysStatus == null) return;
+            BridgeDisplaySnapshot snapshot = output.CurrentConfigurationDisplaySnapshot;
+            bool snapshotBelongsToAnotherConfiguration = false;
+            if (snapshot == null)
+            {
+                snapshot = BridgeDisplayDiscovery.Snapshot;
+                snapshotBelongsToAnotherConfiguration = snapshot != null;
+            }
+            string refreshStatus = output.DisplayRefreshStatus ?? string.Empty;
+            if (ReferenceEquals(snapshot, lastRenderedDisplaySnapshot) && refreshStatus == lastRenderedDisplayStatus &&
+                lastRenderedDisplayText != null)
+            {
+                if (connectedDisplaysStatus.text != lastRenderedDisplayText) connectedDisplaysStatus.text = lastRenderedDisplayText;
                 return;
             }
-
-            AddBoundProperty(foldout, sessionObject, "startOnEnable", "Start Session On Enable");
-            AddBoundProperty(foldout, sessionObject, "runtimePath", "Bridge Runtime Path");
-            AddBoundProperty(foldout, sessionObject, "applicationName", "Application Name");
-            AddBoundProperty(foldout, sessionObject, "displayOrdinal", "Display Ordinal");
-            if (output != null) AddBoundProperty(foldout, outputObject, "zoom", "Bridge Worker Zoom");
-            sessionStatus = new Label(string.Empty);
-            sessionStatus.style.whiteSpace = WhiteSpace.Normal;
-            foldout.Add(sessionStatus);
-            sessionError = new Label(string.Empty);
-            sessionError.style.whiteSpace = WhiteSpace.Normal;
-            sessionError.style.color = new Color(1f, 0.45f, 0.35f);
-            foldout.Add(sessionError);
-            RefreshSessionStatus();
+            if (snapshot == null)
+            {
+                lastRenderedDisplayText = string.IsNullOrEmpty(refreshStatus)
+                    ? "No display snapshot is available. Refresh to query connected displays and calibration."
+                    : refreshStatus;
+                connectedDisplaysStatus.text = lastRenderedDisplayText;
+                lastRenderedDisplaySnapshot = snapshot;
+                lastRenderedDisplayStatus = refreshStatus;
+                return;
+            }
+            var lines = new List<string>
+            {
+                snapshotBelongsToAnotherConfiguration
+                    ? "Global metadata snapshot for display discovery only; it is not bound to this Rig and cannot be used as its calibration. Refresh this Rig to bind a snapshot."
+                    : string.IsNullOrEmpty(refreshStatus)
+                        ? "Last connected display refresh generation: " + snapshot.Generation.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                        : refreshStatus
+            };
+            for (int i = 0; i < snapshot.Displays.Count; ++i)
+            {
+                BridgeDisplayProfile profile = snapshot.Displays[i];
+                string calibration = profile.HasPhysicalCalibration
+                    ? profile.PhysicalWidthMillimeters.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + " x " +
+                      profile.PhysicalHeightMillimeters.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + " mm at " +
+                      profile.CalibrationDpi.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + " DPI"
+                    : "physical calibration unavailable";
+                lines.Add(profile.ToString() + "; " + calibration);
+            }
+            lastRenderedDisplayText = string.Join("\n", lines);
+            connectedDisplaysStatus.text = lastRenderedDisplayText;
+            lastRenderedDisplaySnapshot = snapshot;
+            lastRenderedDisplayStatus = refreshStatus;
         }
 
         void BuildCapturePlaybackSection()
@@ -396,9 +537,9 @@ namespace ViewWeave.Editor
             autoRenderWarning.style.display = DisplayStyle.None;
             foldout.Add(autoRenderWarning);
             foldout.Add(new HelpBox("This uses ViewWeaveRig.AutoRender validation. Automatic rendering runs in Play Mode; Edit Mode preview is started separately.", HelpBoxMessageType.Info));
-            AddBoundProperty(foldout, rendererObject, "useRenderRequests", "Use Render Requests");
-            AddBoundProperty(foldout, rigObject, "outputBehaviour", "Output Component");
-            AddBoundProperty(foldout, rigObject, "guardBehaviour", "Render Guard Component");
+            structuralMutationFields.Add(AddBoundProperty(foldout, rendererObject, "useRenderRequests", "Use Render Requests"));
+            structuralMutationFields.Add(AddBoundProperty(foldout, rigObject, "outputBehaviour", "Output Component"));
+            structuralMutationFields.Add(AddBoundProperty(foldout, rigObject, "guardBehaviour", "Render Guard Component"));
             if (guardObject != null)
             {
                 bool hasHdrpSettings = guardObject.FindProperty("adaptUnsupportedEffects") != null ||
@@ -447,6 +588,23 @@ namespace ViewWeave.Editor
                     autoRenderWarning.style.display = DisplayStyle.Flex;
                 }
             }
+        }
+
+        void OnZoomChanged(ChangeEvent<float> evt)
+        {
+            if (output == null) return;
+            float previous = output.zoom;
+            if (evt.newValue.Equals(previous)) return;
+            Undo.RecordObject(output, "Change Bridge Worker Zoom");
+            if (!output.TrySetZoom(evt.newValue, out string error))
+            {
+                zoomField?.SetValueWithoutNotify(previous);
+                SetActionStatus(error);
+                return;
+            }
+            EditorUtility.SetDirty(output);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(output);
+            SetActionStatus("Bridge Worker Zoom updated.");
         }
 
         Foldout AddFoldout(string title, bool expanded)
@@ -503,69 +661,75 @@ namespace ViewWeave.Editor
             }
             else if (renderer.referenceCamera != null && renderer.followReferenceFieldOfView)
             {
-                var referenceObject = new SerializedObject(renderer.referenceCamera);
-                SerializedProperty property = referenceObject.FindProperty("m_FieldOfView") ?? referenceObject.FindProperty("field of view");
-                if (property != null)
-                {
-                    var field = new PropertyField(property, "Reference Vertical Field of View") { name = "referenceFieldOfView" };
-                    field.Bind(referenceObject);
-                    field.TrackPropertyValue(property, _ => BridgeEditorPreview.RequestRefresh());
-                    fieldOfViewContainer.Add(field);
-                }
+                fieldOfViewInput = new FloatField("Reference Vertical Field of View") { name = "referenceFieldOfView" };
+                fieldOfViewInput.RegisterValueChangedCallback(evt => OnFieldOfViewChanged(evt.newValue));
+                fieldOfViewContainer.Add(fieldOfViewInput);
                 fieldOfViewContainer.Add(new HelpBox("Rendering follows this Reference Camera FOV and replaces the renderer FOV before each render. Cinemachine or animation may overwrite it during preview.", HelpBoxMessageType.Info));
             }
             else
             {
-                PropertyField field = AddBoundProperty(fieldOfViewContainer, rendererObject, "settings.fieldOfView", "Vertical Field of View", BridgeEditorPreview.RequestRefresh);
-                if (field != null) field.name = "rendererFieldOfView";
+                fieldOfViewInput = new FloatField("Vertical Field of View") { name = "rendererFieldOfView" };
+                fieldOfViewInput.RegisterValueChangedCallback(evt => OnFieldOfViewChanged(evt.newValue));
+                fieldOfViewContainer.Add(fieldOfViewInput);
                 if (renderer.referenceCamera != null)
                     fieldOfViewContainer.Add(new HelpBox("Reference Camera FOV is not followed. Rendering uses the stored QuiltRenderer FOV.", HelpBoxMessageType.Info));
             }
+            RefreshFramingControls();
         }
 
-        void PhysicalFramingChanged()
+        void OnFollowReferenceFovChanged(ChangeEvent<bool> evt)
         {
-            RefreshPhysicalFramingState();
+            if (renderer == null || updatingFramingControls) return;
+            if (!renderer.TryCheckMutation(QuiltRendererMutationKind.Structural, out string error))
+            {
+                followReferenceFieldOfViewField.SetValueWithoutNotify(renderer.followReferenceFieldOfView);
+                SetPhysicalStatus("FOV following was not changed: " + error);
+                return;
+            }
+            if (evt.newValue && renderer.referenceCamera != null && !TryValidateReferenceCamera(renderer.referenceCamera, out error))
+            {
+                followReferenceFieldOfViewField.SetValueWithoutNotify(renderer.followReferenceFieldOfView);
+                SetPhysicalStatus("FOV following was not changed: " + error);
+                return;
+            }
+            Undo.RecordObject(renderer, "Change ViewWeave FOV Following");
+            renderer.followReferenceFieldOfView = evt.newValue;
+            EditorUtility.SetDirty(renderer);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(renderer);
+            RebuildFieldOfView();
+            RefreshReferenceCameraState();
             BridgeEditorPreview.RequestRefresh();
         }
 
         void SetPhysicalFramingEnabled(bool enabled)
         {
-            if (renderer == null) return;
-            if (enabled)
-            {
-                QuiltPhysicalFraming framing = renderer.physicalFraming;
-                float fieldOfView = QuiltFramingResolver.EffectiveFieldOfView(renderer);
-                string error = "framing settings are missing.";
-                QuiltPhysicalFraming candidate = framing == null ? null : framing.Clone();
-                if (candidate != null) candidate.enabled = true;
-                if (candidate == null || !candidate.TryResolve(fieldOfView, out _, out _, out error))
-                {
-                    if (physicalFramingStatus != null)
-                        physicalFramingStatus.text = "Physical framing was not enabled: " + error;
-                    physicalFramingEnabledToggle?.SetValueWithoutNotify(false);
-                    return;
-                }
-            }
-            Undo.RecordObject(renderer, enabled ? "Enable Physical Display Framing" : "Disable Physical Display Framing");
-            if (renderer.physicalFraming == null) renderer.physicalFraming = new QuiltPhysicalFraming();
-            renderer.physicalFraming.enabled = enabled;
-            EditorUtility.SetDirty(renderer);
-            PrefabUtility.RecordPrefabInstancePropertyModifications(renderer);
-            rendererObject?.Update();
-            RefreshPhysicalFramingState();
-            BridgeEditorPreview.RequestRefresh();
+            if (renderer == null || updatingFramingControls) return;
+            if (!renderer.TryGetFraming(out QuiltCameraFraming framing)) return;
+            CommitFraming(new QuiltCameraFraming(framing.VerticalFieldOfView, framing.FocusDistance, enabled,
+                apertureWidthInput == null ? framing.ApertureWidthMillimeters : apertureWidthInput.value,
+                apertureHeightInput == null ? framing.ApertureHeightMillimeters : apertureHeightInput.value,
+                unitsPerMeterInput == null ? framing.UnitsPerMeter : unitsPerMeterInput.value),
+                enabled ? "Enable Physical Display Framing" : "Disable Physical Display Framing");
         }
 
         void RefreshPhysicalFramingState()
         {
             if (renderer == null || focusDistanceContainer == null) return;
             bool physicalEnabled = renderer.physicalFraming != null && renderer.physicalFraming.enabled;
+            updatingFramingControls = true;
             physicalFramingEnabledToggle?.SetValueWithoutNotify(physicalEnabled);
+            if (renderer.physicalFraming != null)
+            {
+                apertureWidthInput?.SetValueWithoutNotify(renderer.physicalFraming.visibleApertureWidthMillimeters);
+                apertureHeightInput?.SetValueWithoutNotify(renderer.physicalFraming.visibleApertureHeightMillimeters);
+                unitsPerMeterInput?.SetValueWithoutNotify(renderer.physicalFraming.unitsPerMeter);
+            }
+            updatingFramingControls = false;
+            RefreshFramingControls();
             QuiltSettings effective = null;
             string error = string.Empty;
             bool effectiveValid = physicalEnabled && renderer.TryGetEffectiveSettings(out effective, out error);
-            focusDistanceField.style.display = physicalEnabled ? DisplayStyle.None : DisplayStyle.Flex;
+            if (focusDistanceInput != null) focusDistanceInput.style.display = physicalEnabled ? DisplayStyle.None : DisplayStyle.Flex;
             effectiveFocusDistanceLabel.style.display = physicalEnabled && effectiveValid ? DisplayStyle.Flex : DisplayStyle.None;
             effectiveFocusDistanceLabel.text = effectiveValid
                 ? "Effective Focus Distance: " + effective.cameraDistance.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture) + " units"
@@ -590,41 +754,288 @@ namespace ViewWeave.Editor
             {
                 bool matches = physicalEnabled && Math.Abs(renderer.physicalFraming.visibleApertureWidthMillimeters - calibration.widthMillimeters) < 0.1f &&
                     Math.Abs(renderer.physicalFraming.visibleApertureHeightMillimeters - calibration.heightMillimeters) < 0.1f;
-                physicalFramingStatus.text += " Connected calibration: " + calibration.widthMillimeters.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + " x " +
+                string calibrationSource = calibration.source == QuiltDisplaySettingsSource.ConnectedDisplaySnapshot
+                    ? "Last Bridge refresh" : "Active Bridge profile";
+                physicalFramingStatus.text += " " + calibrationSource + " calibration: " + calibration.widthMillimeters.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + " x " +
                     calibration.heightMillimeters.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + " mm at " + calibration.dpi.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + " DPI; configured aperture " + (matches ? "matches" : "differs") + ".";
             }
             else physicalFramingStatus.text += " No valid connected physical calibration is available; saved dimensions are manual values or a previous explicit copy.";
-            copyConnectedDisplayButton?.SetEnabled(canCopy);
-            if (copyConnectedDisplayButton != null) copyConnectedDisplayButton.tooltip = canCopy ? "Copy the active Bridge calibration into the Rig's serialized aperture fields." : "A connected display with valid pixel dimensions and calibration DPI is required.";
+            string mutationReason = string.Empty;
+            bool canCopyMutation = renderer.TryCheckMutation(QuiltRendererMutationKind.Framing, out mutationReason);
+            if (canCopy && canCopyMutation && renderer.TryGetFraming(out QuiltCameraFraming currentFraming))
+                canCopyMutation = renderer.TryCheckMutation(new QuiltRendererMutationRequest(new QuiltCameraFraming(
+                    currentFraming.VerticalFieldOfView, currentFraming.FocusDistance, true,
+                    calibration.widthMillimeters, calibration.heightMillimeters, currentFraming.UnitsPerMeter)), out mutationReason);
+            bool canRequestCalibration = output != null && !BridgeDisplayDiscovery.IsBusy &&
+                BridgeEditorPreview.CanRefreshDisplaysForRig(rig) &&
+                (output.Ready || output.State == BridgeWorkerQuiltOutput.WorkerState.Closed) &&
+                (session == null || session.State == ViewWeaveBridgeSession.SessionState.Idle || session.State == ViewWeaveBridgeSession.SessionState.Rendering);
+            copyConnectedDisplayButton?.SetEnabled(canCopy ? canCopyMutation : canRequestCalibration && canCopyMutation);
+            if (copyConnectedDisplayButton != null) copyConnectedDisplayButton.tooltip = canCopyMutation
+                ? canCopy ? "Copy the latest valid Bridge calibration into the Rig's serialized aperture fields."
+                    : canRequestCalibration ? "Refresh Bridge metadata now, then copy calibration if this Rig remains unchanged."
+                    : "Refresh Connected Displays is unavailable while a Bridge owner is starting, stopping, or recovering."
+                : mutationReason;
+            if (!string.IsNullOrEmpty(framingStatusOverride)) physicalFramingStatus.text += " " + framingStatusOverride;
         }
 
         void CopyConnectedDisplaySize()
         {
-            if (renderer == null || !QuiltDisplaySettingsResolver.TryGetConnectedPhysicalCalibration(renderer, out QuiltEditorDisplayProfile profile)) return;
-            var candidate = renderer.physicalFraming == null ? new QuiltPhysicalFraming() : renderer.physicalFraming.Clone();
-            candidate.enabled = true;
-            candidate.visibleApertureWidthMillimeters = profile.widthMillimeters;
-            candidate.visibleApertureHeightMillimeters = profile.heightMillimeters;
-            float fieldOfView = QuiltFramingResolver.EffectiveFieldOfView(renderer);
-            if (!candidate.TryResolve(fieldOfView, out _, out _, out string error))
+            if (renderer == null || !renderer.TryGetFraming(out QuiltCameraFraming framing)) return;
+            if (QuiltDisplaySettingsResolver.TryGetConnectedPhysicalCalibration(renderer, out QuiltEditorDisplayProfile profile))
             {
-                if (physicalFramingStatus != null) physicalFramingStatus.text = "Connected display size was not copied: " + error;
+                CommitFraming(new QuiltCameraFraming(framing.VerticalFieldOfView, framing.FocusDistance, true,
+                    profile.widthMillimeters, profile.heightMillimeters, framing.UnitsPerMeter), "Copy Connected Display Size");
                 return;
             }
-            Undo.RecordObject(renderer, "Copy Connected Display Size");
-            if (renderer.physicalFraming == null) renderer.physicalFraming = new QuiltPhysicalFraming();
-            renderer.physicalFraming.visibleApertureWidthMillimeters = candidate.visibleApertureWidthMillimeters;
-            renderer.physicalFraming.visibleApertureHeightMillimeters = candidate.visibleApertureHeightMillimeters;
-            renderer.physicalFraming.enabled = true;
+            if (output == null)
+            {
+                SetPhysicalStatus("No valid display calibration is cached. Configure a Bridge runtime, then use Refresh Connected Displays.");
+                return;
+            }
+            pendingCalibrationCopy = true;
+            pendingCopyRenderer = renderer;
+            pendingCopyRig = rig;
+            pendingCopyOutput = output;
+            pendingCopySession = session;
+            pendingCopyFraming = framing;
+            pendingCopyOrdinal = session == null ? output.displayOrdinal : session.displayOrdinal;
+            pendingCopyZoom = output.zoom;
+            pendingCopySessionRuntimePath = session == null ? string.Empty : session.runtimePath;
+            pendingCopySessionApplicationName = session == null ? string.Empty : session.applicationName;
+            pendingCopyOutputRuntimePath = output.runtimePath ?? string.Empty;
+            pendingCopyOutputApplicationName = output.applicationName ?? string.Empty;
+            pendingCopyOutputOrdinal = output.displayOrdinal;
+            if (!BridgeEditorPreview.TryRequestDisplayRefresh(output, out BridgeWorkerQuiltOutput requestOutput, out string error))
+            {
+                CancelPendingCalibrationCopy();
+                SetPhysicalStatus("Connected calibration was not copied: " + error);
+                return;
+            }
+            pendingCopyRequestOutput = requestOutput;
+            pendingCopyRequestToken = requestOutput.LatestDisplayRefreshToken;
+            requestOutput.ConnectedDisplayRefreshCompleted += OnCalibrationSnapshotPublished;
+            SetPhysicalStatus("Refreshing Bridge metadata. Calibration will be copied only if this Rig and its framing remain unchanged.");
+        }
+
+        void OnCalibrationSnapshotPublished(long requestToken, BridgeDisplaySnapshot snapshot, string requestError)
+        {
+            if (!pendingCalibrationCopy) return;
+            if (requestToken != pendingCopyRequestToken)
+            {
+                CancelPendingCalibrationCopy();
+                return;
+            }
+            QuiltRenderer expectedRenderer = pendingCopyRenderer;
+            ViewWeaveRig expectedRig = pendingCopyRig;
+            BridgeWorkerQuiltOutput expectedOutput = pendingCopyOutput;
+            BridgeWorkerQuiltOutput expectedRequestOutput = pendingCopyRequestOutput;
+            ViewWeaveBridgeSession expectedSession = pendingCopySession;
+            QuiltCameraFraming expectedFraming = pendingCopyFraming;
+            uint expectedOrdinal = pendingCopyOrdinal;
+            float expectedZoom = pendingCopyZoom;
+            string expectedSessionRuntimePath = pendingCopySessionRuntimePath;
+            string expectedSessionApplicationName = pendingCopySessionApplicationName;
+            string expectedOutputRuntimePath = pendingCopyOutputRuntimePath;
+            string expectedOutputApplicationName = pendingCopyOutputApplicationName;
+            uint expectedOutputOrdinal = pendingCopyOutputOrdinal;
+            CancelPendingCalibrationCopy();
+
+            if (!string.IsNullOrEmpty(requestError))
+            {
+                SetPhysicalStatus("Connected calibration was not copied: " + requestError);
+                return;
+            }
+            if (snapshot == null || rigProvider == null || rigProvider() != expectedRig || rig != expectedRig ||
+                renderer != expectedRenderer || output != expectedOutput || session != expectedSession ||
+                expectedRequestOutput == null || expectedRequestOutput.LatestDisplayRefreshToken != requestToken ||
+                expectedRequestOutput.ConnectedDisplaySnapshot != snapshot ||
+                expectedRequestOutput.CurrentConfigurationDisplaySnapshot != snapshot ||
+                !BridgeEditorPreview.CanApplyDisplaySnapshotToRig(expectedRig) ||
+                EditorApplication.isPlayingOrWillChangePlaymode || expectedRenderer == null || expectedOutput == null ||
+                !expectedRenderer.TryGetFraming(out QuiltCameraFraming current) || current != expectedFraming ||
+                expectedOutput.zoom != expectedZoom || (expectedSession != null && expectedSession.displayOrdinal != expectedOrdinal) ||
+                (expectedSession != null && (!string.Equals(expectedSession.runtimePath ?? string.Empty, expectedSessionRuntimePath ?? string.Empty, StringComparison.Ordinal) ||
+                                             !string.Equals(expectedSession.applicationName ?? string.Empty, expectedSessionApplicationName ?? string.Empty, StringComparison.Ordinal))) ||
+                !string.Equals(expectedOutput.runtimePath ?? string.Empty, expectedOutputRuntimePath ?? string.Empty, StringComparison.Ordinal) ||
+                !string.Equals(expectedOutput.applicationName ?? string.Empty, expectedOutputApplicationName ?? string.Empty, StringComparison.Ordinal) ||
+                expectedOutput.displayOrdinal != expectedOutputOrdinal ||
+                !snapshot.TryGetDisplay(expectedOrdinal, out BridgeDisplayProfile profile) || !profile.HasPhysicalCalibration)
+            {
+                SetPhysicalStatus("Connected calibration was not copied because the Rig changed, the query was stale, or valid calibration was unavailable.");
+                return;
+            }
+
+            bool copied = CommitFraming(new QuiltCameraFraming(expectedFraming.VerticalFieldOfView, expectedFraming.FocusDistance, true,
+                profile.PhysicalWidthMillimeters, profile.PhysicalHeightMillimeters, expectedFraming.UnitsPerMeter),
+                "Copy Connected Display Size");
+            if (!copied) SetPhysicalStatus("Connected calibration was found but could not be applied under the current renderer owner policy.");
+        }
+
+        void CancelPendingCalibrationCopy()
+        {
+            if (pendingCalibrationCopy && pendingCopyRequestOutput != null)
+                pendingCopyRequestOutput.ConnectedDisplayRefreshCompleted -= OnCalibrationSnapshotPublished;
+            pendingCalibrationCopy = false;
+            pendingCopyRenderer = null;
+            pendingCopyRig = null;
+            pendingCopyOutput = null;
+            pendingCopyRequestOutput = null;
+            pendingCopySession = null;
+            pendingCopyFraming = default;
+            pendingCopyOrdinal = 0;
+            pendingCopyZoom = 0f;
+            pendingCopyRequestToken = 0;
+            pendingCopySessionRuntimePath = string.Empty;
+            pendingCopySessionApplicationName = string.Empty;
+            pendingCopyOutputRuntimePath = string.Empty;
+            pendingCopyOutputApplicationName = string.Empty;
+            pendingCopyOutputOrdinal = 0;
+        }
+
+        void OnFieldOfViewChanged(float value)
+        {
+            if (renderer == null || updatingFramingControls || !renderer.TryGetFraming(out QuiltCameraFraming current)) return;
+            CommitFraming(new QuiltCameraFraming(value, current.FocusDistance, current.PhysicalFramingEnabled,
+                current.ApertureWidthMillimeters, current.ApertureHeightMillimeters, current.UnitsPerMeter),
+                "Change ViewWeave Field of View");
+        }
+
+        void OnFocusDistanceChanged(float value)
+        {
+            if (renderer == null || updatingFramingControls) return;
+            if (!QuiltRendererAuthoringOperations.TrySetEffectiveFocusDistance(renderer, value))
+            {
+                SetPhysicalStatus("Focus Distance was not changed. Check the requested distance, active owner policy, and editable camera Stage.");
+                RefreshFramingControls();
+                return;
+            }
+            BridgeEditorPreview.RequestRefresh();
+            RefreshFramingControls();
+            RefreshPhysicalFramingState();
+        }
+
+        void OnPhysicalDimensionsChanged()
+        {
+            if (renderer == null || updatingFramingControls || !renderer.TryGetFraming(out QuiltCameraFraming current)) return;
+            CommitFraming(new QuiltCameraFraming(current.VerticalFieldOfView, current.FocusDistance,
+                physicalFramingEnabledToggle != null && physicalFramingEnabledToggle.value,
+                apertureWidthInput == null ? current.ApertureWidthMillimeters : apertureWidthInput.value,
+                apertureHeightInput == null ? current.ApertureHeightMillimeters : apertureHeightInput.value,
+                unitsPerMeterInput == null ? current.UnitsPerMeter : unitsPerMeterInput.value), "Change Physical Display Framing");
+        }
+
+        bool CommitFraming(QuiltCameraFraming candidate, string undoName)
+        {
+            if (renderer == null) return false;
+            if (renderer.followReferenceFieldOfView && renderer.referenceCamera != null &&
+                !TryValidateReferenceCamera(renderer.referenceCamera, out string referenceError))
+            {
+                SetPhysicalStatus("Framing was not changed: " + referenceError);
+                RefreshFramingControls();
+                return false;
+            }
+            if (!renderer.TryCheckMutation(new QuiltRendererMutationRequest(candidate), out string mutationError))
+            {
+                SetPhysicalStatus("Framing was not changed: " + mutationError);
+                RefreshFramingControls();
+                return false;
+            }
+            Camera reference = renderer.referenceCamera != null && renderer.followReferenceFieldOfView ? renderer.referenceCamera : null;
+            Undo.IncrementCurrentGroup();
+            int undoGroup = Undo.GetCurrentGroup();
+            Undo.SetCurrentGroupName(undoName);
+            Undo.RecordObject(renderer, undoName);
+            if (reference != null) Undo.RecordObject(reference, undoName);
+            if (!renderer.TrySetFraming(candidate, out string error))
+            {
+                SetPhysicalStatus("Framing was not changed: " + error);
+                RefreshFramingControls();
+                return false;
+            }
+            Undo.CollapseUndoOperations(undoGroup);
+            MarkFramingDirty(reference);
+            SetPhysicalStatus(string.Empty);
+            BridgeEditorPreview.RequestRefresh();
+            RefreshFramingControls();
+            RefreshPhysicalFramingState();
+            return true;
+        }
+
+        void OnViewRenderModeChanged(ChangeEvent<Enum> evt)
+        {
+            if (renderer == null) return;
+            QuiltViewRenderMode value = (QuiltViewRenderMode)evt.newValue;
+            Undo.IncrementCurrentGroup();
+            int undoGroup = Undo.GetCurrentGroup();
+            Undo.SetCurrentGroupName("Change Quilt View Render Mode");
+            Undo.RecordObject(renderer, "Change Quilt View Render Mode");
+            if (!renderer.TrySetViewRenderMode(value, out string error))
+            {
+                viewRenderModeField?.SetValueWithoutNotify(renderer.viewRenderMode);
+                SetActionStatus("View Render Mode was not changed: " + error);
+                return;
+            }
+            Undo.CollapseUndoOperations(undoGroup);
             EditorUtility.SetDirty(renderer);
             PrefabUtility.RecordPrefabInstancePropertyModifications(renderer);
-            rendererObject?.UpdateIfRequiredOrScript();
-            RefreshPhysicalFramingState();
+            SetActionStatus(string.Empty);
             BridgeEditorPreview.RequestRefresh();
+        }
+
+        void MarkFramingDirty(Camera reference)
+        {
+            EditorUtility.SetDirty(renderer);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(renderer);
+            if (reference == null) return;
+            EditorUtility.SetDirty(reference);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(reference);
+        }
+
+        void RefreshFramingControls()
+        {
+            if (renderer == null) return;
+            updatingFramingControls = true;
+            if (renderer.TryGetFraming(out QuiltCameraFraming framing))
+            {
+                focusDistanceInput?.SetValueWithoutNotify(framing.FocusDistance);
+                fieldOfViewInput?.SetValueWithoutNotify(framing.VerticalFieldOfView);
+                apertureWidthInput?.SetValueWithoutNotify(framing.ApertureWidthMillimeters);
+                apertureHeightInput?.SetValueWithoutNotify(framing.ApertureHeightMillimeters);
+                unitsPerMeterInput?.SetValueWithoutNotify(framing.UnitsPerMeter);
+            }
+            followReferenceFieldOfViewField?.SetValueWithoutNotify(renderer.followReferenceFieldOfView);
+            viewRenderModeField?.SetValueWithoutNotify(renderer.viewRenderMode);
+            updatingFramingControls = false;
+
+            bool canFrame = renderer.TryCheckMutation(QuiltRendererMutationKind.Framing, out string framingReason);
+            bool referenceEditable = renderer.referenceCamera == null || TryValidateReferenceCamera(renderer.referenceCamera, out _);
+            focusDistanceInput?.SetEnabled(canFrame && referenceEditable && (renderer.physicalFraming == null || !renderer.physicalFraming.enabled));
+            fieldOfViewInput?.SetEnabled(canFrame && referenceEditable);
+            apertureWidthInput?.SetEnabled(canFrame);
+            apertureHeightInput?.SetEnabled(canFrame);
+            unitsPerMeterInput?.SetEnabled(canFrame);
+            physicalFramingEnabledToggle?.SetEnabled(canFrame);
+            followReferenceFieldOfViewField?.SetEnabled(referenceEditable && renderer.TryCheckMutation(QuiltRendererMutationKind.Structural, out _));
+            viewRenderModeField?.SetEnabled(renderer.TryCheckMutation(QuiltRendererMutationKind.SamplingMode, out _));
+            if (!canFrame && !string.IsNullOrEmpty(framingReason)) SetPhysicalStatus(framingReason);
+        }
+
+        void SetPhysicalStatus(string message)
+        {
+            framingStatusOverride = message ?? string.Empty;
+            if (physicalFramingStatus != null) physicalFramingStatus.text = framingStatusOverride;
         }
 
         bool TryAssignReferenceCamera(Camera candidate)
         {
+            if (renderer != null && renderer.referenceCamera != candidate &&
+                !renderer.TryCheckMutation(QuiltRendererMutationKind.Structural, out string mutationError))
+            {
+                referenceCameraField?.SetValueWithoutNotify(renderer.referenceCamera);
+                SetPhysicalStatus("Reference Camera was not changed: " + mutationError);
+                return false;
+            }
             if (!TryValidateReferenceCamera(candidate, out string reason))
             {
                 if (referenceCameraField != null) referenceCameraField.SetValueWithoutNotify(renderer == null ? null : renderer.referenceCamera);
@@ -676,7 +1087,7 @@ namespace ViewWeave.Editor
                 referenceCameraField.SetValueWithoutNotify(renderer.referenceCamera);
             bool editable = TryValidateReferenceCamera(renderer.referenceCamera, out string reason);
             if (followReferenceFieldOfViewField != null)
-                followReferenceFieldOfViewField.SetEnabled(editable && CanAuthor());
+                followReferenceFieldOfViewField.SetEnabled(editable && CanAuthor() && renderer.TryCheckMutation(QuiltRendererMutationKind.Structural, out _));
             if (referenceCameraWarning != null)
             {
                 referenceCameraWarning.text = editable ? string.Empty : "Reference Camera is unavailable: " + reason + " Choose a Camera in the loaded Main Stage or the same Prefab Stage.";
@@ -693,26 +1104,16 @@ namespace ViewWeave.Editor
         {
             if (session == null) return;
             QuiltQualityPreset value = (QuiltQualityPreset)evt.newValue;
-            if (EditorApplication.isPlaying)
+            if (!EditorApplication.isPlaying) Undo.RecordObject(session, "Change ViewWeave Session Quality");
+            if (!session.SetQuality(value))
             {
-                if (!session.SetQuality(value)) ShowSessionError(session.LastError);
-                else ShowSessionError(string.Empty);
+                qualityField?.SetValueWithoutNotify(session.Quality);
+                ShowSessionError(session.LastError);
             }
             else
             {
-                Undo.RecordObject(session, "Change ViewWeave Session Quality");
-                if (sessionObject == null) sessionObject = new SerializedObject(session);
-                sessionObject.Update();
-                SerializedProperty property = sessionObject.FindProperty("quality");
-                if (property != null)
-                {
-                    int index = Array.IndexOf(property.enumNames, value.ToString());
-                    if (index >= 0)
-                    {
-                        property.enumValueIndex = index;
-                        sessionObject.ApplyModifiedProperties();
-                    }
-                }
+                if (!EditorApplication.isPlaying) EditorUtility.SetDirty(session);
+                ShowSessionError(string.Empty);
             }
             BridgeEditorPreview.RequestRefresh();
             RefreshSessionStatus();
@@ -754,7 +1155,7 @@ namespace ViewWeave.Editor
             SceneView.RepaintAll();
         }
 
-        bool CanAuthor() => renderer != null && !EditorApplication.isPlaying && !EditorApplication.isPlayingOrWillChangePlaymode;
+        bool CanAuthor() => renderer != null && !playModeTransitioning;
 
         void SetActionStatus(string message)
         {
@@ -883,7 +1284,32 @@ namespace ViewWeave.Editor
             if (sessionStatus != null) sessionStatus.text = "Session state: " + session.State;
             if (sessionError != null) sessionError.text = string.IsNullOrEmpty(session.LastError) ? string.Empty : "Session error: " + session.LastError;
             if (qualityField != null && qualityField.value != (Enum)session.Quality) qualityField.SetValueWithoutNotify(session.Quality);
-            qualityField?.SetEnabled(!playModeTransitioning);
+            if (qualityField != null)
+            {
+                string reason = string.Empty;
+                bool allowed = renderer != null && renderer.TryCheckMutation(QuiltRendererMutationKind.Quality, out reason);
+                if (BridgeDisplayDiscovery.IsBusy)
+                {
+                    allowed = false;
+                    reason = "Bridge quality cannot change while connected display metadata is refreshing or cleaning up.";
+                }
+                qualityField.SetEnabled(!playModeTransitioning && allowed);
+                qualityField.tooltip = allowed ? string.Empty : reason;
+            }
+        }
+
+        void RefreshMutationControlStates()
+        {
+            bool structuralAllowed = renderer != null && renderer.TryCheckMutation(QuiltRendererMutationKind.Structural, out _);
+            bool transportAllowed = renderer != null && renderer.TryCheckMutation(QuiltRendererMutationKind.Transport, out _);
+            for (int i = 0; i < structuralMutationFields.Count; ++i)
+                if (structuralMutationFields[i] != null) structuralMutationFields[i].SetEnabled(structuralAllowed);
+            for (int i = 0; i < transportMutationFields.Count; ++i)
+                if (transportMutationFields[i] != null) transportMutationFields[i].SetEnabled(transportAllowed);
+            if (zoomField != null) zoomField.SetEnabled(output != null && renderer != null &&
+                renderer.TryCheckMutation(QuiltRendererMutationKind.OutputZoom, output.zoom, out _));
+            if (autoRenderToggle != null) autoRenderToggle.SetEnabled(!playModeTransitioning && rig != null &&
+                renderer != null && (structuralAllowed || renderer.TryCheckMutation(QuiltRendererMutationKind.AutoRender, false, out _)));
         }
 
         void ShowSessionError(string message)

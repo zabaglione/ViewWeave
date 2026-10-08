@@ -9,7 +9,8 @@ namespace ViewWeave.Editor
         LocalRendererSettings,
         LocalPreview,
         BridgeSession,
-        DevicePreview
+        DevicePreview,
+        ConnectedDisplaySnapshot
     }
 
     public readonly struct QuiltEditorDisplayProfile

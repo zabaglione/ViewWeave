@@ -25,9 +25,15 @@ namespace ViewWeave
         public RenderTexture QuiltTexture => quiltTexture;
         [SerializeField] MonoBehaviour outputBehaviour;
         [SerializeField] MonoBehaviour guardBehaviour;
+        // Runtime-only fail-closed marker. Editor preview retention has its own serialized owner
+        // record; serializing this marker would leave ordinary saved scenes permanently locked.
+        [NonSerialized] bool mutationOwnerRequired;
+        internal bool HasMutationOwnerRequirement => mutationOwnerRequired;
+        internal void SetMutationOwnerRequired(bool required) => mutationOwnerRequired = required;
 #if UNITY_EDITOR
         [SerializeField, HideInInspector] UnityEngine.Object editorPreviewRetentionOwner;
         [SerializeField, HideInInspector] bool editorPreviewRetentionRequired;
+        internal bool HasEditorPreviewRetentionOwner => editorPreviewRetentionRequired && editorPreviewRetentionOwner != null;
 #endif
         [FormerlySerializedAs("renderInLateUpdate")]
         public bool autoRender;
@@ -39,6 +45,7 @@ namespace ViewWeave
         public MonoBehaviour GuardBehaviour { get => guardBehaviour; set => guardBehaviour = value; }
         public bool useRenderRequests = true;
         public bool IsRendering { get; private set; }
+        internal bool IsNotifyingRenderComplete => notifyingRenderComplete;
         public int LastRenderedViewCount { get; private set; }
         public bool HasRenderedQuilt => hasCompletedQuilt;
         public long QuiltRevision => quiltRevision;
@@ -55,6 +62,186 @@ namespace ViewWeave
         {
             return QuiltFramingResolver.TryResolve(settings, physicalFraming,
                 QuiltFramingResolver.EffectiveFieldOfView(this), out effectiveSettings, out error);
+        }
+
+        public bool TryGetFraming(out QuiltCameraFraming framing)
+        {
+            framing = default;
+            if (settings == null) return false;
+            QuiltPhysicalFraming physical = physicalFraming;
+            framing = new QuiltCameraFraming(QuiltFramingResolver.EffectiveFieldOfView(this), settings.cameraDistance,
+                physical != null && physical.enabled,
+                physical == null ? 0f : physical.visibleApertureWidthMillimeters,
+                physical == null ? 0f : physical.visibleApertureHeightMillimeters,
+                physical == null ? 1f : physical.unitsPerMeter);
+            return true;
+        }
+
+        public bool TrySetFraming(QuiltCameraFraming framing, out string error)
+        {
+            if (!TryValidateFraming(framing, out error)) return false;
+            if (settings == null)
+            {
+                error = "Quilt settings are required.";
+                return false;
+            }
+            bool followReference = referenceCamera != null && followReferenceFieldOfView;
+
+            QuiltPhysicalFraming candidatePhysical = physicalFraming == null
+                ? new QuiltPhysicalFraming()
+                : physicalFraming.Clone();
+            candidatePhysical.enabled = framing.PhysicalFramingEnabled;
+            candidatePhysical.visibleApertureWidthMillimeters = framing.ApertureWidthMillimeters;
+            candidatePhysical.visibleApertureHeightMillimeters = framing.ApertureHeightMillimeters;
+            candidatePhysical.unitsPerMeter = framing.UnitsPerMeter;
+
+            if (followReference)
+                referenceCamera.fieldOfView = framing.VerticalFieldOfView;
+            else
+                settings.fieldOfView = framing.VerticalFieldOfView;
+            if (!framing.PhysicalFramingEnabled) settings.cameraDistance = framing.FocusDistance;
+            physicalFraming = candidatePhysical;
+            return true;
+        }
+
+        internal bool TryValidateFraming(QuiltCameraFraming framing, out string error)
+        {
+            error = string.Empty;
+            if (!QuiltRendererMutationPolicy.TryCheck(this, new QuiltRendererMutationRequest(framing), out error)) return false;
+            if (settings == null)
+            {
+                error = "Quilt settings are required.";
+                return false;
+            }
+            if (!IsFinite(framing.VerticalFieldOfView) || framing.VerticalFieldOfView <= 0f || framing.VerticalFieldOfView >= 179f)
+            {
+                error = "Vertical field of view must be finite and between 0 and 179 degrees.";
+                return false;
+            }
+            if (!IsFinite(framing.FocusDistance) || framing.FocusDistance <= 0f)
+            {
+                error = "Focus distance must be finite and greater than zero.";
+                return false;
+            }
+            if (framing.PhysicalFramingEnabled && framing.FocusDistance != settings.cameraDistance)
+            {
+                error = "Focus Distance is derived while physical framing is enabled. Use the explicit focus-distance operation to preserve the physical plane.";
+                return false;
+            }
+
+            QuiltPhysicalFraming candidatePhysical = physicalFraming == null
+                ? new QuiltPhysicalFraming()
+                : physicalFraming.Clone();
+            candidatePhysical.enabled = framing.PhysicalFramingEnabled;
+            candidatePhysical.visibleApertureWidthMillimeters = framing.ApertureWidthMillimeters;
+            candidatePhysical.visibleApertureHeightMillimeters = framing.ApertureHeightMillimeters;
+            candidatePhysical.unitsPerMeter = framing.UnitsPerMeter;
+            QuiltSettings candidateSettings = settings.Clone();
+            candidateSettings.fieldOfView = framing.VerticalFieldOfView;
+            if (!framing.PhysicalFramingEnabled) candidateSettings.cameraDistance = framing.FocusDistance;
+            if (!QuiltFramingResolver.TryResolve(candidateSettings, candidatePhysical, framing.VerticalFieldOfView,
+                    out _, out error))
+            {
+                error = "Framing was not changed: " + error;
+                return false;
+            }
+            return true;
+        }
+
+        public bool TrySetFocusDistance(float requestedEffectiveDistance, out string error)
+        {
+            error = string.Empty;
+            if (!IsFinite(requestedEffectiveDistance) || requestedEffectiveDistance <= 0f)
+            {
+                error = "Focus distance must be finite and greater than zero.";
+                return false;
+            }
+            if (!TryGetFraming(out QuiltCameraFraming current))
+            {
+                error = "Quilt settings are required.";
+                return false;
+            }
+            if (!current.PhysicalFramingEnabled)
+                return TrySetFraming(new QuiltCameraFraming(current.VerticalFieldOfView, requestedEffectiveDistance,
+                    current.PhysicalFramingEnabled, current.ApertureWidthMillimeters,
+                    current.ApertureHeightMillimeters, current.UnitsPerMeter), out error);
+
+            if (!physicalFraming.TryResolve(current.VerticalFieldOfView, out _, out _, out error))
+            {
+                error = "Focus distance was not changed: " + error;
+                return false;
+            }
+            float apertureHeight = physicalFraming.ApertureHeightInUnityUnits;
+            float fieldOfView = 2f * (float)Math.Atan(apertureHeight / (2f * requestedEffectiveDistance)) * Mathf.Rad2Deg;
+            if (!IsFinite(fieldOfView) || fieldOfView <= 0f || fieldOfView >= 179f)
+            {
+                error = "Focus distance does not produce a valid vertical field of view.";
+                return false;
+            }
+            return TrySetFraming(new QuiltCameraFraming(fieldOfView, current.FocusDistance,
+                current.PhysicalFramingEnabled, current.ApertureWidthMillimeters,
+                current.ApertureHeightMillimeters, current.UnitsPerMeter), out error);
+        }
+
+        internal bool TryValidateFocusDistance(float requestedEffectiveDistance, out string error)
+        {
+            error = string.Empty;
+            if (!IsFinite(requestedEffectiveDistance) || requestedEffectiveDistance <= 0f)
+            {
+                error = "Focus distance must be finite and greater than zero.";
+                return false;
+            }
+            if (!TryGetFraming(out QuiltCameraFraming current))
+            {
+                error = "Quilt settings are required.";
+                return false;
+            }
+            if (!current.PhysicalFramingEnabled)
+                return TryValidateFraming(new QuiltCameraFraming(current.VerticalFieldOfView, requestedEffectiveDistance,
+                    false, current.ApertureWidthMillimeters, current.ApertureHeightMillimeters, current.UnitsPerMeter), out error);
+            if (!physicalFraming.TryResolve(current.VerticalFieldOfView, out _, out _, out error)) return false;
+            float fieldOfView = 2f * (float)Math.Atan(physicalFraming.ApertureHeightInUnityUnits /
+                (2f * requestedEffectiveDistance)) * Mathf.Rad2Deg;
+            if (!IsFinite(fieldOfView) || fieldOfView <= 0f || fieldOfView >= 179f)
+            {
+                error = "Focus distance does not produce a valid vertical field of view.";
+                return false;
+            }
+            return TryValidateFraming(new QuiltCameraFraming(fieldOfView, current.FocusDistance, true,
+                current.ApertureWidthMillimeters, current.ApertureHeightMillimeters, current.UnitsPerMeter), out error);
+        }
+
+        public bool TrySetViewRenderMode(QuiltViewRenderMode mode, out string error)
+        {
+            error = string.Empty;
+            if (!Enum.IsDefined(typeof(QuiltViewRenderMode), mode))
+            {
+                error = "View render mode is invalid.";
+                return false;
+            }
+            if (!QuiltRendererMutationPolicy.TryCheck(this, new QuiltRendererMutationRequest(mode), out error)) return false;
+            viewRenderMode = mode;
+            return true;
+        }
+
+        public bool TryCheckMutation(QuiltRendererMutationKind kind, out string error)
+        {
+            return QuiltRendererMutationPolicy.TryCheck(this, kind, out error);
+        }
+
+        public bool TryCheckMutation(QuiltRendererMutationKind kind, bool value, out string error)
+        {
+            return QuiltRendererMutationPolicy.TryCheck(this, new QuiltRendererMutationRequest(kind, value), out error);
+        }
+
+        public bool TryCheckMutation(QuiltRendererMutationKind kind, float value, out string error)
+        {
+            return QuiltRendererMutationPolicy.TryCheck(this, new QuiltRendererMutationRequest(kind, value), out error);
+        }
+
+        public bool TryCheckMutation(QuiltRendererMutationRequest request, out string error)
+        {
+            return QuiltRendererMutationPolicy.TryCheck(this, request, out error);
         }
 
 #if UNITY_EDITOR
@@ -199,6 +386,7 @@ namespace ViewWeave
             if (notifyingRenderComplete) throw new InvalidOperationException("quilt rendering cannot be started from a quilt completion callback");
             if (IsRendering) throw new InvalidOperationException("quilt render is already in progress");
             bool srp = GraphicsSettings.currentRenderPipeline != null;
+            QuiltViewRenderMode renderMode = viewRenderMode;
             bool trustedSrpBoundary = trustedSchedulerBoundary && Application.isEditor && Application.isPlaying && srp;
 #if UNITY_EDITOR
             trustedSrpBoundary |= trustedEditorPreviewBoundary && Application.isEditor && !Application.isPlaying &&
@@ -207,7 +395,7 @@ namespace ViewWeave
 #endif
             if (Camera.current != null && !trustedSrpBoundary) throw new InvalidOperationException("RenderQuilt must be called outside render callbacks");
             settings.Validate();
-            QuiltViewSampling.GetRenderCount(settings.views, viewRenderMode);
+            QuiltViewSampling.GetRenderCount(settings.views, renderMode);
             if (sourceCamera == null) throw new InvalidOperationException("sourceCamera is required");
             if (sourceCamera.enabled) throw new InvalidOperationException("sourceCamera must be disabled and dedicated to quilt rendering");
             if (sourceCamera.orthographic) throw new InvalidOperationException("only perspective cameras are supported");
@@ -246,7 +434,7 @@ namespace ViewWeave
             try
             {
                 layout = effectiveSettings.GetLayout();
-                EnsureViewSampling(layout.ViewCount);
+                EnsureViewSampling(layout.ViewCount, renderMode);
                 EnsureTextures(layout);
                 ClearQuilt();
                 state = new CameraState(sourceCamera);
@@ -313,7 +501,7 @@ namespace ViewWeave
             }
             if (renderSucceeded)
             {
-                latestSnapshot = new QuiltRenderSnapshot(layout, viewRenderMode, effectiveSettings, LastRenderedViewCount, quiltRevision + 1, sourceCamera, renderPhysicalFraming);
+                latestSnapshot = new QuiltRenderSnapshot(layout, renderMode, effectiveSettings, LastRenderedViewCount, quiltRevision + 1, sourceCamera, renderPhysicalFraming);
                 latestReferenceCamera = framingCamera;
                 latestSnapshotFollowedReferenceFieldOfView = framingCamera != sourceCamera && followReferenceFieldOfView;
                 latestReferenceFieldOfView = renderReferenceFieldOfView;
@@ -417,18 +605,18 @@ namespace ViewWeave
             else sourceCamera.Render();
         }
 
-        void EnsureViewSampling(int viewCount)
+        void EnsureViewSampling(int viewCount, QuiltViewRenderMode renderMode)
         {
-            if (hasSamplingCache && cachedSamplingViewCount == viewCount && cachedSamplingMode == viewRenderMode) return;
-            int renderCount = QuiltViewSampling.GetRenderCount(viewCount, viewRenderMode);
+            if (hasSamplingCache && cachedSamplingViewCount == viewCount && cachedSamplingMode == renderMode) return;
+            int renderCount = QuiltViewSampling.GetRenderCount(viewCount, renderMode);
             renderedViewIndices = new int[renderCount];
             sourceViewAssignments = new int[viewCount];
             for (int slot = 0; slot < renderCount; ++slot)
-                renderedViewIndices[slot] = QuiltViewSampling.GetRenderedViewIndex(viewCount, viewRenderMode, slot);
+                renderedViewIndices[slot] = QuiltViewSampling.GetRenderedViewIndex(viewCount, renderMode, slot);
             for (int view = 0; view < viewCount; ++view)
-                sourceViewAssignments[view] = QuiltViewSampling.GetSourceViewIndex(viewCount, viewRenderMode, view);
+                sourceViewAssignments[view] = QuiltViewSampling.GetSourceViewIndex(viewCount, renderMode, view);
             cachedSamplingViewCount = viewCount;
-            cachedSamplingMode = viewRenderMode;
+            cachedSamplingMode = renderMode;
             hasSamplingCache = true;
         }
 

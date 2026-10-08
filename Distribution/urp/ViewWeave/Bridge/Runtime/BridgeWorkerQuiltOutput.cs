@@ -10,6 +10,10 @@ namespace ViewWeave
     public sealed class BridgeWorkerQuiltOutput : MonoBehaviour, IQuiltOutput
     {
         static long nextSessionGeneration;
+        long nextDisplayRefreshToken;
+        string connectedSnapshotRuntimePath;
+        string connectedSnapshotApplicationName;
+        uint connectedSnapshotDisplayOrdinal;
         public string runtimePath;
         public string applicationName = "ViewWeave";
         public uint displayOrdinal;
@@ -19,11 +23,43 @@ namespace ViewWeave
         public RenderTexture QuiltTexture { get; private set; }
         public QuiltLayout Layout { get; private set; }
         public BridgeDisplayProfile Profile { get; private set; }
+        /// <summary>Returns the last successfully published snapshot only while this output's runtime, application, and display ordinal still match it and reconnection is not required.</summary>
+        public BridgeDisplaySnapshot CurrentConfigurationDisplaySnapshot
+        {
+            get
+            {
+                if (ConnectedDisplaySnapshot == null || RequiresReconnect) return null;
+                ViewWeaveBridgeSession session = GetComponent<ViewWeaveBridgeSession>();
+                string currentRuntime = session == null ? runtimePath : session.runtimePath;
+                string currentApplication = session == null ? applicationName : session.applicationName;
+                uint currentOrdinal = session == null ? displayOrdinal : session.displayOrdinal;
+                return IsConnectedSnapshotConfigurationCurrent(RequiresReconnect,
+                       connectedSnapshotRuntimePath, connectedSnapshotApplicationName, connectedSnapshotDisplayOrdinal,
+                       currentRuntime, currentApplication, currentOrdinal)
+                    ? ConnectedDisplaySnapshot
+                    : null;
+            }
+        }
+        /// <summary>Returns the last snapshot result, even when this output's current configuration no longer matches it.</summary>
+        public BridgeDisplaySnapshot ConnectedDisplaySnapshot { get; private set; }
+        internal long LatestDisplayRefreshToken { get; private set; }
+        public string DisplayRefreshStatus { get; private set; }
         public WorkerState State => state;
         public bool Ready => state == WorkerState.Ready;
+        /// <summary>Raised on the main thread after an explicit connected-display refresh succeeds. This is not an automatic hotplug notification.</summary>
+        public event Action<BridgeDisplaySnapshot> ConnectedDisplaySnapshotChanged;
+        internal event Action<long, BridgeDisplaySnapshot, string> ConnectedDisplayRefreshCompleted;
+        public bool RequiresReconnect { get; private set; }
         public bool TryResetTransfer()
         {
             if (state != WorkerState.Ready || handle == IntPtr.Zero) return false;
+#if UNITY_EDITOR
+            if (!BridgeNativeImageGuard.TryValidateOwnerIdentity(nativeModuleIdentity, out string imageGuardError))
+            {
+                if (!BridgeNativeImageGuard.IsValidationPending) LastError = imageGuardError;
+                return false;
+            }
+#endif
             int result;
             try { result = BridgeWorkerNative.lkg_worker_reset_transfer(handle); }
             catch (EntryPointNotFoundException) { LastError = "Bridge worker reset transfer ABI entry point is missing"; return false; }
@@ -32,6 +68,27 @@ namespace ViewWeave
             if (result != 0) { LastError = "Bridge worker transfer reset failed (code " + result + ")"; return false; }
             if (command != null) { command.Release(); command = null; }
             ReleaseTransferTexture();
+            return true;
+        }
+
+        public bool TrySetZoom(float value, out string error)
+        {
+            error = string.Empty;
+            if (float.IsNaN(value) || float.IsInfinity(value) || value <= 0f)
+            {
+                error = "Bridge zoom must be finite and greater than zero.";
+                return false;
+            }
+            QuiltRenderer renderer = GetComponent<QuiltRenderer>();
+            if (renderer != null && !QuiltRendererMutationPolicy.TryCheck(renderer,
+                    new QuiltRendererMutationRequest(QuiltRendererMutationKind.OutputZoom, value), out error)) return false;
+            QuiltPhysicalFraming physical = renderer == null ? null : renderer.physicalFraming;
+            if (physical != null && physical.enabled && value != 1f)
+            {
+                error = "Physical 1:1 framing requires Bridge zoom to be exactly 1.";
+                return false;
+            }
+            zoom = value;
             return true;
         }
         public string LastError { get; private set; }
@@ -45,6 +102,11 @@ namespace ViewWeave
             get
             {
                 int managed = BridgeWorkerReaper.PendingCount;
+                if (Application.isEditor)
+                {
+                    if (!BridgeNativeImageGuard.TryValidateGlobalCalls(out bool loaded, out _, out _)) return Math.Max(1, managed);
+                    if (!loaded) return managed;
+                }
                 try { return Math.Max(managed, checked((int)BridgeWorkerNative.lkg_worker_pending_count())); }
                 catch (DllNotFoundException) { return managed; }
                 catch (EntryPointNotFoundException) { return managed; }
@@ -59,9 +121,28 @@ namespace ViewWeave
                 return BridgeWorkerReaper.PendingCount != 0;
             }
         }
-        internal static uint NativePendingCount => BridgeWorkerNative.lkg_worker_pending_count();
-        internal static int CloseAllNativeWorkers() => BridgeWorkerNative.lkg_worker_close_all();
-        internal static int CollectClosedNativeWorkers() => BridgeWorkerNative.lkg_worker_collect_closed();
+        internal static uint NativePendingCount
+        {
+            get
+            {
+                if (Application.isEditor)
+                {
+                    if (!BridgeNativeImageGuard.TryValidateGlobalCalls(out bool loaded, out _, out _)) return uint.MaxValue;
+                    if (!loaded) return 0;
+                }
+                return BridgeWorkerNative.lkg_worker_pending_count();
+            }
+        }
+        internal static int CloseAllNativeWorkers()
+        {
+            if (Application.isEditor && (!BridgeNativeImageGuard.TryValidateGlobalCalls(out bool loaded, out _, out _) || !loaded)) return -1;
+            return BridgeWorkerNative.lkg_worker_close_all();
+        }
+        internal static int CollectClosedNativeWorkers()
+        {
+            if (Application.isEditor && (!BridgeNativeImageGuard.TryValidateGlobalCalls(out bool loaded, out _, out _) || !loaded)) return -1;
+            return BridgeWorkerNative.lkg_worker_collect_closed();
+        }
         public string TransferGraphicsFormat => transferGraphicsFormatName ?? string.Empty;
         public string TransferFormat => transferFormatName ?? string.Empty;
         public bool TransferIsSrgb => transferSrgbDiagnostic;
@@ -92,6 +173,9 @@ namespace ViewWeave
         bool disposalInProgress;
         long sessionGeneration;
         long lastReaperHandoffGeneration;
+        BridgeNativeModuleIdentity nativeModuleIdentity;
+        internal IntPtr NativeHandle => handle;
+        internal BridgeNativeModuleIdentity NativeModuleIdentity => nativeModuleIdentity;
         public long SessionGeneration => sessionGeneration;
         public long LastReaperHandoffGeneration => lastReaperHandoffGeneration;
         public event Action<long> PlaybackReaperHandoff;
@@ -103,8 +187,194 @@ namespace ViewWeave
 
         void Update()
         {
+            BridgeDisplayDiscovery.Tick();
             Poll();
         }
+
+        public bool TryRequestDisplayRefresh(out string error)
+        {
+            error = string.Empty;
+            if (state == WorkerState.Connecting || state == WorkerState.Closing || state == WorkerState.Fault)
+            {
+                error = "Connected displays cannot refresh while the Bridge worker is connecting, stopping, or recovering.";
+                DisplayRefreshStatus = error;
+                return false;
+            }
+            if (BridgeDisplayDiscovery.IsBusy)
+            {
+                error = BridgeDisplayDiscovery.Status;
+                if (string.IsNullOrEmpty(error)) error = "A connected display refresh or Bridge reconfiguration is already in progress.";
+                DisplayRefreshStatus = error;
+                return false;
+            }
+            ViewWeaveBridgeSession session = GetComponent<ViewWeaveBridgeSession>();
+            if (session != null && (session.State == ViewWeaveBridgeSession.SessionState.Connecting ||
+                session.State == ViewWeaveBridgeSession.SessionState.Reconfiguring ||
+                session.State == ViewWeaveBridgeSession.SessionState.Closing ||
+                session.State == ViewWeaveBridgeSession.SessionState.Fault))
+            {
+                error = "Connected displays cannot refresh while the Session is connecting, reconfiguring, stopping, or recovering.";
+                DisplayRefreshStatus = error;
+                return false;
+            }
+            string configuredRuntimePath = session == null ? runtimePath : session.runtimePath;
+            string configuredApplicationName = session == null ? applicationName : session.applicationName;
+            uint configuredDisplayOrdinal = session == null ? displayOrdinal : session.displayOrdinal;
+            if (state == WorkerState.Ready && session != null)
+            {
+                if (displayOrdinal != configuredDisplayOrdinal || !string.Equals(applicationName ?? string.Empty,
+                        configuredApplicationName ?? string.Empty, StringComparison.Ordinal) ||
+                    !BridgeRuntimeLocator.TryResolve(configuredRuntimePath, out string resolvedSessionRuntime, out error) ||
+                    !PathsEqual(resolvedSessionRuntime, runtimePath))
+                {
+                    if (string.IsNullOrEmpty(error))
+                        error = "The live Session configuration differs from the active Bridge worker. Stop and reconnect before refreshing displays.";
+                    DisplayRefreshStatus = error;
+                    return false;
+                }
+            }
+            uint requestedDisplayOrdinal = state == WorkerState.Ready ? displayOrdinal : configuredDisplayOrdinal;
+            long requestToken = ++nextDisplayRefreshToken;
+            LatestDisplayRefreshToken = requestToken;
+
+            long requestedSessionGeneration = state == WorkerState.Ready ? sessionGeneration : 0;
+            IntPtr requestedHandle = state == WorkerState.Ready ? handle : IntPtr.Zero;
+            Action<BridgeDisplaySnapshot> onSuccess = snapshot =>
+            {
+                if (this == null || !isActiveAndEnabled || requestToken != LatestDisplayRefreshToken ||
+                    (requestedSessionGeneration != 0 &&
+                     (sessionGeneration != requestedSessionGeneration || handle != requestedHandle || state != WorkerState.Ready))) return;
+                if (!IsCurrentDisplayRefreshConfiguration(configuredRuntimePath, configuredApplicationName,
+                        configuredDisplayOrdinal, requestedSessionGeneration != 0))
+                {
+                    const string staleMessage = "Connected display metadata was discarded because the Session or display selection changed while refreshing.";
+                    DisplayRefreshStatus = staleMessage;
+                    try { ConnectedDisplayRefreshCompleted?.Invoke(requestToken, null, staleMessage); }
+                    catch { }
+                    return;
+                }
+                ConnectedDisplaySnapshot = snapshot;
+                connectedSnapshotRuntimePath = configuredRuntimePath ?? string.Empty;
+                connectedSnapshotApplicationName = configuredApplicationName ?? string.Empty;
+                connectedSnapshotDisplayOrdinal = configuredDisplayOrdinal;
+                if (!TryRefreshMatchesCurrentProfile(snapshot, requestedDisplayOrdinal, out string profileError))
+                {
+                    RequiresReconnect = true;
+                    DisplayRefreshStatus = profileError;
+                }
+                else DisplayRefreshStatus = snapshot == null ? "Connected display refresh returned no snapshot." :
+                    "Connected displays refreshed: " + snapshot.Displays.Count.ToString(CultureInfo.InvariantCulture) + " found.";
+                try { ConnectedDisplaySnapshotChanged?.Invoke(snapshot); }
+                catch { }
+                try { ConnectedDisplayRefreshCompleted?.Invoke(requestToken, snapshot, string.Empty); }
+                catch { }
+            };
+            Action<string> onFailure = message =>
+            {
+                if (this == null || !isActiveAndEnabled || requestToken != LatestDisplayRefreshToken ||
+                    (requestedSessionGeneration != 0 &&
+                     (sessionGeneration != requestedSessionGeneration || handle != requestedHandle || state != WorkerState.Ready))) return;
+                DisplayRefreshStatus = message ?? "Connected display refresh failed.";
+                try { ConnectedDisplayRefreshCompleted?.Invoke(requestToken, null, DisplayRefreshStatus); }
+                catch { }
+            };
+
+            bool requested;
+            if (state == WorkerState.Ready && handle != IntPtr.Zero)
+            {
+                requested = BridgeDisplayDiscovery.TryRequestRefresh(handle, nativeModuleIdentity, displayOrdinal,
+                    requestedSessionGeneration, this, onSuccess, onFailure, out error);
+            }
+            else
+            {
+                if (BridgeWorkerQuiltOutput.HasNativeHandle)
+                {
+                    error = "Another Bridge worker is active. Refresh through its owning preview or Session.";
+                    DisplayRefreshStatus = error;
+                    return false;
+                }
+                if (!BridgeRuntimeLocator.TryResolve(configuredRuntimePath, out string resolvedRuntime, out error))
+                {
+                    DisplayRefreshStatus = error;
+                    return false;
+                }
+                requested = BridgeDisplayDiscovery.TryRequest(resolvedRuntime, configuredApplicationName, configuredDisplayOrdinal,
+                    this, onSuccess, onFailure, out error);
+            }
+            DisplayRefreshStatus = requested ? "Refreshing connected display list..." : error;
+            return requested;
+        }
+
+        bool IsCurrentDisplayRefreshConfiguration(string requestedRuntimePath, string requestedApplicationName,
+            uint requestedOrdinal, bool activeWorkerRefresh)
+        {
+            ViewWeaveBridgeSession session = GetComponent<ViewWeaveBridgeSession>();
+            string currentRuntime = session == null ? runtimePath : session.runtimePath;
+            string currentApplication = session == null ? applicationName : session.applicationName;
+            uint currentOrdinal = session == null ? displayOrdinal : session.displayOrdinal;
+            if (activeWorkerRefresh && (state != WorkerState.Ready || handle == IntPtr.Zero)) return false;
+            return string.Equals(currentRuntime ?? string.Empty, requestedRuntimePath ?? string.Empty, StringComparison.Ordinal) &&
+                   string.Equals(currentApplication ?? string.Empty, requestedApplicationName ?? string.Empty, StringComparison.Ordinal) &&
+                   currentOrdinal == requestedOrdinal;
+        }
+
+        static bool PathsEqual(string left, string right)
+        {
+            return string.Equals((left ?? string.Empty).Replace('/', '\\').TrimEnd('\\'),
+                (right ?? string.Empty).Replace('/', '\\').TrimEnd('\\'), StringComparison.OrdinalIgnoreCase);
+        }
+
+        internal bool TryRefreshMatchesCurrentProfile(BridgeDisplaySnapshot snapshot, uint requestedDisplayOrdinal, out string error)
+        {
+            error = string.Empty;
+            if (state != WorkerState.Ready || handle == IntPtr.Zero) return true;
+            return TryMatchRefreshedDisplay(Profile, displayOrdinal, requestedDisplayOrdinal, snapshot, out error);
+        }
+
+        internal static bool IsConnectedSnapshotConfigurationCurrent(bool requiresReconnect,
+            string snapshotRuntimePath, string snapshotApplicationName, uint snapshotDisplayOrdinal,
+            string currentRuntimePath, string currentApplicationName, uint currentDisplayOrdinal)
+        {
+            return !requiresReconnect &&
+                   string.Equals(snapshotRuntimePath ?? string.Empty, currentRuntimePath ?? string.Empty, StringComparison.Ordinal) &&
+                   string.Equals(snapshotApplicationName ?? string.Empty, currentApplicationName ?? string.Empty, StringComparison.Ordinal) &&
+                   snapshotDisplayOrdinal == currentDisplayOrdinal;
+        }
+
+        internal static bool TryMatchRefreshedDisplay(BridgeDisplayProfile activeProfile, uint currentDisplayOrdinal,
+            uint requestedDisplayOrdinal, BridgeDisplaySnapshot snapshot, out string error)
+        {
+            error = string.Empty;
+            if (currentDisplayOrdinal != requestedDisplayOrdinal)
+            {
+                error = "The selected display ordinal changed during refresh. Stop and reconnect before rendering.";
+                return false;
+            }
+            if (snapshot == null || !snapshot.TryGetDisplay(requestedDisplayOrdinal, out BridgeDisplayProfile refreshed))
+            {
+                error = "The selected Looking Glass is absent from the latest display refresh. Stop and reconnect to refresh its profile.";
+                return false;
+            }
+            if (!ProfilesEquivalent(activeProfile, refreshed))
+            {
+                error = "The selected Looking Glass profile changed during display refresh. Stop and reconnect before rendering again.";
+                return false;
+            }
+            return true;
+        }
+
+        static bool ProfilesEquivalent(BridgeDisplayProfile left, BridgeDisplayProfile right)
+        {
+            return left.IsValid && right.IsValid && left.DisplayIndex == right.DisplayIndex && left.Width == right.Width &&
+                   left.Height == right.Height && NearlyEqual(left.Aspect, right.Aspect) && NearlyEqual(left.Viewcone, right.Viewcone) &&
+                   left.QuiltWidth == right.QuiltWidth && left.QuiltHeight == right.QuiltHeight &&
+                   left.Columns == right.Columns && left.Rows == right.Rows &&
+                   left.HasPhysicalCalibration == right.HasPhysicalCalibration &&
+                   (!left.HasPhysicalCalibration || NearlyEqual(left.PhysicalWidthMillimeters, right.PhysicalWidthMillimeters) &&
+                    NearlyEqual(left.PhysicalHeightMillimeters, right.PhysicalHeightMillimeters) && NearlyEqual(left.CalibrationDpi, right.CalibrationDpi));
+        }
+
+        static bool NearlyEqual(float left, float right) => Mathf.Abs(left - right) <= 0.0001f;
 
         public bool TryBegin()
         {
@@ -151,6 +421,11 @@ namespace ViewWeave
         bool TryBeginCore(BridgeGraphicsBackendRoute route)
         {
             if (!isActiveAndEnabled) return Fail("Bridge worker must be active before begin");
+            if (BridgeDisplayDiscovery.IsBusy)
+            {
+                LastError = "Bridge display metadata is still refreshing or cleaning up. Wait before starting a worker.";
+                return false;
+            }
             if (handle != IntPtr.Zero || state == WorkerState.Connecting || state == WorkerState.Ready || state == WorkerState.Closing)
             {
                 LastError = "Bridge worker is already active";
@@ -176,6 +451,7 @@ namespace ViewWeave
             physicalDisplay = new BridgeWorkerNative.PhysicalDisplayInfoV1 { structSize = (uint)System.Runtime.InteropServices.Marshal.SizeOf(typeof(BridgeWorkerNative.PhysicalDisplayInfoV1)), version = 1 };
             physicalDisplayRead = false;
             Profile = default;
+            RequiresReconnect = false;
             Submissions = 0;
             SubmissionAttempts = 0;
             transferGraphicsFormatName = string.Empty;
@@ -183,6 +459,7 @@ namespace ViewWeave
             transferSrgbDiagnostic = false;
             transferAntiAliasingDiagnostic = 0;
             transferDimensionName = string.Empty;
+            nativeModuleIdentity = default;
 #if UNITY_EDITOR
             if (!BridgeNativeImageGuard.TryInspectEditorProcess(out string imageGuardError)) return Fail(imageGuardError);
 #endif
@@ -201,10 +478,13 @@ namespace ViewWeave
             catch (EntryPointNotFoundException) { return Fail("Bridge worker event ID ABI entry point is missing"); }
             catch (Exception error) { return Fail(Sanitize(error.Message)); }
 #if UNITY_EDITOR
-            if (!BridgeNativeImageGuard.TryInspectEditorProcess(out imageGuardError)) return Fail(imageGuardError);
+            if (!BridgeNativeImageGuard.TryCaptureCurrentIdentity(out nativeModuleIdentity, out imageGuardError)) return Fail(imageGuardError);
 #endif
             try
             {
+#if UNITY_EDITOR
+                if (!BridgeNativeImageGuard.TryValidateOwnerIdentity(nativeModuleIdentity, out imageGuardError)) return Fail(imageGuardError);
+#endif
                 handle = BridgeWorkerNative.lkg_worker_begin(runtimePath, applicationName, displayOrdinal, IntPtr.Zero);
             }
             catch (DllNotFoundException) { return Fail("Bridge worker native library is missing"); }
@@ -220,6 +500,15 @@ namespace ViewWeave
         public void Poll()
         {
             if (handle == IntPtr.Zero || state == WorkerState.Closed) return;
+#if UNITY_EDITOR
+            if (!BridgeNativeImageGuard.TryValidateOwnerIdentity(nativeModuleIdentity, out string imageGuardError))
+            {
+                if (BridgeNativeImageGuard.IsValidationPending) return;
+                LastError = imageGuardError;
+                TransferOwnedResourcesToReaper(true);
+                return;
+            }
+#endif
             try
             {
                 if (BridgeWorkerNative.lkg_worker_poll(handle, out status) != 0)
@@ -323,6 +612,22 @@ namespace ViewWeave
             QuiltTexture = quiltTexture;
             Layout = layout;
             if (state != WorkerState.Ready || handle == IntPtr.Zero) return false;
+            if (RequiresReconnect)
+            {
+                LastError = string.IsNullOrEmpty(DisplayRefreshStatus)
+                    ? "The selected Looking Glass profile changed. Stop and reconnect before rendering."
+                    : DisplayRefreshStatus;
+                return false;
+            }
+#if UNITY_EDITOR
+            if (!BridgeNativeImageGuard.TryValidateOwnerIdentity(nativeModuleIdentity, out string imageGuardError))
+            {
+                if (BridgeNativeImageGuard.IsValidationPending) return false;
+                LastError = imageGuardError;
+                Dispose();
+                return false;
+            }
+#endif
             if (quiltTexture == null || layout.Columns <= 0 || layout.Rows <= 0 || layout.ViewCount != layout.Columns * layout.Rows)
             {
                 LastError = "Bridge worker requires a complete quilt grid";
@@ -363,8 +668,18 @@ namespace ViewWeave
             disposalInProgress = true;
             try
             {
+                NotifyDisplayRefreshCancelled("Connected display refresh was cancelled because its Bridge output stopped.");
+                BridgeDisplayDiscovery.Cancel(this);
                 if (handle == IntPtr.Zero) { ReleaseOwnedResources(); return; }
                 bool needsClose = false;
+#if UNITY_EDITOR
+                if (!BridgeNativeImageGuard.TryValidateOwnerIdentity(nativeModuleIdentity, out string imageGuardError))
+                {
+                    LastError = imageGuardError;
+                    TransferOwnedResourcesToReaper(true);
+                    return;
+                }
+#endif
                 try
                 {
                     int closeResult = BridgeWorkerNative.lkg_worker_close(handle);
@@ -381,6 +696,14 @@ namespace ViewWeave
             finally { disposalInProgress = false; }
         }
 
+        void NotifyDisplayRefreshCancelled(string reason)
+        {
+            long token = LatestDisplayRefreshToken;
+            if (token == 0 || ConnectedDisplayRefreshCompleted == null) return;
+            try { ConnectedDisplayRefreshCompleted.Invoke(token, null, reason); }
+            catch { }
+        }
+
         void TransferOwnedResourcesToReaper(bool needsClose)
         {
 #if UNITY_EDITOR
@@ -394,7 +717,7 @@ namespace ViewWeave
         }
 
 #if UNITY_EDITOR
-        void TransferOwnedResourcesToReaper(bool needsClose, Action<IntPtr, RenderTexture, CommandBuffer, bool, BridgeEditorPreviewRetentionRecord> enqueue,
+        void TransferOwnedResourcesToReaper(bool needsClose, Action<IntPtr, RenderTexture, CommandBuffer, bool, BridgeNativeModuleIdentity, BridgeEditorPreviewRetentionRecord> enqueue,
             BridgeEditorPreviewRetentionRecord previewOwner)
         {
             if (enqueue == null) throw new ArgumentNullException(nameof(enqueue));
@@ -408,12 +731,13 @@ namespace ViewWeave
             transferSrgb = false;
             command = null;
             state = WorkerState.Closed;
-            enqueue(ownedHandle, ownedTexture, ownedCommand, needsClose, previewOwner);
+            enqueue(ownedHandle, ownedTexture, ownedCommand, needsClose, nativeModuleIdentity, previewOwner);
             RecordReaperHandoff(sessionGeneration);
+            BridgeDisplayDiscovery.NotifyWorkerCleanupHandedOff(this, ownedHandle, sessionGeneration);
         }
 #endif
 
-        internal void TransferOwnedResourcesToReaper(bool needsClose, Action<IntPtr, RenderTexture, CommandBuffer, bool> enqueue)
+        internal void TransferOwnedResourcesToReaper(bool needsClose, Action<IntPtr, RenderTexture, CommandBuffer, bool, BridgeNativeModuleIdentity> enqueue)
         {
             if (enqueue == null) throw new ArgumentNullException(nameof(enqueue));
             if (handle == IntPtr.Zero) return;
@@ -426,8 +750,9 @@ namespace ViewWeave
             transferSrgb = false;
             command = null;
             state = WorkerState.Closed;
-            enqueue(ownedHandle, ownedTexture, ownedCommand, needsClose);
+            enqueue(ownedHandle, ownedTexture, ownedCommand, needsClose, nativeModuleIdentity);
             RecordReaperHandoff(sessionGeneration);
+            BridgeDisplayDiscovery.NotifyWorkerCleanupHandedOff(this, ownedHandle, sessionGeneration);
         }
 
         void OnDisable() { Dispose(); }

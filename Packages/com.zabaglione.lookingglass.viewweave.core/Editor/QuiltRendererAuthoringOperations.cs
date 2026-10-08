@@ -69,47 +69,46 @@ namespace ViewWeave.Editor
             Transform framingTransform = framingCamera.transform;
             if (!TryProjectForwardDistance(framingTransform.position, framingTransform.rotation * Vector3.forward, worldPoint, out distance))
                 return false;
-            if (renderer.physicalFraming != null && renderer.physicalFraming.enabled)
-                return TrySetEffectiveFocusDistance(renderer, distance);
-            if (Mathf.Abs(renderer.settings.cameraDistance - distance) < 0.000001f)
-                return true;
-
-            Undo.RecordObject(renderer, "Set ViewWeave Focus From Selection");
-            renderer.settings.cameraDistance = distance;
-            EditorUtility.SetDirty(renderer);
-            PrefabUtility.RecordPrefabInstancePropertyModifications(renderer);
-            return true;
+            return TrySetEffectiveFocusDistance(renderer, distance);
         }
 
         public static bool TrySetEffectiveFocusDistance(QuiltRenderer renderer, float distance)
         {
-            if (renderer == null || renderer.settings == null || renderer.physicalFraming == null || !renderer.physicalFraming.enabled ||
-                !TryGetEditableFramingCamera(renderer, out _) || !IsFinite(distance) || distance <= MinimumFocusDistance ||
-                !renderer.physicalFraming.TryResolve(60f, out _, out _, out _))
-                return false;
-            float apertureHeight = renderer.physicalFraming.ApertureHeightInUnityUnits;
-            float fieldOfView = 2f * Mathf.Atan(apertureHeight / (2f * distance)) * Mathf.Rad2Deg;
-            if (!IsFinite(fieldOfView) || fieldOfView <= 0.01f || fieldOfView >= 178f) return false;
-            Camera fieldOfViewCamera = renderer.referenceCamera != null && renderer.followReferenceFieldOfView ? renderer.referenceCamera : null;
+            if (renderer == null || !IsFinite(distance) || distance <= MinimumFocusDistance ||
+                !TryGetEditableFramingCamera(renderer, out _)) return false;
+            if (!renderer.TryGetFraming(out QuiltCameraFraming current) ||
+                !renderer.TryValidateFocusDistance(distance, out _)) return false;
+            bool physical = current.PhysicalFramingEnabled;
+            Camera fieldOfViewCamera = physical && renderer.referenceCamera != null && renderer.followReferenceFieldOfView
+                ? renderer.referenceCamera
+                : null;
+            float previousDistance = physical && renderer.TryGetEffectiveSettings(out QuiltSettings currentEffective, out _)
+                ? currentEffective.cameraDistance
+                : current.FocusDistance;
+            if (Mathf.Abs(previousDistance - distance) < 0.000001f) return true;
+
+            if (fieldOfViewCamera != null)
+                Undo.RecordObject(fieldOfViewCamera, "Set ViewWeave Physical Focus");
+            else
+                Undo.RecordObject(renderer, "Set ViewWeave Focus Distance");
+            if (!renderer.TrySetFocusDistance(distance, out _)) return false;
             if (fieldOfViewCamera != null)
             {
-                if (Mathf.Abs(fieldOfViewCamera.fieldOfView - fieldOfView) < 0.00001f) return true;
-                Undo.RecordObject(fieldOfViewCamera, "Set ViewWeave Physical Focus");
-                fieldOfViewCamera.fieldOfView = fieldOfView;
                 EditorUtility.SetDirty(fieldOfViewCamera);
                 PrefabUtility.RecordPrefabInstancePropertyModifications(fieldOfViewCamera);
-                return true;
             }
-            if (Mathf.Abs(renderer.settings.fieldOfView - fieldOfView) < 0.00001f) return true;
-            Undo.RecordObject(renderer, "Set ViewWeave Physical Focus");
-            renderer.settings.fieldOfView = fieldOfView;
-            EditorUtility.SetDirty(renderer);
-            PrefabUtility.RecordPrefabInstancePropertyModifications(renderer);
+            else
+            {
+                EditorUtility.SetDirty(renderer);
+                PrefabUtility.RecordPrefabInstancePropertyModifications(renderer);
+            }
             return true;
         }
 
         public static bool TryOrbitEffectiveCamera(QuiltRenderer renderer, float horizontalDegrees, float verticalDegrees)
         {
+            if (renderer == null || !renderer.TryCheckMutation(QuiltRendererMutationKind.Framing, out _))
+                return false;
             if (!TryGetEditableFramingCamera(renderer, out Camera framingCamera))
                 return false;
             Transform framingTransform = framingCamera.transform;
@@ -211,7 +210,7 @@ namespace ViewWeave.Editor
         static bool TryGetEditableFramingCamera(QuiltRenderer renderer, out Camera framingCamera)
         {
             framingCamera = null;
-            if (EditorApplication.isPlaying || EditorApplication.isPlayingOrWillChangePlaymode || renderer == null || renderer.settings == null || renderer.sourceCamera == null)
+            if (renderer == null || renderer.settings == null || renderer.sourceCamera == null)
                 return false;
             if (EditorUtility.IsPersistent(renderer.gameObject) ||
                 !TryGetSceneObjectCenter(renderer, renderer.sourceCamera, out _, out _))

@@ -50,6 +50,7 @@ using InitializeFn = Bool (*)(
 using UninitializeFn = Bool (*)();
 using VersionFn = Bool (*)(unsigned long*, unsigned long*, unsigned long*, int*, wchar_t*);
 using GetDisplaysFn = Bool (*)(int*, unsigned long*);
+static constexpr int kMaximumBridgeDisplays = 256;
 using GetDimensionsFn = Bool (*)(unsigned long, unsigned long*, unsigned long*);
 using GetViewconeFn = Bool (*)(unsigned long, float*);
 using GetDefaultQuiltFn = Bool (*)(unsigned long, float*, int*, int*, int*, int*);
@@ -809,8 +810,12 @@ LKG_EXPORT int32_t lkg_bridge_get_display(uint32_t ordinal, LkgBridgeDisplayInfo
     if (direct_call_rejected()) return -6;
     if (!has_sdk_ownership() || !g_initialized) return -7;
     if (!g_get_displays || !info) return -1;
-    int number = 0; if (!g_get_displays(&number, nullptr) || ordinal >= static_cast<uint32_t>(number)) return -2;
-    std::vector<unsigned long> ids(static_cast<size_t>(number)); if (!g_get_displays(&number, ids.data())) return -3;
+    int number = 0;
+    if (!g_get_displays(&number, nullptr) || number <= 0 || number > kMaximumBridgeDisplays || ordinal >= static_cast<uint32_t>(number)) return -2;
+    const int capacity = number;
+    std::vector<unsigned long> ids(static_cast<size_t>(capacity));
+    number = capacity;
+    if (!g_get_displays(&number, ids.data()) || number <= 0 || number > capacity || ordinal >= static_cast<uint32_t>(number)) return -3;
     const unsigned long id = ids[ordinal]; std::memset(info, 0, sizeof(*info)); info->index = static_cast<uint32_t>(id);
     if (g_get_dimensions) { unsigned long width = 0, height = 0; if (g_get_dimensions(id, &width, &height)) { info->width = static_cast<uint32_t>(width); info->height = static_cast<uint32_t>(height); } }
     if (g_get_viewcone) g_get_viewcone(id, &info->viewcone);

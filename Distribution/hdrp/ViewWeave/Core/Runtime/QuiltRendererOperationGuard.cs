@@ -62,6 +62,11 @@ namespace ViewWeave
                 return false;
             }
 
+            QuiltRendererMutationKind mutationKind = kind == QuiltRendererOperationKind.Recording
+                ? QuiltRendererMutationKind.Recording
+                : QuiltRendererMutationKind.Playback;
+            if (!QuiltRendererMutationPolicy.TryCheck(renderer, mutationKind, out error)) return false;
+
             lease = new QuiltRendererOperationLease(renderer, kind);
             activeLeases.Add(lease);
             return true;

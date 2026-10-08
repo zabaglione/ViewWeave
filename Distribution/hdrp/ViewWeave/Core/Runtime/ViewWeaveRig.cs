@@ -20,23 +20,100 @@ namespace ViewWeave
             get => autoRender;
             set
             {
-                if (value && !ValidateRig(out string error)) throw new InvalidOperationException("cannot enable autoRender: " + error);
+                if (value)
+                {
+                    QuiltRenderer renderer = Renderer != null ? Renderer : GetComponent<QuiltRenderer>();
+                    if (!QuiltRendererMutationPolicy.TryCheck(renderer,
+                            new QuiltRendererMutationRequest(QuiltRendererMutationKind.AutoRender, true), out string mutationError))
+                        throw new InvalidOperationException("cannot enable autoRender: " + mutationError);
+                    if (!ValidateRig(out string error)) throw new InvalidOperationException("cannot enable autoRender: " + error);
+                }
                 autoRender = value;
                 EnsureRenderer().autoRender = value;
             }
         }
 
-        void Awake() => ConfigureComponents();
-        void OnValidate() { if (!Application.isPlaying) ConfigureComponents(); }
+        internal bool SetAutoRenderForBridgeOwner(bool value, object owner, out string error)
+        {
+            error = string.Empty;
+            QuiltRenderer renderer = Renderer != null ? Renderer : GetComponent<QuiltRenderer>();
+            if (!QuiltRendererMutationPolicy.IsOwnerRegistered(renderer, owner))
+            {
+                error = "The Bridge auto-render owner is not registered for this renderer.";
+                return false;
+            }
+            if (value && !ValidateRig(out error)) return false;
+            autoRender = value;
+            EnsureRenderer().autoRender = value;
+            return true;
+        }
+
+        void Awake()
+        {
+            Renderer = GetComponent<QuiltRenderer>();
+            if (Renderer != null && Renderer.HasMutationOwnerRequirement) return;
+#if UNITY_EDITOR
+            if (Renderer != null && Renderer.HasEditorPreviewRetentionOwner) return;
+#endif
+            ConfigureComponents();
+        }
+        void OnValidate()
+        {
+            if (Application.isPlaying) return;
+#if UNITY_EDITOR
+            if (UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode) return;
+#endif
+            QuiltRenderer existingRenderer = Renderer != null ? Renderer : GetComponent<QuiltRenderer>();
+            if (existingRenderer != null && existingRenderer.HasMutationOwnerRequirement) return;
+#if UNITY_EDITOR
+            if (existingRenderer != null && existingRenderer.HasEditorPreviewRetentionOwner) return;
+#endif
+            ConfigureComponents();
+        }
+
+        internal bool HasOutputBinding(MonoBehaviour output)
+        {
+            QuiltRenderer renderer = Renderer != null ? Renderer : GetComponent<QuiltRenderer>();
+            return outputBehaviour == output && renderer != null && renderer.OutputBehaviour == output;
+        }
 
         public void ApplyProfile(QuiltQualityProfile value)
         {
-            value.Validate(); profile = QuiltQualityProfileData.From(value); EnsureRenderer(); value.ApplyTo(Renderer.settings);
+            if (!QuiltRendererMutationPolicy.TryCheck(Renderer != null ? Renderer : GetComponent<QuiltRenderer>(),
+                    QuiltRendererMutationKind.Structural, out string error))
+                throw new InvalidOperationException("Cannot apply a profile while the renderer is owned: " + error);
+            ApplyProfileCore(value);
+        }
+
+        internal bool ApplyProfileForBridgeOwner(QuiltQualityProfile value, object owner, out string error)
+        {
+            error = string.Empty;
+            QuiltRenderer renderer = Renderer != null ? Renderer : GetComponent<QuiltRenderer>();
+            if (!QuiltRendererMutationPolicy.IsOwnerRegistered(renderer, owner))
+            {
+                error = "The Bridge profile owner is not registered for this renderer.";
+                return false;
+            }
+            try { ApplyProfileCore(value); return true; }
+            catch (Exception exception) { error = exception.Message; return false; }
+        }
+
+        void ApplyProfileCore(QuiltQualityProfile value)
+        {
+            value.Validate();
+            profile = QuiltQualityProfileData.From(value);
+            EnsureRenderer();
+            value.ApplyTo(Renderer.settings);
         }
 
         public bool ConfigureComponents()
         {
             Renderer = EnsureRenderer();
+            if (!QuiltRendererMutationPolicy.TryCheck(Renderer, QuiltRendererMutationKind.Structural, out string mutationError))
+            {
+                Fail("rig components cannot be reconfigured while the renderer is owned: " + mutationError);
+                return false;
+            }
             Camera camera = GetComponent<Camera>();
             if (Renderer.sourceCamera != null && Renderer.sourceCamera != camera) { Fail("sourceCamera must belong to the ViewWeaveRig GameObject"); return false; }
             if (Renderer.OutputBehaviour != null && Renderer.OutputBehaviour != outputBehaviour) { Fail("existing output conflicts with the rig output"); return false; }
@@ -49,8 +126,61 @@ namespace ViewWeave
             return true;
         }
 
-        public void SetOutput(MonoBehaviour output) { if (output == null) { outputBehaviour = null; EnsureRenderer().OutputBehaviour = null; return; } if (!TrySetOutput(output)) throw new ArgumentException("output must implement IQuiltOutput", nameof(output)); outputBehaviour = output; }
-        public void SetGuard(MonoBehaviour guard) { if (guard == null) { guardBehaviour = null; EnsureRenderer().GuardBehaviour = null; return; } if (!TrySetGuard(guard)) throw new ArgumentException("guard must implement IQuiltRenderGuard and match the rig camera", nameof(guard)); guardBehaviour = guard; }
+        public void SetOutput(MonoBehaviour output)
+        {
+            if (!QuiltRendererMutationPolicy.TryCheck(Renderer != null ? Renderer : GetComponent<QuiltRenderer>(),
+                    QuiltRendererMutationKind.Structural, out string error))
+                throw new InvalidOperationException("Cannot change the Rig output while the renderer is owned: " + error);
+            if (output == null) { outputBehaviour = null; EnsureRenderer().OutputBehaviour = null; return; }
+            if (!TrySetOutput(output)) throw new ArgumentException("output must implement IQuiltOutput", nameof(output));
+            outputBehaviour = output;
+        }
+
+        public void SetGuard(MonoBehaviour guard)
+        {
+            if (!QuiltRendererMutationPolicy.TryCheck(Renderer != null ? Renderer : GetComponent<QuiltRenderer>(),
+                    QuiltRendererMutationKind.Structural, out string error))
+                throw new InvalidOperationException("Cannot change the Rig render guard while the renderer is owned: " + error);
+            if (guard == null) { guardBehaviour = null; EnsureRenderer().GuardBehaviour = null; return; }
+            if (!TrySetGuard(guard)) throw new ArgumentException("guard must implement IQuiltRenderGuard and match the rig camera", nameof(guard));
+            guardBehaviour = guard;
+        }
+
+        internal bool SetOutputForBridgeOwner(MonoBehaviour output, object owner, out string error)
+        {
+            error = string.Empty;
+            if (!QuiltRendererMutationPolicy.IsOwnerRegistered(Renderer != null ? Renderer : GetComponent<QuiltRenderer>(), owner))
+            {
+                error = "The Bridge output owner is not registered for this renderer.";
+                return false;
+            }
+            if (output != null && !(output is IQuiltOutput))
+            {
+                error = "Output must implement IQuiltOutput.";
+                return false;
+            }
+            outputBehaviour = output;
+            EnsureRenderer().OutputBehaviour = output;
+            return true;
+        }
+
+        internal bool SetGuardForBridgeOwner(MonoBehaviour guard, object owner, out string error)
+        {
+            error = string.Empty;
+            if (!QuiltRendererMutationPolicy.IsOwnerRegistered(Renderer != null ? Renderer : GetComponent<QuiltRenderer>(), owner))
+            {
+                error = "The Bridge render-guard owner is not registered for this renderer.";
+                return false;
+            }
+            if (guard != null && (!(guard is IQuiltRenderGuard) || guard.GetComponent<Camera>() != GetComponent<Camera>()))
+            {
+                error = "Guard must implement IQuiltRenderGuard and match the rig camera.";
+                return false;
+            }
+            guardBehaviour = guard;
+            EnsureRenderer().GuardBehaviour = guard;
+            return true;
+        }
         public bool ValidateRig(out string error)
         {
             try

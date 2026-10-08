@@ -1,5 +1,8 @@
 #include <windows.h>
 
+static int g_initialDisplayCount = 1;
+static int g_populatedDisplayCount = 1;
+
 extern "C" __declspec(dllexport) bool initialize_bridge(const wchar_t*) { return true; }
 extern "C" __declspec(dllexport) bool uninitialize_bridge() { return true; }
 extern "C" __declspec(dllexport) bool get_bridge_version(unsigned long* major, unsigned long* minor, unsigned long* build, int* postfix, wchar_t*) {
@@ -9,7 +12,22 @@ extern "C" __declspec(dllexport) bool get_bridge_version(unsigned long* major, u
     if (postfix) *postfix = 0;
     return true;
 }
-extern "C" __declspec(dllexport) bool get_displays(int* count, unsigned long*) { if (count) *count = 1; return true; }
+extern "C" __declspec(dllexport) void set_fake_display_counts(int initialCount, int populatedCount) {
+    g_initialDisplayCount = initialCount;
+    g_populatedDisplayCount = populatedCount;
+}
+extern "C" __declspec(dllexport) bool get_displays(int* count, unsigned long* ids) {
+    if (!count) return false;
+    if (!ids) {
+        *count = g_initialDisplayCount;
+        return true;
+    }
+    const int capacity = *count;
+    const int actual = g_populatedDisplayCount;
+    *count = actual;
+    for (int index = 0; index < actual && index < capacity; ++index) ids[index] = static_cast<unsigned long>(100 + index);
+    return true;
+}
 extern "C" __declspec(dllexport) bool get_dimensions_for_display(unsigned long, unsigned long* width, unsigned long* height) { if (width) *width = 1; if (height) *height = 1; return true; }
 extern "C" __declspec(dllexport) bool get_viewcone_for_display(unsigned long, float* value) { if (value) *value = 40.0f; return true; }
 extern "C" __declspec(dllexport) bool get_default_quilt_settings_for_display(unsigned long, float*, int*, int*, int*, int*) { return true; }

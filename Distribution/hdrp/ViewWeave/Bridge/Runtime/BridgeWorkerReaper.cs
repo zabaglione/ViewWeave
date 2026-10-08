@@ -105,19 +105,21 @@ namespace ViewWeave
             }
         }
 
-        internal static void Enqueue(IntPtr handle, RenderTexture texture, CommandBuffer command, bool needsClose)
+        internal static void Enqueue(IntPtr handle, RenderTexture texture, CommandBuffer command, bool needsClose, BridgeNativeModuleIdentity moduleIdentity)
         {
-            EnqueueCore(handle, texture, command, needsClose, null);
+            EnqueueCore(handle, texture, command, needsClose, moduleIdentity, null);
         }
 
 #if UNITY_EDITOR
-        internal static void EnqueueEditorPreview(IntPtr handle, RenderTexture texture, CommandBuffer command, bool needsClose, BridgeEditorPreviewRetentionRecord previewOwner)
+        internal static void EnqueueEditorPreview(IntPtr handle, RenderTexture texture, CommandBuffer command, bool needsClose,
+            BridgeNativeModuleIdentity moduleIdentity, BridgeEditorPreviewRetentionRecord previewOwner)
         {
-            EnqueueCore(handle, texture, command, needsClose, previewOwner);
+            EnqueueCore(handle, texture, command, needsClose, moduleIdentity, previewOwner);
         }
 #endif
 
-        static void EnqueueCore(IntPtr handle, RenderTexture texture, CommandBuffer command, bool needsClose, BridgeEditorPreviewRetentionRecord previewOwner)
+        static void EnqueueCore(IntPtr handle, RenderTexture texture, CommandBuffer command, bool needsClose,
+            BridgeNativeModuleIdentity moduleIdentity, BridgeEditorPreviewRetentionRecord previewOwner)
         {
             if (handle == IntPtr.Zero) return;
             BridgeWorkerReaper reaper = Ensure();
@@ -135,7 +137,7 @@ namespace ViewWeave
                 }
             }
             BridgeWorkerRecoveryRecord record = FindRecord(handle.ToInt64());
-            if (record == null) record = BridgeWorkerRecoveryRecord.Create(handle, texture, needsClose, ++nextGeneration);
+            if (record == null) record = BridgeWorkerRecoveryRecord.Create(handle, texture, needsClose, ++nextGeneration, moduleIdentity);
             else record.NeedsClose |= needsClose;
 #if UNITY_EDITOR
             if (previewOwner != null && !record.AttachEditorPreviewOwner(previewOwner))
@@ -146,7 +148,8 @@ namespace ViewWeave
             reaper.RestoreRecords();
         }
 
-        internal static void EnqueueLegacySessionClose(ulong session, RenderTexture texture, CommandBuffer command, bool closeQueued)
+        internal static void EnqueueLegacySessionClose(ulong session, RenderTexture texture, CommandBuffer command, bool closeQueued,
+            BridgeNativeModuleIdentity moduleIdentity)
         {
             if (session == 0) return;
             BridgeWorkerReaper reaper = Ensure();
@@ -167,7 +170,7 @@ namespace ViewWeave
                     return;
                 }
             }
-            BridgeWorkerRecoveryRecord record = BridgeWorkerRecoveryRecord.CreateLegacy(session, texture, closeQueued, ++nextGeneration);
+            BridgeWorkerRecoveryRecord record = BridgeWorkerRecoveryRecord.CreateLegacy(session, texture, closeQueued, ++nextGeneration, moduleIdentity);
             reaper.leases.Add(new Lease { record = record, command = command });
             reaper.RestoreRecords();
         }
@@ -248,6 +251,12 @@ namespace ViewWeave
             {
                 Lease lease = leases[i];
                 if (lease.record == null) { leases.RemoveAt(i); continue; }
+                if (!BridgeNativeImageGuard.TryValidateOwnerIdentity(lease.record.NativeModuleIdentity, out string imageGuardError))
+                {
+                    lease.record.SetDiagnostic(imageGuardError);
+                    Warn(lease, imageGuardError);
+                    continue;
+                }
                 try
                 {
                     if (lease.record.IsLegacySession && !lease.record.NativeReleased)

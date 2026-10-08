@@ -31,6 +31,37 @@ namespace ViewWeave.BridgeSessionValidation
         }
 
         [Test]
+        public void AutostartRemainsPendingWhileConnectedDisplayRefreshOwnsNativeMetadata()
+        {
+            GameObject host = CreateHost(false);
+            FieldInfo pendingStart = typeof(ViewWeaveBridgeSession).GetField("pendingStart", BindingFlags.Instance | BindingFlags.NonPublic);
+            FieldInfo recoveryPending = typeof(BridgeDisplayDiscovery).GetField("recoveryPending", BindingFlags.Static | BindingFlags.NonPublic);
+            MethodInfo update = typeof(ViewWeaveBridgeSession).GetMethod("Update", BindingFlags.Instance | BindingFlags.NonPublic);
+            try
+            {
+                Assert.IsNotNull(pendingStart);
+                Assert.IsNotNull(recoveryPending);
+                Assert.IsNotNull(update);
+                ViewWeaveBridgeSession session = host.GetComponent<ViewWeaveBridgeSession>();
+                host.GetComponent<BridgeWorkerQuiltOutput>().initializeOnEnable = false;
+                host.SetActive(true);
+                pendingStart.SetValue(session, true);
+                recoveryPending.SetValue(null, true);
+
+                update.Invoke(session, null);
+
+                Assert.IsTrue((bool)pendingStart.GetValue(session), "Autostart must wait until metadata cleanup releases SDK ownership.");
+                Assert.AreEqual(ViewWeaveBridgeSession.SessionState.Idle, session.State);
+                Assert.IsTrue(BridgeDisplayDiscovery.IsBusy);
+            }
+            finally
+            {
+                recoveryPending?.SetValue(null, false);
+                Object.DestroyImmediate(host);
+            }
+        }
+
+        [Test]
         public void IdleQualityUpdateIsPersistedWithoutStartingWorker()
         {
             GameObject host = CreateHost(false);
@@ -128,6 +159,7 @@ namespace ViewWeave.BridgeSessionValidation
                 rigAutoRender.SetValue(rig, true);
                 outputState.SetValue(output, BridgeWorkerQuiltOutput.WorkerState.Connecting);
                 sessionState.SetValue(session, ViewWeaveBridgeSession.SessionState.Connecting);
+                RegisterSyntheticSessionOwner(session);
                 connectingSince.SetValue(session, Time.realtimeSinceStartup - 11f);
                 update.Invoke(session, null);
                 Assert.AreEqual(ViewWeaveBridgeSession.SessionState.Fault, session.State);
@@ -168,6 +200,7 @@ namespace ViewWeave.BridgeSessionValidation
                 outputState.SetValue(output, BridgeWorkerQuiltOutput.WorkerState.Ready);
                 submissions.SetValue(output, 10u);
                 sessionState.SetValue(session, ViewWeaveBridgeSession.SessionState.Rendering);
+                RegisterSyntheticSessionOwner(session);
                 watchdogArmed.SetValue(session, true);
                 watchdogSubmissions.SetValue(session, 10u);
                 watchdogCompleted.SetValue(session, 0u);
@@ -203,6 +236,7 @@ namespace ViewWeave.BridgeSessionValidation
                 typeof(ViewWeaveBridgeSession).GetField("completionProgressSince", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(session, Time.realtimeSinceStartup - 11f);
                 typeof(ViewWeaveRig).GetField("autoRender", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(rig, true);
                 typeof(ViewWeaveBridgeSession).GetField("profileApplied", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(session, true);
+                RegisterSyntheticSessionOwner(session);
                 typeof(ViewWeaveBridgeSession).GetMethod("Update", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(session, null);
                 Assert.AreEqual(ViewWeaveBridgeSession.SessionState.Rendering, session.State);
                 Assert.IsTrue(rig.AutoRender);
@@ -239,6 +273,7 @@ namespace ViewWeave.BridgeSessionValidation
                 outputState.SetValue(output, BridgeWorkerQuiltOutput.WorkerState.Ready);
                 submissions.SetValue(output, 5u);
                 sessionState.SetValue(session, ViewWeaveBridgeSession.SessionState.Rendering);
+                RegisterSyntheticSessionOwner(session);
                 typeof(ViewWeaveBridgeSession).GetField("profileApplied", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(session, true);
                 armed.SetValue(session, true); completedBaseline.SetValue(session, 3u); since.SetValue(session, Time.realtimeSinceStartup - 11f);
                 auto.SetValue(rig, true); float beforeRefresh = Time.realtimeSinceStartup; update.Invoke(session, null);
@@ -263,6 +298,72 @@ namespace ViewWeave.BridgeSessionValidation
         public void InvalidProfilePresetIsRejectedBeforeProfileUse()
         {
             Assert.Throws<System.ArgumentOutOfRangeException>(() => ViewWeaveBridgeSession.CreateQualityProfile(default, (QuiltQualityPreset)99));
+        }
+
+        [Test]
+        public void QualityPresetKeepsPreviewBalancedAndNativeDimensionsDistinct()
+        {
+            var native = new BridgeNative.DisplayInfo
+            {
+                index = 0, width = 3840, height = 2160, aspect = 16f / 9f, viewcone = 40f,
+                quiltWidth = 4096, quiltHeight = 4096, quiltColumns = 8, quiltRows = 6
+            };
+            var profile = new BridgeDisplayProfile(native);
+            QuiltQualityProfile preview = ViewWeaveBridgeSession.CreateQualityProfile(profile, QuiltQualityPreset.Preview);
+            QuiltQualityProfile balanced = ViewWeaveBridgeSession.CreateQualityProfile(profile, QuiltQualityPreset.Balanced);
+            QuiltQualityProfile nativeProfile = ViewWeaveBridgeSession.CreateQualityProfile(profile, QuiltQualityPreset.Native);
+
+            Assert.AreEqual(1024, preview.QuiltWidth);
+            Assert.AreEqual(2048, balanced.QuiltWidth);
+            Assert.AreEqual(4096, nativeProfile.QuiltWidth);
+            Assert.AreEqual(48, preview.Views);
+            Assert.AreEqual(48, balanced.Views);
+            Assert.AreEqual(48, nativeProfile.Views);
+        }
+
+        [Test]
+        public void ActiveDisplayRefreshRequiresTheSameSelectedProfile()
+        {
+            BridgeDisplayProfile active = MakeDisplayProfile(16f / 9f, 50f);
+            var unchanged = new BridgeDisplaySnapshot(4, new uint[] { 2 }, new[] { active });
+            Assert.IsTrue(BridgeWorkerQuiltOutput.TryMatchRefreshedDisplay(active, 2, 2, unchanged, out string error), error);
+
+            var removed = new BridgeDisplaySnapshot(5, new uint[0], new BridgeDisplayProfile[0]);
+            Assert.IsFalse(BridgeWorkerQuiltOutput.TryMatchRefreshedDisplay(active, 2, 2, removed, out _));
+            Assert.IsFalse(BridgeWorkerQuiltOutput.TryMatchRefreshedDisplay(active, 2, 3, unchanged, out _));
+
+            BridgeDisplayProfile changed = MakeDisplayProfile(16f / 9f, 45f);
+            var changedSnapshot = new BridgeDisplaySnapshot(6, new uint[] { 2 }, new[] { changed });
+            Assert.IsFalse(BridgeWorkerQuiltOutput.TryMatchRefreshedDisplay(active, 2, 2, changedSnapshot, out _));
+        }
+
+        [Test]
+        public void CachedDisplayCalibrationIsBoundToItsRuntimeApplicationAndOrdinal()
+        {
+            Assert.IsTrue(BridgeWorkerQuiltOutput.IsConnectedSnapshotConfigurationCurrent(false,
+                @"C:\Bridge", "ViewWeave", 2, @"C:\Bridge", "ViewWeave", 2));
+            Assert.IsFalse(BridgeWorkerQuiltOutput.IsConnectedSnapshotConfigurationCurrent(false,
+                @"C:\Bridge", "ViewWeave", 2, @"C:\OtherBridge", "ViewWeave", 2));
+            Assert.IsFalse(BridgeWorkerQuiltOutput.IsConnectedSnapshotConfigurationCurrent(false,
+                @"C:\Bridge", "ViewWeave", 2, @"C:\Bridge", "OtherApp", 2));
+            Assert.IsFalse(BridgeWorkerQuiltOutput.IsConnectedSnapshotConfigurationCurrent(false,
+                @"C:\Bridge", "ViewWeave", 2, @"C:\Bridge", "ViewWeave", 3));
+            Assert.IsFalse(BridgeWorkerQuiltOutput.IsConnectedSnapshotConfigurationCurrent(true,
+                @"C:\Bridge", "ViewWeave", 2, @"C:\Bridge", "ViewWeave", 2));
+        }
+
+        static BridgeDisplayProfile MakeDisplayProfile(float aspect, float viewcone)
+        {
+            var display = new BridgeNative.DisplayInfo
+            {
+                index = 7, width = 3840, height = 2160, aspect = aspect, viewcone = viewcone,
+                quiltWidth = 4096, quiltHeight = 4096, quiltColumns = 8, quiltRows = 6
+            };
+            var physical = new BridgeWorkerNative.PhysicalDisplayInfoV1
+            {
+                structSize = 24, version = 1, pixelWidth = 3840, pixelHeight = 2160, dpi = 283f, valid = 1
+            };
+            return new BridgeDisplayProfile(display, physical);
         }
 
         [Test]
@@ -426,6 +527,43 @@ namespace ViewWeave.BridgeSessionValidation
             host.SetActive(active);
             host.AddComponent<ViewWeaveBridgeSession>();
             return host;
+        }
+
+        static void RegisterSyntheticSessionOwner(ViewWeaveBridgeSession session)
+        {
+            Assert.IsNotNull(session);
+            ViewWeaveRig rig = session.GetComponent<ViewWeaveRig>();
+            Assert.IsNotNull(rig);
+            BridgeWorkerQuiltOutput output = session.GetComponent<BridgeWorkerQuiltOutput>();
+            Assert.IsNotNull(output);
+            QuiltRenderer renderer = rig.Renderer != null ? rig.Renderer : rig.GetComponent<QuiltRenderer>();
+            Assert.IsNotNull(renderer);
+            renderer.SetMutationOwnerRequired(true);
+            IDisposable registration = QuiltRendererMutationPolicy.RegisterOwner(renderer, session,
+                _ => string.Empty, out string error);
+            Assert.IsNotNull(registration, error);
+            FieldInfo field = typeof(ViewWeaveBridgeSession).GetField("mutationOwnerRegistration", BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(field);
+            field.SetValue(session, registration);
+
+            SetSessionSnapshot(session, "sourceCameraAtStart", renderer.sourceCamera);
+            SetSessionSnapshot(session, "referenceCameraAtStart", renderer.referenceCamera);
+            SetSessionSnapshot(session, "guardAtStart", renderer.GuardBehaviour);
+            SetSessionSnapshot(session, "outputBehaviourAtStart", renderer.OutputBehaviour);
+            SetSessionSnapshot(session, "useRenderRequestsAtStart", renderer.useRenderRequests);
+            SetSessionSnapshot(session, "outputRuntimePathAtStart", output.runtimePath ?? string.Empty);
+            SetSessionSnapshot(session, "outputApplicationNameAtStart", output.applicationName ?? string.Empty);
+            SetSessionSnapshot(session, "outputDisplayOrdinalAtStart", output.displayOrdinal);
+            SetSessionSnapshot(session, "profileRuntimePathAtStart", session.runtimePath ?? string.Empty);
+            SetSessionSnapshot(session, "profileApplicationNameAtStart", session.applicationName ?? string.Empty);
+            SetSessionSnapshot(session, "profileDisplayOrdinalAtStart", session.displayOrdinal);
+        }
+
+        static void SetSessionSnapshot(ViewWeaveBridgeSession session, string name, object value)
+        {
+            FieldInfo field = typeof(ViewWeaveBridgeSession).GetField(name, BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(field, name);
+            field.SetValue(session, value);
         }
 
         static bool IsAscii(string value)

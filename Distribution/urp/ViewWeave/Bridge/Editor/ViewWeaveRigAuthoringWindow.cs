@@ -52,6 +52,7 @@ namespace ViewWeave.Editor
             Undo.undoRedoPerformed -= OnUndoRedo;
             EditorApplication.update -= OnEditorUpdate;
             EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+            view?.Dispose();
             if (BridgeEditorPreview.IsActive && !BridgeEditorPreview.IsStopping && BridgeEditorPreview.Target == rig)
                 BridgeEditorPreview.Stop();
             view = null;
@@ -82,6 +83,7 @@ namespace ViewWeave.Editor
         void RebuildContent()
         {
             if (content == null) return;
+            view?.Dispose();
             view = new ViewWeaveRigInspectorUI(content, () => rig, () => focusTarget, value => focusTarget = value);
             view.Rebuild();
         }

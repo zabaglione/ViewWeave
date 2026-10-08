@@ -21,6 +21,7 @@ namespace ViewWeave
         uint actualDisplayIndex;
         RenderTexture bridgeTransferTexture;
         bool bridgeTransferSrgb;
+        BridgeNativeModuleIdentity nativeModuleIdentity;
         public string LastError { get; private set; }
 
         void OnEnable() { if (initializeOnEnable) TryInitialize(); }
@@ -31,6 +32,12 @@ namespace ViewWeave
             QuiltTexture = quiltTexture;
             Layout = layout;
             if (Session == 0) return;
+            if (!BridgeNativeImageGuard.TryValidateOwnerIdentity(nativeModuleIdentity, out string imageGuardError))
+            {
+                LastError = imageGuardError;
+                Dispose();
+                return;
+            }
             if (quiltTexture == null)
             { LastError = "Bridge output requires a quilt texture"; return; }
             if (layout.Columns <= 0 || layout.Rows <= 0 || layout.ViewCount != layout.Columns * layout.Rows)
@@ -83,7 +90,7 @@ namespace ViewWeave
             RenderTexture texture = bridgeTransferTexture;
             if (Session != 0)
             {
-                BridgeWorkerReaper.EnqueueLegacySessionClose(Session, texture, null, false);
+                BridgeWorkerReaper.EnqueueLegacySessionClose(Session, texture, null, false, nativeModuleIdentity);
                 bridgeTransferTexture = null;
                 bridgeTransferSrgb = false;
                 return;
@@ -113,6 +120,7 @@ namespace ViewWeave
         public bool TryInitialize()
         {
             Dispose();
+            nativeModuleIdentity = default;
             if (!BridgeGraphicsBackendPolicy.TrySelect(
                 BridgeGraphicsBackendRoute.LegacyDirect,
                 Application.platform,
@@ -128,17 +136,36 @@ namespace ViewWeave
             }
             if (string.IsNullOrWhiteSpace(bridgeLibraryPath)) { LastError = "Set an absolute Bridge runtime library path"; return false; }
             int result;
+            string imageGuardError;
+#if UNITY_EDITOR
+            if (!BridgeNativeImageGuard.TryInspectEditorProcess(out imageGuardError)) { LastError = imageGuardError; return false; }
+#endif
             try { result = BridgeNative.lkg_bridge_load(bridgeLibraryPath); }
             catch (DllNotFoundException) { LastError = "Native shim library is missing"; return false; }
             if (result != 0) { LastError = "Bridge runtime could not be loaded (code " + result + ")"; return false; }
+#if UNITY_EDITOR
+            if (!BridgeNativeImageGuard.TryCaptureCurrentIdentity(out nativeModuleIdentity, out imageGuardError))
+            { LastError = imageGuardError; return false; }
+#endif
+            if (!BridgeNativeImageGuard.TryValidateOwnerIdentity(nativeModuleIdentity, out imageGuardError))
+            { LastError = imageGuardError; return false; }
             result = BridgeNative.lkg_bridge_initialize(applicationName);
-            if (result != 0) { LastError = "Bridge initialization failed (code " + result + ")"; BridgeNative.lkg_bridge_unload(); return false; }
+            if (result != 0)
+            {
+                LastError = "Bridge initialization failed (code " + result + ")";
+                if (BridgeNativeImageGuard.TryValidateOwnerIdentity(nativeModuleIdentity, out _)) BridgeNative.lkg_bridge_unload();
+                return false;
+            }
+            if (!BridgeNativeImageGuard.TryValidateOwnerIdentity(nativeModuleIdentity, out imageGuardError))
+            { LastError = imageGuardError; return false; }
             if (BridgeNative.lkg_bridge_get_display(displayIndex, out var display) != 0)
-            { LastError = "Requested Looking Glass display was not found"; BridgeNative.lkg_bridge_uninitialize(); return false; }
+            { LastError = "Requested Looking Glass display was not found"; if (BridgeNativeImageGuard.TryValidateOwnerIdentity(nativeModuleIdentity, out _)) BridgeNative.lkg_bridge_uninitialize(); return false; }
             Profile = new BridgeDisplayProfile(display);
-            if (!Profile.IsValid) { LastError = "Bridge returned an invalid display profile"; BridgeNative.lkg_bridge_uninitialize(); return false; }
+            if (!Profile.IsValid) { LastError = "Bridge returned an invalid display profile"; if (BridgeNativeImageGuard.TryValidateOwnerIdentity(nativeModuleIdentity, out _)) BridgeNative.lkg_bridge_uninitialize(); return false; }
             actualDisplayIndex = display.index;
             if (display.aspect > 0f) viewAspect = display.aspect;
+            if (!BridgeNativeImageGuard.TryValidateOwnerIdentity(nativeModuleIdentity, out imageGuardError))
+            { LastError = imageGuardError; return false; }
             Session = BridgeNative.lkg_bridge_create_d3d11_session(IntPtr.Zero, actualDisplayIndex);
             if (Session == 0) { LastError = "Unity D3D11 device hook or Bridge display session is unavailable"; Dispose(); return false; }
             LastError = string.Empty;
@@ -155,16 +182,22 @@ namespace ViewWeave
 
             ulong closingSession = Session;
             RenderTexture currentTexture = bridgeTransferTexture;
-            BridgeWorkerReaper.EnqueueLegacySessionClose(closingSession, currentTexture, null, false);
-            BridgeWorkerReaper.EnqueueLegacySessionClose(closingSession, null, null, false);
+            BridgeWorkerReaper.EnqueueLegacySessionClose(closingSession, currentTexture, null, false, nativeModuleIdentity);
+            BridgeWorkerReaper.EnqueueLegacySessionClose(closingSession, null, null, false, nativeModuleIdentity);
             Session = 0;
             bridgeTransferTexture = null;
             bridgeTransferSrgb = false;
             bool closeSubmitted = false;
             CommandBuffer closeCommand = null;
+            if (!BridgeNativeImageGuard.TryValidateOwnerIdentity(nativeModuleIdentity, out string imageGuardError))
+            {
+                LastError = imageGuardError;
+                BridgeWorkerReaper.EnqueueLegacySessionClose(closingSession, null, null, false, nativeModuleIdentity);
+                return;
+            }
             try { closeCommand = BridgeNative.QueueClose(closingSession, out closeSubmitted); }
             catch { closeSubmitted = false; }
-            BridgeWorkerReaper.EnqueueLegacySessionClose(closingSession, null, closeCommand, closeSubmitted);
+            BridgeWorkerReaper.EnqueueLegacySessionClose(closingSession, null, closeCommand, closeSubmitted, nativeModuleIdentity);
         }
     }
 }

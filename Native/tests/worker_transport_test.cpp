@@ -24,6 +24,7 @@ HWND lkg_worker_test_window(void* handle);
 uint32_t lkg_worker_test_message_count(void* handle);
 int32_t lkg_worker_test_set_d3d12_timeout(void* handle, uint64_t timeoutMilliseconds);
 void lkg_worker_test_throw_during_cleanup(void);
+void lkg_worker_test_throw_during_display_query(void);
 void lkg_worker_test_delay_d3d12_consumer(uint32_t pendingPolls);
 uint32_t lkg_worker_test_d3d12_consumer_pending_polls(void);
 void lkg_worker_test_d3d12_set_removed(bool removed);
@@ -36,6 +37,10 @@ static std::atomic<bool> g_drawFailure{false};
 static std::atomic<bool> g_drawThrow{false};
 static std::atomic<uint32_t> g_drawCount{0};
 static std::atomic<int> g_testCalibrationMode{0};
+static std::atomic<uint32_t> g_testDisplayCount{1};
+static std::atomic<bool> g_testHoldDisplayQuery{false};
+static std::atomic<bool> g_testDisplayQueryEntered{false};
+static std::atomic<bool> g_testReleaseDisplayQuery{false};
 static std::atomic<bool> g_workerClaimed{false};
 static std::atomic<unsigned long> g_producerThread{0};
 static std::atomic<unsigned long> g_workerThread{0};
@@ -187,6 +192,187 @@ static void TestCachedPhysicalDisplayCalibration() {
     Check(lkg_worker_get_physical_display_v1(handle, &info) == 0 && info.valid == 0 && info.pixelWidth == 0 && info.dpi == 0.0f,
         "invalid vendor DPI becomes unavailable calibration");
     EndContext(handle);
+}
+
+static bool WaitForDisplaySnapshot(void* handle, uint64_t generation, uint32_t timeoutMs = 2000) {
+    const auto start = GetTickCount64();
+    while (GetTickCount64() - start < timeoutMs) {
+        LkgWorkerDisplaySnapshotStatusV1 status{};
+        status.structSize = sizeof(status);
+        status.version = 1;
+        uint32_t required = 0;
+        const int32_t result = lkg_worker_get_display_snapshot_v1(handle, &status, nullptr, 0, &required);
+        if ((result == 0 || result == -3) && status.snapshotGeneration >= generation && status.pending == 0) return true;
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    return false;
+}
+
+static LkgWorkerDisplaySnapshotStatusV1 GetDisplaySnapshot(void* handle, std::vector<LkgWorkerDisplaySnapshotItemV1>& items) {
+    LkgWorkerDisplaySnapshotStatusV1 status{};
+    status.structSize = sizeof(status);
+    status.version = 1;
+    uint32_t required = 0;
+    int32_t result = lkg_worker_get_display_snapshot_v1(handle, &status, nullptr, 0, &required);
+    Check(result == 0 || result == -3, "metadata snapshot size query");
+    items.resize(required);
+    status = {};
+    status.structSize = sizeof(status);
+    status.version = 1;
+    result = lkg_worker_get_display_snapshot_v1(handle, &status, items.data(), static_cast<uint32_t>(items.size()), &required);
+    Check(result == 0, "metadata snapshot list query");
+    Check(required == items.size(), "metadata snapshot count consistency");
+    return status;
+}
+
+static void TestMetadataOnlyRefreshLifecycle() {
+    g_testDisplayCount.store(1);
+    g_testCalibrationMode.store(0);
+    g_testHoldDisplayQuery.store(false);
+    g_testDisplayQueryEntered.store(false);
+    g_testReleaseDisplayQuery.store(false);
+    void* handle = lkg_worker_begin_metadata_v1("metadata-runtime", "worker-metadata-test");
+    Check(handle != nullptr, "metadata-only begin");
+#if defined(LKG_WORKER_TRANSPORT_TESTING)
+    Check(lkg_worker_test_window(handle) == nullptr, "metadata-only worker creates no window");
+    Check(lkg_worker_test_message_count(handle) == 0, "metadata-only worker pumps no window messages");
+#endif
+    Check(lkg_worker_begin_metadata_v1("metadata-runtime", "concurrent-metadata-test") == nullptr,
+        "concurrent SDK metadata owner rejected");
+    Check(WaitForDisplaySnapshot(handle, 1), "initial metadata snapshot ready");
+
+    std::vector<LkgWorkerDisplaySnapshotItemV1> items;
+    LkgWorkerDisplaySnapshotStatusV1 status = GetDisplaySnapshot(handle, items);
+    Check(status.state == LKG_WORKER_READY && status.snapshotGeneration == 1 && status.result == 0 && items.size() == 1,
+        "initial metadata snapshot header");
+    Check(items[0].structSize == sizeof(items[0]) && items[0].version == 1 && items[0].displayOrdinal == 0 &&
+        items[0].profile.index == 0 && items[0].physical.valid == 1 && items[0].physical.pixelWidth == 1920 &&
+        items[0].physical.structSize == sizeof(items[0].physical) && items[0].physical.version == 1 &&
+        items[0].physical.pixelHeight == 1080 && items[0].physical.dpi == 110.0f,
+        "metadata display profile and calibration values");
+    LkgWorkerDisplaySnapshotStatusV1 invalidStatus = status;
+    invalidStatus.structSize -= 1;
+    uint32_t required = 0;
+    Check(lkg_worker_get_display_snapshot_v1(handle, &invalidStatus, nullptr, 0, &required) == -1,
+        "metadata snapshot validates ABI size");
+
+    uint64_t generation = 0;
+    g_testDisplayCount.store(0);
+    Check(lkg_worker_request_display_refresh_v1(handle, &generation) == 0 && generation == 2,
+        "request no-device metadata refresh");
+    Check(WaitForDisplaySnapshot(handle, generation), "no-device metadata refresh completes");
+    status = GetDisplaySnapshot(handle, items);
+    Check(status.result == 0 && status.itemCount == 0 && items.empty(), "zero connected displays is a successful empty snapshot");
+
+    g_testDisplayCount.store(2);
+    Check(lkg_worker_request_display_refresh_v1(handle, &generation) == 0 && generation == 3,
+        "request hot-plug metadata refresh");
+    Check(WaitForDisplaySnapshot(handle, generation), "hot-plug metadata refresh completes");
+    status = GetDisplaySnapshot(handle, items);
+    Check(status.result == 0 && status.itemCount == 2 && items.size() == 2 && items[1].displayOrdinal == 1 && items[1].profile.index == 1,
+        "later connected display appears in refreshed snapshot");
+
+    g_testHoldDisplayQuery.store(true);
+    g_testDisplayQueryEntered.store(false);
+    g_testReleaseDisplayQuery.store(false);
+    Check(lkg_worker_request_display_refresh_v1(handle, &generation) == 0 && generation == 4,
+        "request refresh before close");
+    const auto waitStart = GetTickCount64();
+    while (!g_testDisplayQueryEntered.load(std::memory_order_acquire) && GetTickCount64() - waitStart < 2000)
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    Check(g_testDisplayQueryEntered.load(std::memory_order_acquire), "metadata query entered before close");
+    Check(lkg_worker_close(handle) == 0, "metadata close accepted during active refresh");
+    uint64_t ignoredGeneration = 0;
+    Check(lkg_worker_request_display_refresh_v1(handle, &ignoredGeneration) == -3, "refresh rejected after close begins");
+    Check(lkg_worker_release(handle) == -2, "metadata owner cannot release before cleanup completes");
+    g_testReleaseDisplayQuery.store(true, std::memory_order_release);
+    Check(WaitState(handle, LKG_WORKER_CLOSED, 2000), "metadata worker closes after active query returns");
+    Check(lkg_worker_collect_closed() == 0, "metadata snapshot survives collect-closed");
+    status = GetDisplaySnapshot(handle, items);
+    Check(status.snapshotGeneration == 3 && status.requestedGeneration == 4 && status.cleanupFinished == 1 &&
+        status.itemCount == 2 && status.result == 0,
+        "close takes priority over publishing the in-flight refresh and preserves the last snapshot");
+    Check(lkg_worker_pending_count() == 1, "closed metadata handle remains pending until managed release");
+    Check(lkg_worker_end_metadata_v1(handle) == 0, "metadata owner releases closed snapshot");
+    Check(lkg_worker_get_display_snapshot_v1(handle, &status, nullptr, 0, &required) == -2,
+        "metadata snapshot becomes unavailable after owner release");
+    g_testHoldDisplayQuery.store(false);
+    g_testDisplayQueryEntered.store(false);
+    g_testReleaseDisplayQuery.store(false);
+}
+
+static void TestMetadataInitializationFailureIsPublished() {
+    g_initializeFailure.store(true);
+    void* handle = lkg_worker_begin_metadata_v1("metadata-runtime", "worker-metadata-init-failure-test");
+    Check(handle != nullptr, "metadata init failure begin");
+    Check(WaitState(handle, LKG_WORKER_FAULT, 2000), "metadata init failure fault");
+    std::vector<LkgWorkerDisplaySnapshotItemV1> items;
+    LkgWorkerDisplaySnapshotStatusV1 status{};
+    const auto start = GetTickCount64();
+    do {
+        status = GetDisplaySnapshot(handle, items);
+        if (status.cleanupFinished) break;
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    } while (GetTickCount64() - start < 2000);
+    if (!(status.state == LKG_WORKER_FAULT && status.snapshotGeneration == status.requestedGeneration &&
+        status.result != 0 && status.pending == 0 && status.cleanupFinished == 1 && status.error[0] != '\0')) {
+        std::fprintf(stderr, "metadata init snapshot state=%u generation=%llu requested=%llu result=%d pending=%u cleanup=%u error=%s\n",
+            status.state, static_cast<unsigned long long>(status.snapshotGeneration),
+            static_cast<unsigned long long>(status.requestedGeneration), status.result, status.pending,
+            status.cleanupFinished, status.error);
+    }
+    Check(status.state == LKG_WORKER_FAULT && status.snapshotGeneration == status.requestedGeneration &&
+        status.result != 0 && status.pending == 0 && status.cleanupFinished == 1 && status.error[0] != '\0',
+        "metadata initialization failure completes snapshot with an error");
+    Check(lkg_worker_end_metadata_v1(handle) == 0, "metadata init failure owner releases handle");
+    g_initializeFailure.store(false);
+}
+
+static void TestActiveWorkerDisplayRefreshDoesNotMutateRenderStatus() {
+    g_testDisplayCount.store(1);
+    void* handle = nullptr;
+    BeginContext(&handle);
+    LkgWorkerStatus before{};
+    Check(lkg_worker_poll(handle, &before) == 0 && before.state == LKG_WORKER_READY, "active worker status before metadata refresh");
+    g_testDisplayCount.store(2);
+    uint64_t generation = 0;
+    Check(lkg_worker_request_display_refresh_v1(handle, &generation) == 0 && generation == 1,
+        "active rendering worker accepts independent display refresh");
+    Check(WaitForDisplaySnapshot(handle, generation), "active rendering worker metadata refresh completes");
+    std::vector<LkgWorkerDisplaySnapshotItemV1> items;
+    LkgWorkerDisplaySnapshotStatusV1 snapshot = GetDisplaySnapshot(handle, items);
+    Check(snapshot.itemCount == 2 && items.size() == 2, "active worker returns independent display list");
+    LkgWorkerStatus after{};
+    Check(lkg_worker_poll(handle, &after) == 0, "active worker status after metadata refresh");
+    Check(after.state == before.state && after.displayIndex == before.displayIndex && after.width == before.width &&
+        after.height == before.height && after.aspect == before.aspect && after.viewcone == before.viewcone &&
+        after.quiltWidth == before.quiltWidth && after.quiltHeight == before.quiltHeight &&
+        after.quiltColumns == before.quiltColumns && after.quiltRows == before.quiltRows &&
+        after.submitted == before.submitted && after.completed == before.completed,
+        "metadata refresh does not mutate the active rendering profile or status");
+
+    lkg_worker_test_throw_during_display_query();
+    Check(lkg_worker_request_display_refresh_v1(handle, &generation) == 0 && generation == 2,
+        "active worker accepts refresh that will throw during enumeration");
+    const bool throwingRefreshCompleted = WaitForDisplaySnapshot(handle, generation);
+    if (!throwingRefreshCompleted) {
+        std::vector<LkgWorkerDisplaySnapshotItemV1> failedItems;
+        const LkgWorkerDisplaySnapshotStatusV1 failedStatus = GetDisplaySnapshot(handle, failedItems);
+        std::fprintf(stderr, "throwing refresh state=%u generation=%llu requested=%llu result=%d pending=%u error=%s\n",
+            failedStatus.state, static_cast<unsigned long long>(failedStatus.snapshotGeneration),
+            static_cast<unsigned long long>(failedStatus.requestedGeneration), failedStatus.result,
+            failedStatus.pending, failedStatus.error);
+    }
+    Check(throwingRefreshCompleted, "throwing metadata refresh completes with a result");
+    snapshot = GetDisplaySnapshot(handle, items);
+    Check(snapshot.result != 0 && snapshot.error[0] != '\0', "throwing metadata query becomes snapshot error");
+    LkgWorkerStatus afterException{};
+    Check(lkg_worker_poll(handle, &afterException) == 0 && afterException.state == LKG_WORKER_READY &&
+        afterException.displayIndex == before.displayIndex && afterException.width == before.width &&
+        afterException.height == before.height && afterException.viewcone == before.viewcone,
+        "metadata query exception does not fault active rendering worker");
+    EndContext(handle);
+    g_testDisplayCount.store(1);
 }
 
 static void EndContext(void* handle) {
@@ -516,10 +702,19 @@ extern "C" int32_t lkg_bridge_get_session_close_status_v1(uint64_t session, LkgB
 }
 extern "C" int32_t lkg_bridge_ack_session_close_v1(uint64_t) { return 0; }
 int32_t lkg_bridge_version(char*, uint32_t) { return 0; }
-int32_t lkg_bridge_get_display_count(uint32_t* count) { if (!count) return -1; *count = 1; return 0; }
+int32_t lkg_bridge_get_display_count(uint32_t* count) {
+    if (!count) return -1;
+    if (g_workerThread.load(std::memory_order_acquire) != GetCurrentThreadId()) return -99;
+    if (g_testHoldDisplayQuery.load(std::memory_order_acquire)) {
+        g_testDisplayQueryEntered.store(true, std::memory_order_release);
+        while (!g_testReleaseDisplayQuery.load(std::memory_order_acquire)) Sleep(1);
+    }
+    *count = g_testDisplayCount.load(std::memory_order_acquire);
+    return 0;
+}
 int32_t lkg_bridge_get_display(uint32_t ordinal, LkgBridgeDisplayInfo* info) {
-    if (!info || ordinal != 0) return -2;
-    *info = LkgBridgeDisplayInfo{ 0, 32, 32, 1.0f, 1.0f, 128, 128, 4, 4 };
+    if (!info || ordinal >= g_testDisplayCount.load(std::memory_order_acquire)) return -2;
+    *info = LkgBridgeDisplayInfo{ ordinal, 32u + ordinal, 32, 1.0f, 1.0f, 128, 128, 4, 4 };
     return 0;
 }
 int32_t lkg_bridge_get_physical_display_v1(uint32_t, LkgBridgePhysicalDisplayInfoV1* info) {
@@ -596,7 +791,7 @@ uint64_t lkg_bridge_d3d12_submit(ID3D12GraphicsCommandList* list, ID3D12Resource
 uint64_t lkg_bridge_unity_device_generation() { return 1; }
 bool lkg_bridge_worker_claim() { bool expected = false; return g_workerClaimed.compare_exchange_strong(expected, true); }
 void lkg_bridge_worker_release_claim() { g_workerClaimed.store(false); }
-void lkg_bridge_worker_enter() {}
+void lkg_bridge_worker_enter() { g_workerThread.store(GetCurrentThreadId(), std::memory_order_release); }
 void lkg_bridge_worker_leave() {}
 int32_t lkg_bridge_get_worker_render_event_id(int32_t* eventId) { if (!eventId) return -1; *eventId = 0; return 0; }
 
@@ -904,6 +1099,9 @@ int main(int argc, char** argv) {
     }
     TestD3D12RingColors();
     TestCachedPhysicalDisplayCalibration();
+    TestMetadataOnlyRefreshLifecycle();
+    TestMetadataInitializationFailureIsPublished();
+    TestActiveWorkerDisplayRefreshDoesNotMutateRenderStatus();
     TestTypelessSource();
     TestTransferResetResize();
     TestBoundedCompletion();

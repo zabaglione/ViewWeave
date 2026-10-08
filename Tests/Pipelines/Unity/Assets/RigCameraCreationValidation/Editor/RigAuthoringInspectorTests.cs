@@ -100,6 +100,174 @@ namespace ViewWeave.RigCameraCreationValidation
         }
 
         [Test]
+        public void RigOnValidatePreservesComponentsAndSettingsWhileEditorPreviewResourcesAreRetained()
+        {
+            GameObject rigObject = new GameObject("Retained Preview Rig");
+            Object retentionRecord = null;
+            try
+            {
+                ViewWeaveRig rig = rigObject.AddComponent<ViewWeaveRig>();
+                QuiltRenderer renderer = rig.Renderer;
+                Assert.That(renderer, Is.Not.Null);
+                renderer.settings.fieldOfView = 73f;
+                renderer.settings.cameraDistance = 4.25f;
+
+                Type retentionType = typeof(BridgeWorkerQuiltOutput).Assembly.GetType(
+                    "ViewWeave.BridgeEditorPreviewRetentionRecord");
+                Assert.That(retentionType, Is.Not.Null);
+                MethodInfo create = retentionType.GetMethod("Create", BindingFlags.Static | BindingFlags.NonPublic);
+                Assert.That(create, Is.Not.Null);
+                retentionRecord = (Object)create.Invoke(null, new object[] { rigObject, renderer });
+                Assert.That(retentionRecord, Is.Not.Null);
+
+                MethodInfo beginRetention = typeof(QuiltRenderer).GetMethod("BeginEditorPreviewRetention", InstancePrivate);
+                Assert.That(beginRetention, Is.Not.Null);
+                Assert.That(beginRetention.Invoke(renderer, new[] { retentionRecord }), Is.EqualTo(true));
+                PropertyInfo mutationRequirement = typeof(QuiltRenderer).GetProperty("HasMutationOwnerRequirement", InstancePrivate);
+                Assert.That(mutationRequirement, Is.Not.Null);
+                Assert.That(mutationRequirement.GetValue(renderer), Is.EqualTo(false),
+                    "the regression must exercise serialized preview retention without a registered mutation owner");
+
+                Invoke(rig, "OnValidate");
+
+                Assert.That(GetField<Object>(renderer, "editorPreviewRetentionOwner"), Is.SameAs(retentionRecord));
+                Assert.That(renderer.settings.fieldOfView, Is.EqualTo(73f).Within(0.001f),
+                    "OnValidate must not reapply the Rig profile while preview resources are retained");
+                Assert.That(renderer.settings.cameraDistance, Is.EqualTo(4.25f).Within(0.001f));
+                Assert.That(rig.Renderer, Is.SameAs(renderer));
+            }
+            finally
+            {
+                if (retentionRecord != null) Object.DestroyImmediate(retentionRecord);
+                Object.DestroyImmediate(rigObject);
+            }
+        }
+
+        [Test]
+        public void RigAwakePreservesRetainedPreviewBindingsAndExplicitConfigureRemainsRejected()
+        {
+            GameObject rigObject = new GameObject("Retained Preview Awake Rig");
+            rigObject.SetActive(false);
+            Object retentionRecord = null;
+            try
+            {
+                Camera camera = rigObject.AddComponent<Camera>();
+                QuiltRenderer renderer = rigObject.AddComponent<QuiltRenderer>();
+                ViewWeaveRig rig = rigObject.AddComponent<ViewWeaveRig>();
+                BridgeWorkerQuiltOutput output = rigObject.AddComponent<BridgeWorkerQuiltOutput>();
+                output.initializeOnEnable = false;
+                rig.SetOutput(output);
+                Assert.That(rig.ConfigureComponents(), Is.True);
+                renderer.settings.fieldOfView = 71f;
+                renderer.settings.cameraDistance = 4.25f;
+
+                Type retentionType = typeof(BridgeWorkerQuiltOutput).Assembly.GetType(
+                    "ViewWeave.BridgeEditorPreviewRetentionRecord", true);
+                MethodInfo create = retentionType.GetMethod("Create", BindingFlags.Static | BindingFlags.NonPublic);
+                Assert.That(create, Is.Not.Null);
+                retentionRecord = (Object)create.Invoke(null, new object[] { rigObject, renderer });
+                Assert.That(retentionRecord, Is.Not.Null);
+                MethodInfo beginRetention = typeof(QuiltRenderer).GetMethod("BeginEditorPreviewRetention", InstancePrivate);
+                Assert.That(beginRetention, Is.Not.Null);
+                Assert.That(beginRetention.Invoke(renderer, new[] { retentionRecord }), Is.EqualTo(true));
+
+                Invoke(rig, "Awake");
+
+                Assert.That(rig.Renderer, Is.SameAs(renderer));
+                Assert.That(renderer.sourceCamera, Is.SameAs(camera));
+                Assert.That(renderer.OutputBehaviour, Is.SameAs(output));
+                Assert.That(camera.enabled, Is.False);
+                Assert.That(renderer.settings.fieldOfView, Is.EqualTo(71f).Within(0.001f));
+                Assert.That(renderer.settings.cameraDistance, Is.EqualTo(4.25f).Within(0.001f));
+                LogAssert.Expect(LogType.Error,
+                    "ViewWeaveRig configuration failed: rig components cannot be reconfigured while the renderer is owned: An editor preview owner has no active mutation-policy registration.");
+                Assert.That(rig.ConfigureComponents(), Is.False,
+                    "explicit configuration must remain rejected while preview resources are retained");
+                Assert.That(renderer.settings.fieldOfView, Is.EqualTo(71f).Within(0.001f));
+                Assert.That(renderer.settings.cameraDistance, Is.EqualTo(4.25f).Within(0.001f));
+            }
+            finally
+            {
+                if (retentionRecord != null) Object.DestroyImmediate(retentionRecord);
+                Object.DestroyImmediate(rigObject);
+            }
+        }
+
+        [Test]
+        public void RigAwakeConfiguresAnUnownedRigNormally()
+        {
+            GameObject rigObject = new GameObject("Unowned Awake Rig");
+            rigObject.SetActive(false);
+            try
+            {
+                Camera camera = rigObject.AddComponent<Camera>();
+                QuiltRenderer renderer = rigObject.AddComponent<QuiltRenderer>();
+                ViewWeaveRig rig = rigObject.AddComponent<ViewWeaveRig>();
+                camera.enabled = true;
+                Assert.That(rig.Renderer, Is.SameAs(renderer));
+                renderer.sourceCamera = null;
+
+                Invoke(rig, "Awake");
+
+                Assert.That(rig.Renderer, Is.SameAs(renderer));
+                Assert.That(renderer.sourceCamera, Is.SameAs(camera));
+                Assert.That(camera.enabled, Is.False,
+                    "an unowned Rig Awake must still perform its regular source-camera configuration");
+            }
+            finally
+            {
+                Object.DestroyImmediate(rigObject);
+            }
+        }
+
+        [Test]
+        public void TechnicalComponentInspectorsLockWithRendererOwnerAndUnlockAfterOwnerRelease()
+        {
+            GameObject ownerObject = new GameObject("Owned Technical Inspector Rig");
+            ownerObject.SetActive(false);
+            Object retentionRecord = null;
+            try
+            {
+                ownerObject.AddComponent<Camera>();
+                QuiltRenderer renderer = ownerObject.AddComponent<QuiltRenderer>();
+                ownerObject.AddComponent<ViewWeaveRig>();
+                BridgeWorkerQuiltOutput output = ownerObject.AddComponent<BridgeWorkerQuiltOutput>();
+                output.initializeOnEnable = false;
+                ViewWeaveBridgeSession session = ownerObject.AddComponent<ViewWeaveBridgeSession>();
+                session.startOnEnable = false;
+
+                Type hdrpCameraType = Type.GetType("ViewWeave.HDRP.HdrpQuiltCamera, ViewWeave.HDRP", true);
+                Object hdrpCamera = ownerObject.AddComponent(hdrpCameraType);
+                Type hdrpInspectorType = Type.GetType("ViewWeave.HDRP.Editor.HdrpQuiltCameraInspector, ViewWeave.HDRP.Editor", true);
+                Type outputInspectorType = typeof(ViewWeaveRigAuthoringWindow).Assembly.GetType("ViewWeave.Editor.BridgeWorkerQuiltOutputInspector", true);
+                Type sessionInspectorType = typeof(ViewWeaveRigAuthoringWindow).Assembly.GetType("ViewWeave.Editor.ViewWeaveBridgeSessionInspector", true);
+
+                AssertInspectorLock(outputInspectorType, output, false, "an unowned output remains editable");
+                AssertInspectorLock(sessionInspectorType, session, false, "an unowned Session remains editable");
+                AssertInspectorLock(hdrpInspectorType, hdrpCamera, false, "an unowned HDRP guard remains editable");
+
+                Type retentionType = typeof(BridgeWorkerQuiltOutput).Assembly.GetType("ViewWeave.BridgeEditorPreviewRetentionRecord", true);
+                MethodInfo create = retentionType.GetMethod("Create", BindingFlags.Static | BindingFlags.NonPublic);
+                Assert.That(create, Is.Not.Null);
+                retentionRecord = (Object)create.Invoke(null, new object[] { ownerObject, renderer });
+                Assert.That(retentionRecord, Is.Not.Null);
+
+                MethodInfo beginRetention = typeof(QuiltRenderer).GetMethod("BeginEditorPreviewRetention", InstancePrivate);
+                Assert.That(beginRetention, Is.Not.Null);
+                Assert.That(beginRetention.Invoke(renderer, new[] { retentionRecord }), Is.EqualTo(true));
+
+                AssertInspectorLock(outputInspectorType, output, true, "an active Rig owner must lock raw output fields");
+                AssertInspectorLock(sessionInspectorType, session, true, "an active Rig owner must lock raw Session fields");
+                AssertInspectorLock(hdrpInspectorType, hdrpCamera, true, "an active Rig owner must lock raw HDRP guard fields");
+            }
+            finally
+            {
+                if (retentionRecord != null) Object.DestroyImmediate(retentionRecord);
+                Object.DestroyImmediate(ownerObject);
+            }
+        }
+
+        [Test]
         public void SceneViewControlsUseSharedEditorPreferences()
         {
             bool oldNearFar = QuiltRendererSceneViewControls.ShowNearFar;
@@ -137,7 +305,14 @@ namespace ViewWeave.RigCameraCreationValidation
                 PropertyField profileField = root.Q<PropertyField>("rigQualityProfile");
                 Assert.That(profileField, Is.Not.Null);
                 Assert.That(profileField.bindingPath, Is.EqualTo("profile"));
-                Assert.That(root.Q<EnumField>("sessionQuality"), Is.Not.Null);
+                EnumField sessionQuality = root.Q<EnumField>("sessionQuality");
+                Assert.That(sessionQuality, Is.Not.Null);
+                Assert.That(sessionQuality.value, Is.EqualTo(QuiltQualityPreset.Balanced));
+                Assert.That(sessionQuality.enabledInHierarchy, Is.True, "an idle Session should expose its quality setting");
+                EnumField renderMode = root.Q<EnumField>("viewRenderMode");
+                Assert.That(renderMode, Is.Not.Null);
+                Assert.That(renderMode.value, Is.EqualTo(QuiltViewRenderMode.Full));
+                Assert.That(FindFoldout(root, "Rendering").value, Is.True, "Rendering should be open by default");
 
                 SerializedObject rigData = new SerializedObject(rig);
                 SerializedProperty width = rigData.FindProperty("profile").FindPropertyRelative("width");
@@ -148,6 +323,146 @@ namespace ViewWeave.RigCameraCreationValidation
             finally
             {
                 if (editor != null) Object.DestroyImmediate(editor);
+                Object.DestroyImmediate(rigObject);
+            }
+        }
+
+        [Test]
+        public void ConnectedDisplaySizeCopiesCalibrationEnablesFramingAndUndoRestoresBoth()
+        {
+            GameObject rigObject = new GameObject("Connected Calibration Copy Rig");
+            UnityEditor.Editor editor = null;
+            QuiltDisplaySettingsResolver.RegisterProvider(ProvideConnectedCalibration);
+            try
+            {
+                ViewWeaveRig rig = rigObject.AddComponent<ViewWeaveRig>();
+                QuiltRenderer renderer = rigObject.GetComponent<QuiltRenderer>();
+                renderer.physicalFraming.enabled = false;
+                renderer.physicalFraming.visibleApertureWidthMillimeters = 120f;
+                renderer.physicalFraming.visibleApertureHeightMillimeters = 80f;
+                renderer.physicalFraming.unitsPerMeter = 2f;
+                editor = UnityEditor.Editor.CreateEditor(rig, typeof(ViewWeaveRigInspector));
+                VisualElement root = editor.CreateInspectorGUI();
+                object view = GetField<object>(editor, "view");
+                Button copyButton = root.Q<Button>("copyConnectedDisplaySize");
+                Assert.That(copyButton, Is.Not.Null);
+                Assert.That(copyButton.enabledInHierarchy, Is.True);
+
+                Invoke(view, "CopyConnectedDisplaySize");
+                Assert.That(renderer.physicalFraming.enabled, Is.True, "copying calibration should enable physical framing in the same operation");
+                Assert.That(renderer.physicalFraming.visibleApertureWidthMillimeters, Is.EqualTo(344.65018f).Within(0.01f));
+                Assert.That(renderer.physicalFraming.visibleApertureHeightMillimeters, Is.EqualTo(193.86572f).Within(0.01f));
+                Assert.That(renderer.physicalFraming.unitsPerMeter, Is.EqualTo(2f), "copy must preserve project units per meter");
+
+                Undo.PerformUndo();
+                Assert.That(renderer.physicalFraming.enabled, Is.False);
+                Assert.That(renderer.physicalFraming.visibleApertureWidthMillimeters, Is.EqualTo(120f).Within(0.001f));
+                Assert.That(renderer.physicalFraming.visibleApertureHeightMillimeters, Is.EqualTo(80f).Within(0.001f));
+                Assert.That(renderer.physicalFraming.unitsPerMeter, Is.EqualTo(2f).Within(0.001f));
+            }
+            finally
+            {
+                QuiltDisplaySettingsResolver.RegisterProvider(null);
+                if (editor != null) Object.DestroyImmediate(editor);
+                Object.DestroyImmediate(rigObject);
+            }
+        }
+
+        [Test]
+        public void ConnectedDisplayCopyWithoutValidCalibrationReportsErrorAndLeavesRigUntouched()
+        {
+            GameObject rigObject = new GameObject("Missing Calibration Copy Rig");
+            UnityEditor.Editor editor = null;
+            QuiltDisplaySettingsResolver.RegisterProvider(NoConnectedCalibration);
+            try
+            {
+                ViewWeaveRig rig = rigObject.AddComponent<ViewWeaveRig>();
+                QuiltRenderer renderer = rigObject.GetComponent<QuiltRenderer>();
+                renderer.physicalFraming.enabled = false;
+                renderer.physicalFraming.visibleApertureWidthMillimeters = 123f;
+                renderer.physicalFraming.visibleApertureHeightMillimeters = 77f;
+                renderer.physicalFraming.unitsPerMeter = 1.5f;
+                editor = UnityEditor.Editor.CreateEditor(rig, typeof(ViewWeaveRigInspector));
+                VisualElement root = editor.CreateInspectorGUI();
+                object view = GetField<object>(editor, "view");
+
+                Invoke(view, "CopyConnectedDisplaySize");
+                Assert.That(renderer.physicalFraming.enabled, Is.False);
+                Assert.That(renderer.physicalFraming.visibleApertureWidthMillimeters, Is.EqualTo(123f).Within(0.001f));
+                Assert.That(renderer.physicalFraming.visibleApertureHeightMillimeters, Is.EqualTo(77f).Within(0.001f));
+                Assert.That(renderer.physicalFraming.unitsPerMeter, Is.EqualTo(1.5f).Within(0.001f));
+                StringAssert.Contains("No valid display calibration is cached", root.Q<Label>("physicalFramingStatus").text);
+            }
+            finally
+            {
+                QuiltDisplaySettingsResolver.RegisterProvider(null);
+                if (editor != null) Object.DestroyImmediate(editor);
+                Object.DestroyImmediate(rigObject);
+            }
+        }
+
+        [Test]
+        public void RigAuthoringExposesExplicitConnectedDisplayRefreshWithoutStartingSession()
+        {
+            GameObject rigObject = new GameObject("Display Refresh Controls Rig");
+            UnityEditor.Editor editor = null;
+            try
+            {
+                ViewWeaveRig rig = rigObject.AddComponent<ViewWeaveRig>();
+                var output = rigObject.AddComponent<BridgeWorkerQuiltOutput>();
+                output.initializeOnEnable = false;
+                rig.SetOutput(output);
+                editor = UnityEditor.Editor.CreateEditor(rig, typeof(ViewWeaveRigInspector));
+                VisualElement root = editor.CreateInspectorGUI();
+
+                Button refresh = root.Q<Button>("refreshConnectedDisplays");
+                Assert.That(refresh, Is.Not.Null);
+                Assert.That(refresh.text, Is.EqualTo("Refresh Connected Displays"));
+                Assert.That(root.Q<Label>("connectedDisplaysStatus"), Is.Not.Null);
+                Assert.That(rig.GetComponent<ViewWeaveBridgeSession>(), Is.Null, "display metadata refresh controls must not add a Bridge Session");
+                Assert.That(output.Ready, Is.False);
+            }
+            finally
+            {
+                if (editor != null) Object.DestroyImmediate(editor);
+                Object.DestroyImmediate(rigObject);
+            }
+        }
+
+        [Test]
+        public void RecordingLeaseRejectsFramingSamplingAndSessionQualityWithoutMutation()
+        {
+            GameObject rigObject = new GameObject("Mutation Policy Lease Rig");
+            QuiltRendererOperationLease lease = null;
+            try
+            {
+                ViewWeaveRig rig = rigObject.AddComponent<ViewWeaveRig>();
+                QuiltRenderer renderer = rigObject.GetComponent<QuiltRenderer>();
+                var session = rigObject.AddComponent<ViewWeaveBridgeSession>();
+                Assert.That(QuiltRendererOperationLease.TryAcquire(renderer, QuiltRendererOperationKind.Recording,
+                    out lease, out string leaseError), Is.True, leaseError);
+                QuiltCameraFraming beforeFraming = default;
+                Assert.That(renderer.TryGetFraming(out beforeFraming), Is.True);
+                QuiltViewRenderMode beforeMode = renderer.viewRenderMode;
+                QuiltQualityPreset beforeQuality = session.Quality;
+
+                Assert.That(renderer.TrySetFraming(new QuiltCameraFraming(beforeFraming.VerticalFieldOfView + 1f,
+                    beforeFraming.FocusDistance, beforeFraming.PhysicalFramingEnabled,
+                    beforeFraming.ApertureWidthMillimeters, beforeFraming.ApertureHeightMillimeters, beforeFraming.UnitsPerMeter),
+                    out string framingError), Is.False);
+                Assert.That(framingError, Does.Contain("recording or playback lease"));
+                Assert.That(renderer.TrySetViewRenderMode(QuiltViewRenderMode.Half, out string modeError), Is.False);
+                Assert.That(modeError, Does.Contain("recording or playback lease"));
+                Assert.That(session.SetQuality(QuiltQualityPreset.Native), Is.False);
+
+                Assert.That(renderer.TryGetFraming(out QuiltCameraFraming afterFraming), Is.True);
+                Assert.That(afterFraming.VerticalFieldOfView, Is.EqualTo(beforeFraming.VerticalFieldOfView).Within(0.001f));
+                Assert.That(renderer.viewRenderMode, Is.EqualTo(beforeMode));
+                Assert.That(session.Quality, Is.EqualTo(beforeQuality));
+            }
+            finally
+            {
+                if (lease != null) lease.Dispose();
                 Object.DestroyImmediate(rigObject);
             }
         }
@@ -313,16 +628,12 @@ namespace ViewWeave.RigCameraCreationValidation
                 editor = UnityEditor.Editor.CreateEditor(rig, typeof(ViewWeaveRigInspector));
                 VisualElement root = editor.CreateInspectorGUI();
 
-                PropertyField followedField = root.Q<PropertyField>("referenceFieldOfView");
+                FloatField followedField = root.Q<FloatField>("referenceFieldOfView");
                 Assert.That(followedField, Is.Not.Null);
-                SerializedObject referenceSerialized = new SerializedObject(referenceCamera);
-                SerializedProperty referenceFov = FindCameraFovProperty(referenceSerialized);
-                Assert.That(referenceFov, Is.Not.Null);
-                Assert.That(followedField.bindingPath, Is.EqualTo(referenceFov.propertyPath));
-                Assert.That(root.Q<PropertyField>("rendererFieldOfView"), Is.Null);
+                Assert.That(followedField.label, Is.EqualTo("Reference Vertical Field of View"));
+                Assert.That(root.Q<FloatField>("rendererFieldOfView"), Is.Null);
 
-                referenceFov.floatValue = 79f;
-                referenceSerialized.ApplyModifiedProperties();
+                Invoke(GetField<object>(editor, "view"), "OnFieldOfViewChanged", 79f);
                 Assert.That(referenceCamera.fieldOfView, Is.EqualTo(79f).Within(0.001f));
                 Assert.That(sourceCamera.fieldOfView, Is.EqualTo(originalSourceFov).Within(0.001f), "reference FOV edits must not be saved to the dedicated source camera");
                 Assert.That(renderer.settings.fieldOfView, Is.EqualTo(51f).Within(0.001f), "followed FOV edits must not be saved to the preview copy");
@@ -331,14 +642,12 @@ namespace ViewWeave.RigCameraCreationValidation
                 rendererSerialized.FindProperty("followReferenceFieldOfView").boolValue = false;
                 rendererSerialized.ApplyModifiedProperties();
                 Invoke(GetField<object>(editor, "view"), "RebuildFieldOfView");
-                PropertyField manualField = root.Q<PropertyField>("rendererFieldOfView");
+                FloatField manualField = root.Q<FloatField>("rendererFieldOfView");
                 Assert.That(manualField, Is.Not.Null);
-                Assert.That(manualField.bindingPath, Is.EqualTo("settings.fieldOfView"));
-                Assert.That(root.Q<PropertyField>("referenceFieldOfView"), Is.Null);
+                Assert.That(manualField.label, Is.EqualTo("Vertical Field of View"));
+                Assert.That(root.Q<FloatField>("referenceFieldOfView"), Is.Null);
 
-                rendererSerialized.Update();
-                rendererSerialized.FindProperty("settings.fieldOfView").floatValue = 63f;
-                rendererSerialized.ApplyModifiedProperties();
+                Invoke(GetField<object>(editor, "view"), "OnFieldOfViewChanged", 63f);
                 Assert.That(renderer.settings.fieldOfView, Is.EqualTo(63f).Within(0.001f));
                 Assert.That(referenceCamera.fieldOfView, Is.EqualTo(79f).Within(0.001f));
             }
@@ -429,11 +738,11 @@ namespace ViewWeave.RigCameraCreationValidation
                 Assert.That(Invoke(view, "TryAssignReferenceCamera", foreignCamera), Is.EqualTo(false));
                 Assert.That(renderer.referenceCamera, Is.Null, "an unsafe reference must not be assigned from the authoring UI");
                 Assert.That(root.Q<HelpBox>("referenceCameraWarning").text, Does.Contain("Isolated Preview Scenes are not supported"));
-                Assert.That(root.Q<PropertyField>("rendererFieldOfView"), Is.Not.Null);
+                Assert.That(root.Q<FloatField>("rendererFieldOfView"), Is.Not.Null);
 
                 renderer.referenceCamera = foreignCamera;
                 Invoke(view, "RefreshReferenceCameraState");
-                Assert.That(root.Q<PropertyField>("referenceFieldOfView"), Is.Null, "an unsafe existing reference must not expose an editable FOV field");
+                Assert.That(root.Q<FloatField>("referenceFieldOfView"), Is.Null, "an unsafe existing reference must not expose an editable FOV field");
                 Assert.That(root.Q<HelpBox>("referenceCameraWarning").text, Does.Contain("unavailable"));
             }
             finally
@@ -452,17 +761,43 @@ namespace ViewWeave.RigCameraCreationValidation
             return (T)field.GetValue(target);
         }
 
+        static void AssertInspectorLock(Type inspectorType, Object component, bool expected, string message)
+        {
+            MethodInfo method = inspectorType.GetMethod("IsLockedForStructuralMutation", BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.That(method, Is.Not.Null, "Expected structural lock check on " + inspectorType.Name);
+            object[] arguments = { component, null };
+            bool locked = (bool)method.Invoke(null, arguments);
+            Assert.That(locked, Is.EqualTo(expected), message);
+            if (expected) Assert.That(arguments[1] as string, Is.Not.Empty, "locked inspectors must explain the current owner restriction");
+        }
+
+        static bool ProvideConnectedCalibration(QuiltRenderer renderer, out QuiltEditorDisplayProfile profile)
+        {
+            profile = new QuiltEditorDisplayProfile(16f / 9f, 40f, QuiltDisplaySettingsSource.ConnectedDisplaySnapshot,
+                true, true, 344.65018f, 193.86572f, 283f, "Fake connected calibration for Undo test");
+            return renderer != null;
+        }
+
+        static bool NoConnectedCalibration(QuiltRenderer renderer, out QuiltEditorDisplayProfile profile)
+        {
+            profile = default;
+            return false;
+        }
+
+        static Foldout FindFoldout(VisualElement root, string label)
+        {
+            foreach (Foldout foldout in root.Query<Foldout>().ToList())
+                if (foldout.text == label) return foldout;
+            Assert.Fail("Expected foldout " + label);
+            return null;
+        }
+
         static bool ShouldStopPreview(ViewWeaveRig currentRig, ViewWeaveRig nextRig, ViewWeaveRig previewTarget,
             bool previewActive, bool previewStopping)
         {
             MethodInfo method = typeof(ViewWeaveRigAuthoringWindow).GetMethod("ShouldStopPreviewOnRigChange", BindingFlags.Static | BindingFlags.NonPublic);
             Assert.That(method, Is.Not.Null);
             return (bool)method.Invoke(null, new object[] { currentRig, nextRig, previewTarget, previewActive, previewStopping });
-        }
-
-        static SerializedProperty FindCameraFovProperty(SerializedObject serializedCamera)
-        {
-            return serializedCamera.FindProperty("m_FieldOfView") ?? serializedCamera.FindProperty("field of view");
         }
 
         static void Invoke(object target, string name)

@@ -26,6 +26,7 @@ namespace ViewWeave.Editor
             Undo.undoRedoPerformed -= OnUndoRedo;
             EditorApplication.update -= OnEditorUpdate;
             EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+            view?.Dispose();
             view = null;
         }
 
@@ -38,6 +39,7 @@ namespace ViewWeave.Editor
                 return root;
             }
             focusTarget = ResolveSelectionTarget((ViewWeaveRig)target);
+            view?.Dispose();
             view = new ViewWeaveRigInspectorUI(root, () => target as ViewWeaveRig, () => focusTarget, value => focusTarget = value);
             view.Rebuild();
             return root;

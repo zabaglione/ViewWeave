@@ -23,6 +23,8 @@ namespace ViewWeave.Editor
         static BridgeEditorPreviewRetentionRecord retentionRecord;
         static ViewWeaveBridgeSession sourceSession;
         static BridgeWorkerQuiltOutput sourceOutput;
+        static IDisposable sourceMutationOwnerRegistration;
+        static IDisposable producerMutationOwnerRegistration;
         static RenderPipelineAsset pipelineAtStart;
         static QuiltSettings sourceSettingsAtStart;
         static QuiltQualityPreset qualityAtStart;
@@ -52,6 +54,7 @@ namespace ViewWeave.Editor
             _ = QuiltRenderer.EditorPreviewRenderCallbackTrackingReady;
             BridgeEditorPreviewRetention.ResetProofsAfterDomainReload();
             BridgeEditorPreviewRetention.RegisterEditorCallbacks(StopForLifecycle, DetachRetainedProducer);
+            BridgeDisplayDiscovery.SnapshotPublished += OnConnectedDisplaySnapshotPublished;
             EditorApplication.update += Update;
             EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
             AssemblyReloadEvents.beforeAssemblyReload += OnBeforeAssemblyReload;
@@ -62,6 +65,16 @@ namespace ViewWeave.Editor
         internal static ViewWeaveRig Target => target;
         internal static bool IsActive => active && !stopping;
         internal static bool IsStopping => stopping || BridgeEditorPreviewRetention.HasStoppingRecords;
+        internal static bool CanApplyDisplaySnapshotToRig(ViewWeaveRig rig)
+        {
+            if (!IsActive || target != rig || !outputToDevice) return true;
+            return producerOutput != null && producerOutput.Ready && !producerOutput.RequiresReconnect;
+        }
+        internal static bool CanRefreshDisplaysForRig(ViewWeaveRig rig)
+        {
+            if (!IsActive || target != rig || !outputToDevice) return true;
+            return producerOutput != null && producerOutput.Ready && !producerOutput.RequiresReconnect;
+        }
         internal static string Status => status;
         internal static string LastError => lastError;
         internal static RenderTexture Texture => IsActive && producerRenderer != null ? producerRenderer.QuiltTexture : null;
@@ -116,13 +129,24 @@ namespace ViewWeave.Editor
             if (outputToDeviceValue && (BridgeWorkerLifecycle.RecoveryPending || BridgeWorkerQuiltOutput.HasNativeHandle ||
                 BridgeWorkerQuiltOutput.ShutdownPendingCount != 0))
                 return ResetFailedStart("Bridge worker recovery or another native worker is still active.", out error);
+            if (outputToDeviceValue && BridgeDisplayDiscovery.IsBusy)
+                return ResetFailedStart("Bridge display metadata is refreshing or cleaning up. Wait before starting a device preview.", out error);
 
             if (outputToDevice && !ResolveDeviceConfiguration(out string resolveError)) return ResetFailedStart(resolveError, out error);
             configuredRuntimePathAtStart = sourceSession == null ? string.Empty : sourceSession.runtimePath;
             configuredApplicationNameAtStart = sourceSession == null ? "ViewWeave" : sourceSession.applicationName;
             pipelineAtStart = GraphicsSettings.currentRenderPipeline;
             sourceSettingsAtStart = rig.Renderer.settings.Clone();
-            qualityAtStart = sourceSession == null ? QuiltQualityPreset.Preview : sourceSession.Quality;
+            qualityAtStart = sourceSession == null ? QuiltQualityPreset.Balanced : sourceSession.Quality;
+
+            rig.Renderer.SetMutationOwnerRequired(true);
+            sourceMutationOwnerRegistration = QuiltRendererMutationPolicy.RegisterOwner(rig.Renderer, OwnerToken,
+                GetSourceMutationBlockReason, out string mutationRegistrationError);
+            if (sourceMutationOwnerRegistration == null)
+            {
+                rig.Renderer.SetMutationOwnerRequired(false);
+                return ResetFailedStart("Editor preview could not register renderer ownership: " + Sanitize(mutationRegistrationError), out error);
+            }
 
             try
             {
@@ -199,6 +223,35 @@ namespace ViewWeave.Editor
             QueueEditorRender();
         }
 
+        internal static bool TryRequestDisplayRefresh(BridgeWorkerQuiltOutput rigOutput, out string error)
+        {
+            return TryRequestDisplayRefresh(rigOutput, out _, out error);
+        }
+
+        internal static bool TryRequestDisplayRefresh(BridgeWorkerQuiltOutput rigOutput,
+            out BridgeWorkerQuiltOutput requestOutput, out string error)
+        {
+            requestOutput = rigOutput;
+            if (rigOutput == null)
+            {
+                error = "A Bridge worker output is required to refresh connected displays.";
+                return false;
+            }
+            ViewWeaveBridgeSession sourceSession = rigOutput.GetComponent<ViewWeaveBridgeSession>();
+            if (sourceSession != null && (sourceSession.State == ViewWeaveBridgeSession.SessionState.Connecting ||
+                sourceSession.State == ViewWeaveBridgeSession.SessionState.Reconfiguring ||
+                sourceSession.State == ViewWeaveBridgeSession.SessionState.Closing ||
+                sourceSession.State == ViewWeaveBridgeSession.SessionState.Fault))
+            {
+                error = "Connected displays cannot refresh while the Session is connecting, reconfiguring, stopping, or recovering.";
+                return false;
+            }
+            if (outputToDevice && IsActive && producerOutput != null && target != null &&
+                rigOutput.GetComponent<ViewWeaveRig>() == target)
+                requestOutput = producerOutput;
+            return requestOutput.TryRequestDisplayRefresh(out error);
+        }
+
         static bool ResolveDeviceConfiguration(out string error)
         {
             error = string.Empty;
@@ -213,6 +266,7 @@ namespace ViewWeave.Editor
         {
             Camera sourceCamera = sourceRig.Renderer.sourceCamera;
             Camera framingCamera = sourceRig.Renderer.EffectiveCamera;
+            Camera explicitReferenceCamera = sourceRig.Renderer.referenceCamera;
             producerObject = new GameObject("ViewWeave Editor Preview") { hideFlags = HideFlags.HideAndDontSave | HideFlags.DontUnloadUnusedAsset };
             producerObject.SetActive(false);
             producerCamera = producerObject.AddComponent<Camera>();
@@ -224,8 +278,12 @@ namespace ViewWeave.Editor
             retentionRecord = BridgeEditorPreviewRetentionRecord.Create(producerObject, producerRenderer);
             if (!producerRenderer.BeginEditorPreviewRetention(retentionRecord))
                 throw new InvalidOperationException("QuiltRenderer could not attach its Core texture retention owner.");
+            producerMutationOwnerRegistration = QuiltRendererMutationPolicy.RegisterOwner(producerRenderer, OwnerToken,
+                GetProducerMutationBlockReason, out string producerMutationError);
+            if (producerMutationOwnerRegistration == null)
+                throw new InvalidOperationException("Editor preview could not register its private producer: " + Sanitize(producerMutationError));
             producerRenderer.sourceCamera = producerCamera;
-            producerRenderer.referenceCamera = framingCamera;
+            producerRenderer.referenceCamera = explicitReferenceCamera;
             producerRenderer.followReferenceFieldOfView = sourceRig.Renderer.followReferenceFieldOfView;
             producerRenderer.useRenderRequests = sourceRig.Renderer.useRenderRequests;
             producerRenderer.viewRenderMode = sourceRig.Renderer.viewRenderMode;
@@ -250,7 +308,7 @@ namespace ViewWeave.Editor
             producerRig.SetOutput(null);
             producerRig.AutoRender = false;
             if (!producerRig.ConfigureComponents()) throw new InvalidOperationException("The Editor preview producer could not configure its Camera and adapter.");
-            producerRenderer.referenceCamera = framingCamera;
+            producerRenderer.referenceCamera = explicitReferenceCamera;
             producerRenderer.followReferenceFieldOfView = sourceRig.Renderer.followReferenceFieldOfView;
             producerRenderer.physicalFraming = sourceRig.Renderer.physicalFraming == null ? new QuiltPhysicalFraming() : sourceRig.Renderer.physicalFraming.Clone();
             producerRenderer.viewRenderMode = sourceRig.Renderer.viewRenderMode;
@@ -291,7 +349,7 @@ namespace ViewWeave.Editor
             producerCamera.enabled = false;
             producerCamera.targetTexture = null;
             producerCamera.transform.SetPositionAndRotation(sourceCamera.transform.position, sourceCamera.transform.rotation);
-            producerRenderer.referenceCamera = framingCamera;
+            producerRenderer.referenceCamera = sourceRig.Renderer.referenceCamera;
             producerRenderer.followReferenceFieldOfView = sourceRig.Renderer.followReferenceFieldOfView;
             producerRenderer.physicalFraming = sourceRig.Renderer.physicalFraming == null ? new QuiltPhysicalFraming() : sourceRig.Renderer.physicalFraming.Clone();
             producerRenderer.viewRenderMode = sourceRig.Renderer.viewRenderMode;
@@ -416,6 +474,13 @@ namespace ViewWeave.Editor
                         QueueEditorRender();
                         return;
                     }
+                    if (producerOutput.RequiresReconnect)
+                    {
+                        BeginStop(false, string.IsNullOrEmpty(producerOutput.DisplayRefreshStatus)
+                            ? "The selected Looking Glass profile changed. Stop and reconnect before rendering."
+                            : producerOutput.DisplayRefreshStatus);
+                        return;
+                    }
                     if (!profileApplied && !ApplyDeviceProfile())
                     {
                         BeginStop(false, lastError);
@@ -497,7 +562,7 @@ namespace ViewWeave.Editor
             }
             try
             {
-                QuiltQualityPreset quality = sourceSession == null ? QuiltQualityPreset.Preview : sourceSession.Quality;
+                QuiltQualityPreset quality = sourceSession == null ? QuiltQualityPreset.Balanced : sourceSession.Quality;
                 QuiltQualityProfile selected = ViewWeaveBridgeSession.CreateQualityProfile(displayProfile, quality);
                 producerRig.ApplyProfile(selected);
                 producerRenderer.settings = target.Renderer.settings.Clone();
@@ -529,7 +594,7 @@ namespace ViewWeave.Editor
                 current.viewAspect != sourceSettingsAtStart.viewAspect) return true;
             if (outputToDevice)
             {
-                QuiltQualityPreset quality = sourceSession == null ? QuiltQualityPreset.Preview : sourceSession.Quality;
+                QuiltQualityPreset quality = sourceSession == null ? QuiltQualityPreset.Balanced : sourceSession.Quality;
                 if (quality != qualityAtStart) return true;
                 if (sourceSession != null && (sourceSession.runtimePath != configuredRuntimePathAtStart ||
                     sourceSession.applicationName != configuredApplicationNameAtStart || sourceSession.displayOrdinal != displayOrdinalAtStart)) return true;
@@ -538,6 +603,61 @@ namespace ViewWeave.Editor
             int desiredMsaa = GetDesiredMsaaSamples(target.Renderer.sourceCamera, target.Renderer.GuardBehaviour as IQuiltMsaaProvider, desiredLayout);
             return lastMsaaSamples != 0 && desiredMsaa != lastMsaaSamples;
         }
+
+        static string GetSourceMutationBlockReason(QuiltRendererMutationRequest request)
+        {
+            if (request.Kind == QuiltRendererMutationKind.AutoRender && request.HasBooleanValue && !request.BooleanValue)
+                return string.Empty;
+            if (!active || stopping || target == null || target.Renderer == null)
+                return "The Editor preview is stopping or does not own an active Rig.";
+            switch (request.Kind)
+            {
+                case QuiltRendererMutationKind.Framing:
+                    if (request.HasFraming && request.Framing.PhysicalFramingEnabled)
+                    {
+                        if (!IsFinite(request.Framing.ApertureWidthMillimeters) || !IsFinite(request.Framing.ApertureHeightMillimeters) ||
+                            !IsFinite(request.Framing.UnitsPerMeter) || request.Framing.ApertureWidthMillimeters <= 0f ||
+                            request.Framing.ApertureHeightMillimeters <= 0f || request.Framing.UnitsPerMeter <= 0f)
+                            return "Physical framing dimensions must be finite and greater than zero.";
+                        if (outputToDevice)
+                        {
+                            if (producerOutput == null || !producerOutput.Ready || !producerOutput.Profile.IsValid)
+                                return "Physical framing is available after the device preview profile is Ready.";
+                            if (!IsFinite(producerOutput.zoom) || producerOutput.zoom != 1f ||
+                                !producerOutput.Profile.MatchesPhysicalAspect(request.Framing.ApertureWidthMillimeters,
+                                    request.Framing.ApertureHeightMillimeters))
+                                return "Physical framing requires a matching connected display aspect and Bridge zoom of 1.";
+                        }
+                    }
+                    return string.Empty;
+                case QuiltRendererMutationKind.SamplingMode:
+                case QuiltRendererMutationKind.Quality:
+                    return string.Empty;
+                case QuiltRendererMutationKind.AutoRender:
+                    return request.HasBooleanValue && request.BooleanValue
+                        ? "Auto Render cannot be enabled while the Editor preview owns this Rig."
+                        : string.Empty;
+                case QuiltRendererMutationKind.OutputZoom:
+                    if (!request.HasFloatValue || !IsFinite(request.FloatValue) || request.FloatValue <= 0f)
+                        return "Bridge zoom must be finite and greater than zero.";
+                    if (target.Renderer.physicalFraming != null && target.Renderer.physicalFraming.enabled && request.FloatValue != 1f)
+                        return "Physical 1:1 framing requires Bridge zoom to be exactly 1.";
+                    return outputToDevice && (producerOutput == null || !producerOutput.Ready)
+                        ? "Bridge zoom can change after the device preview is Ready."
+                        : string.Empty;
+                default:
+                    return "The Editor preview owns this Rig; stop preview before changing its structure or transport.";
+            }
+        }
+
+        static string GetProducerMutationBlockReason(QuiltRendererMutationRequest request)
+        {
+            if (producerObject == null || retentionRecord == null || stopping)
+                return "The private Editor preview producer is stopping.";
+            return string.Empty;
+        }
+
+        static bool IsFinite(float value) => !float.IsNaN(value) && !float.IsInfinity(value);
 
         internal static int GetDesiredMsaaSamples(Camera incomingSourceCamera, IQuiltMsaaProvider incomingGuard, QuiltLayout desiredLayout)
         {
@@ -611,9 +731,7 @@ namespace ViewWeave.Editor
             }
             if (!BridgeEditorPreviewRetention.HasPending)
             {
-                stopping = false;
-                if (restartAfterStop) CompleteStop();
-                else if (string.IsNullOrEmpty(lastError)) status = "Idle";
+                CompleteStop();
             }
             else QueueEditorRender();
         }
@@ -644,6 +762,7 @@ namespace ViewWeave.Editor
             producerRenderer = null;
             producerOutput = null;
             retentionRecord = null;
+            DisposeMutationOwnerRegistrations();
             bool restart = restartAfterStop;
             restartAfterStop = false;
             ViewWeaveRig nextTarget = target;
@@ -779,6 +898,7 @@ namespace ViewWeave.Editor
 
         static void ResetState()
         {
+            DisposeMutationOwnerRegistrations();
             active = false;
             stopping = false;
             rendering = false;
@@ -787,6 +907,21 @@ namespace ViewWeave.Editor
             sourceSession = null;
             sourceOutput = null;
             QuiltDisplaySettingsResolver.NotifyChanged();
+        }
+
+        static void DisposeMutationOwnerRegistrations()
+        {
+            if (sourceMutationOwnerRegistration != null)
+            {
+                sourceMutationOwnerRegistration.Dispose();
+                sourceMutationOwnerRegistration = null;
+                if (target != null && target.Renderer != null) target.Renderer.SetMutationOwnerRequired(false);
+            }
+            if (producerMutationOwnerRegistration != null)
+            {
+                producerMutationOwnerRegistration.Dispose();
+                producerMutationOwnerRegistration = null;
+            }
         }
 
         static bool ResolveDisplayProfile(QuiltRenderer renderer, out QuiltEditorDisplayProfile profile)
@@ -816,7 +951,24 @@ namespace ViewWeave.Editor
                     connected.CalibrationDpi, connected.ToString());
                 return true;
             }
+            BridgeWorkerQuiltOutput output = renderer.OutputBehaviour as BridgeWorkerQuiltOutput;
+            BridgeDisplaySnapshot snapshot = output == null ? null : output.CurrentConfigurationDisplaySnapshot;
+            ViewWeaveBridgeSession displaySession = renderer.GetComponent<ViewWeaveBridgeSession>();
+            uint ordinal = displaySession != null ? displaySession.displayOrdinal : output == null ? 0u : output.displayOrdinal;
+            if (snapshot != null && snapshot.TryGetDisplay(ordinal, out BridgeDisplayProfile cached))
+            {
+                profile = new QuiltEditorDisplayProfile(cached.Aspect, cached.Viewcone, QuiltDisplaySettingsSource.ConnectedDisplaySnapshot,
+                    true, cached.HasPhysicalCalibration, cached.PhysicalWidthMillimeters, cached.PhysicalHeightMillimeters,
+                    cached.CalibrationDpi, "Last explicit Bridge display refresh, generation " + snapshot.Generation + ": " + cached);
+                return true;
+            }
             return false;
+        }
+
+        static void OnConnectedDisplaySnapshotPublished(BridgeDisplaySnapshot snapshot)
+        {
+            QuiltDisplaySettingsResolver.NotifyChanged();
+            SceneView.RepaintAll();
         }
 
         static bool IsCurrentDevicePreviewProfile(QuiltRenderer renderer)

@@ -41,6 +41,14 @@ struct WorkerContext {
     std::string runtimePath;
     std::string applicationName;
     uint32_t displayOrdinal = 0;
+    bool metadataOnly = false;
+    uint64_t displaySnapshotGeneration = 0;
+    uint64_t displayRequestedGeneration = 0;
+    bool displayRefreshPending = false;
+    bool displayCleanupFinished = false;
+    int32_t displaySnapshotResult = 0;
+    std::string displaySnapshotError;
+    std::vector<LkgWorkerDisplaySnapshotItemV1> displaySnapshot;
     IUnknown* producerDevice = nullptr;
     LkgWorkerStatus status{};
     LkgWorkerPhysicalDisplayInfoV1 physicalDisplay{ static_cast<uint32_t>(sizeof(LkgWorkerPhysicalDisplayInfoV1)), 1, 0, 0, 0.0f, 0 };
@@ -132,6 +140,7 @@ static std::mutex hostRegistryMutex;
 static WorkerHost* persistentHost = nullptr;
 #if defined(LKG_WORKER_TRANSPORT_TESTING)
 static std::atomic<bool> testThrowDuringWorkerCleanup{false};
+static std::atomic<bool> testThrowDuringDisplayQuery{false};
 #endif
 
 struct WorkerDrawData {
@@ -160,6 +169,98 @@ static UINT64 D3D12FenceCompletedValue(ID3D12Fence* fence) {
 static thread_local WorkerContext* renderExceptionContext = nullptr;
 static thread_local uint32_t renderExceptionSlot = 3;
 static void SetFault(WorkerContext& context, uint32_t code, const char* text);
+
+static constexpr uint32_t kMaximumMetadataDisplays = 256;
+
+static bool QueryDisplaySnapshot(uint64_t generation, std::vector<LkgWorkerDisplaySnapshotItemV1>& items,
+    int32_t& result, std::string& error) {
+    items.clear();
+    error.clear();
+    result = 0;
+    try {
+#if defined(LKG_WORKER_TRANSPORT_TESTING)
+    if (testThrowDuringDisplayQuery.exchange(false, std::memory_order_acq_rel))
+        throw std::runtime_error("injected display metadata query exception");
+#endif
+    uint32_t count = 0;
+    result = lkg_bridge_get_display_count(&count);
+    if (result != 0) {
+        error = "Bridge display enumeration failed.";
+        return false;
+    }
+    if (count > kMaximumMetadataDisplays) {
+        result = -4;
+        error = "Bridge returned more displays than the metadata limit.";
+        return false;
+    }
+    try { items.reserve(count); }
+    catch (...) {
+        result = -5;
+        error = "Display metadata allocation failed.";
+        return false;
+    }
+    for (uint32_t ordinal = 0; ordinal < count; ++ordinal) {
+        LkgWorkerDisplaySnapshotItemV1 item{};
+        item.structSize = sizeof(item);
+        item.version = 1;
+        item.displayOrdinal = ordinal;
+        item.reserved0 = 0;
+        item.physical.structSize = sizeof(item.physical);
+        item.physical.version = 1;
+        LkgBridgePhysicalDisplayInfoV1 physical{};
+        physical.structSize = sizeof(physical);
+        physical.version = 1;
+        result = lkg_bridge_get_display(ordinal, &item.profile);
+        if (result != 0) {
+            items.clear();
+            error = "Bridge display profile lookup failed.";
+            return false;
+        }
+        const int32_t physicalResult = lkg_bridge_get_physical_display_v1(item.profile.index, &physical);
+        if (physicalResult == 0 && physical.valid && physical.pixelWidth > 0 && physical.pixelHeight > 0 &&
+            std::isfinite(physical.dpi) && physical.dpi > 0.0f) {
+            item.physical.pixelWidth = physical.pixelWidth;
+            item.physical.pixelHeight = physical.pixelHeight;
+            item.physical.dpi = physical.dpi;
+            item.physical.valid = 1;
+        } else {
+            item.physical.pixelWidth = 0;
+            item.physical.pixelHeight = 0;
+            item.physical.dpi = 0.0f;
+            item.physical.valid = 0;
+        }
+        items.push_back(item);
+    }
+    (void)generation;
+    return true;
+    } catch (...) {
+        items.clear();
+        result = -6;
+        error = "Bridge display metadata query threw an exception.";
+        return false;
+    }
+}
+
+static void PublishDisplaySnapshot(WorkerContext& context, uint64_t generation,
+    std::vector<LkgWorkerDisplaySnapshotItemV1>&& items, int32_t result, std::string&& error) {
+    std::lock_guard<std::mutex> lock(context.mutex);
+    if (context.closeRequested.load(std::memory_order_acquire)) return;
+    context.displaySnapshot = std::move(items);
+    context.displaySnapshotGeneration = generation;
+    context.displaySnapshotResult = result;
+    context.displaySnapshotError = std::move(error);
+    if (context.metadataOnly) context.status.state = LKG_WORKER_READY;
+    context.condition.notify_all();
+}
+
+static bool RefreshDisplaySnapshot(WorkerContext& context, uint64_t generation) {
+    std::vector<LkgWorkerDisplaySnapshotItemV1> items;
+    int32_t result = 0;
+    std::string error;
+    const bool success = QueryDisplaySnapshot(generation, items, result, error);
+    PublishDisplaySnapshot(context, generation, success ? std::move(items) : std::vector<LkgWorkerDisplaySnapshotItemV1>{}, result, std::move(error));
+    return success;
+}
 
 #if defined(LKG_WORKER_TRANSPORT_TESTING)
 static LRESULT CALLBACK WorkerTestWindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -639,7 +740,7 @@ static void WorkerRenderEvent(int eventId, void* value) {
 static void RunWorker(WorkerContext* context) {
     lkg_bridge_worker_enter();
 #if defined(LKG_WORKER_TRANSPORT_TESTING)
-    if (!CreateWorkerTestWindow(*context)) {
+    if (!context->metadataOnly && !CreateWorkerTestWindow(*context)) {
         SetFault(*context, 19, "worker test window creation failed");
     }
 #endif
@@ -734,6 +835,20 @@ static void RunWorker(WorkerContext* context) {
             std::lock_guard<std::mutex> lock(context->mutex);
             context->cleanupProven = cleanupProven;
             if (context->status.state != LKG_WORKER_FAULT) context->status.state = LKG_WORKER_CLOSED;
+            if (context->metadataOnly) {
+                if (context->status.state == LKG_WORKER_FAULT && context->displaySnapshotGeneration < context->displayRequestedGeneration &&
+                    context->displaySnapshotError.empty()) {
+                    context->displayRefreshPending = false;
+                    context->displaySnapshotGeneration = context->displayRequestedGeneration;
+                    context->displaySnapshotResult = -7;
+                    context->displaySnapshotError = context->status.error[0] ? context->status.error : "Bridge metadata worker failed before publishing a snapshot.";
+                }
+                if (!cleanupProven && context->displaySnapshotError.empty()) {
+                    context->displaySnapshotResult = -6;
+                    context->displaySnapshotError = "Bridge metadata SDK cleanup was not proven.";
+                }
+                context->displayCleanupFinished = true;
+            }
             if (NativeTraceEnabled())
                 cleanupEndSnapshot = CaptureWorkerShutdownSnapshot(*context, cleanupSessionId);
         }
@@ -786,6 +901,27 @@ static void RunWorker(WorkerContext* context) {
         return;
     }
     initialized = true;
+    if (context->metadataOnly) {
+        for (;;) {
+            uint64_t generation = 0;
+            {
+                std::unique_lock<std::mutex> lock(context->mutex);
+                context->condition.wait(lock, [&] {
+                    return context->displayRefreshPending || context->closeRequested.load(std::memory_order_acquire);
+                });
+                if (context->closeRequested.load(std::memory_order_acquire)) {
+                    context->displayRefreshPending = false;
+                    if (context->status.state != LKG_WORKER_FAULT) context->status.state = LKG_WORKER_CLOSING;
+                    break;
+                }
+                generation = context->displayRequestedGeneration;
+                context->displayRefreshPending = false;
+            }
+            RefreshDisplaySnapshot(*context, generation);
+        }
+        finish();
+        return;
+    }
     if (producer.As(&producer12) == S_OK) {
         const LUID luid = producer12->GetAdapterLuid();
         if (FAILED(CreateDXGIFactory1(IID_PPV_ARGS(&factory4))) ||
@@ -862,10 +998,24 @@ static void RunWorker(WorkerContext* context) {
     while (true) {
         PumpWorkerMessages(*context);
         WorkerContext::Job job{};
+        uint64_t displayRefreshGeneration = 0;
         {
             std::unique_lock<std::mutex> lock(context->mutex);
-            context->condition.wait_for(lock, std::chrono::milliseconds(10), [&] { return context->jobCount != 0 || (context->closeRequested.load(std::memory_order_acquire) && context->pendingTokens == 0); });
+            context->condition.wait_for(lock, std::chrono::milliseconds(10), [&] {
+                return context->jobCount != 0 || context->displayRefreshPending ||
+                    (context->closeRequested.load(std::memory_order_acquire) && context->pendingTokens == 0);
+            });
+            if (context->closeRequested.load(std::memory_order_acquire)) context->displayRefreshPending = false;
             if (context->jobCount == 0 && context->closeRequested.load(std::memory_order_acquire) && context->pendingTokens == 0) break;
+            if (context->displayRefreshPending) {
+                displayRefreshGeneration = context->displayRequestedGeneration;
+                context->displayRefreshPending = false;
+            }
+            if (displayRefreshGeneration != 0) {
+                lock.unlock();
+                RefreshDisplaySnapshot(*context, displayRefreshGeneration);
+                continue;
+            }
             if (!PopJob(*context, job)) continue;
             context->inFlightJob = true;
             context->inFlightSlot = job.slot;
@@ -1026,9 +1176,51 @@ LKG_EXPORT void* lkg_worker_begin(const char* runtimePath, const char* applicati
     return context;
 }
 
+LKG_EXPORT void* lkg_worker_begin_metadata_v1(const char* runtimePath, const char* applicationName) {
+    if (!runtimePath || !runtimePath[0] || !applicationName || !applicationName[0]) return nullptr;
+    if (!lkg_bridge_worker_claim()) return nullptr;
+    WorkerContext* context = nullptr;
+    try {
+        context = new WorkerContext();
+        context->runtimePath = runtimePath;
+        for (char& character : context->runtimePath) if (character == '/') character = '\\';
+        context->applicationName = applicationName;
+        context->metadataOnly = true;
+        context->displayRequestedGeneration = 1;
+        context->displayRefreshPending = true;
+        context->status.state = LKG_WORKER_CONNECTING;
+        if (!GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
+                reinterpret_cast<LPCWSTR>(&lkg_worker_begin_metadata_v1), &context->moduleReference))
+            throw std::runtime_error("metadata worker module pin failed");
+        {
+            std::lock_guard<std::mutex> lock(registryMutex);
+            if (finalShutdownRequested) throw std::runtime_error("final worker shutdown already requested");
+            registry.insert(context);
+        }
+        if (!SubmitToPersistentHost(context)) {
+            std::lock_guard<std::mutex> lock(registryMutex);
+            registry.erase(context);
+            throw std::runtime_error("persistent metadata worker host unavailable");
+        }
+    } catch (...) {
+        if (context && context->moduleReference) {
+            FreeLibrary(context->moduleReference);
+            context->moduleReference = nullptr;
+        }
+        delete context;
+        lkg_bridge_worker_release_claim();
+        return nullptr;
+    }
+    return context;
+}
+
 #if defined(LKG_WORKER_TRANSPORT_TESTING)
 LKG_EXPORT void lkg_worker_test_throw_during_cleanup(void) {
     testThrowDuringWorkerCleanup.store(true, std::memory_order_release);
+}
+
+LKG_EXPORT void lkg_worker_test_throw_during_display_query(void) {
+    testThrowDuringDisplayQuery.store(true, std::memory_order_release);
 }
 
 LKG_EXPORT int32_t lkg_worker_test_set_d3d12_timeout(void* handle, uint64_t timeoutMilliseconds) {
@@ -1087,6 +1279,70 @@ LKG_EXPORT int32_t lkg_worker_get_physical_display_v1(void* handle, LkgWorkerPhy
     info->dpi = context->physicalDisplay.dpi;
     info->valid = context->physicalDisplay.valid;
     return 0;
+}
+
+LKG_EXPORT int32_t lkg_worker_request_display_refresh_v1(void* handle, uint64_t* requestedGeneration) {
+    if (!handle || !requestedGeneration) return -1;
+    auto* context = static_cast<WorkerContext*>(handle);
+    std::lock_guard<std::mutex> registryLock(registryMutex);
+    if (registry.find(context) == registry.end()) return -2;
+    std::lock_guard<std::mutex> lock(context->mutex);
+    if (finalShutdownRequested || context->closeRequested.load(std::memory_order_acquire) ||
+        context->status.state == LKG_WORKER_CLOSING || context->status.state == LKG_WORKER_CLOSED ||
+        context->status.state == LKG_WORKER_FAULT) return -3;
+    if (context->displayRequestedGeneration == UINT64_MAX) return -4;
+    ++context->displayRequestedGeneration;
+    context->displayRefreshPending = true;
+    *requestedGeneration = context->displayRequestedGeneration;
+    context->condition.notify_all();
+    return 0;
+}
+
+LKG_EXPORT int32_t lkg_worker_get_display_snapshot_v1(void* handle, LkgWorkerDisplaySnapshotStatusV1* status,
+    LkgWorkerDisplaySnapshotItemV1* items, uint32_t capacity, uint32_t* requiredCount) {
+    if (!handle || !status || !requiredCount || status->structSize != sizeof(LkgWorkerDisplaySnapshotStatusV1) || status->version != 1 ||
+        (capacity != 0 && !items)) return -1;
+    auto* context = static_cast<WorkerContext*>(handle);
+    std::lock_guard<std::mutex> registryLock(registryMutex);
+    if (registry.find(context) == registry.end()) return -2;
+    std::lock_guard<std::mutex> lock(context->mutex);
+    LkgWorkerDisplaySnapshotStatusV1 snapshotStatus{};
+    snapshotStatus.structSize = sizeof(snapshotStatus);
+    snapshotStatus.version = 1;
+    snapshotStatus.state = context->status.state;
+    snapshotStatus.itemCount = static_cast<uint32_t>(context->displaySnapshot.size());
+    snapshotStatus.snapshotGeneration = context->displaySnapshotGeneration;
+    snapshotStatus.requestedGeneration = context->displayRequestedGeneration;
+    snapshotStatus.pending = context->displayRefreshPending || context->displaySnapshotGeneration < context->displayRequestedGeneration ? 1u : 0u;
+    snapshotStatus.cleanupFinished = context->displayCleanupFinished ? 1u : 0u;
+    snapshotStatus.result = context->displaySnapshotResult;
+    std::snprintf(snapshotStatus.error, sizeof(snapshotStatus.error), "%s", context->displaySnapshotError.c_str());
+    *requiredCount = snapshotStatus.itemCount;
+    *status = snapshotStatus;
+    if (capacity < snapshotStatus.itemCount) return -3;
+    for (uint32_t index = 0; index < snapshotStatus.itemCount; ++index) items[index] = context->displaySnapshot[index];
+    return 0;
+}
+
+LKG_EXPORT int32_t lkg_worker_end_metadata_v1(void* handle) {
+    if (!handle) return -1;
+    auto* context = static_cast<WorkerContext*>(handle);
+    {
+        std::lock_guard<std::mutex> registryLock(registryMutex);
+        if (registry.find(context) == registry.end()) return -2;
+        std::lock_guard<std::mutex> lock(context->mutex);
+        if (!context->metadataOnly || !context->cleanupProven || !context->finished.load(std::memory_order_acquire)) return -3;
+    }
+    WorkerHost* host = nullptr;
+    {
+        std::lock_guard<std::mutex> hostRegistryLock(hostRegistryMutex);
+        host = persistentHost;
+    }
+    if (host) {
+        std::lock_guard<std::mutex> hostLock(host->mutex);
+        if (host->active == context || host->queued == context) return -3;
+    }
+    return lkg_worker_release(handle);
 }
 
 LKG_EXPORT int32_t lkg_worker_close(void* handle) {
@@ -1370,6 +1626,10 @@ LKG_EXPORT int32_t lkg_worker_collect_closed(void) {
             bool idleHost = true;
             {
                 std::lock_guard<std::mutex> lock(context->mutex);
+                if (context->metadataOnly) {
+                    ++it;
+                    continue;
+                }
                 finished = context->cleanupProven && context->finished.load(std::memory_order_acquire) &&
                     context->pendingTokens == 0 && context->jobCount == 0 && !context->inFlightJob;
             }
