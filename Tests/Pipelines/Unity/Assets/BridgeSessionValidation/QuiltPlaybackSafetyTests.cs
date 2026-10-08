@@ -29,6 +29,18 @@ namespace ViewWeave.BridgeSessionValidation
         }
 
         [Test]
+        public void FinalQuitKeepsPendingReadbackOrFenceInProgress()
+        {
+            Type policy = typeof(BridgeWorkerQuiltOutput).Assembly.GetType("ViewWeave.BridgePlaybackCleanupPolicy", true);
+            MethodInfo shouldWait = policy.GetMethod("ShouldWaitForFinalQuitProof", BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.IsNotNull(shouldWait);
+            Assert.IsTrue((bool)shouldWait.Invoke(null, new object[] { true, false, true }), "A pending readback must remain in progress after native handoff.");
+            Assert.IsTrue((bool)shouldWait.Invoke(null, new object[] { true, true, false }), "A pending fence must remain in progress.");
+            Assert.IsFalse((bool)shouldWait.Invoke(null, new object[] { true, true, true }), "Completed readback and fence proceed to the remaining ownership proof.");
+            Assert.IsFalse((bool)shouldWait.Invoke(null, new object[] { false, false, false }), "The final-quit defer rule does not alter ordinary cleanup.");
+        }
+
+        [Test]
         public void SinglePngCursorEndDoesNotReleasePlaybackButSequenceEndDoes()
         {
             Type policy = typeof(BridgeWorkerQuiltOutput).Assembly.GetType("ViewWeave.BridgePlaybackCleanupPolicy", true);

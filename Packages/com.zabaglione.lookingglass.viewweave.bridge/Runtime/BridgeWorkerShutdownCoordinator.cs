@@ -17,6 +17,17 @@ namespace ViewWeave
 
         internal static bool FinalizationReady => finalizationReady;
 
+        internal static bool WaitForFinalization()
+        {
+            return BridgeWorkerQuitWait.WaitForFinalization(
+                RequestQuit,
+                PumpOnce,
+                () => finalizationReady && BridgeWorkerReaper.PendingCount == 0 &&
+                    !BridgeWorkerReaper.HasUnprovenResources && PlaybackQuitCleanupComplete(),
+                WarnOnce,
+                ShutdownTimeoutSeconds);
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void RegisterPlayerQuitHook()
         {
@@ -41,6 +52,10 @@ namespace ViewWeave
                 timedOut = false;
                 deadline = Time.realtimeSinceStartupAsDouble + ShutdownTimeoutSeconds;
                 BridgeWorkerLifecycle.BeginFinalShutdown();
+#if UNITY_EDITOR
+                if (Application.platform == RuntimePlatform.WindowsEditor)
+                    BridgeQuiltPlaybackLease.PrepareForFinalQuitAll("Windows Editor quit requested; proving playback GPU completion.");
+#endif
                 try { StopManagedWorkers(); }
                 catch (Exception error) { WarnOnce("Stopping Bridge worker outputs failed: " + Sanitize(error.Message)); }
                 try
@@ -117,6 +132,9 @@ namespace ViewWeave
 
         static bool HasPotentialWorkerActivity()
         {
+#if UNITY_EDITOR
+            if (Application.platform == RuntimePlatform.WindowsEditor && !BridgeQuiltPlaybackLease.FinalQuitCleanupComplete) return true;
+#endif
             if (BridgeWorkerLifecycle.FinalShutdownPending || BridgeWorkerReaper.PendingCount != 0 || BridgeWorkerQuiltOutput.HasNativeHandle) return true;
             foreach (BridgeQuiltOutput output in Resources.FindObjectsOfTypeAll<BridgeQuiltOutput>())
                 if (output != null && output.Session != 0) return true;
@@ -183,6 +201,10 @@ namespace ViewWeave
         internal static void PumpOnce()
         {
             if (!requestAttempted || finalizationReady) return;
+#if UNITY_EDITOR
+            if (Application.platform == RuntimePlatform.WindowsEditor)
+                BridgeQuiltPlaybackLease.PumpAll();
+#endif
             BridgeWorkerReaper.PumpNow();
             if (timedOut) return;
             if (!finalStatusComplete) PumpNativeStatus();
@@ -190,7 +212,11 @@ namespace ViewWeave
             {
                 BridgeWorkerReaper.MarkFinalShutdownCollected();
                 BridgeWorkerReaper.PumpNow();
-                if (BridgeWorkerReaper.PendingCount == 0 && !BridgeWorkerReaper.HasUnprovenResources)
+#if UNITY_EDITOR
+                if (Application.platform == RuntimePlatform.WindowsEditor)
+                    BridgeQuiltPlaybackLease.CompleteAfterBridgeShutdownAll();
+#endif
+                if (BridgeWorkerReaper.PendingCount == 0 && !BridgeWorkerReaper.HasUnprovenResources && PlaybackQuitCleanupComplete())
                 {
                     finalizationReady = true;
                     BridgeWorkerLifecycle.EndFinalShutdown();
@@ -207,6 +233,15 @@ namespace ViewWeave
                 timedOut = true;
                 WarnOnce("Final worker shutdown exceeded 10 seconds; quit was canceled and resources remain retained.");
             }
+        }
+
+        static bool PlaybackQuitCleanupComplete()
+        {
+#if UNITY_EDITOR
+            if (Application.platform == RuntimePlatform.WindowsEditor)
+                return BridgeQuiltPlaybackLease.FinalQuitCleanupComplete;
+#endif
+            return true;
         }
 
         static void PumpNativeStatus()

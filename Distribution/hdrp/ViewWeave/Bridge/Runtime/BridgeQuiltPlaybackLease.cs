@@ -33,6 +33,9 @@ namespace ViewWeave
         bool transitionProofRequired;
         bool readbackCompleted;
         bool readbackValid;
+        bool transitionReadbackIssued;
+        bool finalQuitPending;
+        AsyncGPUReadbackRequest transitionReadback;
         bool resetCompleted;
         bool invalidated;
         bool restoreAutoRender;
@@ -220,6 +223,7 @@ namespace ViewWeave
 
         internal void PumpOnce()
         {
+            PumpTransitionReadback();
             if (State == LeaseState.Retained)
             {
                 if (CanReleaseTexture())
@@ -323,8 +327,10 @@ namespace ViewWeave
                 return;
             }
             if (Time.realtimeSinceStartupAsDouble >= stateDeadline && cleanupProofAvailable) { CompleteCleanup(!invalidated); return; }
-            if (!FencePassed()) return;
+            bool fencePassed = FencePassed();
+            if (!fencePassed) return;
             if (recoveryRecord != null) recoveryRecord.SetTailFencePassed(true);
+            if (BridgePlaybackCleanupPolicy.ShouldWaitForFinalQuitProof(finalQuitPending, readbackCompleted, fencePassed)) return;
             if (output != null && output.Ready && session != null && session.State == ViewWeaveBridgeSession.SessionState.Rendering)
             {
                 if (!resetCompleted)
@@ -617,6 +623,65 @@ namespace ViewWeave
             }
         }
 
+        internal void PrepareForFinalQuit(string reason)
+        {
+            if (State == LeaseState.Stopped || transitionReadbackIssued || transitionProofRequired) return;
+            invalidated = true;
+            restoreAutoRender = false;
+            cleanupStarted = true;
+            transitionProofRequired = true;
+            finalQuitPending = true;
+            State = LeaseState.Stopping;
+            stateDeadline = Time.realtimeSinceStartupAsDouble + PlaybackOwnershipTimeoutSeconds;
+            statusMessage = reason;
+            if (output != null) output.ClearPlaybackTexture(sessionToken, playbackTexture);
+            try
+            {
+                if (!hasTailFence) SetTailFence();
+                if (recoveryRecord == null)
+                {
+                    Retain("Playback has no durable recovery record; source texture remains retained.");
+                    return;
+                }
+                if (playbackTexture == null)
+                {
+                    Retain("Playback source texture is unavailable; GPU completion remains unproven.");
+                    return;
+                }
+                transitionReadback = AsyncGPUReadback.Request(playbackTexture, mipIndex: 0, x: 0, width: 1,
+                    y: 0, height: 1, z: 0, depth: 1, dstFormat: TextureFormat.RGBA32);
+                transitionReadbackIssued = true;
+            }
+            catch (Exception exception)
+            {
+                readbackCompleted = false;
+                readbackValid = false;
+                if (recoveryRecord != null) recoveryRecord.SetReadback(false, false);
+                Retain("Final quit GPU readback could not be started: " + Sanitize(exception.Message));
+            }
+        }
+
+        void PumpTransitionReadback()
+        {
+            if (!transitionReadbackIssued || readbackCompleted) return;
+            try
+            {
+                transitionReadback.Update();
+                if (!transitionReadback.done) return;
+                readbackCompleted = true;
+                readbackValid = !transitionReadback.hasError;
+                if (recoveryRecord != null) recoveryRecord.SetReadback(true, readbackValid);
+                if (!readbackValid) Retain("Final quit GPU readback failed; playback resources remain retained.");
+            }
+            catch (Exception exception)
+            {
+                readbackCompleted = false;
+                readbackValid = false;
+                if (recoveryRecord != null) recoveryRecord.SetReadback(false, false);
+                Retain("Final quit GPU readback update failed: " + Sanitize(exception.Message));
+            }
+        }
+
         internal void TryCompleteAfterBridgeShutdown()
         {
             if (State != LeaseState.Stopping && State != LeaseState.Retained) return;
@@ -625,6 +690,8 @@ namespace ViewWeave
                 State = LeaseState.Stopping;
             }
             if (output != null && output.HasReaperHandoff(sessionGeneration)) OnReaperHandoff(sessionGeneration);
+            bool fencePassed = FencePassed();
+            if (BridgePlaybackCleanupPolicy.ShouldWaitForFinalQuitProof(finalQuitPending, readbackCompleted, fencePassed)) return;
             if (CanReleaseTexture()) CompleteCleanup(false);
             else if (State != LeaseState.Retained) Retain("Bridge shutdown did not provide a safe same-generation handoff; playback texture remains retained.");
         }
@@ -635,6 +702,28 @@ namespace ViewWeave
             {
                 BridgeQuiltPlaybackLease lease = knownLeases[i];
                 if (!ReferenceEquals(lease, null)) lease.PrepareForEditorTransition(reason);
+            }
+        }
+
+        internal static void PrepareForFinalQuitAll(string reason)
+        {
+            for (int i = knownLeases.Count - 1; i >= 0; --i)
+            {
+                BridgeQuiltPlaybackLease lease = knownLeases[i];
+                if (!ReferenceEquals(lease, null)) lease.PrepareForFinalQuit(reason);
+            }
+        }
+
+        internal static bool FinalQuitCleanupComplete
+        {
+            get
+            {
+                foreach (BridgeQuiltPlaybackLease lease in knownLeases)
+                    if (!ReferenceEquals(lease, null)) return false;
+                BridgePlaybackRecoveryRecord[] records = Resources.FindObjectsOfTypeAll<BridgePlaybackRecoveryRecord>();
+                foreach (BridgePlaybackRecoveryRecord record in records)
+                    if (record != null) return false;
+                return true;
             }
         }
 
@@ -742,6 +831,11 @@ namespace ViewWeave
 
     internal static class BridgePlaybackCleanupPolicy
     {
+        internal static bool ShouldWaitForFinalQuitProof(bool finalQuitPending, bool readbackCompleted, bool fencePassed)
+        {
+            return finalQuitPending && (!readbackCompleted || !fencePassed);
+        }
+
         internal static bool DeadlineExpiredWithoutProof(double now, double deadline, bool proofAvailable)
         {
             return now >= deadline && !proofAvailable;

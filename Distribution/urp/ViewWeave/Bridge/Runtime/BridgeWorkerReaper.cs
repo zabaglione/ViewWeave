@@ -14,6 +14,7 @@ namespace ViewWeave
             internal CommandBuffer command;
             internal GraphicsFence fence;
             internal AsyncGPUReadbackRequest readback;
+            internal bool readbackIssued;
             internal bool proofStarted;
             internal bool warned;
         }
@@ -358,6 +359,7 @@ namespace ViewWeave
                 }
                 finally { fenceCommand.Release(); }
                 lease.readback = AsyncGPUReadback.Request(texture, 0, 0, 1, 0, 1, 0, 1);
+                lease.readbackIssued = true;
                 lease.record.SetGpuProof(true, false, false, false);
             }
             catch (Exception error)
@@ -370,8 +372,10 @@ namespace ViewWeave
         void PumpGpuProof(Lease lease)
         {
             if (lease.record == null || lease.record.HasGpuReleaseProof || !lease.proofStarted) return;
+            if (!lease.readbackIssued) return;
             try
             {
+                lease.readback.Update();
                 bool fencePassed = lease.fence.passed;
                 bool requestDone = lease.readback.done;
                 bool requestValid = requestDone && !lease.readback.hasError;
