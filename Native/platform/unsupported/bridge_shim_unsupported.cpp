@@ -35,6 +35,11 @@ extern "C" LKG_EXPORT int32_t lkg_bridge_get_display(uint32_t, LkgBridgeDisplayI
     if (info) std::memset(info, 0, sizeof(*info));
     return -1;
 }
+extern "C" LKG_EXPORT int32_t lkg_bridge_get_physical_display_v1(uint32_t, LkgBridgePhysicalDisplayInfoV1* info) {
+    if (!info || info->structSize != sizeof(LkgBridgePhysicalDisplayInfoV1) || info->version != 1) return -1;
+    info->pixelWidth = 0; info->pixelHeight = 0; info->dpi = 0.0f; info->valid = 0;
+    return -2;
+}
 extern "C" LKG_EXPORT uint64_t lkg_bridge_create_d3d11_session(void*, uint32_t) { return 0; }
 extern "C" LKG_EXPORT int32_t lkg_bridge_get_session_close_status_v1(uint64_t session, LkgBridgeSessionCloseStatusV1* status) {
     if (!status || status->structSize != sizeof(LkgBridgeSessionCloseStatusV1) || status->version != 1) return -1;

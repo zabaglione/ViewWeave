@@ -1,5 +1,6 @@
 using System;
 using ViewWeave;
+using ViewWeave.Editor;
 using UnityEditor;
 using UnityEngine;
 
@@ -24,8 +25,57 @@ public static class QuiltCameraAuthoringTests
         CheckProjectionBoundsAndFocusPlane();
         CheckParentTransformUsesCameraPose();
         CheckInvalidInputsAreRejected();
+        CheckPhysicalFramingResolution();
         CheckInspectorPropertiesAndUndo();
         Debug.Log("Quilt camera authoring tests passed");
+    }
+
+    static void CheckPhysicalFramingResolution()
+    {
+        QuiltSettings stored = new QuiltSettings { views = 48, rows = 6, columns = 8, quiltWidth = 3360, quiltHeight = 3360, fieldOfView = 60f, viewAspect = 1f, cameraDistance = 4f, viewCone = 40f };
+        QuiltPhysicalFraming portrait = new QuiltPhysicalFraming { enabled = true, visibleApertureWidthMillimeters = 62f, visibleApertureHeightMillimeters = 110f, unitsPerMeter = 1f };
+        Require(QuiltFramingResolver.TryResolve(stored, portrait, 60f, out QuiltSettings portraitSettings, out _), "portrait physical framing resolves");
+        Require(Mathf.Abs(portraitSettings.viewAspect - 62f / 110f) < 0.00001f, "portrait physical aspect resolves");
+        Require(Mathf.Abs(portraitSettings.cameraDistance - (0.11f * 0.5f / Mathf.Tan(30f * Mathf.Deg2Rad))) < 0.00001f, "portrait focus distance follows physical aperture");
+        Require(stored.viewAspect == 1f && stored.cameraDistance == 4f, "resolver does not mutate stored aspect or distance");
+
+        QuiltPhysicalFraming landscape = new QuiltPhysicalFraming { enabled = true, visibleApertureWidthMillimeters = 160f, visibleApertureHeightMillimeters = 90f, unitsPerMeter = 1f };
+        Require(QuiltFramingResolver.TryResolve(stored, landscape, 40f, out QuiltSettings landscapeSettings, out _), "landscape physical framing resolves");
+        float planeHeight = 2f * landscapeSettings.cameraDistance * Mathf.Tan(landscapeSettings.fieldOfView * Mathf.Deg2Rad * 0.5f);
+        Require(Mathf.Abs(landscapeSettings.viewAspect - 160f / 90f) < 0.00001f && Mathf.Abs(planeHeight - 0.09f) < 0.00001f, "landscape FOV preserves fixed physical plane height");
+        Require(Mathf.Abs(portrait.DiagonalInches - Mathf.Sqrt(62f * 62f + 110f * 110f) / 25.4f) < 0.00001f, "physical diagonal uses millimeters without a DPI default");
+
+        QuiltPhysicalFraming unset = new QuiltPhysicalFraming { enabled = true };
+        Require(!QuiltFramingResolver.TryResolve(stored, unset, 60f, out _, out string unsetError) && unsetError.Contains("finite positive aperture dimensions"), "unset aperture is rejected without a fabricated default");
+        landscape.unitsPerMeter = float.NaN;
+        Require(!QuiltFramingResolver.TryResolve(stored, landscape, 60f, out _, out _), "non-finite unit scale is rejected");
+        landscape.unitsPerMeter = 1f;
+        Require(!QuiltFramingResolver.TryResolve(stored, landscape, 179f, out _, out _), "out-of-range FOV is rejected");
+
+        GameObject rendererObject = new GameObject("physical-framing-authoring-test");
+        GameObject cameraObject = new GameObject("physical-framing-camera-test");
+        try
+        {
+            QuiltRenderer renderer = rendererObject.AddComponent<QuiltRenderer>();
+            Camera sourceCamera = cameraObject.AddComponent<Camera>();
+            renderer.sourceCamera = sourceCamera;
+            renderer.physicalFraming = new QuiltPhysicalFraming
+            {
+                enabled = true,
+                visibleApertureWidthMillimeters = 160f,
+                visibleApertureHeightMillimeters = 90f,
+                unitsPerMeter = 1f
+            };
+            float sourceFov = sourceCamera.fieldOfView;
+            Require(QuiltRendererAuthoringOperations.TrySetEffectiveFocusDistance(renderer, 0.5f), "physical focus distance can be authored in the Main Stage");
+            Require(QuiltFramingResolver.TryResolve(renderer.settings, renderer.physicalFraming, renderer.settings.fieldOfView, out QuiltSettings authored, out _), "authored physical focus resolves");
+            Require(Mathf.Abs(authored.cameraDistance - 0.5f) < 0.00001f && sourceCamera.fieldOfView == sourceFov, "physical focus setter changes renderer FOV without mutating source camera");
+        }
+        finally
+        {
+            UnityEngine.Object.DestroyImmediate(cameraObject);
+            UnityEngine.Object.DestroyImmediate(rendererObject);
+        }
     }
 
     static void CheckProjectionBoundsAndFocusPlane()

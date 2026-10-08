@@ -6,6 +6,7 @@
 #include <fstream>
 #include <mutex>
 #include <atomic>
+#include <cmath>
 #include <string>
 #include <cwchar>
 #include <unordered_map>
@@ -54,6 +55,8 @@ using GetViewconeFn = Bool (*)(unsigned long, float*);
 using GetDefaultQuiltFn = Bool (*)(unsigned long, float*, int*, int*, int*, int*);
 using GetPositionDisplayFn = Bool (*)(unsigned long, long*, long*);
 using GetWindowDisplayFn = Bool (*)(WindowHandle, unsigned long*);
+struct CalibrationSubpixelCell { float ROffsetX, ROffsetY, GOffsetX, GOffsetY, BOffsetX, BOffsetY; };
+using GetCalibrationFn = Bool (*)(unsigned long, float*, float*, float*, int*, int*, float*, float*, int*, float*, float*, int*, int*, CalibrationSubpixelCell*);
 
 #if defined(_WIN32)
 using ReleaseDeviceFn = Bool (*)(IUnknown*);
@@ -202,6 +205,7 @@ static GetViewconeFn g_get_viewcone{};
 static GetDefaultQuiltFn g_get_default_quilt{};
 static GetPositionDisplayFn g_get_position_display{};
 static GetWindowDisplayFn g_get_window_display{};
+static GetCalibrationFn g_get_calibration{};
 #if defined(_WIN32)
 static ReleaseDeviceFn g_release_device{};
 static InstanceWindowFn g_instance_window{};
@@ -578,7 +582,7 @@ static T sym(const char* name) {
 
 static void clear_symbols() {
     g_initialize = nullptr; g_uninitialize = nullptr; g_version = nullptr;
-    g_get_displays = nullptr; g_get_dimensions = nullptr; g_get_viewcone = nullptr;
+    g_get_displays = nullptr; g_get_dimensions = nullptr; g_get_viewcone = nullptr; g_get_calibration = nullptr;
     g_get_default_quilt = nullptr; g_get_position_display = nullptr; g_get_window_display = nullptr;
 #if defined(_WIN32)
     g_release_device = nullptr; g_instance_window = nullptr; g_show_window = nullptr;
@@ -614,6 +618,7 @@ static bool canonical_library_path(const char* path, std::wstring* result) {
 static bool bind_symbols() {
     g_initialize = sym<InitializeFn>("initialize_bridge"); g_uninitialize = sym<UninitializeFn>("uninitialize_bridge");
     g_version = sym<VersionFn>("get_bridge_version"); g_get_displays = sym<GetDisplaysFn>("get_displays");
+    g_get_calibration = sym<GetCalibrationFn>("get_calibration_for_display");
     g_get_dimensions = sym<GetDimensionsFn>("get_dimensions_for_display"); g_get_viewcone = sym<GetViewconeFn>("get_viewcone_for_display");
     g_get_default_quilt = sym<GetDefaultQuiltFn>("get_default_quilt_settings_for_display");
     g_get_position_display = sym<GetPositionDisplayFn>("get_window_position_for_display");
@@ -691,6 +696,7 @@ LKG_EXPORT int32_t lkg_bridge_load(const char* path) {
 #else
     g_initialize = sym<InitializeFn>("initialize_bridge"); g_uninitialize = sym<UninitializeFn>("uninitialize_bridge");
     g_version = sym<VersionFn>("get_bridge_version"); g_get_displays = sym<GetDisplaysFn>("get_displays");
+    g_get_calibration = sym<GetCalibrationFn>("get_calibration_for_display");
     g_get_dimensions = sym<GetDimensionsFn>("get_dimensions_for_display"); g_get_viewcone = sym<GetViewconeFn>("get_viewcone_for_display");
     g_get_default_quilt = sym<GetDefaultQuiltFn>("get_default_quilt_settings_for_display");
     g_get_position_display = sym<GetPositionDisplayFn>("get_window_position_for_display");
@@ -809,6 +815,31 @@ LKG_EXPORT int32_t lkg_bridge_get_display(uint32_t ordinal, LkgBridgeDisplayInfo
     if (g_get_dimensions) { unsigned long width = 0, height = 0; if (g_get_dimensions(id, &width, &height)) { info->width = static_cast<uint32_t>(width); info->height = static_cast<uint32_t>(height); } }
     if (g_get_viewcone) g_get_viewcone(id, &info->viewcone);
     if (g_get_default_quilt) g_get_default_quilt(id, &info->aspect, &info->quilt_width, &info->quilt_height, &info->quilt_columns, &info->quilt_rows);
+    return 0;
+}
+
+LKG_EXPORT int32_t lkg_bridge_get_physical_display_v1(uint32_t displayIndex, LkgBridgePhysicalDisplayInfoV1* info) {
+    if (direct_call_rejected()) return -6;
+    if (!info || info->structSize != sizeof(LkgBridgePhysicalDisplayInfoV1) || info->version != 1) return -1;
+    info->pixelWidth = 0;
+    info->pixelHeight = 0;
+    info->dpi = 0.0f;
+    info->valid = 0;
+    if (!has_sdk_ownership() || !g_initialized) return -7;
+    if (!g_get_calibration) return -2;
+    float center = 0.0f, pitch = 0.0f, slope = 0.0f, dpi = 0.0f, flipX = 0.0f, viewcone = 0.0f, fringe = 0.0f;
+    int width = 0, height = 0, inverted = 0, cellPatternMode = 0, numberOfCells = 0;
+    try {
+        if (!g_get_calibration(static_cast<unsigned long>(displayIndex), &center, &pitch, &slope, &width, &height, &dpi, &flipX,
+            &inverted, &viewcone, &fringe, &cellPatternMode, &numberOfCells, nullptr)) return -3;
+    } catch (...) {
+        return -3;
+    }
+    if (width <= 0 || height <= 0 || !std::isfinite(dpi) || dpi <= 0.0f || numberOfCells < 0) return -3;
+    info->pixelWidth = static_cast<uint32_t>(width);
+    info->pixelHeight = static_cast<uint32_t>(height);
+    info->dpi = dpi;
+    info->valid = 1;
     return 0;
 }
 

@@ -82,6 +82,8 @@ namespace ViewWeave
         CommandBuffer command;
         int workerRenderEventId;
         BridgeWorkerNative.Status status;
+        BridgeWorkerNative.PhysicalDisplayInfoV1 physicalDisplay;
+        bool physicalDisplayRead;
         object playbackToken;
 #if UNITY_EDITOR
         object editorPreviewOwner;
@@ -171,6 +173,8 @@ namespace ViewWeave
             if (string.IsNullOrWhiteSpace(runtimePath))
                 return Fail("Set an absolute Bridge worker runtime path");
             status = default;
+            physicalDisplay = new BridgeWorkerNative.PhysicalDisplayInfoV1 { structSize = (uint)System.Runtime.InteropServices.Marshal.SizeOf(typeof(BridgeWorkerNative.PhysicalDisplayInfoV1)), version = 1 };
+            physicalDisplayRead = false;
             Profile = default;
             Submissions = 0;
             SubmissionAttempts = 0;
@@ -243,7 +247,19 @@ namespace ViewWeave
                         aspect = status.aspect, viewcone = status.viewcone, quiltWidth = status.quiltWidth,
                         quiltHeight = status.quiltHeight, quiltColumns = status.quiltColumns, quiltRows = status.quiltRows
                     };
-                    Profile = new BridgeDisplayProfile(info);
+                    if (!physicalDisplayRead)
+                    {
+                        physicalDisplayRead = true;
+                        try
+                        {
+                            BridgeWorkerNative.PhysicalDisplayInfoV1 calibration = physicalDisplay;
+                            if (BridgeWorkerNative.lkg_worker_get_physical_display_v1(handle, ref calibration) == 0)
+                                physicalDisplay = calibration;
+                        }
+                        catch (DllNotFoundException) { }
+                        catch (EntryPointNotFoundException) { }
+                    }
+                    Profile = new BridgeDisplayProfile(info, physicalDisplay);
                 }
                 if (state == WorkerState.Fault) FailFromStatus("Bridge worker fault");
                 if (state == WorkerState.Closed) ReleaseOwnedResources();

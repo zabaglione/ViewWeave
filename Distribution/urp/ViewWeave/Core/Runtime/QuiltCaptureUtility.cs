@@ -49,6 +49,10 @@ namespace ViewWeave
         public float viewCone;
         public float nearClip;
         public float farClip;
+        public bool physicalFramingEnabled;
+        public float visibleApertureWidthMillimeters;
+        public float visibleApertureHeightMillimeters;
+        public float unitsPerMeter;
         public float cameraPositionX;
         public float cameraPositionY;
         public float cameraPositionZ;
@@ -68,8 +72,9 @@ namespace ViewWeave
         public readonly long Revision;
         public readonly DateTime TimestampUtc;
         public readonly QuiltCaptureGeometry Geometry;
+        public readonly QuiltCapturePhysicalFraming PhysicalFraming;
 
-        internal QuiltRenderSnapshot(QuiltLayout layout, QuiltViewRenderMode mode, QuiltSettings settings, int renderedViewCount, long revision, Camera camera)
+        internal QuiltRenderSnapshot(QuiltLayout layout, QuiltViewRenderMode mode, QuiltSettings settings, int renderedViewCount, long revision, Camera camera, QuiltPhysicalFraming physicalFraming)
         {
             IsValid = true;
             Layout = layout;
@@ -89,6 +94,10 @@ namespace ViewWeave
                 viewCone = settings.viewCone,
                 nearClip = camera.nearClipPlane,
                 farClip = camera.farClipPlane,
+                physicalFramingEnabled = physicalFraming != null && physicalFraming.enabled,
+                visibleApertureWidthMillimeters = physicalFraming == null ? 0f : physicalFraming.visibleApertureWidthMillimeters,
+                visibleApertureHeightMillimeters = physicalFraming == null ? 0f : physicalFraming.visibleApertureHeightMillimeters,
+                unitsPerMeter = physicalFraming == null ? 1f : physicalFraming.unitsPerMeter,
                 cameraPositionX = position.x,
                 cameraPositionY = position.y,
                 cameraPositionZ = position.z,
@@ -97,6 +106,7 @@ namespace ViewWeave
                 cameraRotationZ = rotation.z,
                 cameraRotationW = rotation.w
             };
+            PhysicalFraming = new QuiltCapturePhysicalFraming(physicalFraming);
         }
 
         public QuiltCaptureMetadata ToMetadata()
@@ -120,6 +130,22 @@ namespace ViewWeave
                 geometry = Geometry,
                 timestampUtc = TimestampUtc.ToString("O", CultureInfo.InvariantCulture)
             };
+        }
+    }
+
+    public readonly struct QuiltCapturePhysicalFraming
+    {
+        public readonly bool enabled;
+        public readonly float visibleApertureWidthMillimeters;
+        public readonly float visibleApertureHeightMillimeters;
+        public readonly float unitsPerMeter;
+
+        internal QuiltCapturePhysicalFraming(QuiltPhysicalFraming value)
+        {
+            enabled = value != null && value.enabled;
+            visibleApertureWidthMillimeters = value == null ? 0f : value.visibleApertureWidthMillimeters;
+            visibleApertureHeightMillimeters = value == null ? 0f : value.visibleApertureHeightMillimeters;
+            unitsPerMeter = value == null ? 1f : value.unitsPerMeter;
         }
     }
 

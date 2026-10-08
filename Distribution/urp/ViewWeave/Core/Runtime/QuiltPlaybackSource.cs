@@ -335,7 +335,10 @@ namespace ViewWeave
         static bool SameStaticGeometry(QuiltCaptureGeometry left, QuiltCaptureGeometry right)
         {
             return left.viewAspect == right.viewAspect && left.fieldOfView == right.fieldOfView && left.cameraDistance == right.cameraDistance &&
-                left.viewCone == right.viewCone && left.nearClip == right.nearClip && left.farClip == right.farClip;
+                left.viewCone == right.viewCone && left.nearClip == right.nearClip && left.farClip == right.farClip &&
+                left.physicalFramingEnabled == right.physicalFramingEnabled &&
+                left.visibleApertureWidthMillimeters == right.visibleApertureWidthMillimeters &&
+                left.visibleApertureHeightMillimeters == right.visibleApertureHeightMillimeters && left.unitsPerMeter == right.unitsPerMeter;
         }
 
         static void ValidateGeometry(QuiltCaptureGeometry geometry)
@@ -346,6 +349,11 @@ namespace ViewWeave
                 !IsFinite(geometry.cameraRotationZ) || !IsFinite(geometry.cameraRotationW) || geometry.viewAspect <= 0f || geometry.fieldOfView <= 0f ||
                 geometry.fieldOfView >= 180f || geometry.cameraDistance <= 0f || geometry.viewCone < 0f || geometry.nearClip <= 0f || geometry.farClip <= geometry.nearClip)
                 throw new InvalidDataException("Metadata camera geometry is invalid.");
+            if (geometry.physicalFramingEnabled &&
+                (!IsFinite(geometry.visibleApertureWidthMillimeters) || !IsFinite(geometry.visibleApertureHeightMillimeters) ||
+                 !IsFinite(geometry.unitsPerMeter) || geometry.visibleApertureWidthMillimeters <= 0f ||
+                 geometry.visibleApertureHeightMillimeters <= 0f || geometry.unitsPerMeter <= 0f))
+                throw new InvalidDataException("Metadata physical framing is invalid.");
         }
 
         static PlaybackLayoutData CreateTaggedLayout(int width, int height, QuiltTag tag)

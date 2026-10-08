@@ -49,6 +49,13 @@ namespace ViewWeave.Editor
         Label sessionStatus;
         Label sessionError;
         VisualElement fieldOfViewContainer;
+        VisualElement focusDistanceContainer;
+        PropertyField focusDistanceField;
+        Label effectiveFocusDistanceLabel;
+        HelpBox physicalFocusError;
+        Label physicalFramingStatus;
+        Button copyConnectedDisplayButton;
+        Toggle physicalFramingEnabledToggle;
         Button localPreviewButton;
         Button devicePreviewButton;
         Button stopPreviewButton;
@@ -119,6 +126,7 @@ namespace ViewWeave.Editor
             RefreshReferenceCameraState();
             RefreshPreview();
             RefreshSessionStatus();
+            RefreshPhysicalFramingState();
         }
 
         public void OnPlayModeStateChanged(PlayModeStateChange state)
@@ -155,7 +163,34 @@ namespace ViewWeave.Editor
                 BridgeEditorPreview.RequestRefresh();
             });
             RefreshReferenceCameraState();
-            AddBoundProperty(foldout, rendererObject, "settings.cameraDistance", "Focus Distance", BridgeEditorPreview.RequestRefresh);
+            focusDistanceContainer = new VisualElement();
+            foldout.Add(focusDistanceContainer);
+            focusDistanceField = AddBoundProperty(focusDistanceContainer, rendererObject, "settings.cameraDistance", "Focus Distance", BridgeEditorPreview.RequestRefresh);
+            effectiveFocusDistanceLabel = new Label { name = "effectiveFocusDistance" };
+            focusDistanceContainer.Add(effectiveFocusDistanceLabel);
+            physicalFocusError = new HelpBox(string.Empty, HelpBoxMessageType.Error) { name = "physicalFocusError" };
+            physicalFocusError.style.whiteSpace = WhiteSpace.Normal;
+            focusDistanceContainer.Add(physicalFocusError);
+            var physicalFoldout = new Foldout { text = "Physical Display Framing", value = false };
+            physicalFoldout.style.marginTop = 4;
+            physicalFoldout.style.marginBottom = 4;
+            foldout.Add(physicalFoldout);
+            physicalFramingEnabledToggle = new Toggle("Use Physical 1:1 Framing")
+            {
+                name = "physicalFramingEnabled",
+                value = renderer != null && renderer.physicalFraming != null && renderer.physicalFraming.enabled
+            };
+            physicalFramingEnabledToggle.RegisterValueChangedCallback(evt => SetPhysicalFramingEnabled(evt.newValue));
+            physicalFoldout.Add(physicalFramingEnabledToggle);
+            AddBoundProperty(physicalFoldout, rendererObject, "physicalFraming.visibleApertureWidthMillimeters", "Visible Aperture Width (mm)", PhysicalFramingChanged);
+            AddBoundProperty(physicalFoldout, rendererObject, "physicalFraming.visibleApertureHeightMillimeters", "Visible Aperture Height (mm)", PhysicalFramingChanged);
+            AddBoundProperty(physicalFoldout, rendererObject, "physicalFraming.unitsPerMeter", "Unity Units per Meter", PhysicalFramingChanged);
+            physicalFramingStatus = new Label { name = "physicalFramingStatus" };
+            physicalFramingStatus.style.whiteSpace = WhiteSpace.Normal;
+            physicalFoldout.Add(physicalFramingStatus);
+            copyConnectedDisplayButton = new Button(CopyConnectedDisplaySize) { name = "copyConnectedDisplaySize", text = "Use Connected Display Size" };
+            physicalFoldout.Add(copyConnectedDisplayButton);
+            RefreshPhysicalFramingState();
             fieldOfViewContainer = new VisualElement();
             foldout.Add(fieldOfViewContainer);
             RebuildFieldOfView();
@@ -486,6 +521,106 @@ namespace ViewWeave.Editor
                 if (renderer.referenceCamera != null)
                     fieldOfViewContainer.Add(new HelpBox("Reference Camera FOV is not followed. Rendering uses the stored QuiltRenderer FOV.", HelpBoxMessageType.Info));
             }
+        }
+
+        void PhysicalFramingChanged()
+        {
+            RefreshPhysicalFramingState();
+            BridgeEditorPreview.RequestRefresh();
+        }
+
+        void SetPhysicalFramingEnabled(bool enabled)
+        {
+            if (renderer == null) return;
+            if (enabled)
+            {
+                QuiltPhysicalFraming framing = renderer.physicalFraming;
+                float fieldOfView = QuiltFramingResolver.EffectiveFieldOfView(renderer);
+                string error = "framing settings are missing.";
+                QuiltPhysicalFraming candidate = framing == null ? null : framing.Clone();
+                if (candidate != null) candidate.enabled = true;
+                if (candidate == null || !candidate.TryResolve(fieldOfView, out _, out _, out error))
+                {
+                    if (physicalFramingStatus != null)
+                        physicalFramingStatus.text = "Physical framing was not enabled: " + error;
+                    physicalFramingEnabledToggle?.SetValueWithoutNotify(false);
+                    return;
+                }
+            }
+            Undo.RecordObject(renderer, enabled ? "Enable Physical Display Framing" : "Disable Physical Display Framing");
+            if (renderer.physicalFraming == null) renderer.physicalFraming = new QuiltPhysicalFraming();
+            renderer.physicalFraming.enabled = enabled;
+            EditorUtility.SetDirty(renderer);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(renderer);
+            rendererObject?.Update();
+            RefreshPhysicalFramingState();
+            BridgeEditorPreview.RequestRefresh();
+        }
+
+        void RefreshPhysicalFramingState()
+        {
+            if (renderer == null || focusDistanceContainer == null) return;
+            bool physicalEnabled = renderer.physicalFraming != null && renderer.physicalFraming.enabled;
+            physicalFramingEnabledToggle?.SetValueWithoutNotify(physicalEnabled);
+            QuiltSettings effective = null;
+            string error = string.Empty;
+            bool effectiveValid = physicalEnabled && renderer.TryGetEffectiveSettings(out effective, out error);
+            focusDistanceField.style.display = physicalEnabled ? DisplayStyle.None : DisplayStyle.Flex;
+            effectiveFocusDistanceLabel.style.display = physicalEnabled && effectiveValid ? DisplayStyle.Flex : DisplayStyle.None;
+            effectiveFocusDistanceLabel.text = effectiveValid
+                ? "Effective Focus Distance: " + effective.cameraDistance.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture) + " units"
+                : string.Empty;
+            physicalFocusError.style.display = physicalEnabled && !effectiveValid ? DisplayStyle.Flex : DisplayStyle.None;
+            physicalFocusError.text = error;
+
+            bool profileResolved = QuiltDisplaySettingsResolver.TryResolve(renderer, out QuiltSettings effectiveSettings,
+                out QuiltEditorDisplayProfile profile, out string profileError);
+            if (renderer.physicalFraming != null && renderer.physicalFraming.enabled)
+            {
+                string dimensions = renderer.physicalFraming.visibleApertureWidthMillimeters.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + " x " +
+                    renderer.physicalFraming.visibleApertureHeightMillimeters.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + " mm (" +
+                    renderer.physicalFraming.DiagonalInches.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + " in diagonal)";
+                physicalFramingStatus.text = profileResolved
+                    ? "Geometry source: " + profile.source + "; effective aspect: " + effectiveSettings.viewAspect.ToString("0.####", System.Globalization.CultureInfo.InvariantCulture) + "; aperture: " + dimensions + ". Physical 1:1 framing controls the zero-parallax plane, not all-depth optical scale."
+                    : "Geometry source: " + profile.source + "; physical framing is invalid: " + profileError;
+            }
+            else physicalFramingStatus.text = "Display aspect source: " + profile.source + "; aspect: " + profile.aspect.ToString("0.####", System.Globalization.CultureInfo.InvariantCulture) + ". Physical framing is disabled.";
+            bool canCopy = QuiltDisplaySettingsResolver.TryGetConnectedPhysicalCalibration(renderer, out QuiltEditorDisplayProfile calibration);
+            if (canCopy)
+            {
+                bool matches = physicalEnabled && Math.Abs(renderer.physicalFraming.visibleApertureWidthMillimeters - calibration.widthMillimeters) < 0.1f &&
+                    Math.Abs(renderer.physicalFraming.visibleApertureHeightMillimeters - calibration.heightMillimeters) < 0.1f;
+                physicalFramingStatus.text += " Connected calibration: " + calibration.widthMillimeters.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + " x " +
+                    calibration.heightMillimeters.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + " mm at " + calibration.dpi.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + " DPI; configured aperture " + (matches ? "matches" : "differs") + ".";
+            }
+            else physicalFramingStatus.text += " No valid connected physical calibration is available; saved dimensions are manual values or a previous explicit copy.";
+            copyConnectedDisplayButton?.SetEnabled(canCopy);
+            if (copyConnectedDisplayButton != null) copyConnectedDisplayButton.tooltip = canCopy ? "Copy the active Bridge calibration into the Rig's serialized aperture fields." : "A connected display with valid pixel dimensions and calibration DPI is required.";
+        }
+
+        void CopyConnectedDisplaySize()
+        {
+            if (renderer == null || !QuiltDisplaySettingsResolver.TryGetConnectedPhysicalCalibration(renderer, out QuiltEditorDisplayProfile profile)) return;
+            var candidate = renderer.physicalFraming == null ? new QuiltPhysicalFraming() : renderer.physicalFraming.Clone();
+            candidate.enabled = true;
+            candidate.visibleApertureWidthMillimeters = profile.widthMillimeters;
+            candidate.visibleApertureHeightMillimeters = profile.heightMillimeters;
+            float fieldOfView = QuiltFramingResolver.EffectiveFieldOfView(renderer);
+            if (!candidate.TryResolve(fieldOfView, out _, out _, out string error))
+            {
+                if (physicalFramingStatus != null) physicalFramingStatus.text = "Connected display size was not copied: " + error;
+                return;
+            }
+            Undo.RecordObject(renderer, "Copy Connected Display Size");
+            if (renderer.physicalFraming == null) renderer.physicalFraming = new QuiltPhysicalFraming();
+            renderer.physicalFraming.visibleApertureWidthMillimeters = candidate.visibleApertureWidthMillimeters;
+            renderer.physicalFraming.visibleApertureHeightMillimeters = candidate.visibleApertureHeightMillimeters;
+            renderer.physicalFraming.enabled = true;
+            EditorUtility.SetDirty(renderer);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(renderer);
+            rendererObject?.UpdateIfRequiredOrScript();
+            RefreshPhysicalFramingState();
+            BridgeEditorPreview.RequestRefresh();
         }
 
         bool TryAssignReferenceCamera(Camera candidate)

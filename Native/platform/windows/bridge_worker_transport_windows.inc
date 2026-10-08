@@ -43,6 +43,7 @@ struct WorkerContext {
     uint32_t displayOrdinal = 0;
     IUnknown* producerDevice = nullptr;
     LkgWorkerStatus status{};
+    LkgWorkerPhysicalDisplayInfoV1 physicalDisplay{ static_cast<uint32_t>(sizeof(LkgWorkerPhysicalDisplayInfoV1)), 1, 0, 0, 0.0f, 0 };
     std::atomic<bool> closeRequested{false};
     std::atomic<bool> finished{false};
     bool hosted = false;
@@ -824,6 +825,17 @@ static void RunWorker(WorkerContext* context) {
             finish();
             return;
         }
+        LkgBridgePhysicalDisplayInfoV1 physical{};
+        physical.structSize = sizeof(physical);
+        physical.version = 1;
+        const int32_t physicalResult = lkg_bridge_get_physical_display_v1(display.index, &physical);
+        if (physicalResult == 0 && physical.valid && physical.pixelWidth > 0 && physical.pixelHeight > 0 && std::isfinite(physical.dpi) && physical.dpi > 0.0f) {
+            std::lock_guard<std::mutex> lock(context->mutex);
+            context->physicalDisplay.pixelWidth = physical.pixelWidth;
+            context->physicalDisplay.pixelHeight = physical.pixelHeight;
+            context->physicalDisplay.dpi = physical.dpi;
+            context->physicalDisplay.valid = 1;
+        }
         session = lkg_bridge_create_d3d11_session(workerDevice.Get(), display.index);
         if (session == 0) {
             SetBridgeFault(*context, 7, "bridge_create_session", -1);
@@ -1061,6 +1073,19 @@ LKG_EXPORT int32_t lkg_worker_poll(void* handle, LkgWorkerStatus* status) {
     if (registry.find(context) == registry.end()) return -2;
     std::lock_guard<std::mutex> lock(context->mutex);
     *status = context->status;
+    return 0;
+}
+
+LKG_EXPORT int32_t lkg_worker_get_physical_display_v1(void* handle, LkgWorkerPhysicalDisplayInfoV1* info) {
+    if (!handle || !info || info->structSize != sizeof(LkgWorkerPhysicalDisplayInfoV1) || info->version != 1) return -1;
+    auto* context = static_cast<WorkerContext*>(handle);
+    std::lock_guard<std::mutex> registryLock(registryMutex);
+    if (registry.find(context) == registry.end()) return -2;
+    std::lock_guard<std::mutex> lock(context->mutex);
+    info->pixelWidth = context->physicalDisplay.pixelWidth;
+    info->pixelHeight = context->physicalDisplay.pixelHeight;
+    info->dpi = context->physicalDisplay.dpi;
+    info->valid = context->physicalDisplay.valid;
     return 0;
 }
 

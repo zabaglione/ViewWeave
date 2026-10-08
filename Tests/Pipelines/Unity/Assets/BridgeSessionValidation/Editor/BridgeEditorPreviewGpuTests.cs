@@ -3,11 +3,13 @@ using System.Collections;
 using System.Reflection;
 using NUnit.Framework;
 using UnityEditor;
+using UnityEditor.UIElements;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.HighDefinition;
 using UnityEngine.Rendering.Universal;
+using UnityEngine.UIElements;
 using UnityEngine.TestTools;
 using ViewWeave;
 using ViewWeave.Editor;
@@ -19,6 +21,98 @@ namespace ViewWeave.BridgeEditorPreviewValidation
 {
     public sealed class BridgeEditorPreviewGpuTests
     {
+        [Test]
+        public void DisplayProfileSelectionRejectsUnavailableAndStalePreviewAndSessionSources()
+        {
+            Assert.IsFalse(BridgeEditorPreview.IsPreviewProfileCurrent(false, false, true, true, true, false));
+            Assert.IsFalse(BridgeEditorPreview.IsPreviewProfileCurrent(true, true, true, true, true, false));
+            Assert.IsFalse(BridgeEditorPreview.IsPreviewProfileCurrent(true, false, false, true, true, false));
+            Assert.IsFalse(BridgeEditorPreview.IsPreviewProfileCurrent(true, false, true, false, true, false));
+            Assert.IsFalse(BridgeEditorPreview.IsPreviewProfileCurrent(true, false, true, true, false, false));
+            Assert.IsFalse(BridgeEditorPreview.IsPreviewProfileCurrent(true, false, true, true, true, true));
+            Assert.IsTrue(BridgeEditorPreview.IsPreviewProfileCurrent(true, false, true, true, true, false));
+
+            BridgeDisplayProfile profile = MakeDisplayProfile(16f / 9f);
+            var gameObject = new GameObject("Display profile selection test");
+            QuiltRenderer renderer = gameObject.AddComponent<QuiltRenderer>();
+            try
+            {
+                Assert.IsFalse(BridgeEditorPreview.IsDevicePreviewProfileCurrent(renderer, false, profile, false, 1f));
+                Assert.IsFalse(BridgeEditorPreview.IsDevicePreviewProfileCurrent(renderer, true, default, false, 1f));
+                Assert.IsFalse(BridgeEditorPreview.IsDevicePreviewProfileCurrent(renderer, true, profile, true, 1f));
+                Assert.IsTrue(BridgeEditorPreview.IsDevicePreviewProfileCurrent(renderer, true, profile, false, 1f));
+
+                renderer.physicalFraming.enabled = true;
+                renderer.physicalFraming.visibleApertureWidthMillimeters = 160f;
+                renderer.physicalFraming.visibleApertureHeightMillimeters = 90f;
+                Assert.IsTrue(BridgeEditorPreview.IsDevicePreviewProfileCurrent(renderer, true, profile, false, 1f));
+                Assert.IsFalse(BridgeEditorPreview.IsDevicePreviewProfileCurrent(renderer, true, profile, false, 1.01f));
+                renderer.physicalFraming.visibleApertureWidthMillimeters = 150f;
+                Assert.IsFalse(BridgeEditorPreview.IsDevicePreviewProfileCurrent(renderer, true, profile, false, 1f));
+            }
+            finally
+            {
+                Object.DestroyImmediate(gameObject);
+            }
+
+            Assert.IsFalse(ViewWeaveBridgeSession.IsEditorDisplayProfileCurrent(false, true, true, true, profile, true, true));
+            Assert.IsFalse(ViewWeaveBridgeSession.IsEditorDisplayProfileCurrent(true, false, true, true, profile, true, true));
+            Assert.IsFalse(ViewWeaveBridgeSession.IsEditorDisplayProfileCurrent(true, true, false, true, profile, true, true));
+            Assert.IsFalse(ViewWeaveBridgeSession.IsEditorDisplayProfileCurrent(true, true, true, false, profile, true, true));
+            Assert.IsFalse(ViewWeaveBridgeSession.IsEditorDisplayProfileCurrent(true, true, true, true, default, true, true));
+            Assert.IsFalse(ViewWeaveBridgeSession.IsEditorDisplayProfileCurrent(true, true, true, true, profile, false, true));
+            Assert.IsFalse(ViewWeaveBridgeSession.IsEditorDisplayProfileCurrent(true, true, true, true, profile, true, false));
+            Assert.IsTrue(ViewWeaveBridgeSession.IsEditorDisplayProfileCurrent(true, true, true, true, profile, true, true));
+        }
+
+        static BridgeDisplayProfile MakeDisplayProfile(float aspect)
+        {
+            int width = aspect > 1f ? 1920 : 1080;
+            int height = aspect > 1f ? 1080 : 1920;
+            return new BridgeDisplayProfile(new BridgeNative.DisplayInfo
+            {
+                index = 0,
+                width = (uint)width,
+                height = (uint)height,
+                aspect = aspect,
+                viewcone = 40f,
+                quiltWidth = 4096,
+                quiltHeight = 4096,
+                quiltColumns = 8,
+                quiltRows = 6
+            });
+        }
+
+        [Test]
+        public void AuthoringRefreshPreservesFocusFieldWhilePhysicalModeChanges()
+        {
+            var fixture = new Fixture(false);
+            var root = new VisualElement();
+            try
+            {
+                fixture.Setup();
+                var ui = new ViewWeaveRigInspectorUI(root, () => fixture.Rig, () => null, _ => { });
+                ui.Rebuild();
+                FieldInfo field = typeof(ViewWeaveRigInspectorUI).GetField("focusDistanceField", BindingFlags.Instance | BindingFlags.NonPublic);
+                Assert.NotNull(field);
+                PropertyField focusField = (PropertyField)field.GetValue(ui);
+                Assert.NotNull(focusField);
+                for (int i = 0; i < 3; ++i) ui.Refresh();
+                Assert.AreSame(focusField, field.GetValue(ui), "Periodic refresh must retain the raw focus PropertyField instance.");
+
+                fixture.Rig.Renderer.physicalFraming.enabled = true;
+                fixture.Rig.Renderer.physicalFraming.visibleApertureWidthMillimeters = 160f;
+                fixture.Rig.Renderer.physicalFraming.visibleApertureHeightMillimeters = 90f;
+                ui.Refresh();
+                Assert.AreSame(focusField, field.GetValue(ui), "Switching physical framing must not rebuild the focus field.");
+            }
+            finally
+            {
+                root.Clear();
+                fixture.Dispose();
+            }
+        }
+
         [Test]
         public void EditorPreviewRenderBoundaryRequiresExactOwnerAndRejectsActiveSrpCallbacksAndCompletionReentry()
         {
@@ -296,7 +390,19 @@ namespace ViewWeave.BridgeEditorPreviewValidation
             try
             {
                 fixture.Setup();
+                QuiltRenderer sourceRenderer = fixture.Rig.Renderer;
+                float storedAspect = sourceRenderer.settings.viewAspect;
+                float storedDistance = sourceRenderer.settings.cameraDistance;
+                sourceRenderer.physicalFraming.enabled = true;
+                sourceRenderer.physicalFraming.visibleApertureWidthMillimeters = 800f;
+                sourceRenderer.physicalFraming.visibleApertureHeightMillimeters = 450f;
+                sourceRenderer.physicalFraming.unitsPerMeter = 1f;
+                sourceRenderer.settings.fieldOfView = 60f;
                 fixture.RenderSourceControl();
+                AssertPhysicalSnapshot(sourceRenderer.LatestSnapshot, 800f / 450f, 60f, 0.45f,
+                    "The source renderer should use the configured physical aperture without mutating its base settings.");
+                Assert.AreEqual(storedAspect, sourceRenderer.settings.viewAspect, 0.0001f);
+                Assert.AreEqual(storedDistance, sourceRenderer.settings.cameraDistance, 0.0001f);
                 previewAttempted = true;
                 if (!PreviewApi.Start(fixture.Rig, false, out string startError))
                     throw new AssertionException("Local Editor preview did not start: " + startError);
@@ -306,6 +412,30 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                 RenderTexture first = PreviewApi.Texture;
                 QuiltRenderer producerRenderer = PreviewApi.ProducerRenderer;
                 Assert.IsNotNull(producerRenderer);
+                Assert.IsTrue(QuiltDisplaySettingsResolver.TryResolve(producerRenderer, out QuiltSettings gizmoSettings,
+                    out QuiltEditorDisplayProfile displayProfile, out string framingError), framingError);
+                Assert.AreEqual(QuiltDisplaySettingsSource.LocalPreview, displayProfile.source);
+                AssertPhysicalSnapshot(producerRenderer.LatestSnapshot, 800f / 450f, 60f, 0.45f,
+                    "The hidden preview producer should copy and render the physical framing configuration.");
+                Assert.AreEqual(gizmoSettings.viewAspect, producerRenderer.LatestSnapshot.Geometry.viewAspect, 0.0001f,
+                    "The gizmo resolver and preview producer should use the same effective physical aspect.");
+                Assert.AreEqual(gizmoSettings.cameraDistance, producerRenderer.LatestSnapshot.Geometry.cameraDistance, 0.0001f,
+                    "The gizmo resolver and preview producer should use the same effective physical distance.");
+                Assert.AreEqual(storedAspect, sourceRenderer.settings.viewAspect, 0.0001f,
+                    "Physical rendering must not write the derived aspect into the source profile.");
+                Assert.AreEqual(storedDistance, sourceRenderer.settings.cameraDistance, 0.0001f,
+                    "Physical rendering must not write the derived distance into the source profile.");
+                long physicalRevision = producerRenderer.LatestSnapshot.Revision;
+                sourceRenderer.settings.fieldOfView = 45f;
+                BridgeEditorPreview.RequestRefresh();
+                yield return WaitFor(() => producerRenderer != null && producerRenderer.LatestSnapshot.IsValid &&
+                    producerRenderer.LatestSnapshot.Revision > physicalRevision &&
+                    Mathf.Abs(producerRenderer.LatestSnapshot.Geometry.fieldOfView - 45f) < 0.001f,
+                    "The preview did not apply a changed field of view to physical framing.");
+                AssertPhysicalSnapshot(producerRenderer.LatestSnapshot, 800f / 450f, 45f, 0.45f,
+                    "Changing field of view should move the camera while keeping the physical plane height fixed.");
+                Assert.AreEqual(storedAspect, sourceRenderer.settings.viewAspect, 0.0001f);
+                Assert.AreEqual(storedDistance, sourceRenderer.settings.cameraDistance, 0.0001f);
                 Debug.Log("EDITOR_PREVIEW_GPU cameras=" + PreviewApi.DescribeCameras(fixture.Rig.Renderer.sourceCamera, fixture.TargetObject));
                 Assert.IsTrue(producerRenderer.HasRenderedQuilt);
                 Assert.AreEqual(8, producerRenderer.LastRenderedViewCount);
@@ -350,6 +480,19 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                 }
                 fixture.Dispose();
             }
+        }
+
+        static void AssertPhysicalSnapshot(QuiltRenderSnapshot snapshot, float expectedAspect, float fieldOfView,
+            double expectedPlaneHeight, string message)
+        {
+            Assert.IsTrue(snapshot.IsValid, message);
+            Assert.IsTrue(snapshot.Geometry.physicalFramingEnabled, message);
+            Assert.AreEqual(expectedAspect, snapshot.Geometry.viewAspect, 0.0001f, message);
+            Assert.AreEqual(fieldOfView, snapshot.Geometry.fieldOfView, 0.001f, message);
+            Assert.AreEqual(800f, snapshot.PhysicalFraming.visibleApertureWidthMillimeters, 0.001f, message);
+            Assert.AreEqual(450f, snapshot.PhysicalFraming.visibleApertureHeightMillimeters, 0.001f, message);
+            float planeHeight = 2f * snapshot.Geometry.cameraDistance * Mathf.Tan(snapshot.Geometry.fieldOfView * Mathf.Deg2Rad * 0.5f);
+            Assert.AreEqual(expectedPlaneHeight, planeHeight, 0.001f, message);
         }
 
         static IEnumerator WaitFor(Func<bool> predicate, string failureMessage)

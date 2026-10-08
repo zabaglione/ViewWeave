@@ -35,6 +35,7 @@ static std::atomic<bool> g_initializeFailure{false};
 static std::atomic<bool> g_drawFailure{false};
 static std::atomic<bool> g_drawThrow{false};
 static std::atomic<uint32_t> g_drawCount{0};
+static std::atomic<int> g_testCalibrationMode{0};
 static std::atomic<bool> g_workerClaimed{false};
 static std::atomic<unsigned long> g_producerThread{0};
 static std::atomic<unsigned long> g_workerThread{0};
@@ -161,6 +162,31 @@ static void BeginContext(void** handle) {
     *handle = lkg_worker_begin("test-runtime", "worker-transport-test", 0, nullptr);
     Check(*handle != nullptr, "worker begin");
     Check(WaitReady(*handle), "worker ready");
+}
+
+static void EndContext(void* handle);
+
+static void TestCachedPhysicalDisplayCalibration() {
+    g_testCalibrationMode.store(0);
+    void* handle = nullptr;
+    BeginContext(&handle);
+    LkgWorkerPhysicalDisplayInfoV1 info{};
+    info.structSize = sizeof(info);
+    info.version = 1;
+    Check(lkg_worker_get_physical_display_v1(handle, &info) == 0 && info.valid == 1, "cached physical calibration available");
+    Check(info.pixelWidth == 1920 && info.pixelHeight == 1080 && info.dpi == 110.0f, "cached physical calibration values");
+    info.structSize = sizeof(info) - 1;
+    Check(lkg_worker_get_physical_display_v1(handle, &info) == -1, "cached physical calibration validates ABI size");
+    EndContext(handle);
+
+    g_testCalibrationMode.store(1);
+    BeginContext(&handle);
+    info = {};
+    info.structSize = sizeof(info);
+    info.version = 1;
+    Check(lkg_worker_get_physical_display_v1(handle, &info) == 0 && info.valid == 0 && info.pixelWidth == 0 && info.dpi == 0.0f,
+        "invalid vendor DPI becomes unavailable calibration");
+    EndContext(handle);
 }
 
 static void EndContext(void* handle) {
@@ -494,6 +520,21 @@ int32_t lkg_bridge_get_display_count(uint32_t* count) { if (!count) return -1; *
 int32_t lkg_bridge_get_display(uint32_t ordinal, LkgBridgeDisplayInfo* info) {
     if (!info || ordinal != 0) return -2;
     *info = LkgBridgeDisplayInfo{ 0, 32, 32, 1.0f, 1.0f, 128, 128, 4, 4 };
+    return 0;
+}
+int32_t lkg_bridge_get_physical_display_v1(uint32_t, LkgBridgePhysicalDisplayInfoV1* info) {
+    if (!info || info->structSize != sizeof(LkgBridgePhysicalDisplayInfoV1) || info->version != 1) return -1;
+    if (g_testCalibrationMode.load() != 0) {
+        info->pixelWidth = 1920;
+        info->pixelHeight = 1080;
+        info->dpi = 0.0f;
+        info->valid = 0;
+        return -3;
+    }
+    info->pixelWidth = 1920;
+    info->pixelHeight = 1080;
+    info->dpi = 110.0f;
+    info->valid = 1;
     return 0;
 }
 uint64_t lkg_bridge_create_d3d11_session(void* device, uint32_t) { return device ? 1 : 0; }
@@ -862,6 +903,7 @@ int main(int argc, char** argv) {
         return 0;
     }
     TestD3D12RingColors();
+    TestCachedPhysicalDisplayCalibration();
     TestTypelessSource();
     TestTransferResetResize();
     TestBoundedCompletion();

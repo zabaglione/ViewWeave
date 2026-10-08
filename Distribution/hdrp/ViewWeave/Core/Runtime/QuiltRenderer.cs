@@ -10,6 +10,8 @@ namespace ViewWeave
     public sealed class QuiltRenderer : MonoBehaviour
     {
         public QuiltSettings settings = new QuiltSettings();
+        [Tooltip("Use physical aperture dimensions and units-per-meter to derive the view aspect and zero-parallax distance.")]
+        public QuiltPhysicalFraming physicalFraming = new QuiltPhysicalFraming();
         [Tooltip("The output quilt stays full size. Half and Quarter render ceil(view count / divisor) views, reuse the nearest rendered image for each output tile, and can reduce angular smoothness. At least the first and last views are rendered when view count is greater than one.")]
         public QuiltViewRenderMode viewRenderMode = QuiltViewRenderMode.Full;
         [Tooltip("Disabled dedicated camera used only to render quilt views.")]
@@ -48,6 +50,12 @@ namespace ViewWeave
         public long LastViewCpuTicks { get; private set; }
         public int ViewAntiAliasingSamples => viewTexture == null ? 0 : viewTexture.antiAliasing;
         public int ResolveAntiAliasingSamples => resolveTexture == null ? 0 : resolveTexture.antiAliasing;
+
+        public bool TryGetEffectiveSettings(out QuiltSettings effectiveSettings, out string error)
+        {
+            return QuiltFramingResolver.TryResolve(settings, physicalFraming,
+                QuiltFramingResolver.EffectiveFieldOfView(this), out effectiveSettings, out error);
+        }
 
 #if UNITY_EDITOR
         internal bool BeginEditorPreviewRetention(UnityEngine.Object ownerIdentity)
@@ -219,6 +227,13 @@ namespace ViewWeave
                     settings.fieldOfView = renderReferenceFieldOfView;
                 }
             }
+            float effectiveFieldOfView = framingCamera != sourceCamera && followReferenceFieldOfView
+                ? renderReferenceFieldOfView
+                : settings.fieldOfView;
+            QuiltPhysicalFraming renderPhysicalFraming = physicalFraming == null ? new QuiltPhysicalFraming() : physicalFraming.Clone();
+            if (!QuiltFramingResolver.TryResolve(settings, renderPhysicalFraming, effectiveFieldOfView,
+                    out QuiltSettings effectiveSettings, out string framingError))
+                throw new InvalidOperationException(framingError);
             IsRendering = true;
             hasCompletedQuilt = false;
             LastRenderedViewCount = 0;
@@ -230,7 +245,7 @@ namespace ViewWeave
             IDisposable quiltPreparation = null;
             try
             {
-                layout = settings.GetLayout();
+                layout = effectiveSettings.GetLayout();
                 EnsureViewSampling(layout.ViewCount);
                 EnsureTextures(layout);
                 ClearQuilt();
@@ -246,8 +261,8 @@ namespace ViewWeave
                 sourceCamera.enabled = false;
                 IQuiltRenderPreparation preparation = RenderGuard as IQuiltRenderPreparation;
                 if (preparation != null) quiltPreparation = preparation.PrepareQuilt(sourceCamera);
-                Matrix4x4 centerProjection = QuiltMath.OffAxisProjection(settings.fieldOfView, settings.viewAspect, state.nearClip, state.farClip, 0f, settings.cameraDistance);
-                float maximumViewOffset = QuiltMath.ViewOffset(layout.ViewCount - 1, layout.ViewCount, settings.viewCone, settings.cameraDistance);
+                Matrix4x4 centerProjection = QuiltMath.OffAxisProjection(effectiveSettings.fieldOfView, effectiveSettings.viewAspect, state.nearClip, state.farClip, 0f, effectiveSettings.cameraDistance);
+                float maximumViewOffset = QuiltMath.ViewOffset(layout.ViewCount - 1, layout.ViewCount, effectiveSettings.viewCone, effectiveSettings.cameraDistance);
                 for (int renderSlot = 0; renderSlot < renderedViewIndices.Length; ++renderSlot)
                 {
                     long viewStart = Stopwatch.GetTimestamp();
@@ -256,9 +271,9 @@ namespace ViewWeave
                     float offset = maximumViewOffset * normalizedView;
                     sourceCamera.transform.position = state.position + state.rotation * Vector3.right * offset;
                     sourceCamera.transform.rotation = QuiltMath.ParallelViewRotation(state.rotation);
-                    sourceCamera.projectionMatrix = QuiltMath.ProjectionWithViewOffset(centerProjection, offset, settings.cameraDistance);
+                    sourceCamera.projectionMatrix = QuiltMath.ProjectionWithViewOffset(centerProjection, offset, effectiveSettings.cameraDistance);
                     sourceCamera.targetTexture = viewTexture;
-                    sourceCamera.aspect = settings.viewAspect;
+                    sourceCamera.aspect = effectiveSettings.viewAspect;
                     sourceCamera.rect = new Rect(0f, 0f, 1f, 1f);
                     IDisposable viewGuard = srp ? RenderGuard.Begin(sourceCamera) : null;
                     try
@@ -298,7 +313,7 @@ namespace ViewWeave
             }
             if (renderSucceeded)
             {
-                latestSnapshot = new QuiltRenderSnapshot(layout, viewRenderMode, settings, LastRenderedViewCount, quiltRevision + 1, sourceCamera);
+                latestSnapshot = new QuiltRenderSnapshot(layout, viewRenderMode, effectiveSettings, LastRenderedViewCount, quiltRevision + 1, sourceCamera, renderPhysicalFraming);
                 latestReferenceCamera = framingCamera;
                 latestSnapshotFollowedReferenceFieldOfView = framingCamera != sourceCamera && followReferenceFieldOfView;
                 latestReferenceFieldOfView = renderReferenceFieldOfView;
@@ -317,11 +332,14 @@ namespace ViewWeave
             try
             {
                 ValidateReferenceCamera(sourceCamera, referenceCamera);
-                QuiltLayout currentLayout = settings.GetLayout();
+                if (!TryGetEffectiveSettings(out QuiltSettings currentEffective, out _)) return false;
+                QuiltLayout currentLayout = currentEffective.GetLayout();
                 QuiltCaptureSettings previous = latestSnapshot.Settings;
-                QuiltSettings current = settings;
+                QuiltSettings current = currentEffective;
                 if (currentLayout.QuiltWidth != latestSnapshot.Layout.QuiltWidth || currentLayout.QuiltHeight != latestSnapshot.Layout.QuiltHeight || currentLayout.Rows != latestSnapshot.Layout.Rows || currentLayout.Columns != latestSnapshot.Layout.Columns || currentLayout.ViewCount != latestSnapshot.Layout.ViewCount || viewRenderMode != latestSnapshot.ViewRenderMode) return false;
                 if (current.viewAspect != previous.viewAspect || current.fieldOfView != previous.fieldOfView || current.cameraDistance != previous.cameraDistance || current.viewCone != previous.viewCone) return false;
+                QuiltCapturePhysicalFraming capturedPhysical = latestSnapshot.PhysicalFraming;
+                if (!PhysicalFramingMatches(physicalFraming, capturedPhysical)) return false;
                 Camera framingCamera = EffectiveCamera;
                 if (framingCamera != latestReferenceCamera) return false;
                 if ((framingCamera != sourceCamera && followReferenceFieldOfView) != latestSnapshotFollowedReferenceFieldOfView) return false;
@@ -361,6 +379,15 @@ namespace ViewWeave
         }
 
         static bool IsFinite(float value) => !float.IsNaN(value) && !float.IsInfinity(value);
+
+        static bool PhysicalFramingMatches(QuiltPhysicalFraming current, QuiltCapturePhysicalFraming captured)
+        {
+            if (current == null) return !captured.enabled;
+            return current.enabled == captured.enabled &&
+                current.visibleApertureWidthMillimeters == captured.visibleApertureWidthMillimeters &&
+                current.visibleApertureHeightMillimeters == captured.visibleApertureHeightMillimeters &&
+                current.unitsPerMeter == captured.unitsPerMeter;
+        }
 
         void NotifyQuiltRendered()
         {

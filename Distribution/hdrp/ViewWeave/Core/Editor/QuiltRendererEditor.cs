@@ -33,7 +33,7 @@ namespace ViewWeave.Editor
             SceneView sceneView = SceneView.lastActiveSceneView;
             if (renderer == null || sceneView == null ||
                 !QuiltRendererAuthoringOperations.TryGetFocusPoint(renderer, out _, out Vector3 focusPoint)) return false;
-            float size = Mathf.Max(renderer.settings.cameraDistance * 0.08f, 0.1f);
+            float size = Mathf.Max(QuiltRendererAuthoringOperations.GetEffectiveFocusDistance(renderer) * 0.08f, 0.1f);
             sceneView.Frame(new Bounds(focusPoint, Vector3.one * size), false);
             return true;
         }
@@ -61,7 +61,7 @@ namespace ViewWeave.Editor
 
         public override void OnInspectorGUI()
         {
-            DrawDefaultInspector();
+            DrawTechnicalInspector();
             if (targets.Length == 1)
             {
                 ViewWeaveRig rig = ((QuiltRenderer)target).GetComponent<ViewWeaveRig>();
@@ -92,8 +92,55 @@ namespace ViewWeave.Editor
             serializedObject.Update();
             QuiltRenderer renderer = (QuiltRenderer)target;
             bool followsReferenceFov = renderer.referenceCamera != null && renderer.followReferenceFieldOfView;
-            DrawSetting("cameraDistance", "Focus Distance", "Distance in Unity units from the effective framing camera to the zero-parallax plane. This is not depth-of-field focus.");
-            DrawSetting("fieldOfView", "Vertical Field of View", followsReferenceFov ? "The reference camera's FOV replaces this value before every render while FOV following is enabled." : null);
+            if (renderer.physicalFraming != null && renderer.physicalFraming.enabled)
+            {
+                if (renderer.TryGetEffectiveSettings(out QuiltSettings effective, out string framingError))
+                    EditorGUILayout.LabelField("Effective Zero-Parallax Distance", effective.cameraDistance.ToString("0.###", CultureInfo.InvariantCulture) + " units");
+                else EditorGUILayout.HelpBox(framingError, MessageType.Error);
+            }
+            else
+                DrawSetting("cameraDistance", "Focus Distance", "Distance in Unity units from the effective framing camera to the zero-parallax plane. This is not depth-of-field focus.");
+            if (renderer.physicalFraming != null && renderer.physicalFraming.enabled && followsReferenceFov)
+            {
+                SerializedObject referenceObject = new SerializedObject(renderer.referenceCamera);
+                referenceObject.Update();
+                SerializedProperty referenceFov = FindCameraProperty(referenceObject, "field of view", "m_FieldOfView");
+                string referenceError = string.Empty;
+                bool editableReference = !EditorApplication.isPlaying && !EditorApplication.isPlayingOrWillChangePlaymode &&
+                    renderer.sourceCamera != null && renderer.referenceCamera != renderer.sourceCamera && !renderer.referenceCamera.orthographic &&
+                    !renderer.referenceCamera.transform.IsChildOf(renderer.sourceCamera.transform) &&
+                    QuiltRendererAuthoringOperations.TryGetSceneObjectCenter(renderer, renderer.referenceCamera, out _, out referenceError);
+                using (new EditorGUI.DisabledScope(!editableReference))
+                {
+                    if (referenceFov != null) EditorGUILayout.PropertyField(referenceFov, new GUIContent("Vertical Field of View"));
+                    if (referenceObject.ApplyModifiedProperties()) SceneView.RepaintAll();
+                }
+                if (!editableReference)
+                    EditorGUILayout.HelpBox("Reference Camera FOV is read-only here because the camera is not editable in the Rig's current Stage or edit state. " +
+                        (string.IsNullOrEmpty(referenceError) ? "Assign a perspective camera from the same loaded Main Stage or Prefab Stage." : referenceError), MessageType.Warning);
+            }
+            else
+                DrawSetting("fieldOfView", "Vertical Field of View", followsReferenceFov ? "The reference camera's FOV replaces this value before every render while FOV following is enabled." : null);
+            if (renderer.physicalFraming != null && renderer.physicalFraming.enabled)
+            {
+                QuiltPhysicalFraming physical = renderer.physicalFraming;
+                EditorGUILayout.LabelField("Physical Aperture", physical.visibleApertureWidthMillimeters.ToString("0.##", CultureInfo.InvariantCulture) + " x " +
+                    physical.visibleApertureHeightMillimeters.ToString("0.##", CultureInfo.InvariantCulture) + " mm (" + physical.DiagonalInches.ToString("0.##", CultureInfo.InvariantCulture) + " in)");
+                if (QuiltDisplaySettingsResolver.TryGetConnectedPhysicalCalibration(renderer, out QuiltEditorDisplayProfile calibration))
+                {
+                    if (GUILayout.Button("Use Connected Display Size"))
+                    {
+                        Undo.RecordObject(renderer, "Copy Connected Display Size");
+                        renderer.physicalFraming.visibleApertureWidthMillimeters = calibration.widthMillimeters;
+                        renderer.physicalFraming.visibleApertureHeightMillimeters = calibration.heightMillimeters;
+                        EditorUtility.SetDirty(renderer);
+                        PrefabUtility.RecordPrefabInstancePropertyModifications(renderer);
+                        SceneView.RepaintAll();
+                    }
+                    EditorGUILayout.LabelField("Calibration DPI", calibration.dpi.ToString("0.##", CultureInfo.InvariantCulture));
+                }
+                else EditorGUILayout.HelpBox("No valid connected display calibration is available. Enter aperture dimensions manually; no default DPI is assumed.", MessageType.Info);
+            }
             if (serializedObject.ApplyModifiedProperties()) SceneView.RepaintAll();
             if (followsReferenceFov)
                 EditorGUILayout.HelpBox("Vertical Field of View follows Reference Camera at render time. A manually entered value is replaced while this is enabled.", MessageType.Info);
@@ -127,6 +174,41 @@ namespace ViewWeave.Editor
             QuiltRendererSceneViewControls.ShowNearFar = EditorGUILayout.Toggle("Show Near / Far", QuiltRendererSceneViewControls.ShowNearFar);
             QuiltRendererSceneViewControls.ShowExtremeViews = EditorGUILayout.Toggle("Show Extreme Views", QuiltRendererSceneViewControls.ShowExtremeViews);
             QuiltRendererSceneViewControls.Show3DFocusCursor = EditorGUILayout.Toggle(new GUIContent("Show 3D Focus Cursor", "Shows a free-move Scene View handle at the focus-plane center. Only its forward-axis projection changes Focus Distance; camera position and rotation are unchanged."), QuiltRendererSceneViewControls.Show3DFocusCursor);
+        }
+
+        void DrawTechnicalInspector()
+        {
+            serializedObject.UpdateIfRequiredOrScript();
+            SerializedProperty iterator = serializedObject.GetIterator();
+            bool enterChildren = true;
+            bool physicalFocusIsDerived = target is QuiltRenderer renderer && renderer.physicalFraming != null && renderer.physicalFraming.enabled;
+            while (iterator.NextVisible(enterChildren))
+            {
+                enterChildren = false;
+                if (iterator.propertyPath == "settings" && physicalFocusIsDerived)
+                    DrawSettingsWithoutDerivedFocusDistance(iterator.Copy());
+                else EditorGUILayout.PropertyField(iterator, true);
+            }
+            serializedObject.ApplyModifiedProperties();
+        }
+
+        static void DrawSettingsWithoutDerivedFocusDistance(SerializedProperty settings)
+        {
+            EditorGUILayout.LabelField(settings.displayName, EditorStyles.boldLabel);
+            EditorGUI.indentLevel++;
+            try
+            {
+                SerializedProperty property = settings.Copy();
+                SerializedProperty end = property.GetEndProperty();
+                bool enterChildren = true;
+                while (property.NextVisible(enterChildren) && !SerializedProperty.EqualContents(property, end))
+                {
+                    enterChildren = false;
+                    if (property.name == "cameraDistance") continue;
+                    EditorGUILayout.PropertyField(property, true);
+                }
+            }
+            finally { EditorGUI.indentLevel--; }
         }
 
         void DrawAuthoringControls(QuiltRenderer renderer)
@@ -236,10 +318,9 @@ namespace ViewWeave.Editor
             if (framingCamera == null || framingCamera.orthographic)
                 return;
             Camera sourceCamera = renderer.sourceCamera;
-            float fov = renderer.referenceCamera != null && renderer.followReferenceFieldOfView
-                ? renderer.referenceCamera.fieldOfView
-                : renderer.settings.fieldOfView;
-            if (!QuiltFrustumGeometry.TryBuild(framingCamera.transform, renderer.settings, sourceCamera.nearClipPlane, sourceCamera.farClipPlane, fov, out QuiltFrustumGeometry.Geometry geometry))
+            float fov = QuiltFramingResolver.EffectiveFieldOfView(renderer);
+            if (!QuiltDisplaySettingsResolver.TryResolve(renderer, out QuiltSettings effectiveSettings, out QuiltEditorDisplayProfile display, out _) ||
+                !QuiltFrustumGeometry.TryBuild(framingCamera.transform, effectiveSettings, sourceCamera.nearClipPlane, sourceCamera.farClipPlane, fov, out QuiltFrustumGeometry.Geometry geometry))
                 return;
 
             Color oldColor = Handles.color;
@@ -263,7 +344,10 @@ namespace ViewWeave.Editor
                 Handles.Label(Center(geometry.focusPlane), "Zero-parallax focus");
                 Vector3 focusCenter = Center(geometry.focusPlane);
                 Handles.DrawLine(framingCamera.transform.position, focusCenter);
-                Handles.Label((framingCamera.transform.position + focusCenter) * 0.5f, renderer.settings.cameraDistance.ToString("0.###", CultureInfo.InvariantCulture) + " units");
+                string distanceLabel = effectiveSettings.cameraDistance.ToString("0.###", CultureInfo.InvariantCulture) + " units; " + display.source;
+                if (renderer.physicalFraming != null && renderer.physicalFraming.enabled)
+                    distanceLabel += "; " + renderer.physicalFraming.visibleApertureWidthMillimeters.ToString("0.##", CultureInfo.InvariantCulture) + " x " + renderer.physicalFraming.visibleApertureHeightMillimeters.ToString("0.##", CultureInfo.InvariantCulture) + " mm";
+                Handles.Label((framingCamera.transform.position + focusCenter) * 0.5f, distanceLabel);
 
                 if (QuiltRendererSceneViewControls.ShowExtremeViews)
                 {
@@ -308,6 +392,11 @@ namespace ViewWeave.Editor
 
             float distance = Vector3.Dot(moved - origin, forward);
             if (float.IsNaN(distance) || float.IsInfinity(distance) || distance <= 0.001f) return;
+            if (renderer.physicalFraming != null && renderer.physicalFraming.enabled)
+            {
+                if (QuiltRendererAuthoringOperations.TrySetEffectiveFocusDistance(renderer, distance)) SceneView.RepaintAll();
+                return;
+            }
             Undo.RecordObject(renderer, "Change ViewWeave Focus Distance");
             renderer.settings.cameraDistance = distance;
             EditorUtility.SetDirty(renderer);

@@ -37,3 +37,11 @@ extern "C" LKG_EXPORT int32_t lkg_worker_wait_final_shutdown_v1(uint32_t, LkgWor
     status->lastResult = -2;
     return -2;
 }
+extern "C" LKG_EXPORT int32_t lkg_worker_get_physical_display_v1(void*, LkgWorkerPhysicalDisplayInfoV1* info) {
+    if (!info || info->structSize != sizeof(LkgWorkerPhysicalDisplayInfoV1) || info->version != 1) return -1;
+    info->pixelWidth = 0;
+    info->pixelHeight = 0;
+    info->dpi = 0.0f;
+    info->valid = 0;
+    return -2;
+}

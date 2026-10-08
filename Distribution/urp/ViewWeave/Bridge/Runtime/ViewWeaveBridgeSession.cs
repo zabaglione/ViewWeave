@@ -38,6 +38,9 @@ namespace ViewWeave
         bool initialized;
         bool pendingStart;
         bool profileApplied;
+        string profileRuntimePathAtStart;
+        string profileApplicationNameAtStart;
+        uint profileDisplayOrdinalAtStart;
         bool completionWatchdogArmed;
         uint watchdogSubmissions;
         uint watchdogCompleted;
@@ -137,6 +140,11 @@ namespace ViewWeave
                 return;
             }
             if (State == SessionState.Idle || State == SessionState.Fault) return;
+            if (profileApplied && State == SessionState.Rendering)
+            {
+                string physicalError = GetPhysicalOutputError();
+                if (!string.IsNullOrEmpty(physicalError)) { Fail(physicalError); return; }
+            }
             if (rig != null && !rig.AutoRender)
             {
                 ResetCompletionWatchdog();
@@ -218,11 +226,18 @@ namespace ViewWeave
                 out string backendError))
                 return Fail(backendError);
             if (!ValidateRig()) return false;
+            if (!rig.Renderer.TryGetEffectiveSettings(out _, out string framingError))
+                return Fail("Physical framing is invalid: " + Sanitize(framingError));
+            if (rig.Renderer.physicalFraming != null && rig.Renderer.physicalFraming.enabled && output.zoom != 1f)
+                return Fail("Physical 1:1 framing requires Bridge zoom to be exactly 1.");
             rig.Renderer.ResetAutoRenderError();
             if (!ResolveRuntimePath(out string resolvedPath)) return false;
             output.runtimePath = resolvedPath;
             output.applicationName = applicationName;
             output.displayOrdinal = displayOrdinal;
+            profileRuntimePathAtStart = runtimePath ?? string.Empty;
+            profileApplicationNameAtStart = applicationName ?? string.Empty;
+            profileDisplayOrdinalAtStart = displayOrdinal;
             output.initializeOnEnable = false;
             if (!output.TryBegin())
             {
@@ -373,6 +388,8 @@ namespace ViewWeave
         {
             BridgeDisplayProfile profile = output.Profile;
             if (!profile.IsValid) return Fail("Bridge worker returned an invalid display profile");
+            string physicalError = GetPhysicalOutputError(profile);
+            if (!string.IsNullOrEmpty(physicalError)) return Fail(physicalError);
             try
             {
                 QuiltQualityProfile selected = CreateQualityProfile(profile, quality);
@@ -385,6 +402,46 @@ namespace ViewWeave
             {
                 return Fail(Sanitize(error.Message));
             }
+        }
+
+        string GetPhysicalOutputError(BridgeDisplayProfile profile = default)
+        {
+            QuiltPhysicalFraming physical = rig == null || rig.Renderer == null ? null : rig.Renderer.physicalFraming;
+            if (physical == null || !physical.enabled) return string.Empty;
+            if (!rig.Renderer.TryGetEffectiveSettings(out _, out string framingError))
+                return "Physical framing became invalid: " + Sanitize(framingError);
+            if (output != null && output.zoom != 1f)
+                return "Physical 1:1 framing requires Bridge zoom to be exactly 1.";
+            BridgeDisplayProfile connected = profile.IsValid ? profile : output == null ? default : output.Profile;
+            if (connected.IsValid && !connected.MatchesPhysicalAspect(physical.visibleApertureWidthMillimeters, physical.visibleApertureHeightMillimeters))
+                return "Physical aperture aspect does not match the connected display profile.";
+            return string.Empty;
+        }
+
+        internal bool TryGetEditorDisplayProfile(QuiltRenderer requestedRenderer, out BridgeDisplayProfile profile)
+        {
+            profile = default;
+            if (rig == null || output == null) return false;
+            bool configurationMatches = string.Equals(runtimePath ?? string.Empty, profileRuntimePathAtStart, StringComparison.Ordinal) &&
+                                        string.Equals(applicationName ?? string.Empty, profileApplicationNameAtStart, StringComparison.Ordinal) &&
+                                        displayOrdinal == profileDisplayOrdinalAtStart;
+            bool outputConfigurationMatches = string.Equals(output.applicationName ?? string.Empty, profileApplicationNameAtStart, StringComparison.Ordinal) &&
+                                              output.displayOrdinal == profileDisplayOrdinalAtStart;
+            BridgeDisplayProfile current = output.Profile;
+            if (!IsEditorDisplayProfileCurrent(isActiveAndEnabled && State == SessionState.Rendering,
+                    profileApplied, rig.Renderer == requestedRenderer, output.isActiveAndEnabled && output.Ready,
+                    current, configurationMatches, outputConfigurationMatches) ||
+                !string.IsNullOrEmpty(GetPhysicalOutputError(current))) return false;
+            profile = current;
+            return true;
+        }
+
+        internal static bool IsEditorDisplayProfileCurrent(bool activeSession, bool profileApplied,
+            bool rendererMatches, bool workerReady, BridgeDisplayProfile profile, bool configurationMatches,
+            bool outputConfigurationMatches)
+        {
+            return activeSession && profileApplied && rendererMatches && workerReady && profile.IsValid &&
+                   configurationMatches && outputConfigurationMatches;
         }
 
         public static QuiltQualityProfile CreateQualityProfile(BridgeDisplayProfile profile, QuiltQualityPreset preset)

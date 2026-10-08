@@ -40,10 +40,23 @@ namespace ViewWeave
             public int lastResult;
         }
 
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct PhysicalDisplayInfoV1
+        {
+            public uint structSize;
+            public uint version;
+            public uint pixelWidth;
+            public uint pixelHeight;
+            public float dpi;
+            public uint valid;
+        }
+
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr lkg_worker_begin([MarshalAs(UnmanagedType.LPUTF8Str)] string runtimePath, [MarshalAs(UnmanagedType.LPUTF8Str)] string applicationName, uint displayOrdinal, IntPtr producerDevice);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
         internal static extern int lkg_worker_poll(IntPtr handle, out Status status);
+        [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern int lkg_worker_get_physical_display_v1(IntPtr handle, ref PhysicalDisplayInfoV1 info);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
         internal static extern int lkg_worker_close(IntPtr handle);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]

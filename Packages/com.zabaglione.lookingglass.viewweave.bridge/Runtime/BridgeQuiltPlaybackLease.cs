@@ -141,7 +141,7 @@ namespace ViewWeave
             lease.renderer = targetRenderer;
             lease.source = playbackSource;
             lease.rendererLease = coreLease;
-            lease.initialSettings = new QuiltSettingsSnapshot(targetRenderer.settings);
+            lease.initialSettings = new QuiltSettingsSnapshot(targetRenderer);
             lease.initialOutputBehaviour = targetRenderer.OutputBehaviour;
             lease.initialSourceCamera = targetRenderer.sourceCamera;
             lease.initialReferenceCamera = targetRenderer.referenceCamera;
@@ -458,7 +458,7 @@ namespace ViewWeave
 
         bool SettingsMatch()
         {
-            return renderer != null && renderer.settings != null && initialSettings.Matches(renderer.settings) && renderer.viewRenderMode == initialRenderMode;
+            return renderer != null && renderer.settings != null && initialSettings.Matches(renderer) && renderer.viewRenderMode == initialRenderMode;
         }
 
         void SetTailFence()
@@ -864,14 +864,24 @@ namespace ViewWeave
         {
             error = string.Empty;
             QuiltLayout layout = info.Layout;
-            QuiltSettings settings = value.settings;
+            if (!value.TryGetEffectiveSettings(out QuiltSettings settings, out error)) return false;
             if (layout.QuiltWidth != settings.quiltWidth || layout.QuiltHeight != settings.quiltHeight || layout.Columns != settings.columns || layout.Rows != settings.rows || layout.ViewCount != settings.views || Math.Abs(layout.AspectRatio - settings.viewAspect) > 0.0001f)
             {
                 error = "Quilt source layout must match the active Bridge Renderer dimensions, grid, view count, and aspect.";
                 return false;
             }
             Camera sourceCamera = value.sourceCamera;
-            if (info.HasCameraGeometry && (sourceCamera == null || Math.Abs(info.Geometry.fieldOfView - settings.fieldOfView) > 0.001f || Math.Abs(info.Geometry.cameraDistance - settings.cameraDistance) > 0.001f || Math.Abs(info.Geometry.viewCone - settings.viewCone) > 0.001f || Math.Abs(info.Geometry.nearClip - sourceCamera.nearClipPlane) > 0.001f || Math.Abs(info.Geometry.farClip - sourceCamera.farClipPlane) > 0.001f))
+            QuiltPhysicalFraming physical = value.physicalFraming;
+            bool physicalMismatch = info.Geometry.physicalFramingEnabled != (physical != null && physical.enabled);
+            if (physical != null && physical.enabled)
+            {
+                physicalMismatch |= Math.Abs(info.Geometry.visibleApertureWidthMillimeters - physical.visibleApertureWidthMillimeters) > 0.001f ||
+                                    Math.Abs(info.Geometry.visibleApertureHeightMillimeters - physical.visibleApertureHeightMillimeters) > 0.001f ||
+                                    Math.Abs(info.Geometry.unitsPerMeter - physical.unitsPerMeter) > 0.000001f;
+            }
+            if (info.HasCameraGeometry && (sourceCamera == null || Math.Abs(info.Geometry.fieldOfView - settings.fieldOfView) > 0.001f ||
+                Math.Abs(info.Geometry.cameraDistance - settings.cameraDistance) > 0.001f || Math.Abs(info.Geometry.viewCone - settings.viewCone) > 0.001f ||
+                Math.Abs(info.Geometry.nearClip - sourceCamera.nearClipPlane) > 0.001f || Math.Abs(info.Geometry.farClip - sourceCamera.farClipPlane) > 0.001f || physicalMismatch))
             {
                 error = "Quilt source camera geometry does not match the active Renderer lens settings.";
                 return false;
@@ -891,15 +901,32 @@ namespace ViewWeave
         {
             readonly int width, height, columns, rows, views;
             readonly float aspect, fieldOfView, distance, cone;
-            internal QuiltSettingsSnapshot(QuiltSettings settings)
+            readonly float effectiveAspect, effectiveFieldOfView, effectiveDistance, effectiveCone;
+            readonly QuiltPhysicalFraming physical;
+            internal QuiltSettingsSnapshot(QuiltRenderer renderer)
             {
+                QuiltSettings settings = renderer.settings;
                 width = settings.quiltWidth; height = settings.quiltHeight; columns = settings.columns; rows = settings.rows; views = settings.views;
                 aspect = settings.viewAspect; fieldOfView = settings.fieldOfView; distance = settings.cameraDistance; cone = settings.viewCone;
+                physical = renderer.physicalFraming == null ? new QuiltPhysicalFraming() : renderer.physicalFraming.Clone();
+                if (renderer.TryGetEffectiveSettings(out QuiltSettings effective, out _))
+                {
+                    effectiveAspect = effective.viewAspect;
+                    effectiveFieldOfView = effective.fieldOfView;
+                    effectiveDistance = effective.cameraDistance;
+                    effectiveCone = effective.viewCone;
+                }
+                else effectiveAspect = effectiveFieldOfView = effectiveDistance = effectiveCone = float.NaN;
             }
-            internal bool Matches(QuiltSettings settings)
+            internal bool Matches(QuiltRenderer renderer)
             {
-                return settings != null && width == settings.quiltWidth && height == settings.quiltHeight && columns == settings.columns && rows == settings.rows && views == settings.views &&
-                    aspect == settings.viewAspect && fieldOfView == settings.fieldOfView && distance == settings.cameraDistance && cone == settings.viewCone;
+                if (renderer == null || renderer.settings == null) return false;
+                QuiltSettings settings = renderer.settings;
+                if (!(width == settings.quiltWidth && height == settings.quiltHeight && columns == settings.columns && rows == settings.rows && views == settings.views &&
+                    aspect == settings.viewAspect && fieldOfView == settings.fieldOfView && distance == settings.cameraDistance && cone == settings.viewCone && physical.Matches(renderer.physicalFraming))) return false;
+                if (!renderer.TryGetEffectiveSettings(out QuiltSettings effective, out _)) return false;
+                return effectiveAspect == effective.viewAspect && effectiveFieldOfView == effective.fieldOfView &&
+                    effectiveDistance == effective.cameraDistance && effectiveCone == effective.viewCone;
             }
         }
     }

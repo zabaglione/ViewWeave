@@ -23,6 +23,15 @@ typedef struct LkgBridgeDisplayInfo {
     int32_t quilt_rows;
 } LkgBridgeDisplayInfo;
 
+typedef struct LkgBridgePhysicalDisplayInfoV1 {
+    uint32_t structSize;
+    uint32_t version;
+    uint32_t pixelWidth;
+    uint32_t pixelHeight;
+    float dpi;
+    uint32_t valid;
+} LkgBridgePhysicalDisplayInfoV1;
+
 typedef struct LkgBridgeDrawData {
     uint64_t session;
     void* texture;
@@ -69,6 +78,7 @@ LKG_EXPORT uint32_t lkg_bridge_graphics_api(void);
 LKG_EXPORT int32_t lkg_bridge_version(char* utf8, uint32_t capacity);
 LKG_EXPORT int32_t lkg_bridge_get_display_count(uint32_t* count);
 LKG_EXPORT int32_t lkg_bridge_get_display(uint32_t ordinal, LkgBridgeDisplayInfo* info);
+LKG_EXPORT int32_t lkg_bridge_get_physical_display_v1(uint32_t display_index, LkgBridgePhysicalDisplayInfoV1* info);
 LKG_EXPORT uint64_t lkg_bridge_create_d3d11_session(void* d3d_device, uint32_t display_index);
 LKG_EXPORT int32_t lkg_bridge_destroy_session(uint64_t session);
 /* Query returns 0 for a ledger record, -2 for unknown/acknowledged IDs, and -1

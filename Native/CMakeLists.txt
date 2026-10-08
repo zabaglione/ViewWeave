@@ -177,6 +177,7 @@ if (WIN32 AND BUILD_TESTING)
     add_executable(lookingglass_bridge_loader_lifecycle_test tests/bridge_loader_lifecycle_test.cpp)
     target_compile_features(lookingglass_bridge_loader_lifecycle_test PRIVATE cxx_std_17)
     target_compile_definitions(lookingglass_bridge_loader_lifecycle_test PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
+    target_include_directories(lookingglass_bridge_loader_lifecycle_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
     target_link_libraries(lookingglass_bridge_loader_lifecycle_test PRIVATE user32)
     add_dependencies(lookingglass_bridge_loader_lifecycle_test lookingglass_bridge_shim lkg_fake_bridge_runtime lkg_fake_bridge_missing)
     add_custom_command(TARGET lkg_fake_bridge_runtime POST_BUILD

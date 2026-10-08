@@ -61,6 +61,8 @@ namespace ViewWeave
 
         readonly List<QuiltRecordingFrame> capturedFrames = new List<QuiltRecordingFrame>();
         QuiltSettings startingSettings;
+        QuiltSettings startingEffectiveSettings;
+        QuiltPhysicalFraming startingPhysicalFraming;
         QuiltViewRenderMode startingViewRenderMode;
         Camera startingSourceCamera;
         QuiltRenderer subscribedRenderer;
@@ -139,6 +141,8 @@ namespace ViewWeave
             if (quiltRenderer.settings == null) throw new InvalidOperationException("The selected Quilt Renderer requires Quilt settings.");
             quiltRenderer.settings.Validate();
             if (!quiltRenderer.autoRender) throw new InvalidOperationException("The selected Quilt Renderer must have Auto Render enabled.");
+            if (!quiltRenderer.TryGetEffectiveSettings(out QuiltSettings effectiveSettings, out string framingError))
+                throw new InvalidOperationException("The selected Quilt Renderer framing is invalid: " + framingError);
             if (framesPerSecond < 1 || framesPerSecond > 240) throw new ArgumentOutOfRangeException(nameof(framesPerSecond), "FPS must be between 1 and 240.");
             if (frameCount < 1) throw new ArgumentOutOfRangeException(nameof(frameCount), "Frame count must be positive.");
             if (string.IsNullOrWhiteSpace(outputRoot)) throw new ArgumentException("An output folder is required.", nameof(outputRoot));
@@ -155,6 +159,8 @@ namespace ViewWeave
             try
             {
                 startingSettings = quiltRenderer.settings.Clone();
+                startingEffectiveSettings = effectiveSettings.Clone();
+                startingPhysicalFraming = quiltRenderer.physicalFraming == null ? new QuiltPhysicalFraming() : quiltRenderer.physicalFraming.Clone();
                 startingViewRenderMode = quiltRenderer.viewRenderMode;
                 startingSourceCamera = quiltRenderer.sourceCamera;
                 startingNearClip = startingSourceCamera.nearClipPlane;
@@ -495,6 +501,7 @@ namespace ViewWeave
         bool ConfigurationMatchesStart()
         {
             if (quiltRenderer == null || quiltRenderer.settings == null) return false;
+            if (!quiltRenderer.TryGetEffectiveSettings(out QuiltSettings currentEffective, out _)) return false;
             QuiltSettings current = quiltRenderer.settings;
             return quiltRenderer.viewRenderMode == startingViewRenderMode
                 && current.quiltWidth == startingSettings.quiltWidth
@@ -503,9 +510,14 @@ namespace ViewWeave
                 && current.columns == startingSettings.columns
                 && current.views == startingSettings.views
                 && current.viewAspect == startingSettings.viewAspect
-                && current.fieldOfView == startingSettings.fieldOfView
+                && (quiltRenderer.referenceCamera != null && quiltRenderer.followReferenceFieldOfView || current.fieldOfView == startingSettings.fieldOfView)
                 && current.cameraDistance == startingSettings.cameraDistance
                 && current.viewCone == startingSettings.viewCone
+                && currentEffective.viewAspect == startingEffectiveSettings.viewAspect
+                && currentEffective.fieldOfView == startingEffectiveSettings.fieldOfView
+                && currentEffective.cameraDistance == startingEffectiveSettings.cameraDistance
+                && currentEffective.viewCone == startingEffectiveSettings.viewCone
+                && startingPhysicalFraming.Matches(quiltRenderer.physicalFraming)
                 && ReferenceEquals(quiltRenderer.sourceCamera, startingSourceCamera)
                 && startingSourceCamera != null
                 && startingSourceCamera.nearClipPlane == startingNearClip

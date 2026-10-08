@@ -69,6 +69,8 @@ namespace ViewWeave.Editor
             Transform framingTransform = framingCamera.transform;
             if (!TryProjectForwardDistance(framingTransform.position, framingTransform.rotation * Vector3.forward, worldPoint, out distance))
                 return false;
+            if (renderer.physicalFraming != null && renderer.physicalFraming.enabled)
+                return TrySetEffectiveFocusDistance(renderer, distance);
             if (Mathf.Abs(renderer.settings.cameraDistance - distance) < 0.000001f)
                 return true;
 
@@ -79,12 +81,40 @@ namespace ViewWeave.Editor
             return true;
         }
 
+        public static bool TrySetEffectiveFocusDistance(QuiltRenderer renderer, float distance)
+        {
+            if (renderer == null || renderer.settings == null || renderer.physicalFraming == null || !renderer.physicalFraming.enabled ||
+                !TryGetEditableFramingCamera(renderer, out _) || !IsFinite(distance) || distance <= MinimumFocusDistance ||
+                !renderer.physicalFraming.TryResolve(60f, out _, out _, out _))
+                return false;
+            float apertureHeight = renderer.physicalFraming.ApertureHeightInUnityUnits;
+            float fieldOfView = 2f * Mathf.Atan(apertureHeight / (2f * distance)) * Mathf.Rad2Deg;
+            if (!IsFinite(fieldOfView) || fieldOfView <= 0.01f || fieldOfView >= 178f) return false;
+            Camera fieldOfViewCamera = renderer.referenceCamera != null && renderer.followReferenceFieldOfView ? renderer.referenceCamera : null;
+            if (fieldOfViewCamera != null)
+            {
+                if (Mathf.Abs(fieldOfViewCamera.fieldOfView - fieldOfView) < 0.00001f) return true;
+                Undo.RecordObject(fieldOfViewCamera, "Set ViewWeave Physical Focus");
+                fieldOfViewCamera.fieldOfView = fieldOfView;
+                EditorUtility.SetDirty(fieldOfViewCamera);
+                PrefabUtility.RecordPrefabInstancePropertyModifications(fieldOfViewCamera);
+                return true;
+            }
+            if (Mathf.Abs(renderer.settings.fieldOfView - fieldOfView) < 0.00001f) return true;
+            Undo.RecordObject(renderer, "Set ViewWeave Physical Focus");
+            renderer.settings.fieldOfView = fieldOfView;
+            EditorUtility.SetDirty(renderer);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(renderer);
+            return true;
+        }
+
         public static bool TryOrbitEffectiveCamera(QuiltRenderer renderer, float horizontalDegrees, float verticalDegrees)
         {
             if (!TryGetEditableFramingCamera(renderer, out Camera framingCamera))
                 return false;
             Transform framingTransform = framingCamera.transform;
-            if (!TryCalculateOrbitPose(framingTransform.position, framingTransform.rotation, renderer.settings.cameraDistance,
+            float focusDistance = GetEffectiveFocusDistance(renderer);
+            if (!TryCalculateOrbitPose(framingTransform.position, framingTransform.rotation, focusDistance,
                     horizontalDegrees, verticalDegrees, out Vector3 position, out Quaternion rotation))
                 return false;
             if (position == framingTransform.position && rotation == framingTransform.rotation)
@@ -104,7 +134,7 @@ namespace ViewWeave.Editor
             if (!TryGetEditableFramingCamera(renderer, out framingCamera))
                 return false;
             Transform transform = framingCamera.transform;
-            focusPoint = transform.position + transform.rotation * Vector3.forward * renderer.settings.cameraDistance;
+            focusPoint = transform.position + transform.rotation * Vector3.forward * GetEffectiveFocusDistance(renderer);
             return IsFinite(focusPoint);
         }
 
@@ -192,12 +222,18 @@ namespace ViewWeave.Editor
             framingCamera = renderer.EffectiveCamera;
             if (framingCamera == null || renderer.sourceCamera.orthographic || framingCamera.orthographic ||
                 (renderer.referenceCamera != null && (renderer.referenceCamera == renderer.sourceCamera || renderer.referenceCamera.transform.IsChildOf(renderer.sourceCamera.transform))) ||
-                !IsFinite(renderer.settings.cameraDistance) || renderer.settings.cameraDistance <= MinimumFocusDistance)
+                !renderer.TryGetEffectiveSettings(out QuiltSettings effectiveSettings, out _) ||
+                !IsFinite(effectiveSettings.cameraDistance) || effectiveSettings.cameraDistance <= MinimumFocusDistance)
                 return false;
             Transform transform = framingCamera.transform;
             Quaternion rotation = transform.rotation;
             return IsFinite(transform.position) && IsFinite(rotation) &&
                    rotation.x * rotation.x + rotation.y * rotation.y + rotation.z * rotation.z + rotation.w * rotation.w >= 0.000001f;
+        }
+
+        public static float GetEffectiveFocusDistance(QuiltRenderer renderer)
+        {
+            return renderer != null && renderer.TryGetEffectiveSettings(out QuiltSettings effective, out _) ? effective.cameraDistance : 0f;
         }
 
         static bool IsFinite(Vector3 value) => IsFinite(value.x) && IsFinite(value.y) && IsFinite(value.z);

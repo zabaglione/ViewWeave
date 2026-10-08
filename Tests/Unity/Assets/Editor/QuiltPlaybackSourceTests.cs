@@ -131,6 +131,22 @@ public static class QuiltPlaybackSourceTests
         Require(source.Info.FramesPerSecond == 30 && source.Info.HasCameraGeometry, "sequence metadata provides playback rate and geometry");
         Require(source.Frames[2].Metadata.geometry.cameraPositionX == 2f, "per-frame camera pose may change while static quilt geometry stays fixed");
 
+        QuiltCaptureMetadata secondFrameMetadata = source.Frames[1].Metadata;
+        secondFrameMetadata.geometry.physicalFramingEnabled = true;
+        secondFrameMetadata.geometry.visibleApertureWidthMillimeters = 160f;
+        secondFrameMetadata.geometry.visibleApertureHeightMillimeters = 90f;
+        secondFrameMetadata.geometry.unitsPerMeter = 1f;
+        File.WriteAllText(Path.Combine(directory, "frame_000001_qs8x6a0.75.json"), JsonUtility.ToJson(secondFrameMetadata));
+        ExpectInvalid(() => QuiltPlaybackSource.Open(directory), "recording sequence rejects changes to physical aperture geometry");
+        secondFrameMetadata.geometry.visibleApertureWidthMillimeters = 0f;
+        File.WriteAllText(Path.Combine(directory, "frame_000001_qs8x6a0.75.json"), JsonUtility.ToJson(secondFrameMetadata));
+        ExpectInvalid(() => QuiltPlaybackSource.Open(directory), "enabled physical framing rejects unset metadata dimensions");
+        secondFrameMetadata.geometry.physicalFramingEnabled = false;
+        secondFrameMetadata.geometry.visibleApertureWidthMillimeters = 0f;
+        secondFrameMetadata.geometry.visibleApertureHeightMillimeters = 0f;
+        secondFrameMetadata.geometry.unitsPerMeter = 1f;
+        File.WriteAllText(Path.Combine(directory, "frame_000001_qs8x6a0.75.json"), JsonUtility.ToJson(secondFrameMetadata));
+
         string validFirstLine = lines[0];
         lines[0] = JsonUtility.ToJson(new QuiltRecordingFrame { index = -1, fileName = "frame_000000_qs8x6a0.75.png" });
         File.WriteAllText(Path.Combine(directory, "frames.jsonl"), string.Join("\n", lines) + "\n");

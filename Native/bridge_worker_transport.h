@@ -52,6 +52,15 @@ typedef struct LkgWorkerFinalShutdownStatusV1 {
     int32_t lastResult;
 } LkgWorkerFinalShutdownStatusV1;
 
+typedef struct LkgWorkerPhysicalDisplayInfoV1 {
+    uint32_t structSize;
+    uint32_t version;
+    uint32_t pixelWidth;
+    uint32_t pixelHeight;
+    float dpi;
+    uint32_t valid;
+} LkgWorkerPhysicalDisplayInfoV1;
+
 #if defined(__cplusplus)
 static_assert(sizeof(LkgWorkerFinalShutdownStatusV1) == 8 * sizeof(uint32_t), "final shutdown status ABI must be eight 32-bit fields");
 #endif
@@ -71,6 +80,7 @@ LKG_EXPORT uint32_t lkg_worker_pending_count(void);
 LKG_EXPORT int32_t lkg_worker_request_final_shutdown(void);
 LKG_EXPORT int32_t lkg_worker_get_final_shutdown_status_v1(LkgWorkerFinalShutdownStatusV1* status);
 LKG_EXPORT int32_t lkg_worker_wait_final_shutdown_v1(uint32_t timeoutMilliseconds, LkgWorkerFinalShutdownStatusV1* status);
+LKG_EXPORT int32_t lkg_worker_get_physical_display_v1(void* handle, LkgWorkerPhysicalDisplayInfoV1* info);
 
 #ifdef __cplusplus
 }

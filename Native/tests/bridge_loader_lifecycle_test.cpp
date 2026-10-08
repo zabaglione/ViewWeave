@@ -1,12 +1,14 @@
 #include <windows.h>
 #include <cstdio>
 #include <string>
+#include "bridge_shim.h"
 
 using LoadFn = int32_t (*)(const char*);
 using UnloadFn = void (*)();
 using InitializeFn = int32_t (*)(const char*);
 using UninitializeFn = void (*)();
 using LastErrorFn = int32_t (*)(char*, uint32_t);
+using GetPhysicalDisplayFn = int32_t (*)(uint32_t, LkgBridgePhysicalDisplayInfoV1*);
 
 static std::string full_path(const char* path) {
     char buffer[MAX_PATH]{};
@@ -50,6 +52,12 @@ int main(int argc, char** argv) {
     }
     if (load(good.c_str()) != 0) { FreeLibrary(module); return 8; }
     if (initialize("loader-lifecycle-test") != 0) { unload(); FreeLibrary(module); return 12; }
+    GetPhysicalDisplayFn getPhysical = reinterpret_cast<GetPhysicalDisplayFn>(GetProcAddress(module, "lkg_bridge_get_physical_display_v1"));
+    LkgBridgePhysicalDisplayInfoV1 physical{};
+    physical.structSize = sizeof(physical);
+    physical.version = 1;
+    if (!getPhysical || getPhysical(0, &physical) != -2 || physical.valid != 0)
+    { uninitialize(); unload(); FreeLibrary(module); return 15; }
     uninitialize();
     if (!GetModuleHandleA("lkg_fake_bridge_runtime.dll")) { unload(); FreeLibrary(module); return 13; }
     if (load(other.c_str()) != -5 || !has_error(lastError, "different resident path")) { unload(); FreeLibrary(module); return 9; }

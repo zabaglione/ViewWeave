@@ -40,6 +40,47 @@ namespace ViewWeave.BridgeSessionValidation
         }
 
         [Test]
+        public void PhysicalCalibrationConvertsDpiAndRejectsUnknownOrMismatchedGeometry()
+        {
+            var display = new BridgeNative.DisplayInfo
+            {
+                index = 0,
+                width = 1920,
+                height = 1080,
+                aspect = 16f / 9f,
+                viewcone = 40f,
+                quiltWidth = 4096,
+                quiltHeight = 4096,
+                quiltColumns = 8,
+                quiltRows = 6
+            };
+            var calibration = new BridgeWorkerNative.PhysicalDisplayInfoV1
+            {
+                pixelWidth = 1920,
+                pixelHeight = 1080,
+                dpi = 100f,
+                valid = 1
+            };
+            BridgeDisplayProfile profile = new BridgeDisplayProfile(display, calibration);
+            Assert.IsTrue(profile.HasPhysicalCalibration);
+            Assert.AreEqual(487.68f, profile.PhysicalWidthMillimeters, 0.01f);
+            Assert.AreEqual(274.32f, profile.PhysicalHeightMillimeters, 0.01f);
+            Assert.IsTrue(profile.MatchesPhysicalAspect(160f, 90f));
+            Assert.IsFalse(profile.MatchesPhysicalAspect(150f, 100f));
+
+            calibration.pixelWidth = 1080;
+            calibration.pixelHeight = 1920;
+            BridgeDisplayProfile rotated = new BridgeDisplayProfile(display, calibration);
+            Assert.IsTrue(rotated.HasPhysicalCalibration);
+            Assert.AreEqual(487.68f, rotated.PhysicalWidthMillimeters, 0.01f);
+            Assert.AreEqual(274.32f, rotated.PhysicalHeightMillimeters, 0.01f);
+
+            calibration.dpi = 0f;
+            Assert.IsFalse(new BridgeDisplayProfile(display, calibration).HasPhysicalCalibration);
+            Assert.IsFalse(new BridgeDisplayProfile(display).HasPhysicalCalibration);
+        }
+
+        [Test]
         public void NativeFinalStatusRequiresVersionedCompleteAndJoinedHost()
         {
             var status = new BridgeWorkerNative.FinalShutdownStatusV1
