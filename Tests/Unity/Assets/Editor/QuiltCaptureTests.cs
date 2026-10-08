@@ -75,6 +75,33 @@ public static class QuiltCaptureTests
             catch (IOException) { rejectedExisting = true; }
             Require(rejectedExisting, "existing PNG and sidecar are not overwritten");
             Require(RenderTexture.active == sentinel, "failed save preserves active render texture");
+
+            Texture2D centralPattern = CreateTilePattern(renderer.QuiltTexture.width, renderer.QuiltTexture.height, 2, 2);
+            try
+            {
+                Graphics.Blit(centralPattern, renderer.QuiltTexture);
+                RenderTexture.active = sentinel;
+                string centralPath = Path.Combine(outputDirectory, "capture_central.png");
+                QuiltCaptureUtility.SaveCentralViewLatest(renderer, centralPath);
+                Require(RenderTexture.active == sentinel, "central view readback restores the previous active render texture");
+                CheckCentralPng(centralPath, 32, 24);
+                QuiltCentralViewCaptureMetadata centralMetadata = JsonUtility.FromJson<QuiltCentralViewCaptureMetadata>(File.ReadAllText(Path.ChangeExtension(centralPath, ".json")));
+                Require(centralMetadata.logicalViewIndex == 1 && centralMetadata.renderedViewIndex == 1, "central metadata identifies the selected logical and rendered views");
+                Require(centralMetadata.width == 32 && centralMetadata.height == 24, "central metadata records the cropped image dimensions");
+                Require(centralMetadata.quilt.width == 64 && centralMetadata.quilt.views == 4, "central metadata retains source quilt metadata");
+                bool rejectedCentralOverwrite = false;
+                try { QuiltCaptureUtility.SaveCentralViewLatest(renderer, centralPath); }
+                catch (IOException) { rejectedCentralOverwrite = true; }
+                Require(rejectedCentralOverwrite, "existing central PNG and sidecar are not overwritten");
+                Require(RenderTexture.active == sentinel, "failed central save preserves active render texture");
+
+                bool rejectedInvalidSnapshot = false;
+                try { QuiltCaptureUtility.SaveCentralView(renderer.QuiltTexture, default(QuiltRenderSnapshot), Path.Combine(outputDirectory, "invalid.png")); }
+                catch (ArgumentException) { rejectedInvalidSnapshot = true; }
+                Require(rejectedInvalidSnapshot, "central view save rejects an invalid snapshot");
+                Require(!File.Exists(Path.Combine(outputDirectory, "invalid.png")), "invalid central snapshot creates no output");
+            }
+            finally { UnityEngine.Object.DestroyImmediate(centralPattern); }
             Debug.Log("ViewWeave Quilt capture GPU smoke passed");
         }
         finally
@@ -109,6 +136,47 @@ public static class QuiltCaptureTests
         texture.SetPixels32(pixels);
         texture.Apply(false, false);
         return texture;
+    }
+
+    static Texture2D CreateTilePattern(int width, int height, int columns, int rows)
+    {
+        Texture2D texture = new Texture2D(width, height, TextureFormat.RGBA32, false, false);
+        int tileWidth = width / columns;
+        int tileHeight = height / rows;
+        Color32[] tileColors = { new Color32(255, 0, 0, 255), new Color32(0, 255, 0, 255), new Color32(0, 0, 255, 255), new Color32(255, 255, 0, 255) };
+        Color32[] pixels = new Color32[width * height];
+        for (int y = 0; y < height; ++y)
+            for (int x = 0; x < width; ++x)
+            {
+                int view = (y / tileHeight) * columns + (x / tileWidth);
+                int localX = x % tileWidth;
+                int localY = y % tileHeight;
+                Color32 color = tileColors[view];
+                if (localX < 2 && localY < 2) color = new Color32(255, 255, 255, 255);
+                else if (localX >= tileWidth - 2 && localY < 2) color = new Color32(0, 0, 0, 255);
+                else if (localX < 2 && localY >= tileHeight - 2) color = new Color32(128, 128, 128, 255);
+                else if (localX >= tileWidth - 2 && localY >= tileHeight - 2) color = new Color32(255, 0, 255, 255);
+                pixels[y * width + x] = color;
+            }
+        texture.SetPixels32(pixels);
+        texture.Apply(false, false);
+        return texture;
+    }
+
+    static void CheckCentralPng(string path, int width, int height)
+    {
+        Texture2D decoded = new Texture2D(2, 2, TextureFormat.RGBA32, false, false);
+        try
+        {
+            Require(ImageConversion.LoadImage(decoded, File.ReadAllBytes(path), false), "central PNG decoded");
+            Require(decoded.width == width && decoded.height == height, "central PNG is cropped to one tile");
+            CheckColor(decoded.GetPixel(width / 2, height / 2), new Color32(0, 255, 0, 255), "central logical tile is selected");
+            CheckColor(decoded.GetPixel(1, 1), new Color32(255, 255, 255, 255), "central crop keeps bottom-left orientation");
+            CheckColor(decoded.GetPixel(width - 2, 1), new Color32(0, 0, 0, 255), "central crop keeps bottom-right orientation");
+            CheckColor(decoded.GetPixel(1, height - 2), new Color32(128, 128, 128, 255), "central crop keeps top-left orientation");
+            CheckColor(decoded.GetPixel(width - 2, height - 2), new Color32(255, 0, 255, 255), "central crop keeps top-right orientation");
+        }
+        finally { UnityEngine.Object.DestroyImmediate(decoded); }
     }
 
     static void CheckPng(string path, int width, int height)

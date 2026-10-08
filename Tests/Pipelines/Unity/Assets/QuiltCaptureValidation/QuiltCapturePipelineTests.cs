@@ -7,7 +7,10 @@ using System.Threading;
 using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEditor;
+using Unity.Collections;
 using UnityEngine;
+using UnityEngine.Audio;
+using UnityEngine.LowLevel;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.TestTools;
@@ -42,6 +45,614 @@ namespace ViewWeave.QuiltCaptureValidation
         public IEnumerator HdrpReferenceCameraSyncsWorldPoseAndFieldOfViewWithoutMutation()
         {
             return RunReferenceCameraSync(true);
+        }
+
+        [UnityTest]
+        public IEnumerator UrpMonoAudioRecordingPairsPngFramesAndPauseResumeSamples()
+        {
+            return RunMonoAudioRecording(false);
+        }
+
+        [UnityTest]
+        public IEnumerator HdrpMonoAudioRecordingPairsPngFramesAndPauseResumeSamples()
+        {
+            return RunMonoAudioRecording(true);
+        }
+
+        [UnityTest]
+        public IEnumerator UrpAudioStartRejectPreservesExistingRendererOwner()
+        {
+            Fixture fixture = null;
+            bool testStartedRenderer = false;
+            bool rendererStoppedByRecorder = false;
+            bool ownedRendererStopSucceeded = false;
+            float originalDelta = Time.captureDeltaTime;
+            string outputRoot = Path.Combine(Path.GetTempPath(), "ViewWeaveAudioStartReject_" + Guid.NewGuid().ToString("N"));
+            try
+            {
+                AudioConfiguration configuration = AudioSettings.GetConfiguration();
+                if (!Application.isEditor || Application.platform != RuntimePlatform.WindowsEditor)
+                    Assert.Ignore("Audio recording integration is limited to Windows Editor Play mode.");
+                if (configuration.speakerMode != AudioSpeakerMode.Mono || AudioSettings.speakerMode != AudioSpeakerMode.Mono)
+                    Assert.Ignore("The active Unity audio speaker mode is not Mono.");
+                if (!AudioRenderer.Start())
+                    Assert.Ignore("AudioRenderer already has an owner; the test did not stop it.");
+                testStartedRenderer = true;
+                fixture = new Fixture(false);
+                fixture.Setup();
+                fixture.Renderer.autoRender = true;
+                QuiltRecorder recorder = fixture.CameraObject.AddComponent<QuiltRecorder>();
+                recorder.Renderer = fixture.Renderer;
+                Time.captureDeltaTime = 0f;
+
+                LogAssert.Expect(LogType.Error, "Error: AudioRender.Start() called while system was already recording.");
+                InvalidOperationException startFailure = Assert.Throws<InvalidOperationException>(() => recorder.StartRecordingWithAudio(outputRoot, 30, 2));
+                Assert.IsNotNull(startFailure, "AudioRenderer.Start should reject a concurrent capture owner.");
+                Assert.IsFalse(recorder.IsRecording);
+                Assert.AreEqual(QuiltRecordingStatus.Error, recorder.Status);
+                Assert.AreEqual(originalDelta, Time.captureDeltaTime, 0.000001f, "a rejected audio start restores the capture timestep");
+                Assert.IsTrue(fixture.Renderer.autoRender, "a rejected audio start preserves renderer state");
+                int sampleCount = AudioRenderer.GetSampleCountForCaptureFrame();
+                using (NativeArray<float> output = new NativeArray<float>(sampleCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory))
+                    Assert.IsTrue(AudioRenderer.Render(output), "the pre-existing owner remains active after the rejected start");
+            }
+            finally
+            {
+                if (fixture != null)
+                {
+                    QuiltRecorder recorder = fixture.CameraObject != null ? fixture.CameraObject.GetComponent<QuiltRecorder>() : null;
+                    if (recorder != null && recorder.IsRecording)
+                    {
+                        recorder.StopRecording();
+                        rendererStoppedByRecorder = true;
+                    }
+                    fixture.Dispose();
+                }
+                Time.captureDeltaTime = originalDelta;
+                if (testStartedRenderer && !rendererStoppedByRecorder) ownedRendererStopSucceeded = AudioRenderer.Stop();
+                try { if (Directory.Exists(outputRoot)) Directory.Delete(outputRoot, true); }
+                catch { }
+            }
+            if (testStartedRenderer && !rendererStoppedByRecorder)
+                Assert.IsTrue(ownedRendererStopSucceeded, "the test-owned AudioRenderer.Stop should succeed");
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator AudioRendererStopFalseBlocksFurtherAudioStartsWithoutNativeCalls()
+        {
+            RequireWindowsEditorMono();
+            string directory = Path.Combine(Path.GetTempPath(), "ViewWeaveAudioStopFalse_" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(directory);
+            var backend = new FakeAudioBackend { StopResult = false };
+            QuiltRecordingAudioCapture capture = null;
+            PlayerLoopSystem originalLoop = InstallTestSchedulerNode();
+            try
+            {
+                QuiltRecordingAudioCapture.SetBackendForTests(backend);
+                capture = CreateFakeCapture(directory, null, error => { });
+                capture.Start();
+                string cleanupError = capture.Complete(false);
+                Assert.That(cleanupError, Does.Contain("Stop returned false"));
+                Assert.AreEqual(1, backend.StartCalls);
+                Assert.AreEqual(1, backend.StopCalls);
+                Assert.IsTrue(QuiltRecordingAudioCapture.IsStopUnconfirmed);
+                Assert.That(QuiltRecordingAudioCapture.ValidateEnvironment(), Does.Contain("Restart the Unity Editor"));
+                Assert.IsTrue(File.Exists(Path.Combine(directory, "audio.incomplete.wav")));
+            }
+            finally
+            {
+                if (capture != null) capture.Complete(false);
+                QuiltRecordingAudioCapture.ResetBackendForTests();
+                PlayerLoop.SetPlayerLoop(originalLoop);
+                if (Directory.Exists(directory)) Directory.Delete(directory, true);
+            }
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator AudioHookLossAndMissedPreviousBoundaryAreReported()
+        {
+            RequireWindowsEditorMono();
+            string directory = Path.Combine(Path.GetTempPath(), "ViewWeaveAudioHookLoss_" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(directory);
+            var backend = new FakeAudioBackend();
+            QuiltRecordingAudioCapture capture = null;
+            PlayerLoopSystem originalLoop = InstallTestSchedulerNode();
+            try
+            {
+                QuiltRecordingAudioCapture.SetBackendForTests(backend);
+                capture = CreateFakeCapture(directory, null, error => { });
+                capture.Start();
+                Assert.IsEmpty(capture.ValidateHookAndPreviousFrame(Time.frameCount));
+                Assert.That(capture.ValidateHookAndPreviousFrame(Time.frameCount + 2), Does.Contain("previous Unity frame"));
+                capture.RemoveHookForTests();
+                string error = capture.ValidateHookAndPreviousFrame(Time.frameCount);
+                Assert.That(error, Does.Contain("hook is missing"));
+                Assert.AreEqual(1, backend.StartCalls);
+                Assert.AreEqual(0, backend.StopCalls);
+            }
+            finally
+            {
+                if (capture != null) capture.Complete(false);
+                QuiltRecordingAudioCapture.ResetBackendForTests();
+                PlayerLoop.SetPlayerLoop(originalLoop);
+                if (Directory.Exists(directory)) Directory.Delete(directory, true);
+            }
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator WavHeaderInitializationFailureClosesFileBeforeAudioBackendStarts()
+        {
+            RequireWindowsEditorMono();
+            string directory = Path.Combine(Path.GetTempPath(), "ViewWeaveAudioHeaderFailure_" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(directory);
+            var backend = new FakeAudioBackend();
+            try
+            {
+                QuiltRecordingAudioCapture.SetBackendForTests(backend);
+                QuiltRecordingAudioCapture.BeforeWavHeaderForTests = () => throw new IOException("Injected WAV header failure.");
+                QuiltRecordingAudioCapture capture = CreateFakeCapture(directory, null, error => { });
+                Assert.Throws<IOException>(() => capture.Start());
+                Assert.AreEqual(0, backend.StartCalls, "WAV initialization must finish before AudioRenderer.Start is called.");
+                string temporaryWav = Path.Combine(directory, "audio.wav.tmp");
+                Assert.IsTrue(File.Exists(temporaryWav));
+                File.Delete(temporaryWav);
+                using (new FileStream(temporaryWav, FileMode.CreateNew, FileAccess.Write, FileShare.None)) { }
+            }
+            finally
+            {
+                QuiltRecordingAudioCapture.ResetBackendForTests();
+                if (Directory.Exists(directory)) Directory.Delete(directory, true);
+            }
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator AudioFrameCommitIoFailureRollsBackSamplesAndKeepsIncompleteWav()
+        {
+            RequireWindowsEditorMono();
+            string directory = Path.Combine(Path.GetTempPath(), "ViewWeaveAudioCommitFailure_" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(directory);
+            var backend = new FakeAudioBackend();
+            QuiltRecordingAudioCapture capture = null;
+            string failure = string.Empty;
+            PlayerLoopSystem originalLoop = InstallTestSchedulerNode();
+            try
+            {
+                QuiltRecordingAudioCapture.SetBackendForTests(backend);
+                capture = CreateFakeCapture(directory, (index, frame, first, count) => throw new IOException("Injected frame commit failure."), error => failure = error);
+                capture.Start();
+                capture.SetPendingFrame(0, Time.frameCount);
+                capture.ProcessBoundaryForTests();
+                Assert.That(failure, Does.Contain("Injected frame commit failure"));
+                Assert.AreEqual(0L, capture.SavedSamples);
+                Assert.AreEqual(0, capture.SavedFrames);
+                Assert.AreEqual(1, backend.StartCalls);
+                Assert.AreEqual(0, backend.StopCalls);
+                Assert.IsEmpty(capture.Complete(false));
+                Assert.AreEqual(1, backend.StopCalls);
+                byte[] wav = File.ReadAllBytes(Path.Combine(directory, "audio.incomplete.wav"));
+                Assert.AreEqual(44, wav.Length, "failed frame PCM is rolled back rather than exposed as completed audio");
+            }
+            finally
+            {
+                if (capture != null) capture.Complete(false);
+                QuiltRecordingAudioCapture.ResetBackendForTests();
+                PlayerLoop.SetPlayerLoop(originalLoop);
+                if (Directory.Exists(directory)) Directory.Delete(directory, true);
+            }
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator DspSampleCountAboveNominalFrameEstimateIsAccepted()
+        {
+            RequireWindowsEditorMono();
+            string directory = Path.Combine(Path.GetTempPath(), "ViewWeaveAudioDspRounding_" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(directory);
+            int sampleRate = AudioSettings.outputSampleRate;
+            int nominalEstimate = (int)Math.Ceiling(sampleRate / 240d + 1d);
+            var backend = new FakeAudioBackend { SampleCount = nominalEstimate + 1 };
+            QuiltRecordingAudioCapture capture = null;
+            PlayerLoopSystem originalLoop = InstallTestSchedulerNode();
+            try
+            {
+                QuiltRecordingAudioCapture.SetBackendForTests(backend);
+                long committedSampleCount = -1;
+                capture = CreateFakeCapture(directory, (index, frame, first, count) => committedSampleCount = count, error => Assert.Fail(error), 240, 1);
+                capture.Start();
+                capture.SetPendingFrame(0, Time.frameCount);
+                capture.ProcessBoundaryForTests();
+                Assert.AreEqual(nominalEstimate + 1L, capture.SavedSamples);
+                Assert.AreEqual(capture.SavedSamples, committedSampleCount);
+                Assert.AreEqual(1, capture.SavedFrames);
+                Assert.IsEmpty(capture.Complete(true));
+                Assert.IsTrue(capture.IsFinalizedComplete);
+                Assert.IsTrue(File.Exists(Path.Combine(directory, "audio.wav")));
+            }
+            finally
+            {
+                if (capture != null) capture.Complete(false);
+                QuiltRecordingAudioCapture.ResetBackendForTests();
+                PlayerLoop.SetPlayerLoop(originalLoop);
+                if (Directory.Exists(directory)) Directory.Delete(directory, true);
+            }
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator DuplicateAudioBoundaryDoesNotCommitSamplesTwice()
+        {
+            RequireWindowsEditorMono();
+            string directory = Path.Combine(Path.GetTempPath(), "ViewWeaveAudioDuplicateBoundary_" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(directory);
+            var backend = new FakeAudioBackend();
+            QuiltRecordingAudioCapture capture = null;
+            PlayerLoopSystem originalLoop = InstallTestSchedulerNode();
+            string failure = string.Empty;
+            try
+            {
+                QuiltRecordingAudioCapture.SetBackendForTests(backend);
+                capture = CreateFakeCapture(directory, (index, frame, first, count) => { }, error => failure = error);
+                capture.Start();
+                capture.SetPendingFrame(0, Time.frameCount);
+                capture.ProcessBoundaryForTests();
+                long samplesAfterFirstBoundary = capture.SavedSamples;
+                capture.ProcessBoundaryForTests();
+                Assert.AreEqual(1, capture.SavedFrames);
+                Assert.AreEqual(samplesAfterFirstBoundary, capture.SavedSamples);
+                Assert.That(failure, Does.Contain("more than once"));
+            }
+            finally
+            {
+                if (capture != null) capture.Complete(false);
+                QuiltRecordingAudioCapture.ResetBackendForTests();
+                PlayerLoop.SetPlayerLoop(originalLoop);
+                if (Directory.Exists(directory)) Directory.Delete(directory, true);
+            }
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator UrpMonoAudioPauseThenStopRestoresFilesAndCaptureTime()
+        {
+            return RunMonoAudioTermination(false, false);
+        }
+
+        [UnityTest]
+        public IEnumerator UrpMonoAudioPauseThenDisableRestoresFilesAndCaptureTime()
+        {
+            return RunMonoAudioTermination(false, true);
+        }
+
+        [UnityTest]
+        public IEnumerator UrpAudioStartStopPreservesPlayingAndScheduledSources()
+        {
+            Fixture fixture = null;
+            GameObject audioRoot = null;
+            AudioClip playingClip = null;
+            AudioClip scheduledClip = null;
+            string outputRoot = Path.Combine(Path.GetTempPath(), "ViewWeaveAudioSourcePreservation_" + Guid.NewGuid().ToString("N"));
+            float originalDelta = Time.captureDeltaTime;
+            bool originalListenerPause = AudioListener.pause;
+            float originalListenerVolume = AudioListener.volume;
+            AudioListener listener = null;
+            AudioSource playingSource = null;
+            AudioSource scheduledSource = null;
+            bool playingBefore = false;
+            int playingClipSamples = 0;
+            double scheduledAt = 0d;
+            try
+            {
+                RequireWindowsEditorMono();
+                fixture = new Fixture(false);
+                fixture.Setup();
+                audioRoot = new GameObject("QuiltAudioSourcePreservation.Root");
+                listener = audioRoot.AddComponent<AudioListener>();
+                playingSource = audioRoot.AddComponent<AudioSource>();
+                scheduledSource = audioRoot.AddComponent<AudioSource>();
+                playingClip = CreateToneClip("QuiltAudioPlayingClip");
+                scheduledClip = CreateToneClip("QuiltAudioScheduledClip");
+                playingSource.clip = playingClip;
+                playingSource.loop = true;
+                playingSource.spatialBlend = 0f;
+                playingSource.Play();
+                scheduledSource.clip = scheduledClip;
+                scheduledSource.loop = true;
+                scheduledSource.spatialBlend = 0f;
+                scheduledAt = AudioSettings.dspTime + 0.75d;
+                scheduledSource.PlayScheduled(scheduledAt);
+                yield return null;
+                playingBefore = playingSource.isPlaying;
+                playingClipSamples = playingSource.timeSamples;
+                Assert.IsTrue(playingBefore, "the test-owned source starts playing before recording begins");
+                fixture.Renderer.autoRender = true;
+                QuiltRecorder recorder = fixture.CameraObject.AddComponent<QuiltRecorder>();
+                recorder.Renderer = fixture.Renderer;
+                Time.captureDeltaTime = 0f;
+                recorder.StartRecordingWithAudio(outputRoot, 30, 3);
+                Assert.AreEqual(QuiltRecordingStatus.Recording, recorder.Status);
+                recorder.StopRecording();
+                Assert.AreEqual(QuiltRecordingStatus.Cancelled, recorder.Status);
+                Assert.AreEqual(originalDelta, Time.captureDeltaTime, 0.000001f);
+                Assert.AreSame(playingClip, playingSource.clip);
+                Assert.AreSame(scheduledClip, scheduledSource.clip);
+                Assert.AreEqual(playingBefore, playingSource.isPlaying);
+                Assert.That(Math.Abs(playingSource.timeSamples - playingClipSamples), Is.LessThan(playingClip.samples), "the playing clip remains assigned and advances normally");
+                Assert.AreEqual(originalListenerPause, AudioListener.pause);
+                Assert.AreEqual(originalListenerVolume, AudioListener.volume, 0.000001f);
+                Assert.IsTrue(listener.enabled);
+                yield return new WaitForSecondsRealtime(0.9f);
+                Assert.IsTrue(scheduledSource.isPlaying, "PlayScheduled continues after ViewWeave stops AudioRenderer");
+                Assert.AreSame(scheduledClip, scheduledSource.clip);
+            }
+            finally
+            {
+                if (fixture != null)
+                {
+                    QuiltRecorder recorder = fixture.CameraObject != null ? fixture.CameraObject.GetComponent<QuiltRecorder>() : null;
+                    if (recorder != null && recorder.IsRecording) recorder.StopRecording();
+                    fixture.Dispose();
+                }
+                if (playingSource != null) playingSource.Stop();
+                if (scheduledSource != null) scheduledSource.Stop();
+                if (audioRoot != null) UnityEngine.Object.DestroyImmediate(audioRoot);
+                if (playingClip != null) UnityEngine.Object.DestroyImmediate(playingClip);
+                if (scheduledClip != null) UnityEngine.Object.DestroyImmediate(scheduledClip);
+                AudioListener.pause = originalListenerPause;
+                AudioListener.volume = originalListenerVolume;
+                Time.captureDeltaTime = originalDelta;
+                try { if (Directory.Exists(outputRoot)) Directory.Delete(outputRoot, true); }
+                catch { }
+            }
+        }
+
+        IEnumerator RunMonoAudioTermination(bool hdrp, bool disableRecorder)
+        {
+            Fixture fixture = null;
+            string outputRoot = Path.Combine(Path.GetTempPath(), "ViewWeaveAudioTermination_" + Guid.NewGuid().ToString("N"));
+            float originalDelta = Time.captureDeltaTime;
+            float originalScale = Time.timeScale;
+            try
+            {
+                RequireWindowsEditorMono();
+                fixture = new Fixture(hdrp);
+                fixture.Setup();
+                fixture.Renderer.autoRender = true;
+                fixture.Renderer.ResetAutoRenderError();
+                QuiltRecorder recorder = fixture.CameraObject.AddComponent<QuiltRecorder>();
+                recorder.Renderer = fixture.Renderer;
+                Time.captureDeltaTime = 0f;
+                Time.timeScale = 1f;
+                recorder.StartRecordingWithAudio(outputRoot, 30, 5);
+                for (int wait = 0; wait < 120 && recorder.CompletedFrameCount < 1 && recorder.IsRecording; ++wait) yield return null;
+                Assert.AreEqual(1, recorder.CompletedFrameCount, recorder.ErrorMessage);
+                recorder.PauseRecording();
+                Assert.AreEqual(QuiltRecordingStatus.Paused, recorder.Status);
+                for (int wait = 0; wait < 3; ++wait) yield return null;
+                if (disableRecorder) recorder.enabled = false;
+                else recorder.StopRecording();
+                Assert.AreEqual(QuiltRecordingStatus.Cancelled, recorder.Status);
+                Assert.AreEqual(originalDelta, Time.captureDeltaTime, 0.000001f);
+                Assert.AreEqual(1, recorder.CompletedFrameCount);
+                string directory = recorder.RecordingDirectory;
+                string[] frameLog = File.ReadAllLines(Path.Combine(directory, "frames.jsonl"));
+                Assert.AreEqual(recorder.CompletedFrameCount, frameLog.Length);
+                Assert.IsTrue(File.Exists(Path.Combine(directory, "audio.incomplete.wav")));
+                Assert.IsFalse(File.Exists(Path.Combine(directory, "audio.wav")));
+                Assert.AreEqual(0, Directory.GetFiles(Path.Combine(directory, "pending")).Length);
+                QuiltRecordingManifest manifest = JsonUtility.FromJson<QuiltRecordingManifest>(File.ReadAllText(Path.Combine(directory, "manifest.json")));
+                Assert.AreEqual(QuiltRecordingStatus.Cancelled.ToString().ToLowerInvariant(), manifest.status);
+                Assert.AreEqual(1, manifest.completedFrameCount);
+                QuiltRecordingFrame frame = JsonUtility.FromJson<QuiltRecordingFrame>(frameLog[0]);
+                Assert.AreEqual(manifest.audioSampleCount, frame.audioLastSampleExclusive);
+                Assert.Greater(frame.audioSampleCount, 0);
+            }
+            finally
+            {
+                if (fixture != null)
+                {
+                    QuiltRecorder recorder = fixture.CameraObject != null ? fixture.CameraObject.GetComponent<QuiltRecorder>() : null;
+                    if (recorder != null && recorder.IsRecording) recorder.StopRecording();
+                    fixture.Dispose();
+                }
+                Time.captureDeltaTime = originalDelta;
+                Time.timeScale = originalScale;
+                try { if (Directory.Exists(outputRoot)) Directory.Delete(outputRoot, true); }
+                catch { }
+            }
+        }
+
+        static void RequireWindowsEditorMono()
+        {
+            AudioConfiguration configuration = AudioSettings.GetConfiguration();
+            if (!Application.isEditor || Application.platform != RuntimePlatform.WindowsEditor || !Application.isPlaying)
+                Assert.Ignore("Audio recording validation requires Windows Editor Play mode.");
+            if (configuration.speakerMode != AudioSpeakerMode.Mono || AudioSettings.speakerMode != AudioSpeakerMode.Mono)
+                Assert.Ignore("The active Unity audio speaker mode is not Mono.");
+        }
+
+        static QuiltRecordingAudioCapture CreateFakeCapture(string directory, Action<int, int, long, int> commit, Action<string> failed, int fps = 30, int frameCount = 2)
+        {
+            return new QuiltRecordingAudioCapture(directory, fps, frameCount,
+                commit ?? ((index, frame, first, count) => { }),
+                committed => { },
+                failed);
+        }
+
+        static PlayerLoopSystem InstallTestSchedulerNode()
+        {
+            PlayerLoopSystem original = PlayerLoop.GetCurrentPlayerLoop();
+            PlayerLoopSystem testLoop = original;
+            if (!InsertTestSchedulerNode(ref testLoop)) throw new InvalidOperationException("PostLateUpdate was not found in the current PlayerLoop.");
+            PlayerLoop.SetPlayerLoop(testLoop);
+            return original;
+        }
+
+        static bool InsertTestSchedulerNode(ref PlayerLoopSystem parent)
+        {
+            PlayerLoopSystem[] children = parent.subSystemList;
+            if (parent.type == typeof(UnityEngine.PlayerLoop.PostLateUpdate))
+            {
+                if (children == null) children = Array.Empty<PlayerLoopSystem>();
+                for (int i = 0; i < children.Length; ++i)
+                    if (children[i].type == typeof(QuiltAutoRenderScheduler)) return true;
+                Array.Resize(ref children, children.Length + 1);
+                children[children.Length - 1] = new PlayerLoopSystem { type = typeof(QuiltAutoRenderScheduler) };
+                parent.subSystemList = children;
+                return true;
+            }
+            if (children == null) return false;
+            for (int i = 0; i < children.Length; ++i)
+            {
+                PlayerLoopSystem child = children[i];
+                if (!InsertTestSchedulerNode(ref child)) continue;
+                children[i] = child;
+                parent.subSystemList = children;
+                return true;
+            }
+            return false;
+        }
+
+        static AudioClip CreateToneClip(string clipName)
+        {
+            int sampleRate = AudioSettings.outputSampleRate;
+            float[] samples = new float[sampleRate];
+            for (int i = 0; i < samples.Length; ++i) samples[i] = Mathf.Sin(2f * Mathf.PI * 440f * i / sampleRate) * 0.1f;
+            AudioClip clip = AudioClip.Create(clipName, samples.Length, 1, sampleRate, false);
+            clip.SetData(samples, 0);
+            return clip;
+        }
+
+        sealed class FakeAudioBackend : IQuiltAudioCaptureBackend
+        {
+            public bool StopResult = true;
+            public int StartCalls;
+            public int StopCalls;
+            public int SampleCount = 128;
+
+            public bool Start()
+            {
+                StartCalls++;
+                return true;
+            }
+
+            public int GetSampleCountForCaptureFrame() => SampleCount;
+
+            public bool Render(NativeArray<float> samples)
+            {
+                for (int i = 0; i < samples.Length; ++i) samples[i] = 0.125f;
+                return true;
+            }
+
+            public bool Stop()
+            {
+                StopCalls++;
+                return StopResult;
+            }
+        }
+
+        IEnumerator RunMonoAudioRecording(bool hdrp)
+        {
+            Fixture fixture = null;
+            GameObject audioRoot = null;
+            AudioClip clip = null;
+            string outputRoot = Path.Combine(Path.GetTempPath(), "ViewWeaveAudioValidation_" + Guid.NewGuid().ToString("N"));
+            float originalDelta = Time.captureDeltaTime;
+            float originalScale = Time.timeScale;
+            try
+            {
+                AudioConfiguration audioConfiguration = AudioSettings.GetConfiguration();
+                if (!Application.isEditor || Application.platform != RuntimePlatform.WindowsEditor)
+                    Assert.Ignore("Audio recording integration is limited to Windows Editor Play mode.");
+                if (audioConfiguration.speakerMode != AudioSpeakerMode.Mono || AudioSettings.speakerMode != AudioSpeakerMode.Mono)
+                    Assert.Ignore("The active Unity audio speaker mode is not Mono.");
+                fixture = new Fixture(hdrp);
+                fixture.Setup();
+                audioRoot = new GameObject("QuiltAudioValidation.Source");
+                audioRoot.AddComponent<AudioListener>();
+                AudioSource source = audioRoot.AddComponent<AudioSource>();
+                source.playOnAwake = false;
+                source.loop = true;
+                source.spatialBlend = 0f;
+                source.volume = 0.25f;
+                int samples = AudioSettings.outputSampleRate;
+                float[] tone = new float[samples];
+                for (int i = 0; i < tone.Length; ++i) tone[i] = Mathf.Sin(2f * Mathf.PI * 440f * i / samples) * 0.25f;
+                clip = AudioClip.Create("QuiltAudioValidationTone", samples, 1, samples, false);
+                clip.SetData(tone, 0);
+                source.clip = clip;
+                source.Play();
+                fixture.Renderer.autoRender = true;
+                fixture.Renderer.ResetAutoRenderError();
+                QuiltRecorder recorder = fixture.CameraObject.AddComponent<QuiltRecorder>();
+                recorder.Renderer = fixture.Renderer;
+                Time.captureDeltaTime = 0f;
+                Time.timeScale = 1f;
+                recorder.StartRecordingWithAudio(outputRoot, 30, 4);
+                for (int wait = 0; wait < 120 && recorder.CompletedFrameCount < 1 && recorder.IsRecording; ++wait) yield return null;
+                Assert.AreEqual(1, recorder.CompletedFrameCount, "the first quilt/audio pair commits together: " + recorder.ErrorMessage);
+                recorder.PauseRecording();
+                Assert.AreEqual(QuiltRecordingStatus.Paused, recorder.Status);
+                int pausedCount = recorder.CompletedFrameCount;
+                for (int wait = 0; wait < 3; ++wait) yield return null;
+                Assert.AreEqual(pausedCount, recorder.CompletedFrameCount, "paused audio is rendered and discarded without committing quilt frames");
+                recorder.ResumeRecording();
+                for (int wait = 0; wait < 240 && recorder.IsRecording; ++wait) yield return null;
+                Assert.AreEqual(QuiltRecordingStatus.Complete, recorder.Status, recorder.ErrorMessage);
+                Assert.AreEqual(4, recorder.CompletedFrameCount);
+                Assert.AreEqual(originalDelta, Time.captureDeltaTime, 0.000001f);
+
+                string wavPath = Path.Combine(recorder.RecordingDirectory, "audio.wav");
+                Assert.IsTrue(File.Exists(wavPath));
+                byte[] wav = File.ReadAllBytes(wavPath);
+                Assert.GreaterOrEqual(wav.Length, 44);
+                Assert.AreEqual("RIFF", System.Text.Encoding.ASCII.GetString(wav, 0, 4));
+                Assert.AreEqual("WAVE", System.Text.Encoding.ASCII.GetString(wav, 8, 4));
+                Assert.AreEqual((ushort)3, BitConverter.ToUInt16(wav, 20), "WAV data is IEEE float");
+                Assert.AreEqual((ushort)1, BitConverter.ToUInt16(wav, 22), "WAV data is mono");
+                Assert.AreEqual((uint)AudioSettings.outputSampleRate, BitConverter.ToUInt32(wav, 24));
+                Assert.AreEqual((ushort)32, BitConverter.ToUInt16(wav, 34));
+                Assert.AreEqual((uint)(wav.Length - 44), BitConverter.ToUInt32(wav, 40));
+                float peak = 0f;
+                for (int offset = 44; offset + sizeof(float) <= wav.Length; offset += sizeof(float))
+                    peak = Mathf.Max(peak, Mathf.Abs(BitConverter.ToSingle(wav, offset)));
+                Assert.Greater(peak, 0.001f, "the owned AudioSource clip is present in the captured mix");
+                string[] records = File.ReadAllLines(Path.Combine(recorder.RecordingDirectory, "frames.jsonl"));
+                Assert.AreEqual(4, records.Length);
+                long nextSample = 0;
+                foreach (string record in records)
+                {
+                    QuiltRecordingFrame frame = JsonUtility.FromJson<QuiltRecordingFrame>(record);
+                    Assert.AreEqual(nextSample, frame.audioFirstSample);
+                    Assert.Greater(frame.audioSampleCount, 0);
+                    Assert.AreEqual(frame.audioFirstSample + frame.audioSampleCount, frame.audioLastSampleExclusive);
+                    nextSample = frame.audioLastSampleExclusive;
+                }
+                Assert.AreEqual((long)(wav.Length - 44) / sizeof(float), nextSample);
+                QuiltRecordingManifest manifest = JsonUtility.FromJson<QuiltRecordingManifest>(File.ReadAllText(Path.Combine(recorder.RecordingDirectory, "manifest.json")));
+                Assert.IsTrue(manifest.audioEnabled);
+                Assert.AreEqual(nextSample, manifest.audioSampleCount);
+                Assert.AreEqual(4d / 30d, manifest.simulationDurationSeconds, 0.000001d);
+                Assert.That(manifest.durationResidualSeconds, Is.EqualTo(manifest.audioDurationSeconds - manifest.simulationDurationSeconds).Within(0.000001d));
+            }
+            finally
+            {
+                if (fixture != null)
+                {
+                    QuiltRecorder recorder = fixture.CameraObject != null ? fixture.CameraObject.GetComponent<QuiltRecorder>() : null;
+                    if (recorder != null && recorder.IsRecording) recorder.StopRecording();
+                    fixture.Dispose();
+                }
+                if (audioRoot != null) UnityEngine.Object.DestroyImmediate(audioRoot);
+                if (clip != null) UnityEngine.Object.DestroyImmediate(clip);
+                Time.captureDeltaTime = originalDelta;
+                Time.timeScale = originalScale;
+                try { if (Directory.Exists(outputRoot)) Directory.Delete(outputRoot, true); }
+                catch { }
+            }
         }
 
         IEnumerator RunReferenceCameraSync(bool hdrp)
@@ -259,6 +870,23 @@ namespace ViewWeave.QuiltCaptureValidation
                 Assert.IsTrue(fixture.Renderer.HasRenderedQuilt);
                 Assert.Greater(CountDistinctPixels(fixture.Renderer.QuiltTexture), 1, "real pipeline output contains visible RGB variation");
 
+                Directory.CreateDirectory(outputRoot);
+                foreach (QuiltViewRenderMode mode in new[] { QuiltViewRenderMode.Half, QuiltViewRenderMode.Quarter })
+                {
+                    fixture.Renderer.viewRenderMode = mode;
+                    fixture.Renderer.RenderQuilt();
+                    int logicalView = (fixture.Renderer.LatestSnapshot.Layout.ViewCount - 1) / 2;
+                    int renderedView = QuiltViewSampling.GetSourceViewIndex(fixture.Renderer.LatestSnapshot.Layout.ViewCount, mode, logicalView);
+                    string centralPath = Path.Combine(outputRoot, mode.ToString().ToLowerInvariant() + "_central.png");
+                    QuiltCaptureUtility.SaveCentralViewLatest(fixture.Renderer, centralPath);
+                    QuiltCentralViewCaptureMetadata centralMetadata = JsonUtility.FromJson<QuiltCentralViewCaptureMetadata>(File.ReadAllText(Path.ChangeExtension(centralPath, ".json")));
+                    Assert.AreEqual(logicalView, centralMetadata.logicalViewIndex, "central capture records its logical tile");
+                    Assert.AreEqual(renderedView, centralMetadata.renderedViewIndex, "central capture records its nearest rendered source tile");
+                    AssertCentralPngMatchesTile(centralPath, fixture.Renderer.QuiltTexture, fixture.Renderer.LatestSnapshot.Layout.GetTile(logicalView));
+                }
+                fixture.Renderer.viewRenderMode = QuiltViewRenderMode.Full;
+                fixture.Renderer.RenderQuilt();
+
                 RenderTexture sentinel = new RenderTexture(4, 4, 0, RenderTextureFormat.ARGB32);
                 sentinel.Create();
                 RenderTexture originalActive = RenderTexture.active;
@@ -367,6 +995,65 @@ namespace ViewWeave.QuiltCaptureValidation
                 Assert.AreEqual(0.04d, second25.simulationTime - first25.simulationTime, 0.001d);
                 Assert.AreEqual(0.04d, third25.simulationTime - second25.simulationTime, 0.001d);
 
+                recorder.StartRecording(outputRoot, 10, 5);
+                while (recorder.CompletedFrameCount == 0 && recorder.IsRecording) yield return null;
+                Assert.AreEqual(QuiltRecordingStatus.Recording, recorder.Status, "recording is active before pause");
+                int framesBeforePause = recorder.CompletedFrameCount;
+                recorder.PauseRecording();
+                Assert.AreEqual(QuiltRecordingStatus.Paused, recorder.Status);
+                Assert.IsTrue(recorder.IsRecording && recorder.IsPaused, "paused recorder keeps its active session ownership");
+                Assert.AreEqual(oldCaptureDelta, Time.captureDeltaTime, "pause restores the prior capture timestep");
+                QuiltRecordingManifest pausedManifest = JsonUtility.FromJson<QuiltRecordingManifest>(File.ReadAllText(Path.Combine(recorder.RecordingDirectory, "manifest.json")));
+                Assert.AreEqual("paused", pausedManifest.status);
+                Assert.IsTrue(string.IsNullOrEmpty(pausedManifest.finishedAtUtc), "paused manifest remains open");
+                Assert.Throws<InvalidOperationException>(() => fixture.SecondRecorder.StartRecording(outputRoot, 20, 3), "a paused recorder keeps exclusive ownership");
+                for (int wait = 0; wait < 3; ++wait) yield return null;
+                Assert.AreEqual(framesBeforePause, recorder.CompletedFrameCount, "paused recorder does not save frames");
+                recorder.ResumeRecording();
+                Assert.AreEqual(QuiltRecordingStatus.Recording, recorder.Status);
+                Assert.AreEqual(0.1f, Time.captureDeltaTime, 0.0001f, "resume reinstates the requested simulation timestep");
+                for (int wait = 0; wait < 240 && recorder.IsRecording; ++wait) yield return null;
+                Assert.AreEqual(QuiltRecordingStatus.Complete, recorder.Status, "resumed recording completes the original frame count: " + recorder.ErrorMessage);
+                Assert.AreEqual(5, recorder.CompletedFrameCount);
+                Assert.AreEqual(oldCaptureDelta, Time.captureDeltaTime, "completion after resume restores the original capture timestep");
+                string[] resumedRecords = File.ReadAllLines(Path.Combine(recorder.RecordingDirectory, "frames.jsonl"));
+                Assert.AreEqual(5, resumedRecords.Length);
+                QuiltRecordingFrame beforePause = JsonUtility.FromJson<QuiltRecordingFrame>(resumedRecords[framesBeforePause - 1]);
+                QuiltRecordingFrame afterResume = JsonUtility.FromJson<QuiltRecordingFrame>(resumedRecords[framesBeforePause]);
+                Assert.Greater(afterResume.unityFrame, beforePause.unityFrame + 1, "paused Unity frames are omitted from the recording");
+                Assert.AreEqual(0.1f, afterResume.deltaTime, 0.0001f, "the first post-resume saved frame uses the requested timestep");
+
+                recorder.StartRecording(outputRoot, 20, 10);
+                recorder.PauseRecording();
+                Time.captureDeltaTime = 0.04f;
+                float externalDeltaDuringPause = Time.captureDeltaTime;
+                Assert.Throws<InvalidOperationException>(() => recorder.ResumeRecording(), "resume rejects an externally owned capture timestep");
+                Assert.AreEqual(QuiltRecordingStatus.Error, recorder.Status);
+                Assert.AreEqual(externalDeltaDuringPause, Time.captureDeltaTime, "failed resume preserves the external capture timestep");
+                Time.captureDeltaTime = oldCaptureDelta;
+
+                recorder.StartRecording(outputRoot, 20, 10);
+                recorder.PauseRecording();
+                QuiltSettings settingsBeforePausedEdit = fixture.Renderer.settings.Clone();
+                fixture.Renderer.settings.cameraDistance += 0.25f;
+                Assert.Throws<InvalidOperationException>(() => recorder.ResumeRecording(), "resume rejects geometry changes made while paused");
+                Assert.AreEqual(QuiltRecordingStatus.Error, recorder.Status);
+                Assert.AreEqual(oldCaptureDelta, Time.captureDeltaTime, "failed geometry resume does not leave a capture timestep behind");
+                fixture.Renderer.settings = settingsBeforePausedEdit;
+
+                recorder.StartRecording(outputRoot, 20, 10);
+                recorder.PauseRecording();
+                recorder.StopRecording();
+                Assert.AreEqual(QuiltRecordingStatus.Cancelled, recorder.Status, "stopping a paused recording finalizes it as cancelled");
+                Assert.AreEqual(oldCaptureDelta, Time.captureDeltaTime, "stopping a paused recording leaves the restored timestep intact");
+
+                recorder.StartRecording(outputRoot, 20, 10);
+                recorder.PauseRecording();
+                recorder.enabled = false;
+                Assert.AreEqual(QuiltRecordingStatus.Cancelled, recorder.Status, "disabling a paused recorder cleans up the session");
+                Assert.AreEqual(oldCaptureDelta, Time.captureDeltaTime, "disabling a paused recorder leaves no owned timestep");
+                recorder.enabled = true;
+
                 if (!hdrp)
                 {
                     for (int testFps = 1; testFps <= 240; ++testFps)
@@ -468,6 +1155,29 @@ namespace ViewWeave.QuiltCaptureValidation
                 AssertColor(decoded.GetPixel(expectedWidth - 2, expectedHeight - 2), new Color32(255, 255, 0, 255), "top-right pixel orientation");
             }
             finally { UnityEngine.Object.DestroyImmediate(decoded); }
+        }
+
+        static void AssertCentralPngMatchesTile(string path, RenderTexture quilt, RectInt tile)
+        {
+            RenderTexture previous = RenderTexture.active;
+            Texture2D expected = new Texture2D(tile.width, tile.height, TextureFormat.RGBA32, false, false);
+            Texture2D actual = new Texture2D(2, 2, TextureFormat.RGBA32, false, false);
+            try
+            {
+                RenderTexture.active = quilt;
+                expected.ReadPixels(new Rect(tile.x, tile.y, tile.width, tile.height), 0, 0, false);
+                expected.Apply(false, false);
+                Assert.IsTrue(ImageConversion.LoadImage(actual, File.ReadAllBytes(path), false));
+                Assert.AreEqual(tile.width, actual.width);
+                Assert.AreEqual(tile.height, actual.height);
+                CollectionAssert.AreEqual(expected.GetPixels32(), actual.GetPixels32(), "central PNG pixels equal the selected output tile");
+            }
+            finally
+            {
+                RenderTexture.active = previous;
+                UnityEngine.Object.DestroyImmediate(expected);
+                UnityEngine.Object.DestroyImmediate(actual);
+            }
         }
 
         static void AssertColor(Color actual, Color32 expected, string label)

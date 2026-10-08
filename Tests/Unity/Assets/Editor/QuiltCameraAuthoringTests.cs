@@ -5,6 +5,12 @@ using UnityEngine;
 
 public static class QuiltCameraAuthoringTests
 {
+    [MenuItem("Tools/ViewWeave/Run Camera Authoring Validation")]
+    public static void RunCameraAuthoringValidation()
+    {
+        Run();
+    }
+
     public static void RunAllRegressions()
     {
         Run();
@@ -14,6 +20,7 @@ public static class QuiltCameraAuthoringTests
 
     public static void Run()
     {
+        QuiltRendererAuthoringOperationsTests.Run();
         CheckProjectionBoundsAndFocusPlane();
         CheckParentTransformUsesCameraPose();
         CheckInvalidInputsAreRejected();

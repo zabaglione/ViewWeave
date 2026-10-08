@@ -10,16 +10,21 @@ namespace ViewWeave.Editor
     {
         const string ShowClippingKey = "ViewWeave.QuiltRenderer.ShowClippingPlanes";
         const string ShowExtremeViewsKey = "ViewWeave.QuiltRenderer.ShowExtremeViews";
+        const string ShowFocusCursorKey = "ViewWeave.QuiltRenderer.ShowFocusCursor";
         static bool showClipping = true;
         static bool showExtremeViews;
+        static bool showFocusCursor;
 
         SerializedProperty settingsProperty;
+        float horizontalOrbitDegrees;
+        float verticalOrbitDegrees;
 
         void OnEnable()
         {
             settingsProperty = serializedObject.FindProperty("settings");
             showClipping = EditorPrefs.GetBool(ShowClippingKey, true);
             showExtremeViews = EditorPrefs.GetBool(ShowExtremeViewsKey, false);
+            showFocusCursor = EditorPrefs.GetBool(ShowFocusCursorKey, false);
         }
 
         public override void OnInspectorGUI()
@@ -65,6 +70,8 @@ namespace ViewWeave.Editor
             if (farClip != null) EditorGUILayout.PropertyField(farClip, new GUIContent("Far Clip"));
             if (cameraObject.ApplyModifiedProperties()) SceneView.RepaintAll();
 
+            DrawAuthoringControls(renderer);
+
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Scene View", EditorStyles.boldLabel);
             bool clipping = EditorGUILayout.Toggle("Show Near / Far", showClipping);
@@ -81,6 +88,130 @@ namespace ViewWeave.Editor
                 EditorPrefs.SetBool(ShowExtremeViewsKey, showExtremeViews);
                 SceneView.RepaintAll();
             }
+            bool focusCursor = EditorGUILayout.Toggle(new GUIContent("Show 3D Focus Cursor", "Shows a free-move Scene View handle at the focus-plane center. Only its forward-axis projection changes Focus Distance; camera position and rotation are unchanged."), showFocusCursor);
+            if (focusCursor != showFocusCursor)
+            {
+                showFocusCursor = focusCursor;
+                EditorPrefs.SetBool(ShowFocusCursorKey, showFocusCursor);
+                SceneView.RepaintAll();
+            }
+        }
+
+        void DrawAuthoringControls(QuiltRenderer renderer)
+        {
+            Camera framingCamera = renderer.EffectiveCamera;
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("Camera Authoring", EditorStyles.boldLabel);
+            using (new EditorGUI.DisabledScope(true))
+            {
+                EditorGUILayout.ObjectField(new GUIContent("Effective Camera"), framingCamera, typeof(Camera), true);
+                EditorGUILayout.ObjectField(new GUIContent("Effective Camera Transform"), framingCamera == null ? null : framingCamera.transform, typeof(Transform), true);
+            }
+
+            bool playLocked = EditorApplication.isPlaying || EditorApplication.isPlayingOrWillChangePlaymode;
+            if (renderer.referenceCamera != null)
+                EditorGUILayout.HelpBox("Manual camera operations target Reference Camera above. Quilt rendering continues to copy its world pose to Source Camera. Cinemachine or animation preview can overwrite manual edits; edit while not playing or previewing.", MessageType.Info);
+            else
+                EditorGUILayout.HelpBox("Manual camera operations target Source Camera above. These controls edit the camera pose only when explicitly invoked.", MessageType.Info);
+
+            if (playLocked)
+                EditorGUILayout.HelpBox("Camera authoring controls are disabled while entering or running Play Mode.", MessageType.Warning);
+
+            using (new EditorGUI.DisabledScope(playLocked || framingCamera == null || renderer.settings == null))
+            {
+                if (GUILayout.Button(new GUIContent("Set Focus From Selected Object Center", "Projects the selected scene object's world bounds center onto the effective camera forward axis. Objects behind the camera are rejected.")))
+                {
+                    if (!TryGetSelectedSceneObjectCenter(out Vector3 center, out string reason))
+                        ShowActionWarning(reason);
+                    else if (!QuiltRendererAuthoringOperations.TrySetFocusFromWorldPoint(renderer, center, out _))
+                        ShowActionWarning("The selected center is behind the effective camera or the camera framing references are invalid.");
+                    SceneView.RepaintAll();
+                }
+
+                SceneView activeSceneView = SceneView.lastActiveSceneView;
+                using (new EditorGUI.DisabledScope(activeSceneView == null))
+                {
+                    if (GUILayout.Button("Frame Focus Plane Center in Scene View"))
+                    {
+                        if (QuiltRendererAuthoringOperations.TryGetFocusPoint(renderer, out _, out Vector3 focusPoint))
+                        {
+                            float size = Mathf.Max(renderer.settings.cameraDistance * 0.08f, 0.1f);
+                            activeSceneView.Frame(new Bounds(focusPoint, Vector3.one * size), false);
+                        }
+                        else ShowActionWarning("The effective camera or focus distance is invalid.");
+                    }
+                }
+
+                horizontalOrbitDegrees = EditorGUILayout.FloatField("Horizontal Orbit (degrees)", horizontalOrbitDegrees);
+                using (new EditorGUI.DisabledScope(!IsFinite(horizontalOrbitDegrees)))
+                {
+                    if (GUILayout.Button("Apply Horizontal Orbit"))
+                        ApplyOrbit(renderer, Mathf.Clamp(horizontalOrbitDegrees, -QuiltRendererAuthoringOperations.MaximumHorizontalOrbitDegrees, QuiltRendererAuthoringOperations.MaximumHorizontalOrbitDegrees), 0f);
+                }
+
+                verticalOrbitDegrees = EditorGUILayout.FloatField("Vertical Orbit (degrees)", verticalOrbitDegrees);
+                using (new EditorGUI.DisabledScope(!IsFinite(verticalOrbitDegrees)))
+                {
+                    if (GUILayout.Button("Apply Vertical Orbit"))
+                        ApplyOrbit(renderer, 0f, Mathf.Clamp(verticalOrbitDegrees, -QuiltRendererAuthoringOperations.MaximumVerticalOrbitDegrees, QuiltRendererAuthoringOperations.MaximumVerticalOrbitDegrees));
+                }
+                EditorGUILayout.LabelField("Orbit is pivoted at the zero-parallax point. Horizontal is clamped to +/-180 degrees; vertical is clamped to +/-89 degrees.", EditorStyles.miniLabel);
+            }
+        }
+
+        static void ApplyOrbit(QuiltRenderer renderer, float horizontalDegrees, float verticalDegrees)
+        {
+            if (!QuiltRendererAuthoringOperations.TryOrbitEffectiveCamera(renderer, horizontalDegrees, verticalDegrees))
+                ShowActionWarning("Orbit could not be applied. Check the perspective camera reference and focus distance.");
+            SceneView.RepaintAll();
+        }
+
+        static bool TryGetSelectedSceneObjectCenter(out Vector3 center, out string reason)
+        {
+            center = Vector3.zero;
+            reason = "Select one scene object before setting the focus distance.";
+            if (Selection.transforms == null || Selection.transforms.Length != 1 || Selection.activeGameObject == null)
+                return false;
+            GameObject selected = Selection.activeGameObject;
+            if (EditorUtility.IsPersistent(selected) || !selected.scene.IsValid() || UnityEditor.SceneManagement.EditorSceneManager.IsPreviewSceneObject(selected))
+            {
+                reason = "The selected object must belong to a loaded scene.";
+                return false;
+            }
+
+            Renderer[] renderers = selected.GetComponentsInChildren<Renderer>();
+            bool hasBounds = false;
+            Bounds bounds = default;
+            for (int i = 0; i < renderers.Length; ++i)
+            {
+                if (renderers[i] == null || !renderers[i].enabled) continue;
+                if (!hasBounds) { bounds = renderers[i].bounds; hasBounds = true; }
+                else bounds.Encapsulate(renderers[i].bounds);
+            }
+            if (!hasBounds)
+            {
+                Collider[] colliders = selected.GetComponentsInChildren<Collider>();
+                for (int i = 0; i < colliders.Length; ++i)
+                {
+                    if (colliders[i] == null || !colliders[i].enabled) continue;
+                    if (!hasBounds) { bounds = colliders[i].bounds; hasBounds = true; }
+                    else bounds.Encapsulate(colliders[i].bounds);
+                }
+            }
+            center = hasBounds ? bounds.center : selected.transform.position;
+            if (!IsFinite(center))
+            {
+                reason = "The selected object center is invalid.";
+                return false;
+            }
+            reason = string.Empty;
+            return true;
+        }
+
+        static void ShowActionWarning(string message)
+        {
+            if (string.IsNullOrEmpty(message)) return;
+            EditorUtility.DisplayDialog("ViewWeave Camera Authoring", message, "OK");
         }
 
         void DrawSetting(string relativePath, string label, string tooltip)
@@ -156,7 +287,11 @@ namespace ViewWeave.Editor
                     Handles.color = new Color(0.8f, 0.8f, 0.8f, 0.55f);
                     DrawFrustumRays(geometry.nearPlane, geometry.farPlane);
                 }
-                DrawFocusDistanceHandle(renderer, framingCamera.transform, geometry.focusPlane);
+                if (!EditorApplication.isPlaying && !EditorApplication.isPlayingOrWillChangePlaymode)
+                {
+                    if (showFocusCursor) DrawFocusCursorHandle(renderer, framingCamera.transform, geometry.focusPlane);
+                    else DrawFocusDistanceHandle(renderer, framingCamera.transform, geometry.focusPlane);
+                }
             }
             finally
             {
@@ -183,6 +318,18 @@ namespace ViewWeave.Editor
             SceneView.RepaintAll();
         }
 
+        static void DrawFocusCursorHandle(QuiltRenderer renderer, Transform framingTransform, Vector3[] focusPlane)
+        {
+            Vector3 center = Center(focusPlane);
+            EditorGUI.BeginChangeCheck();
+            Vector3 moved = Handles.PositionHandle(center, Quaternion.identity);
+            if (!EditorGUI.EndChangeCheck()) return;
+
+            if (!QuiltRendererAuthoringOperations.TrySetFocusFromWorldPoint(renderer, moved, out _))
+                return;
+            SceneView.RepaintAll();
+        }
+
         static void DrawPlane(Vector3[] points)
         {
             if (points == null || points.Length != 4) return;
@@ -205,5 +352,8 @@ namespace ViewWeave.Editor
             for (int i = 0; i < points.Length; ++i) center += points[i];
             return center / points.Length;
         }
+
+        static bool IsFinite(Vector3 value) => IsFinite(value.x) && IsFinite(value.y) && IsFinite(value.z);
+        static bool IsFinite(float value) => !float.IsNaN(value) && !float.IsInfinity(value);
     }
 }

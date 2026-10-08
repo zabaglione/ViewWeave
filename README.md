@@ -6,6 +6,8 @@ Looking Glassに表示するときは、利用者自身のUnity projectをEditor
 
 対応環境はUnity 6000.6.4f1、Windows、URPまたはHDRPです。Bridge Worker経由ならD3D11またはD3D12のUnity Editor PlayとWindows Playerから出力できます。Legacy Direct経路はD3D11のみです。Edit ModeとmacOS出力は対象外です。Bridge runtimeとLooking Glass機器を別途用意してください。
 
+macOS Metalは明示opt-inのbounded実験です。通常SessionはMetalを受け付けず、macOS native shimはUPMに含まれません。限定的な手順と未検証範囲は[Graphics backends](docs/graphics-backends.md)を参照してください。
+
 このprivate repositoryからPackage Managerで取得するにはGitHubのアクセス権が必要です。独自コードのライセンスは[Apache-2.0](LICENSE)です。
 
 ## 使い始める
@@ -24,19 +26,28 @@ Looking Glassに表示するときは、利用者自身のUnity projectをEditor
 
 Git packageを更新した後はUnity Editorを正常終了して起動し直し、選択したGraphics APIでPlayします。新しいmanaged assemblyとnative pluginを読み込むために必要です。
 
+Windowsでは、Play中のStop/再開とEditor終了は別の処理です。Editor終了時はBridgeの終了処理を待ち、完了すれば最初の終了操作でUnityを閉じます。完了できない場合は終了をキャンセルして資源を保持します。終了確認をCancelした後は、Bridgeを再び使う前にEditorを再起動してください。Windows D3D12 Editorでは、一度のFile > Exitで正常終了を確認しました。保存確認のCancel動作と過去のaccess violationの原因は未検証です。詳細は[Shutdown validation](docs/shutdown-validation-20261008.md)を参照してください。
+
 Windows Playerで使う場合は、Windows Graphics APIsでD3D11またはD3D12を有効にしてBuild and Runします。Legacy Direct経路を明示的に使う場合はD3D11が必要です。Bridge runtimeが自動検出されない場合だけ、RigのSessionにRuntime Pathを設定します。
 
 ## 視点描画数を調整する
 
 Hierarchyで`ViewWeave Bridge Rig`を選び、Inspectorの`QuiltRenderer > View Render Mode`で`Full`、`Half`、`Quarter`を選べます。Fullが既定です。48視点の機器では、どのモードも48タイルのQuiltを出力し、実際に描画する視点数はFullが48、Halfが24、Quarterが12です。描画しないtileには最も近い描画済み視点の画像を使います。視点間の補間は行わないため、HalfとQuarterでは視点角度方向の滑らかさが下がることがあります。この設定はQuilt解像度やPreview/Balanced/Native profileとは別です。速度向上はシーンやGPUで変わるため、数値を保証しません。限定HDRP fixtureの測定と制約は[DX12 HDRP performance investigation](docs/dx12-performance-investigation.md)を参照してください。
 
-## Quilt保存とカメラ調整
+## Quiltの保存と再生
 
-Play中にHierarchyで`ViewWeave Bridge Rig`を選び、`Window > ViewWeave > Quilt Capture`から完成QuiltのPNGとJSONメタデータを保存できます。URP/HDRPのD3D11 PlayMode基本テストは各2/2通過し、追加Recorder suiteも通過しました。10fpsと25fpsで各3枚、URPで1〜240fpsの開始・停止とsimulation時間の復元を自動確認しています。PNG読み戻し・圧縮は同期処理のため、実時間では指定FPSに追いつかない場合があります。録画は追加Quilt描画を行わず、MP4や音声には対応しません。保存機能のD3D12と実機保存は未検証です。操作と保存条件は[Quilt保存と連番録画](docs/quilt-capture.md)を参照してください。
+Play中に`Window > ViewWeave > Quilt Capture`を開き、完成QuiltのPNG、JSON sidecar、中央view PNGを保存できます。連番を作る場合は出力先とFPSを指定して記録を開始し、必要ならPause/Resumeを使って停止します。生成済みの完成Quilt PNGまたは記録済み連番は`Window > ViewWeave > Quilt Playback`から選び、再生・一時停止・再開できます。再生には、Play中の既存ViewWeave Bridge Rigが正常に映像を出力できる状態である必要があります。PlaybackはBridge sessionを作成しません。D3D11またはD3D12のWindows Editor Playで使います。
 
-カメラ範囲は`QuiltRenderer`の`Camera Framing`とSceneビューで確認できます。紫の面がzero-parallax/focus plane、青緑と橙の面がNear/Farです。Camera Authoring test suiteは通過しています。Sceneビューでハンドルを直接ドラッグする操作、D3D12、実機の光学表示は未検証です。カメラのfocus/FOV/clip設定を変えても元カメラのposeは維持されます。録画中のカメラ移動は可能です。詳細は[Quiltのカメラ範囲とフォーカス](docs/quilt-authoring.md)を参照してください。
+音声を含める場合はQuilt Captureの`Start PNG Sequence + Audio`を明示的に選びます。対応するのはWindows Editor Play中の現在のMono音声設定です。SDKはUnityやOSの音声設定を自動変更せず、録音中は通常の音声出力がミュートされることがあります。音声はPNG連番と別のWAVファイルに保存され、MP4書き出しには含まれません。詳しい条件は[Quilt Capture](docs/quilt-capture.md)と[Quilt recording audio](docs/quilt-recording-audio.md)を参照してください。
 
-対応条件と既知の制約は[Compatibility](docs/compatibility.md)、検証結果は[Windows validation](docs/windows-validation.md)を参照してください。
+記録を完了したPNG連番から無音MP4を作るには、`Window > ViewWeave > Quilt Video Export`を使います。FFmpegとffprobe 7.0.2を別途用意してください。SDKはそれらを同梱またはダウンロードしません。詳しくは[Quilt Video Export](docs/quilt-video-export.md)を参照してください。
+
+## カメラの構図調整
+
+QuiltRenderer InspectorのCamera FramingとScene Viewで描画範囲を確認できます。紫の面はzero-parallax/focus plane、青緑と橙の面はNear/Farです。構図を手動調整するときはEdit ModeでCamera Authoringの操作を使います。Inspectorをロックして対象objectを選び、選択objectからfocus距離を設定するか、Scene Viewをfocus面中央へ移動します。水平・垂直orbitはfocus点をpivotとしてカメラの位置と向きを一緒に回します。3D focus cursorは個別toggleで、既定ではOFFです。操作対象のEffective CameraをInspectorで確認してください。CinemachineやanimationはPlay中にcamera poseを上書きすることがあります。手順は[Quilt camera authoring](docs/quilt-authoring.md#明示的なカメラ制作操作)を参照してください。
+
+対応条件と既知の制約は[Compatibility](docs/compatibility.md)、Windows上の検証範囲は[Windows validation](docs/windows-validation.md)を参照してください。
+
 
 ## 任意のサンプル
 
@@ -55,6 +66,9 @@ HDRPとVFX GraphはLinear color spaceが必須です。HDRP Wizardの`Lightmap E
 - [Getting started](docs/getting-started.md): Editor PlayとPlayerの手順
 - [Compatibility](docs/compatibility.md): 対応条件と既知の制約
 - [Windows validation](docs/windows-validation.md): 実行済み試験と結果
+- [Shutdown validation](docs/shutdown-validation-20261008.md): Windows shutdown lifecycle、歴史的AV記録と現在の検証状態
+- [残作業と受け入れ計画](docs/remaining-work-plan.md): 次に行う作業と完了条件
+- [残作業の検証記録](docs/benchmarks/remaining-work-validation-20261007.md): 2026-10-07の限定DX12 captureと終了診断
 - [DX12 HDRP performance investigation](docs/dx12-performance-investigation.md): Profiler調査と視点数削減の実測
 - [Legacy render pipeline investigation](docs/legacy-render-pipeline-investigation.md): 旧Looking Glass専用pipelineの調査と採用した投影計算
 - [公式SDK機能調査](docs/official-sdk-feature-research.md): Quilt保存、連番録画、カメラ操作の比較

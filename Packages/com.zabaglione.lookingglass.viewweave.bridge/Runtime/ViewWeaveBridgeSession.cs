@@ -42,6 +42,8 @@ namespace ViewWeave
         uint watchdogSubmissions;
         uint watchdogCompleted;
         float completionProgressSince;
+        object playbackToken;
+        Action<string> playbackInvalidated;
 
         void Awake()
         {
@@ -181,6 +183,11 @@ namespace ViewWeave
 
         public bool StartSession()
         {
+            if (playbackToken != null)
+            {
+                SetError("Bridge playback cleanup is still holding this session.");
+                return false;
+            }
             if (State == SessionState.Connecting || State == SessionState.Rendering || State == SessionState.Reconfiguring || State == SessionState.Closing)
             {
                 SetError("Bridge session is already active");
@@ -198,12 +205,18 @@ namespace ViewWeave
             {
                 return Fail("Bridge worker shutdown is still pending");
             }
-            if (Application.isEditor && (!Application.isPlaying || Application.platform != RuntimePlatform.WindowsEditor || BridgeWorkerLifecycle.RecoveryPending))
+            if (Application.isEditor && BridgeWorkerLifecycle.RecoveryPending)
                 return Fail("Bridge worker requires Windows D3D11 or D3D12 Play mode in the Editor");
-            if (Application.platform != RuntimePlatform.WindowsPlayer && Application.platform != RuntimePlatform.WindowsEditor)
-                return Fail("Bridge worker requires Windows Player or Windows Editor Play mode");
-            if (UnityEngine.SystemInfo.graphicsDeviceType != UnityEngine.Rendering.GraphicsDeviceType.Direct3D11 && UnityEngine.SystemInfo.graphicsDeviceType != UnityEngine.Rendering.GraphicsDeviceType.Direct3D12)
-                return Fail("Bridge worker requires Direct3D11 or Direct3D12");
+            if (!BridgeGraphicsBackendPolicy.TrySelect(
+                BridgeGraphicsBackendRoute.Worker,
+                Application.platform,
+                Application.isEditor,
+                Application.isPlaying,
+                UnityEngine.SystemInfo.graphicsDeviceType,
+                UnityEngine.SystemInfo.renderingThreadingMode,
+                out _,
+                out string backendError))
+                return Fail(backendError);
             if (!ValidateRig()) return false;
             rig.Renderer.ResetAutoRenderError();
             if (!ResolveRuntimePath(out string resolvedPath)) return false;
@@ -224,8 +237,72 @@ namespace ViewWeave
             return true;
         }
 
+        internal bool TryAcquirePlayback(object token, Action<string> invalidated, out long generation, out string error)
+        {
+            generation = 0;
+            error = string.Empty;
+#if UNITY_EDITOR
+            if (!Application.isEditor || !Application.isPlaying || Application.platform != RuntimePlatform.WindowsEditor)
+            {
+                error = "Quilt playback requires Windows Editor Play mode.";
+                return false;
+            }
+#else
+            error = "Quilt playback is available only in the Unity Editor.";
+            return false;
+#endif
+            if (token == null || invalidated == null) { error = "Playback ownership is invalid."; return false; }
+            if (!isActiveAndEnabled || State != SessionState.Rendering || output == null || !output.isActiveAndEnabled || !output.Ready || rig == null || !rig.isActiveAndEnabled || !rig.AutoRender || rig.Renderer == null || !rig.Renderer.isActiveAndEnabled)
+            {
+                error = "Playback requires an active Ready Bridge session with Auto Render enabled.";
+                return false;
+            }
+            if (playbackToken != null) { error = "This Bridge session is already leased by playback."; return false; }
+            if (!output.TryBeginPlaybackOutput(token, out error)) return false;
+            playbackToken = token;
+            playbackInvalidated = invalidated;
+            try
+            {
+                rig.AutoRender = false;
+                generation = output.SessionGeneration;
+                ResetCompletionWatchdog();
+                return true;
+            }
+            catch (Exception exception)
+            {
+                output.EndPlaybackOutput(token);
+                playbackToken = null;
+                playbackInvalidated = null;
+                error = Sanitize(exception.Message);
+                return false;
+            }
+        }
+
+        internal void ReleasePlayback(object token)
+        {
+            if (token == null || !ReferenceEquals(playbackToken, token)) return;
+            if (output != null) output.EndPlaybackOutput(token);
+            playbackToken = null;
+            playbackInvalidated = null;
+        }
+
+        internal void NotifyPlaybackFailure(object token, string reason)
+        {
+            if (token == null || !ReferenceEquals(playbackToken, token)) return;
+            Fail("Quilt playback stopped after a Bridge submission failure: " + Sanitize(reason));
+        }
+
+        void InvalidatePlayback(string reason)
+        {
+            Action<string> callback = playbackInvalidated;
+            if (callback == null) return;
+            try { callback(Sanitize(reason)); }
+            catch (Exception error) { Debug.LogError("[ViewWeave] Playback invalidation callback failed: " + Sanitize(error.Message)); }
+        }
+
         public void StopSession()
         {
+            InvalidatePlayback("Bridge session stopped while quilt playback was active.");
             restartRequested = false;
             pendingStart = false;
             profileApplied = false;
@@ -249,6 +326,11 @@ namespace ViewWeave
 
         public bool SetQuality(QuiltQualityPreset value)
         {
+            if (playbackToken != null)
+            {
+                SetError("Bridge quality cannot change while quilt playback owns the session.");
+                return false;
+            }
             if (!Enum.IsDefined(typeof(QuiltQualityPreset), value))
             {
                 SetError("Bridge session quality preset is invalid");
@@ -341,6 +423,7 @@ namespace ViewWeave
 
         bool Fail(string message)
         {
+            InvalidatePlayback("Bridge session faulted while quilt playback was active.");
             SetError(message);
             if (rig != null) rig.AutoRender = false;
             if (output != null) output.Dispose();

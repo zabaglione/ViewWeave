@@ -23,10 +23,12 @@ uint32_t lkg_worker_test_thread_id(void* handle);
 HWND lkg_worker_test_window(void* handle);
 uint32_t lkg_worker_test_message_count(void* handle);
 int32_t lkg_worker_test_set_d3d12_timeout(void* handle, uint64_t timeoutMilliseconds);
+void lkg_worker_test_throw_during_cleanup(void);
 void lkg_worker_test_delay_d3d12_consumer(uint32_t pendingPolls);
 uint32_t lkg_worker_test_d3d12_consumer_pending_polls(void);
 void lkg_worker_test_d3d12_set_removed(bool removed);
 #endif
+extern "C" int32_t lkg_worker_shutdown_host(uint32_t timeoutMilliseconds);
 
 static ComPtr<ID3D11Device> g_device;
 static std::atomic<bool> g_initializeFailure{false};
@@ -76,6 +78,12 @@ static bool WaitState(void* handle, uint32_t state, uint32_t timeoutMs) {
 
 static bool WaitReady(void* handle, uint32_t timeoutMs = 2000) {
     return WaitState(handle, LKG_WORKER_READY, timeoutMs);
+}
+
+static ULONG ReferenceCount(ID3D11Device* device) {
+    if (!device) return 0;
+    device->AddRef();
+    return device->Release();
 }
 
 static ComPtr<ID3D11Texture2D> MakeTexture(DXGI_FORMAT format, uint32_t width, uint32_t height) {
@@ -291,7 +299,26 @@ static void TestCloseAllRetiresLateToken() {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
     Check(lkg_worker_pending_count() == 1, "closed context remains pending until collect");
-    Check(lkg_worker_collect_closed() >= 1, "collect closed context");
+    const auto collectStart = std::chrono::steady_clock::now();
+    const auto collectDeadline = collectStart + std::chrono::milliseconds(2000);
+    int32_t lastCollect = 0;
+    for (;;) {
+        lastCollect = lkg_worker_collect_closed();
+        const auto now = std::chrono::steady_clock::now();
+        const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - collectStart).count();
+        if (lastCollect < 0) {
+            std::fprintf(stderr, "FAIL collect closed context elapsed_ms=%lld last_collect=%d pending=%u\n",
+                static_cast<long long>(elapsed), lastCollect, lkg_worker_pending_count());
+            std::exit(1);
+        }
+        if (lastCollect >= 1) break;
+        if (now >= collectDeadline) {
+            std::fprintf(stderr, "FAIL collect closed context timeout elapsed_ms=%lld last_collect=%d pending=%u\n",
+                static_cast<long long>(elapsed), lastCollect, lkg_worker_pending_count());
+            std::exit(1);
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
     Check(lkg_worker_pending_count() == 0, "close all pending drain");
     LkgWorkerStatus status{};
     Check(lkg_worker_poll(handle, &status) == -2, "poll after close all collect");
@@ -449,6 +476,19 @@ int32_t lkg_bridge_is_idle(void) { return 1; }
 int32_t lkg_bridge_last_error(char* utf8, uint32_t capacity) { if (utf8 && capacity) utf8[0] = 0; return 0; }
 uint32_t lkg_bridge_successful_draw_count(void) { return g_drawCount.load(); }
 int32_t lkg_bridge_is_initialized(void) { return 0; }
+extern "C" int32_t lkg_bridge_sdk_shutdown_faulted(void) { return 0; }
+extern "C" int32_t lkg_bridge_close_sdk_admission(void) { return 0; }
+extern "C" int32_t lkg_bridge_sdk_shutdown_incomplete(void) { return 0; }
+extern "C" int32_t lkg_bridge_get_session_close_status_v1(uint64_t session, LkgBridgeSessionCloseStatusV1* status) {
+    if (!status || status->structSize != sizeof(LkgBridgeSessionCloseStatusV1) || status->version != 1) return -1;
+    status->sessionId = session;
+    status->state = LKG_BRIDGE_SESSION_CLOSE_CLOSED_SAFE;
+    status->lastResult = 0;
+    status->reserved0 = 0;
+    status->reserved1 = 0;
+    return 0;
+}
+extern "C" int32_t lkg_bridge_ack_session_close_v1(uint64_t) { return 0; }
 int32_t lkg_bridge_version(char*, uint32_t) { return 0; }
 int32_t lkg_bridge_get_display_count(uint32_t* count) { if (!count) return -1; *count = 1; return 0; }
 int32_t lkg_bridge_get_display(uint32_t ordinal, LkgBridgeDisplayInfo* info) {
@@ -458,9 +498,13 @@ int32_t lkg_bridge_get_display(uint32_t ordinal, LkgBridgeDisplayInfo* info) {
 }
 uint64_t lkg_bridge_create_d3d11_session(void* device, uint32_t) { return device ? 1 : 0; }
 int32_t lkg_bridge_destroy_session(uint64_t) { return 0; }
-void* lkg_bridge_render_event_func(void) { return nullptr; }
+void* lkg_bridge_render_event_func(void) {
+    return reinterpret_cast<void*>(+[](int eventId, void* data) {
+        if (eventId == 1) delete static_cast<uint64_t*>(data);
+    });
+}
 void* lkg_bridge_make_draw_data(uint64_t, void*, uint32_t, uint32_t, float, float) { return nullptr; }
-void* lkg_bridge_make_close_data(uint64_t) { return nullptr; }
+void* lkg_bridge_make_close_data(uint64_t session) { return new uint64_t(session); }
 int32_t lkg_bridge_smoke_draw(uint64_t, void* texture, uint32_t, uint32_t, float, float) {
     if (g_drawThrow.load()) throw std::runtime_error("stub draw exception");
     if (g_drawFailure.load()) return -202;
@@ -787,8 +831,36 @@ static void TestD3D12RingColors() {
     g_testD3D12GateFence.Reset();
 }
 
-int main() {
+static void TestCleanupExceptionRetainsContext(void) {
+    const ULONG referencesBeforeBegin = ReferenceCount(g_device.Get());
+    void* handle = lkg_worker_begin("test-runtime", "worker-transport-cleanup-exception-test", 0, g_device.Get());
+    Check(handle != nullptr, "cleanup-exception worker begin");
+    Check(WaitReady(handle), "cleanup-exception worker ready");
+    lkg_worker_test_throw_during_cleanup();
+    Check(lkg_worker_close(handle) == 0, "cleanup-exception close accepted");
+    Check(WaitState(handle, LKG_WORKER_FAULT, 5000), "cleanup exception faults worker");
+    Check(lkg_worker_shutdown_host(5000) == 0, "cleanup exception worker host join");
+    Check(ReferenceCount(g_device.Get()) > referencesBeforeBegin,
+        "cleanup exception retains producer-device references after worker exit");
+    Check(lkg_worker_release(handle) == -2, "cleanup exception prevents worker release");
+    Check(lkg_worker_collect_closed() == 0, "cleanup exception prevents context collection");
+    LkgWorkerFinalShutdownStatusV1 status{};
+    status.structSize = sizeof(status);
+    status.version = 1;
+    Check(lkg_worker_get_final_shutdown_status_v1(&status) == 0 &&
+        status.state == LKG_WORKER_FINAL_SHUTDOWN_NONE && status.registeredContexts == 1 &&
+        status.closedUncollectedContexts == 1,
+        "cleanup exception leaves a registered uncollected context");
+    Check(lkg_worker_release(handle) == -2, "joined host does not make unproven context releasable");
+}
+
+int main(int argc, char** argv) {
     BeginDevice();
+    if (argc == 2 && std::strcmp(argv[1], "--cleanup-exception-only") == 0) {
+        TestCleanupExceptionRetainsContext();
+        std::fprintf(stdout, "worker_cleanup_exception_test pass\n");
+        return 0;
+    }
     TestD3D12RingColors();
     TestTypelessSource();
     TestTransferResetResize();
