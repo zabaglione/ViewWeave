@@ -225,7 +225,7 @@ namespace ViewWeave.Editor
 
         void OnSceneGUI()
         {
-            if (targets.Length == 1) DrawFrustum((QuiltRenderer)target);
+            if (target is QuiltRenderer renderer) DrawFrustum(renderer);
         }
 
         void DrawFrustum(QuiltRenderer renderer)
