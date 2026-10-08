@@ -2,6 +2,8 @@
 
 This prototype is intended for community review. Keep runtime and Editor assemblies/directories separate where practical and preserve Unity `.meta` files. Do not copy proprietary source code, headers, or binaries into this repository. Record the provenance and license of third-party source or assets in `docs/THIRD_PARTY_NOTICES.md`.
 
+English is the default language for repository documentation. When adding or changing user-facing documentation, update the corresponding Japanese page under `docs/ja/` or the adjacent `*.ja.md` file where one exists; link both language versions at the top of each page. See [README.ja.md](README.ja.md) for Japanese project information.
+
 Repository and package sources are distributed under Apache-2.0. The root `LICENSE` and each package `LICENSE.md` contain the complete license text; third-party notices remain subject to provenance review.
 
 Logs must contain ASCII characters only. Remove serial numbers, account data, absolute local paths, and credentials before attaching diagnostics. Use the repository validator before opening a pull request and include its output in the PR description.

@@ -1,20 +1,22 @@
-# Third-party notices
+[Japanese](ja/THIRD_PARTY_NOTICES.md)
 
-本リポジトリのViewWeave Core、URP、HDRP、Bridge adapterは、Looking Glass Factoryの公式Unity SDKとは独立して開発している非公式の実装です。公式SDKのsource code、Bridge binary、外部header、Unity Render Pipelineのforkは同梱しません。公式製品との提携や公式brandingの使用許諾を示しません。
+# Third-Party Notices
 
-Bridge adapterは、利用者が別途インストールしたBridge runtimeの公開ABIへ動的に接続します。runtime、header、libraryの再配布権、商用利用、リポジトリ公開への適合性はこの文書では判断しません。利用者は対象runtimeの契約を確認してください。
+ViewWeave Core, URP, HDRP, and Bridge adapters in this repository are an unofficial implementation developed independently from Looking Glass Factory's official Unity SDK. This repository does not include official SDK source code, Bridge binaries, external headers, or a fork of Unity's Render Pipeline. It does not indicate an affiliation with official products or permission to use official branding.
 
-URP/HDRPはUnityの公開rendering/volume APIを利用します。Unity packageは依存関係として参照しますが、source codeはfork・同梱しません。Unity、Bridge、機器ソフトウェア、その他外部依存のライセンスを本リポジトリが付与するものではありません。
+The Bridge adapter dynamically connects to the public ABI of a Bridge runtime installed separately by the user. This document does not determine redistribution rights, commercial-use rights, or whether publishing the runtime, headers, or libraries in a repository is permitted. Users should review the terms that apply to the runtime they use.
 
-本リポジトリの独自コードはApache-2.0で公開します。Bridge、Unity、商標、第三者特許など外部権利は別条件であり、runtimeの再配布権・商用利用・リポジトリ公開への適合性は利用者が確認してください。
+URP/HDRP use Unity's public rendering and Volume APIs. Unity packages are referenced as dependencies; their source code is not forked or included. This repository does not grant licenses for Unity, Bridge, device software, or other external dependencies.
 
-Bridge Native Function Referenceには、runtime libraryをコピー・配布できる場合がある旨の説明があります。ただし、これは一般的な再配布許諾の宣言ではありません。Looking GlassのTermsには個人利用・非商用利用を前提とする条件、配布や派生物に関する制限が記載されており、Bridge 2.6.3の個別契約へどの条件が適用されるかは本リポジトリでは確定していません。商用利用、公開リポジトリへの同梱、runtime・header・libraryの再配布は、公開前に対象vendor文書と個別契約を確認するrelease gateです。法律上の結論を示すものではありません。
+Original code in this repository is released under Apache-2.0. External rights, including Bridge, Unity, trademarks, and third-party patents, are subject to separate terms. Users are responsible for confirming redistribution rights for the runtime, commercial-use rights, and permission to publish the runtime, headers, or libraries in a repository.
 
-本リポジトリは公式Bridge binary、header、source code、Unity packageのforkを同梱しません。利用者は必要なBridge runtimeを各自の契約条件に従って導入してください。独自コードのApache-2.0ライセンスは、Bridge runtimeやUnityの利用権を拡張しません。
+The Bridge Native Function Reference says that a runtime library may be copied and distributed in some cases. This is not a general grant of redistribution rights. Looking Glass Terms include conditions based on personal and non-commercial use, along with restrictions on distribution and derivative works. This repository has not determined which conditions apply to the specific Bridge 2.6.3 agreement. Before release, review the relevant vendor documents and individual agreement for commercial use, inclusion in a public repository, and redistribution of the runtime, headers, or libraries. This document does not state a legal conclusion.
 
-Bridge 2.6.3のインストール版noticeは、Bridge本体をLooking Glass Factoryのproprietary softwareとして扱い、vendorのTermsを参照しています。同noticeに記載された同梱ライブラリには個別ライセンス条件があります。本リポジトリはBridge本体や同梱ライブラリの権利を付与せず、BridgeをApache-2.0として扱いません。
+This repository does not include official Bridge binaries, headers, source code, or a fork of the Unity package. Users must install any required Bridge runtime under the terms applicable to them. The Apache-2.0 license for original code does not extend usage rights for Bridge runtime or Unity.
 
-参照した一次資料は挙動や公開APIの調査用です。これらの参照は公式との提携、承認、完全互換性を意味しません。
+The installed Bridge 2.6.3 notice treats Bridge itself as proprietary software of Looking Glass Factory and refers to the vendor's Terms. Libraries bundled with that installation have their own license terms. This repository does not grant rights to Bridge or its bundled libraries and does not treat Bridge as Apache-2.0 licensed.
+
+The primary sources below were consulted to research behavior and public APIs. These references do not imply affiliation with or endorsement by the official vendor, or complete compatibility.
 
 - [Looking Glass Unity Plugin](https://lookingglassfactory.com/software/looking-glass-unity-plugin)
 - [Looking Glass software documentation](https://lfdocs.lookingglassfactory.com/software/index)

@@ -1,61 +1,63 @@
-# Pipeline smoke tests
+[Japanese](README.ja.md)
 
-`Tests/Pipelines/Unity`は、Core、URP、HDRP、Bridgeのvalidationを実行するUnity projectです。fresh cloneではUnity Hubで開く前にrepository rootから`python tools/prepare_sample_tests.py`を実行してください。Bridge packageのSamplesをignoredな`Tests/Pipelines/Unity/Assets/Samples/ViewWeaveBridge`へcopyします。Unity Hubの`Add`からこのフォルダを開き、Unity 6000.6.4f1を選択してください。
+# Pipeline Smoke Tests
 
-## Test Runnerで実行する
+`Tests/Pipelines/Unity` is the Unity project used to validate Core, URP, HDRP, and Bridge. On a fresh clone, run `python tools/prepare_sample_tests.py` from the repository root before opening the project in Unity Hub. This copies Bridge package Samples to the ignored path `Tests/Pipelines/Unity/Assets/Samples/ViewWeaveBridge`. In Unity Hub, choose `Add`, open this folder, and select Unity 6000.6.4f1.
 
-1. Unity Editorで`Window > General > Test Runner`を開きます。
-2. `PlayMode`タブを選択します。
-3. `Run All`を押します。
+## Run from the Test Runner
 
-Build Settingsには固定sceneを登録していません。PlayModeテストは実行時にfixture sceneを作り、終了時に破棄します。GPUが必要なfixtureはGPUのあるWindows環境で実行してください。Run Allには既知のVFX compatibility未通過条件が含まれるため、結果XMLで内訳を確認してください。
+1. In the Unity Editor, open `Window > General > Test Runner`.
+2. Select the `PlayMode` tab.
+3. Click `Run All`.
 
-主なPlayModeテストクラスは次のとおりです。
+No fixed scene is registered in Build Settings. PlayMode tests create fixture scenes at runtime and destroy them after execution. Fixtures that require a GPU must run on a Windows machine with a GPU. `Run All` includes known VFX compatibility failures; inspect the breakdown in the result XML.
 
-| クラス | 目的 |
+The main PlayMode test classes are:
+
+| Class | Purpose |
 | --- | --- |
-| `BridgeSessionValidationTests` | Session状態、timeout、completion watchdog、quality再設定のmanaged検証 |
-| `SrpAdditionalValidationTests` | URP/HDRPの基本描画、MSAA、postprocess条件 |
-| `QuiltRendererMsaaLifecycleTests` | 1x/2x/4x/8x、resolve、resize、disable、Deferred fallback |
-| `GrdValidationPlayModeTests` | URP/HDRPのGPU Resident Drawer条件 |
+| `BridgeSessionValidationTests` | Managed checks for session state, timeout, completion watchdog, and quality reconfiguration |
+| `SrpAdditionalValidationTests` | Basic URP/HDRP rendering, MSAA, and post-processing conditions |
+| `QuiltRendererMsaaLifecycleTests` | 1x/2x/4x/8x, resolve, resize, disable, and Deferred fallback |
+| `GrdValidationPlayModeTests` | GPU Resident Drawer conditions in URP/HDRP |
 | `VfxGraphicsCompatibilityTests` | URP/HDRP VFX compatibility matrix |
-| `HdrpVfxPrimingValidationTests` | HDRP same-camera primingの診断 |
+| `HdrpVfxPrimingValidationTests` | Diagnostics for HDRP same-camera priming |
 
-CLIで同じPlayMode suiteを実行する場合は、repository rootから次を使います。
+To run the same PlayMode suite from the CLI, use this command from the repository root:
 
 ```powershell
 unity test "$PWD/Tests/Pipelines/Unity" --editor-version 6000.6.4f1 --mode PlayMode --report-format junit --output "$PWD/.local/test-results/playmode.xml" --timeout 1200 -- -force-d3d11
 ```
 
-結果XMLのtest countが0の場合は成功扱いにしません。結果の内訳、既知のVFX未通過条件、D3D12の対象範囲は[docs/windows-validation.md](../../docs/windows-validation.md)を参照してください。
+A result XML with a test count of 0 is not a successful run. For the result breakdown, known VFX failures, and D3D12 coverage boundaries, see [docs/windows-validation.md](../../docs/windows-validation.md).
 
-## generated sceneを使うPlayer validation
+## Player Validation Using Generated Scenes
 
-Playerを作るvalidationだけは、Editor methodが一時的なsceneを作成します。これらはBuild用の入口であり、固定sceneとして手動編集しません。
+Only validations that build a Player use an Editor method to create a temporary scene. These are build entry points; do not edit them manually as fixed scenes.
 
-| Editor method | generated scene | 目的 |
+| Editor method | Generated scene | Purpose |
 | --- | --- | --- |
 | `ViewWeave.BridgeWorkerValidation.Editor.BridgeWorkerValidationBuilder.Build` | `Assets/BridgeWorkerValidationGenerated/BridgeWorkerValidation.unity` | Bridge Worker validation Player |
-| `ViewWeave.BridgeWorkerValidation.Editor.BridgeWorkerValidationBuilder.BuildDemo` | `Assets/BridgeWorkerValidationGenerated/ViewWeaveDemo.unity` | 48 view demo Player |
+| `ViewWeave.BridgeWorkerValidation.Editor.BridgeWorkerValidationBuilder.BuildDemo` | `Assets/BridgeWorkerValidationGenerated/ViewWeaveDemo.unity` | 48-view demo Player |
 | `ViewWeave.SamplePlayerValidation.Editor.SamplePlayerValidationBuilder.BuildUrp` | `Assets/SamplePlayerValidationGenerated/SamplePlayerValidation.unity` | URP sample Player |
 | `ViewWeave.SamplePlayerValidation.Editor.SamplePlayerValidationBuilder.BuildHdrp` | `Assets/SamplePlayerValidationGenerated/SamplePlayerValidation.unity` | HDRP sample Player |
-| `ViewWeave.PlayerValidation.Editor.PlayerValidationBuilder.Build` | `Assets/PlayerValidationGenerated/PlayerValidation.unity` | BridgeなしのURP GRD Player検証 |
+| `ViewWeave.PlayerValidation.Editor.PlayerValidationBuilder.Build` | `Assets/PlayerValidationGenerated/PlayerValidation.unity` | URP GRD Player validation without Bridge |
 | `ViewWeave.VfxPlayerValidation.Editor.VfxPlayerValidationBuilder.Build` | `Assets/VfxPlayerValidationGenerated/VfxPlayerValidation.unity` | VFX Player validation |
 
-Bridge demoの視点番号検証は`ViewWeave.BridgeWorkerValidation.Editor.BridgeWorkerViewIndexDebugVerification.Run`です。Bridge接続なしで48 tileの番号一意性とcoverageを確認し、結果を`.local`へ保存します。実機確認ではview 0/47を左右と仮定せず、左右から実際に見えた番号を記録します。
+Bridge demo view-index validation uses `ViewWeave.BridgeWorkerValidation.Editor.BridgeWorkerViewIndexDebugVerification.Run`. It checks that all 48 tile indices are unique and covered without a Bridge connection, then saves the result under `.local`. For hardware validation, do not assume view 0 or 47 corresponds to the left or right edge; record the indices actually seen from each side.
 
-generated sceneを作ってPlayerをBuildする場合は、Unity CLIからEditor methodへ引数を渡します。例えばURP sample Playerは次のように実行します。
+To create a generated scene and build a Player, pass the Editor method arguments through the Unity CLI. For example, build a URP sample Player with:
 
 ```powershell
 unity run "$PWD/Tests/Pipelines/Unity" --editor-version 6000.6.4f1 -- -executeMethod ViewWeave.SamplePlayerValidation.Editor.SamplePlayerValidationBuilder.BuildUrp -buildOutput "$PWD/.local/player/SampleUrp.exe"
 ```
 
-このmethodは`Assets/SamplePlayerValidationGenerated/SamplePlayerValidation.unity`を一時作成し、Direct3D11、Linear、Run In Backgroundを設定してPlayerをBuildします。Build後のPlayer起動にはBridge runtimeが必要です。
+This method temporarily creates `Assets/SamplePlayerValidationGenerated/SamplePlayerValidation.unity`, sets Direct3D11, Linear, and Run In Background, and builds the Player. The built Player requires the Bridge runtime to start.
 
-## GPU Resident Drawer validation
+## GPU Resident Drawer Validation
 
-`GrdValidationPlayModeTests`はURP/HDRPの1、8、48 viewsを検証します。GRDのON条件はprofiler counterも確認します。結果PNGとJSONは`.local/grd-validation/`へ出力されますが、証跡ファイルだけで合否を決めず、Unity test resultとlogを確認してください。Editor結果はPlayerのthreading、長時間運転、性能を保証しません。
+`GrdValidationPlayModeTests` validates 1, 8, and 48 views in URP/HDRP. The GRD ON condition also checks profiler counters. Result PNGs and JSON are written to `.local/grd-validation/`, but do not decide pass/fail from evidence files alone; inspect the Unity test result and log. An Editor result does not guarantee Player threading, long-duration operation, or performance.
 
-## PlayerとEditorの境界
+## Player and Editor Boundaries
 
-通常のTest Runner実行はUnity EditorのPlayModeです。Bridge接続を使う実機Player確認は、Bridge sampleまたは上記generated sceneをBuildして別途実行します。EditorからBridgeへ接続する手順はありません。
+Normal Test Runner execution runs in Unity Editor PlayMode. Hardware Player validation with a Bridge connection is a separate run using a Bridge sample or one of the generated scenes above. There is no procedure for connecting the Bridge from the Editor.

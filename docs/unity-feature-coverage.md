@@ -1,106 +1,109 @@
-# Unity feature coverage
+[Japanese](ja/unity-feature-coverage.md)
 
-このページは、Unity 6000.6.4f1、URP/HDRP 17.6、Windows D3D11/D3D12のViewWeave複数視点出力について、公開機能と実測範囲を分けて記載します。Bridge Worker出力はWindows D3D11/D3D12 Editor PlayおよびPlayerが対象です。Legacy DirectはD3D11のみで、Edit ModeとmacOS出力は対象外です。合格は個別 fixture の結果であり、同じ機能を含む全プロジェクトを保証するものではありません。
+# Unity Feature Coverage
 
-## 現在の検証集計
+This page separates public Unity features from the measured coverage for ViewWeave multiview output on Unity 6000.6.4f1, URP/HDRP 17.6, and Windows D3D11/D3D12. Bridge Worker output covers Windows D3D11/D3D12 Editor Play and Player. Legacy Direct is D3D11 only; Edit Mode and macOS output are out of scope. A pass applies to the stated fixture and does not guarantee every project that uses the same feature.
 
-旧package snapshotのWindows D3D11 PlayModeは、現行guard追加前に123件中108件pass、15件fail、skip 0でした。Core/SRP/VFX Editor targeted試験はGamma 8/8、Linear 17/17で、全件matrixの結果ではありません。Gamma MSAA/通常URPのBridge Player実行は未検証です。Gamma VFXは公式非対応です。旧D3D11統合の未通過はHDRP priming 1件とVFX compatibility 14件で、別の同時期VFX matrixは20件中5件pass、15件failでした。これらの履歴は現行D3D12 project統合や全VFX条件の成否を示しません。詳細な正本集計は [docs/compatibility.md](compatibility.md) を参照してください。
+## Current Validation Summary
 
-既存DX12 cold driver suiteは6/7 PASS（FOV50 Simple Burstはalive=0のfailureを保持）、URP Particle 3/3、HDRP Particle 2/2 PASS。同期CSV I/Oなしのmemory診断suiteは7/7 PASSし、FOV50/FOV90で各128 aliveを観測。元fully-qualified FOV50 caseを含む別filter runは3/3 PASSだが、cold suite failureは履歴として維持し恒久fixとはしない。旧D3D11 15 failureも保持する。Shadow OnDemandはEveryFrame baselineの自己比較がstrict image gateに届かず、OnDemand比較・性能測定未到達、未採用。
+Before the current guard was added, the old package snapshot's Windows D3D11 PlayMode suite passed 108 of 123 tests, failed 15, and skipped 0. Targeted Core/SRP/VFX Editor tests passed Gamma 8/8 and Linear 17/17; these are not results for the full matrix. Gamma MSAA and normal URP Bridge Player execution remain untested. Gamma VFX is officially unsupported. The old D3D11 integration had one HDRP priming failure and 14 VFX compatibility failures; a separate VFX matrix from around the same time passed 5 of 20 and failed 15. This history does not establish the result of the current D3D12 project integration or all VFX conditions. See the canonical summary in [docs/compatibility.md](compatibility.md).
 
-GRD の性能実測は URP normal multithreaded Player の範囲だけです。HDRP fixture で GRD 性能を測定した結果とは扱いません。自動描画 scheduler は scene rendering 後に実行しますが、機能固有の更新順序や一般的な描画対応を保証するものではありません。
+The existing DX12 cold driver suite passed 6/7 and retains an `alive=0` failure for FOV50 Simple Burst. URP Particle passed 3/3 and HDRP Particle 2/2. A memory diagnostic suite without synchronous CSV I/O passed 7/7 and observed 128 alive for both FOV50 and FOV90. A separate filtered run including the original fully qualified FOV50 case passed 3/3, but the cold-suite failure is retained as history and is not treated as a permanent fix. The old 15 D3D11 failures are also retained. HDRP Shadow OnDemand was not adopted: the EveryFrame baseline failed its own strict image comparison, so the OnDemand comparison and performance measurement were not reached.
 
-判定は次の意味です。
+GRD performance measurements cover only a normal multithreaded URP Player. They are not measurements of GRD performance in an HDRP fixture. The automatic-render scheduler runs after scene rendering, but that does not guarantee feature-specific update ordering or general rendering compatibility.
 
-- **限定実測**: 記載した pipeline、設定、fixture で合格を確認済みです。
-- **調査対象**: Unity/SRP の公開機能として利用できますが、ViewWeave の複数視点 fixture が未合格です。
-- **制約あり**: Guard、pipeline差、視点依存状態などの制限があります。
-- **非対応**: 現在のSDK経路で明示的に拒否または提供していません。
+Status meanings:
 
-## 描画、マテリアル、ジオメトリ
+- **Measured in a limited scope**: passed under the stated pipeline, settings, and fixture.
+- **Under investigation**: available as a public Unity/SRP feature, but no passing ViewWeave multiview fixture exists yet.
+- **Constrained**: subject to guards, pipeline differences, or view-dependent state.
+- **Unsupported**: explicitly rejected or unavailable in the current SDK path.
 
-| 機能 | 状態 | 実測範囲と制約 |
+## Rendering, Materials, and Geometry
+
+| Feature | Status | Measured scope and limitations |
 | --- | --- | --- |
-| MeshRenderer と Lit material | 限定実測 | URP/HDRP の基本 Lit fixture。HDRP は Linear color space と固定 Exposure 条件。 |
-| Quilt View Render Mode | 実装済み、static fixture限定実測 | Full/Half/Quarter。48-view出力Quiltを維持し、実描画数は48/24/12。未描画tileは最近傍viewを複製し、補間しない。2026-10-04 static HDRP fixtureで各modeを計測し、Half/Quarterの全48 tileは割当sourceとのRGBA画素差0。VFX/user sceneと実機光学品質は未確認。[測定範囲](dx12-performance-investigation.md)。 |
-| Shader Graph Lit/Unlit | 限定実測 | URP/HDRPの個別Shader Graph fixture。shader、keyword、depth、shadowの一般対応は未検証。 |
-| SkinnedMeshRenderer | 限定実測 | Geometry suite の URP/HDRP skinned 1-bone pose。複雑な skinning は未検証。 |
-| Animator / Transform 更新 | 調査対象 | 固定 fixture の pose 以外の animation state 同期は未検証。 |
-| LODGroup | 限定実測 | Geometry suite の ForceLOD fixture。距離による一般的な選択は未検証。 |
-| Terrain | 限定実測 | Geometry suite の visibility fixture。地形の全機能、detail、tree は未検証。 |
-| Directional light intensity | 限定実測 | Geometry suite の固定 light fixture。複雑な light、shadow、probe 組み合わせは未検証。 |
-| Shadow mode | 限定実測 | Geometry suite の shadow mode fixture。全 shadow cascade、contact shadow は未検証。 |
-| GPU Resident Drawer | 制約あり | GRD 実測は URP normal multithreaded Player の MeshRenderer 範囲。HDRP性能、他Renderer種別、透明、VFX、Terrain性能は未検証。 |
-| SRP Batcher / GPU instancing | 調査対象 | 複数 view の batching と性能は未検証。 |
+| MeshRenderer and Lit material | Measured in a limited scope | Basic URP/HDRP Lit fixtures. HDRP uses Linear color space and fixed Exposure. |
+| Quilt View Render Mode | Implemented; measured only in static fixtures | Full/Half/Quarter. Keeps a 48-view output Quilt while rendering 48/24/12 views. Unrendered tiles duplicate the nearest view; no interpolation is performed. Each mode was measured in a static HDRP fixture on 2026-10-04. All 48 tiles in Half/Quarter had zero RGBA pixel difference from their assigned source. VFX/user scenes and physical optical quality are unverified. [Measurement scope](dx12-performance-investigation.md). |
+| Shader Graph Lit/Unlit | Measured in a limited scope | Individual URP/HDRP Shader Graph fixtures. General shader, keyword, depth, and shadow support is unverified. |
+| SkinnedMeshRenderer | Measured in a limited scope | URP/HDRP one-bone pose in the Geometry suite. Complex skinning is unverified. |
+| Animator / Transform updates | Under investigation | Animation-state synchronization beyond fixed fixture poses is unverified. |
+| LODGroup | Measured in a limited scope | ForceLOD fixture in the Geometry suite. General distance-based selection is unverified. |
+| Terrain | Measured in a limited scope | Visibility fixture in the Geometry suite. Terrain features, details, and trees are not fully tested. |
+| Directional light intensity | Measured in a limited scope | Fixed light fixture in the Geometry suite. Complex combinations of lights, shadows, and probes are unverified. |
+| Shadow mode | Measured in a limited scope | Shadow-mode fixture in the Geometry suite. All shadow cascades and contact shadows are unverified. |
+| GPU Resident Drawer | Constrained | GRD measurements cover MeshRenderer in a normal multithreaded URP Player. HDRP performance and other renderer types, transparency, VFX, and Terrain performance are unverified. |
+| SRP Batcher / GPU instancing | Under investigation | Batching and performance across multiple views are unverified. |
 
-## パーティクル、VFX、線、デカール、プローブ
+## Particles, VFX, Lines, Decals, and Probes
 
-| 機能 | 状態 | 実測範囲と制約 |
+| Feature | Status | Measured scope and limitations |
 | --- | --- | --- |
-| Shuriken ParticleSystem | 限定実測 | URP paused Lit/Unlit/live 3 と HDRP mesh paused/live 2 の fixture。sorting、soft depth、culling の一般対応は未確定。 |
-| VFX Graph | DX12限定実測、Linear必須 | 既存cold driver suite 6/7 PASSでFOV50 Simple Burstのalive=0 failureを保持。同期CSV I/Oなしmemory診断suiteは7/7 PASS（FOV50/FOV90は各128 alive）。元fully-qualified FOV50 caseを含む別filter runは3/3 PASSしたが恒久fix・cold/warm一般成功の証明ではない。Gammaは公式要件により非対応。一般的な透明、sorting、culling、soft depth、同一Camera primingは未確定。GPU simulationを一般対応と扱わない。 |
-| LineRenderer / TrailRenderer | 限定実測 | 個別Line/Trail fixtureで描画差を確認。camera依存幅、履歴、順序、深度の一般対応は未検証。 |
-| BillboardRenderer | 調査対象 | HDRPを含む複数視点表示は未検証。 |
-| Decal / Decal Projector | 調査対象 | URP Renderer Feature と HDRP Decal の投影、深度、透明物は未検証。 |
-| Reflection Probe / Planar Reflection | 限定実測 | 個別Probe fixtureで描画差を確認。probe更新、視点別反射、realtime履歴は未検証。 |
+| Shuriken ParticleSystem | Measured in a limited scope | URP paused Lit/Unlit/live (3) and HDRP mesh paused/live (2) fixtures. General sorting, soft depth, and culling support is unresolved. |
+| VFX Graph | Measured only on DX12; Linear required | Existing cold driver suite passed 6/7 and retains the FOV50 Simple Burst `alive=0` failure. The memory diagnostic suite without synchronous CSV I/O passed 7/7 (128 alive each at FOV50/FOV90). A separate filtered run including the original fully qualified FOV50 case passed 3/3, but this does not prove a permanent fix or general cold/warm success. Gamma is unsupported by official requirements. General transparency, sorting, culling, soft depth, and same-Camera priming remain unresolved. GPU simulation is not considered generally supported. |
+| LineRenderer / TrailRenderer | Measured in a limited scope | Image differences checked in individual Line/Trail fixtures. General camera-dependent width, history, ordering, and depth behavior are unverified. |
+| BillboardRenderer | Under investigation | Multiview output, including HDRP, is unverified. |
+| Decal / Decal Projector | Under investigation | URP Renderer Feature and HDRP Decal projection, depth, and transparency are unverified. |
+| Reflection Probe / Planar Reflection | Measured in a limited scope | Image differences checked in individual Probe fixtures. Probe updates, per-view reflections, and realtime history are unverified. |
 
-## Volume と時間履歴
+## Volumes and Temporal History
 
-| 機能 | 状態 | 実測範囲と制約 |
+| Feature | Status | Measured scope and limitations |
 | --- | --- | --- |
-| HDRP Bloom | 限定実測 | HDRP Linear条件のDirectional light、明示Volume fixture。adapterの一時overrideでquilt中も通常Bloomを維持。複雑なstackは未検証。 |
-| URP Bloom | 限定実測 | 個別Bloom fixtureで視点ごとの差を確認。一般のVolume継承、他の効果、tile seamは未検証。 |
-| Color Adjustments / Tonemapping / Exposure | 限定実測 | 個別Tone/Color fixtureで描画差を確認。HDRPはLinear必須。quilt中のAuto Exposureは全view共通Fixed EV 12に変換し、元stackがFixedなら元EVを保つ。一般の色管理は未検証。 |
-| Motion Blur | HDRPはquilt中に一時抑制 | HDRP adapter既定の一時Volume overrideでquilt中だけ無効化。通常renderと元Volume設定は維持。URPの構成は別途。 |
-| FXAA / SMAA / MSAA | FXAA/SMAAは限定確認。URP MSAA 1/1で4x view RT、1x resolve、resize/disable lifecycle、中心色一致を確認。追加のLinear境界試験10/10で、このRTX GPUの2x/4x/8x対応倍率、pipeline 1x、allowMSAA無効、Deferred fallback、中心色一致と対応MSAAのedge差分を確認。Gamma側targeted MSAA 7件も確認したが専用MSAA Playerは未実施。低MSAA能力GPU、HDRP MSAA、性能は未検証 | MSAAの一般素材、Unity/Player、画質、性能を検証。 |
-| TAA / temporal history | 非対応 | view render 中は TAA を無効化して終了時に復元。独立した per-view temporal history は提供しない。 |
-| SSAO / SSGI / SSR | HDRP SSGI/SSRはquilt中に一時抑制 | HDRP adapter既定のoverrideでquilt view中だけ無効化し、scope終了時に戻す。URP/他構成は未検証。 |
-| Fog / Volumetric Fog / Clouds | HDRP volumetric effectsはquilt中に一時抑制 | HDRP volumetric fog/cloudはquilt view中だけ無効化。通常のFogとSkyは維持する。 |
-| Depth of Field / Auto Exposure | Depth of Fieldは限定確認。HDRP Auto Exposureはquilt共通Fixed EVへ一時変換 | HDRPはEV 12を既定にし、元stackがFixedならそのEVを使う。URP Auto Exposureは未検証。 |
+| HDRP Bloom | Measured in a limited scope | Directional light and explicit Volume fixture in HDRP Linear mode. A temporary adapter override preserves normal Bloom during Quilt rendering. Complex stacks are unverified. |
+| URP Bloom | Measured in a limited scope | Per-view image differences checked in an individual Bloom fixture. General Volume inheritance, other effects, and tile seams are unverified. |
+| Color Adjustments / Tonemapping / Exposure | Measured in a limited scope | Image differences checked in individual Tone/Color fixtures. HDRP requires Linear. Auto Exposure during Quilt rendering is converted to a shared Fixed EV 12 for all views; if the original stack is Fixed, its EV is preserved. General color management is unverified. |
+| Motion Blur | Temporarily suppressed during HDRP Quilt rendering | A default temporary Volume override in the HDRP adapter disables it only during Quilt rendering. Normal rendering and the original Volume settings are preserved. URP configuration is separate. |
+| FXAA / SMAA / MSAA | Limited FXAA/SMAA checks; URP MSAA 1/1. Confirmed 4x view RT, 1x resolve, resize/disable lifecycle, and center-color match. An additional Linear boundary suite passed 10/10, checking this RTX GPU's supported 2x/4x/8x levels, pipeline 1x, disabled allowMSAA, Deferred fallback, center-color match, and edge differences at supported MSAA. Seven targeted Gamma MSAA cases were also checked, but no dedicated MSAA Player test was run. Low-MSAA-capability GPUs, HDRP MSAA, and performance are unverified. | General materials, Unity/Player behavior, image quality, and performance under MSAA require testing. |
+| TAA / temporal history | Unsupported | TAA is disabled during view rendering and restored afterward. Independent per-view temporal history is not provided. |
+| SSAO / SSGI / SSR | HDRP SSGI/SSR temporarily suppressed during Quilt rendering | The HDRP adapter's default override disables these only during Quilt views and restores them when the scope ends. URP and other configurations are unverified. |
+| Fog / Volumetric Fog / Clouds | HDRP volumetric effects temporarily suppressed during Quilt rendering | HDRP volumetric fog/clouds are disabled only during Quilt views. Normal Fog and Sky are preserved. |
+| Depth of Field / Auto Exposure | Limited Depth of Field checks; HDRP Auto Exposure temporarily converted to a shared Fixed EV | HDRP defaults to EV 12 and uses the original EV if the stack is Fixed. URP Auto Exposure is unverified. |
 
-今回の変更でcamera authoring、Quilt playback、Mono AudioRenderer recordingを追加しました。Camera authoringのDX12 targeted test/static reviewはPASSですが、Scene GUI interactive dragは未実測です。Playback safetyの12 scenariosは個別PASS、Core CPU boundary testもPASS。隔離DX12 official Bridge fixtureで事前生成7680x4320/8x6 PNGの静止保持/Pause/Resumeと3枚・1fps連番を送り、3 submit/0 skipped、Ready generation維持、lease解放、pending 0のplayback body gateを確認しました。一方Editor終了時にUnity.dll offset 0x44383dfのアクセス違反（exit code -1073741819）があり、自然終了gateは未合格です。これは48 camera live render/実機表示ではありません。限定Editor reload probeではserialized playback recovery recordと4x4 RenderTexture referenceの維持、post-reload fence/readback、test-only handoffを確認しましたが、production shutdown ordering/natural exitは未証明です。Audio fake suite 6/6とactual audio/legacy silent 8 casesはfocused rerun後に全件個別PASS（合計14 cases）。Mono URP/HDRP録画、Pause/Resume、stop/disable、AudioSource/scheduled clip保全を確認しました。Native Bridge audio deliveryとsample-accurate frame alignmentは未実測です。検証実行時の基準revisionは4230c4cです。最終integration revisionは未確定です。
+The current change adds camera authoring, Quilt playback, and Mono AudioRenderer recording. The Camera Authoring DX12 targeted test and static review passed, but interactive Scene GUI dragging is unmeasured. The 12 Playback safety scenarios passed individually, as did the Core CPU boundary test. An isolated DX12 official Bridge fixture sent a pre-generated 7680x4320/8x6 PNG with still-image hold/Pause/Resume and a three-frame, 1 fps sequence. The playback body gate confirmed three submissions, zero skipped, preserved Ready generation, released lease, and pending 0. However, the Editor exited with an access violation at Unity.dll offset `0x44383df` (exit code `-1073741819`), so the natural-exit gate did not pass. This does not demonstrate live 48-camera rendering or physical display. A limited Editor reload probe confirmed retention of the serialized playback recovery record and 4x4 RenderTexture reference, post-reload fence/readback, and test-only handoff; it does not prove production shutdown ordering or natural exit. The Audio fake suite passed 6/6 and the actual audio/legacy silent cases each passed after a focused rerun (14 cases total). Mono URP/HDRP recording, Pause/Resume, stop/disable, and preservation of AudioSource/scheduled clips were confirmed. Native Bridge audio delivery and sample-accurate frame alignment were not measured. The validation baseline revision was 4230c4c. The final integration revision is undetermined.
 
-## Quilt保存と録画
+## Quilt Capture and Recording
 
-| 機能 | 状態 | 実測範囲と制約 |
+| Feature | Status | Measured scope and limitations |
 | --- | --- | --- |
-| Camera framing / focus / orbit / cursor | 今回の変更で実装、DX12 targeted test + static review | focus距離設定、pivot保持orbit、既定OFFの3D cursorを確認。Scene GUI direct dragは未実測。 |
-| Quilt file playback | Core実装。隔離D3D12 official Bridge playback fixtureのbody gate限定実測 | 事前生成7680x4320/8x6 PNGの静止保持/Pause/Resumeと3枚1fps sequenceを確認。sequence 3 submit/0 skipped、Ready generation維持、lease解放、pending 0。Unity Editor終了時にUnity.dll access violation、exit code -1073741819で終了gate未合格。48 camera live renderと実機表示は未測定。Playback safety 12 scenariosは個別PASS。 |
-| AudioRenderer recording | 今回の変更でWindows Editor Mono opt-inを実装、fakeとactual integration限定実測 | Fake suite 6/6 PASS。Actual audio/legacy silent casesは初回7/8後、test-only fixのfocused 1/1を含め全8 cases individually PASS。URP/HDRP Quilt、Pause/Resume、Stop/disable、playing/scheduled AudioSource保全を確認。Stereo captureはunsupported; Native Bridge outputとper-frame sample-accurate alignmentは未検証。 |
-| 静止Quilt PNGとmetadata | main実装済み、D3D11とDX12 fake-outputで限定実測 | Quilt PNG、JSON sidecar、中央view PNGを保存。既存D3D11 URP/HDRP PlayMode各2/2。DX12 Core smokeとURP/HDRP各1 capture testでcentral metadata/view mappingを確認し、実URP recording-to-MP4 E2Eも1/1 PASS。Bridge transport/実機保存は未検証。 |
-| Quilt PNG連番 | main実装済み、D3D11/DX12 fake-outputで限定実測 | Recorder suiteで10/25 fps各3枚、URP 1〜240 fpsの開始/停止と時間復元を確認。DX12 URP/HDRP capture testではPause/Resumeを確認し、実URP DX12 recordingから無音MP4へのE2Eも3 frame/30fpsで1/1 PASS。別の隔離DX12 official Bridge playback fixtureでは3枚・1fpsのpre-rendered PNG sequence body gateがPASSしたが、Unity終了gateはaccess violationで未合格。 |
-| 中央2D PNG | 実装済み、DX12 fake-output限定実測 | 完成quiltの中央論理viewを保存し、sidecar/mappingをURP/HDRP testで確認。実Bridge中の保存と実機表示は未検証。 |
-| 無音MP4 export | main実装済み。fake process suite、合成CPU smoke、実録画E2Eを限定確認 | Synthetic 64x48 8x6/48-view PNG 3枚の30fps exportに加え、実URP DX12 QuiltRecorderから256x192 4x2/8-view PNG 3枚を30fps H.264/yuv420pへ変換するE2E 1/1 PASS。Native/Bridgeなし。manual Editor-window操作と実機出力は未確認。 |
-## UI とカメラ
+| Camera framing / focus / orbit / cursor | Implemented in the current change; DX12 targeted test and static review | Confirmed focus-distance settings, orbit that preserves the pivot, and a 3D cursor that is OFF by default. Direct Scene GUI dragging is unmeasured. |
+| Quilt file playback | Core implementation; playback body gate measured in an isolated D3D12 official Bridge fixture | Checked still-image hold/Pause/Resume for a pre-generated 7680x4320/8x6 PNG and a three-frame, 1 fps sequence. Sequence had three submissions/zero skipped, preserved Ready generation, released lease, and pending 0. Unity Editor exited with a Unity.dll access violation, code `-1073741819`; the exit gate did not pass. Live 48-camera rendering and physical display are unmeasured. The 12 Playback safety scenarios passed individually. |
+| AudioRenderer recording | Windows Editor Mono opt-in implemented in the current change; limited fake and actual integration measurements | Fake suite passed 6/6. Actual audio/legacy silent cases all passed individually after the initial 7/8 run and a focused test-only fix (8 cases total). Confirmed URP/HDRP Quilt recording, Pause/Resume, Stop/disable, and preserving playing/scheduled AudioSources. Stereo capture is unsupported; Native Bridge output and per-frame sample-accurate alignment are unverified. |
+| Still Quilt PNG and metadata | Implemented on main; limited D3D11 and DX12 fake-output measurements | Saves Quilt PNG, JSON sidecar, and center-view PNG. Existing D3D11 URP/HDRP PlayMode tests passed 2/2 each. DX12 Core smoke and one capture test per URP/HDRP confirmed center metadata/view mapping; an actual URP recording-to-MP4 E2E also passed 1/1. Bridge transport and saving from a physical device are unverified. |
+| Quilt PNG sequence | Implemented on main; limited D3D11/DX12 fake-output measurements | Recorder suite confirmed three images each at 10/25 fps and time restoration after 1–240 fps start/stop in URP. DX12 URP/HDRP capture tests checked Pause/Resume. An actual URP DX12 recording-to-silent-MP4 E2E passed 1/1 with three frames at 30 fps. Separately, a pre-rendered three-image, 1 fps sequence passed the body gate in an isolated DX12 official Bridge playback fixture; the Unity exit gate failed with an access violation. |
+| Center-view 2D PNG | Implemented; measured only with DX12 fake output | Saves the center logical view of the completed Quilt; sidecar/mapping checked in URP/HDRP tests. Saving during actual Bridge output and physical display are unverified. |
+| Silent MP4 export | Implemented on main; limited fake-process suite, synthetic CPU smoke, and actual recording E2E | In addition to synthetic export of three 64x48 8x6/48-view PNGs at 30 fps, an E2E passed 1/1 converting three 256x192 4x2/8-view PNGs from an actual URP DX12 QuiltRecorder recording to 30 fps H.264/yuv420p. No Native/Bridge was used. Manual Editor-window operation and physical output are unverified. |
 
-| 機能 | 状態 | 実測範囲と制約 |
+## UI and Camera
+
+| Feature | Status | Measured scope and limitations |
 | --- | --- | --- |
-| uGUI World Space | 限定実測 | 統合 fixture で合格。入力、複雑なCanvas、深度競合は未検証。 |
-| uGUI Screen Space Camera | 限定実測 | 統合 fixture で合格。cameraごとのviewport、入力は未検証。 |
-| uGUI Screen Space Overlay | 制約あり | 通常画面のOverlayは自動Quilt capture対象ではない。各viewと同じdepthで合成する方式は未検証。 |
-| UI Toolkit target texture | 限定実測 | Unity 6.6 targetTexture fixture で合格。ray map、DPI、EventSystem、入力は未検証。 |
-| Camera.Render | 非対応 | SRP経路では使用しない。Coreは `useRenderRequests=false` を拒否する。 |
-| SDK RenderRequest | 限定実測 | SRPでは Standard RenderRequest を必須とし、pipeline adapter/guardで検証する。1 CameraでN回要求するコストは残る。 |
-| URP camera stack | 非対応 | Base cameraのみ。Overlay camera stackはGuardが拒否。 |
+| uGUI World Space | Measured in a limited scope | Passed in an integration fixture. Input, complex Canvas, and depth conflicts are unverified. |
+| uGUI Screen Space Camera | Measured in a limited scope | Passed in an integration fixture. Per-camera viewport and input are unverified. |
+| uGUI Screen Space Overlay | Constrained | Normal-screen Overlay is not automatically included in Quilt capture. Compositing at the same depth as each view is unverified. |
+| UI Toolkit target texture | Measured in a limited scope | Passed in a Unity 6.6 targetTexture fixture. Ray mapping, DPI, EventSystem, and input are unverified. |
+| Camera.Render | Unsupported | Not used in the SRP path. Core rejects `useRenderRequests=false`. |
+| SDK RenderRequest | Measured in a limited scope | SRP requires Standard RenderRequest and validates it in the pipeline adapter/guard. The cost of N requests from one Camera remains. |
+| URP camera stack | Unsupported | Base camera only. The Guard rejects an Overlay camera stack. |
 
-## SRP拡張、XR、特殊経路
+## SRP Extensions, XR, and Special Paths
 
-| 機能 | 状態 | 実測範囲と制約 |
+| Feature | Status | Measured scope and limitations |
 | --- | --- | --- |
-| URP Renderer Feature / Render Graph | 限定実測 | 検証用marker passで8視点の差分と8回実行を確認。一般のresource lifetime、pass順、camera filteringは未検証。 |
-| HDRP Custom Pass / Render Graph | 限定実測 | 検証用marker passで8視点の差分と8回実行を確認。一般のCustom Pass camera filteringとresource管理は未検証。 |
-| Custom post-processing | 調査対象 | view間の履歴共有と順序は未検証。 |
-| XR single-pass / multipass | 未検証 | XRのstereo viewとquilt gridは別モデル。 |
-| DXR ray tracing / HDRP path tracing | 未検証 | ray/path tracingの履歴とN回render requestを保証しない。 |
-| D3D12 Bridge Worker / Vulkan / Metal output | D3D12はWindows Bridge WorkerのEditor Play/Player経路に対応。VulkanとMetalは対象外または未検証 | D3D12 Workerは同一GPU上のD3D11 workerとGPU資源を共有する。Legacy DirectはD3D11のみ。 |
+| URP Renderer Feature / Render Graph | Measured in a limited scope | A validation marker pass confirmed differences across eight views and eight executions. General resource lifetime, pass order, and camera filtering are unverified. |
+| HDRP Custom Pass / Render Graph | Measured in a limited scope | A validation marker pass confirmed differences across eight views and eight executions. General Custom Pass camera filtering and resource management are unverified. |
+| Custom post-processing | Under investigation | Shared history and ordering across views are unverified. |
+| XR single-pass / multipass | Unverified | XR stereo views and a Quilt grid are different models. |
+| DXR ray tracing / HDRP path tracing | Unverified | History behavior and N render requests are not guaranteed. |
+| D3D12 Bridge Worker / Vulkan / Metal output | D3D12 supports the Windows Bridge Worker Editor Play/Player path. Vulkan is out of scope; Metal is unverified. | D3D12 Worker shares GPU resources with a D3D11 worker on the same GPU. Legacy Direct is D3D11 only. |
 
-## SRP と GRD の注意点
+## SRP and GRD Notes
 
-CoreはSRPで標準 RenderRequest を使います。`useRenderRequests=false` はSRP adapter経路で拒否されます。URPはBase camera、Volume、Renderer Feature、camera stateをviewごとに検証します。HDRPはLinear必須です。adapterはquilt scope中に一時Volume overrideを使い、Motion Blur、SSR、SSGI、volumetric fog/cloudを抑えてAuto Exposureを全view共通Fixed EVにします。scope外のMainCameraとVolume設定は保たれます。
+Core uses standard RenderRequest in SRP. `useRenderRequests=false` is rejected in the SRP adapter path. URP validates Base camera, Volume, Renderer Feature, and Camera state per view. HDRP requires Linear. During the Quilt scope, adapters use temporary Volume overrides to suppress Motion Blur, SSR, SSGI, volumetric fog/clouds, and convert Auto Exposure to a shared Fixed EV for all views. The Main Camera and Volume settings outside that scope are preserved.
 
-GRDの機能有無はpipelineの公式対応と別に検証します。現在の性能証跡はURP normal multithreaded PlayerのMeshRendererに限定され、HDRPやVFX、ParticleSystem、SkinnedMeshRenderer、Terrain、DecalのGRD性能を意味しません。
+GRD availability is validated separately from official pipeline support. Current performance evidence is limited to MeshRenderer in a normal multithreaded URP Player; it does not represent GRD performance for HDRP, VFX, ParticleSystem, SkinnedMeshRenderer, Terrain, or Decal.
 
-公式資料:
+Official references:
 
 - [Unity 6 render pipeline feature comparison](https://docs.unity3d.com/6000.6/Documentation/Manual/render-pipelines-feature-comparison.html)
 - [VisualEffect API](https://docs.unity3d.com/6000.6/Documentation/ScriptReference/VFX.VisualEffect.html)

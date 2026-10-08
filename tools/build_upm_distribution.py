@@ -167,7 +167,26 @@ def build(kind: str, target: Path) -> None:
         "This package is generated from the ViewWeave repository. The bundled native bridge "
         "artifact and its source hashes are documented in ViewWeave/Bridge/Plugins/native-provenance.json.\n",
     )
-    shutil.copy2(ROOT / "docs/THIRD_PARTY_NOTICES.md", target / "THIRD_PARTY_NOTICES.md")
+    notices_path = target / "THIRD_PARTY_NOTICES.md"
+    shutil.copy2(ROOT / "docs/THIRD_PARTY_NOTICES.md", notices_path)
+    notices_text = notices_path.read_text(encoding="utf-8")
+    notices_text = notices_text.replace(
+        "[Japanese](ja/THIRD_PARTY_NOTICES.md)",
+        "[Japanese](THIRD_PARTY_NOTICES.ja.md)",
+    )
+    write_text(notices_path, notices_text)
+    notices_ja_source = ROOT / "docs/ja/THIRD_PARTY_NOTICES.md"
+    notices_ja_path = target / "THIRD_PARTY_NOTICES.ja.md"
+    notices_ja_text = notices_ja_source.read_text(encoding="utf-8")
+    notices_ja_text = notices_ja_text.replace(
+        "[English](../THIRD_PARTY_NOTICES.md)",
+        "[English](THIRD_PARTY_NOTICES.md)",
+    )
+    write_text(notices_ja_path, notices_ja_text)
+    write_file_meta(
+        notices_ja_path.with_name(notices_ja_path.name + ".meta"),
+        kind + ":root:THIRD_PARTY_NOTICES.ja.md",
+    )
     write_text(
         target / "README.md",
         "# ViewWeave " + kind.upper() + " Git package\n\n"

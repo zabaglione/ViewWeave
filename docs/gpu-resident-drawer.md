@@ -1,35 +1,37 @@
-# GPU Resident Drawerの検証状況
+[Japanese](ja/gpu-resident-drawer.md)
 
-本SDKでは、Unity 6.6のGPU Resident Drawer（GRD）を独自multiview高速化とは別に検証します。URPでは、旧LateUpdate自動描画とGRDを組み合わせた条件で移動反映の遅延を確認し、現在の自動描画タイミングで修正しました。これは旧描画タイミングとの組み合わせに関する結果であり、GRD自体の一般的な遅延を示すものではありません。GRDのdraw call最適化と、Bridge interopのスレッド停止は別問題です。GRD有効化による速度優位やBridge停止の解決は確認していません。
+# GPU Resident Drawer Validation Status
 
-Unity `6000.6.4f1`、Windows D3D11でEditor GRD/VolumeStack回帰27/27、URP通常thread PlayerのGRD OFF/ON・1/8/48視点6ケースを確認しました。HDRP PlayerでもPreview、Balanced、NativeのGRD OFF/ON各6条件を48 viewで確認し、GRD ONの76 renderer、3,648 visible instancesを記録しました。これは描画正確性の確認であり、HDRP性能の測定ではありません。別の固定条件の性能比較では48視点CPU submission p50がGRD Off 17.3311 ms、On 15.0732 msで、Onが約13.0%低くなりました。GPU時間とrender thread時間は欠測で、一般的な速度優位は未確定です。MetalとHDRPのGRD性能は未検証です。Bridge Worker通常threadは別のGPU preview継続確認を行いましたが、GRDとの組み合わせた性能値はありません。
+This SDK evaluates Unity 6.6 GPU Resident Drawer (GRD) separately from custom multiview optimization. In URP, delayed movement updates were observed when GRD was combined with the former LateUpdate-based automatic rendering path; the issue was corrected for the current automatic-render timing. This finding applies to the interaction with the former render timing and does not indicate a general delay in GRD itself. GRD draw-call optimization and Bridge interop thread shutdown are separate issues. Neither a performance advantage from enabling GRD nor a fix for Bridge shutdown has been confirmed.
 
-## Unity公式機能との関係
+With Unity `6000.6.4f1` on Windows D3D11, Editor GRD/VolumeStack regression tests passed 27/27. The URP normal-thread Player was checked in 6 cases: GRD OFF/ON at 1/8/48 views. The HDRP Player was also checked at 48 views for Preview, Balanced, and Native with GRD OFF/ON, recording 76 renderers and 3,648 visible instances with GRD ON. These checks establish rendering correctness, not HDRP performance. In a separate fixed-condition performance comparison, 48-view CPU submission p50 was 17.3311 ms with GRD Off and 15.0732 ms with GRD On, about 13.0% lower with On. GPU and render-thread time are missing, so a general performance advantage remains undetermined. Metal and HDRP GRD performance are untested. The Bridge Worker normal-thread path had a separate GPU-preview continuity check, but no performance measurement combining it with GRD.
 
-最新のGRD/VolumeStack回帰は27/27 passed、skip 0です。URP/HDRPのvalidation stack reuseとMotion Blur toggleを含みます。これは正確性ゲートであり、速度保証ではありません。Player benchmarkの固定条件と実測値は [performance.md](performance.md) に記載します。paired tableはVolumeStack cache変更後の条件を含みますが、キャッシュ変更単独の因果やGPU速度を示すものではありません。
+## Relationship to Unity's Official Feature
 
-Unity 6.6の選択表では、GRDとBatchRendererGroup（BRG）はmultithreaded対応で、SRP Batcherと併用できます。GRDはMeshRendererのデータをGPU常駐させ、BRG、GPU instancing、CPU並列culling jobsを使う仕組みです。48視点を自動的に1 drawへ変換する機能ではなく、Camera APIを`Task.Run`で実行できる仕組みでもありません。
+The latest GRD/VolumeStack regression suite passed 27/27 with 0 skipped. It includes URP/HDRP validation stack reuse and Motion Blur toggling. This is a correctness gate, not a performance guarantee. Fixed conditions and Player benchmark measurements are in [performance.md](performance.md). The paired table includes conditions after the VolumeStack cache change, but does not establish causality for the cache change alone or GPU performance.
 
-URP 6.6ではForward+とDeferred+の両方を対象候補とします。使用するRendererがいずれかであること、SRP Batcherを有効化し、GRDのInstanced Drawingを使い、BRG VariantsをKeep All、static batchingを無効化することを確認します。compute対応はD3D11、D3D12、Vulkan、Metalを機種ごとに確認します。これはWindows D3D11 Directに限定したBridge経路とは別の条件です。
+Unity 6.6's selection guide lists both GRD and BatchRendererGroup (BRG) as multithreaded and compatible with the SRP Batcher. GRD keeps MeshRenderer data resident on the GPU and uses BRG, GPU instancing, and CPU-parallel culling jobs. It does not automatically combine 48 views into one draw, nor does it allow Camera APIs to run in `Task.Run`.
 
-HDRP 17.6にもGRDがあります。HDRP AssetのInstanced DrawingとBRG Keep All、compute対応、MeshRenderer条件を確認します。
+For URP 6.6, both Forward+ and Deferred+ are candidates. Confirm that the active Renderer uses one of these paths, enable the SRP Batcher and GRD Instanced Drawing, set BRG Variants to Keep All, and disable static batching. Validate compute support per device for D3D11, D3D12, Vulkan, and Metal. These conditions are separate from the Bridge path limited to Windows D3D11 Direct.
 
-参考資料: [Unityの方式選択](https://docs.unity3d.com/6000.6/Documentation/Manual/optimizing-draw-calls-choose-method.html)、[URP GRD](https://docs.unity3d.com/6000.6/Documentation/Manual/urp/gpu-resident-drawer.html)、[URP互換オブジェクト](https://docs.unity3d.com/6000.6/Documentation/Manual/urp/make-object-compatible-gpu-rendering.html)、[URP GRD性能](https://docs.unity3d.com/6000.6/Documentation/Manual/urp/gpu-resident-drawer-performance.html)、[HDRP 17.6 GRD](https://docs.unity3d.com/Packages/com.unity.render-pipelines.high-definition@17.6/manual/gpu-resident-drawer.html)。
+HDRP 17.6 also has GRD. Check Instanced Drawing and BRG Keep All in the HDRP Asset, compute support, and MeshRenderer conditions.
 
-## 適用条件と制約
+References: [Unity's method selection](https://docs.unity3d.com/6000.6/Documentation/Manual/optimizing-draw-calls-choose-method.html), [URP GRD](https://docs.unity3d.com/6000.6/Documentation/Manual/urp/gpu-resident-drawer.html), [URP compatible objects](https://docs.unity3d.com/6000.6/Documentation/Manual/urp/make-object-compatible-gpu-rendering.html), [URP GRD performance](https://docs.unity3d.com/6000.6/Documentation/Manual/urp/gpu-resident-drawer-performance.html), [HDRP 17.6 GRD](https://docs.unity3d.com/Packages/com.unity.render-pipelines.high-definition@17.6/manual/gpu-resident-drawer.html).
 
-対象はMeshRendererとDOTS対応shaderです。MaterialPropertyBlock、per-instance描画callback、プローブなどには制約があります。視点の描画中に対象オブジェクトを動かさない条件を確認します。フレーム間の移動を一律禁止する意味ではありません。
+## Applicability Conditions and Limitations
 
-SkinnedMeshRenderer、ParticleSystemRenderer、uGUI、UI ToolkitはGRDのMeshRenderer対象とは別経路です。標準描画fallbackとの共存、画質、生成・破棄、透明のsortを検証します。GRD自体はdepth interpolationではないため、透明を一律拒否するとは決めません。
+GRD applies to MeshRenderer and DOTS-compatible shaders. It has constraints for MaterialPropertyBlock, per-instance rendering callbacks, and probes. Confirm that target objects are not moved while their views are being rendered. This does not mean that movement between frames is universally prohibited.
 
-GRDはCPU draw bound、多数の同一meshとvariantで効果が期待されます。GPU boundでは追加GPU負荷により遅くなる場合があります。比較はGRD OFF/ONと実際のcounter・Burst worker・Profilerで行い、toggleだけでは適用成功としません。
+SkinnedMeshRenderer, ParticleSystemRenderer, uGUI, and UI Toolkit follow paths separate from GRD's MeshRenderer support. Validate coexistence with standard rendering fallback, image quality, creation/destruction, and transparent sorting. GRD itself is not depth interpolation, so transparency is not rejected universally.
 
-## 本SDKでの仮説と検証ゲート
+GRD may help when CPU draw submission is the bottleneck and many instances share a mesh and variant. It can be slower when GPU-bound due to added GPU work. Compare GRD OFF/ON using actual counters, Burst workers, and the Profiler; a toggle alone does not prove successful applicability.
 
-17.6のローカル依存コードから、Coreの`GPUResidentDrawer.InsertIntoPlayerLoop`が`PostLateUpdate.FinishFrameRendering`直前に`WorldProcessor.Update`を行うことを確認しました。旧来のLateUpdate自動描画ではこの更新より前に描画されるため、URPの8視点・GRD有効条件で動的対象の移動が反映されない結果を確認しました。現在の自動描画は`PostLateUpdate.FinishFrameRendering`直後にスケジュールされます。`renderInLateUpdate`は互換propertyとして残りますが、LateUpdateでの自動描画には使用しません。
+## ViewWeave Hypotheses and Validation Gates
 
-Editorの`EditorFrameUpdate`は同じCamera IDの再登場をframe境界と推定するため、48回の`StandardRequest`でper-view処理が増える可能性があります。PlayerとEditorを分けて計測します。URPのUniversalRendererRenderGraphがcamera entity IDを使うocclusion設定を参照するため、1 Camera 48視点ではocclusion view履歴共有の可能性も仮説として扱います。
+Inspection of the local 17.6 dependency confirmed that Core's `GPUResidentDrawer.InsertIntoPlayerLoop` calls `WorldProcessor.Update` immediately before `PostLateUpdate.FinishFrameRendering`. The former LateUpdate automatic render ran before this update; under an eight-view URP condition with GRD enabled, movement of dynamic objects was not reflected. The current automatic render is scheduled immediately after `PostLateUpdate.FinishFrameRendering`. `renderInLateUpdate` remains as a compatibility property, but is no longer used for automatic rendering in LateUpdate.
 
-初期試験は、A:通常SRP・GRD OFF、B:GRD ON・occlusion OFF、C:履歴安全確認後のGRD ON・occlusion ONです。Bridge出力を切り離し、1/8/48視点、静止同一mesh多数、異なるmesh、動的spawn/despawn、移動、遮蔽開閉、影、transparent、Skinned、particles、UI、postprocessを比較します。現時点ではURPのBeforeFinish/AfterFinish条件と48視点のGRD ON/OFFを確認済みです。速度比較は別途、実際のcounter・Burst worker・Profilerで行い、toggleだけでは適用成功としません。最終確認はUnity `6000.6.4f1`のWindows D3D11 Editor batchによる描画正確性チェックです。WindowsのURP Forward+/Deferred+とHDRP、通常graphicsとDirectを分け、Mac Metalは別hostで検証します。
+The Editor's `EditorFrameUpdate` infers a frame boundary when the same Camera ID reappears, so per-view processing may increase across 48 `StandardRequest` calls. Measure Player and Editor separately. Because URP's `UniversalRendererRenderGraph` references occlusion settings using a camera entity ID, shared occlusion view history across 48 views from 1 Camera is also a hypothesis.
 
-受入条件は、動的更新時点が正しいこと、視点間cullingが正当であること、callbackが1 frame 1回のsimulationを保つこと、誤消失がないことです。高解像度、独自multiview、reprojectionの優先度はGRD試験後に判断します。M1のBridge修正とは同時進行でき、依存しません。Unity依存forkや非公開メソッドの反射呼び出しは採用しません。
+Initial test cases are A: normal SRP with GRD OFF; B: GRD ON with occlusion OFF; and C: GRD ON with occlusion ON after history safety is confirmed. Disconnect Bridge output. Compare 1/8/48 views, many identical static meshes, different meshes, dynamic spawn/despawn, movement, opening/closing occlusion, shadows, transparency, skinned meshes, particles, UI, and post-processing. The current URP BeforeFinish/AfterFinish timing and GRD ON/OFF at 48 views have been checked. Measure performance separately using actual counters, Burst workers, and the Profiler; a toggle alone does not prove applicability. Final validation is a rendering-correctness check using Unity `6000.6.4f1` Windows D3D11 Editor batch. Separate Windows URP Forward+/Deferred+ and HDRP, normal graphics and Direct, and validate Mac Metal on a separate host.
+
+Acceptance requires correct dynamic-update timing, valid culling across views, callbacks preserving one simulation per frame, and no false object disappearance. Decide the priority of high resolution, custom multiview, and reprojection after GRD testing. This can proceed alongside the M1 Bridge fix and does not depend on it. Do not adopt a Unity dependency fork or reflection calls to non-public methods.

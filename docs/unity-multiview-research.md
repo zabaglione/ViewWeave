@@ -1,47 +1,49 @@
-# Unity多視点描画の最適化事例
+[Japanese](ja/unity-multiview-research.md)
 
-調査日: 2026-10-07
+# Unity Multiview Rendering Optimization Examples
 
-調査対象は、Unityの複数視点描画とLooking Glass向けQuilt生成です。今回確認した資料の範囲では、URP/HDRPの通常マテリアル、VFX、透明表現、Volumeを保ったまま真の48視点を高速化する、公開済みUnity実装は見つかりませんでした。以下では、Unityで利用できる機能、研究試作、通常のRender Pipelineを置き換える研究を区別します。
+Research date: 2026-10-07
 
-## Unityの機能・実装例
+This research covers Unity multiview rendering and Quilt generation for Looking Glass displays. In the sources reviewed, no published Unity implementation was found that accelerates true 48-view rendering while preserving ordinary URP/HDRP materials, VFX, transparency, and Volumes. The examples below distinguish Unity features, research prototypes, and research that replaces the normal Render Pipeline.
 
-| 事例 | 公開内容 | 48視点/HDRPへの読み替え |
+## Unity Features and Implementation Examples
+
+| Example | Published information | Implications for 48 views/HDRP |
 | --- | --- | --- |
-| Looking Glass Plugin 4.0 | 公式は3.x比2〜4倍を掲示。公開4.0 alpha資料ではURP/Render Graph、深度による視点補間、独自Core/URP packageを説明。 | HDRP未対応。透明物とVFXに条件がある。性能表示の比較条件と同じ48視点シーンでの結果は未確認。既存HDRPへそのまま導入する候補ではない。 |
-| Unity Single Pass Instanced | XRの左右2眼をインスタンス化し、同じシーン描画準備のCPU負荷を抑えるUnity機能。 | 2眼XR向けであり、48個の別視点を1回の同等描画に変える機能ではない。 |
-| Unity XR Display Provider / DisplayXR | UnityのProvider経路は既存Camera姿勢から複数viewをRender Passへ渡す統合設計に使える。DisplayXR ADR-007は少数viewをXR Provider、多数viewをQuilt経路に分ける案をAcceptedとして記録。 | 通常のScene Objectを既存Cameraから表示する統合例として有望。ただしDisplayXR資料のQuilt経路は未実装で、HDRP 48視点の動作・性能実績ではない。Unity Single Pass Instanced自体は2眼向け。ViewWeaveでの採用・試作はユーザー方針により保留。 |
-| DirectX 12 Split Graphics Jobs | Unityは特定構成でCPU latency最大40%低下を報告。Unity 6のDX12ではEditorもGraphics Jobs設定に対応する。 | 40%はFPS向上率でもViewWeaveの予測でもない。現プロジェクトのPlayerではGraphics Jobs有効だが、Editorの実効スレッドモードは未確認。Editor/Playerそれぞれの実効状態を先に測る。 |
-| HDRP Shadow Update Mode | HDRP 17.6はライトのシャドウ更新を毎フレーム、On Enable、On Demandなどに制御できる。 | 同じsimulation状態でSpot/PointライトのshadowをQuiltごとに1回更新し、全視点で使えるか試験候補。動的遮蔽物を各frameで反映した上で、座標cullingと影の正しさを確認する。Directional cascadeに一般化しない。未検証。 |
-| GPU Resident Drawer | HDRP/URPで対応RendererをGPU側で処理する機能。 | ViewWeaveのHDRP試験プロジェクトは既に有効。単にONにするだけの改善余地は残っていない。 |
+| Looking Glass Plugin 4.0 | The official product claims 2–4x over 3.x. Public 4.0 alpha material describes URP/Render Graph, depth-based view interpolation, and dedicated Core/URP packages. | HDRP is unsupported. Transparency and VFX have conditions. Measurement conditions for the performance claim and results for the same 48-view scene are unknown. It is not a direct candidate for an existing HDRP project. |
+| Unity Single Pass Instanced | Unity feature that instantiates the two XR eyes and reduces CPU load for shared scene-render preparation. | Intended for two-eye XR; it does not turn 48 distinct views into one equivalent draw. |
+| Unity XR Display Provider / DisplayXR | Unity's Provider path can pass views derived from an existing Camera pose into Render Passes as an integration design. DisplayXR ADR-007 records an Accepted proposal to use an XR Provider for a small number of views and a dedicated Quilt path for many views. | Promising as an integration example for displaying ordinary Scene Objects from an existing Camera. However, the Quilt path in DisplayXR material is unimplemented and is not evidence of HDRP 48-view behavior or performance. Unity Single Pass Instanced itself is for two eyes. Adoption or prototyping in ViewWeave is on hold under the user's direction. |
+| DirectX 12 Split Graphics Jobs | Unity reports up to 40% lower CPU latency for specific configurations. Unity 6 DX12 also supports the Graphics Jobs setting in the Editor. | 40% is neither an FPS increase nor a ViewWeave prediction. Graphics Jobs is enabled in the current project's Player, but the Editor's effective threading mode has not been checked. Measure the effective state separately in Editor and Player first. |
+| HDRP Shadow Update Mode | HDRP 17.6 can control light-shadow updates as Every Frame, On Enable, On Demand, and other modes. | A candidate test is to update Spot/Point shadows once per Quilt in the same simulation state and reuse them across views. First verify dynamic occluders are reflected each frame, and validate bounds culling and shadow correctness. Do not generalize to directional cascades. Untested. |
+| GPU Resident Drawer | Feature that processes supported renderers on the GPU in HDRP/URP. | It was already enabled in the ViewWeave HDRP test project. There is no remaining opportunity from simply turning it on. |
 
-Unity XR Providerは既存Cameraからview pose/projectionを受け渡す統合設計に使えます。Provider経路への変更は、OpenXR runtimeの自作を意味しません。XR culling pass共有APIもありますが、48-view union cullingの正しさや性能は別途検証が必要です。Unity XR Originはtracking空間を使う場合の座標補助であり、非追跡のライトフィールド表示に必須ではありません。現在のViewWeaveは専用cameraから48個のStandardRequestを送り、通常のMain Camera画像を拡大している方式ではありません。現在の実装・検証範囲、DisplayXRの公開設計、XR Provider試作順は[XR Display Provider調査](xr-provider-investigation.md)にまとめています。
+Unity XR Provider can pass view poses/projections from an existing Camera. Changing to a Provider path does not mean creating a custom OpenXR runtime. Unity XR also has a culling-pass sharing API, but correctness and performance of union culling across 48 views require separate validation. Unity XR Origin assists with coordinates when using a tracked space; it is not required for an untracked light-field display. ViewWeave currently sends 48 `StandardRequest` calls from a dedicated Camera; it does not upscale the ordinary Main Camera image. Current implementation and validation scope, public DisplayXR design, and the proposed XR Provider spike order are summarized in [XR Display Provider Investigation](xr-provider-investigation.md).
 
-Split Graphics JobsのCPU latency最大40%は[Unity 6の公式説明](https://unity.com/blog/unity-6-features-announcement)の値です。DX12でEditorが対応することは[DirectX 12改善資料](https://unity.com/blog/directx-12-improvements-in-unity-6)にあります。Editor Preferencesの設定とPlayer Settingsは別です。実効モードを読み取ってから、設定変更が意味を持つ環境だけ比較するのが安全です。今回の調査ではUnity APIから実効Graphics Threading Modeを取得する方法があることを確認していますが、ユーザーのEditorの実効値は未確認です。
+The maximum 40% CPU latency figure for Split Graphics Jobs is from [Unity 6's official announcement](https://unity.com/blog/unity-6-features-announcement). Editor support on DX12 is described in [DirectX 12 improvements](https://unity.com/blog/directx-12-improvements-in-unity-6). Editor Preferences and Player Settings are separate. Read the effective mode first and compare only environments where changing the setting is meaningful. This research confirmed that a Unity API can provide the effective Graphics Threading Mode, but did not confirm the effective mode in the user's Editor.
 
-## 研究として有望だが、そのまま統合できない例
+## Promising Research That Cannot Be Integrated As-Is
 
-| 研究 | 実測・実装 | ViewWeaveへの示唆と限界 |
+| Research | Measurement or implementation | Implications and limits for ViewWeave |
 | --- | --- | --- |
-| Image-Based Spatio-Temporal Interpolation (HPG 2025) | Unity URPで元画像・深度等を取得し、補間部は公開C++/CUDA実装。RTX 4090で1440pの補間処理約2ms。 | 48視点全体の描画時間ではなく補間部分の値。ボリューメトリック照明とCausticsは対象外。深度合成の小規模試験の参考。 |
-| CREAL STALF (2022) | Unity統合のライトフィールドHMD研究。1枚のカラー/深度画像から約100の近接視点を生成。 | 近眼・狭い視点間隔向けで、Looking Glassの広い視点範囲や表示品質へ数値を外挿できない。 |
-| Light Field Display Point Rendering (ACM TOG 2024) | Unityではなく独自OpenGL。共有点群で48視点を描き、RTX 3070で非最適化MVR比2〜8倍、Sponzaで38.92msから12.81msと報告。 | 通常のURP/HDRPマテリアル/VFX/Volume描画を保つ手法ではない。描画方式を置き換える研究プロトタイプとしての比較対象。 |
+| Image-Based Spatio-Temporal Interpolation (HPG 2025) | Captures source images/depth in Unity URP; interpolation is a public C++/CUDA implementation. Reports about 2 ms for interpolation at 1440p on RTX 4090. | This is interpolation time, not total rendering time for 48 views. Volumetric lighting and caustics are out of scope. A reference for a small depth-compositing experiment. |
+| CREAL STALF (2022) | Unity-integrated light-field HMD research. Generates about 100 nearby views from one color/depth image. | Intended for near-eye displays with narrow view spacing. The values cannot be extrapolated to the wide viewing range or image quality of a Looking Glass display. |
+| Light Field Display Point Rendering (ACM TOG 2024) | Independent OpenGL rather than Unity. Renders 48 views using shared point clouds and reports 2–8x versus non-optimized MVR on RTX 3070, and 38.92 ms to 12.81 ms on Sponza. | Does not preserve normal URP/HDRP materials, VFX, or Volume rendering. A comparison for research prototypes that replace the rendering method. |
 
-- [HPG 2025論文](https://onlinelibrary.wiley.com/doi/full/10.1111/cgf.70215) / [公開コード](https://github.com/DerThomy/ImageBasedSpatioTemporalInterpolation)
-- [CREAL STALF論文](https://sid.onlinelibrary.wiley.com/doi/full/10.1002/jsid.1112) / [技術資料](https://creal.com/app/uploads/2023/03/CREAL-light-field-rendering-2.pdf)
-- [Light Field Display Point Rendering論文](https://arxiv.org/html/2601.19901v1)
+- [HPG 2025 paper](https://onlinelibrary.wiley.com/doi/full/10.1111/cgf.70215) / [public code](https://github.com/DerThomy/ImageBasedSpatioTemporalInterpolation)
+- [CREAL STALF paper](https://sid.onlinelibrary.wiley.com/doi/full/10.1002/jsid.1112) / [technical material](https://creal.com/app/uploads/2023/03/CREAL-light-field-rendering-2.pdf)
+- [Light Field Display Point Rendering paper](https://arxiv.org/html/2601.19901v1)
 
-## ViewWeaveでの実測と次の比較
+## ViewWeave Measurements and Next Comparisons
 
-ユーザーのHDRP VFX Learning Templatesで行った48視点測定は、Native設定でEditor約9fps、GPU時間約88ms、CPU submission約103msでした。CPU submissionは描画準備・描画・コピーの壁時計時間で、Render ThreadやGPU待ちを含み得ます。CPUだけが原因とは断定できません。品質解像度を下げてもFPSはほぼ変わらず、24/12視点へ減らすと速度は上がりました。測定条件と注意点は[HDRP VFX性能記録](resumed-hdrp-vfx-performance.md)にあります。試験プロジェクトではGPU Resident Drawerが既にONでした。これはその試験設定での状態であり、全プロジェクトの保証ではありません。
+A 48-view measurement in the user's HDRP VFX Learning Templates recorded about 9 FPS in the Editor at Native settings, about 88 ms GPU time, and about 103 ms CPU submission. CPU submission is wall-clock time for render preparation, rendering, and copying; it may include Render Thread or GPU waits. CPU alone cannot be identified as the cause. Lowering quality resolution barely changed FPS, while reducing to 24/12 views increased speed. Conditions and limitations are in [HDRP VFX Performance Record](resumed-hdrp-vfx-performance.md). GPU Resident Drawer was already ON in the test project; that is specific to this test and is not a guarantee for all projects.
 
-優先する検証は次の順です。
+The next validation candidates are prioritized as follows:
 
-1. Split Graphics Jobsの実効Editor/Playerモードを読み、既にsplitなら比較対象から外す。
-2. 静的ローカルライトを使う最小シーンでHDRP Shadow Update Modeの結果・コストを比較する。
-3. 機能を保つ範囲で、共有できる視点準備処理を2視点試作し、CPU/GPU/end-to-endを個別計測する。
-4. 任意の近似モードとして、12/24視点の画像から48枚を深度合成する品質・速度比較を行う。これは真の48視点描画とは別の品質設定として扱う。
+1. Read the effective Editor/Player mode for Split Graphics Jobs; if already split, remove it from the comparison.
+2. Compare HDRP Shadow Update Mode output and cost in a minimal scene with static local lights.
+3. Prototype shared view-preparation work for two views while retaining features, and measure CPU, GPU, and end-to-end time separately.
+4. As an optional approximate mode, compare quality and speed when depth-compositing 48 images from 12/24 rendered views. Treat this as a separate quality setting from true 48-view rendering.
 
-これらは検証候補であり、今回の調査だけで速度向上を実証したものではありません。視点合成は透明VFX、遮蔽境界、反射、ボリューメトリック効果を含むシーンで品質の確認が必要です。
+These are candidates for validation; this research does not demonstrate a performance improvement. View synthesis requires image-quality checks in scenes with transparent VFX, occlusion boundaries, reflections, and volumetric effects.
 
-参照: [Unity Single Pass Instanced](https://docs.unity3d.com/6000.0/Documentation/Manual/SinglePassInstancing.html)、[HDRP 17.6 Shadow Update Mode](https://docs.unity3d.com/Packages/com.unity.render-pipelines.high-definition@17.6/manual/shadow-update-mode.html)、[HDRP GPU Resident Drawer](https://docs.unity3d.com/Packages/com.unity.render-pipelines.high-definition@17.6/manual/gpu-resident-drawer.html)。
+References: [Unity Single Pass Instanced](https://docs.unity3d.com/6000.0/Documentation/Manual/SinglePassInstancing.html), [HDRP 17.6 Shadow Update Mode](https://docs.unity3d.com/Packages/com.unity.render-pipelines.high-definition@17.6/manual/shadow-update-mode.html), [HDRP GPU Resident Drawer](https://docs.unity3d.com/Packages/com.unity.render-pipelines.high-definition@17.6/manual/gpu-resident-drawer.html).

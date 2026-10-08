@@ -1,21 +1,23 @@
+[日本語](ja/quilt-recording-audio.md)
+
 # Quilt PNG and audio recording
 
 ViewWeave can optionally record the Unity audio mix alongside a Quilt PNG sequence. Audio capture is opt-in; the existing `StartRecording(outputRoot, fps, frameCount)` API continues to create a silent PNG sequence. Call `StartRecordingWithAudio(...)` or choose **Start PNG Sequence + Audio** in **Window > ViewWeave > Quilt Capture** to request audio.
 
-この図は、選択可能な音声経路と保存物の対応を示します。音声を選ばない既存APIはPNG連番のみを作り、音声を含む選択では各Quilt frameとMono WAV sampleを対応付けて別ファイルへ保存します。
+The diagram shows the relationship between the optional audio path and its output files. The existing API without audio creates only a PNG sequence; when audio is selected, each Quilt frame is paired with Mono WAV samples stored in a separate file.
 
 ```mermaid
 flowchart LR
-    Select["Audio recordingを明示選択"] --> Check["Windows Editor Play / Monoを確認"]
-    Check --> Frame["Quilt frameを保存"]
-    Check --> Samples["AudioRenderer sampleを取得"]
+    Select["Explicitly select audio recording"] --> Check["Check Windows Editor Play / Mono"]
+    Check --> Frame["Save Quilt frame"]
+    Check --> Samples["Read AudioRenderer samples"]
     Frame --> Commit["PNG + sidecar + frame log"]
     Samples --> Commit
-    Commit --> Wave["別ファイル audio.wav"]
-    Silent["既存silent API"] --> PngOnly["PNG連番のみ"]
+    Commit --> Wave["Separate audio.wav file"]
+    Silent["Existing silent API"] --> PngOnly["PNG sequence only"]
 ```
 
-Mono設定はUnity project全体へ影響します。SDKは音声設定を変更しないため、Monoを使わない場合はsilent recordingを選びます。
+Mono settings affect the entire Unity project. The SDK does not change audio settings, so use silent recording if you do not want to switch to Mono.
 
 Audio capture is currently limited to Windows Editor Play mode and an already active Mono speaker configuration. ViewWeave checks the current configuration and rejects unsupported settings before starting. It never calls `AudioSettings.Reset` or changes the operating system or project audio configuration.
 

@@ -1,79 +1,81 @@
+[日本語](ja/graphics-backends.md)
+
 # Graphics backends
 
-ViewWeaveのgraphics backendは、Unityが生成したQuiltをnative transportへ渡すproducerと、Looking Glass Bridgeへ引き渡すconsumerを分離します。通常のmanaged Sessionが選ぶ経路と、実験中のnative経路は区別します。
+ViewWeave separates the producer that passes Unity-generated Quilts to native transport from the consumer that hands them to Looking Glass Bridge. The path selected by a regular managed Session is distinct from the experimental native path.
 
 ## Backend map
 
-| 経路 | Producer | Consumer | 状態 |
+| Path | Producer | Consumer | Status |
 | --- | --- | --- | --- |
-| Legacy Direct | Windows D3D11 | Windows D3D11 / official Bridge | 既存のWindows D3D11経路 |
-| Bridge Worker | Windows D3D11 | worker所有D3D11 / official Bridge | Windows Editor PlayとPlayerの通常経路 |
-| Bridge Worker on D3D12 | Windows D3D12 resource | 同じGPU上のD3D11 worker / official Bridge | GPU共有で渡す。画像CPU readbackなし |
-| Metal experiment | Unity Metal texture | official Bridge Metal API via IOSurface | native実験のみ。通常Sessionでは未対応、macOS native artifact未配布 |
-| Vulkan | なし | なし | 実装・対応なし |
+| Legacy Direct | Windows D3D11 | Windows D3D11 / official Bridge | Existing Windows D3D11 path |
+| Bridge Worker | Windows D3D11 | Worker-owned D3D11 / official Bridge | Regular Windows Editor Play and Player path |
+| Bridge Worker on D3D12 | Windows D3D12 resource | D3D11 Worker on the same GPU / official Bridge | GPU-shared; no CPU image readback |
+| Metal experiment | Unity Metal texture | Official Bridge Metal API via IOSurface | Native experiment only; unsupported in regular sessions; macOS native artifact not distributed |
+| Vulkan | None | None | Not implemented or supported |
 
-次図はサポート対象の通常Sessionと、独立したMetal実験を区別します。Metal枝は通常Sessionへ接続せず、Windowsのshutdown gateにも入りません。
+The diagram distinguishes the supported regular Session from the independent Metal experiment. The Metal branch does not connect to a regular Session or enter the Windows shutdown gate.
 
 ```mermaid
 flowchart TD
-    Session["通常managed Session"] --> Windows["Windows D3D11 / D3D12"]
+    Session["Regular managed Session"] --> Windows["Windows D3D11 / D3D12"]
     Windows --> Worker["Bridge Worker"]
     Windows --> Legacy["D3D11 Legacy Direct"]
-    Worker --> Bridge["公式Bridge runtime"]
+    Worker --> Bridge["Official Bridge runtime"]
     Legacy --> Bridge
-    Metal["macOS Metal component"] --> Gate["明示opt-in / 最大3 quilt"]
-    Gate --> Contract["consumer release契約は未確認"]
+    Metal["macOS Metal component"] --> Gate["Explicit opt-in / maximum 3 Quilts"]
+    Gate --> Contract["Consumer release contract unconfirmed"]
 ```
 
-通常表示はWindowsのBridge WorkerまたはD3D11 Legacy Directを使います。Metal枝は手動artifactと実験専用componentを要し、連続運用やUPM配布を示しません。
+Regular display uses the Windows Bridge Worker or D3D11 Legacy Direct. The Metal branch requires a manually downloaded artifact and an experiment-only component; it does not establish continuous operation or UPM distribution.
 
-通常のmanaged policyはWindows D3D11/D3D12のWorkerと、D3D11のLegacy Directを対象にします。共通descriptor validationとBridge path判定もD3D11/D3D12 producerからD3D11 consumerへの経路を扱います。Windows backendはD3D11、D3D12、D3D11/D3D12 interopに分かれ、共通worker codeからtransport単位で呼ばれます。非対応platformのtransportはfailure stubです。
+Regular managed policy targets the Windows D3D11/D3D12 Worker and D3D11 Legacy Direct. Common descriptor validation and Bridge path selection also cover D3D11/D3D12 producers to a D3D11 consumer. Windows backends are divided into D3D11, D3D12, and D3D11/D3D12 interop and are called by transport from shared Worker code. Unsupported platforms use a failure stub for transport.
 
 ## Windows shutdown and package updates
 
-Play Modeの通常Stopとsession再起動はfinal shutdown latchを立てません。所有中のworker/sessionをdrainし、GPU完了とnative releaseを確認してから参照を解放します。Windows EditorまたはWindows Playerのprocess終了では別のfinal shutdown gateを使い、admissionを閉じ、active outputを停止し、native contextsの回収とpersistent worker hostのjoinを確認してから終了を許可します。Legacy D3D11 outputはsessionごとのclose ledgerが`ClosedSafe`を返し、ACKが成功してからGPU fence/readback proofと合わせてtransfer textureを解放します。global SDK idleだけでは解放しません。
+Regular Play Mode Stop and Session restart do not set the final shutdown latch. The SDK drains owned Workers/Sessions and releases references only after GPU completion and native release are confirmed. Process exit in a Windows Editor or Windows Player uses a separate final shutdown gate: it closes admission, stops active output, reclaims native contexts, and permits exit only after the persistent Worker host has joined. For Legacy D3D11 output, a per-Session close ledger must return `ClosedSafe` and its ACK must succeed before the transfer texture is released with GPU-fence/readback proof. Global SDK idle alone is not sufficient for release.
 
-Windows Editorの通常quit callback内で、Bridge専用の同期gateを実行します。単調時計の10秒polling予算を使いますが、個別のUnity/native API呼び出しは中断できず、絶対的な終了時間上限ではありません。callback自身はCoordinatorのPumpOnce、発行済みGPU readbackのUpdate、1ms sleepだけを行います。Unity全体のEditor updateやUI message pumpは再入しません。Native host join、閉じたcontextの回収、ReaperとPlaybackのGPU proofが揃わない場合はquitをキャンセルし、referencesを保持してadmissionを閉じたままにします。自動再試行はせず、後の明示的quit要求でstatusを再確認します。完了後は同じ終了要求を許可し、window close/menu commandは再発行しません。save確認をCancelした場合、irreversibleなfinal admissionは再開しないためBridge再利用前にEditor再起動が必要です。quit callbackを迂回する終了では従来の5秒bounded fallbackを別に試しますが、完了を証明できなければ成功扱いしません。V6の単一Windows D3D12 Editor fixtureで、作成済みかつGPU proof前のowned textureを持つ状態から実際のGUI終了要求一回を通し、flush 1/1、native/managed completion、Editor自然終了code 0を確認しました。これは一つの8-view 512x256 fixtureであり、save確認cancelや一般的な性能/光学品質の確認ではありません。
+Inside the regular Windows Editor quit callback, a Bridge-specific synchronous gate runs. It uses a 10-second monotonic-clock polling budget, but individual Unity/native API calls cannot be interrupted, so this is not an absolute upper bound on exit time. The callback itself only runs Coordinator `PumpOnce`, updates issued GPU readbacks, and sleeps for 1 ms. It does not re-enter the full Unity Editor update or UI message pump. If native host join, closed-context reclamation, Reaper proof, or Playback GPU proof is missing, it cancels the quit, retains references, and keeps admission closed. It does not retry automatically; a later explicit quit request checks status again. After completion, it allows that same exit request and does not repost a window-close/menu command. If the user cancels the save confirmation, irreversible final admission is not reopened, so restart the Editor before using Bridge again. Exit paths that bypass the quit callback use a separate historical 5-second bounded fallback, but are not considered successful unless completion is proven. In the V6 single Windows D3D12 Editor fixture, one real GUI exit request was made while an owned texture existed before GPU proof; flush 1/1, native/managed completion, and natural Editor exit with code 0 were confirmed. This was one 8-view 512x256 fixture, not a save-confirmation-cancel test or a general performance/optical-quality test.
 
-Final shutdown hookはWindows Editor/Playerだけに適用し、asset import worker processでは登録しません。macOS Metal実験とunsupported platformには触れません。V6ではarmed後も通常描画を続け、実GUI終了要求一回を通して自然終了しました。これは過去のaccess violation原因を除去した証明ではありません。save確認cancel、48-view optical quality、性能、physical displayは未検証です。現在のnative/managed test結果とEditor fixtureの検証状態は[Shutdown validation](shutdown-validation-20261008.md)に記録しています。
+The final shutdown hook applies only to Windows Editor/Player, not asset-import worker processes. It does not affect the macOS Metal experiment or unsupported platforms. In V6, regular rendering continued after arming and one real GUI exit request led to natural shutdown. This does not prove that the historical access-violation cause was removed. Save-confirmation cancellation, 48-view optical quality, performance, and physical display remain unverified. Current native/managed test results and Editor fixture validation are recorded in [Shutdown validation](shutdown-validation-20261008.md).
 
-UPM packageを更新した後はUnity Editorを通常終了し、起動し直してください。packageのmanaged assemblyとnative shimを同じversionで読み込みます。shutdown traceの使い方とnative test境界は[Native shutdown trace](native-shutdown-trace.md)を参照してください。
+After updating a UPM package, close the Unity Editor normally and reopen it so the managed assembly and native shim are loaded from the same version. See [Native shutdown trace](native-shutdown-trace.md) for shutdown-trace usage and native-test boundaries.
 
-MetalのAPI wrapper、Unity Metal producer、submission lifetime管理は別のnative module群に隔離されています。この実験を通常のSession policyや既存Bridge outputの対応表へ含めません。Metal sourceの存在だけでは利用可能なruntimeや配布物を意味しません。
+The Metal API wrapper, Unity Metal producer, and submission-lifetime management are isolated in separate native modules. The experiment is not included in regular Session policy or the support table for existing Bridge outputs. The presence of Metal source alone does not mean a usable runtime or distributable package exists.
 
 ## Metal experiment and lifetime boundary
 
-公式Looking Glass Bridge 2.6.3 ARM64 packageのheader/export調査で、`initialize_bridge`、`instance_window_metal`、`create_metal_texture_with_iosurface`、`draw_interop_quilt_texture_metal`のMetal entry pointsを確認しました。wrapperはこれらのABIへtexture descriptor相当のObjective-C object pointerとIOSurface-backed textureを渡します。Unity側は`IUnityGraphicsMetalV2`を使い、Unity command bufferのcompletion handlerでproducer側のcopy完了を観測します。
+Inspection of headers and exports in the official Looking Glass Bridge 2.6.3 ARM64 package confirmed the Metal entry points `initialize_bridge`, `instance_window_metal`, `create_metal_texture_with_iosurface`, and `draw_interop_quilt_texture_metal`. The wrapper passes an Objective-C object pointer equivalent to a texture descriptor and an IOSurface-backed texture to these ABIs. Unity uses `IUnityGraphicsMetalV2`; a completion handler on the Unity command buffer observes producer-side copy completion.
 
-現設計は最大3枚のimmutable texture slotをboundedに保持します。Unity command-buffer completionはproducer copyの完了です。SDK drawの受理はBridge consumerがtextureの読み取りを終えた通知ではありません。Bridgeのconsumer acknowledgment、release/reuse時点、drawのthread affinity、window/runloop要件は確認できていません。そのため実験経路はslotを再利用せず、通常SessionはMetalをreadyにしません。
+The current design retains at most three immutable texture slots. Unity command-buffer completion means the producer copy completed. Acceptance of an SDK draw does not mean the Bridge consumer has finished reading the texture. Bridge consumer acknowledgment, release/reuse timing, draw thread affinity, and window/runloop requirements are unconfirmed. Therefore, the experiment does not reuse slots, and a regular Session does not become Metal-ready.
 
-SDKの`copy_metal_texture`内にBridge自身のcommand bufferをcommit後`waitUntilCompleted`する実装はありますが、pluginのdraw後のconsumer read完了を示すものではありません。また、plugin実装がそのcopy APIを呼ぶことも前提にしません。ABIで確認したselectorやexportの存在を、draw完了・release契約の証明として扱いません。
+The SDK's `copy_metal_texture` implementation commits Bridge's own command buffer and calls `waitUntilCompleted`, but that does not prove consumer-read completion after the plugin draw. The plugin also does not assume that this copy API is called. The existence of an ABI selector or export is not proof of a draw-completion or release contract.
 
-Unityの公式[IUnityGraphicsMetal.h](https://github.com/Unity-Technologies/NativeRenderingPlugin/blob/master/PluginSource/source/Unity/IUnityGraphicsMetal.h)はMetal interfaceのrender-thread利用制約を記載しています。pluginはUnity render eventからMetal producerを実行します。Bridge API側のthread契約は不明です。公式Bridgeの製品情報は[Looking Glass Bridge](https://lookingglassfactory.com/software/looking-glass-bridge)を参照してください。
+Unity's official [IUnityGraphicsMetal.h](https://github.com/Unity-Technologies/NativeRenderingPlugin/blob/master/PluginSource/source/Unity/IUnityGraphicsMetal.h) documents render-thread constraints for the Metal interface. The plugin executes the Metal producer from a Unity render event. The Bridge API's thread contract is unknown. See [Looking Glass Bridge](https://lookingglassfactory.com/software/looking-glass-bridge) for official Bridge product information.
 
-GitHub Actionsの2 workflow run ([37705337066](https://github.com/zabaglione/ViewWeave/actions/runs/37705337066), [37705340768](https://github.com/zabaglione/ViewWeave/actions/runs/37705340768))はcommit `054fffeb817ac8daae6ff68ed567ec7e69fe4798`で各5/5 jobs成功です。macOS jobは`macos-14-arm64`上でAppleClang 15.0.0.15000309のCXX/ObjCXXを使い、shimをbuild/linkし、common、Metal API contract、submission lifetimeの3 testsを通過しました。CMakeは`CMAKE_BUILD_TYPE`を指定していないため、Release最適化済みとは記録しません。Windows fake regressionsは4/4、transportは2/2、Linux portable/unsupported ABIは2/2、static jobも成功しました。
+Two GitHub Actions workflow runs ([37705337066](https://github.com/zabaglione/ViewWeave/actions/runs/37705337066), [37705340768](https://github.com/zabaglione/ViewWeave/actions/runs/37705340768)) passed all 5/5 jobs each on commit `054fffeb817ac8daae6ff68ed567ec7e69fe4798`. The macOS job used CXX/ObjCXX with AppleClang 15.0.0.15000309 on `macos-14-arm64`, built/linked the shim, and passed three tests: common, Metal API contract, and submission lifetime. Because CMake did not set `CMAKE_BUILD_TYPE`, this is not recorded as Release-optimized. Windows fake regressions passed 4/4, transport 2/2, Linux portable/unsupported ABI 2/2, and the static job also passed.
 
-CI artifact `native-macos-metal-shim` (artifact 11519112992)は`liblookingglass_bridge_shim.dylib` 179952 bytesです。downloadしたfileはMach-O 64-bit ARM64 (CPU type `0x0100000c`)、SHA-256 `C06464EEEBAA3D3B934437AD9242B6DFA4C5E37E26A3187D3BE131113213980B`で、`UnityPluginLoad`とMetal provider query/begin/submit/pump exportsを含みます。依存はMetal/Foundation/IOSurfaceとmacOS system librariesで、official Bridge dylibは同梱されていません。artifactはUPMに含まれず、CIから手動取得する必要があります。
+CI artifact `native-macos-metal-shim` (artifact 11519112992) contains `liblookingglass_bridge_shim.dylib` at 179952 bytes. The downloaded file is Mach-O 64-bit ARM64 (CPU type `0x0100000c`), SHA-256 `C06464EEEBAA3D3B934437AD9242B6DFA4C5E37E26A3187D3BE131113213980B`, and exports `UnityPluginLoad` plus Metal provider query/begin/submit/pump functions. Dependencies are Metal/Foundation/IOSurface and macOS system libraries; the official Bridge dylib is not bundled. This artifact is not included in UPM and must be downloaded manually from CI.
 
-このjobはnative build/linkとfake contract testsだけを行いました。Unityを起動せず、official SDKをloadせず、実機へquiltを表示していません。物理display、provider full flow、consumer release/thread/shutdown契約も未検証です。normal Metal Sessionはunsupportedのままです。
+The job covered only native build/link and fake contract tests. It did not start Unity, load the official SDK, or display a Quilt on a physical device. Physical display, the full provider flow, consumer release/thread/shutdown contracts remain unverified. Regular Metal Sessions remain unsupported.
 
 ## Managed finite experiment
 
-`BridgeMetalExperimentalOutput`は、通常Sessionから独立した明示opt-in用componentです。macOS Play mode、64-bit process、Metal graphics device、runtime ABI layout guardを満たさない場合は開始しません。ABI guardは`ProviderStatusV1` 64 bytes (`deviceGeneration` offset 32)、`BeginRequestV1` 56 bytes (`runtimePathUtf8` offset 8、`width` offset 28)、`RenderRequest` 48 bytes (`sourceTexture` offset 8、`generation` offset 16、`columns` offset 24)を確認します。
+`BridgeMetalExperimentalOutput` is an explicit opt-in component independent of regular Sessions. It will not start unless macOS Play Mode, a 64-bit process, a Metal graphics device, and the runtime ABI layout guard are satisfied. The ABI guard checks `ProviderStatusV1` at 64 bytes (`deviceGeneration` offset 32), `BeginRequestV1` at 56 bytes (`runtimePathUtf8` offset 8, `width` offset 28), and `RenderRequest` at 48 bytes (`sourceTexture` offset 8, `generation` offset 16, `columns` offset 24).
 
-限定試験の手順は次のとおりです。
+Use this bounded procedure:
 
-1. Metal実験用componentをscene objectへ追加し、`rig`に既存の`ViewWeaveRig`を割り当てます。`runtimePath`にはBridge 2.6.3の`/Applications/Looking Glass Bridge 2.6.3.app/Contents/MacOS/libbridge_inproc.dylib`を指定します。native shimは別途手動で入手する必要があり、UPMには含まれません。
-2. macOS EditorのPlay中にcomponentのContext Menuから`Begin Finite Metal Experiment From Rig Profile`を実行します。providerがruntimeを初期化し`RuntimeAvailable`になるまで待ちます。
-3. `RuntimeAvailable`になった後、`Start Finite Metal Quilt Rendering`を一度実行します。producer submissionは最大3枚で自動停止し、3枚を超えて継続描画しません。
-4. `Close Finite Metal Experiment`を実行してmanaged rigのoutput/profile/Auto Render設定を戻します。同じprocessで実験を再開する用途には使わないでください。
+1. Add the Metal experiment component to a scene object and assign an existing `ViewWeaveRig` to `rig`. Set `runtimePath` to `/Applications/Looking Glass Bridge 2.6.3.app/Contents/MacOS/libbridge_inproc.dylib`. Obtain the native shim manually; it is not included in UPM.
+2. During macOS Editor Play, use the component Context Menu command `Begin Finite Metal Experiment From Rig Profile`. Wait for the provider to initialize the runtime and enter `RuntimeAvailable`.
+3. After `RuntimeAvailable`, invoke `Start Finite Metal Quilt Rendering` once. Producer submissions stop automatically after at most three Quilts and do not continue beyond that.
+4. Run `Close Finite Metal Experiment` to restore the managed Rig output/profile/Auto Render settings. Do not use this procedure to restart the experiment in the same process.
 
-この試験はprocessごとのone-shotで、最大3 quiltを受け付け、Bridge consumerが解放したことを示すacknowledgmentがありません。slot/textureはretainedのままです。`Close`はmanaged rigを復元しprovider admissionを閉じますが、SDK側resourceの安全なretire、thread affinity、正常なprocess shutdownは未確定です。継続運用や繰り返し起動に使わないでください。通常SessionのMetal `interopReady`はfalseのままです。
+The experiment is one-shot per process, accepts at most three Quilts, and has no acknowledgment proving the Bridge consumer released them. Slots/textures remain retained. `Close` restores the managed Rig and closes provider admission, but safe SDK resource retirement, thread affinity, and clean process shutdown remain unconfirmed. Do not use it for continuous operation or repeated startup. Regular Session Metal `interopReady` remains false.
 
-最初のCIでは古いv5 pinとWindows fake initializer/Metal includeのcompile failureがありました。v7対応pin`522254181faf188efa8b50c3e3bf6fce720b26e4`への更新と修正後、上記2 runが成功しました。ただしCI結果はUnity runtime、official SDK load、Bridge画面、physical display、shader/format品質を検証していません。artifactは手動取得のみで、通常Metal対応を意味しません。
+The first CI attempt used an old v5 pin and had Windows fake initializer/Metal include compile failures. After updating to v7 pin `522254181faf188efa8b50c3e3bf6fce720b26e4` and correcting the failures, the two runs above passed. CI does not validate Unity runtime, official SDK loading, Bridge display, physical display, or shader/format quality. The artifact is manually downloaded only and does not imply regular Metal support.
 
 ## Scope and known limits
 
-Vulkan実装は今回の範囲外です。性能最適化は保留中です。既存のScene View Gizmoによるcamera authoringは対象に含みますが、Quilt imageへのGizmo overlayは対象外です。
+Vulkan implementation is out of scope. Performance optimization is deferred. Scene View Gizmo camera authoring is included, but Gizmo overlays in the Quilt image are not.
 
-過去のWindows Bridge終了時access violationは根本原因未確定のまま履歴として保持します。訂正済みbaseline2は自然終了しましたが、旧事象は再現されておらず、修正の因果的な解消も証明されていません。Metal実験は通常Sessionに未対応で、このWindows shutdown変更の検証には含みません。
+Historical access violations on Windows Bridge shutdown remain unresolved. Corrected baseline 2 shut down naturally, but the old event has not been reproduced and a causal fix has not been proven. The Metal experiment remains unsupported by regular Sessions and is outside validation for this Windows shutdown change.

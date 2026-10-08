@@ -1,62 +1,64 @@
-# Quilt の保存と連番録画
+[日本語](ja/quilt-capture.md)
 
-ViewWeave Core には、完成した Quilt を静止画として保存する機能と、Play 中に Auto Render が出力した Quilt を PNG 連番として保存する機能があります。録画のために追加の視点を描画することはありません。
+# Save and record Quilts
 
-図はsilent PNG recordingと明示opt-inのMono audio recordingを示します。両方とも完成Quiltを共有しますが、音声は別WAVになりMP4 exporterへmuxされません。
+ViewWeave Core can save a completed Quilt as a still image and save Quilts emitted by Auto Render during Play as a PNG sequence. Recording does not render additional views.
+
+The diagram shows silent PNG recording and the explicit opt-in path for Mono audio recording. Both use the completed Quilt, but audio is saved to a separate WAV and is not muxed by the MP4 exporter.
 
 ```mermaid
 flowchart LR
-    Render["Play中の完成Quilt"] --> Save["1枚PNG + JSON sidecar"]
-    Render --> Sequence["PNG連番 + frame metadata"]
-    Sequence --> Silent["無音MP4へ後処理"]
-    Audio["明示的なMono audio選択"] --> Wave["別WAV + sample metadata"]
+    Render["Completed Quilt during Play"] --> Save["Single PNG + JSON sidecar"]
+    Render --> Sequence["PNG sequence + frame metadata"]
+    Sequence --> Silent["Post-process to silent MP4"]
+    Audio["Explicit Mono audio selection"] --> Wave["Separate WAV + sample metadata"]
     Sequence --> Audio
 ```
 
-静止画と連番は既存Auto Renderの出力を保存します。音声録音を選ばない通常連番はsilentです。
+Still capture and sequence recording save the output of the existing Auto Render. A regular sequence is silent unless audio recording is selected.
 
-## 静止画を保存する
+## Save a still image
 
-1. Unity のメニューから **Window > ViewWeave > Quilt Capture** を開きます。
-2. 保存したい **Quilt Renderer** を指定します。
-3. Bridge Rig を Play し、Auto Render による Looking Glass 表示を確認します。完成 Quilt が作られると、このウィンドウにも最新画像が表示されます。
-4. 最新画像が古くないことを確認し、**Save Latest Quilt PNG...** を押して保存先を指定します。
+1. In Unity, open **Window > ViewWeave > Quilt Capture**.
+2. Select the **Quilt Renderer** to capture.
+3. Enter Play with the Bridge Rig and confirm Looking Glass output from Auto Render. The latest completed Quilt appears in this window.
+4. Confirm that the latest image is current, then choose **Save Latest Quilt PNG...** and select a destination.
 
-PNG の隣に同名の `.json` sidecar が作成されます。sidecar には画像サイズ、行列、視点数、view render mode、実際に描画した視点数、使用領域、カメラと Quilt の幾何設定、UTC 時刻が入ります。メタデータは PNG 内には埋め込まず、別ファイルに保存します。PNG または sidecar が既にある場合は上書きしません。
+A `.json` sidecar with the same basename is created next to the PNG. It records image dimensions, matrices, view count, view render mode, actual rendered-view count, used area, camera and Quilt geometry settings, and UTC time. Metadata is not embedded in the PNG. Existing PNG or sidecar files are not overwritten.
 
-**Save Central View PNG...** は、完成済み Quilt から中央に最も近い論理 view を1 tileだけ切り出して保存します。追加の Camera Render は発生しません。view 数が奇数なら中央 view、偶数なら index `(views - 1) / 2` の低い側の中央 view を使います。たとえば 48 views では index 23 です。偶数の場合、これは光学軸に厳密に重なる中央 view ではありません。Half / Quarter では、その論理 view の tile に複製された実描画 view の画像を保存します。
+**Save Central View PNG...** crops one logical view nearest the center from a completed Quilt. It does not render another Camera view. For an odd view count it uses the center view; for an even count it uses the lower of the two center views, at index `(views - 1) / 2`. For example, with 48 views it uses index 23. For even counts this is not exactly the view on the optical axis. In Half/Quarter mode, it saves the image of the rendered view copied into that logical view's tile.
 
-中央画像の sidecar には元の Quilt metadata に加え、`logicalViewIndex`、`renderedViewIndex`、view render mode、切り出した画像サイズが記録されます。`logicalViewIndex` は中央として選んだ出力 tile、`renderedViewIndex` は Half / Quarter でその tile に割り当てられた実際の描画元です。PNG は lower-left origin の tile 座標で読み出し、tile 内の向きを保ちます。Quilt と同じく既存 PNG や sidecar を上書きしません。
+The central image sidecar adds `logicalViewIndex`, `renderedViewIndex`, the view render mode, and cropped image dimensions to the original Quilt metadata. `logicalViewIndex` is the selected center output tile; `renderedViewIndex` is its actual rendered source in Half/Quarter mode. The PNG is read in lower-left-origin tile coordinates while preserving tile orientation. As with the Quilt, existing PNG or sidecar files are not overwritten.
 
-ファイル名は `name_qs{columns}x{rows}a{renderAspect}.png` です。`renderAspect` には tile のピクセル比ではなく、Quilt layout の aspect ratio を使います。たとえば 8 列、6 行、aspect ratio 0.75 の設定では `name_qs8x6a0.75.png` となります。小数点と数値書式は OS の地域設定に依存しません。
+The filename format is `name_qs{columns}x{rows}a{renderAspect}.png`. `renderAspect` uses the Quilt layout aspect ratio, not the tile pixel ratio. For example, 8 columns, 6 rows, and aspect ratio 0.75 produce `name_qs8x6a0.75.png`. Decimal formatting is independent of the operating system locale.
 
-## PNG 連番を録画する
+## Record a PNG sequence
 
-1. Quilt Capture ウィンドウで **Add Recorder Component** を押し、Undo 対応で Quilt Renderer と同じ GameObject に Recorder を追加します。
-2. Play に入り、対象 Quilt Renderer の Auto Render を有効にします。renderer は有効なままにしてください。
-3. **Frames per second**（1〜240）と **Frame count** を指定し、出力先フォルダーを選びます。
-4. **Start PNG Sequence** を押します。開始ボタンを押した Unity frame は保存せず、その次の frame から指定 FPS の simulation timestep で保存します。
-5. **Pause Recording** で保存を一時停止できます。pause 中も scene simulation は動き、capture timestep を開始前の値へ戻します。**Resume Recording** は同じ出力先と frame numbering のまま継続し、Resume を押した frame は保存しません。指定枚数に達すると自動終了します。途中で止める場合は **Stop Recording** を押します。
+1. In Quilt Capture, choose **Add Recorder Component**. An Undo-capable Recorder is added to the same GameObject as Quilt Renderer.
+2. Enter Play and enable Auto Render on the target Quilt Renderer. Keep the renderer enabled.
+3. Set **Frames per second** (1–240) and **Frame count**, then choose an output folder.
+4. Choose **Start PNG Sequence**. The Unity frame in which the button is pressed is not saved. Saving starts on the next frame using the selected FPS as the simulation timestep.
+5. Use **Pause Recording** to pause saving. Scene simulation continues during the pause, and the capture timestep is restored to its pre-recording value. **Resume Recording** continues in the same destination with the same frame numbering; the frame in which Resume is pressed is not saved. Recording ends automatically when the requested frame count is reached. Choose **Stop Recording** to stop early.
 
-出力先には毎回新しい `ViewWeave_年月日_時分秒_一意ID` フォルダーを作ります。各完成 Quilt は `frame_000000_qs...png` のような PNG と JSON sidecar で保存されます。`manifest.json` には要求 FPS、指定枚数、実際の完了枚数、status、エラーが入り、`frames.jsonl` には各 Unity frame、simulation time、実測 delta time、UTC 時刻が1行ずつ記録されます。status は `recording`、`paused`、`complete`、`cancelled`、`error` です。録画中はpause中も含め `finishedAtUtc` を空のまま保ち、終了時に記録します。途中終了や失敗の場合も、それまでに完成して保存できたファイルを残します。
+Each run creates a new `ViewWeave_YYYYMMDD_HHMMSS_uniqueID` folder under the output location. Each completed Quilt is saved as a PNG such as `frame_000000_qs...png` with a JSON sidecar. `manifest.json` records requested FPS, requested frame count, actual completed count, status, and errors. `frames.jsonl` records each Unity frame, simulation time, measured delta time, and UTC timestamp on one line. Status is `recording`, `paused`, `complete`, `cancelled`, or `error`. `finishedAtUtc` stays empty while recording, including while paused, and is written when recording ends. On early stop or failure, completed files remain available.
 
-## 動作上の注意
+## Operational notes
 
-- 録画は Unity Play mode の active Auto Render renderer 専用です。追加 render を発行せず、その frame に完成した Quilt を 1 枚だけ保存します。
-- PNG 読み戻しと圧縮を同期実行するため、保存中は Unity の frame とシミュレーションが止まり、実時間より遅くなることがあります。指定 FPS は wall-clock 再生速度ではなく、`Time.captureDeltaTime` による simulation timestep です。
-- 録画開始時と実行中は `Time.timeScale == 1` が必要です。別の capture が `Time.captureDeltaTime` を使用中の場合や、別の Recorder が録画中の場合は開始できません。停止・完了・失敗時には ViewWeave が設定した値のままなら開始前の値へ戻します。外部コードが値を変更していた場合はその値を上書きしません。
-- pause 中は Recorder が同じ録画 session と排他所有権を保持します。別 Recorder は開始できません。再開時には Play mode、renderer、Auto Render、録画開始時の Quilt geometry、`timeScale`、外部 capture timestep を再確認します。確認に失敗すると録画は error で終了し、イベント購読と所有権を解放します。
-- Quilt の寸法、行列、視点数、render density、FOV、focus distance、view cone、view aspect、source camera、near/far clip の変更、Auto Render の停止、renderer の無効化、アプリの pause は録画を止めて manifest に状態を残します。録画中のカメラ移動は許可され、各 PNG sidecar にその時点の位置と回転が記録されます。
-- [Quilt Video Export](quilt-video-export.md) は完成済みPNG連番を無音MP4へ後処理変換します。音声mux、Timeline/VideoPlayer同期、既存録画への追加録画は未対応です。
-- 音声を含める場合は **Start PNG Sequence + Audio** を明示的に選びます。Windows Editor Play と事前設定済み Mono 出力が必要です。既存3引数APIは引き続き無音PNG連番を作ります。詳細と検証境界は[Quilt audio recording](quilt-recording-audio.md)を参照してください。
-- PNG 保存は Bridge 転送完了を待たず、Quilt Renderer の描画完了を基準にします。通常の Bridge Rig で Looking Glass へ表示しながらそのまま使えます。
+- Recording is limited to an active Auto Render renderer in Unity Play mode. It does not issue another render and saves one completed Quilt from that frame.
+- PNG readback and compression run synchronously. Unity frames and simulation can stall while saving, so wall-clock recording may run slower. The selected FPS is a simulation timestep through `Time.captureDeltaTime`, not a wall-clock playback rate.
+- `Time.timeScale == 1` is required when recording starts and while it runs. Recording cannot start while another capture uses `Time.captureDeltaTime` or another Recorder is recording. On stop, completion, or error, ViewWeave restores the prior value only if the current value is still the one ViewWeave set. It does not overwrite a value changed by external code.
+- While paused, the Recorder retains exclusive ownership of the same recording session. Another Recorder cannot start. Resume rechecks Play mode, renderer, Auto Render, Quilt geometry from recording start, `timeScale`, and external capture timestep. If a check fails, recording ends with error and releases event subscriptions and ownership.
+- Changes to Quilt dimensions, matrices, view count, render density, FOV, focus distance, view cone, view aspect, source Camera, or near/far clip; stopping Auto Render; disabling the renderer; or pausing the application stops recording and records the status in the manifest. Camera movement during recording is allowed, and each PNG sidecar records the position and rotation at that time.
+- [Quilt Video Export](quilt-video-export.md) post-processes a completed PNG sequence into a silent MP4. Audio muxing, Timeline/VideoPlayer synchronization, and appending to an existing recording are unsupported.
+- To include audio, explicitly select **Start PNG Sequence + Audio**. Windows Editor Play and a preconfigured Mono output are required. The existing three-argument API still creates a silent PNG sequence. See [Quilt audio recording](quilt-recording-audio.md) for requirements and validation boundaries.
+- PNG saving uses completion of Quilt Renderer drawing and does not wait for Bridge transfer completion. It can be used while a regular Bridge Rig displays on a Looking Glass.
 
-## 検証
+## Validation
 
-Unity 6000.6.4f1 の自動 PlayMode テストで URP と HDRP の両方を実描画し、PNG 読み戻し、中央 tile の色と向き、3枚録画、pause/resume、frame count、timestep ownership、paused cleanup を確認します。録画は10fpsと25fpsで各3枚を確認し、URPでは1〜240fpsの全設定で同フレーム停止後に `Time.captureDeltaTime` が開始前の値へ戻ることも確認します。
+Automated PlayMode tests on Unity 6000.6.4f1 rendered in both URP and HDRP and checked PNG readback, central-tile color and orientation, three-frame recording, pause/resume, frame count, timestep ownership, and cleanup while paused. Three frames were checked at 10 fps and 25 fps. In URP, all settings from 1–240 fps were also checked for same-frame stop and restoration of the original `Time.captureDeltaTime`.
 
-## 2026-10-07 DX12 capture validation
+## DX12 capture validation (2026-10-07)
 
-The current working branch passed CoreBuiltinCaptureSmoke on DX12 and one URP plus one HDRP QuiltCapturePipelineTests case. The Unity 6000.6.4f1 Editor used -force-d3d12 on an RTX 3090 Ti without -nographics; the tests covered central PNG/sidecar output, half/quarter source-view mapping, and Recorder Pause/Resume with capture-time restoration. They used fake output and did not connect to Bridge or a Looking Glass display. This is working-branch evidence, separate from the existing D3D11 results and not a claim that main or physical output has passed.
+The current working branch passed CoreBuiltinCaptureSmoke on DX12 and one URP plus one HDRP `QuiltCapturePipelineTests` case. The Unity 6000.6.4f1 Editor used `-force-d3d12` on an RTX 3090 Ti without `-nographics`; tests covered central PNG/sidecar output, Half/Quarter source-view mapping, and Recorder Pause/Resume with capture-time restoration. They used fake output and did not connect to Bridge or a Looking Glass display. This is working-branch evidence, separate from existing D3D11 results, and does not mean main or physical output passed.
 
 The first test fixture under a 272-character path failed during Unity URT/UXML import with a missing-directory error. The same 420 source files, with matching hashes, were prepared under a 218-character fixture path; URT compute/ray-tracing shader assets and both pipeline Global Settings then imported with zero errors before the capture tests passed. This result is limited to the tested fixture layout. Two folder `.meta` files were initially copied from stale 168-byte snapshots and generated two YAML parse errors. The fixture was re-synchronized from the 169-byte source files and imported synchronously. The final check found zero C# errors, zero YAML/meta errors, and both Folder GUIDs. The earlier failing copy and its correction remain part of the history; the final re-import is confirmed for this fixture only.

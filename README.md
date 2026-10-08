@@ -1,92 +1,92 @@
+[日本語](README.ja.md)
+
 # ViewWeave
 
-Looking Glass向けの非公式Unity SDKです。URPまたはHDRPの通常のシーンを複数視点で描画し、Windows上のLooking Glass Bridge runtimeへ送ります。
+An unofficial Unity SDK for Looking Glass. It renders a regular URP or HDRP scene from multiple views and sends the result to the Looking Glass Bridge runtime on Windows.
 
-Looking Glassに表示するときは、利用者自身のUnity projectをEditor PlayするかPlayerとして起動します。UnityがQuiltを描画し、インストール済みで起動中の公式Looking Glass Bridge runtimeが機器へ届けます。SDK内のTests/Bridge Unityプロジェクトやデモアプリを別途起動する必要はありません。
+To display content on a Looking Glass, run your own Unity project in the Editor or as a Player. Unity renders the Quilt, and the installed, running official Looking Glass Bridge runtime sends it to the device. You do not need to launch the SDK's `Tests/Bridge` Unity project or a separate demo app.
 
-対応環境はUnity 6000.6.4f1、Windows、URPまたはHDRPです。Bridge Worker経由ならD3D11またはD3D12のUnity Editor PlayとWindows Playerから出力できます。Legacy Direct経路はD3D11のみです。Edit ModeとmacOS通常Sessionは対象外です。Bridge runtimeとLooking Glass機器を別途用意してください。
+The supported environment is Unity 6000.6.4f1 on Windows with URP or HDRP. The Bridge Worker path outputs from Unity Editor Play and Windows Players using D3D11 or D3D12. Legacy Direct supports D3D11 only. Edit Mode and regular macOS sessions are outside the supported scope. Provide the Bridge runtime and Looking Glass device separately.
 
-macOS Metalは明示opt-inのbounded実験です。通常SessionはMetalを受け付けず、macOS native shimはUPMに含まれません。限定的な手順と未検証範囲は[Graphics backends](docs/graphics-backends.md)を参照してください。
+macOS Metal is a bounded experiment that requires explicit opt-in. Regular sessions do not accept Metal, and the macOS native shim is not included in UPM. See [Graphics backends](docs/graphics-backends.md) for the limited procedure and unverified areas.
 
-このprivate repositoryからPackage Managerで取得するにはGitHubのアクセス権が必要です。独自コードのライセンスは[Apache-2.0](LICENSE)です。機能別の手順、設計、検証履歴は[ドキュメント目次](docs/index.md)から参照できます。
+Access to this private repository is required to install its packages through the Package Manager. Original code is licensed under [Apache-2.0](LICENSE). See the [documentation index](docs/index.md) for feature guides, design notes, and validation records.
 
-次図は標準Windows Sessionの概要です。macOS Metal実験、保存したQuiltの再生、別WAVの作成は独立した手順を参照してください。
+The diagram below shows a regular Windows session. See the separate guides for the macOS Metal experiment, playback of saved Quilts, and creation of a separate WAV file.
 
 ```mermaid
 flowchart LR
-    Project["利用者のUnity project"] --> Rig["ViewWeave RigがQuiltを描画"]
-    Rig --> Bridge["公式Looking Glass Bridge runtime"]
-    Bridge --> Display["接続したLooking Glass"]
+    Project["Your Unity project"] --> Rig["ViewWeave Rig renders a Quilt"]
+    Rig --> Bridge["Official Looking Glass Bridge runtime"]
+    Bridge --> Display["Connected Looking Glass"]
 ```
 
-標準経路は既存のsceneとCameraを使い、再生とBridge接続の手順は[Getting started](docs/getting-started.md)に記載しています。
+The regular path uses your existing scene and Camera. See [Getting started](docs/getting-started.md) for playback and Bridge connection steps.
 
-## 使い始める
+## Get started
 
-1. Unity HubでUnity 6000.6.4f1のURPまたはHDRPテンプレートからプロジェクトを作り、Unity Editorで開きます。
-2. `Window > Package Management > Package Manager`の`+ > Install package from git URL`を選び、利用するpipelineのURLを追加します。
+1. In Unity Hub, create a project from a Unity 6000.6.4f1 URP or HDRP template and open it in the Unity Editor.
+2. Choose `Window > Package Management > Package Manager`, select `+ > Install package from git URL`, and add the URL for your pipeline:
    - URP: `https://github.com/zabaglione/ViewWeave.git?path=/Distribution/urp#main`
    - HDRP: `https://github.com/zabaglione/ViewWeave.git?path=/Distribution/hdrp#main`
-3. 配布packageにはCore、Bridge、選択したpipelineが含まれます。追加のViewWeave packageは不要です。Package ManagerのSamplesは任意で、ImportするまでAssetsへ入りません。標準Cubeから試す場合はImport不要です。
-4. WindowsへLooking Glass Bridge runtimeをインストールして、対象機器を接続します。
-5. シーンに通常のCubeまたはBoxを置き、必要なmaterialとlightを設定します。特別なobject scriptやgeneratorは不要です。
-6. Hierarchyで使用中Camera、またはCameraを祖先に持つGameObjectを右クリックして`ViewWeave > Bridge Rig`を選びます。対象Cameraのposeと基本設定はRig作成時にコピーされます。`MainCamera`タグは不要です。
-7. CubeをCameraの前に置き、必要に応じてRigの`QuiltRenderer > Settings > Camera Distance`（`cameraDistance`）を調整します。詳しい焦点距離の決まり方は[Getting started](docs/getting-started.md#既存のcubeやboxを表示する)を参照してください。
-8. HDRPではPlay前に`Window > Rendering > HDRP Wizard`を開き、HDRP/Global checksの`Lightmap Encoding`が赤い場合は`Fix All Platforms`を実行して`High Quality`にします。`Color Space`も`Linear`であることを確認し、必要ならWizardの`Fix`を実行してください。`Default Render Pipeline`、`Volume`、`Diffusion Profile`、`SRP Batcher`など他の項目が赤い場合も`Fix All`または各項目の`Fix`で設定を整えます。HDRP標準テンプレートでは通常これらの設定は済んでいます。Unityの[HDRP Wizard](https://docs.unity3d.com/Packages/com.unity.render-pipelines.high-definition@17.6/manual/Render-Pipeline-Wizard.html)の手順を参照してください。ViewWeaveは利用者projectのこれらの設定を変更しません。HDRP設定の詳細は[Getting started](docs/getting-started.md)を参照してください。
-9. Unity EditorでPlayを押します。
+3. The distribution package contains Core, Bridge, and the selected pipeline. No additional ViewWeave package is required. Package Manager Samples are optional and are not copied into Assets until imported. You can start with a standard Cube without importing a sample.
+4. Install the Looking Glass Bridge runtime on Windows and connect the device.
+5. Add a regular Cube or Box to the scene and assign materials and lights as needed. No special object script or generator is required.
+6. In the Hierarchy, right-click the active Camera or a GameObject with a Camera ancestor and choose `ViewWeave > Bridge Rig`. The Rig copies the Camera pose and basic settings when it is created. The `MainCamera` tag is not required.
+7. Place the Cube in front of the Camera. If needed, adjust `QuiltRenderer > Settings > Camera Distance` (`cameraDistance`) on the Rig. See [Getting started](docs/getting-started.md#display-an-existing-cube-or-box) for how the focus distance is chosen.
+8. For HDRP, open `Window > Rendering > HDRP Wizard` before Play. If `Lightmap Encoding` under HDRP/Global checks is red, run `Fix All Platforms` and set it to `High Quality`. Confirm `Color Space` is `Linear`, and use the Wizard's `Fix` if needed. Fix other red items such as `Default Render Pipeline`, `Volume`, `Diffusion Profile`, or `SRP Batcher` as well. HDRP templates usually have these settings already. Follow Unity's [HDRP Wizard](https://docs.unity3d.com/Packages/com.unity.render-pipelines.high-definition@17.6/manual/Render-Pipeline-Wizard.html) guidance. ViewWeave does not change these settings in your project. See [Getting started](docs/getting-started.md) for HDRP details.
+9. Press Play in the Unity Editor.
 
-Git packageを更新した後はUnity Editorを正常終了して起動し直し、選択したGraphics APIでPlayします。新しいmanaged assemblyとnative pluginを読み込むために必要です。
+After updating the Git package, close the Unity Editor normally and reopen it, then Play with the selected Graphics API. This loads the updated managed assembly and native plugin.
 
-Windowsでは、Play中のStop/再開とEditor終了は別の処理です。Editor終了時はBridgeの終了処理を待ち、完了すれば最初の終了操作でUnityを閉じます。完了できない場合は終了をキャンセルして資源を保持します。終了確認をCancelした後は、Bridgeを再び使う前にEditorを再起動してください。Windows D3D12 Editorでは、一度のFile > Exitで正常終了を確認しました。保存確認のCancel動作と過去のaccess violationの原因は未検証です。詳細は[Shutdown validation](docs/shutdown-validation-20261008.md)を参照してください。
+On Windows, stopping or resuming Play and exiting the Editor are separate operations. On Editor exit, ViewWeave waits for Bridge shutdown and closes Unity on the first exit action when cleanup completes. If it cannot complete, it cancels the exit and retains resources. After canceling an exit confirmation, restart the Editor before using Bridge again. A single `File > Exit` was confirmed to shut down normally in Windows D3D12 Editor. Save-confirmation cancellation and the cause of historical access violations remain unverified. See [Shutdown validation](docs/shutdown-validation-20261008.md).
 
-Windows Playerで使う場合は、Windows Graphics APIsでD3D11またはD3D12を有効にしてBuild and Runします。Legacy Direct経路を明示的に使う場合はD3D11が必要です。Bridge runtimeが自動検出されない場合だけ、RigのSessionにRuntime Pathを設定します。
+For a Windows Player, enable D3D11 or D3D12 under Windows Graphics APIs and use Build and Run. Set Runtime Path on the Rig's Session only if the Bridge runtime is not discovered automatically. The Legacy Direct path requires D3D11.
 
-## 視点描画数を調整する
+## Change the number of rendered views
 
-Hierarchyで`ViewWeave Bridge Rig`を選び、Inspectorの`QuiltRenderer > View Render Mode`で`Full`、`Half`、`Quarter`を選べます。Fullが既定です。48視点の機器では、どのモードも48タイルのQuiltを出力し、実際に描画する視点数はFullが48、Halfが24、Quarterが12です。描画しないtileには最も近い描画済み視点の画像を使います。視点間の補間は行わないため、HalfとQuarterでは視点角度方向の滑らかさが下がることがあります。この設定はQuilt解像度やPreview/Balanced/Native profileとは別です。速度向上はシーンやGPUで変わるため、数値を保証しません。限定HDRP fixtureの測定と制約は[DX12 HDRP performance investigation](docs/dx12-performance-investigation.md)を参照してください。
+Select `ViewWeave Bridge Rig` in the Hierarchy and choose `Full`, `Half`, or `Quarter` under `QuiltRenderer > View Render Mode` in the Inspector. Full is the default. On a 48-view device, every mode outputs a 48-tile Quilt; the number of views actually rendered is 48 for Full, 24 for Half, and 12 for Quarter. Unrendered tiles use the image from the nearest rendered view. There is no interpolation between views, so Half and Quarter may reduce angular smoothness. This setting is separate from Quilt resolution and the Preview/Balanced/Native quality profile. Speed gains depend on the scene and GPU and are not guaranteed. See [DX12 HDRP performance investigation](docs/dx12-performance-investigation.md) for measurements and limitations from a bounded HDRP fixture.
 
-## Quiltの保存と再生
+## Save and play back Quilts
 
-Play中に`Window > ViewWeave > Quilt Capture`を開き、完成QuiltのPNG、JSON sidecar、中央view PNGを保存できます。連番を作る場合は出力先とFPSを指定して記録を開始し、必要ならPause/Resumeを使って停止します。生成済みの完成Quilt PNGまたは記録済み連番は`Window > ViewWeave > Quilt Playback`から選び、再生・一時停止・再開できます。再生には、Play中の既存ViewWeave Bridge Rigが正常に映像を出力できる状態である必要があります。PlaybackはBridge sessionを作成しません。D3D11またはD3D12のWindows Editor Playで使います。
+During Play, open `Window > ViewWeave > Quilt Capture` to save a completed Quilt as PNG, a JSON sidecar, and a central-view PNG. To create a sequence, choose an output location and FPS, start recording, and use Pause/Resume if needed. Select a completed Quilt PNG or recorded sequence from `Window > ViewWeave > Quilt Playback` to play, pause, or resume it. Playback requires an existing ViewWeave Bridge Rig in Play that can output video. Playback does not create a Bridge session. Use Windows Editor Play with D3D11 or D3D12.
 
-音声を含める場合はQuilt Captureの`Start PNG Sequence + Audio`を明示的に選びます。対応するのはWindows Editor Play中の現在のMono音声設定です。SDKはUnityやOSの音声設定を自動変更せず、録音中は通常の音声出力がミュートされることがあります。音声はPNG連番と別のWAVファイルに保存され、MP4書き出しには含まれません。詳しい条件は[Quilt Capture](docs/quilt-capture.md)と[Quilt recording audio](docs/quilt-recording-audio.md)を参照してください。
+To include audio, explicitly choose `Start PNG Sequence + Audio` in Quilt Capture. This supports the current Mono audio configuration during Windows Editor Play. The SDK does not change Unity or OS audio settings, and normal audio output may be muted during recording. Audio is saved to a separate WAV file alongside the PNG sequence and is not included in MP4 export. See [Quilt Capture](docs/quilt-capture.md) and [Quilt recording audio](docs/quilt-recording-audio.md) for requirements.
 
-記録を完了したPNG連番から無音MP4を作るには、`Window > ViewWeave > Quilt Video Export`を使います。FFmpegとffprobe 7.0.2を別途用意してください。SDKはそれらを同梱またはダウンロードしません。詳しくは[Quilt Video Export](docs/quilt-video-export.md)を参照してください。
+To create a silent MP4 from a completed PNG sequence, use `Window > ViewWeave > Quilt Video Export`. Provide FFmpeg and ffprobe 7.0.2 separately. The SDK does not bundle or download them. See [Quilt Video Export](docs/quilt-video-export.md).
 
-## カメラの構図調整
+## Adjust camera framing
 
-QuiltRenderer InspectorのCamera FramingとScene Viewで描画範囲を確認できます。紫の面はzero-parallax/focus plane、青緑と橙の面はNear/Farです。構図を手動調整するときはEdit ModeでCamera Authoringの操作を使います。Inspectorをロックして対象objectを選び、選択objectからfocus距離を設定するか、Scene Viewをfocus面中央へ移動します。水平・垂直orbitはfocus点をpivotとしてカメラの位置と向きを一緒に回します。3D focus cursorは個別toggleで、既定ではOFFです。操作対象のEffective CameraをInspectorで確認してください。CinemachineやanimationはPlay中にcamera poseを上書きすることがあります。手順は[Quilt camera authoring](docs/quilt-authoring.md#明示的なカメラ制作操作)を参照してください。
+Use Camera Framing in the QuiltRenderer Inspector and the Scene View to inspect the rendered area. The purple plane is the zero-parallax/focus plane; teal and orange planes are Near and Far. For manual adjustments, use Camera Authoring in Edit Mode. Lock the Inspector, select a target object, and set the focus distance from the selected object or move the Scene View to the center of the focus plane. Horizontal and vertical orbit rotate camera position and orientation together around the focus point. The 3D focus cursor is toggled separately and is off by default. Check the Effective Camera in the Inspector. Cinemachine or animation may override the camera pose during Play. See [Quilt camera authoring](docs/quilt-authoring.md#explicit-camera-authoring-controls).
 
-対応条件と既知の制約は[Compatibility](docs/compatibility.md)、Windows上の検証範囲は[Windows validation](docs/windows-validation.md)を参照してください。
+See [Compatibility](docs/compatibility.md) for support conditions and known limitations, and [Windows validation](docs/windows-validation.md) for tested Windows configurations.
 
+## Optional samples
 
-## 任意のサンプル
+Import `Windows URP Lit` or `Windows HDRP Lit` from Samples on the ViewWeave package details in Package Manager. After import, add `BridgeUrpLitSampleGenerator` for URP or `BridgeHdrpLitSampleGenerator` for HDRP to an existing Bridge Rig. Enable `Generate On Start` or run `Generate Lit Scene` from the Inspector. See [Import optional samples](docs/getting-started.md#import-optional-samples). Adding the package alone does not copy Samples into Assets.
 
-付属の`Windows URP Lit`と`Windows HDRP Lit`はPackage ManagerのViewWeave package詳細にあるSamplesから明示的にImportできます。Import後、既存のBridge RigへURPなら`BridgeUrpLitSampleGenerator`、HDRPなら`BridgeHdrpLitSampleGenerator`をAdd Componentし、`Generate On Start`を有効にするかInspectorの`Generate Lit Scene`を実行します。詳しくは[サンプル手順](docs/getting-started.md#任意のsamplesをimportする)を参照してください。packageを追加しただけではサンプルがAssetsへコピーされません。
+## HDRP and color space
 
-## HDRPと色空間
+HDRP and VFX Graph require Linear color space. `Lightmap Encoding` in HDRP Wizard must be set to `High Quality` for HDRP. During Quilt rendering, the HDRP adapter suppresses Motion Blur, SSR, SSGI, volumetric fog, and volumetric clouds, and temporarily pauses TAA. Auto Exposure uses a shared Fixed EV 12 across all Quilt views; if the original Volume stack is Fixed, its EV is preserved. Regular Fog, Sky, and Bloom remain enabled. See [Compatibility](docs/compatibility.md) for HDRP adapter details and limitations.
 
-HDRPとVFX GraphはLinear color spaceが必須です。HDRP Wizardの`Lightmap Encoding`はHDRPで`High Quality`を使うための設定です。HDRP adapterはquiltの描画中だけMotion Blur、SSR、SSGI、volumetric fog、volumetric cloudsを抑え、TAAを一時停止します。Auto Exposureは全quilt viewで同じFixed EV 12にし、元のVolume stackがFixedならそのEVを保ちます。通常のFog、Sky、Bloomなどは維持されます。HDRP adapterの詳細と制約は[Compatibility](docs/compatibility.md)を参照してください。
+## Test projects
 
-## テストプロジェクト
+See [Tests/Pipelines/README.md](Tests/Pipelines/README.md) for test setup and [the test-project section in Getting started](docs/getting-started.md#test-projects) for execution steps.
 
-テスト環境の準備は[Tests/Pipelines/README.md](Tests/Pipelines/README.md)、実行方法は[Getting startedのテストプロジェクト](docs/getting-started.md#テストプロジェクト)を参照してください。
+## Validation documents
 
-## 検証資料
-
-- [ドキュメント目次](docs/index.md): 利用者向け、開発者向け、検証履歴の資料を目的別に案内します。
-
-- [Getting started](docs/getting-started.md): Editor PlayとPlayerの手順
-- [Compatibility](docs/compatibility.md): 対応条件と既知の制約
-- [Windows validation](docs/windows-validation.md): 実行済み試験と結果
-- [Shutdown validation](docs/shutdown-validation-20261008.md): Windows shutdown lifecycle、歴史的AV記録と現在の検証状態
-- [残作業と受け入れ計画](docs/remaining-work-plan.md): 次に行う作業と完了条件
-- [残作業の検証記録](docs/benchmarks/remaining-work-validation-20261007.md): 2026-10-07の限定DX12 captureと終了診断
-- [DX12 HDRP performance investigation](docs/dx12-performance-investigation.md): Profiler調査と視点数削減の実測
-- [Legacy render pipeline investigation](docs/legacy-render-pipeline-investigation.md): 旧Looking Glass専用pipelineの調査と採用した投影計算
-- [公式SDK機能調査](docs/official-sdk-feature-research.md): Quilt保存、連番録画、カメラ操作の比較
-- [Unity多視点最適化調査](docs/unity-multiview-research.md): Unityと研究での描画最適化
-- [XR Display Provider調査](docs/xr-provider-investigation.md): 既存Cameraを使うXR連携方式の調査（採用・試作は保留）
-- [Unity feature coverage](docs/unity-feature-coverage.md): Unity機能ごとの確認範囲
-- [VFX Graph](docs/vfx-graph.md): VFX Graph利用時の条件
-- [Third-party notices](docs/THIRD_PARTY_NOTICES.md): 外部ライセンス
+- [Documentation index](docs/index.md): guides for users, developers, and validation history.
+- [Getting started](docs/getting-started.md): Editor Play and Player procedures.
+- [Compatibility](docs/compatibility.md): supported configurations and known limitations.
+- [Windows validation](docs/windows-validation.md): executed tests and results.
+- [Shutdown validation](docs/shutdown-validation-20261008.md): Windows shutdown lifecycle, historical AV records, and current validation status.
+- [Remaining work plan](docs/remaining-work-plan.md): next tasks and completion criteria.
+- [Remaining-work validation record](docs/benchmarks/remaining-work-validation-20261007.md): bounded DX12 capture and shutdown diagnostics from 2026-10-07.
+- [DX12 HDRP performance investigation](docs/dx12-performance-investigation.md): Profiler investigation and measured view-count reduction.
+- [Legacy render pipeline investigation](docs/legacy-render-pipeline-investigation.md): investigation of the legacy Looking Glass pipeline and adopted projection calculation.
+- [Official SDK feature research](docs/official-sdk-feature-research.md): comparison of Quilt saving, sequence recording, and camera controls.
+- [Unity multiview optimization research](docs/unity-multiview-research.md): rendering optimization in Unity and research.
+- [XR Display Provider investigation](docs/xr-provider-investigation.md): XR integration using an existing Camera (adoption and prototype deferred).
+- [Unity feature coverage](docs/unity-feature-coverage.md): validation scope by Unity feature.
+- [VFX Graph](docs/vfx-graph.md): conditions for using VFX Graph.
+- [Third-party notices](docs/THIRD_PARTY_NOTICES.md): external licenses.

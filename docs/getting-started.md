@@ -1,108 +1,110 @@
+[日本語](ja/getting-started.md)
+
 # Getting started
 
-この手順はUnity 6000.6.4f1、Windows、URPまたはHDRPを対象にします。標準のBridge Rig/Worker経路はWindows D3D11とD3D12のEditor PlayおよびPlayerで使えます。Looking Glassへの出力には公式Looking Glass Bridge runtimeと接続済みの機器が必要です。macOS Metalは通常Sessionに含まれず、別途明示opt-inの実験経路です。
+This guide targets Unity 6000.6.4f1 on Windows with URP or HDRP. The regular Bridge Rig/Worker path is available in Editor Play and Windows Players on D3D11 and D3D12. Output to a Looking Glass requires the official Looking Glass Bridge runtime and a connected device. macOS Metal is not part of regular sessions; it is a separate experiment requiring explicit opt-in.
 
-この図は、既存CameraからBridge表示を始める最短経路です。Quality profileの詳細設定と任意のMetal実験は含みません。
+The diagram shows the shortest path from an existing Camera to Bridge display. It does not cover detailed Quality profile settings or the optional Metal experiment.
 
 ```mermaid
-flowchart LR
-    Package["URPまたはHDRP package"] --> Rig["既存CameraからBridge Rigを作成"]
-    Rig --> Play["WindowsでPlayまたはPlayer起動"]
-    Play --> Render["Coreとpipeline adapterがQuiltを描画"]
-    Render --> Worker["Bridge WorkerへGPU共有"]
-    Worker --> Runtime["起動中の公式Bridge runtime"]
-    Runtime --> Device["接続済みLooking Glass"]
+flowchart TB
+    Package["URP or HDRP package"] --> Rig["Create a Bridge Rig from an existing Camera"]
+    Rig --> Play["Play on Windows or launch a Player"]
+    Play --> Render["Core and pipeline adapter render a Quilt"]
+    Render --> Worker["GPU-share to the Bridge Worker"]
+    Worker --> Runtime["Running official Bridge runtime"]
+    Runtime --> Device["Connected Looking Glass"]
 ```
 
-通常の導入では、利用者projectのUnity EditorまたはPlayerだけを起動し、公式Bridge runtimeを別途起動します。
+For regular setup, run only your Unity project in the Editor or as a Player, and start the official Bridge runtime separately.
 
-表示のために起動するのは、自分のUnity projectです。Unity EditorのPlay、またはビルドしたPlayerがsceneからQuiltを生成し、公式Looking Glass Bridge runtimeがそれを接続機器へ送ります。Bridge runtimeはインストールして起動しておきます。SDK内のTests/Bridge Unityプロジェクトやデモアプリを別途起動する必要はありません。
+To display content, run your own Unity project. Unity Editor Play or a built Player generates a Quilt from the scene, and the official Looking Glass Bridge runtime sends it to the connected device. Install and start the Bridge runtime. You do not need to launch the SDK's `Tests/Bridge` Unity project or a separate demo app.
 
-標準のBridge Rig/Worker経路では、選択中のD3D11またはD3D12 graphics APIを使います。対応条件は[Compatibility](compatibility.md)を参照してください。
+The regular Bridge Rig/Worker path uses the selected D3D11 or D3D12 Graphics API. See [Compatibility](compatibility.md) for support conditions.
 
-## Package Managerから追加する
+## Install from Package Manager
 
-1. Unity HubでURPまたはHDRPテンプレートからプロジェクトを作成し、Unity Editorで開きます。
-2. GitHub private repositoryへアクセスできるようGit Credential ManagerまたはSSHを設定します。認証tokenをGit URLに埋め込まないでください。
-3. `Window > Package Management > Package Manager`を開き、`+ > Install package from git URL`を選びます。
-4. 次のいずれか一つを追加します。
+1. In Unity Hub, create a project from a URP or HDRP template and open it in the Unity Editor.
+2. Configure Git Credential Manager or SSH so you can access the private GitHub repository. Do not embed an authentication token in a Git URL.
+3. Open `Window > Package Management > Package Manager` and choose `+ > Install package from git URL`.
+4. Add one of these URLs:
    - URP: `https://github.com/zabaglione/ViewWeave.git?path=/Distribution/urp#main`
    - HDRP: `https://github.com/zabaglione/ViewWeave.git?path=/Distribution/hdrp#main`
-5. 配布packageにCore、Bridge、選択したpipelineが含まれるため、別のViewWeave packageは追加しません。Samplesは任意です。Package ManagerのSamplesからImportするまでAssetsへ入りません。
+5. The distribution package includes Core, Bridge, and the selected pipeline, so do not add another ViewWeave package. Samples are optional and are not copied into Assets until imported.
 
-同じprojectにURP版とHDRP版を同時に追加しないでください。Git URLの`#main`を更新する際にPackage Manager cacheが残る場合は、Removeしてから同じURLを再Addするか、特定commit hashをrefに指定します。
-Package Managerが更新を完了したら、Unity Editorを正常終了して起動し直してください。更新したmanaged assemblyとnative pluginを読み込むために必要です。起動後は、使用するGraphics APIを選びます。
+Do not add the URP and HDRP packages to the same project. If the Package Manager retains a cache when updating the `#main` Git URL, remove and re-add the same URL or use a specific commit hash as the ref.
+After Package Manager completes the update, close the Unity Editor normally and reopen it. This loads the updated managed assembly and native plugin. Then select the Graphics API to use.
 
-## 既存のCubeやBoxを表示する
+## Display an existing Cube or Box
 
-1. UnityをWindows D3D11またはD3D12で起動します。標準のBridge Worker経路はどちらのAPIでもEditor Play出力できます。標準のGraphics API選択を使うか、必要な場合だけ起動引数`-force-d3d11`または`-force-d3d12`を指定します。実際のAPIは`SystemInfo.graphicsDeviceType`で確認してください。
-2. WindowsへLooking Glass Bridge runtimeをインストールし、Looking Glassを接続します。
-3. 通常のCubeやBoxをシーンに置き、標準のURP/HDRP materialとlightを使います。CubeへViewWeave componentを追加する必要はありません。
-4. 使用中Camera、またはCameraを祖先に持つGameObjectをHierarchyで右クリックし、`ViewWeave > Bridge Rig`を選びます。Rigは右クリックしたGameObjectの子として作成されます。右クリック対象かその祖先にあるCameraが優先され、対象がない場合は選択中GameObjectとその祖先、最後に`Camera.main`が使われます。`MainCamera`タグは必須ではありません。解決したCameraはRigの`Reference Camera`にも設定され、元Cameraは有効なまま、専用Rig CameraがQuiltを描画します。詳しくは[既存CameraからRigを作る](#既存cameraからrigを作る)を参照してください。
-5. RendererのあるCubeやBoxをCameraの前方に置きます。メニューでMain Cameraを右クリックした場合、zero-parallax距離は既定の10 Unity unitsから始まります。被写体に合わせたい場合は、Rigの`QuiltRenderer > Settings > Camera Distance`（`cameraDistance`）を調整します。
-6. Rigのあるsceneを保存し、Unity EditorのPlayを押します。Unity Editorがsceneを描画し、Bridge runtime接続後にBridge profileに応じたQuiltがLooking Glassへ送られます。EditorのGame viewは通常のMainCamera表示のままです。
+1. Start Unity on Windows with D3D11 or D3D12. The regular Bridge Worker path can output in Editor Play with either API. Use the standard Graphics API selection, or specify `-force-d3d11` or `-force-d3d12` at startup if needed. Check the active API with `SystemInfo.graphicsDeviceType`.
+2. Install the Looking Glass Bridge runtime on Windows and connect the device.
+3. Add a regular Cube or Box to the scene and use standard URP/HDRP materials and lights. You do not need to add a ViewWeave component to the Cube.
+4. In the Hierarchy, right-click the active Camera or a GameObject with a Camera ancestor and choose `ViewWeave > Bridge Rig`. The Rig is created as a child of the clicked GameObject. A Camera on the clicked object or one of its ancestors takes precedence; if none exists, the selected GameObject and its ancestors are checked, then `Camera.main`. The `MainCamera` tag is not required. The resolved Camera is also assigned to the Rig's `Reference Camera`; the original Camera stays enabled, and a dedicated Rig Camera renders the Quilt. See [Create a Rig from an existing Camera](#create-a-rig-from-an-existing-camera).
+5. Place a Cube or Box with a Renderer in front of the Camera. If you right-clicked Main Camera in the menu, the default zero-parallax distance starts at 10 Unity units. Adjust `QuiltRenderer > Settings > Camera Distance` (`cameraDistance`) on the Rig to fit the subject.
+6. Save the scene containing the Rig and press Play in the Unity Editor. The Editor renders the scene, and after connecting to the Bridge runtime, a Quilt based on the Bridge profile is sent to the Looking Glass. The Editor Game view remains the regular MainCamera view.
 
-被写体Rendererを選択した状態でRigを作るときは、選択中Rendererのbounds centerが解決したframing Cameraの前方かつnear/far clipの間にある場合、そのforward距離を`Camera Distance`に設定します。Rendererがない、disabled、範囲外、背面なら10 unitsです。framing Cameraが見つからない場合はRigの既定位置と3 unitsを使います。Cameraのnear/farとculling maskはRig作成時に初期値としてコピーします。poseと既定で有効なFOV追従は前段の説明どおり、実行中も参照Cameraから同期されます。
+When creating a Rig while a Renderer is selected, its bounds center is used to set `Camera Distance` if it is in front of the resolved framing Camera and between its near and far clip planes. If there is no Renderer, it is disabled or out of range, or it is behind the Camera, the distance is 10 units. If no framing Camera can be resolved, the Rig uses its default position and 3 units. The Camera near/far planes and culling mask are copied as initial values when the Rig is created. As described above, pose and the enabled-by-default FOV following are synchronized from the reference Camera during runtime.
 
-Edit ModeとmacOS通常SessionではBridge出力しません。Metalは[Graphics backends](graphics-backends.md)に記載した明示opt-inの別実験です。Windows Playerで確認する場合はWindows Graphics APIsでD3D11またはD3D12を選び、Build and Runします。Legacy Direct経路を使う場合はD3D11を選んでください。
+Edit Mode and regular macOS sessions do not output to Bridge. Metal is a separate experiment requiring explicit opt-in, documented in [Graphics backends](graphics-backends.md). To test a Windows Player, select D3D11 or D3D12 under Windows Graphics APIs and use Build and Run. Select D3D11 if using Legacy Direct.
 
-## 視点描画数を変更する
+## Change the number of rendered views
 
-HierarchyでViewWeave Rigを選び、Inspectorの`QuiltRenderer > View Render Mode`から`Full`、`Half`、`Quarter`を選びます。この48-view profile例では出力Quiltは常に48 tileで、modeが実際にrender requestを出す視点数を決めます。
+Select the ViewWeave Rig in the Hierarchy and choose `Full`, `Half`, or `Quarter` under `QuiltRenderer > View Render Mode` in the Inspector. In this 48-view profile example, the output Quilt always has 48 tiles; the mode determines how many views are actually rendered.
 
 ```mermaid
 flowchart LR
-    Full["Full: 48 tile / 48 rendered views"] --> Quilt["48-tile output Quilt"]
-    Half["Half: 48 tile / 24 rendered views"] --> Quilt
-    Quarter["Quarter: 48 tile / 12 rendered views"] --> Quilt
+    Full["Full: 48 tiles / 48 rendered views"] --> Quilt["48-tile output Quilt"]
+    Half["Half: 48 tiles / 24 rendered views"] --> Quilt
+    Quarter["Quarter: 48 tiles / 12 rendered views"] --> Quilt
 ```
 
-未描画tileには最も近い描画済みviewを割り当てます。`View Render Mode`は表示解像度を変更せず、視点間の補間も行いません。`Quality`（Preview/Balanced/Native）とは別の設定です。
+Unrendered tiles use the nearest rendered view. `View Render Mode` does not change output resolution and does not interpolate between views. It is separate from `Quality` (Preview/Balanced/Native).
 
-## Qualityを変更する
+## Change Quality
 
-`ViewWeaveBridgeSession` Inspectorの`Quality`は各viewの描画解像度を選びます。`Preview`はprofile解像度の1/4、`Balanced`は1/2、`Native`はprofile本来の解像度です。Qualityを変えてもprofileのview数と`View Render Mode`は変わりません。
+`Quality` in the `ViewWeaveBridgeSession` Inspector selects the render resolution for each view. `Preview` uses one quarter of the profile resolution, `Balanced` uses one half, and `Native` uses the profile's full resolution. Changing Quality does not change the profile's view count or `View Render Mode`.
 
-1. Unity EditorのPlayを停止します。
-2. Rig上の`ViewWeaveBridgeSession` Inspectorにある`Quality`を`Balanced`または`Native`へ変更します。
-3. Playを押し、Bridgeへ送られる表示を確認します。
+1. Stop Play mode in the Unity Editor.
+2. On the Rig's `ViewWeaveBridgeSession` Inspector, change `Quality` to `Balanced` or `Native`.
+3. Press Play and inspect the output sent to Bridge.
 
-接続機器から取得したprofileが7680x4320、8x6 viewsなら、1 viewあたりはPreviewが240x180、Balancedが480x360、Nativeが960x720です。この数値はそのprofileの例で、他の機器に共通する仕様値ではありません。48 viewsの場合、NativeはPreviewと比べて1 viewあたり縦横4倍、総pixel数16倍を描画するため、GPU負荷が増えます。
+For example, if the connected device profile is 7680x4320 with 8x6 views, each view is 240x180 in Preview, 480x360 in Balanced, and 960x720 in Native. These values are an example for that profile, not a common specification for all devices. With 48 views, Native renders four times the width and height per view compared with Preview, or 16 times the total pixel count, so GPU load increases.
 
-Sessionは起動時に選択したQualityからquilt解像度とgridを適用します。`QuiltSettings`を直接編集してもSessionのprofileで上書きされるため、表示解像度を変える場合は`ViewWeaveBridgeSession`の`Quality`を使ってください。
+At startup, Session applies Quilt resolution and grid from the selected Quality. Editing `QuiltSettings` directly is overwritten by the Session profile, so use `Quality` on `ViewWeaveBridgeSession` to change display resolution.
 
-## 既存CameraからRigを作る
+## Create a Rig from an existing Camera
 
-既存CameraのGameObjectを右クリックして`ViewWeave > Bridge Rig`を選びます。`MainCamera`タグのないCameraも選択できます。メニューはRig作成前に右クリックしたGameObjectとその祖先を調べ、最初に見つけたCameraをframing sourceとして解決します。Hierarchyのcontextを持たないメニューを使う場合は、選択中GameObjectとその祖先を調べ、見つからなければ`Camera.main`を使います。
+Right-click an existing Camera GameObject and choose `ViewWeave > Bridge Rig`. Cameras without the `MainCamera` tag are also eligible. Before creating the Rig, the menu checks the clicked GameObject and its ancestors and resolves the first Camera found as the framing source. When using a menu without Hierarchy context, it checks the selected GameObject and its ancestors, then uses `Camera.main` if none is found.
 
-解決したCameraのworld pose、FOV、near/far clip、culling maskをRig Cameraへ初期値としてコピーし、`Reference Camera`にも設定します。標準の自動Quilt描画では各描画直前に参照Cameraのworld poseを読み取るため、Cinemachine Brainが出力するMain Cameraの位置・向きに追従します。`Follow Reference Field Of View`も既定で有効で、参照CameraのFOVが各描画でQuilt設定へ反映されます。手入力のFOVを使いたい場合はこのチェックを外してください。near/far clip、view aspect、focus distance、view coneは追従しません。元Cameraの設定は変更しません。Rigは右クリックしたGameObjectの子になり、専用CameraはQuilt描画用に自動で無効になります。
+The Camera's world pose, FOV, near/far clip planes, and culling mask are copied as initial values to the Rig Camera, and the Camera is assigned to `Reference Camera`. The regular automatic Quilt renderer reads the reference Camera's world pose immediately before each render, so it follows the position and orientation of the Main Camera driven by Cinemachine Brain. `Follow Reference Field Of View` is enabled by default, and the reference Camera's FOV is applied to Quilt settings for each render. Disable this option to use the manually entered FOV. Near/far clip planes, view aspect, focus distance, and view cone are not synchronized. The original Camera settings are not changed. The Rig is parented to the clicked GameObject, and its dedicated Camera is automatically disabled for Quilt rendering.
 
-`Camera Distance`は参照Cameraのworld位置から前方へ測るUnity unitsで、Sceneビューの紫のゼロ視差面がその位置を示します。1 unitを1mとするsceneなら距離をメートル相当として読めます。Cinemachine Virtual Camera自体ではなく、Brainが制御する実Cameraを参照してください。手動`RenderQuilt()`は呼び出し時の姿勢を使います。自動Quilt描画とURP VFX Graph用driverの姿勢同期については[Camera framingとFocus](quilt-authoring.md)を参照してください。
+`Camera Distance` is measured in Unity units forward from the reference Camera's world position; the purple zero-parallax plane in the Scene View marks that distance. If the scene scale uses 1 unit per meter, the distance corresponds approximately to meters. Reference the actual Camera controlled by Cinemachine Brain, not the Cinemachine Virtual Camera itself. Manual `RenderQuilt()` uses the pose at the time of the call. See [Camera framing and focus](quilt-authoring.md) for automatic Quilt rendering and pose synchronization for the URP VFX Graph driver.
 
-## HDRPテンプレート
+## HDRP template
 
-HDRPはLinear color spaceが必須です。`Project Settings > Player > Other Settings > Color Space`でLinearを選んでください。HDRPのquilt描画には専用adapterが働き、既定でquilt viewを妨げる一部temporal効果を一時的に抑えます。HDRP Auto Exposureは全view共通のFixed EV 12に変換されます。元のExposureがFixedならその値を保ちます。元のMainCamera、Volume Profile、Project Settingsは変更しません。通常Fog、Sky、Bloomなどは維持されます。
+HDRP requires Linear color space. Choose Linear under `Project Settings > Player > Other Settings > Color Space`. A dedicated adapter is used for HDRP Quilt rendering and temporarily suppresses some temporal effects that interfere with Quilt views. HDRP Auto Exposure is converted to a shared Fixed EV 12 across all views. If the original Exposure mode is Fixed, its value is retained. The original MainCamera, Volume Profile, and Project Settings are not changed. Regular Fog, Sky, and Bloom remain enabled.
 
-VFX Graphを使う場合もLinear color spaceにします。HDRP adapterの制約は[Compatibility](compatibility.md)を参照してください。
+Use Linear color space with VFX Graph as well. See [Compatibility](compatibility.md) for HDRP adapter limitations.
 
-## 任意のSamplesをImportする
+## Import optional Samples
 
-確認用オブジェクトをgeneratorで作る場合だけ、Package ManagerでViewWeave packageを選び、Samples欄からpipelineに合うものをImportします。この操作はsceneをAssetsへコピーせず、generatorとmaterial resourceをImportします。
+Only if you want to generate test objects, select the ViewWeave package in Package Manager and import the Sample for your pipeline from the Samples section. This operation imports a generator and material resource, not a scene into Assets.
 
-1. シーンに`GameObject > ViewWeave > Bridge Rig`を作成します。
-2. RigにURPなら`BridgeUrpLitSampleGenerator`、HDRPなら`BridgeHdrpLitSampleGenerator`をAdd Componentします。
-3. Inspectorの`Generate On Start`を有効にしてPlayすると、起動時に確認用のCube、sphere、lightが生成されます。手動で作成する場合は、generatorのInspectorメニューから`Generate Lit Scene`を実行します。
-4. Bridge出力を確認するにはWindows D3D11またはD3D12でPlayします。HDRPはLinear color spaceが必要です。HDRP adapterと色空間の説明は上記[HDRPテンプレート](#hdrpテンプレート)を参照してください。
+1. Create a `GameObject > ViewWeave > Bridge Rig` in the scene.
+2. Add `BridgeUrpLitSampleGenerator` for URP or `BridgeHdrpLitSampleGenerator` for HDRP to the same Rig GameObject.
+3. Enable `Generate On Start` and press Play to generate a test Cube, sphere, and light at startup. To generate these manually, use `Generate Lit Scene` in the generator Inspector menu.
+4. To verify Bridge output, press Play on Windows D3D11 or D3D12. HDRP requires Linear color space. See [HDRP template](#hdrp-template) above for adapter and color-space details.
 
-標準Cubeや自分のsceneを表示するときはSamplesのImportもgeneratorも必要ありません。
+Samples and a generator are not required to display a standard Cube or your own scene.
 
-## Player build
+## Build a Player
 
-1. sceneを保存します。
-2. `File > Build Profiles`でWindows profileにsceneを追加します。
-3. Windows Graphics APIsでDirect3D11またはDirect3D12を有効にします。標準Bridge Worker経路はいずれも使えます。
-4. `Build and Run`します。Bridge runtimeが自動検出されない場合だけ、Bridge SessionのRuntime Pathに`bridge_inproc.dll`の絶対パスを指定します。
+1. Save the scene.
+2. Add it to a Windows profile in `File > Build Profiles`.
+3. Enable Direct3D11 or Direct3D12 under Windows Graphics APIs. Both are supported by the regular Bridge Worker path.
+4. Choose `Build and Run`. If the Bridge runtime is not discovered automatically, set the absolute path to `bridge_inproc.dll` in the Bridge Session's Runtime Path.
 
-## テストプロジェクト
+## Test projects
 
-repository rootで`python tools/prepare_sample_tests.py`を実行してから、Unity Hubの`Add`で`Tests/Pipelines/Unity`を開きます。GPUを使うfixtureが含まれます。Editorで`Window > General > Test Runner`から対象testを実行します。既知の未通過条件と試験結果は[Windows validation](windows-validation.md)を参照してください。
+From the repository root, run `python tools/prepare_sample_tests.py`, then use `Add` in Unity Hub to open `Tests/Pipelines/Unity`. Some fixtures use the GPU. In the Editor, run the target tests from `Window > General > Test Runner`. See [Windows validation](windows-validation.md) for known non-passing conditions and test results.

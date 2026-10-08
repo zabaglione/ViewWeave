@@ -1,16 +1,18 @@
+[日本語](README.ja.md)
+
 # Windows HDRP Lit sample
 
-Windows D3D11またはD3D12 Editor PlayまたはPlayerでHDRPの基本Lit表示を確認する任意sampleです。Unity 6000.6.4f1のHDRP projectへViewWeave HDRP配布packageをGit URLから追加し、`Window > Package Management > Package Manager`のSamplesから`Windows HDRP Lit`をImportします。配布packageにはCore、HDRP、Bridgeが含まれます。HDRPではLinear color spaceが必要です。quilt描画中のExposureはadapterが全view共通のFixed値に調整します。
+This optional sample demonstrates basic HDRP Lit rendering in Unity Editor Play or a Player on Windows D3D11 or D3D12. Add the ViewWeave HDRP distribution package to a Unity 6000.6.4f1 HDRP project from its Git URL, then import `Windows HDRP Lit` from Samples under `Window > Package Management > Package Manager`. The distribution package contains Core, HDRP, and Bridge. HDRP requires Linear color space. During Quilt rendering, the adapter applies a shared Fixed Exposure value across all views.
 
-## 使い方
+## Usage
 
-1. `GameObject > ViewWeave > Bridge Rig`を作成します。
-2. 同じGameObjectへ`BridgeHdrpLitSampleGenerator`をAdd Componentします。
-3. `Generate On Start`を有効にしてWindows Standalone PlayerをDirect3D11またはDirect3D12でBuild and Runします。
-4. Player起動後、生成されたLit sceneがQuilt表示されることを確認します。
+1. Create `GameObject > ViewWeave > Bridge Rig`.
+2. Add `BridgeHdrpLitSampleGenerator` to the same GameObject.
+3. Enable `Generate On Start` and Build and Run a Windows Standalone Player using Direct3D11 or Direct3D12.
+4. After the Player starts, verify that the generated Lit scene appears in the Quilt.
 
-Inspectorの`Generate Lit Scene`は確認用のCube、sphere、lightを生成する操作です。Bridgeへの出力は、Bridge runtimeと機器を用意してWindows D3D11またはD3D12 EditorでPlayするか、Windows D3D11またはD3D12 Playerを起動して確認します。通常のruntime discoveryでBridge DLLを見つけられない場合だけ、`ViewWeaveBridgeSession`の`Runtime Path`へDLLの絶対パスを設定します。
+`Generate Lit Scene` in the Inspector creates the test Cube, sphere, and light. To output to Bridge, provide the Bridge runtime and device, then Play in the Windows D3D11/D3D12 Editor or start a Windows D3D11/D3D12 Player. Set the absolute DLL path in `ViewWeaveBridgeSession`'s `Runtime Path` only if normal runtime discovery cannot find the Bridge DLL.
 
-## materialとHDRP条件
+## Material and HDRP conditions
 
-sampleは`Resources/ViewWeave/HdrpLit.mat`を使います。resourceが見つからない場合は`ViewWeave/Samples/Windows HDRP Lit/Create Material Resource`を実行してから`Generate Lit Scene`を再実行してください。生成時は赤いcube、緑のsphere、directional light、固定Exposure、Motion Blur、SSR、SSGI、volumetric fog、cloudの無効設定を使用します。
+The sample uses `Resources/ViewWeave/HdrpLit.mat`. If the resource is missing, run `ViewWeave/Samples/Windows HDRP Lit/Create Material Resource`, then run `Generate Lit Scene` again. Generation uses a red Cube, green sphere, directional light, fixed Exposure, and disables Motion Blur, SSR, SSGI, volumetric fog, and clouds.

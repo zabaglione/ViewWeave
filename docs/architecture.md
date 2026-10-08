@@ -1,69 +1,69 @@
+[日本語](ja/architecture.md)
+
 # Architecture
 
-ViewWeaveは公式SDKとは独立して開発している非公式のUnity SDKです。Core、URP adapter、HDRP adapter、Bridge outputを分離しています。正式な対象はUnity 6000.6.4f1で検証しているURP/HDRPです。Built-inはサポート対象外で、CoreはStandard RenderRequest経路を要求します。
+ViewWeave is an unofficial Unity SDK developed independently of the official SDK. It separates Core, URP and HDRP adapters, and Bridge output. Its supported targets are URP and HDRP validated on Unity 6000.6.4f1. Built-in is unsupported, and Core requires the Standard RenderRequest path.
 
-## 現在のデータ経路
+## Current data path
 
-次図は通常のWindows URP/HDRP Bridge Worker経路を示します。adapterで描画状態を整え、CoreがStandardRequestとGPU上のtile転送を行います。Metal実験とファイル再生は別の経路です。
+The diagram shows the regular Windows URP/HDRP Bridge Worker path. The adapter prepares render state, then Core issues StandardRequests and transfers tiles on the GPU. The Metal experiment and file playback use separate paths.
 
 ```mermaid
 flowchart TB
-    Camera["利用者Camera"] --> Core["Coreがviewを制御"]
-    Core --> Adapter["URP/HDRP adapterが描画状態を準備"]
-    Adapter --> Request["CoreがviewごとのStandardRequestを実行"]
-    Request --> Copy["CoreがGPU上のtileへCopyTexture"]
-    Copy --> Quilt["完成Quilt texture"]
+    Camera["User Camera"] --> Core["Core controls views"]
+    Core --> Adapter["URP/HDRP adapter prepares render state"]
+    Adapter --> Request["Core issues one StandardRequest per view"]
+    Request --> Copy["Core copies to GPU tiles with CopyTexture"]
+    Copy --> Quilt["Completed Quilt texture"]
     Quilt --> Output["IQuiltOutput"]
     Output --> Worker["Bridge Worker"]
-    Worker --> Bridge["公式Bridge runtime"]
+    Worker --> Bridge["Official Bridge runtime"]
     Bridge --> Display["Looking Glass"]
 ```
 
-adapterはQuilt完成前のview描画を担当し、`IQuiltOutput`は完成したQuiltを出力経路へ渡します。Bridge WorkerはGPU共有経路で公式Bridge runtimeへ送ります。Core描画はview数分のrender requestを行います。
+The adapter prepares view rendering before the Quilt is complete; `IQuiltOutput` passes the completed Quilt to the output path. The Bridge Worker sends it to the official Bridge runtime over GPU sharing. Core performs one render request per view.
 
-Coreは専用Camera 1台を一時的に制御し、各視点をN回レンダリングします。視点ごとに平行移動とオフ軸frustumを設定し、`Graphics.CopyTexture`でGPU上のQuiltタイルへ転送します。現在は視点間でフル描画を共有していないため、1台のCameraでもN回の描画、culling、影、post processingが発生します。CPU readbackは通常経路にありません。
+Core temporarily controls one dedicated Camera and renders N times, once per view. It sets the view translation and off-axis frustum, then transfers the result to a GPU Quilt tile with `Graphics.CopyTexture`. Rendering is not shared between views, so one Camera still incurs N renders, culling operations, shadows, and post-processing passes. The regular path does not use CPU readback.
 
-`IQuiltOutput`は公開Quilt RenderTextureと`QuiltLayout`を出力経路へ渡す境界です。QuiltはBridge入力仕様上必須であり、Quilt単独を低速原因とは判断できません。Coreはnative library、socket、Bridge protocolを直接扱わず、Bridgeやテスト用出力を交換できる構成を維持します。
+`IQuiltOutput` passes the public Quilt RenderTexture and `QuiltLayout` to the output path. Bridge input requires a Quilt, so the Quilt alone is not identified as a performance bottleneck. Core does not directly handle a native library, socket, or Bridge protocol; it remains replaceable with Bridge and test outputs.
 
-URP/HDRPでは専用Guardと`RenderPipeline.StandardRequest`を使います。`VolumeStack`はGuardで再利用する構成ですが、視点ごとのtemporal history分離やTAAの独立性を保証するものではありません。TAAは現在の描画中だけ無効化し、終了時に復元します。Game simulation、Physics、Animationは視点ごとに繰り返しませんが、利用者のrender callbackの副作用やtemporal処理の共有は別途確認が必要です。
+URP/HDRP use a dedicated Guard and `RenderPipeline.StandardRequest`. The Guard reuses a `VolumeStack`, but does not guarantee separate temporal history or independent TAA per view. TAA is disabled only while rendering and restored afterward. Game simulation, Physics, and Animation do not repeat per view, but side effects in user render callbacks and sharing of temporal state still require separate validation.
 
-## 出力とBridge
+## Output and Bridge
 
-Sessionは機器のprofileを動的に選択し、自動検出を主経路とします。通常の利用では公式Bridge runtimeを別途用意します。`BridgeQuiltOutput`/Legacy DirectはWindows D3D11のみです。標準の`BridgeWorkerQuiltOutput`はWindows D3D11とD3D12のEditor PlayおよびPlayerで使う経路です。D3D12ではUnityのD3D12 deviceから同じGPU上のD3D11 workerへQuiltをGPU共有し、workerが公式Bridgeへ送ります。この経路はCPU画像readbackを使いません。Edit Modeは対象外です。通常のSessionはWindowsのみです。`BridgeMetalExperimentalOutput`は最大3 quiltに制限した独立componentですが、macOS native shimはUPM未同梱で、実機運用をサポートしません。ABI、手動artifact条件、未確定寿命契約は[Graphics backends](graphics-backends.md)を参照してください。
+Session selects a device profile dynamically and uses auto-detection as its primary path. Regular use requires the official Bridge runtime separately. `BridgeQuiltOutput` and Legacy Direct support Windows D3D11 only. The standard `BridgeWorkerQuiltOutput` path supports Windows D3D11 and D3D12 in Editor Play and Players. On D3D12, the Quilt is GPU-shared from Unity's D3D12 device to a D3D11 worker on the same GPU, and the worker sends it to the official Bridge. This path does not use CPU image readback. Edit Mode is unsupported. Regular sessions target Windows only. `BridgeMetalExperimentalOutput` is an independent component limited to at most three Quilts; the macOS native shim is not included in UPM, and this is not supported for physical-device operation. See [Graphics backends](graphics-backends.md) for ABI, manual artifact, and unconfirmed lifetime-contract details.
 
-WorkerはUnity render thread側のQuilt copyとworker所有のD3D11 device、3 slot共有GPU ring、worker側の描画、WM message pump、shutdown/reopenを分離します。RTX 3090 Tiでshared-resource handoff、ring reuse、typeless format、timeout、late completion、device-removal seam、generationを含むD3D11 baseline込み349 draw testを通過し、fake Bridge runtimeを使ったloader lifecycle 100 cycleも通過しました。Unity D3D12 Editor PlayはURP/HDRPのDomain Reload enabled/disabledで各2 cycleを確認しました。固定fixtureのD3D12 Player matrixではURP/HDRPのDevelopment/Release各runがPreview、Balanced、Native、Previewを完了し、Native qualityのPlayer実行もこのmatrix内で確認済みです。Developmentは各pipelineでNative restartを10回、Releaseは1回行いました。ユーザーHDRP VFX Learning Templates projectもsnapshot 8adda27cでNative 7680x4320・48 viewsのEditor PlayとIdle/Closed・pending 0の停止を確認しました。このmatrixではGRD設定を切り替えていません。任意projectの全48 views光学品質、WARP、他GPUは未検証です。Windows CIではhardware D3D12をskipします。
+The Worker separates Quilt copies on Unity's render thread from its owned D3D11 device, a three-slot shared-GPU ring, worker-side rendering, the WM message pump, and shutdown/reopen. A D3D11 baseline with 349 draw tests passed on RTX 3090 Ti, covering shared-resource handoff, ring reuse, typeless formats, timeouts, late completion, device-removal seams, and generations. Loader lifecycle tests using a fake Bridge runtime passed 100 cycles. Windows D3D12 Editor Play was checked for two cycles per URP/HDRP pipeline with Domain Reload enabled and disabled. In the fixed-fixture D3D12 Player matrix, URP/HDRP Development and Release runs completed Preview, Balanced, Native, then Preview; Native-quality Player execution is confirmed within that matrix. Development performed 10 Native restarts per pipeline; Release performed one. The user's HDRP VFX Learning Templates project at snapshot `8adda27c` also completed Native 7680x4320, 48-view Editor Play and stopped with Idle/Closed and zero pending work. This matrix did not toggle GRD. Optical quality for all 48 views in arbitrary user projects, WARP, and other GPUs remain unverified. Windows CI skips hardware D3D12.
 
-失敗時はworkerを`Fault`にし、submission状態が確定しない間はGPU resource参照をshutdown完了まで保持します。保留中のnative shutdownが解決しない場合はUnity Editor/Playerを再起動して回復します。これは技術的なrecovery境界で、通常のセットアップ手順には不要です。物理hotplugや任意の実機接続hangをカバーしません。
+On failure, the Worker enters `Fault` and retains GPU resource references until shutdown completes while submission state is uncertain. If a pending native shutdown does not resolve, recovery requires restarting the Unity Editor/Player. This is a technical recovery boundary, not part of normal setup. It does not cover physical hotplug or hangs with arbitrary device connections.
 
-Bridge経路ではUnity render threadからのcopy、Bridge workerの描画、WM message pump、終了時の非同期排出、resizeと再openを分離して扱います。共有GPU ring bufferは3スロットです。queueが満杯の場合は新しいsubmissionをdropし、投入済みsubmissionを保持します。Workerの同一プロセス再接続と終了保留0は実測済みです。全48 viewの人手による光学確認、hotplug、複数機器の受入は未完了です。
+The Bridge path separates copies from the Unity render thread, Bridge Worker rendering, the WM message pump, asynchronous drain on exit, resize, and reopen. The shared GPU ring buffer has three slots. If the queue is full, a new submission is dropped while queued submissions are retained. Same-process Worker reconnect and zero pending work on shutdown have been measured. Manual optical review of all 48 views, hotplug, and acceptance with multiple devices remain incomplete.
 
-## 確認済み範囲と未検証範囲
+## Verified and unverified scope
 
-Unity 6000.6.4f1、Windows、D3D11でURP/HDRPの基本Lit、Bloom、透明Lit、uGUI、粒子、UI Toolkitの試験を行っています。これらの結果は個別のfixture条件に限られ、すべての素材や描画経路への対応を意味しません。HDRPではLinear color spaceが必須です。HDRP adapterはquilt viewのscopeだけ専用Volume overrideを有効にし、Motion Blur、SSR、SSGI、volumetric fog/cloudを抑え、Exposureをquilt全view共通のFixed EVにします。元stackがFixedならEVを保ち、通常Fog、Sky、BloomとMainCamera/元Volume/Project Settingsは変更しません。通常SessionでのmacOS出力は未対応です。Metal native実験は物理Mac/Bridgeで未検証です。長時間動作と性能の一般化も未確認です。
+Basic Lit, Bloom, transparent Lit, uGUI, particles, and UI Toolkit have been tested on Unity 6000.6.4f1, Windows, and D3D11 with URP/HDRP. Results are limited to individual fixture conditions and do not imply support for every material or render path. HDRP requires Linear color space. During Quilt views, the HDRP adapter enables a dedicated Volume override that suppresses Motion Blur, SSR, SSGI, and volumetric fog/clouds; it sets one shared Fixed EV for all views. If the original stack is Fixed, its EV is preserved. Regular Fog, Sky, and Bloom remain enabled, and the user's MainCamera, original Volume, and Project Settings are not changed. Regular macOS sessions are unsupported. The Metal native experiment has not been tested on a physical Mac with Bridge. Long-duration behavior and general performance are also unverified.
 
-次の項目は対応範囲を決めるための検証対象です。
+The following items remain validation targets for defining support:
 
-| 分類 | 状態 |
+| Area | Status |
 | --- | --- |
-| Animator、SkinnedMeshRenderer、Terrain、LOD、影 | Geometry fixtureを個別確認。Animatorを含む一般素材への対応は未確定 |
-| Shader Graph、Renderer Feature、Decal、Reflection Probe、Light Probe | Shader GraphとRenderer Featureは限定fixture。Decal、Reflection Probe、Light Probeの一般利用は未検証 |
-| HDRP SSR、SSGI、volumetric fog/cloud、Motion Blur | quilt view中だけadapterの一時overrideで抑制。通常表示と元Volume設定は維持 |
-| FXAA、SMAA、MSAA、色調補正、TAA履歴、Auto Exposure | FXAA/SMAAと一部色調補正は限定fixture。URP MSAA 1/1の個別条件を確認。HDRP Auto Exposureはquilt view中に共通Fixed EVへ一時変換。独立TAA履歴、HDRP MSAA、性能は未検証 |
-| RenderTextureを使うUI、入力ray map、VideoTexture | uGUIとUI Toolkitの個別fixtureを確認。入力ray mapとVideoTextureは未検証 |
-| LineRenderer、TrailRenderer、VFX Graph、複雑な透明ソート | Line/Trailは個別fixtureで限定確認。URP Simple Burstは停止6条件と通常再生4条件をPlayerで確認。HDRP、一般VFX、複雑なsortは未確定 |
-| 複数機器、hotplug、RGBD、quilt layer | 未実装または未検証 |
-| Quilt保存・連番録画・無音MP4 | Capture PNG/連番とsilent MP4 exportは実装済みで、限定fixtureを確認。Mono音声は別WAVへ保存。Bridge delivery、音声mux、実機品質は未検証 |
+| Animator, SkinnedMeshRenderer, Terrain, LOD, shadows | Individual geometry fixtures checked. Support for general content including Animator remains undetermined. |
+| Shader Graph, Renderer Feature, Decal, Reflection Probe, Light Probe | Limited Shader Graph and Renderer Feature fixtures. General use of Decal, Reflection Probe, and Light Probe is unverified. |
+| HDRP SSR, SSGI, volumetric fog/clouds, Motion Blur | Temporarily suppressed by adapter override only during Quilt views. Regular rendering and original Volume settings are retained. |
+| FXAA, SMAA, MSAA, color grading, TAA history, Auto Exposure | Limited FXAA/SMAA and some color-grading fixtures. URP MSAA 1/1 checked under one condition. Independent TAA histories, HDRP MSAA, and performance are unverified. HDRP Auto Exposure is temporarily converted to a shared Fixed EV during Quilt views. |
+| UI using RenderTexture, input ray map, VideoTexture | Individual uGUI and UI Toolkit fixtures checked. Input ray maps and VideoTexture are unverified. |
+| LineRenderer, TrailRenderer, VFX Graph, complex transparent sorting | Line/Trail checked in individual fixtures. URP Simple Burst checked in a Player for six stop conditions and four regular-play conditions. HDRP, general VFX, and complex sorting remain undetermined. |
+| Multiple devices, hotplug, RGBD, Quilt layers | Unimplemented or unverified. |
+| Quilt saving, sequence recording, silent MP4 | Capture PNG/sequence and silent MP4 export are implemented and checked in bounded fixtures. Mono audio is saved to a separate WAV. Bridge delivery, audio muxing, and physical-device quality are unverified. |
 
-## 性能計測の扱い
+## How to interpret performance measurements
 
-`LastCpuSubmissionTicks`はCPU描画依頼区間だけを計時し、`BridgeSubmit`を含みません。GPU時間、render thread時間、transfer時間、present latencyを表しません。視点数を減らさずにGPU負荷が下がるとは限らないため、同一機器、同一scene、同一Quilt設定で個別に計測します。Quiltのタイル転送だけを理由に全体の遅さを説明しません。
+`LastCpuSubmissionTicks` times only the CPU render-submission interval and excludes `BridgeSubmit`. It does not represent GPU time, render-thread time, transfer time, or present latency. Reducing GPU load without reducing view count is not guaranteed; measure each scene on the same device with the same Quilt settings. Do not attribute overall slowness to Quilt tile transfer alone.
 
-性能最適化は検証待ちのため保留しています。既存のScene View Gizmoによるcamera authoringは維持し、QuiltへのGizmo overlayは対象外です。GPU Resident Drawerや視点間共通処理の再利用は独立した検証項目です。既存の1台Camera・N回描画を置き換えた実装ではなく、結果を確認した後に採用可否を判断します。
+Performance optimization is deferred pending validation. Existing Scene View Gizmo camera authoring is retained; Gizmo overlays in the Quilt are out of scope. GPU Resident Drawer and reuse of work shared between views are independent validation items. No implementation has replaced the existing one-Camera, N-render path. Decide whether to adopt an optimization only after its results are checked.
 
-## 実装済みの検証と残るゲート
+## Implemented validation and remaining gates
 
-M1の通常thread経路は、call stack、thread ID、device context、fenceの収集、Unity render threadだけのcopy、worker own device、3スロットring buffer、resize、close/reopenの実装とAPI検証まで完了しています。同一プロセス再接続を含む各120 draw、終了保留0、host thread再利用を実測しました。品質、光学、配布署名、hotplug、複数機器はrelease gateとして残ります。通常threadの実機結果をDirect経路の結果と混同しません。
+The M1 regular-thread path completed implementation and API validation for call-stack, thread-ID, and device-context collection; Unity-render-thread-only copying; the Worker-owned device; the three-slot ring buffer; resize; and close/reopen. Measurements covered 120 draws per case including same-process reconnect, zero pending work at shutdown, and host-thread reuse. Quality, optics, distribution signing, hotplug, and multiple devices remain release gates. Do not conflate regular-thread results with the Direct path.
 
-M2のSession、Registry、Locator、Rig menuはコンパイルと18件のSession試験を確認しています。SessionはURP/HDRPのPreview、Balanced、NativeとGRD ON/OFFの単独6条件を48 view Playerで確認しました。固定条件のURP/HDRP品質切替で4段階を各122 completion、明示Stop/Start後120 draw、pending 0まで確認しましたが、Registryの一般運用、hotplug、複数機器、光学品質は未確認です。GRDはMeshRenderer中心の検証対象であり、Coreの1台Camera・N回描画やフルrender回数を削減する実装ではありません。cached VolumeStackは適用済みで、固定条件のCPU submission比較もありますが、GPU時間とrender thread時間は未取得です。
-
-
+M2 Session, Registry, Locator, and Rig menu compile, and 18 Session tests passed. Session was checked in 48-view Player for the six individual combinations of URP/HDRP Preview, Balanced, Native, and GRD on/off. Under fixed URP/HDRP quality-switch conditions, four stages completed 122 times each; explicit Stop/Start was followed by 120 draws and zero pending work. General Registry operation, hotplug, multiple devices, and optical quality remain unverified. GRD is evaluated for MeshRenderer-focused cases; it does not reduce Core's one-Camera, N-render path or full render count. VolumeStack caching is applied and fixed-condition CPU submission comparisons exist, but GPU and render-thread times have not been collected.

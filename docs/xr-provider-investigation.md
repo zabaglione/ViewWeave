@@ -1,53 +1,55 @@
-# XR Display Providerの調査とViewWeave適用案
+[Japanese](ja/xr-provider-investigation.md)
 
-調査日: 2026-10-07
+# Investigation of XR Display Providers and Their Application to ViewWeave
 
-## 現在の方針
+Research date: 2026-10-07
 
-ユーザー方針により、XR方式の採用判断、prototype作成、既存経路からの移行は一旦保留しています。この資料は将来検討用の調査記録です。Quilt保存とカメラ調整機能の仕上げは継続します。
+## Current Direction
 
-## 結論
+Under the user's direction, the decision to adopt an XR approach, prototype work, and migration from the existing path are on hold. This page is a research record for future consideration. Work to finish Quilt capture and camera-framing features continues.
 
-通常のシーンに置いたCubeなどをLooking Glassに表示するため、各オブジェクトへ個別コンポーネントを追加する必要はありません。必要なのは、既存シーンのどのCameraを基準に多視点を描くかを選び、そのCameraの姿勢・投影を各表示視点に変換する、小さな表示側コンポーネントです。これをUnityの`XRDisplaySubsystem`から呼ばれる`XRDisplayProvider`として作れば、既存CameraやScene構成を大きく変えずに接続できる設計です。
+## Conclusion
 
-ただし、調査時点のViewWeaveはXR Provider方式ではありません。通常のMain Cameraの画像を48枚へ拡大しているのでもありません。Rigが保持する専用の無効Cameraに48個の`StandardRequest`を送り、各視点を描いてQuiltを組み立てます。XR経路への移行、性能向上、HDRP/VFXの互換性はまだ実証していません。
+Displaying an ordinary scene object such as a Cube on a Looking Glass does not require adding an individual component to every object. A small display-side component can select which existing scene Camera is the basis for multiview rendering and transform that Camera's pose/projection for each display view. Implementing this as an `XRDisplayProvider` called by Unity's `XRDisplaySubsystem` is a design that could connect without significantly changing existing Cameras or Scene structure.
 
-## 既存Cameraを利用するイメージ
+However, ViewWeave at the time of this research does not use the XR Provider approach. It does not enlarge the ordinary Main Camera image into 48 copies. The Rig uses a dedicated disabled Camera, sends 48 `StandardRequest` calls, renders each view, and assembles the Quilt. Migration to an XR path, performance improvement, and HDRP/VFX compatibility have not been demonstrated.
 
-| | 現在の方式 | XR Display Provider方式の案 |
+## Using Existing Cameras
+
+| | Current approach | Proposed XR Display Provider approach |
 | --- | --- | --- |
-| 利用者の準備 | シーンCameraにViewWeave Bridge Rigを付ける | Cameraを選択し、表示Providerを割り当てる小コンポーネントを追加する案 |
-| 多視点描画 | ViewWeaveの専用Cameraから48回のrender request | Unity XRのrender passに多視点のposition/projectionを渡し、既存の描画ループに参加 |
-| Cube等の通常オブジェクト | 通常通り表示。専用shader追加不要 | 同様に通常Rendererを描く設計が可能。各オブジェクトにXR用componentを付ける必要はない |
-| 描画回数・性能 | 現在は48視点を個別に描画 | cullingなどの共通処理を共有できる可能性。ただし48視点のGPU描画が自動で1回になる意味ではない |
-| 互換性・リスク | 現在のURP/HDRP経路 | URP/HDRPのrender pass、VFX、Volume、screen-space/history効果、native display lifecycleを検証する必要がある |
+| User setup | Add ViewWeave Bridge Rig to a scene Camera | Proposed small component to select a Camera and assign a display Provider |
+| Multiview rendering | 48 render requests from ViewWeave's dedicated Camera | Pass multiview positions/projections to Unity XR render passes and join the existing rendering loop |
+| Ordinary objects such as Cubes | Render normally; no dedicated shader needed | Can be designed to render standard Renderers the same way; no XR component needed on each object |
+| Render count and performance | Currently renders 48 views individually | Shared work such as culling may be possible; this does not mean that GPU rendering of 48 views automatically becomes one draw |
+| Compatibility and risk | Current URP/HDRP paths | Validate URP/HDRP render passes, VFX, Volumes, screen-space/history effects, and native display lifecycle |
 
-Providerでは、既存Cameraのposeとprojectionを元に、表示に必要な多視点のpose/projectionを生成してUnityへ渡せます。どのCameraを使うか、表示中心に対応するzero-parallax/focus distance、view coneの幅と単位、シーン上のscale、平面モニターとLooking Glassのどちらへ出すかはユーザーが指定できる必要があります。通常の`Camera`と`XRDisplaySubsystem`の橋渡しだけをする設定componentから始めるのが現実的です。
+A Provider can generate the multiple poses/projections required for display from an existing Camera's pose and projection, then pass them to Unity. The user must be able to specify which Camera to use, the zero-parallax/focus distance corresponding to the display center, the width and units of the view cone, scene scale, and whether to output to a flat monitor or Looking Glass. A practical starting point is a settings component that only bridges a normal `Camera` to `XRDisplaySubsystem`.
 
-この構成は「OpenXR runtimeを自作する」ことと同じではありません。Unity XRのrendering providerを実装し、最終Quiltを既存の公式Looking Glass Bridgeへ送るバックエンドを維持する構成が可能です。OpenXRは別途、tracked headsetやXR入力を使う必要が生じた場合の選択です。
+This design is not the same as “writing a custom OpenXR runtime.” It is possible to implement a Unity XR rendering Provider and keep the backend that sends the final Quilt to the existing official Looking Glass Bridge. OpenXR is a separate option if tracked headsets or XR input become necessary.
 
-## Unity標準機能の境界
+## Boundaries of Unity's Standard Features
 
-UnityのXR Originはtracking spaceとUnity scene spaceの変換を扱うものです。非追跡のライトフィールド表示で必須ではなく、tracking座標の原点整理が必要な場合に使う補助になります。[Unity XR Origin](https://docs.unity3d.com/6000.0/Documentation/Manual/xr-origin.html)
+Unity XR Origin handles transforms between tracking space and Unity scene space. It is not required for an untracked light-field display; it can help organize the tracking coordinate origin when needed. [Unity XR Origin](https://docs.unity3d.com/6000.0/Documentation/Manual/xr-origin.html)
 
-UnityのSingle Pass Instancedは標準的なXR左右2眼をtexture arrayへ描く経路です。Unity 6000.0の公開資料は2眼のinstance描画を説明し、導入中のCore 17.6のXRSystemにもarray depth 2の制約が確認されています。これは48視点をそのまま処理できる根拠になりません。([Unity Single Pass Instanced](https://docs.unity3d.com/6000.0/Documentation/Manual/SinglePassInstancing.html), [Unity Graphics XRSystem source](https://github.com/Unity-Technologies/Graphics/blob/master/Packages/com.unity.render-pipelines.core/Runtime/XR/XRSystem.cs))
+Unity Single Pass Instanced renders the standard two XR eyes into a texture array. Unity 6000.0 public documentation describes instanced drawing for two eyes, and a two-layer array constraint was also confirmed in the XRSystem of the local Core 17.6 package. This is not evidence that 48 views can be processed directly. ([Unity Single Pass Instanced](https://docs.unity3d.com/6000.0/Documentation/Manual/SinglePassInstancing.html), [Unity Graphics XRSystem source](https://github.com/Unity-Technologies/Graphics/blob/master/Packages/com.unity.render-pipelines.core/Runtime/XR/XRSystem.cs))
 
-一方で、UnityのXR Render Passには`cullingPassIndex`があり、別のviewが同じculling passを使う関係を示せます。これはculling情報共有の仕組みを設計する参考になりますが、48視点のunion cullingが正しいことや、共有による性能向上が自動的に得られることを保証しません。[XRRenderPass.cullingPassIndex](https://docs.unity3d.com/6000.0/Documentation/ScriptReference/XR.XRDisplaySubsystem.XRRenderPass-cullingPassIndex.html)
+Unity XR Render Pass has a `cullingPassIndex` that represents the relationship where a different view can use the same culling pass. This is a useful design reference for sharing culling information, but it does not guarantee correct union culling across 48 views or an automatic performance benefit from sharing. [XRRenderPass.cullingPassIndex](https://docs.unity3d.com/6000.0/Documentation/ScriptReference/XR.XRDisplaySubsystem.XRRenderPass-cullingPassIndex.html)
 
-既存のUnity native XR headerと公開Provider例からrender-passに複数viewを渡す概念は確認できました。ただし、Unity 6000.6 Editorに同梱されるヘッダーでViewWeaveが必要とする最大view数を確定できていません。したがって「XR Providerなら48 viewが標準対応」「最大8 view」とは断定せず、対象Unity版の実APIとHDRP経路を使ったprobeで確認します。
+Existing Unity native XR headers and public Provider examples confirm the concept of passing multiple views through render passes. However, the headers bundled with Unity 6000.6 Editor have not established the maximum number of views required by ViewWeave. Therefore, do not claim that “XR Provider supports 48 views by default” or that “the limit is 8 views.” Confirm the actual API for the target Unity version and HDRP path with a probe.
 
-## DisplayXRの公開設計例
+## Public DisplayXR Design Example
 
-[DisplayXR ADR-007](https://github.com/DisplayXR/displayxr-unity/blob/main/docs~/adr/ADR-007-render-path-by-view-count.md)は2026-07-03付のAcceptedな設計決定として、少数viewではXR Provider、多数viewではQuilt専用経路を使い分ける案を記録しています。ADR自身がQuilt側はまだ未実装としており、設計資料であって、HDRP 48視点の成功・性能実績ではありません。[DisplayXR XR Display Provider architecture](https://github.com/DisplayXR/displayxr-unity/blob/main/docs~/architecture/xr-display-provider.md)も構成の参考になります。同リポジトリの資料には旧案や未解決項目も含まれるため、個々の図・主張は採用済み実装と区別します。
+[DisplayXR ADR-007](https://github.com/DisplayXR/displayxr-unity/blob/main/docs~/adr/ADR-007-render-path-by-view-count.md), dated 2026-07-03 and marked Accepted, records a proposal to use an XR Provider for a small number of views and a dedicated Quilt path for a larger number. The ADR itself says the Quilt path is not implemented; it is design material, not evidence of HDRP 48-view success or performance. [DisplayXR XR Display Provider architecture](https://github.com/DisplayXR/displayxr-unity/blob/main/docs~/architecture/xr-display-provider.md) is also a useful architecture reference. That repository's documents include older proposals and open items, so distinguish individual diagrams and claims from adopted implementations.
 
-この例は、XR Providerを使うかどうかを「既存シーンとの統合が簡単か」だけでなく、「視点数とRender Pipelineの費用」で分岐させる設計を支持します。ViewWeaveでの48視点経路をProviderへ一括置換する根拠にはなりません。
+This example supports making the choice to use an XR Provider depend not only on ease of integration with an existing scene, but also on the cost of view count and render pipeline. It does not justify replacing ViewWeave's 48-view path with a Provider wholesale.
 
-## 再開時に必要な確認順
+## Checks Required Before Resuming
 
-1. Unity 6000.6向けXR SDKのnative header/ABIを取得できるか確認する。UnityのXR SDK資料はnative SDK headersの入手方法を案内しているため、Editorへ同梱されていると仮定せず、対象版の取得経路と必要なview数・render lifecycle・HDRP接続条件を確認する。([Unity XR SDK](https://docs.unity3d.com/ja/6000.0/Manual/xr-sdk.html))
-2. 既存Cameraを基準にした2視点XR Provider prototypeを作り、通常のCubeが表示されることを確認する。
-3. 同じScene・解像度・2視点数で、XR Providerと2回のStandardRequestを比較し、CPU/GPU/end-to-end時間と画質を測る。2視点XRと既存の48回StandardRequestの差を、XR Providerの性能改善率として扱わない。
-4. Editor PlayとPlayerをそれぞれ確認し、その後URP/HDRPでVolume、VFX、透明、screen-space効果、履歴依存の見え方と性能を照合する。
-5. native APIのview数上限とRender Pipeline側の制約、culling/shadow/work submissionを共有した場合の正しさを確認してから、48視点へ拡張するか判断する。48視点比較をする場合も、同じScene・解像度・48視点数で基準経路と比較する。
+1. Determine how to obtain the native headers/ABI for the Unity 6000.6 XR SDK. Unity's XR SDK documentation describes obtaining native SDK headers; do not assume they ship with the Editor. Confirm the acquisition path for the target version, required view count, render lifecycle, and HDRP connection conditions. ([Unity XR SDK](https://docs.unity3d.com/ja/6000.0/Manual/xr-sdk.html))
+2. Build a two-view XR Provider prototype based on an existing Camera and confirm that a normal Cube is displayed.
+3. In the same Scene, resolution, and two-view count, compare an XR Provider with two `StandardRequest` calls; measure CPU, GPU, end-to-end time, and image quality. Do not treat the difference between two-view XR and the existing 48 `StandardRequest` calls as an XR Provider performance-improvement percentage.
+4. Validate Editor Play and Player separately, then compare Volume, VFX, transparency, screen-space effects, history-dependent appearance, and performance in URP/HDRP.
+5. Confirm native API view limits and Render Pipeline constraints, and correctness when sharing culling, shadows, and work submission before deciding whether to extend to 48 views. For a 48-view comparison, use the same Scene, resolution, and view count for both the baseline and candidate.
 
-現在のXR Provider prototypeもこの比較も未実施です。既存のQuilt captureとギズモ機能の実装はXR方式の選定と独立して進行し、今回の調査はXR経路へ変更していません。
+Neither an XR Provider prototype nor these comparisons have been run. Implementation of existing Quilt capture and gizmo features proceeds independently from selection of an XR approach; this research has not changed the rendering path to XR.
