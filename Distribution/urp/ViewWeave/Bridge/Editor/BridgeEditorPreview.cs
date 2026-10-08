@@ -47,6 +47,7 @@ namespace ViewWeave.Editor
 
         static BridgeEditorPreview()
         {
+            _ = QuiltRenderer.EditorPreviewRenderCallbackTrackingReady;
             BridgeEditorPreviewRetention.ResetProofsAfterDomainReload();
             BridgeEditorPreviewRetention.RegisterEditorCallbacks(StopForLifecycle, DetachRetainedProducer);
             EditorApplication.update += Update;
@@ -67,8 +68,14 @@ namespace ViewWeave.Editor
         internal static bool Start(ViewWeaveRig rig, bool outputToDeviceValue, out string error)
         {
             error = string.Empty;
-            if (Application.isPlaying)
+            if (Application.isPlaying || EditorApplication.isPlayingOrWillChangePlaymode)
                 return FailStart("Editor Rig Preview can only start in Edit Mode.", out error);
+            if (!QuiltRenderer.EditorPreviewRenderCallbackTrackingReady)
+                return FailStart("Editor Rig Preview requires healthy SRP render callback tracking.", out error);
+            if (QuiltRenderer.EditorPreviewRenderCallbackActive)
+                return FailStart("Editor Rig Preview must start outside SRP render callbacks.", out error);
+            if (GraphicsSettings.currentRenderPipeline == null)
+                return FailStart("Editor Rig Preview requires an active Scriptable Render Pipeline.", out error);
             if (IsActive || stopping)
                 return FailStart("An Editor Rig Preview is already active or stopping.", out error);
             if (BridgeEditorPreviewRetention.HasPending)
@@ -326,6 +333,18 @@ namespace ViewWeave.Editor
 
         static void Update()
         {
+            bool hasPreviewWork = active || stopping || BridgeEditorPreviewRetention.HasPending;
+            if (hasPreviewWork && !QuiltRenderer.EditorPreviewRenderCallbackTrackingReady)
+            {
+                lastError = "Editor preview is paused because SRP render callback tracking is unavailable or inconsistent.";
+                status = "Preview paused";
+                return;
+            }
+            if (hasPreviewWork && QuiltRenderer.EditorPreviewRenderCallbackActive)
+            {
+                QueueEditorRender();
+                return;
+            }
             BridgeEditorPreviewRetention.Pump();
             if (stopping)
             {
@@ -461,7 +480,7 @@ namespace ViewWeave.Editor
             try
             {
                 EditorApplication.QueuePlayerLoopUpdate();
-                producerRenderer.RenderQuilt();
+                producerRenderer.RenderEditorPreviewAtBoundary(retentionRecord);
                 layout = producerRenderer.QuiltTexture == null ? producerRenderer.settings.GetLayout() : producerRenderer.LatestSnapshot.Layout;
                 if (outputToDevice && !producerOutput.TrySubmitEditorPreview(OwnerToken, producerRenderer.QuiltTexture, layout))
                     throw new InvalidOperationException(string.IsNullOrEmpty(producerOutput.LastError) ? "Bridge Worker rejected the preview quilt." : producerOutput.LastError);

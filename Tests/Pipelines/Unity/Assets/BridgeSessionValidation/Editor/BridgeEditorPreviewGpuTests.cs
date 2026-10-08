@@ -19,6 +19,58 @@ namespace ViewWeave.BridgeEditorPreviewValidation
 {
     public sealed class BridgeEditorPreviewGpuTests
     {
+        [Test]
+        public void EditorPreviewRenderBoundaryRequiresExactOwnerAndRejectsActiveSrpCallbacksAndCompletionReentry()
+        {
+            var producerObject = new GameObject("Editor preview callback boundary test");
+            QuiltRenderer renderer = producerObject.AddComponent<QuiltRenderer>();
+            BridgeEditorPreviewRetentionRecord owner = BridgeEditorPreviewRetentionRecord.Create(producerObject, renderer);
+            BridgeEditorPreviewRetentionRecord wrongOwner = ScriptableObject.CreateInstance<BridgeEditorPreviewRetentionRecord>();
+            FieldInfo retentionRequired = typeof(QuiltRenderer).GetField("editorPreviewRetentionRequired", BindingFlags.Instance | BindingFlags.NonPublic);
+            FieldInfo completionCallback = typeof(QuiltRenderer).GetField("notifyingRenderComplete", BindingFlags.Instance | BindingFlags.NonPublic);
+
+            try
+            {
+                Assert.IsTrue(QuiltRenderer.EditorPreviewRenderCallbackTrackingReady);
+                Assert.IsTrue(renderer.BeginEditorPreviewRetention(owner));
+
+                InvalidOperationException ownerError = Assert.Throws<InvalidOperationException>(
+                    () => renderer.RenderEditorPreviewAtBoundary(wrongOwner));
+                StringAssert.Contains("serialized retention owner", ownerError.Message);
+
+                ScriptableRenderContext context = default;
+                var cameras = new System.Collections.Generic.List<Camera>();
+                QuiltRendererEditorCallbackTracker.OnBeginContextRendering(context, cameras);
+                QuiltRendererEditorCallbackTracker.OnBeginCameraRendering(context, null);
+                try
+                {
+                    Assert.IsTrue(QuiltRenderer.EditorPreviewRenderCallbackActive);
+                    InvalidOperationException callbackError = Assert.Throws<InvalidOperationException>(
+                        () => renderer.RenderEditorPreviewAtBoundary(owner));
+                    StringAssert.Contains("outside SRP render callbacks", callbackError.Message);
+                }
+                finally
+                {
+                    QuiltRendererEditorCallbackTracker.OnEndCameraRendering(context, null);
+                    QuiltRendererEditorCallbackTracker.OnEndContextRendering(context, cameras);
+                }
+
+                Assert.IsFalse(QuiltRenderer.EditorPreviewRenderCallbackActive);
+                completionCallback.SetValue(renderer, true);
+                InvalidOperationException reentryError = Assert.Throws<InvalidOperationException>(
+                    () => renderer.RenderEditorPreviewAtBoundary(owner));
+                StringAssert.Contains("quilt completion callback", reentryError.Message);
+            }
+            finally
+            {
+                completionCallback.SetValue(renderer, false);
+                retentionRequired.SetValue(renderer, false);
+                if (wrongOwner != null) Object.DestroyImmediate(wrongOwner);
+                if (owner != null) Object.DestroyImmediate(owner);
+                if (producerObject != null) Object.DestroyImmediate(producerObject);
+            }
+        }
+
         [UnityTest]
         public IEnumerator UrpEditorPreviewRendersAndRebuildsItsOwnedTextures()
         {

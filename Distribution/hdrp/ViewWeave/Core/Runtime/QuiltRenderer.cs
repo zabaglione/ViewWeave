@@ -102,6 +102,30 @@ namespace ViewWeave
             texture.hideFlags |= HideFlags.HideAndDontSave | HideFlags.DontUnloadUnusedAsset;
             textures.Add(texture);
         }
+
+        internal static bool EditorPreviewRenderCallbackTrackingReady => QuiltRendererEditorCallbackTracker.IsReady;
+        internal static bool EditorPreviewRenderCallbackActive => QuiltRendererEditorCallbackTracker.IsInsideRenderCallback;
+
+        internal void RenderEditorPreviewAtBoundary(UnityEngine.Object ownerIdentity)
+        {
+            if (!Application.isEditor) throw new InvalidOperationException("Editor preview rendering is only available in the Unity Editor");
+            if (Application.isPlaying || UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+                throw new InvalidOperationException("Editor preview rendering is only available in stable Edit Mode");
+            if (!QuiltRendererEditorCallbackTracker.IsReady)
+                throw new InvalidOperationException("Editor preview render callback tracking is unavailable or inconsistent");
+            if (QuiltRendererEditorCallbackTracker.IsInsideRenderCallback)
+                throw new InvalidOperationException("Editor preview rendering must be scheduled outside SRP render callbacks");
+            if (!editorPreviewRetentionRequired || ownerIdentity == null ||
+                !ReferenceEquals(editorPreviewRetentionOwner, ownerIdentity) ||
+                !(ownerIdentity is IQuiltEditorResourceRetentionOwner))
+                throw new InvalidOperationException("Editor preview render owner does not match the serialized retention owner");
+            if (notifyingRenderComplete) throw new InvalidOperationException("quilt rendering cannot be started from a quilt completion callback");
+            if (IsRendering) throw new InvalidOperationException("quilt render is already in progress");
+            if (GraphicsSettings.currentRenderPipeline == null)
+                throw new InvalidOperationException("Editor preview rendering requires an active Scriptable Render Pipeline");
+
+            RenderQuiltCore(false, true);
+        }
 #endif
 
         RenderTexture viewTexture;
@@ -146,13 +170,13 @@ namespace ViewWeave
 
         public void RenderQuilt()
         {
-            RenderQuiltCore(false);
+            RenderQuiltCore(false, false);
         }
 
         internal void RenderAutoQuiltAtBoundary()
         {
             if (!autoRender || !isActiveAndEnabled || autoRenderFailed || IsRendering) return;
-            try { RenderQuiltCore(true); }
+            try { RenderQuiltCore(true, false); }
             catch (Exception error)
             {
                 autoRenderFailed = true;
@@ -162,12 +186,17 @@ namespace ViewWeave
             }
         }
 
-        void RenderQuiltCore(bool trustedSchedulerBoundary)
+        void RenderQuiltCore(bool trustedSchedulerBoundary, bool trustedEditorPreviewBoundary)
         {
             if (notifyingRenderComplete) throw new InvalidOperationException("quilt rendering cannot be started from a quilt completion callback");
             if (IsRendering) throw new InvalidOperationException("quilt render is already in progress");
             bool srp = GraphicsSettings.currentRenderPipeline != null;
             bool trustedSrpBoundary = trustedSchedulerBoundary && Application.isEditor && Application.isPlaying && srp;
+#if UNITY_EDITOR
+            trustedSrpBoundary |= trustedEditorPreviewBoundary && Application.isEditor && !Application.isPlaying &&
+                !UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode && srp && editorPreviewRetentionRequired &&
+                QuiltRendererEditorCallbackTracker.IsReady && !QuiltRendererEditorCallbackTracker.IsInsideRenderCallback;
+#endif
             if (Camera.current != null && !trustedSrpBoundary) throw new InvalidOperationException("RenderQuilt must be called outside render callbacks");
             settings.Validate();
             QuiltViewSampling.GetRenderCount(settings.views, viewRenderMode);
