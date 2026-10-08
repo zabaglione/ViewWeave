@@ -50,4 +50,6 @@ Pview.m02 = Pcenter.m02 + (-eyeOffset / distance) * Pcenter.m00
 
 静的な式の確認では、中心投影の水平成分`m00`とview offsetから更新する`m02`が、従来のFrustum水平shift式と一致することを確認しました。Core、URP、HDRPのソースにも同じ計算が反映されています。`python tools/build_upm_distribution.py all --check`はURP/HDRP両方で成功し、`python tools/validate_repository.py`は0 errors、0 warnings、Python validator suiteは5/5で成功しました。これらは静的・配布・Python検証であり、Unity実行結果とは別です。
 
-統合後のUnity Core batch再試行では、Unity CLIがLicenseClient IPCへ接続できず、初期化の60秒timeoutと接続喪失の後、Editorがcode `-536870911`で終了しました。独立Core projectのEditor logに`QuiltCoreBatchTests.Run`のpass markerはありません。テストmethodは実行されておらず、この試行は合格ではなく未実行です。
+前回のsandbox内Unity Core batch試行では、Unity CLIがLicenseClient IPCへ接続できず、初期化の60秒timeoutと接続喪失の後、Editorがcode `-536870911`で終了しました。独立Core projectのEditor logに`QuiltCoreBatchTests.Run`のpass markerはなく、その試行ではテストmethodは実行されていません。
+
+2026-10-08のsandbox外再試行では、同じUnity `6000.6.4f1`、独立Core project、`QuiltCoreBatchTests.Run`をUnity CLI `run`で実行しました。LicenseClient IPCへの接続、テストmethodのpass marker、Editor/CLIの終了コード0を確認しました。結果ログは`.local/core-validation/Logs/Editor-unsandboxed.log`と`.local/core-validation/result-unsandboxed.txt`に保存しています。この結果はCore batchの今回の対象チェックに限り、過去のNative playback AV、録音同期、Metal連続表示、全48視点品質やFPSを検証したものではありません。
