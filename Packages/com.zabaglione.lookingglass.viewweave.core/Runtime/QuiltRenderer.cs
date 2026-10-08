@@ -158,14 +158,17 @@ namespace ViewWeave
                 sourceCamera.enabled = false;
                 IQuiltRenderPreparation preparation = RenderGuard as IQuiltRenderPreparation;
                 if (preparation != null) quiltPreparation = preparation.PrepareQuilt(sourceCamera);
+                Matrix4x4 centerProjection = QuiltMath.OffAxisProjection(settings.fieldOfView, settings.viewAspect, state.nearClip, state.farClip, 0f, settings.cameraDistance);
+                float maximumViewOffset = QuiltMath.ViewOffset(layout.ViewCount - 1, layout.ViewCount, settings.viewCone, settings.cameraDistance);
                 for (int renderSlot = 0; renderSlot < renderedViewIndices.Length; ++renderSlot)
                 {
                     long viewStart = Stopwatch.GetTimestamp();
                     int viewIndex = renderedViewIndices[renderSlot];
-                    float offset = QuiltMath.ViewOffset(viewIndex, layout.ViewCount, settings.viewCone, settings.cameraDistance);
+                    float normalizedView = layout.ViewCount <= 1 ? 0f : viewIndex / (float)(layout.ViewCount - 1) * 2f - 1f;
+                    float offset = maximumViewOffset * normalizedView;
                     sourceCamera.transform.position = state.position + state.rotation * Vector3.right * offset;
                     sourceCamera.transform.rotation = QuiltMath.ParallelViewRotation(state.rotation);
-                    sourceCamera.projectionMatrix = QuiltMath.OffAxisProjection(settings.fieldOfView, settings.viewAspect, state.nearClip, state.farClip, offset, settings.cameraDistance);
+                    sourceCamera.projectionMatrix = QuiltMath.ProjectionWithViewOffset(centerProjection, offset, settings.cameraDistance);
                     sourceCamera.targetTexture = viewTexture;
                     sourceCamera.aspect = settings.viewAspect;
                     sourceCamera.rect = new Rect(0f, 0f, 1f, 1f);
