@@ -370,7 +370,7 @@ namespace ViewWeave
                     autoGenerateMips = false,
                     sRGB = source.sRGB
                 };
-                transferTexture = new RenderTexture(descriptor) { name = "BridgeWorkerQuiltTransfer", filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Clamp };
+                transferTexture = new RenderTexture(descriptor) { name = "BridgeWorkerQuiltTransfer", filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Clamp, hideFlags = HideFlags.HideAndDontSave };
                 transferTexture.Create();
                 transferNativePtr = transferTexture.IsCreated() ? transferTexture.GetNativeTexturePtr() : IntPtr.Zero;
             }

@@ -12,6 +12,12 @@ The regular quit path allows the original close/save confirmation to continue af
 
 After updating the ViewWeave package, fully close and restart the Unity Editor to load the matching managed assembly and native shim.
 
+## Owned transfer texture lifetime fix
+
+The one-close reproduction exposed an ownership-lifetime gap: Unity can destroy an output-owned transfer RenderTexture during Play Mode teardown while the reaper still needs that same texture to establish GPU-release proof. The fix applies `HideAndDontSave` when creating the owned transfer texture, so the object survives teardown and remains available to the reaper until its existing native and GPU proof predicates pass. Those predicates, timeout behavior, Native ABI, and packaged native DLL are unchanged.
+
+The fix passed two real Unity 6000.6.4f1 sample runs against candidate `e495edae90f95bb47da5c92b0e97e00d0d5ab29f`. URP Garden completed 701 worker frames before Stop; transfer texture `60849:256` remained live through reaper handoff, was retired after proof, then the original GUI `File > Exit` completed with finalization ready, zero leases/records, and natural process exit code 0. HDRP VFX completed 114 worker frames; texture `40309:256` followed the same ownership and retirement path, with finalization ready, zero leases/records, and natural process exit code 0. Both original scenes and targeted project settings retained their baseline hashes. The URP used the existing HTTPS package URI; HDRP retained its SSH URI. Unity `Client.List` and loaded assembly/package evidence matched the candidate in both projects. These runs validate the reproduced integration path; they do not address the historical access violations below.
+
 ## Historical access violations
 
 | Observation | Faulting location | What it establishes |
