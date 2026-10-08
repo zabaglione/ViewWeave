@@ -79,12 +79,26 @@ namespace ViewWeave
 
         void ReleaseBridgeTransferTexture()
         {
-            if (bridgeTransferTexture == null) return;
-            if (bridgeTransferTexture.IsCreated()) bridgeTransferTexture.Release();
-            if (Application.isPlaying) Destroy(bridgeTransferTexture);
-            else DestroyImmediate(bridgeTransferTexture);
+            if (ReferenceEquals(bridgeTransferTexture, null)) return;
+            RenderTexture texture = bridgeTransferTexture;
+            if (Session != 0)
+            {
+                BridgeWorkerReaper.EnqueueLegacySessionClose(Session, texture, null, false);
+                bridgeTransferTexture = null;
+                bridgeTransferSrgb = false;
+                return;
+            }
             bridgeTransferTexture = null;
             bridgeTransferSrgb = false;
+            ReleaseTextureNow(texture);
+        }
+
+        static void ReleaseTextureNow(RenderTexture texture)
+        {
+            if (texture == null) return;
+            if (texture.IsCreated()) texture.Release();
+            if (Application.isPlaying) Destroy(texture);
+            else DestroyImmediate(texture);
         }
 
         string NativeError()
@@ -133,8 +147,24 @@ namespace ViewWeave
 
         public void Dispose()
         {
-            if (Session != 0) { ulong session = Session; Session = 0; BridgeNative.QueueClose(session); }
-            ReleaseBridgeTransferTexture();
+            if (Session == 0)
+            {
+                ReleaseBridgeTransferTexture();
+                return;
+            }
+
+            ulong closingSession = Session;
+            RenderTexture currentTexture = bridgeTransferTexture;
+            BridgeWorkerReaper.EnqueueLegacySessionClose(closingSession, currentTexture, null, false);
+            BridgeWorkerReaper.EnqueueLegacySessionClose(closingSession, null, null, false);
+            Session = 0;
+            bridgeTransferTexture = null;
+            bridgeTransferSrgb = false;
+            bool closeSubmitted = false;
+            CommandBuffer closeCommand = null;
+            try { closeCommand = BridgeNative.QueueClose(closingSession, out closeSubmitted); }
+            catch { closeSubmitted = false; }
+            BridgeWorkerReaper.EnqueueLegacySessionClose(closingSession, null, closeCommand, closeSubmitted);
         }
     }
 }

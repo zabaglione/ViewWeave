@@ -26,6 +26,8 @@ macOS Metalは明示opt-inのbounded実験です。通常SessionはMetalを受�
 
 Git packageを更新した後はUnity Editorを正常終了して起動し直し、選択したGraphics APIでPlayします。新しいmanaged assemblyとnative pluginを読み込むために必要です。
 
+WindowsでPlay中にStopして再びStartする経路と、Unity Editor/Player自体を終了する経路は別のshutdown処理です。process終了時は新規Bridge開始を止め、native workerをdrain/joinし、GPU proof後にmanaged参照を解放します。完了できない場合はquitをキャンセルし、参照を保持したままadmissionを閉じます。Editorのshutdown完了後は通知が表示されるので、Editorをもう一度明示的に終了してください。自動でwindow closeを再送しないため、Unityのsave確認経路をアプリ側で操作しません。final shutdown開始後にsave確認をCancelすると同じEditor processではBridgeを再開できないため、次の利用前にEditorを再起動してください。現在の手動2回目終了とsave/cancel GUI確認は未完了で、古いaccess violationの原因も未確定です。詳細と現在の検証状況は[Shutdown validation](docs/shutdown-validation-20261008.md)を参照してください。
+
 Windows Playerで使う場合は、Windows Graphics APIsでD3D11またはD3D12を有効にしてBuild and Runします。Legacy Direct経路を明示的に使う場合はD3D11が必要です。Bridge runtimeが自動検出されない場合だけ、RigのSessionにRuntime Pathを設定します。
 
 ## 視点描画数を調整する
@@ -64,6 +66,7 @@ HDRPとVFX GraphはLinear color spaceが必須です。HDRP Wizardの`Lightmap E
 - [Getting started](docs/getting-started.md): Editor PlayとPlayerの手順
 - [Compatibility](docs/compatibility.md): 対応条件と既知の制約
 - [Windows validation](docs/windows-validation.md): 実行済み試験と結果
+- [Shutdown validation](docs/shutdown-validation-20261008.md): Windows shutdown lifecycle、歴史的AV記録と現在の検証状態
 - [残作業と受け入れ計画](docs/remaining-work-plan.md): 次に行う作業と完了条件
 - [残作業の検証記録](docs/benchmarks/remaining-work-validation-20261007.md): 2026-10-07の限定DX12 captureと終了診断
 - [DX12 HDRP performance investigation](docs/dx12-performance-investigation.md): Profiler調査と視点数削減の実測

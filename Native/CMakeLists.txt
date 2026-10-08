@@ -116,6 +116,7 @@ if (BUILD_TESTING)
   if (NOT WIN32 AND NOT APPLE AND NOT LKG_TRANSPORT_TESTS_ONLY)
     add_executable(lookingglass_unsupported_shim_abi_test tests/unsupported_shim_abi_test.cpp)
     target_compile_features(lookingglass_unsupported_shim_abi_test PRIVATE cxx_std_17)
+    target_include_directories(lookingglass_unsupported_shim_abi_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
     target_link_libraries(lookingglass_unsupported_shim_abi_test PRIVATE ${CMAKE_DL_LIBS})
     add_test(NAME lookingglass_unsupported_shim_abi_test
       COMMAND lookingglass_unsupported_shim_abi_test "$<TARGET_FILE:lookingglass_bridge_shim>")
@@ -160,6 +161,9 @@ if (WIN32 AND BUILD_TESTING)
   target_link_libraries(lookingglass_worker_transport_test PRIVATE d3d11 d3d12 dxgi user32)
   add_test(NAME lookingglass_worker_transport_test COMMAND lookingglass_worker_transport_test)
   set_tests_properties(lookingglass_worker_transport_test PROPERTIES TIMEOUT 60)
+  add_test(NAME lookingglass_worker_cleanup_exception_test
+    COMMAND lookingglass_worker_transport_test --cleanup-exception-only)
+  set_tests_properties(lookingglass_worker_cleanup_exception_test PROPERTIES TIMEOUT 30)
 
   if (NOT LKG_TRANSPORT_TESTS_ONLY)
     add_library(lkg_fake_bridge_runtime SHARED tests/fake_bridge_runtime.cpp)
@@ -200,6 +204,12 @@ if (WIN32 AND BUILD_TESTING)
         "$<TARGET_FILE:lookingglass_bridge_shim>"
         "$<TARGET_FILE:lkg_fake_bridge_shutdown_runtime>")
     set_tests_properties(lookingglass_bridge_shutdown_contract_test PROPERTIES TIMEOUT 60 RUN_SERIAL TRUE)
+    add_test(NAME lookingglass_bridge_shutdown_exception_contract_test
+      COMMAND lookingglass_bridge_shutdown_contract_test
+        "$<TARGET_FILE:lookingglass_bridge_shim>"
+        "$<TARGET_FILE:lkg_fake_bridge_shutdown_runtime>"
+        "--uninitialize-exception")
+    set_tests_properties(lookingglass_bridge_shutdown_exception_contract_test PROPERTIES TIMEOUT 60 RUN_SERIAL TRUE)
   endif()
 endif()
 

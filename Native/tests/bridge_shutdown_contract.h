@@ -30,3 +30,8 @@ typedef void (__cdecl *LkgFakeBridgeSetDrawModeFn)(int32_t failDraw, int32_t blo
 typedef int32_t (__cdecl *LkgFakeBridgeWaitDrawEnteredFn)(uint32_t timeoutMilliseconds);
 typedef void (__cdecl *LkgFakeBridgeReleaseDrawFn)();
 typedef uint32_t (__cdecl *LkgFakeBridgeGetEventsFn)(LkgFakeBridgeEvent* events, uint32_t capacity);
+typedef void (__cdecl *LkgFakeBridgeSetUninitializeModeFn)(int32_t failUninitialize, int32_t blockUninitialize);
+typedef void (__cdecl *LkgFakeBridgeSetUninitializeThrowFn)(int32_t throwUninitialize);
+typedef void (__cdecl *LkgFakeBridgeSetEmptyUninitializeFn)(int32_t allowEmptyUninitialize);
+typedef int32_t (__cdecl *LkgFakeBridgeWaitUninitializeEnteredFn)(uint32_t timeoutMilliseconds);
+typedef void (__cdecl *LkgFakeBridgeReleaseUninitializeFn)();

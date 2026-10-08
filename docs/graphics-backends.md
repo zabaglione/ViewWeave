@@ -14,6 +14,16 @@ ViewWeaveのgraphics backendは、Unityが生成したQuiltをnative transport�
 
 通常のmanaged policyはWindows D3D11/D3D12のWorkerと、D3D11のLegacy Directを対象にします。共通descriptor validationとBridge path判定もD3D11/D3D12 producerからD3D11 consumerへの経路を扱います。Windows backendはD3D11、D3D12、D3D11/D3D12 interopに分かれ、共通worker codeからtransport単位で呼ばれます。非対応platformのtransportはfailure stubです。
 
+## Windows shutdown and package updates
+
+Play Modeの通常Stopとsession再起動はfinal shutdown latchを立てません。所有中のworker/sessionをdrainし、GPU完了とnative releaseを確認してから参照を解放します。Windows EditorまたはWindows Playerのprocess終了では別のfinal shutdown gateを使い、admissionを閉じ、active outputを停止し、native contextsの回収とpersistent worker hostのjoinを確認してから終了を許可します。Legacy D3D11 outputはsessionごとのclose ledgerが`ClosedSafe`を返し、ACKが成功してからGPU fence/readback proofと合わせてtransfer textureを解放します。global SDK idleだけでは解放しません。
+
+通常のEditor quitは非同期でdrainします。10秒以内に証明できない場合はquitをキャンセルし、admissionを閉じたままnative/managed referencesを保持します。自動再試行はせず、利用者がquitを再度要求した時にstatusを再確認します。完了後は一度だけshutdown完了を通知し、Editorの終了操作を利用者にもう一度要求します。自動でwindow closeやmenu commandを実行せず、Unityの通常のclose/save flowをアプリ側から進めません。quit callbackを迂回する終了では5秒のbounded fallbackを一度試しますが、完了を証明できなければ成功として扱いません。final shutdown開始後にsave確認をCancelするとadmissionは再開しません。同じEditorでBridgeを再利用するにはEditor再起動が必要です。現手動2回目終了とGUI save/cancel動作はまだ未検証です。
+
+Final shutdown hookはWindows Editor/Playerだけに適用し、asset import worker processでは登録しません。macOS Metal実験とunsupported platformには触れません。Windowsの終了時access violation二件は異なるfaulting locationで観測されました。原因は不明で、今回の自然終了結果はそれらの原因を除去した証明ではありません。修正はmainへ統合する対象ですが、未検証の保存確認cancelや物理displayの性能を保証しません。現在のnative/managed test結果とEditor fixtureの検証状態は[Shutdown validation](shutdown-validation-20261008.md)に記録しています。
+
+UPM packageを更新した後はUnity Editorを通常終了し、起動し直してください。packageのmanaged assemblyとnative shimを同じversionで読み込みます。shutdown traceの使い方とnative test境界は[Native shutdown trace](native-shutdown-trace.md)を参照してください。
+
 MetalのAPI wrapper、Unity Metal producer、submission lifetime管理は別のnative module群に隔離されています。この実験を通常のSession policyや既存Bridge outputの対応表へ含めません。Metal sourceの存在だけでは利用可能なruntimeや配布物を意味しません。
 
 ## Metal experiment and lifetime boundary
@@ -47,8 +57,8 @@ CI artifact `native-macos-metal-shim` (artifact 11519112992)は`liblookingglass_
 
 最初のCIでは古いv5 pinとWindows fake initializer/Metal includeのcompile failureがありました。v7対応pin`522254181faf188efa8b50c3e3bf6fce720b26e4`への更新と修正後、上記2 runが成功しました。ただしCI結果はUnity runtime、official SDK load、Bridge画面、physical display、shader/format品質を検証していません。artifactは手動取得のみで、通常Metal対応を意味しません。
 
-## Scope and release gates
+## Scope and known limits
 
 Vulkan実装は今回の範囲外です。性能最適化は保留中です。既存のScene View Gizmoによるcamera authoringは対象に含みますが、Quilt imageへのGizmo overlayは対象外です。
 
-過去のWindows Bridge終了時access violationは未解決のrelease gateとして保持します。根本原因が確定するまでmain/releaseは保留です。Metal実験の進捗はこのWindows gateを解消しません。
+過去のWindows Bridge終了時access violationは根本原因未確定のまま履歴として保持します。訂正済みbaseline2は自然終了しましたが、旧事象は再現されておらず、修正の因果的な解消も証明されていません。Metal実験は通常Sessionに未対応で、このWindows shutdown変更の検証には含みません。

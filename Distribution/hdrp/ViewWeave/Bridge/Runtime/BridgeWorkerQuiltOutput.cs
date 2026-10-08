@@ -50,6 +50,15 @@ namespace ViewWeave
                 catch (EntryPointNotFoundException) { return managed; }
             }
         }
+        internal static bool HasNativeHandle
+        {
+            get
+            {
+                foreach (BridgeWorkerQuiltOutput output in Resources.FindObjectsOfTypeAll<BridgeWorkerQuiltOutput>())
+                    if (output != null && output.handle != IntPtr.Zero) return true;
+                return BridgeWorkerReaper.PendingCount != 0;
+            }
+        }
         internal static uint NativePendingCount => BridgeWorkerNative.lkg_worker_pending_count();
         internal static int CloseAllNativeWorkers() => BridgeWorkerNative.lkg_worker_close_all();
         internal static int CollectClosedNativeWorkers() => BridgeWorkerNative.lkg_worker_collect_closed();

@@ -31,6 +31,9 @@ bool lkg_bridge_worker_claim();
 void lkg_bridge_worker_release_claim();
 void lkg_bridge_worker_enter();
 void lkg_bridge_worker_leave();
+extern "C" int32_t lkg_bridge_sdk_shutdown_faulted(void);
+extern "C" int32_t lkg_bridge_sdk_shutdown_incomplete(void);
+extern "C" int32_t lkg_bridge_close_sdk_admission(void);
 
 struct WorkerContext {
     std::mutex mutex;
@@ -90,6 +93,10 @@ struct WorkerContext {
     std::atomic<uint64_t> d3d12FenceTimeoutMs{ 10000 };
     bool slotsInitializing = false;
     bool renderFault = false;
+    bool cleanupProven = false;
+    IUnknown* retainedProducerDevice = nullptr;
+    ComPtr<ID3D11Device> retainedWorkerDevice;
+    ComPtr<ID3D11DeviceContext> retainedWorkerDeviceContext;
 #if defined(_WIN32)
     HMODULE moduleReference = nullptr;
 #endif
@@ -116,8 +123,15 @@ struct WorkerHost {
 
 static std::mutex registryMutex;
 static std::unordered_set<WorkerContext*> registry;
+static bool finalShutdownRequested = false;
+static std::atomic<bool> finalShutdownAdmissionClosed{false};
+static std::atomic<uint32_t> finalShutdownState{LKG_WORKER_FINAL_SHUTDOWN_NONE};
+static std::atomic<int32_t> finalShutdownLastResult{0};
 static std::mutex hostRegistryMutex;
 static WorkerHost* persistentHost = nullptr;
+#if defined(LKG_WORKER_TRANSPORT_TESTING)
+static std::atomic<bool> testThrowDuringWorkerCleanup{false};
+#endif
 
 struct WorkerDrawData {
     uint64_t id = 0;
@@ -282,6 +296,7 @@ static void RunWorker(WorkerContext* context);
 static WorkerHost* GetPersistentHost() {
     std::lock_guard<std::mutex> lock(hostRegistryMutex);
     if (persistentHost) return persistentHost;
+    if (finalShutdownAdmissionClosed.load(std::memory_order_acquire)) return nullptr;
     WorkerHost* host = new (std::nothrow) WorkerHost();
     if (!host) return nullptr;
 #if defined(_WIN32)
@@ -346,10 +361,11 @@ static WorkerHost* GetPersistentHost() {
 }
 
 static bool SubmitToPersistentHost(WorkerContext* context) {
+    if (finalShutdownAdmissionClosed.load(std::memory_order_acquire)) return false;
     WorkerHost* host = GetPersistentHost();
     if (!host) return false;
     std::lock_guard<std::mutex> lock(host->mutex);
-    if (host->stopRequested || host->queued || host->active) return false;
+    if (finalShutdownAdmissionClosed.load(std::memory_order_acquire) || host->stopRequested || host->queued || host->active) return false;
     context->hosted = true;
     host->queued = context;
     host->condition.notify_all();
@@ -642,32 +658,72 @@ static void RunWorker(WorkerContext* context) {
 
     auto cleanup = [&]() {
         const uint64_t cleanupSessionId = session;
+        bool cleanupProven = true;
+        {
+            std::lock_guard<std::mutex> lock(context->mutex);
+            context->cleanupProven = false;
+        }
+        if (producer && !context->retainedProducerDevice) {
+            producer->AddRef();
+            context->retainedProducerDevice = producer.Get();
+        }
+        if (workerDevice) context->retainedWorkerDevice = workerDevice;
+        if (workerDeviceContext) context->retainedWorkerDeviceContext = workerDeviceContext;
         TraceWorkerShutdownEvent("cleanup-begin", cleanupSessionId);
         if (session != 0) {
             void* closeData = lkg_bridge_make_close_data(session);
             auto callback = reinterpret_cast<void (*)(int, void*)>(lkg_bridge_render_event_func());
-            if (closeData && callback) callback(1, closeData);
-            lkg_bridge_destroy_session(session);
+            if (closeData && callback) {
+                callback(1, closeData);
+                lkg_bridge_destroy_session(session);
+                LkgBridgeSessionCloseStatusV1 closeStatus{};
+                closeStatus.structSize = sizeof(closeStatus);
+                closeStatus.version = 1;
+                const int32_t queryResult = lkg_bridge_get_session_close_status_v1(session, &closeStatus);
+                cleanupProven = queryResult == 0 && closeStatus.state == LKG_BRIDGE_SESSION_CLOSE_CLOSED_SAFE;
+                if (cleanupProven) cleanupProven = lkg_bridge_ack_session_close_v1(session) == 0;
+                TraceWorkerShutdownEvent(cleanupProven ? "session-close-safe-acked" : "session-close-not-proven-retained",
+                    cleanupSessionId, static_cast<int>(closeStatus.state));
+            } else {
+                cleanupProven = false;
+                TraceWorkerShutdownEvent("session-close-callback-unavailable-retained", cleanupSessionId);
+            }
             session = 0;
         }
-        if (initialized) {
+        if (initialized && cleanupProven) {
             lkg_bridge_uninitialize();
             initialized = false;
+            if (lkg_bridge_sdk_shutdown_faulted() != 0) cleanupProven = false;
         }
-        if (loaded) {
+        if (lkg_bridge_sdk_shutdown_faulted() != 0) cleanupProven = false;
+        if (loaded && cleanupProven) {
             lkg_bridge_unload();
             loaded = false;
         }
-        if (context->producerDevice) {
-            context->producerDevice->Release();
-            context->producerDevice = nullptr;
-        }
-        for (uint32_t slotIndex = 0; slotIndex < 3; ++slotIndex) {
-            WorkerContext::Slot& slot = context->slots[slotIndex];
-            if (!slot.d3d12Slot) continue;
-            TraceWorkerShutdownEvent("clear-d3d12-slot-begin", cleanupSessionId, static_cast<int>(slotIndex));
-            ClearD3D12Slot(slot);
-            TraceWorkerShutdownEvent("clear-d3d12-slot-end", cleanupSessionId, static_cast<int>(slotIndex));
+#if defined(LKG_WORKER_TRANSPORT_TESTING)
+        if (cleanupProven && testThrowDuringWorkerCleanup.exchange(false, std::memory_order_acq_rel))
+            throw std::runtime_error("injected worker cleanup exception");
+#endif
+        if (cleanupProven) {
+            if (context->producerDevice) {
+                context->producerDevice->Release();
+                context->producerDevice = nullptr;
+            }
+            for (uint32_t slotIndex = 0; slotIndex < 3; ++slotIndex) {
+                WorkerContext::Slot& slot = context->slots[slotIndex];
+                if (!slot.d3d12Slot) continue;
+                TraceWorkerShutdownEvent("clear-d3d12-slot-begin", cleanupSessionId, static_cast<int>(slotIndex));
+                ClearD3D12Slot(slot);
+                TraceWorkerShutdownEvent("clear-d3d12-slot-end", cleanupSessionId, static_cast<int>(slotIndex));
+            }
+            if (context->retainedProducerDevice) {
+                context->retainedProducerDevice->Release();
+                context->retainedProducerDevice = nullptr;
+            }
+            context->retainedWorkerDevice.Reset();
+            context->retainedWorkerDeviceContext.Reset();
+        } else {
+            SetFault(*context, 22, "vendor cleanup not proven; resources retained");
         }
 #if defined(LKG_WORKER_TRANSPORT_TESTING)
         DestroyWorkerTestWindow(*context);
@@ -675,6 +731,7 @@ static void RunWorker(WorkerContext* context) {
         WorkerShutdownSnapshot cleanupEndSnapshot{};
         {
             std::lock_guard<std::mutex> lock(context->mutex);
+            context->cleanupProven = cleanupProven;
             if (context->status.state != LKG_WORKER_FAULT) context->status.state = LKG_WORKER_CLOSED;
             if (NativeTraceEnabled())
                 cleanupEndSnapshot = CaptureWorkerShutdownSnapshot(*context, cleanupSessionId);
@@ -686,6 +743,10 @@ static void RunWorker(WorkerContext* context) {
             cleanup();
         } catch (...) {
             try {
+                {
+                    std::lock_guard<std::mutex> lock(context->mutex);
+                    context->cleanupProven = false;
+                }
                 SetFault(*context, 15, "worker cleanup exception");
             } catch (...) {
             }
@@ -919,12 +980,17 @@ LKG_EXPORT void* lkg_worker_begin(const char* runtimePath, const char* applicati
             lkg_bridge_worker_release_claim();
             return nullptr;
         }
+        if (!GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
+                reinterpret_cast<LPCWSTR>(&lkg_worker_begin), &context->moduleReference)) {
+            throw std::runtime_error("worker module pin failed");
+        }
         ComPtr<ID3D12Device> producer12;
         context->producerD3D12 = context->producerDevice->QueryInterface(IID_PPV_ARGS(&producer12)) == S_OK;
         if (!context->producerD3D12) context->deviceGeneration = 0;
         context->status.state = LKG_WORKER_CONNECTING;
         {
             std::lock_guard<std::mutex> lock(registryMutex);
+            if (finalShutdownRequested) throw std::runtime_error("final worker shutdown already requested");
             registry.insert(context);
         }
         if (!SubmitToPersistentHost(context)) {
@@ -937,6 +1003,10 @@ LKG_EXPORT void* lkg_worker_begin(const char* runtimePath, const char* applicati
             context->producerDevice->Release();
             context->producerDevice = nullptr;
         }
+        if (context && context->moduleReference) {
+            FreeLibrary(context->moduleReference);
+            context->moduleReference = nullptr;
+        }
         delete context;
         lkg_bridge_worker_release_claim();
         return nullptr;
@@ -945,6 +1015,10 @@ LKG_EXPORT void* lkg_worker_begin(const char* runtimePath, const char* applicati
 }
 
 #if defined(LKG_WORKER_TRANSPORT_TESTING)
+LKG_EXPORT void lkg_worker_test_throw_during_cleanup(void) {
+    testThrowDuringWorkerCleanup.store(true, std::memory_order_release);
+}
+
 LKG_EXPORT int32_t lkg_worker_test_set_d3d12_timeout(void* handle, uint64_t timeoutMilliseconds) {
     auto* context = static_cast<WorkerContext*>(handle);
     if (!context || timeoutMilliseconds == 0) return -1;
@@ -1048,7 +1122,7 @@ LKG_EXPORT void* lkg_worker_make_draw_data(void* handle, void* texture, uint32_t
     if (lkg::common::ValidateDrawRequest(request) != lkg::common::ValidationResult::Valid) return nullptr;
     auto* context = static_cast<WorkerContext*>(handle);
     std::lock_guard<std::mutex> registryLock(registryMutex);
-    if (registry.find(context) == registry.end()) return nullptr;
+    if (finalShutdownRequested || registry.find(context) == registry.end()) return nullptr;
     std::lock_guard<std::mutex> lock(context->mutex);
     if (context->status.state != LKG_WORKER_READY || context->closeRequested.load(std::memory_order_acquire) || context->pendingTokens >= 3) {
         ++context->status.dropped;
@@ -1144,6 +1218,123 @@ LKG_EXPORT uint32_t lkg_worker_pending_count(void) {
     return pending;
 }
 
+LKG_EXPORT int32_t lkg_worker_request_final_shutdown(void) {
+    if (lkg_bridge_close_sdk_admission() != 0) return -2;
+    {
+        std::lock_guard<std::mutex> registryLock(registryMutex);
+        if (finalShutdownRequested) return 0;
+        finalShutdownRequested = true;
+        finalShutdownAdmissionClosed.store(true, std::memory_order_release);
+        finalShutdownState.store(LKG_WORKER_FINAL_SHUTDOWN_DRAINING, std::memory_order_release);
+        finalShutdownLastResult.store(0, std::memory_order_release);
+    }
+    lkg_worker_close_all();
+    WorkerHost* host = nullptr;
+    {
+        std::lock_guard<std::mutex> hostRegistryLock(hostRegistryMutex);
+        host = persistentHost;
+    }
+    if (host) {
+        std::lock_guard<std::mutex> hostLock(host->mutex);
+        host->stopRequested = true;
+        if (host->queued) host->queued->closeRequested.store(true, std::memory_order_release);
+        if (host->active) host->active->closeRequested.store(true, std::memory_order_release);
+        host->condition.notify_all();
+    }
+    return 0;
+}
+
+static bool ValidateFinalShutdownStatusRequest(const LkgWorkerFinalShutdownStatusV1* status) {
+    return status && status->structSize == sizeof(LkgWorkerFinalShutdownStatusV1) && status->version == 1;
+}
+
+LKG_EXPORT int32_t lkg_worker_get_final_shutdown_status_v1(LkgWorkerFinalShutdownStatusV1* status) {
+    if (!ValidateFinalShutdownStatusRequest(status)) return -1;
+    bool requested = false;
+    {
+        std::lock_guard<std::mutex> registryLock(registryMutex);
+        requested = finalShutdownRequested;
+    }
+    if (requested) {
+        lkg_worker_collect_closed();
+        lkg_worker_shutdown_host(0);
+    }
+
+    uint32_t registeredContexts = 0;
+    uint32_t closedUncollectedContexts = 0;
+    {
+        std::lock_guard<std::mutex> registryLock(registryMutex);
+        registeredContexts = static_cast<uint32_t>(registry.size());
+        for (WorkerContext* context : registry) {
+            if (!context) continue;
+            std::lock_guard<std::mutex> contextLock(context->mutex);
+            const bool terminal = context->status.state == LKG_WORKER_CLOSED || context->status.state == LKG_WORKER_FAULT;
+            if (terminal && context->finished.load(std::memory_order_acquire)) ++closedUncollectedContexts;
+        }
+    }
+
+    WorkerHost* host = nullptr;
+    bool hostRunning = false;
+    bool hostJoined = true;
+    {
+        std::lock_guard<std::mutex> hostRegistryLock(hostRegistryMutex);
+        host = persistentHost;
+    }
+    if (host) {
+        std::lock_guard<std::mutex> hostLock(host->mutex);
+        hostJoined = host->joined;
+        hostRunning = !host->stopped && !host->joined;
+    }
+
+    const bool sdkFaulted = lkg_bridge_sdk_shutdown_faulted() != 0;
+    const bool sdkIncomplete = lkg_bridge_sdk_shutdown_incomplete() != 0;
+    uint32_t state = finalShutdownState.load(std::memory_order_acquire);
+    int32_t lastResult = finalShutdownLastResult.load(std::memory_order_acquire);
+    if (sdkFaulted) {
+        state = LKG_WORKER_FINAL_SHUTDOWN_FAULT;
+        lastResult = -2;
+    } else if (requested && registeredContexts == 0 && hostJoined && !sdkIncomplete) {
+        state = LKG_WORKER_FINAL_SHUTDOWN_COMPLETE;
+        lastResult = 0;
+    } else if (requested && state != LKG_WORKER_FINAL_SHUTDOWN_TIMED_OUT) {
+        state = registeredContexts == 0 && hostJoined && !sdkIncomplete
+            ? LKG_WORKER_FINAL_SHUTDOWN_JOINING
+            : LKG_WORKER_FINAL_SHUTDOWN_DRAINING;
+        lastResult = 0;
+    }
+    finalShutdownState.store(state, std::memory_order_release);
+    finalShutdownLastResult.store(lastResult, std::memory_order_release);
+    status->structSize = sizeof(LkgWorkerFinalShutdownStatusV1);
+    status->version = 1;
+    status->state = state;
+    status->registeredContexts = registeredContexts;
+    status->closedUncollectedContexts = closedUncollectedContexts;
+    status->hostRunning = hostRunning ? 1u : 0u;
+    status->hostJoined = hostJoined ? 1u : 0u;
+    status->lastResult = lastResult;
+    return 0;
+}
+
+LKG_EXPORT int32_t lkg_worker_wait_final_shutdown_v1(uint32_t timeoutMilliseconds, LkgWorkerFinalShutdownStatusV1* status) {
+    if (!ValidateFinalShutdownStatusRequest(status)) return -1;
+    if (lkg_worker_request_final_shutdown() != 0) return -2;
+    const ULONGLONG deadline = GetTickCount64() + timeoutMilliseconds;
+    for (;;) {
+        if (lkg_worker_get_final_shutdown_status_v1(status) != 0) return -1;
+        if (status->state == LKG_WORKER_FINAL_SHUTDOWN_COMPLETE) return 0;
+        if (status->state == LKG_WORKER_FINAL_SHUTDOWN_FAULT && status->registeredContexts == 0 && status->hostJoined == 1) return -2;
+        if (GetTickCount64() >= deadline) {
+            if (status->state == LKG_WORKER_FINAL_SHUTDOWN_FAULT) return -2;
+            finalShutdownState.store(LKG_WORKER_FINAL_SHUTDOWN_TIMED_OUT, std::memory_order_release);
+            finalShutdownLastResult.store(1, std::memory_order_release);
+            status->state = LKG_WORKER_FINAL_SHUTDOWN_TIMED_OUT;
+            status->lastResult = 1;
+            return 1;
+        }
+        Sleep(1);
+    }
+}
+
 LKG_EXPORT int32_t lkg_worker_collect_closed(void) {
     std::vector<WorkerContext*> reclaim;
     {
@@ -1154,7 +1345,8 @@ LKG_EXPORT int32_t lkg_worker_collect_closed(void) {
             bool idleHost = true;
             {
                 std::lock_guard<std::mutex> lock(context->mutex);
-                finished = context->finished.load(std::memory_order_acquire) && context->pendingTokens == 0 && context->jobCount == 0 && !context->inFlightJob;
+                finished = context->cleanupProven && context->finished.load(std::memory_order_acquire) &&
+                    context->pendingTokens == 0 && context->jobCount == 0 && !context->inFlightJob;
             }
             if (context->hosted) {
                 WorkerHost* host = nullptr;
@@ -1200,7 +1392,7 @@ LKG_EXPORT int32_t lkg_worker_release(void* handle) {
     if (registry.find(context) == registry.end()) return -2;
     {
         std::lock_guard<std::mutex> lock(context->mutex);
-        if (!context->finished.load(std::memory_order_acquire)) return -2;
+        if (!context->cleanupProven || !context->finished.load(std::memory_order_acquire)) return -2;
     }
     if (context->thread.joinable()) context->thread.join();
 #if defined(_WIN32)
