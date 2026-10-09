@@ -114,9 +114,9 @@ flowchart TB
     Paused --> Closing
     Closing --> Closed["完全drainとproof後に所有権を解放"]
 ```
-Local previewは最後の画像を保持します。`Resume Preview`は同じpreview sessionを再表示します。完全にdrain・解放するには`Close Preview`を使います。これにより構造設定のlockが解除され、preview ownerも解放されます。The process-wide SDK owner and loaded native image remain until Editor shutdown.Authoring windowのRig切替・preview対象windowのclose、Play移行、reload、Editor終了では一時停止ではなく完全終了を要求します。一時停止中も構造設定はlockされ、display refreshは保持中のWorker経由で続きます。
+Local previewは最後の画像を保持します。`Resume Preview`は同じpreview sessionを再表示します。完全にdrain・解放するには`Close Preview`を使います。これにより構造設定のlockが解除され、preview ownerも解放されます。プロセス全体のSDK ownerと読み込み済みnative imageはEditor終了まで保持されます。Authoring windowのRig切替・preview対象windowのclose、Play移行、reload、Editor終了では一時停止ではなく完全終了を要求します。一時停止中も構造設定はlockされ、display refreshは保持中のWorker経由で続きます。
 
-次の図は再利用可能な一時停止と完全終了を区別します。完全終了ではproducerとGPU/Workerの所有権proofを待ってからresourceを解放します。Native Releaseのpause protocolはdrain-before-hide、pause/resume acknowledgement、同一session resource保持、pause中からの完全終了を含むCTest 10/10に合格しました。これはfake Bridge runtimeとtest adapterによるNative worker契約の検証です。隔離URP/HDRP local previewのmanaged testはpause/resume、一時停止中のFOV変更、完全Closeを2/2で確認しました。公式device上のpause/resume表示は未検証です。
+上の図は再利用可能な一時停止と完全終了を区別します。完全終了ではproducerとGPU/Workerの所有権proofを待ってからresourceを解放します。Native Releaseのpause protocolはdrain-before-hide、pause/resume acknowledgement、同一session resource保持、pause中からの完全終了を含むCTest 10/10に合格しました。これはfake Bridge runtimeとtest adapterによるNative worker契約の検証です。隔離URP/HDRP local previewのmanaged testはpause/resume、一時停止中のFOV変更、完全Closeを2/2で確認しました。2026-10-09、利用者はUnity 6000.6.4f1 / Windows D3D12 / package revision `6a297a8fddc685b51e0da3136ca6cdb5331e8c6f`の実URP `test.unity` sceneで一度のPause/Resumeを確認しました。native pause acknowledgement後もworker handleとgenerationは維持され、Resume後に表示が戻り、表示対象の移動とUndoが反映されました。送信・完了はResume後に進み、dropとerrorはありませんでした。これは一つのsceneと一度の操作です。反復動作やHDRP機器での挙動は未検証で、実寸scale、画像品質、性能も確認していません。
 
 preview開始・pause・resume・close時は`Preview` sectionのstatusとerrorを確認してください。Local previewはUnity内に表示し、device previewはBridgeへ送信します。running状態や送信成功はsoftware側の進行を示すだけで、機器に画像が表示されたことや光学的な見え方を保証しません。機器出力を確認する場合はLooking Glass本体を直接確認してください。Native DLLまたはexportを変えるpackage更新では、`Close Preview`と通常Session停止で所有権を解放し、Package Managerで更新した後にUnityを再起動してください。native-image guardは古い・重複・確認できないloaded imageを拒否できますが、DLLをunload/reloadする機能はありません。
 

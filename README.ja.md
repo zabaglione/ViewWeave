@@ -6,7 +6,7 @@ Looking Glass向けの非公式Unity SDKです。URPまたはHDRPの通常のシ
 
 Looking Glassに表示するときは、利用者自身のUnity projectをEditor PlayするかPlayerとして起動します。UnityがQuiltを描画し、インストール済みで起動中の公式Looking Glass Bridge runtimeが機器へ届けます。SDK内のTests/Bridge Unityプロジェクトやデモアプリを別途起動する必要はありません。
 
-通常runtime Sessionの対応環境はUnity 6000.6.4f1、Windows、URPまたはHDRPです。Bridge WorkerはEditor PlayとWindows PlayerからD3D11またはD3D12で出力し、Legacy DirectはD3D11のみです。Rigの制作向けに、ViewWeaveRigから明示的に開始する別のEdit Mode previewもあります。これはPlay ModeやRigの通常Bridge Sessionを開始しません。D3D11/D3D12 deviceのURP/HDRP fixtureでStart/Stop/Restartとpending 0を確認しました。手動の光学確認は保留中です。隔離Editor fixtureではDomain Reload後のpreview cleanupと手動restartを確認しました。3本のFile > Exit probeではhelperによる停止・回収後にgateのpending 0を確認しましたが、Editor正常終了は未確認です。詳細は[Graphics backends](docs/ja/graphics-backends.md)を参照してください。通常のmacOS Sessionは対象外です。Bridge runtimeとLooking Glass機器を別途用意してください。
+通常runtime Sessionの対応環境はUnity 6000.6.4f1、Windows、URPまたはHDRPです。Bridge WorkerはEditor PlayとWindows PlayerからD3D11またはD3D12で出力し、Legacy DirectはD3D11のみです。Rigの制作向けに、ViewWeaveRigから明示的に開始する別のEdit Mode previewもあります。これはPlay ModeやRigの通常Bridge Sessionを開始しません。D3D11/D3D12 deviceのURP/HDRP fixtureでStart/Stop/Restartとpending 0を確認しました。2026-10-09には、実URPのWindows D3D12 sceneで一度のPause/Resume後に画像が再表示されたことを利用者が確認しました。これは単一の操作であり、機器全般の検証ではありません。実寸scaleと画像品質は未検証です。隔離Editor fixtureではDomain Reload後のpreview cleanupと手動restartを確認しました。3本のFile > Exit probeではhelperによる停止・回収後にgateのpending 0を確認しましたが、Editor正常終了は未確認です。詳細は[Graphics backends](docs/ja/graphics-backends.md)を参照してください。通常のmacOS Sessionは対象外です。Bridge runtimeとLooking Glass機器を別途用意してください。
 
 macOS Metalは明示opt-inのbounded実験です。通常SessionはMetalを受け付けず、macOS native shimはUPMに含まれません。限定的な手順と未検証範囲は[Graphics backends](docs/ja/graphics-backends.md)を参照してください。
 
@@ -61,7 +61,7 @@ ViewWeaveRig Inspectorまたは`Window > ViewWeave > Rig Authoring`を使うと�
 
 ## Edit ModeでRigを制作・プレビューする
 
-Rigの`Preview`カテゴリから`Start Local Edit Mode Preview`または`Start Looking Glass Device Preview`を明示的に開始します。`Pause Preview`は進行中の処理をdrainしてdevice windowを隠しますが、同じproducer、RenderTexture、Workerと所有権lockを保持します。`Resume Preview`で同じsessionを再表示します。targetや構造設定を変更するときは`Close Preview`で完全にdrain・解放してください。Authoring windowのRig切替・close、Play移行、reload、Editor終了も完全終了経路を使います。以前のURP/HDRP GPU fixtureとD3D11/D3D12 device fixtureはlocal描画と完全終了cleanupを検証しましたが、pause/resumeの実機表示は検証していません。現在のNative Release pause protocolはCTest 10/10 PASSです。URP/HDRPのlocal managed testではpause/resume、FOV変更、Closeを2/2で確認しました。公式device上のpause/resume表示は未検証で、手動の光学確認も保留中です。詳しくは[Graphics backends](docs/ja/graphics-backends.md)を参照してください。
+Rigの`Preview`カテゴリから`Start Local Edit Mode Preview`または`Start Looking Glass Device Preview`を明示的に開始します。`Pause Preview`は進行中の処理をdrainしてdevice windowを隠しますが、同じproducer、RenderTexture、Workerと所有権lockを保持します。`Resume Preview`で同じsessionを再表示します。targetや構造設定を変更するときは`Close Preview`で完全にdrain・解放してください。Authoring windowのRig切替・close、Play移行、reload、Editor終了も完全終了経路を使います。現在のNative Release pause protocolはCTest 10/10 PASSです。URP/HDRPのlocal managed testではpause/resume、FOV変更、Closeを2/2で確認しました。2026-10-09、利用者は実URPの`test.unity` sceneをWindows D3D12で一度Pause/Resumeし、Resume後の再表示と表示対象の移動・Undoの反映を確認しました。この単一scene・単一cycleは反復運用やHDRP機器での動作を示しません。実寸scale、画像品質、性能は未検証です。詳しくは[Graphics backends](docs/ja/graphics-backends.md)を参照してください。
 
 PreviewにはRig設定を基にした別のEditor-owned producerを使います。開始・停止だけでpreview状態が保存sceneへ書き戻されることはありません。`Camera & Focus`や`Rendering`などで行った通常の編集は、各設定の保存先へ反映されます。詳しくは[制作フロー](docs/ja/quilt-authoring.md#edit-mode-authoring-preview)を参照してください。
 
