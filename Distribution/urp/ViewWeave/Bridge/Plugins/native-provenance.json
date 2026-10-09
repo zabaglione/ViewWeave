@@ -357,24 +357,24 @@
     "notes": "The source Bridge package DLL matches this artifact SHA-256. Native Release CTest passed 9/9. These tests validate host COM lifetime and existing fake Bridge contracts, not official Bridge optical output.",
     "freshHardwareEvidence": {
       "status": "Two-cycle diagnostic and non-diagnostic software-image runs passed; physical display observation is unconfirmed",
-      "previousArtifactSha256": "D8C5C1FF4C651278737612A1DA061DAD8D7CF3C333CF41192095FC1E506E79EA",
+      "previousArtifactSha256": "D46AAADDFC035FCC3AF3FAD5B6886AF7DE1D9E0816846C4A5874A52F815944DF",
       "previousEvidencePath": ".local/current-sample-state/2026-10-09/refresh-2da34c050b2f4e0493e4308a7dfa693b",
-      "note": "The prior refresh/Play/toolbar-Stop/refresh pass was performed with the previous diagnostic-only DLL and does not validate this persistent-device build. The current diagnostic run below is separate from optical observation."
+      "note": "The prior metadata/Play/toolbar-Stop/refresh pass used the 0405c09 package DLL with SHA-256 D46AAADDFC035FCC3AF3FAD5B6886AF7DE1D9E0816846C4A5874A52F815944DF. It is historical evidence for that artifact and does not validate the current persistent-device build. The current diagnostic run below is separate from optical observation."
     },
     "diagnosticTwoColorRun": {
-      "status": "PASS; process exited naturally with code 0",
+      "status": "PASS; final SDK uninitialize succeeded",
       "dllSha256": "DAECE40186CBDF12C95105649B764BC274B0A5F93FCDE43A3C1DEF14CDA3B004",
       "evidencePath": ".local/current-sample-state/2026-10-09/device-restart-fixed-diag-daec",
-      "environment": "Unity 6000.6.4f1 URP fixture, Windows D3D12, official Bridge runtime, device display ordinal 2, Preview quality, Half view render mode, physical framing disabled, reference-camera FOV following enabled.",
+      "environment": "Unity 6000.6.4f1 URP fixture, Windows D3D12, official Bridge runtime, display ordinal 0 (SDK display index 2), Preview quality, Half view render mode, physical framing disabled, reference-camera FOV following enabled.",
       "result": "Two render sessions completed five submissions each. Native trace reported source_match=1 and bridge_match=1 for the shared D3D11 device identity. Source and Bridge texture frame 3 and frame 5 readbacks each matched the expected color: green in session 1 and magenta in session 2, with 348096 matching pixels per frame. Both sessions stopped with native pending=0 and preview-retention pending=0; final SDK uninitialize returned success.",
-      "limits": "This run enabled native snapshot and staging-readback diagnostics. It establishes software texture handoff and process SDK finalization for this fixture only; it is not a non-diagnostic observer run or an optical display-quality assessment. A separate non-diagnostic observer run remains pending."
+      "limits": "This run enabled native snapshot and staging-readback diagnostics. It establishes software texture handoff and process SDK finalization for this fixture only; it is not an optical display-quality assessment. A separate non-diagnostic run is recorded below."
     },
     "nonDiagnosticTwoColorRun": {
       "status": "PASS; process exited naturally with code 0 and the Editor PID was confirmed gone",
       "dllSha256": "DAECE40186CBDF12C95105649B764BC274B0A5F93FCDE43A3C1DEF14CDA3B004",
-      "testSourceHashAtRunPrefixSuffix": "10FCF9DC...9312",
+      "testSourceSha256AtRun": "10FCF9DC672BECE6DA62C548CE94F8B6D4663EA5F04B4D2F6714483BA7ED9312",
       "evidencePath": ".local/current-sample-state/2026-10-09/device-restart-visual-observer-daec",
-      "environment": "Unity 6000.6.4f1 URP fixture, Windows D3D12, official Bridge runtime, device display ordinal 2, Preview quality, Half view render mode, physical framing disabled, reference-camera FOV following enabled.",
+      "environment": "Unity 6000.6.4f1 URP fixture, Windows D3D12, official Bridge runtime, display ordinal 0 (SDK display index 2), Preview quality, Half view render mode, physical framing disabled, reference-camera FOV following enabled.",
       "result": "The one-test run passed in 142.287 seconds, including a 120-second active magenta hold. Green and magenta appeared in the Unity source ReadPixels checks on both render sessions; the test continued to observe draw activity after restart. Both preview stops reached native pending=0 and preview-retention pending=0, and final SDK uninitialize succeeded.",
       "diagnostics": "No native texture snapshot or staging-readback diagnostics were enabled; the fixture still used Unity source ReadPixels. The optional null-trace-path guard in the test source was applied after this run and does not change the executed test result.",
       "limits": "The software-side two-color result is not confirmation of physical display appearance. The user has not yet confirmed optical visibility."
