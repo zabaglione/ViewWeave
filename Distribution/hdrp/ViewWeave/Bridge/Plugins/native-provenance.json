@@ -1,10 +1,10 @@
 {
   "artifact": "lookingglass_bridge_shim.dll",
-  "sha256": "D46AAADDFC035FCC3AF3FAD5B6886AF7DE1D9E0816846C4A5874A52F815944DF",
+  "sha256": "DAECE40186CBDF12C95105649B764BC274B0A5F93FCDE43A3C1DEF14CDA3B004",
   "nativeSourceHashes": {
-    "Native/CMakeLists.txt": "69D2CFC6B311D57BA7C533D6387EE7B01C827E161BB5E2EAA454FA603E064717",
+    "Native/CMakeLists.txt": "24BE06266EA842A6CBB32583281D8E954C5F96257FBCFD342390A24FCDCC2EDF",
     "Native/bridge_d3d12_internal.h": "6B06A4792E547BDAE65EE91908CB565ED5FA1B89AD5C6E7A6EE627D6933FE154",
-    "Native/bridge_shim.cpp": "F539E6B5B8BFAB5B65A819C128D5EED37CA497AB62A0501ECB13D72E77D4148E",
+    "Native/bridge_shim.cpp": "B88AC70DAD533DDFE8E750FE0DDF35DD00D1E0FF0BA68A8ADBE4AD8DCAF32ECC",
     "Native/bridge_shim.h": "B33943E3D0BA4F5E3E7177008542BF48E94AD17846CB421C5AF834F07B687954",
     "Native/bridge_worker_common.cpp": "D57B45EA0B65FA2B3BD953853529E5005A629321D035C090C1C3D6C620C9E39B",
     "Native/bridge_worker_common.h": "48ACE99B1F5C90842FB2E6B5AE6021AD835891486BC65C3969C2427F5DB96FD4",
@@ -14,7 +14,7 @@
     "Native/platform/windows/backends/d3d11_backend.inc": "8358D013E24979837AF3419B23223675E211C51CAA667F78672194E5585ADDDF",
     "Native/platform/windows/backends/d3d11_d3d12_interop.inc": "FDF55A669CE099FA48B95683678ABE7F51592AA1B9E55BF097B90482F7398B28",
     "Native/platform/windows/backends/d3d12_backend.inc": "AE913E68B1D6D11BB551A2D85DDAC4CCE5990C7E92678801D00F1383BA38BCB0",
-    "Native/platform/windows/bridge_worker_transport_windows.inc": "BCD8108E8D29F997C47E329C26F13E8B6BA4C8F1177FEF0736632FF55CE3B63E",
+    "Native/platform/windows/bridge_worker_transport_windows.inc": "4FCFBE27B36A89E521AE2C221474F0CEA328D2C6464E0E09B85D91B2EC00E934",
     "Native/tests/bridge_loader_lifecycle_test.cpp": "FA9E38EAF6B4492F02F2F4F45C0FDB59AEFA3227EA37116AE84EF971D19CAC3B",
     "Native/tests/bridge_shutdown_contract.h": "407273B9AC0330ED817CD85B22BEF2070F1365BCD64B2398A9F6C638FE546B58",
     "Native/tests/bridge_shutdown_contract_test.cpp": "5FF2677DBF79B43F571E12E9276793D8910B96018C7E42627D38D501CB39B9C0",
@@ -23,7 +23,7 @@
     "Native/tests/fake_bridge_runtime.cpp": "3639075BF270849DBAA8903C9466F78B913085462B9CE8E5DF36C4FC31A6CAF8",
     "Native/tests/fake_bridge_shutdown_runtime.cpp": "5F79C774C021FF9BD57414CD6AB2F2F02295D202CCD7115FBAC48A56B17244C3",
     "Native/tests/portable_common_test.cpp": "ED50427D073E0FFE9692E2749DDD076EEABD3AEA3ACA6E2D481F15D0FA82772E",
-    "Native/tests/worker_transport_test.cpp": "0E44FDEB0A60BEC3326E5006AFA20BDE271DE892D0652B908E075910FD38D8FB"
+    "Native/tests/worker_transport_test.cpp": "1527A29A9F3A222F7E583F874F63169911E22FC387656941D8737E1DFE5326B5"
   },
   "compilerVersion": "MSVC 19.44.35217.0",
   "targetArchitecture": "x64",
@@ -31,11 +31,11 @@
   "pluginApiUnityVersion": "6000.6.4f1",
   "buildDirectory": "Native/build-worker-release-vs/Release (currentWindowsReleaseBuild)",
   "generator": "Visual Studio 17 2022; MSBuild 17.14.23",
-  "independentCTest": "Current packaged Windows DLL: Native Release CTest passed 8/8, including persistent SDK host lifetime, metadata-to-render reuse, configuration mismatch, initialization/finalization failure retention, shutdown ordering, and window-hide ordering. Tests use fake Bridge runtimes; no physical-device claim is made.",
+  "independentCTest": "Current packaged Windows DLL: Native Release CTest passed 9/9. The suite includes metadata-to-render device-lifetime reuse, same-adapter COM identity reuse, adapter mismatch rejection without recreation, failed finalization resource retention, shutdown ordering, and D3D12 producer-fence retirement. Tests use fake Bridge runtimes and WARP/hardware adapters; no official vendor-device rendering claim is made.",
   "d3d12HardwareValidation": "Historical only: NVIDIA RTX 3090 Ti D3D12 shared-resource handoff, ring reuse, typeless formats, timeout, late completion, device-removal seam, and generation coverage were previously exercised. These observations are not fresh validation for this DLL.",
-  "validationLimits": "The packaged DLL matches currentWindowsReleaseBuild and the listed nativeSourceHashes. Native Release CTest uses fake Bridge runtimes and verifies window hide before texture/device release; it does not prove native window destruction or physical-device rendering. No optical-scale or performance claim is made.",
+  "validationLimits": "The current package DLL matches currentWindowsReleaseBuild and the listed nativeSourceHashes. Native Release CTest uses fake Bridge runtimes and WARP or matching test adapters; it does not prove official vendor optical output, image quality, or performance. Session close and D3D12 producer/consumer retirement contracts remain separately enforced.",
   "license": "Apache-2.0",
-  "generatedAt": "2026-10-09T00:20:50Z",
+  "generatedAt": "2026-10-09T02:54:51Z",
   "unityD3D12InterfaceSelection": "The current DLL in currentWindowsReleaseBuild was built with the local Unity 6000.6.4f1 PluginAPI and the v8-preferred D3D12 interface selection. The pinned NativeRenderingPlugin v7-header run and CI records under freshWindowsReleaseEvidence refer to a prior artifact and do not rebuild or validate the current DLL.",
   "freshWindowsReleaseEvidence": {
     "artifactSha256": "81CBF29737B1D1A13FBB3C1EEAB6265F3B0B076F41AB8C23B6E9229B17F0AEA9",
@@ -135,8 +135,8 @@
   },
   "historicalGpuValidation": "Historical RTX 3090 Ti D3D12 shared-resource and Editor/Player observations are not fresh evidence for this DLL. The latest local validation above is the fresh Windows Release CTest only.",
   "ciValidation": "Historical CI for commit 054fffeb817ac8daae6ff68ed567ec7e69fe4798: workflow run 37705337066 and PR run 37705340768 succeeded with 5/5 jobs each. The jobs covered static checks, Linux portable/unsupported ABI, Windows transport, Windows fake regressions with Unity API v7, and the macOS ARM64 shim build/link plus native contract tests. These runs predate the current uncommitted final-shutdown source and do not validate or replace the current locally built Windows v8 DLL. No Unity runtime, official Bridge SDK load, physical display, or Metal consumer lifetime validation was performed.",
-  "artifactBuildCMakeListsSha256": "2E4683DC270A1F55115555DC2F43377B854843012720AF880C454A03BF385B97",
-  "currentCMakeListsSha256": "2E4683DC270A1F55115555DC2F43377B854843012720AF880C454A03BF385B97",
+  "artifactBuildCMakeListsSha256": "24BE06266EA842A6CBB32583281D8E954C5F96257FBCFD342390A24FCDCC2EDF",
+  "currentCMakeListsSha256": "24BE06266EA842A6CBB32583281D8E954C5F96257FBCFD342390A24FCDCC2EDF",
   "macOSCIBuildArtifact": {
     "workflowRunId": 37705337066,
     "pullRequestRunId": 37705340768,
@@ -307,21 +307,21 @@
     "baseCommit": "cdb6933"
   },
   "currentWindowsReleaseBuild": {
-    "artifactSha256": "D46AAADDFC035FCC3AF3FAD5B6886AF7DE1D9E0816846C4A5874A52F815944DF",
-    "dllSha256": "D46AAADDFC035FCC3AF3FAD5B6886AF7DE1D9E0816846C4A5874A52F815944DF",
-    "sourceBaseCommit": "22c8e830ad8d88a423a3ec43f9659f48efe65b00",
-    "sourceState": "Built from the shared working tree based on 22c8e830ad8d88a423a3ec43f9659f48efe65b00 with uncommitted Native SDK-host lifetime changes; current source hashes are recorded in nativeSourceHashes.",
+    "artifactSha256": "DAECE40186CBDF12C95105649B764BC274B0A5F93FCDE43A3C1DEF14CDA3B004",
+    "dllSha256": "DAECE40186CBDF12C95105649B764BC274B0A5F93FCDE43A3C1DEF14CDA3B004",
+    "sourceBaseCommit": "0405c09100a6a0acc0222de55fedde3a4f112e51",
+    "sourceState": "Windows Release shim built from commit 0405c09100a6a0acc0222de55fedde3a4f112e51 plus current Native working-tree changes. The persistent SDK host now owns one D3D11 device/immediate context for same-adapter render sessions, rejects adapter changes or device removal with a restart-required fault, and releases host COM references only after successful SDK finalization. Conditional native tracing and explicit snapshot/readback diagnostics in Native/bridge_shim.cpp remain opt-in.",
     "compiler": "MSVC 19.44.35217.0",
     "targetArchitecture": "x64",
     "configuration": "Release",
     "generator": "Visual Studio 17 2022; MSBuild 17.14.23",
     "unityPluginApi": "6000.6.4f1",
     "buildDirectory": "Native/build-worker-release-vs/Release",
-    "buildCommand": "cmake --build Native/build-worker-release-vs --config Release --target lookingglass_worker_transport_test lookingglass_bridge_shutdown_contract_test --parallel 6",
+    "buildCommand": "cmake --build Native/build-worker-release-vs --config Release --target lookingglass_bridge_shim",
     "localCTest": {
-      "passed": 8,
-      "total": 8,
-      "elapsedSeconds": 7.8,
+      "passed": 9,
+      "total": 9,
+      "elapsedSeconds": 8.99,
       "evidencePath": "Native/build-worker-release-vs/Testing/Temporary/LastTest.log",
       "tests": [
         {
@@ -340,6 +340,9 @@
           "name": "lookingglass_worker_host_uninitialize_failure_test"
         },
         {
+          "name": "lookingglass_persistent_d3d11_device_test"
+        },
+        {
           "name": "lookingglass_bridge_loader_lifecycle_test"
         },
         {
@@ -348,16 +351,47 @@
         {
           "name": "lookingglass_bridge_shutdown_exception_contract_test"
         }
-      ]
+      ],
+      "note": "The added persistent-device case verifies metadata-only contexts allocate no D3D11 worker device; render contexts before and after metadata reuse the same COM identity; adapter mismatch is rejected without recreating the host device; successful SDK finalization releases it; failed final uninitialize retains it."
     },
-    "notes": "The packaged DLL copies match this artifact SHA-256. Current Native CTest used fake Bridge runtimes; historical evidence remains unchanged.",
+    "notes": "The source Bridge package DLL matches this artifact SHA-256. Native Release CTest passed 9/9. These tests validate host COM lifetime and existing fake Bridge contracts, not official Bridge optical output.",
     "freshHardwareEvidence": {
-      "case": "metadata-refresh-session-toolbar-play-stop-refresh",
-      "completedUtc": "2026-10-09",
-      "evidencePath": ".local/current-sample-state/2026-10-09/refresh-2da34c050b2f4e0493e4308a7dfa693b",
-      "result": "PASS. On Unity 6000.6.4f1 with the official Bridge 2.6.3 runtime, a metadata refresh succeeded before Play, the automatic Session rendered and completed one frame, direct toolbar Exit Play Mode without an explicit Session.Stop preserved the same Rig's connected display aspect (1.77778), and a second metadata refresh succeeded. Native SDK initialize and final uninitialize each occurred once; Editor exited naturally with code 0 and no crash.",
-      "configuration": "D3D12; Enter Play Mode options disabled Domain Reload and Scene Reload; Preview quality; Half view rendering mode; physical framing disabled.",
-      "limits": "This is one URP fixture lifecycle regression run. It verifies refresh and Session lifecycle behavior, not optical output, scale, image quality, performance, or other Unity projects/pipelines."
-    }
-  }
+      "status": "Two-cycle diagnostic and non-diagnostic software-image runs passed; physical display observation is unconfirmed",
+      "previousArtifactSha256": "D8C5C1FF4C651278737612A1DA061DAD8D7CF3C333CF41192095FC1E506E79EA",
+      "previousEvidencePath": ".local/current-sample-state/2026-10-09/refresh-2da34c050b2f4e0493e4308a7dfa693b",
+      "note": "The prior refresh/Play/toolbar-Stop/refresh pass was performed with the previous diagnostic-only DLL and does not validate this persistent-device build. The current diagnostic run below is separate from optical observation."
+    },
+    "diagnosticTwoColorRun": {
+      "status": "PASS; process exited naturally with code 0",
+      "dllSha256": "DAECE40186CBDF12C95105649B764BC274B0A5F93FCDE43A3C1DEF14CDA3B004",
+      "evidencePath": ".local/current-sample-state/2026-10-09/device-restart-fixed-diag-daec",
+      "environment": "Unity 6000.6.4f1 URP fixture, Windows D3D12, official Bridge runtime, device display ordinal 2, Preview quality, Half view render mode, physical framing disabled, reference-camera FOV following enabled.",
+      "result": "Two render sessions completed five submissions each. Native trace reported source_match=1 and bridge_match=1 for the shared D3D11 device identity. Source and Bridge texture frame 3 and frame 5 readbacks each matched the expected color: green in session 1 and magenta in session 2, with 348096 matching pixels per frame. Both sessions stopped with native pending=0 and preview-retention pending=0; final SDK uninitialize returned success.",
+      "limits": "This run enabled native snapshot and staging-readback diagnostics. It establishes software texture handoff and process SDK finalization for this fixture only; it is not a non-diagnostic observer run or an optical display-quality assessment. A separate non-diagnostic observer run remains pending."
+    },
+    "nonDiagnosticTwoColorRun": {
+      "status": "PASS; process exited naturally with code 0 and the Editor PID was confirmed gone",
+      "dllSha256": "DAECE40186CBDF12C95105649B764BC274B0A5F93FCDE43A3C1DEF14CDA3B004",
+      "testSourceHashAtRunPrefixSuffix": "10FCF9DC...9312",
+      "evidencePath": ".local/current-sample-state/2026-10-09/device-restart-visual-observer-daec",
+      "environment": "Unity 6000.6.4f1 URP fixture, Windows D3D12, official Bridge runtime, device display ordinal 2, Preview quality, Half view render mode, physical framing disabled, reference-camera FOV following enabled.",
+      "result": "The one-test run passed in 142.287 seconds, including a 120-second active magenta hold. Green and magenta appeared in the Unity source ReadPixels checks on both render sessions; the test continued to observe draw activity after restart. Both preview stops reached native pending=0 and preview-retention pending=0, and final SDK uninitialize succeeded.",
+      "diagnostics": "No native texture snapshot or staging-readback diagnostics were enabled; the fixture still used Unity source ReadPixels. The optional null-trace-path guard in the test source was applied after this run and does not change the executed test result.",
+      "limits": "The software-side two-color result is not confirmation of physical display appearance. The user has not yet confirmed optical visibility."
+    },
+    "traceOnlyBuild": {
+      "purpose": "Conditional session/window/device/texture lifecycle tracing and explicit per-frame texture diagnostics for the Start-Stop-Start investigation.",
+      "sourceFile": "Native/bridge_shim.cpp",
+      "sourceSha256": "B88AC70DAD533DDFE8E750FE0DDF35DD00D1E0FF0BA68A8ADBE4AD8DCAF32ECC",
+      "dllSha256": "D8C5C1FF4C651278737612A1DA061DAD8D7CF3C333CF41192095FC1E506E79EA",
+      "dllSizeBytes": 167424,
+      "compiledUtc": "2026-10-09T02:38:44Z",
+      "traceOutput": "Enabled only when LKG_NATIVE_TRACE is set. Records process/thread/tick/session IDs, opaque window/device/texture values, operation results, and COM device identity comparisons.",
+      "optionalSnapshotOutput": "LKG_BRIDGE_SNAPSHOT_SESSION_SUFFIX=1 appends .session-<id> before the extension. LKG_BRIDGE_SNAPSHOT_FRAME_SEQUENCE=1 saves source and Bridge textures after successful draw at frames 1, 3, and 5 with per-session filenames and opt-in D3D11 staging readback pixel statistics. Unset preserves the existing single-snapshot behavior.",
+      "tests": "Windows Release DLL target compiled successfully. Existing 8/8 CTest evidence predates this diagnostic rebuild and was not rerun."
+    },
+    "compiledUtc": "2026-10-09T02:53:35Z"
+  },
+  "artifactSha256": "DAECE40186CBDF12C95105649B764BC274B0A5F93FCDE43A3C1DEF14CDA3B004",
+  "dllSha256": "DAECE40186CBDF12C95105649B764BC274B0A5F93FCDE43A3C1DEF14CDA3B004"
 }

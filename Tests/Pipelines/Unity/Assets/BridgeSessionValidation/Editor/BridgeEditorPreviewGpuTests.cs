@@ -883,6 +883,139 @@ namespace ViewWeave.BridgeEditorPreviewValidation
         }
 
         [UnityTest]
+        public IEnumerator DevicePreviewRestartKeepsProducerQuiltVisibleAcrossTwoCycles()
+        {
+            if (Environment.GetEnvironmentVariable("VIEWWEAVE_EDITOR_PREVIEW_RESTART_CONTENT_TEST") != "1")
+                Assert.Ignore("Set VIEWWEAVE_EDITOR_PREVIEW_RESTART_CONTENT_TEST=1 only for the owned isolated project with Bridge and a connected display.");
+            string nativeTracePath = Environment.GetEnvironmentVariable("LKG_NATIVE_TRACE");
+            string bridgeSnapshotBasePath = Environment.GetEnvironmentVariable("LKG_BRIDGE_SNAPSHOT");
+            string sessionSuffixFlag = Environment.GetEnvironmentVariable("LKG_BRIDGE_SNAPSHOT_SESSION_SUFFIX");
+            string frameSequenceFlag = Environment.GetEnvironmentVariable("LKG_BRIDGE_SNAPSHOT_FRAME_SEQUENCE");
+            bool snapshotConfigurationRequested = !string.IsNullOrWhiteSpace(bridgeSnapshotBasePath) ||
+                !string.IsNullOrWhiteSpace(sessionSuffixFlag) || !string.IsNullOrWhiteSpace(frameSequenceFlag);
+            bool validateBridgeSnapshots = snapshotConfigurationRequested &&
+                !string.IsNullOrWhiteSpace(bridgeSnapshotBasePath) && sessionSuffixFlag == "1" && frameSequenceFlag == "1";
+            if (snapshotConfigurationRequested && !validateBridgeSnapshots)
+                Assert.Ignore("Bridge PNG validation requires a unique snapshot path, session suffix, and frame sequence flags together.");
+            if (validateBridgeSnapshots && string.IsNullOrWhiteSpace(nativeTracePath))
+                Assert.Ignore("Set LKG_NATIVE_TRACE for the owned diagnostic snapshot run.");
+            double observerHoldSeconds = GetRestartObserverHoldSeconds();
+            Assert.IsTrue(BridgeGraphicsBackendPolicy.TrySelect(
+                BridgeGraphicsBackendRoute.EditorPreview,
+                Application.platform,
+                Application.isEditor,
+                Application.isPlaying,
+                SystemInfo.graphicsDeviceType,
+                SystemInfo.renderingThreadingMode,
+                out BridgeGraphicsBackendDecision backend,
+                out string backendError), backendError);
+            Assert.AreEqual(UnityEngine.Rendering.GraphicsDeviceType.Direct3D12, SystemInfo.graphicsDeviceType,
+                "The restart-content regression must run on the D3D12 path used by the report.");
+
+            var fixture = new Fixture(false);
+            bool previewAttempted = false;
+            long firstGeneration = 0;
+            GameObject referenceCameraObject = null;
+            try
+            {
+                fixture.Setup();
+                fixture.Rig.gameObject.SetActive(false);
+                fixture.Rig.Renderer.sourceCamera.backgroundColor = new Color(0.2f, 0.2f, 0.2f, 1f);
+                fixture.TargetObject.transform.localScale = new Vector3(1.25f, 1.25f, 1f);
+                Assert.IsTrue(fixture.Rig.Renderer.TrySetViewRenderMode(QuiltViewRenderMode.Half, out string modeError), modeError);
+                Assert.IsFalse(fixture.Rig.Renderer.physicalFraming.enabled,
+                    "The two-cycle fixture must match the user's non-physical framing configuration.");
+                referenceCameraObject = new GameObject("Editor Preview Reference Camera");
+                Camera referenceCamera = referenceCameraObject.AddComponent<Camera>();
+                referenceCamera.transform.position = fixture.Rig.Renderer.sourceCamera.transform.position;
+                referenceCamera.transform.rotation = fixture.Rig.Renderer.sourceCamera.transform.rotation;
+                referenceCamera.fieldOfView = fixture.Rig.Renderer.sourceCamera.fieldOfView;
+                fixture.Rig.Renderer.referenceCamera = referenceCamera;
+                fixture.Rig.Renderer.followReferenceFieldOfView = true;
+                SetPreviewTargetColor(fixture.TargetObject, Color.green);
+                BridgeWorkerQuiltOutput output = fixture.Rig.gameObject.AddComponent<BridgeWorkerQuiltOutput>();
+                output.initializeOnEnable = false;
+                output.runtimePath = string.Empty;
+                output.applicationName = "ViewWeave";
+                output.displayOrdinal = 0;
+                fixture.Rig.SetOutput(output);
+                ViewWeaveBridgeSession session = fixture.Rig.gameObject.AddComponent<ViewWeaveBridgeSession>();
+                session.startOnEnable = true;
+                session.runtimePath = string.Empty;
+                session.applicationName = "ViewWeave";
+                session.displayOrdinal = 0;
+                Assert.IsTrue(session.SetQuality(QuiltQualityPreset.Preview),
+                    "The Session must keep the user's explicit Preview quality preset.");
+                Assert.AreEqual(QuiltQualityPreset.Preview, session.Quality);
+                if (!fixture.Rig.ConfigureComponents())
+                    throw new AssertionException("The restart-content fixture Rig could not configure its Bridge output.");
+                fixture.Rig.gameObject.SetActive(true);
+
+                Debug.Log("EDITOR_PREVIEW_RESTART environment unity=" + Application.unityVersion +
+                    ", graphics=" + SystemInfo.graphicsDeviceType +
+                    ", route=" + backend.Route +
+                    ", pipeline=" + (GraphicsSettings.currentRenderPipeline == null ? "BuiltIn" : GraphicsSettings.currentRenderPipeline.GetType().FullName) +
+                    ", trace=" + (string.IsNullOrWhiteSpace(nativeTracePath) ? "disabled" : ToAscii(Path.GetFullPath(nativeTracePath))) +
+                    ", target=green-then-magenta, background=0.2/0.2/0.2, sessionQuality=" + session.Quality +
+                    ", sessionStartOnEnable=" + session.startOnEnable + ", viewMode=" + fixture.Rig.Renderer.viewRenderMode +
+                    ", physicalFraming=" + fixture.Rig.Renderer.physicalFraming.enabled +
+                    ", followReferenceFov=" + fixture.Rig.Renderer.followReferenceFieldOfView +
+                    ", application=ViewWeave, ordinal=0");
+
+                int priorSnapshotSessions = CountBridgeFrameFiveSnapshots(bridgeSnapshotBasePath);
+                previewAttempted = true;
+                StartDevicePreview(fixture.Rig);
+                yield return WaitForDeviceWorker("content-first");
+                yield return WaitForDevicePreviewContent("content-first", false);
+                if (validateBridgeSnapshots)
+                    yield return WaitForBridgeSnapshotContent("content-first", bridgeSnapshotBasePath, priorSnapshotSessions, false);
+                BridgeWorkerQuiltOutput firstOutput = PreviewApi.ProducerOutput;
+                Assert.IsNotNull(firstOutput);
+                firstGeneration = firstOutput.SessionGeneration;
+                LogDevicePreviewCycle("content-first", nativeTracePath, firstOutput);
+                StopDevicePreview("content-first");
+                yield return WaitForDeviceStop("content-first");
+
+                priorSnapshotSessions = CountBridgeFrameFiveSnapshots(bridgeSnapshotBasePath);
+                SetPreviewTargetColor(fixture.TargetObject, Color.magenta);
+                StartDevicePreview(fixture.Rig);
+                yield return WaitForDeviceWorker("content-restart");
+                yield return WaitForDevicePreviewContent("content-restart", true);
+                if (validateBridgeSnapshots)
+                    yield return WaitForBridgeSnapshotContent("content-restart", bridgeSnapshotBasePath, priorSnapshotSessions, true);
+                BridgeWorkerQuiltOutput secondOutput = PreviewApi.ProducerOutput;
+                Assert.IsNotNull(secondOutput);
+                Assert.AreNotEqual(firstGeneration, secondOutput.SessionGeneration,
+                    "Restart must create a new Worker session generation.");
+                LogDevicePreviewCycle("content-restart", nativeTracePath, secondOutput);
+                if (observerHoldSeconds > 0.0)
+                    yield return HoldMagentaPreviewForObservation(observerHoldSeconds);
+                StopDevicePreview("content-restart");
+                yield return WaitForDeviceStop("content-restart");
+                Assert.IsFalse(PreviewApi.IsActive);
+                Assert.IsFalse(PreviewApi.IsStopping);
+                Assert.AreEqual(0, BridgeWorkerQuiltOutput.ShutdownPendingCount);
+                Assert.AreEqual(0, BridgeEditorPreviewRetention.PendingCount);
+            }
+            finally
+            {
+                if (previewAttempted)
+                {
+                    if (PreviewApi.IsActive && !PreviewApi.IsStopping) PreviewApi.Stop();
+                    BridgeEditorPreviewRetention.RequestStop(true);
+                    Debug.Log("EDITOR_PREVIEW_RESTART cleanup active=" + PreviewApi.IsActive +
+                        ", stopping=" + PreviewApi.IsStopping +
+                        ", nativePending=" + BridgeWorkerQuiltOutput.ShutdownPendingCount +
+                        ", retentionPending=" + BridgeEditorPreviewRetention.PendingCount +
+                        ", status=" + ToAscii(PreviewApi.Status) +
+                        ", error=" + ToAscii(PreviewApi.LastError));
+                }
+                fixture.Dispose();
+                if (referenceCameraObject != null) Object.DestroyImmediate(referenceCameraObject);
+            }
+        }
+
+        [UnityTest]
         public IEnumerator ConnectedDisplayRefreshSurvivesToolbarPlayStopAndCanRefreshAgain()
         {
             if (Environment.GetEnvironmentVariable("VIEWWEAVE_EDITOR_PREVIEW_SESSION_REFRESH_TEST") != "1")
@@ -1723,6 +1856,292 @@ namespace ViewWeave.BridgeEditorPreviewValidation
             }
             Assert.Fail("Looking Glass Worker did not report Ready and completed submission during " + label +
                 " preview. elapsedSeconds=" + (EditorApplication.timeSinceStartup - startedAt).ToString("F1", System.Globalization.CultureInfo.InvariantCulture));
+        }
+
+        static IEnumerator WaitForDevicePreviewContent(string label, bool expectMagenta)
+        {
+            const uint minimumCompletedFrames = 5;
+            double startedAt = EditorApplication.timeSinceStartup;
+            double deadline = startedAt + 30.0;
+            uint lastSampledCompleted = uint.MaxValue;
+            string lastDiagnostic = string.Empty;
+            while (EditorApplication.timeSinceStartup < deadline)
+            {
+                BridgeWorkerQuiltOutput output = PreviewApi.ProducerOutput;
+                RenderTexture texture = PreviewApi.Texture;
+                if (output != null && output.Ready && output.Completed >= minimumCompletedFrames && IsCreated(texture) &&
+                    output.Completed != lastSampledCompleted)
+                {
+                    lastSampledCompleted = output.Completed;
+                    bool hasExpectedPixels = HasExpectedPreviewTargetPixels(texture, expectMagenta, out lastDiagnostic);
+                    Debug.Log("EDITOR_PREVIEW_RESTART_PIXELS phase=" + label +
+                        ", minimumCompletedFrames=" + minimumCompletedFrames +
+                        ", expectedColor=" + (expectMagenta ? "magenta" : "green") +
+                        ", completed=" + output.Completed +
+                        ", submissions=" + output.Submissions +
+                        ", sessionGeneration=" + output.SessionGeneration +
+                        ", ready=" + output.Ready +
+                        ", workerState=" + output.State +
+                        ", previewActive=" + PreviewApi.IsActive +
+                        ", previewStopping=" + PreviewApi.IsStopping +
+                        ", status=" + ToAscii(PreviewApi.Status) +
+                        ", error=" + ToAscii(PreviewApi.LastError) +
+                        ", textureCreated=" + texture.IsCreated() +
+                        ", textureSize=" + texture.width + "x" + texture.height +
+                        ", textureNativePtr=0x" + texture.GetNativeTexturePtr().ToInt64().ToString("X") +
+                        ", hasExpectedPixels=" + hasExpectedPixels +
+                        ", pixelStats=" + lastDiagnostic);
+                    if (hasExpectedPixels) yield break;
+                }
+                if (output != null && (output.State == BridgeWorkerQuiltOutput.WorkerState.Fault || !string.IsNullOrEmpty(output.LastError)))
+                    Assert.Fail("The device Worker failed while validating " + label + " preview content: " + output.LastError);
+                yield return null;
+            }
+            Assert.Fail("The device preview did not produce the expected " + (expectMagenta ? "magenta" : "green") + " target pixels during " + label +
+                ". elapsedSeconds=" + (EditorApplication.timeSinceStartup - startedAt).ToString("F1", System.Globalization.CultureInfo.InvariantCulture) +
+                ", minimumCompletedFrames=5, completedSamples=" + lastSampledCompleted + ", pixelStats=" + lastDiagnostic +
+                ", status=" + ToAscii(PreviewApi.Status) + ", error=" + ToAscii(PreviewApi.LastError));
+        }
+
+        static IEnumerator WaitForBridgeSnapshotContent(
+            string label,
+            string snapshotBasePath,
+            int priorSnapshotSessions,
+            bool expectMagenta)
+        {
+            double deadline = EditorApplication.timeSinceStartup + 30.0;
+            string frameThreePath = string.Empty;
+            string frameFivePath = string.Empty;
+            string frameThreeStats = string.Empty;
+            string frameFiveStats = string.Empty;
+            while (EditorApplication.timeSinceStartup < deadline)
+            {
+                string[] frameFivePaths = GetBridgeFrameFiveSnapshotPaths(snapshotBasePath);
+                if (frameFivePaths.Length > priorSnapshotSessions)
+                {
+                    string newestFrameFive = frameFivePaths[0];
+                    for (int i = 1; i < frameFivePaths.Length; i++)
+                    {
+                        if (File.GetLastWriteTimeUtc(frameFivePaths[i]) > File.GetLastWriteTimeUtc(newestFrameFive))
+                            newestFrameFive = frameFivePaths[i];
+                    }
+
+                    frameFivePath = newestFrameFive;
+                    frameThreePath = frameFivePath.Replace(".frame-005.bridge.png", ".frame-003.bridge.png");
+                    bool frameThreeRead = TryReadBridgeSnapshotPixels(frameThreePath, expectMagenta, out frameThreeStats, out bool frameThreeMatches);
+                    bool frameFiveRead = TryReadBridgeSnapshotPixels(frameFivePath, expectMagenta, out frameFiveStats, out bool frameFiveMatches);
+                    if (frameThreeRead && frameFiveRead)
+                    {
+                        Debug.Log("EDITOR_PREVIEW_RESTART_BRIDGE_PIXELS phase=" + label +
+                            ", expectedColor=" + (expectMagenta ? "magenta" : "green") +
+                            ", frame3=" + ToAscii(Path.GetFileName(frameThreePath)) + ", frame3Matches=" + frameThreeMatches +
+                            ", frame3Stats=" + frameThreeStats +
+                            ", frame5=" + ToAscii(Path.GetFileName(frameFivePath)) + ", frame5Matches=" + frameFiveMatches +
+                            ", frame5Stats=" + frameFiveStats);
+                        Assert.IsTrue(frameThreeMatches,
+                            "The Bridge interop texture frame 3 did not contain the current " + (expectMagenta ? "magenta" : "green") + " target. " + frameThreeStats);
+                        Assert.IsTrue(frameFiveMatches,
+                            "The Bridge interop texture frame 5 did not contain the current " + (expectMagenta ? "magenta" : "green") + " target. " + frameFiveStats);
+                        yield break;
+                    }
+                }
+                yield return null;
+            }
+
+            Assert.Fail("Bridge interop snapshots did not become readable for " + label +
+                ". expectedColor=" + (expectMagenta ? "magenta" : "green") +
+                ", frame3=" + ToAscii(frameThreePath) + ", frame3Stats=" + frameThreeStats +
+                ", frame5=" + ToAscii(frameFivePath) + ", frame5Stats=" + frameFiveStats);
+        }
+
+        static int CountBridgeFrameFiveSnapshots(string snapshotBasePath) => GetBridgeFrameFiveSnapshotPaths(snapshotBasePath).Length;
+
+        static double GetRestartObserverHoldSeconds()
+        {
+            string value = Environment.GetEnvironmentVariable("VIEWWEAVE_EDITOR_PREVIEW_RESTART_OBSERVER_HOLD_SECONDS");
+            if (string.IsNullOrWhiteSpace(value)) return 0.0;
+            if (!double.TryParse(value, System.Globalization.NumberStyles.Float,
+                    System.Globalization.CultureInfo.InvariantCulture, out double seconds) || double.IsNaN(seconds) || double.IsInfinity(seconds))
+                throw new AssertionException("The optional observer hold must be a finite number of seconds.");
+            return Math.Max(0.0, Math.Min(seconds, 120.0));
+        }
+
+        static IEnumerator HoldMagentaPreviewForObservation(double seconds)
+        {
+            double startedAt = EditorApplication.timeSinceStartup;
+            double deadline = startedAt + seconds;
+            Debug.Log("MAGENTA_HOLD_BEGIN expectedColor=magenta, seconds=" +
+                seconds.ToString("F1", System.Globalization.CultureInfo.InvariantCulture) +
+                ", active=" + PreviewApi.IsActive + ", status=" + ToAscii(PreviewApi.Status));
+            while (EditorApplication.timeSinceStartup < deadline)
+            {
+                if (!PreviewApi.IsActive || PreviewApi.IsStopping)
+                    Assert.Fail("The magenta preview stopped before the observer hold completed. status=" + ToAscii(PreviewApi.Status) +
+                        ", error=" + ToAscii(PreviewApi.LastError));
+                yield return null;
+            }
+            Debug.Log("MAGENTA_HOLD_END expectedColor=magenta, elapsed=" +
+                (EditorApplication.timeSinceStartup - startedAt).ToString("F1", System.Globalization.CultureInfo.InvariantCulture) +
+                ", active=" + PreviewApi.IsActive + ", status=" + ToAscii(PreviewApi.Status));
+        }
+
+        static string[] GetBridgeFrameFiveSnapshotPaths(string snapshotBasePath)
+        {
+            if (string.IsNullOrWhiteSpace(snapshotBasePath)) return Array.Empty<string>();
+            string directory = Path.GetDirectoryName(Path.GetFullPath(snapshotBasePath));
+            if (string.IsNullOrEmpty(directory) || !Directory.Exists(directory)) return Array.Empty<string>();
+            string pattern = Path.GetFileNameWithoutExtension(snapshotBasePath) + ".session-*.frame-005.bridge.png";
+            return Directory.GetFiles(directory, pattern);
+        }
+
+        static bool TryReadBridgeSnapshotPixels(string path, bool expectMagenta, out string diagnostic, out bool matches)
+        {
+            diagnostic = string.Empty;
+            matches = false;
+            if (string.IsNullOrWhiteSpace(path) || !File.Exists(path)) return false;
+            var image = new Texture2D(2, 2, TextureFormat.RGBA32, false, true);
+            try
+            {
+                if (!image.LoadImage(File.ReadAllBytes(path), false)) return false;
+                Color32[] pixels = image.GetPixels32();
+                int matchingPixels = 0;
+                int nonBlackPixels = 0;
+                byte maxRed = 0;
+                byte maxGreen = 0;
+                byte maxBlue = 0;
+                foreach (Color32 pixel in pixels)
+                {
+                    if (pixel.r > maxRed) maxRed = pixel.r;
+                    if (pixel.g > maxGreen) maxGreen = pixel.g;
+                    if (pixel.b > maxBlue) maxBlue = pixel.b;
+                    if (pixel.r > 2 || pixel.g > 2 || pixel.b > 2) nonBlackPixels++;
+                    if (expectMagenta)
+                    {
+                        if (pixel.r > 32 && pixel.b > 32 && pixel.r > pixel.g * 2 && pixel.b > pixel.g * 2)
+                            matchingPixels++;
+                    }
+                    else if (pixel.g > 32 && pixel.g > pixel.r * 2 && pixel.g > pixel.b * 2)
+                    {
+                        matchingPixels++;
+                    }
+                }
+                diagnostic = "matchingPixels=" + matchingPixels + ", nonBlack=" + nonBlackPixels +
+                    ", maxRGB=" + maxRed + "/" + maxGreen + "/" + maxBlue;
+                matches = matchingPixels > 0;
+                return true;
+            }
+            catch (IOException exception)
+            {
+                diagnostic = "readError=" + ToAscii(exception.Message);
+                return false;
+            }
+            finally
+            {
+                Object.DestroyImmediate(image);
+            }
+        }
+
+        static bool HasExpectedPreviewTargetPixels(RenderTexture source, bool expectMagenta, out string diagnostic)
+        {
+            RenderTexture previous = RenderTexture.active;
+            var image = new Texture2D(source.width, source.height, TextureFormat.RGBA32, false, true);
+            try
+            {
+                RenderTexture.active = source;
+                image.ReadPixels(new Rect(0, 0, source.width, source.height), 0, 0, false);
+                image.Apply(false, false);
+                Color32[] pixels = image.GetPixels32();
+                int matchingPixels = 0;
+                int nonBlackPixels = 0;
+                byte maxRed = 0;
+                byte maxGreen = 0;
+                byte maxBlue = 0;
+                foreach (Color32 pixel in pixels)
+                {
+                    if (pixel.r > maxRed) maxRed = pixel.r;
+                    if (pixel.g > maxGreen) maxGreen = pixel.g;
+                    if (pixel.b > maxBlue) maxBlue = pixel.b;
+                    if (pixel.r > 32 || pixel.g > 32 || pixel.b > 32) nonBlackPixels++;
+                    if (expectMagenta)
+                    {
+                        if (pixel.r > 32 && pixel.b > 32 && pixel.r > pixel.g * 2 && pixel.b > pixel.g * 2)
+                            matchingPixels++;
+                    }
+                    else if (pixel.g > 32 && pixel.g > pixel.r * 2 && pixel.g > pixel.b * 2)
+                    {
+                        matchingPixels++;
+                    }
+                }
+                diagnostic = "matchingPixels=" + matchingPixels + ", nonBlack=" + nonBlackPixels +
+                    ", maxRGB=" + maxRed + "/" + maxGreen + "/" + maxBlue;
+                return matchingPixels > 0;
+            }
+            finally
+            {
+                RenderTexture.active = previous;
+                Object.DestroyImmediate(image);
+            }
+        }
+
+        static void SetPreviewTargetColor(GameObject targetObject, Color color)
+        {
+            Renderer targetRenderer = targetObject == null ? null : targetObject.GetComponent<Renderer>();
+            Material material = targetRenderer == null ? null : targetRenderer.sharedMaterial;
+            Assert.IsNotNull(material, "The preview target material must be available for distinct cycle colors.");
+            if (material.HasProperty("_BaseColor")) material.SetColor("_BaseColor", color);
+            else if (material.HasProperty("_UnlitColor")) material.SetColor("_UnlitColor", color);
+            else if (material.HasProperty("_Color")) material.SetColor("_Color", color);
+            else Assert.Fail("The preview target shader has no supported color property.");
+        }
+
+        static void LogDevicePreviewCycle(string label, string nativeTracePath, BridgeWorkerQuiltOutput output)
+        {
+            RenderTexture texture = PreviewApi.Texture;
+            Assert.IsNotNull(texture, "The active device preview must expose its producer quilt texture.");
+            Assert.IsTrue(texture.IsCreated(), "The active device preview quilt texture must be created.");
+            QuiltRenderer renderer = PreviewApi.ProducerRenderer;
+            Assert.IsNotNull(renderer);
+            Debug.Log("EDITOR_PREVIEW_RESTART_CYCLE phase=" + label +
+                ", sessionGeneration=" + output.SessionGeneration +
+                ", nativeHandle=0x" + output.NativeHandle.ToInt64().ToString("X") +
+                ", ready=" + output.Ready +
+                ", state=" + output.State +
+                ", submissions=" + output.Submissions +
+                ", completed=" + output.Completed +
+                ", profile=" + output.Profile +
+                ", latestViews=" + renderer.LastRenderedViewCount +
+                ", layout=" + PreviewApi.Layout +
+                ", previewActive=" + PreviewApi.IsActive +
+                ", previewStopping=" + PreviewApi.IsStopping +
+                ", status=" + ToAscii(PreviewApi.Status) +
+                ", error=" + ToAscii(PreviewApi.LastError) +
+                ", texture=" + texture.width + "x" + texture.height +
+                ", textureNativePtr=0x" + texture.GetNativeTexturePtr().ToInt64().ToString("X") +
+                ", windowTrace={" + ReadNativePreviewWindowEvents(nativeTracePath) + "}");
+        }
+
+        static string ReadNativePreviewWindowEvents(string tracePath)
+        {
+            if (string.IsNullOrWhiteSpace(tracePath) || !File.Exists(tracePath)) return "traceUnavailable=true";
+            string[] lines = File.ReadAllLines(tracePath);
+            int displayCount = 0;
+            int shownCount = 0;
+            int hiddenCount = 0;
+            var tail = new System.Collections.Generic.List<string>();
+            foreach (string line in lines)
+            {
+                if (line.IndexOf("instance_window_display=", StringComparison.Ordinal) >= 0) displayCount++;
+                if (line.IndexOf("show_window=true", StringComparison.Ordinal) >= 0) shownCount++;
+                if (line.IndexOf("show_window=false", StringComparison.Ordinal) >= 0) hiddenCount++;
+                if (line.IndexOf("instance_window_display=", StringComparison.Ordinal) >= 0 ||
+                    line.IndexOf("show_window=", StringComparison.Ordinal) >= 0)
+                {
+                    tail.Add(ToAscii(line.Trim()));
+                    if (tail.Count > 6) tail.RemoveAt(0);
+                }
+            }
+            return "displayCalls=" + displayCount + ", shownCalls=" + shownCount + ", hiddenCalls=" + hiddenCount +
+                ", events=" + string.Join("|", tail);
         }
 
         static void StopDevicePreview(string label)

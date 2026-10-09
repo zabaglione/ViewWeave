@@ -74,8 +74,28 @@ The V6 one-shot Windows D3D12 Editor fixture left an owned, created transfer tex
 
 ## Current Windows SDK ownership contract
 
-The Windows Bridge Worker keeps one persistent owner host for a canonical runtime path and application name. The SDK is initialized once on that host. A Play, preview, or metadata context can close its GPU, session, window, device, and metadata resources while the SDK and owner ledger remain owned by the host. A successful metadata `end_metadata` is proof that the metadata context closed; it is not proof that SDK ownership ended. An idle metadata refresh therefore publishes its successful snapshot after per-context cleanup while retaining the process-wide SDK owner.
+The Windows Bridge Worker keeps one persistent owner host for a canonical runtime path and application name. The SDK is initialized once on that host. A Play, preview, or metadata context can close its per-context GPU slots, session/window association, and metadata resources while the SDK and owner ledger remain owned by the host. Render contexts borrow a host-owned D3D11 device and immediate context; metadata-only contexts create no D3D11 device. A successful metadata `end_metadata` is proof that the metadata context closed; it is not proof that SDK ownership ended. An idle metadata refresh therefore publishes its successful snapshot after per-context cleanup while retaining the process-wide SDK owner.
+
+The first render context creates the host D3D11 device on the producer's DXGI adapter and records that adapter identity. Later render contexts reuse the same COM device and immediate context only when their producer uses that adapter. An adapter change or removed device is rejected with a restart-required error; the host does not silently create a replacement device. Per-context shared textures, fences, window/session cleanup, and release proofs remain separate from the host device lifetime.
 
 While the host is idle, admission of legacy direct SDK calls and a duplicate shim is rejected. The same runtime path and application name can reuse the initialized SDK. A different runtime path or application name is rejected and requires an Editor restart. Non-Windows and legacy direct-SDK paths retain their prior lifecycle contract.
 
-Final Windows Editor or Player process shutdown requests `uninitialize_bridge` exactly once on the owner host thread. The owner ledger, host join, and module-pin release occur only after successful uninitialization. If uninitialization fails or throws, ownership and admission guards remain retained. This is the current lifecycle contract; the historical fixture results above describe their own tested binaries and workloads and do not establish that a reported shutdown crash is fixed.
+Final Windows Editor or Player process shutdown requests `uninitialize_bridge` exactly once on the owner host thread. Only successful SDK uninitialization releases the owner ledger, host-owned D3D11 context/device, and module pin. The host thread may still be joined after SDK finalization fails; a joined thread alone does not prove successful SDK release. If uninitialization fails or throws, SDK ownership, host COM resources, and admission guards remain retained. This is the current lifecycle contract; the historical fixture results above describe their own tested binaries and workloads and do not establish that a reported shutdown crash is fixed.
+
+```mermaid
+flowchart TB
+    Metadata["Metadata-only context\nNo D3D11 device"] --> MetadataClose["Metadata context cleanup\nSDK host remains owned"]
+    MetadataClose --> RenderStart["Render context starts"]
+    RenderStart --> Device["Create or borrow host D3D11 device\nSame adapter required"]
+    Device --> Stop["Stop preview or render Session"]
+    Stop --> SessionCleanup["Per-session GPU/window cleanup\nand release proof"]
+    SessionCleanup --> HostRetained["SDK and host device remain"]
+    HostRetained --> Restart["Next render context borrows\nthe same host device"]
+    Restart --> Stop
+    Device --> AdapterChange["Adapter change or device removal"]
+    AdapterChange --> RestartRequired["Reject; restart required"]
+    HostRetained --> FinalQuit["Final process shutdown"]
+    FinalQuit --> AllProof["All context cleanup proofs complete"]
+    AllProof --> Uninitialize["SDK uninitialize succeeds"]
+    Uninitialize --> Release["Release host COM references\nand host ownership"]
+```

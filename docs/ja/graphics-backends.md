@@ -30,6 +30,8 @@ flowchart TD
 
 通常Session表示はWindowsのBridge WorkerまたはD3D11 Legacy Directを使います。Edit Mode Rig previewは独立したEditor経路で、明示開始します。Local modeはpreview QuiltをEditor内へ表示し、device modeはWindows EditorのBridge Worker経路を使います。いずれもPlay Modeや対象Rigの通常Sessionを開始しません。Metal枝は手動artifactと実験専用componentを要し、連続運用やUPM配布を示しません。
 
+Windowsのpersistent Worker hostは、producer adapterが同じ場合に限りrender Session間でD3D11 deviceとimmediate contextを再利用します。Session Stopでsessionごとのresourceは閉じますが、process全体のSDK ownerがhost deviceを保持します。adapter変更またはdevice removalはrestartが必要なerrorとして拒否し、deviceを暗黙に作り直しません。EditorまたはPlayer process終了時のSDK uninitializeが成功した後にだけhost deviceを解放します。
+
 通常のmanaged policyはWindows D3D11/D3D12のWorkerと、D3D11のLegacy Directを対象にします。共通descriptor validationとBridge path判定もD3D11/D3D12 producerからD3D11 consumerへの経路を扱います。Windows backendはD3D11、D3D12、D3D11/D3D12 interopに分かれ、共通worker codeからtransport単位で呼ばれます。非対応platformのtransportはfailure stubです。
 
 ## 明示的なEdit Mode Rig preview

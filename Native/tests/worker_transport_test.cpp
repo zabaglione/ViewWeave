@@ -1,6 +1,7 @@
 #include "bridge_worker_transport.h"
 #include <windows.h>
 #include <d3d11.h>
+#include <dxgi1_4.h>
 #include "bridge_d3d12_internal.h"
 #include <wrl/client.h>
 #include <atomic>
@@ -24,6 +25,10 @@ using Microsoft::WRL::ComPtr;
 uint32_t lkg_worker_test_thread_id(void* handle);
 HWND lkg_worker_test_window(void* handle);
 uint32_t lkg_worker_test_message_count(void* handle);
+uintptr_t lkg_worker_test_context_device_identity(void* handle);
+uint32_t lkg_worker_test_host_device_create_count(void);
+uintptr_t lkg_worker_test_host_device_identity(void);
+void lkg_worker_test_force_adapter_mismatch(void);
 int32_t lkg_worker_test_set_d3d12_timeout(void* handle, uint64_t timeoutMilliseconds);
 void lkg_worker_test_throw_during_cleanup(void);
 void lkg_worker_test_throw_during_display_query(void);
@@ -97,7 +102,13 @@ static bool WaitState(void* handle, uint32_t state, uint32_t timeoutMs) {
 }
 
 static bool WaitReady(void* handle, uint32_t timeoutMs = 2000) {
-    return WaitState(handle, LKG_WORKER_READY, timeoutMs);
+    if (WaitState(handle, LKG_WORKER_READY, timeoutMs)) return true;
+    LkgWorkerStatus status{};
+    if (lkg_worker_poll(handle, &status) == 0) {
+        std::fprintf(stderr, "worker ready timeout state=%u code=%u error=%s\n",
+            status.state, status.lastErrorCode, status.error);
+    }
+    return false;
 }
 
 static ULONG ReferenceCount(ID3D11Device* device) {
@@ -170,11 +181,32 @@ static bool WaitCompleted(void* handle, uint32_t target, uint32_t timeoutMs) {
     return false;
 }
 
+static bool InitializeD3D12TestDevice();
+
 static void BeginDevice() {
     D3D_FEATURE_LEVEL selected{};
     const D3D_FEATURE_LEVEL levels[] = { D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_11_0 };
-    Check(SUCCEEDED(D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_WARP, nullptr, D3D11_CREATE_DEVICE_BGRA_SUPPORT,
-        levels, 2, D3D11_SDK_VERSION, &g_device, &selected, nullptr)), "D3D11CreateDevice");
+    bool created = false;
+    if (InitializeD3D12TestDevice()) {
+        ComPtr<IDXGIAdapter> adapter;
+        ComPtr<IDXGIFactory4> factory;
+        const LUID adapterLuid = g_testD3D12Device->GetAdapterLuid();
+        if (SUCCEEDED(CreateDXGIFactory1(IID_PPV_ARGS(&factory))) &&
+            SUCCEEDED(factory->EnumAdapterByLuid(adapterLuid, IID_PPV_ARGS(&adapter))) &&
+            SUCCEEDED(D3D11CreateDevice(adapter.Get(), D3D_DRIVER_TYPE_UNKNOWN, nullptr, D3D11_CREATE_DEVICE_BGRA_SUPPORT,
+                levels, 2, D3D11_SDK_VERSION, &g_device, &selected, nullptr))) {
+            created = true;
+        } else {
+            g_testD3D12Fence.Reset();
+            g_testD3D12GateFence.Reset();
+            g_testD3D12Queue.Reset();
+            g_testD3D12Device.Reset();
+        }
+    }
+    if (!created) {
+        Check(SUCCEEDED(D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_WARP, nullptr, D3D11_CREATE_DEVICE_BGRA_SUPPORT,
+            levels, 2, D3D11_SDK_VERSION, &g_device, &selected, nullptr)), "D3D11CreateDevice");
+    }
 }
 
 static void BeginContext(void** handle) {
@@ -184,6 +216,7 @@ static void BeginContext(void** handle) {
 }
 
 static void EndContext(void* handle);
+static void ReleaseAfterFault(void* handle, const char* message);
 
 static void TestCachedPhysicalDisplayCalibration() {
     g_testCalibrationMode.store(0);
@@ -381,6 +414,66 @@ static void TestMetadataAfterRenderReusesPersistentSdk() {
     Check(g_hostInitializeCount.load() == 1 && g_hostUninitializeCount.load() == 0 &&
         g_hostLoadCount.load() == 1 && g_hostUnloadCount.load() == 0,
         "metadata-render-metadata uses one host SDK initialization until final shutdown");
+}
+
+static void TestPersistentD3D11DeviceReuseAndAdapterGate() {
+    void* metadataBefore = lkg_worker_begin_metadata_v1("test-runtime", "worker-transport-test");
+    Check(metadataBefore != nullptr && WaitForDisplaySnapshot(metadataBefore, 1),
+        "metadata-only query completes before the first rendering context");
+    Check(lkg_worker_close(metadataBefore) == 0 && WaitState(metadataBefore, LKG_WORKER_CLOSED, 2000),
+        "metadata-only context closes before the first rendering context");
+    Check(lkg_worker_end_metadata_v1(metadataBefore) == 0, "metadata-only context releases before first render");
+    Check(lkg_worker_test_host_device_create_count() == 0 && lkg_worker_test_host_device_identity() == 0,
+        "metadata-only contexts do not create a D3D11 device");
+
+    void* first = nullptr;
+    BeginContext(&first);
+    const uintptr_t firstIdentity = lkg_worker_test_context_device_identity(first);
+    Check(firstIdentity != 0 && firstIdentity == lkg_worker_test_host_device_identity(),
+        "first render context borrows the host-owned D3D11 device");
+    Check(lkg_worker_test_host_device_create_count() == 1, "host creates one persistent D3D11 device");
+    EndContext(first);
+
+    void* second = nullptr;
+    BeginContext(&second);
+    const uintptr_t secondIdentity = lkg_worker_test_context_device_identity(second);
+    Check(secondIdentity == firstIdentity && lkg_worker_test_host_device_create_count() == 1,
+        "successive render context borrows the same D3D11 COM identity");
+    EndContext(second);
+
+    void* metadataAfter = lkg_worker_begin_metadata_v1("TEST-RUNTIME", "worker-transport-test");
+    Check(metadataAfter != nullptr && WaitForDisplaySnapshot(metadataAfter, 1),
+        "metadata-only query succeeds between rendering contexts");
+    Check(lkg_worker_close(metadataAfter) == 0 && WaitState(metadataAfter, LKG_WORKER_CLOSED, 2000),
+        "interleaved metadata-only context closes safely");
+    Check(lkg_worker_end_metadata_v1(metadataAfter) == 0, "interleaved metadata-only context releases");
+    Check(lkg_worker_test_host_device_identity() == firstIdentity &&
+        lkg_worker_test_host_device_create_count() == 1,
+        "metadata context preserves the persistent rendering device");
+
+    void* third = nullptr;
+    BeginContext(&third);
+    Check(lkg_worker_test_context_device_identity(third) == firstIdentity,
+        "render after metadata reuses the original D3D11 COM identity");
+    EndContext(third);
+
+    lkg_worker_test_force_adapter_mismatch();
+    void* mismatched = lkg_worker_begin("test-runtime", "worker-transport-test", 0, nullptr);
+    Check(mismatched != nullptr, "adapter mismatch is reported through a worker context");
+    Check(WaitState(mismatched, LKG_WORKER_FAULT, 2000), "adapter mismatch faults without creating another device");
+    LkgWorkerStatus mismatchStatus{};
+    Check(lkg_worker_poll(mismatched, &mismatchStatus) == 0 &&
+        std::strstr(mismatchStatus.error, "differs from persistent worker") != nullptr &&
+        std::strstr(mismatchStatus.error, "restart required") != nullptr,
+        "adapter mismatch reports restart requirement");
+    ReleaseAfterFault(mismatched, "adapter mismatch cleanup release");
+    Check(lkg_worker_test_host_device_create_count() == 1 &&
+        lkg_worker_test_host_device_identity() == firstIdentity,
+        "adapter mismatch retains the original host device and does not recreate it");
+    Check(lkg_worker_shutdown_host(5000) == 0, "persistent D3D11 host finalization succeeds");
+    Check(lkg_worker_test_host_device_identity() == 0, "host releases its D3D11 device after SDK finalization");
+    Check(g_hostInitializeCount.load() == 1 && g_hostUninitializeCount.load() == 1 &&
+        !g_fakeHostSdkOwned.load(), "render-metadata-render host SDK finalizes exactly once");
 }
 
 static void TestActiveWorkerDisplayRefreshDoesNotMutateRenderStatus() {
@@ -909,6 +1002,7 @@ static bool WaitD3D12Fence(uint64_t value) {
 }
 
 static bool InitializeD3D12TestDevice() {
+    if (g_testD3D12Device && g_testD3D12Queue && g_testD3D12Fence && g_testD3D12GateFence) return true;
     ComPtr<IDXGIFactory1> factory;
     if (FAILED(CreateDXGIFactory1(IID_PPV_ARGS(&factory)))) return false;
     for (UINT index = 0;; ++index) {
@@ -926,6 +1020,7 @@ static bool InitializeD3D12TestDevice() {
             g_testD3D12Device.Reset();
             g_testD3D12Queue.Reset();
             g_testD3D12Fence.Reset();
+            g_testD3D12GateFence.Reset();
             continue;
         }
         g_testD3D12FenceValue.store(0);
@@ -1213,14 +1308,22 @@ int main(int argc, char** argv) {
     if (argc == 2 && std::strcmp(argv[1], "--host-uninitialize-failure-only") == 0) {
         void* handle = nullptr;
         BeginContext(&handle);
+        Check(lkg_worker_test_host_device_identity() != 0, "worker host owns D3D11 device before finalization");
         EndContext(handle);
         g_fakeHostFinalizationFailure.store(true);
         Check(lkg_worker_shutdown_host(5000) == -2, "failed host uninitialize remains incomplete");
         Check(g_hostUninitializeCount.load() == 1 && g_fakeHostSdkOwned.load(),
             "failed final uninitialize is attempted once and retains SDK ownership");
+        Check(lkg_worker_test_host_device_identity() != 0,
+            "failed final uninitialize retains the host-owned D3D11 device");
         Check(lkg_worker_begin_metadata_v1("test-runtime", "worker-transport-test") == nullptr,
             "finalization fault rejects further SDK contexts");
         std::fprintf(stdout, "worker_host_uninitialize_failure_test pass\n");
+        return 0;
+    }
+    if (argc == 2 && std::strcmp(argv[1], "--persistent-d3d11-device-only") == 0) {
+        TestPersistentD3D11DeviceReuseAndAdapterGate();
+        std::fprintf(stdout, "persistent_d3d11_device_test pass\n");
         return 0;
     }
     TestD3D12RingColors();

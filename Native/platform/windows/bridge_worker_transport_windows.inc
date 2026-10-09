@@ -116,6 +116,7 @@ struct WorkerContext {
     DWORD testThreadId = 0;
     HWND testWindow = nullptr;
     std::atomic<uint32_t> testMessageCount{0};
+    std::atomic<uintptr_t> testWorkerDeviceIdentity{0};
 #endif
 };
 
@@ -130,6 +131,19 @@ struct WorkerHost {
     bool sdkFaulted = false;
     int32_t sdkFinalizationResult = 0;
     std::thread thread;
+    // The vendor SDK keeps D3D11 state across session windows. Keep its worker
+    // device identity stable for the lifetime of the persistent SDK owner.
+    ComPtr<ID3D11Device> workerDevice;
+    ComPtr<ID3D11DeviceContext> workerDeviceContext;
+    LUID workerAdapterLuid{};
+    D3D_FEATURE_LEVEL workerFeatureLevel{};
+    bool workerDeviceInitialized = false;
+    bool workerDeviceFaulted = false;
+#if defined(LKG_WORKER_TRANSPORT_TESTING)
+    std::atomic<uint32_t> testWorkerDeviceCreateCount{0};
+    std::atomic<uintptr_t> testWorkerDeviceIdentity{0};
+    std::atomic<bool> testForceAdapterMismatch{false};
+#endif
 #if defined(_WIN32)
     HMODULE moduleReference = nullptr;
 #endif
@@ -398,7 +412,7 @@ static void TraceWorkerShutdownSnapshot(const char* stage, const WorkerShutdownS
     std::fclose(file);
 }
 
-static void RunWorker(WorkerContext* context);
+static void RunWorker(WorkerContext* context, WorkerHost* host);
 
 static WorkerHost* GetPersistentHost() {
     std::lock_guard<std::mutex> lock(hostRegistryMutex);
@@ -448,6 +462,17 @@ static WorkerHost* GetPersistentHost() {
                 if (finalize) {
                     lkg_bridge_worker_enter();
                     const int32_t finalResult = host->sdkFaulted ? -1 : lkg_bridge_worker_host_finalize_sdk();
+                    if (finalResult == 0) {
+                        // SDK finalization is the lifetime boundary for the
+                        // vendor's cached D3D11 device state. Release our COM
+                        // references only after it succeeds.
+                        host->workerDeviceContext.Reset();
+                        host->workerDevice.Reset();
+                        host->workerDeviceInitialized = false;
+#if defined(LKG_WORKER_TRANSPORT_TESTING)
+                        host->testWorkerDeviceIdentity.store(0, std::memory_order_release);
+#endif
+                    }
                     lkg_bridge_worker_leave();
                     {
                         std::lock_guard<std::mutex> lock(host->mutex);
@@ -457,7 +482,7 @@ static WorkerHost* GetPersistentHost() {
                     }
                     return;
                 }
-                RunWorker(context);
+                RunWorker(context, host);
                 {
                     std::lock_guard<std::mutex> lock(host->mutex);
                     if (!context->cleanupProven || context->sdkHostFatalFailure) host->sdkFaulted = true;
@@ -759,7 +784,11 @@ static void WorkerRenderEvent(int eventId, void* value) {
     }
 }
 
-static void RunWorker(WorkerContext* context) {
+static bool SameAdapterLuid(const LUID& left, const LUID& right) {
+    return left.LowPart == right.LowPart && left.HighPart == right.HighPart;
+}
+
+static void RunWorker(WorkerContext* context, WorkerHost* host) {
     lkg_bridge_worker_enter();
 #if defined(LKG_WORKER_TRANSPORT_TESTING)
     if (!context->metadataOnly && !CreateWorkerTestWindow(*context)) {
@@ -933,11 +962,49 @@ static void RunWorker(WorkerContext* context) {
         finish();
         return;
     }
-    {
+    DXGI_ADAPTER_DESC adapterDesc{};
+    if (FAILED(adapter->GetDesc(&adapterDesc))) {
+        SetFault(*context, 5, "producer adapter identity unavailable; restart required");
+        finish();
+        return;
+    }
+    if (host->workerDeviceFaulted) {
+        SetFault(*context, 5, "persistent worker D3D11 device is unavailable; restart required");
+        finish();
+        return;
+    }
+    if (host->workerDeviceInitialized) {
+        bool adapterMatches = SameAdapterLuid(adapterDesc.AdapterLuid, host->workerAdapterLuid);
+#if defined(LKG_WORKER_TRANSPORT_TESTING)
+        if (host->testForceAdapterMismatch.exchange(false, std::memory_order_acq_rel)) adapterMatches = false;
+#endif
+        if (!host->workerDevice || !host->workerDeviceContext || !adapterMatches) {
+            char adapterError[192]{};
+            std::snprintf(adapterError, sizeof(adapterError),
+                "producer adapter %08lX:%08lX differs from persistent worker D3D11 adapter %08lX:%08lX; restart required",
+                static_cast<unsigned long>(adapterDesc.AdapterLuid.HighPart),
+                static_cast<unsigned long>(adapterDesc.AdapterLuid.LowPart),
+                static_cast<unsigned long>(host->workerAdapterLuid.HighPart),
+                static_cast<unsigned long>(host->workerAdapterLuid.LowPart));
+            SetFault(*context, 5, adapterError);
+            finish();
+            return;
+        }
+        const HRESULT removedReason = host->workerDevice->GetDeviceRemovedReason();
+        if (FAILED(removedReason)) {
+            host->workerDeviceFaulted = true;
+            SetFault(*context, 5, "persistent worker D3D11 device was removed; restart required");
+            finish();
+            return;
+        }
+        workerDevice = host->workerDevice;
+        workerDeviceContext = host->workerDeviceContext;
+    } else {
         D3D_FEATURE_LEVEL selected{};
         const D3D_FEATURE_LEVEL levels[] = { D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_11_0 };
-        if (D3D11CreateDevice(adapter.Get(), D3D_DRIVER_TYPE_UNKNOWN, nullptr, D3D11_CREATE_DEVICE_BGRA_SUPPORT, levels, 2, D3D11_SDK_VERSION, &workerDevice, &selected, nullptr) != S_OK) {
-            SetFault(*context, 5, "worker D3D11 device creation failed");
+        if (D3D11CreateDevice(adapter.Get(), D3D_DRIVER_TYPE_UNKNOWN, nullptr, D3D11_CREATE_DEVICE_BGRA_SUPPORT,
+                levels, 2, D3D11_SDK_VERSION, &workerDevice, &selected, nullptr) != S_OK) {
+            SetFault(*context, 5, "worker D3D11 device creation failed; restart if the device was removed");
             finish();
             return;
         }
@@ -947,7 +1014,28 @@ static void RunWorker(WorkerContext* context) {
             finish();
             return;
         }
+        const HRESULT removedReason = workerDevice->GetDeviceRemovedReason();
+        if (FAILED(removedReason)) {
+            workerDevice.Reset();
+            workerDeviceContext.Reset();
+            host->workerDeviceFaulted = true;
+            SetFault(*context, 5, "new worker D3D11 device was removed during initialization; restart required");
+            finish();
+            return;
+        }
+        host->workerDevice = workerDevice;
+        host->workerDeviceContext = workerDeviceContext;
+        host->workerAdapterLuid = adapterDesc.AdapterLuid;
+        host->workerFeatureLevel = selected;
+        host->workerDeviceInitialized = true;
+#if defined(LKG_WORKER_TRANSPORT_TESTING)
+        host->testWorkerDeviceCreateCount.fetch_add(1, std::memory_order_acq_rel);
+        host->testWorkerDeviceIdentity.store(reinterpret_cast<uintptr_t>(host->workerDevice.Get()), std::memory_order_release);
+#endif
     }
+#if defined(LKG_WORKER_TRANSPORT_TESTING)
+    context->testWorkerDeviceIdentity.store(reinterpret_cast<uintptr_t>(workerDevice.Get()), std::memory_order_release);
+#endif
     {
         uint32_t count = 0;
         LkgBridgeDisplayInfo display{};
@@ -1021,6 +1109,22 @@ static void RunWorker(WorkerContext* context) {
         WorkerContext::Slot* slot = &context->slots[job.slot];
         if (slot->d3d12Slot) {
             ProcessD3D12WorkerJob(*context, job, workerDevice.Get(), workerDeviceContext.Get(), session);
+            // D3D12 slots must retire only through their producer-fence and
+            // D3D11 consumer-query proof path. Device removal alone cannot
+            // retire the producer's outstanding GPU work.
+            if (FAILED(workerDevice->GetDeviceRemovedReason())) host->workerDeviceFaulted = true;
+            continue;
+        }
+        const HRESULT removedReason = workerDevice->GetDeviceRemovedReason();
+        if (FAILED(removedReason)) {
+            host->workerDeviceFaulted = true;
+            SetFault(*context, 5, "persistent worker D3D11 device was removed during rendering; restart required");
+            std::lock_guard<std::mutex> lock(context->mutex);
+            slot->inUse = false;
+            if (context->pendingTokens) --context->pendingTokens;
+            ++context->status.dropped;
+            context->inFlightJob = false;
+            context->condition.notify_all();
             continue;
         }
         if (!slot->workerTexture) {
@@ -1253,6 +1357,26 @@ LKG_EXPORT HWND lkg_worker_test_window(void* handle) {
 LKG_EXPORT uint32_t lkg_worker_test_message_count(void* handle) {
     auto* context = static_cast<WorkerContext*>(handle);
     return context ? context->testMessageCount.load(std::memory_order_relaxed) : 0;
+}
+
+LKG_EXPORT uintptr_t lkg_worker_test_context_device_identity(void* handle) {
+    auto* context = static_cast<WorkerContext*>(handle);
+    return context ? context->testWorkerDeviceIdentity.load(std::memory_order_acquire) : 0;
+}
+
+LKG_EXPORT uint32_t lkg_worker_test_host_device_create_count(void) {
+    std::lock_guard<std::mutex> lock(hostRegistryMutex);
+    return persistentHost ? persistentHost->testWorkerDeviceCreateCount.load(std::memory_order_acquire) : 0;
+}
+
+LKG_EXPORT uintptr_t lkg_worker_test_host_device_identity(void) {
+    std::lock_guard<std::mutex> lock(hostRegistryMutex);
+    return persistentHost ? persistentHost->testWorkerDeviceIdentity.load(std::memory_order_acquire) : 0;
+}
+
+LKG_EXPORT void lkg_worker_test_force_adapter_mismatch(void) {
+    std::lock_guard<std::mutex> lock(hostRegistryMutex);
+    if (persistentHost) persistentHost->testForceAdapterMismatch.store(true, std::memory_order_release);
 }
 #endif
 

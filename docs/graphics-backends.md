@@ -30,6 +30,8 @@ flowchart TD
 
 Regular Session display uses the Windows Bridge Worker or D3D11 Legacy Direct. The Edit Mode Rig preview is an independent, explicitly started Editor route. Local mode displays the preview Quilt in the Editor; device mode uses the Windows Editor Bridge Worker path. Neither starts Play Mode or the selected Rig's regular Session. The Metal branch requires a manually downloaded artifact and an experiment-only component; it does not establish continuous operation or UPM distribution.
 
+The Windows persistent Worker host reuses its D3D11 device and immediate context across render Sessions only when the producer adapter stays the same. Session Stop closes per-session resources but keeps the host device with the process-wide SDK owner. An adapter change or removed device is rejected with a restart-required error rather than silently creating a replacement. The host releases its device only after successful SDK uninitialization at Editor or Player process shutdown.
+
 Regular managed policy targets the Windows D3D11/D3D12 Worker and D3D11 Legacy Direct. Common descriptor validation and Bridge path selection also cover D3D11/D3D12 producers to a D3D11 consumer. Windows backends are divided into D3D11, D3D12, and D3D11/D3D12 interop and are called by transport from shared Worker code. Unsupported platforms use a failure stub for transport.
 
 ## Explicit Edit Mode Rig preview

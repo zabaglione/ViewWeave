@@ -1,4 +1,5 @@
 #include "bridge_shim.h"
+#include <algorithm>
 #include <cstdarg>
 #include <cstdio>
 #include <cstdlib>
@@ -78,6 +79,7 @@ struct Session {
     IUnknown* bridgeTexture{};
     uint32_t display{};
     uint32_t pending{};
+    uint64_t drawFrameCount{};
     bool closing{};
     bool registered{};
     bool snapshotAttempted{};
@@ -341,6 +343,11 @@ static void trace(const char* message) {
     file.flush();
 }
 
+static bool trace_enabled() {
+    const char* path = std::getenv("LKG_NATIVE_TRACE");
+    return path && *path;
+}
+
 static void tracef(const char* format, ...) {
     char buffer[512]{};
     va_list args;
@@ -419,6 +426,28 @@ static unsigned long trace_thread_id() {
 #else
     return 0;
 #endif
+}
+
+static void trace_sessionf(uint64_t sessionId, const char* format, ...) {
+    const char* path = std::getenv("LKG_NATIVE_TRACE");
+    if (!path || !*path) return;
+    char event[512]{};
+    va_list args;
+    va_start(args, format);
+    std::vsnprintf(event, sizeof(event), format, args);
+    va_end(args);
+#if defined(_WIN32)
+    const unsigned long processId = static_cast<unsigned long>(GetCurrentProcessId());
+    const unsigned long long tickMs = static_cast<unsigned long long>(GetTickCount64());
+#else
+    const unsigned long processId = 0;
+    const unsigned long long tickMs = 0;
+#endif
+    char line[768]{};
+    std::snprintf(line, sizeof(line),
+                  "native_session pid=%lu tid=%lu tick_ms=%llu session_id=%llu event=%s",
+                  processId, trace_thread_id(), tickMs, static_cast<unsigned long long>(sessionId), event);
+    trace(line);
 }
 
 #if defined(_WIN32)
@@ -599,6 +628,156 @@ static bool get_texture_desc(IUnknown* texture, D3D11_TEXTURE2D_DESC* desc) {
     return true;
 }
 
+static HRESULT get_resource_device_identity(IUnknown* resource, ID3D11Device** device, IUnknown** identity) {
+    if (device) *device = nullptr;
+    if (identity) *identity = nullptr;
+    if (!resource || !device || !identity) return E_INVALIDARG;
+    ID3D11Resource* resource11 = nullptr;
+    HRESULT result = resource->QueryInterface(__uuidof(ID3D11Resource), reinterpret_cast<void**>(&resource11));
+    if (FAILED(result) || !resource11) return result;
+    resource11->GetDevice(device);
+    resource11->Release();
+    if (!*device) return E_FAIL;
+    return (*device)->QueryInterface(IID_IUnknown, reinterpret_cast<void**>(identity));
+}
+
+static void trace_texture_device_identities(uint64_t sessionId, IUnknown* sessionDevice,
+                                            IUnknown* sourceTexture, IUnknown* bridgeTexture) {
+    ID3D11Device* sessionDevice11 = nullptr;
+    IUnknown* sessionIdentity = nullptr;
+    const HRESULT sessionResult = sessionDevice
+        ? sessionDevice->QueryInterface(__uuidof(ID3D11Device), reinterpret_cast<void**>(&sessionDevice11))
+        : E_POINTER;
+    HRESULT sessionIdentityResult = E_POINTER;
+    if (SUCCEEDED(sessionResult) && sessionDevice11) {
+        sessionIdentityResult = sessionDevice11->QueryInterface(IID_IUnknown, reinterpret_cast<void**>(&sessionIdentity));
+    }
+
+    ID3D11Device* sourceDevice = nullptr;
+    IUnknown* sourceIdentity = nullptr;
+    const HRESULT sourceResult = get_resource_device_identity(sourceTexture, &sourceDevice, &sourceIdentity);
+    ID3D11Device* bridgeDevice = nullptr;
+    IUnknown* bridgeIdentity = nullptr;
+    const HRESULT bridgeResult = get_resource_device_identity(bridgeTexture, &bridgeDevice, &bridgeIdentity);
+    const bool sourceMatches = sessionIdentity && sourceIdentity && sessionIdentity == sourceIdentity;
+    const bool bridgeMatches = sessionIdentity && bridgeIdentity && sessionIdentity == bridgeIdentity;
+    trace_sessionf(sessionId,
+                   "device_identity session_device=%p session_identity=%p session_hr=0x%08X session_identity_hr=0x%08X source_texture=%p source_device=%p source_identity=%p source_hr=0x%08X source_match=%d bridge_texture=%p bridge_device=%p bridge_identity=%p bridge_hr=0x%08X bridge_match=%d",
+                   sessionDevice, sessionIdentity, static_cast<unsigned>(sessionResult),
+                   static_cast<unsigned>(sessionIdentityResult), sourceTexture, sourceDevice,
+                   sourceIdentity, static_cast<unsigned>(sourceResult), sourceMatches ? 1 : 0,
+                   bridgeTexture, bridgeDevice, bridgeIdentity, static_cast<unsigned>(bridgeResult),
+                   bridgeMatches ? 1 : 0);
+    if (bridgeIdentity) bridgeIdentity->Release();
+    if (bridgeDevice) bridgeDevice->Release();
+    if (sourceIdentity) sourceIdentity->Release();
+    if (sourceDevice) sourceDevice->Release();
+    if (sessionIdentity) sessionIdentity->Release();
+    if (sessionDevice11) sessionDevice11->Release();
+}
+
+struct TextureReadbackStats {
+    HRESULT createResult{E_FAIL};
+    HRESULT mapResult{E_FAIL};
+    uint64_t nonBlackPixels{};
+    uint64_t greenPixels{};
+    unsigned maxR{};
+    unsigned maxG{};
+    unsigned maxB{};
+    unsigned format{};
+    bool attempted{};
+};
+
+static TextureReadbackStats readback_texture_stats(IUnknown* resource) {
+    TextureReadbackStats stats{};
+    if (!resource) return stats;
+    ID3D11Texture2D* texture = nullptr;
+    const HRESULT queryResult = resource->QueryInterface(__uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&texture));
+    if (FAILED(queryResult) || !texture) {
+        stats.createResult = queryResult;
+        return stats;
+    }
+    D3D11_TEXTURE2D_DESC sourceDesc{};
+    texture->GetDesc(&sourceDesc);
+    stats.format = static_cast<unsigned>(sourceDesc.Format);
+    if (sourceDesc.MipLevels != 1 || sourceDesc.ArraySize != 1 || sourceDesc.SampleDesc.Count != 1 ||
+        !(sourceDesc.Format == DXGI_FORMAT_R8G8B8A8_TYPELESS ||
+          sourceDesc.Format == DXGI_FORMAT_R8G8B8A8_UNORM ||
+          sourceDesc.Format == DXGI_FORMAT_R8G8B8A8_UNORM_SRGB ||
+          sourceDesc.Format == DXGI_FORMAT_B8G8R8A8_TYPELESS ||
+          sourceDesc.Format == DXGI_FORMAT_B8G8R8A8_UNORM ||
+          sourceDesc.Format == DXGI_FORMAT_B8G8R8A8_UNORM_SRGB)) {
+        stats.createResult = DXGI_ERROR_UNSUPPORTED;
+        texture->Release();
+        return stats;
+    }
+
+    ID3D11Device* device = nullptr;
+    texture->GetDevice(&device);
+    if (!device) {
+        stats.createResult = E_FAIL;
+        texture->Release();
+        return stats;
+    }
+    D3D11_TEXTURE2D_DESC stagingDesc = sourceDesc;
+    stagingDesc.Usage = D3D11_USAGE_STAGING;
+    stagingDesc.BindFlags = 0;
+    stagingDesc.MiscFlags = 0;
+    stagingDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+    ID3D11Texture2D* staging = nullptr;
+    stats.createResult = device->CreateTexture2D(&stagingDesc, nullptr, &staging);
+    stats.attempted = SUCCEEDED(stats.createResult) && staging;
+    if (stats.attempted) {
+        ID3D11DeviceContext* context = nullptr;
+        device->GetImmediateContext(&context);
+        if (context) {
+            context->CopyResource(staging, texture);
+            D3D11_MAPPED_SUBRESOURCE mapped{};
+            stats.mapResult = context->Map(staging, 0, D3D11_MAP_READ, 0, &mapped);
+            if (SUCCEEDED(stats.mapResult) && mapped.pData) {
+                const bool bgra = sourceDesc.Format == DXGI_FORMAT_B8G8R8A8_TYPELESS ||
+                                  sourceDesc.Format == DXGI_FORMAT_B8G8R8A8_UNORM ||
+                                  sourceDesc.Format == DXGI_FORMAT_B8G8R8A8_UNORM_SRGB;
+                const auto* base = static_cast<const unsigned char*>(mapped.pData);
+                for (UINT y = 0; y < sourceDesc.Height; ++y) {
+                    const unsigned char* row = base + static_cast<size_t>(y) * mapped.RowPitch;
+                    for (UINT x = 0; x < sourceDesc.Width; ++x) {
+                        const unsigned char* pixel = row + static_cast<size_t>(x) * 4;
+                        const unsigned r = pixel[bgra ? 2 : 0];
+                        const unsigned g = pixel[1];
+                        const unsigned b = pixel[bgra ? 0 : 2];
+                        stats.maxR = (std::max)(stats.maxR, r);
+                        stats.maxG = (std::max)(stats.maxG, g);
+                        stats.maxB = (std::max)(stats.maxB, b);
+                        if (r > 8 || g > 8 || b > 8) ++stats.nonBlackPixels;
+                        if (g > 32 && g > 2 * r && g > 2 * b) ++stats.greenPixels;
+                    }
+                }
+                context->Unmap(staging, 0);
+            }
+            context->Release();
+        } else {
+            stats.mapResult = E_FAIL;
+        }
+    }
+    if (staging) staging->Release();
+    device->Release();
+    texture->Release();
+    return stats;
+}
+
+static void trace_texture_readback_stats(uint64_t sessionId, uint64_t frame,
+                                         const char* kind, IUnknown* texture) {
+    const TextureReadbackStats stats = readback_texture_stats(texture);
+    trace_sessionf(sessionId,
+                   "texture_readback frame=%llu kind=%s texture=%p attempted=%d create_hr=0x%08X map_hr=0x%08X format=%u nonblack=%llu green=%llu max_rgb=%u,%u,%u",
+                   static_cast<unsigned long long>(frame), kind ? kind : "texture", texture,
+                   stats.attempted ? 1 : 0, static_cast<unsigned>(stats.createResult),
+                   static_cast<unsigned>(stats.mapResult), stats.format,
+                   static_cast<unsigned long long>(stats.nonBlackPixels),
+                   static_cast<unsigned long long>(stats.greenPixels), stats.maxR, stats.maxG, stats.maxB);
+}
+
 static void trace_desc(const char* label, const D3D11_TEXTURE2D_DESC& desc) {
     tracef("%s width=%u height=%u format=%u sample_count=%u sample_quality=%u",
            label, desc.Width, desc.Height, static_cast<unsigned>(desc.Format),
@@ -616,8 +795,11 @@ static bool release_bridge_texture(uint64_t sessionId, Session& session, bool sh
         if (shutdownTrace) trace_shutdownf(sessionId, "unregister_texture_dx begin");
 #endif
         bool ok = false;
+        trace_sessionf(sessionId, "unregister_texture_begin window=%lu bridge_texture=%p", session.window, session.bridgeTexture);
         try { ok = g_unregister_texture(session.window, session.bridgeTexture); }
         catch (...) { ok = false; }
+        trace_sessionf(sessionId, "unregister_texture_end result=%d window=%lu bridge_texture=%p",
+                       ok ? 1 : 0, session.window, session.bridgeTexture);
         tracef("unregister_end result=%d", ok ? 1 : 0);
 #if defined(_WIN32)
         if (shutdownTrace) trace_shutdownf(sessionId, "unregister_texture_dx end result=%d", ok ? 1 : 0);
@@ -638,8 +820,11 @@ static bool release_bridge_texture(uint64_t sessionId, Session& session, bool sh
         if (shutdownTrace) trace_shutdownf(sessionId, "release_texture_dx begin");
 #endif
         bool released = false;
+        trace_sessionf(sessionId, "release_texture_begin window=%lu bridge_texture=%p", session.window, session.bridgeTexture);
         try { released = g_release_texture(session.window, session.bridgeTexture); }
         catch (...) { released = false; }
+        trace_sessionf(sessionId, "release_texture_end result=%d window=%lu bridge_texture=%p",
+                       released ? 1 : 0, session.window, session.bridgeTexture);
 #if defined(_WIN32)
         if (shutdownTrace) trace_shutdownf(sessionId, "release_texture_dx end result=%d", released ? 1 : 0);
 #endif
@@ -659,16 +844,53 @@ static bool release_bridge_texture(uint64_t sessionId, Session& session, bool sh
     return true;
 }
 
-static std::wstring snapshot_path() {
+static std::wstring snapshot_path(uint64_t sessionId) {
     const char* value = std::getenv("LKG_BRIDGE_SNAPSHOT");
     if (!value || !*value) return {};
     if (std::strcmp(value, "1") == 0 || std::strcmp(value, "true") == 0) {
         value = "bridge_snapshot.png";
     }
-    const int length = MultiByteToWideChar(CP_UTF8, 0, value, -1, nullptr, 0);
+    std::string sessionPath(value);
+    const char* suffixOption = std::getenv("LKG_BRIDGE_SNAPSHOT_SESSION_SUFFIX");
+    if (suffixOption && std::strcmp(suffixOption, "1") == 0) {
+        const size_t separator = sessionPath.find_last_of("/\\");
+        size_t extension = sessionPath.find_last_of('.');
+        if (extension == std::string::npos || (separator != std::string::npos && extension < separator)) {
+            extension = sessionPath.size();
+        }
+        sessionPath.insert(extension, ".session-" + std::to_string(sessionId));
+    }
+    const char* resolved = suffixOption && std::strcmp(suffixOption, "1") == 0 ? sessionPath.c_str() : value;
+    const int resolvedLength = MultiByteToWideChar(CP_UTF8, 0, resolved, -1, nullptr, 0);
+    if (resolvedLength <= 0) return {};
+    std::wstring result(static_cast<size_t>(resolvedLength), L'\0');
+    MultiByteToWideChar(CP_UTF8, 0, resolved, -1, result.data(), resolvedLength);
+    result.resize(static_cast<size_t>(resolvedLength - 1));
+    return result;
+}
+
+static bool snapshot_frame_sequence_enabled() {
+    const char* enabled = std::getenv("LKG_BRIDGE_SNAPSHOT_FRAME_SEQUENCE");
+    return enabled && std::strcmp(enabled, "1") == 0;
+}
+
+static std::wstring snapshot_sequence_path(uint64_t sessionId, uint64_t frame, const char* textureKind) {
+    const char* value = std::getenv("LKG_BRIDGE_SNAPSHOT");
+    if (!value || !*value) return {};
+    if (std::strcmp(value, "1") == 0 || std::strcmp(value, "true") == 0) value = "bridge_snapshot.png";
+    std::string path(value);
+    const size_t separator = path.find_last_of("/\\");
+    size_t extension = path.find_last_of('.');
+    if (extension == std::string::npos || (separator != std::string::npos && extension < separator)) extension = path.size();
+    char suffix[96]{};
+    std::snprintf(suffix, sizeof(suffix), ".session-%llu.frame-%03llu.%s",
+                  static_cast<unsigned long long>(sessionId), static_cast<unsigned long long>(frame),
+                  textureKind ? textureKind : "texture");
+    path.insert(extension, suffix);
+    const int length = MultiByteToWideChar(CP_UTF8, 0, path.c_str(), -1, nullptr, 0);
     if (length <= 0) return {};
     std::wstring result(static_cast<size_t>(length), L'\0');
-    MultiByteToWideChar(CP_UTF8, 0, value, -1, result.data(), length);
+    MultiByteToWideChar(CP_UTF8, 0, path.c_str(), -1, result.data(), length);
     result.resize(static_cast<size_t>(length - 1));
     return result;
 }
@@ -975,25 +1197,34 @@ LKG_EXPORT uint64_t lkg_bridge_create_d3d11_session(void* device, uint32_t displ
         g_last_error = "Bridge session close ledger is full";
         return 0;
     }
+    trace_sessionf(id, "create_begin display=%u supplied_device=%p unity_device=%p selected_device=%p sdk_initialized=%d host_sdk_reserved=%d",
+                   display, device, g_unity_device, device ? device : g_unity_device,
+                   g_initialized ? 1 : 0,
+                   g_host_sdk_reserved.load(std::memory_order_acquire) ? 1 : 0);
     tracef("instance_window_display=%u", display);
     if (g_get_position_display) { long x = 0, y = 0; if (g_get_position_display(display, &x, &y)) tracef("display_position=%ld,%ld", x, y); }
     trace("instance_window_main_begin");
     IUnknown* dx = reinterpret_cast<IUnknown*>(device); dx->AddRef(); WindowHandle window = 0;
     bool created = false;
+    trace_sessionf(id, "instance_window_begin display=%u device=%p", display, dx);
     try { created = g_instance_window(dx, &window, display); }
     catch (...) { created = false; }
+    trace_sessionf(id, "instance_window_end result=%d window=%lu device=%p", created ? 1 : 0, window, dx);
     tracef("instance_window_end result=%d thread_id=%lu", created ? 1 : 0, trace_thread_id());
     if (!created) {
         mark_session_close_failed(id, -2, dx, nullptr, LKG_BRIDGE_SESSION_CLOSE_UNKNOWN);
-        g_last_error = "Bridge window creation failed"; trace("instance_window_main_fail"); return 0;
+        g_last_error = "Bridge window creation failed"; trace_sessionf(id, "create_failed stage=instance_window device=%p", dx); trace("instance_window_main_fail"); return 0;
     }
     trace("instance_window_main_end");
     bool shown = false;
+    trace_sessionf(id, "show_window_begin window=%lu show=1 device=%p", window, dx);
     try { shown = g_show_window(window, true); }
     catch (...) { shown = false; }
+    trace_sessionf(id, "show_window_end window=%lu show=1 result=%d", window, shown ? 1 : 0);
     tracef("show_window=true result=%d", shown ? 1 : 0);
     if (!shown) {
         mark_session_close_failed(id, -3, dx, nullptr, LKG_BRIDGE_SESSION_CLOSE_UNKNOWN);
+        trace_sessionf(id, "create_failed stage=show_window window=%lu device=%p", window, dx);
         g_last_error = "Bridge window show failed"; return 0;
     }
     unsigned long actual = 0;
@@ -1001,6 +1232,8 @@ LKG_EXPORT uint64_t lkg_bridge_create_d3d11_session(void* device, uint32_t displ
         bool matched = false;
         try { matched = g_get_window_display(window, &actual) && actual == display; }
         catch (...) { matched = false; }
+        trace_sessionf(id, "window_display_check window=%lu expected=%u actual=%lu matched=%d",
+                       window, display, actual, matched ? 1 : 0);
         if (!matched) {
             mark_session_close_failed(id, -4, dx, nullptr, LKG_BRIDGE_SESSION_CLOSE_UNKNOWN);
             g_last_error = "Bridge window display mismatch";
@@ -1011,6 +1244,8 @@ LKG_EXPORT uint64_t lkg_bridge_create_d3d11_session(void* device, uint32_t displ
     try {
         std::lock_guard<std::mutex> lock(g_mutex);
         g_sessions.emplace(id, Session{window, dx, nullptr, display, 0, false, false, false, false});
+        trace_sessionf(id, "create_stored window=%lu device=%p display=%u session_count=%llu",
+                       window, dx, display, static_cast<unsigned long long>(g_sessions.size()));
     } catch (...) {
         mark_session_close_failed(id, -5, dx, nullptr, LKG_BRIDGE_SESSION_CLOSE_UNKNOWN);
         g_last_error = "Bridge session allocation failed";
@@ -1064,12 +1299,29 @@ LKG_EXPORT int32_t lkg_bridge_ack_session_close_v1(uint64_t id) {
 
 LKG_EXPORT int32_t lkg_bridge_smoke_draw(uint64_t id, void* texture, uint32_t columns, uint32_t rows, float aspect, float zoom) {
     if (!has_sdk_ownership() || !g_initialized) return -7;
-    trace("draw_enter"); std::lock_guard<std::mutex> lock(g_mutex); auto it = g_sessions.find(id);
-    if (it == g_sessions.end() || !texture || !g_draw_texture || !g_register_texture) { g_last_error = "invalid draw session or texture"; return -1; }
-    Session& session = it->second; if (!session.window) { g_last_error = "Bridge session has no window"; return -4; }
+    trace_sessionf(id, "draw_enter source_texture=%p columns=%u rows=%u aspect=%.6f zoom=%.6f",
+                   texture, columns, rows, aspect, zoom);
+    std::lock_guard<std::mutex> lock(g_mutex); auto it = g_sessions.find(id);
+    if (it == g_sessions.end() || !texture || !g_draw_texture || !g_register_texture) {
+        trace_sessionf(id, "draw_rejected session_found=%d source_texture=%p draw_symbol=%d register_symbol=%d",
+                       it != g_sessions.end() ? 1 : 0, texture, g_draw_texture ? 1 : 0, g_register_texture ? 1 : 0);
+        g_last_error = "invalid draw session or texture"; return -1;
+    }
+    Session& session = it->second;
+    trace_sessionf(id, "draw_session window=%lu device=%p bridge_texture=%p registered=%d closing=%d pending=%u display=%u",
+                   session.window, session.device, session.bridgeTexture, session.registered ? 1 : 0,
+                   session.closing ? 1 : 0, session.pending, session.display);
+    if (!session.window) { trace_sessionf(id, "draw_rejected reason=no_window"); g_last_error = "Bridge session has no window"; return -4; }
     D3D11_TEXTURE2D_DESC source{}; if (!get_texture_desc(reinterpret_cast<IUnknown*>(texture), &source)) { g_last_error = "Source is not a D3D11 texture2D"; return -2; }
     trace_desc("source_desc", source);
-    if (!session.bridgeTexture) { trace("create_texture_begin"); if (!g_create_texture(session.window, source.Width, source.Height, &session.bridgeTexture)) { g_last_error = "Bridge compatible texture creation failed"; return -2; } trace("create_texture_end"); }
+    if (!session.bridgeTexture) {
+        trace_sessionf(id, "create_texture_begin window=%lu device=%p width=%u height=%u create_symbol=%d",
+                       session.window, session.device, source.Width, source.Height, g_create_texture ? 1 : 0);
+        const bool created = g_create_texture && g_create_texture(session.window, source.Width, source.Height, &session.bridgeTexture);
+        trace_sessionf(id, "create_texture_end result=%d window=%lu bridge_texture=%p", created ? 1 : 0,
+                       session.window, session.bridgeTexture);
+        if (!created) { g_last_error = "Bridge compatible texture creation failed"; return -2; }
+    }
     D3D11_TEXTURE2D_DESC destination{}; if (!get_texture_desc(session.bridgeTexture, &destination)) { g_last_error = "Bridge texture descriptor query failed"; release_bridge_texture(id, session, false); return -2; }
     trace_desc("dest_desc", destination);
     if (!IsCopyCompatible(source, destination)) {
@@ -1091,19 +1343,101 @@ LKG_EXPORT int32_t lkg_bridge_smoke_draw(uint64_t id, void* texture, uint32_t co
             trace("copy_validation_failed"); g_last_error = "Source and Bridge texture descriptors are incompatible"; release_bridge_texture(id, session, false); return -2;
         }
     }
-    trace("copy_begin"); if (!g_copy_texture(session.window, reinterpret_cast<IUnknown*>(texture), session.bridgeTexture)) { g_last_error = "Bridge texture copy failed"; trace("copy_failed"); return -2; } trace("copy_end");
-    if (!session.registered) { trace("register_begin"); if (!g_register_texture(session.window, session.bridgeTexture)) { g_last_error = "Bridge texture registration failed"; return -2; } session.registered = true; trace("register_end"); }
-    if (!session.snapshotAttempted) { session.snapshotAttempted = true; std::wstring snapshot = snapshot_path(); if (!snapshot.empty() && g_save_texture) { std::vector<wchar_t> path(snapshot.begin(), snapshot.end()); path.push_back(L'\0'); const bool saved = g_save_texture(session.window, path.data(), session.bridgeTexture); tracef("snapshot_save result=%d", saved ? 1 : 0); } }
-    trace("draw_begin"); const bool ok = g_draw_texture(session.window, session.bridgeTexture, columns, rows, aspect, zoom); tracef("draw_end result=%d", ok ? 1 : 0); trace("draw_exit");
-    if (!ok) { g_last_error = "Bridge quilt draw failed"; return -3; } g_last_error.clear(); ++g_successful_draws; return 0;
+    trace_sessionf(id, "copy_texture_begin window=%lu source_texture=%p bridge_texture=%p",
+                   session.window, texture, session.bridgeTexture);
+    const bool copied = g_copy_texture(session.window, reinterpret_cast<IUnknown*>(texture), session.bridgeTexture);
+    trace_sessionf(id, "copy_texture_end result=%d window=%lu source_texture=%p bridge_texture=%p",
+                   copied ? 1 : 0, session.window, texture, session.bridgeTexture);
+    if (!copied) { g_last_error = "Bridge texture copy failed"; trace("copy_failed"); return -2; }
+    if (!session.registered) {
+        trace_sessionf(id, "register_texture_begin window=%lu bridge_texture=%p", session.window, session.bridgeTexture);
+        const bool registered = g_register_texture(session.window, session.bridgeTexture);
+        trace_sessionf(id, "register_texture_end result=%d window=%lu bridge_texture=%p", registered ? 1 : 0,
+                       session.window, session.bridgeTexture);
+        if (!registered) { g_last_error = "Bridge texture registration failed"; return -2; }
+        session.registered = true;
+    }
+    const bool frameSequenceEnabled = snapshot_frame_sequence_enabled();
+    const uint64_t frameNumber = (frameSequenceEnabled || trace_enabled()) ? session.drawFrameCount + 1 : 0;
+    if (trace_enabled()) {
+        trace_texture_device_identities(id, session.device, reinterpret_cast<IUnknown*>(texture), session.bridgeTexture);
+    }
+    if (!frameSequenceEnabled && !session.snapshotAttempted) {
+        session.snapshotAttempted = true;
+        std::wstring snapshot = snapshot_path(id);
+        const bool suffixEnabled = [] {
+            const char* option = std::getenv("LKG_BRIDGE_SNAPSHOT_SESSION_SUFFIX");
+            return option && std::strcmp(option, "1") == 0;
+        }();
+        if (!snapshot.empty() && g_save_texture) {
+            trace_sessionf(id, "snapshot_save_begin window=%lu texture=%p session_suffix=%d",
+                           session.window, session.bridgeTexture, suffixEnabled ? 1 : 0);
+            std::vector<wchar_t> path(snapshot.begin(), snapshot.end());
+            path.push_back(L'\0');
+            const bool saved = g_save_texture(session.window, path.data(), session.bridgeTexture);
+            trace_sessionf(id, "snapshot_save_end result=%d window=%lu texture=%p session_suffix=%d",
+                           saved ? 1 : 0, session.window, session.bridgeTexture, suffixEnabled ? 1 : 0);
+            tracef("snapshot_save result=%d", saved ? 1 : 0);
+        } else {
+            trace_sessionf(id, "snapshot_save_skipped configured=%d symbol=%d",
+                           snapshot.empty() ? 0 : 1, g_save_texture ? 1 : 0);
+        }
+    }
+    trace_sessionf(id, "draw_texture_begin window=%lu bridge_texture=%p columns=%u rows=%u aspect=%.6f zoom=%.6f",
+                   session.window, session.bridgeTexture, columns, rows, aspect, zoom);
+    const bool ok = g_draw_texture(session.window, session.bridgeTexture, columns, rows, aspect, zoom);
+    trace_sessionf(id, "draw_texture_end result=%d window=%lu bridge_texture=%p", ok ? 1 : 0,
+                   session.window, session.bridgeTexture);
+    tracef("draw_end result=%d", ok ? 1 : 0); trace("draw_exit");
+    if (!ok) { g_last_error = "Bridge quilt draw failed"; return -3; }
+    if (frameNumber) session.drawFrameCount = frameNumber;
+    if (frameSequenceEnabled) {
+        const bool captureFrame = frameNumber == 1 || frameNumber == 3 || frameNumber == 5;
+        if (captureFrame) {
+            const std::wstring sourceSnapshot = snapshot_sequence_path(id, frameNumber, "source");
+            const std::wstring bridgeSnapshot = snapshot_sequence_path(id, frameNumber, "bridge");
+            if (!sourceSnapshot.empty() && !bridgeSnapshot.empty() && g_save_texture) {
+                std::vector<wchar_t> sourcePath(sourceSnapshot.begin(), sourceSnapshot.end());
+                sourcePath.push_back(L'\0');
+                std::vector<wchar_t> bridgePath(bridgeSnapshot.begin(), bridgeSnapshot.end());
+                bridgePath.push_back(L'\0');
+                trace_sessionf(id, "snapshot_frame_begin frame=%llu source_texture=%p bridge_texture=%p",
+                               static_cast<unsigned long long>(frameNumber), texture, session.bridgeTexture);
+                bool sourceSaved = false;
+                bool bridgeSaved = false;
+                try { sourceSaved = g_save_texture(session.window, sourcePath.data(), reinterpret_cast<IUnknown*>(texture)); }
+                catch (...) { sourceSaved = false; }
+                try { bridgeSaved = g_save_texture(session.window, bridgePath.data(), session.bridgeTexture); }
+                catch (...) { bridgeSaved = false; }
+                trace_sessionf(id, "snapshot_frame_end frame=%llu source_result=%d bridge_result=%d source_texture=%p bridge_texture=%p",
+                               static_cast<unsigned long long>(frameNumber), sourceSaved ? 1 : 0,
+                               bridgeSaved ? 1 : 0, texture, session.bridgeTexture);
+            } else {
+                trace_sessionf(id, "snapshot_frame_skipped frame=%llu configured=%d save_symbol=%d",
+                               static_cast<unsigned long long>(frameNumber),
+                               sourceSnapshot.empty() || bridgeSnapshot.empty() ? 0 : 1,
+                               g_save_texture ? 1 : 0);
+            }
+            trace_texture_readback_stats(id, frameNumber, "source", reinterpret_cast<IUnknown*>(texture));
+            trace_texture_readback_stats(id, frameNumber, "bridge", session.bridgeTexture);
+        }
+    }
+    g_last_error.clear(); ++g_successful_draws; return 0;
 }
 
 static void lkg_render_event(int eventId, void* data) {
     if (!data) return; auto* drawData = static_cast<LkgBridgeDrawData*>(data);
     if (eventId == 1) {
+        trace_sessionf(drawData->session, "close_enter event_id=%d source_texture=%p pending_data=%p", eventId,
+                       drawData->texture, static_cast<void*>(drawData));
         trace("close_begin"); std::lock_guard<std::mutex> lock(g_mutex); auto it = g_sessions.find(drawData->session);
         if (it != g_sessions.end() && it->second.pending == 0) {
             Session& session = it->second;
+            const WindowHandle closingWindow = session.window;
+            trace_sessionf(drawData->session, "close_session window=%lu device=%p bridge_texture=%p registered=%d pending=%u display=%u cleanup_failed=%d session_count=%llu",
+                           session.window, session.device, session.bridgeTexture, session.registered ? 1 : 0,
+                           session.pending, session.display, session.cleanupFailed ? 1 : 0,
+                           static_cast<unsigned long long>(g_sessions.size()));
             IUnknown* retainedDevice = session.device;
             IUnknown* retainedTexture = session.bridgeTexture;
             if (retainedDevice) retainedDevice->AddRef();
@@ -1112,8 +1446,12 @@ static void lkg_render_event(int eventId, void* data) {
             bool cleanupSafe = !session.cleanupFailed;
             if (cleanupSafe && session.window) {
                 bool hidden = false;
+                trace_sessionf(drawData->session, "show_window_begin window=%lu show=0 device=%p bridge_texture=%p",
+                               session.window, session.device, session.bridgeTexture);
                 try { hidden = g_show_window && g_show_window(session.window, false); }
                 catch (...) { hidden = false; }
+                trace_sessionf(drawData->session, "show_window_end window=%lu show=0 result=%d",
+                               session.window, hidden ? 1 : 0);
                 if (!hidden) {
                     cleanupSafe = false;
                     g_last_error = "Bridge window hide was not proven during session cleanup";
@@ -1122,10 +1460,13 @@ static void lkg_render_event(int eventId, void* data) {
             if (cleanupSafe) cleanupSafe = release_bridge_texture(drawData->session, session, true);
             if (cleanupSafe && session.device) {
                 if (g_release_device) {
+                    trace_sessionf(drawData->session, "release_device_begin window=%lu device=%p", session.window, session.device);
                     trace_shutdownf(drawData->session, "release_device_dx begin");
                     bool released = false;
                     try { released = g_release_device(session.device); }
                     catch (...) { released = false; }
+                    trace_sessionf(drawData->session, "release_device_end result=%d window=%lu device=%p",
+                                   released ? 1 : 0, session.window, session.device);
                     trace_shutdownf(drawData->session, "release_device_dx end result=%d", released ? 1 : 0);
                     if (released) session.device = nullptr;
                     else cleanupSafe = false;
@@ -1135,6 +1476,9 @@ static void lkg_render_event(int eventId, void* data) {
                 }
             }
             const bool lastSession = g_sessions.size() == 1;
+            trace_sessionf(drawData->session, "close_context_cleanup result=%d last_session=%d sdk_initialized=%d host_sdk_reserved=%d",
+                           cleanupSafe ? 1 : 0, lastSession ? 1 : 0, g_initialized ? 1 : 0,
+                           g_host_sdk_reserved.load(std::memory_order_acquire) ? 1 : 0);
             if (cleanupSafe && lastSession && g_initialized
 #if defined(_WIN32)
                 && !g_host_sdk_reserved.load(std::memory_order_acquire)
@@ -1155,10 +1499,17 @@ static void lkg_render_event(int eventId, void* data) {
                 if (retainedTexture) retainedTexture->Release();
                 if (retainedDevice) retainedDevice->Release();
                 mark_session_close_safe(drawData->session, 0);
+                trace_sessionf(drawData->session, "close_complete result=0 sdk_initialized=%d window=%lu device=%p texture=%p",
+                               g_initialized ? 1 : 0, closingWindow, retainedDevice, retainedTexture);
             } else {
                 mark_session_close_failed(drawData->session, -5, retainedDevice, retainedTexture);
                 trace_shutdownf(drawData->session, "session_close_failed resources_retained=1");
+                trace_sessionf(drawData->session, "close_failed result=-5 retained_device=%p retained_texture=%p",
+                               retainedDevice, retainedTexture);
             }
+        } else {
+            trace_sessionf(drawData->session, "close_deferred session_found=%d pending=%u",
+                           it != g_sessions.end() ? 1 : 0, it != g_sessions.end() ? it->second.pending : 0);
         }
         trace("close_end"); delete drawData; return;
     }
