@@ -33,6 +33,8 @@ flowchart LR
 
 ## Pause、Resume、Close、handoff
 
+Inspectorの`Close Preview`は初期状態で閉じた`Advanced` section内にあります。通常のpreview操作はStart、Pause、Resumeです。
+
 | 操作 | Mode producerとUnity texture | Lease | Process Bridge endpoint |
 | --- | --- | --- | --- |
 | Pause Preview | submit drain後も保持 | 同じgenerationを保持 | 非表示でpark |
@@ -97,18 +99,20 @@ flowchart TD
 
 ## Candidateと導入済みbuild
 
-両sample projectは2026-10-09にpackage commit `eb527e1ec126ec99d35e9990d8dce0119b855b4d`、Native DLL SHA-256 `A6A062343710AF2362DAF7B923A9BB98BDD5D381D896C68AE3190CA55655FBC7`でcold verificationされました。これは日付時点のsample記録で、後日のpackage更新後も同じ内容だという意味ではありません。現在のNative artifact/source implementationはSHA-256 `655FDB898CF7B9F9733A1880828B740B62FB74E0C3ECDF9D825C07794F6388CD`、208,896 bytes、51 exportsです。Native Windows fake/WARP CTestは12/12件成功し、source review済みで、artifactは生成済みdistribution packageに含まれています。このartifactは2026-10-09の実機検証時にはsample Editorへ導入されていませんでした。
-
-現在sourceのRoslyn compileはCore/Bridge runtimeのEditor・Player構成、`Bridge.Editor`、focused `QuiltPlaybackSafetyTests` sourceで成功しました。これはcompileのみです。Unity Test Runnerは未実行で、Native試験もofficial Looking Glass Bridge SDKをloadせず、実機を検証しません。
+2026-10-09、両sample projectをpackage commit `eb527e1ec126ec99d35e9990d8dce0119b855b4d`、Native DLL SHA-256 `A6A062343710AF2362DAF7B923A9BB98BDD5D381D896C68AE3190CA55655FBC7`でcold verificationしました。同日後刻、両sampleをpackage commit `5234b834381afd91a896714ad6d8f9dcbd9f6f95`、Native DLL SHA-256 `655FDB898CF7B9F9733A1880828B740B62FB74E0C3ECDF9D825C07794F6388CD`（208,896 bytes、51 exports）でcold verificationしました。これは各日付時点のidentityであり、その後のpackage更新後も同一という意味ではありません。現行Native artifact/sourceはWindows fake/WARP CTest 12/12件とsource reviewに成功しました。managed runtimeのEditor/Player構成、`Bridge.Editor`、focused playback-safety test sourceもcompile済みです。Unity Test Runnerは未実行です。Native testはfake/WARP resourceを使用し、official Looking Glass Bridge SDKをloadしません。
 
 ## URP実機での限定観察
 
-以下はすべてWindows Unity 6000.6.4f1、更新済みURP sample、package commit `eb527e1`、導入済みDLL A6A...FBC7での観察です。新しい655F...candidateの実機検証ではありません。HDRPの実機出力は試していません。
+以下はWindows Unity 6000.6.4f1、URP package commit `5234b834381afd91a896714ad6d8f9dcbd9f6f95`、Native DLL SHA-256 `655FDB898CF7B9F9733A1880828B740B62FB74E0C3ECDF9D825C07794F6388CD`での限定観察です。HDRPの実機出力は試していません。
 
 | 遷移 | 実機での観察 | managed/leaseでの観察 | 判定範囲 |
 | --- | --- | --- | --- |
-| Edit Preview Close/Start、その後active Edit Preview → Play | URP sampleで映像と新たな移動/Undoが両modeで反映されたと利用者が確認 | 各handoffで同じprocess endpointを再利用 | 2026-10-09の導入済みbuildでClose/Start一回とEditからPlay一回を確認 |
-| Active Play → Edit Preview | 最初は黒。producer quiltを一度readbackした後、同じleaseで映像が見えたとの報告 | 観察された復帰中にendpoint/leaseの再作成なし | readbackが時間に影響した可能性があり、黒画面の原因は不明。反復可能な復帰は未証明 |
-| 後の逆handoff | 後に映像が見えたとの報告があったが、その後のpollではEditor worker停止とerror、current ownerなしを確認 | 報告後のlive outputは確認できていない | 表示報告は復帰を証明しない。逆handoffは未解決 |
+| Edit Preview Close/Start | 利用者が再開始後の映像と新たな移動/Undoを確認 | 同じprocess endpoint、新しいlease generation | 日付付き候補でURPの1 cycleを確認 |
+| active Edit Preview → Play | 利用者がPlayで映像と新たな移動/Undoを確認 | 同じendpointで新generationがReady | 同日候補でURPの1 handoffを確認 |
+| active Play → Edit Preview | 最初は黒。後に映像と新たな移動/Undoが見えたと利用者が報告 | managed verification前にpreview ownerが消え、workerはIdle/error停止 | live復帰は検証できず、逆handoffは未解決 |
 
-これらの観察は上記の日付付きsample identityを使っており、現在のNative artifact/source implementationを実機検証したものではありません。Native fake/WARP testは12/12件成功しました。current-sourceのruntime Editor/Player構成、`Bridge.Editor`、focused playback-safety test sourceがcompile済みで、Unity Test Runnerは未実行です。新しいNative artifactの実機検証は未実施です。HDRP実機handoff、device hot-plug、物理寸法、光学画質、runtime性能も未検証です。
+655F artifactはURP実機で限定的に試しましたが、逆handoffは未解決です。手動のStart/Pause/CloseおよびPlay cycleでも断続的な黒画面が報告されています。関連するdiagnostic変更では最初のstop reasonを保持し、二次Core callbackを抑制します。InspectorのAdvanced sectionは初期状態で閉じています。これらのdiagnostic/UI変更は黒画面の修正を証明しません。output counterやGPU completion値はdisplay scanoutを証明しません。HDRP実機handoff、device hot-plug、物理寸法、光学画質、runtime性能は未検証です。別の日付のA6A試験でproducer readback後に映像が出た事象は、655F candidateや黒画面の原因の証拠ではありません。
+
+## Native traceと表示確認の限界
+
+Editor起動前にprocess環境変数`LKG_NATIVE_TRACE`を設定すると、Native trace recordを収集できます。traceはlifecycleやdraw callの相関に役立ちますが、submit受理、worker completion counter、producer GPU completionはBridge表示やscanoutを確認しません。trace記録はdiagnostic path上で行われるため、観測タイミングに影響することがあります。後から映像が見えたことだけでは、復帰させた操作やlive ownerを証明できません。

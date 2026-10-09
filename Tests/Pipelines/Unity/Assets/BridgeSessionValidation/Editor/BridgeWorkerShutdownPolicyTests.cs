@@ -605,6 +605,104 @@ namespace ViewWeave.BridgeSessionValidation
         }
 
         [Test]
+        public void CoreStopRequestInvokesGlobalStopOwnerOnceForActiveRecord()
+        {
+            var producer = new GameObject("Preview Core stop callback producer");
+            QuiltRenderer renderer = producer.AddComponent<QuiltRenderer>();
+            BridgeEditorPreviewRetentionRecord record = BridgeEditorPreviewRetentionRecord.Create(producer, renderer);
+            BridgeEditorPreviewRetention.CallbackRegistration callbacks = BridgeEditorPreviewRetention.CaptureCallbacks();
+            int stopCalls = 0;
+            try
+            {
+                BridgeEditorPreviewRetention.RegisterEditorCallbacks(() => { stopCalls++; return false; }, _ => { });
+                Assert.IsFalse(BridgeEditorPreviewRetention.RequestStopFromCore(record, renderer));
+                Assert.AreEqual(1, stopCalls);
+                Assert.IsFalse(record.StopRequested);
+            }
+            finally
+            {
+                BridgeEditorPreviewRetention.RestoreCallbacks(callbacks);
+                Object.DestroyImmediate(record);
+                Object.DestroyImmediate(producer);
+            }
+        }
+
+        [Test]
+        public void CoreStopRetryForStoppedRecordDoesNotStopAnotherOwner()
+        {
+            var firstProducer = new GameObject("Preview first Core stop producer");
+            var secondProducer = new GameObject("Preview second Core stop producer");
+            QuiltRenderer firstRenderer = firstProducer.AddComponent<QuiltRenderer>();
+            QuiltRenderer secondRenderer = secondProducer.AddComponent<QuiltRenderer>();
+            BridgeEditorPreviewRetentionRecord firstRecord = BridgeEditorPreviewRetentionRecord.Create(firstProducer, firstRenderer);
+            BridgeEditorPreviewRetentionRecord secondRecord = BridgeEditorPreviewRetentionRecord.Create(secondProducer, secondRenderer);
+            BridgeEditorPreviewRetention.CallbackRegistration callbacks = BridgeEditorPreviewRetention.CaptureCallbacks();
+            int stopCalls = 0;
+            try
+            {
+                firstRecord.MarkStopRequested();
+                BridgeEditorPreviewRetention.RegisterEditorCallbacks(() =>
+                {
+                    stopCalls++;
+                    secondRecord.MarkStopRequested();
+                    return false;
+                }, _ => { });
+
+                Assert.IsFalse(BridgeEditorPreviewRetention.RequestStopFromCore(firstRecord, firstRenderer));
+                Assert.AreEqual(0, stopCalls);
+                Assert.IsFalse(secondRecord.StopRequested);
+            }
+            finally
+            {
+                BridgeEditorPreviewRetention.RestoreCallbacks(callbacks);
+                Object.DestroyImmediate(firstRecord);
+                Object.DestroyImmediate(secondRecord);
+                Object.DestroyImmediate(firstProducer);
+                Object.DestroyImmediate(secondProducer);
+            }
+        }
+
+        [Test]
+        public void CoreStopRequestRejectsMismatchedRendererWithoutGlobalStop()
+        {
+            var producer = new GameObject("Preview Core stop renderer producer");
+            var otherProducer = new GameObject("Preview Core stop other producer");
+            QuiltRenderer renderer = producer.AddComponent<QuiltRenderer>();
+            QuiltRenderer otherRenderer = otherProducer.AddComponent<QuiltRenderer>();
+            BridgeEditorPreviewRetentionRecord record = BridgeEditorPreviewRetentionRecord.Create(producer, renderer);
+            BridgeEditorPreviewRetention.CallbackRegistration callbacks = BridgeEditorPreviewRetention.CaptureCallbacks();
+            int stopCalls = 0;
+            try
+            {
+                BridgeEditorPreviewRetention.RegisterEditorCallbacks(() => { stopCalls++; return false; }, _ => { });
+                Assert.IsFalse(BridgeEditorPreviewRetention.RequestStopFromCore(record, otherRenderer));
+                Assert.AreEqual(0, stopCalls);
+                Assert.IsFalse(record.StopRequested);
+            }
+            finally
+            {
+                BridgeEditorPreviewRetention.RestoreCallbacks(callbacks);
+                Object.DestroyImmediate(record);
+                Object.DestroyImmediate(producer);
+                Object.DestroyImmediate(otherProducer);
+            }
+        }
+
+        [Test]
+        public void ExplicitGlobalPreviewStopStillInvokesRegisteredStopOwner()
+        {
+            BridgeEditorPreviewRetention.CallbackRegistration callbacks = BridgeEditorPreviewRetention.CaptureCallbacks();
+            int stopCalls = 0;
+            try
+            {
+                BridgeEditorPreviewRetention.RegisterEditorCallbacks(() => { stopCalls++; return false; }, _ => { });
+                Assert.IsTrue(BridgeEditorPreviewRetention.RequestStop(false));
+                Assert.AreEqual(1, stopCalls);
+            }
+            finally { BridgeEditorPreviewRetention.RestoreCallbacks(callbacks); }
+        }
+
+        [Test]
         public void PreviewMsaaDescriptorUsesIncomingSourceCameraBeforeCopy()
         {
             var sourceObject = new GameObject("Preview MSAA source camera");

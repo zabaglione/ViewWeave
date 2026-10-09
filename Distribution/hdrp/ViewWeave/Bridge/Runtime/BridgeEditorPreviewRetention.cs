@@ -113,6 +113,7 @@ namespace ViewWeave
         internal static bool RequestStopFromCore(BridgeEditorPreviewRetentionRecord record, QuiltRenderer renderer)
         {
             if (record == null || !ReferenceEquals(record.Renderer, renderer)) return false;
+            if (record.StopRequested) return false;
             bool completed = RequestStop(false);
             if (!record.StopRequested)
                 record.SetDiagnostic("Core requested preview stop, but the Editor owner did not accept the request; textures remain retained.");

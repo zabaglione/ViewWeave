@@ -961,7 +961,12 @@ namespace ViewWeave.Editor
         static void BeginStop(bool restart, string reason)
         {
             if (!active && !stopping && producerObject == null) return;
-            if (!string.IsNullOrEmpty(reason)) { lastError = Sanitize(reason); status = "Stopping preview"; }
+            bool firstStopRequest = !stopping;
+            if (firstStopRequest && !string.IsNullOrEmpty(reason))
+            {
+                lastError = Sanitize(reason);
+                status = "Stopping preview";
+            }
             active = false;
             stopping = true;
             previewState = PreviewState.Closing;

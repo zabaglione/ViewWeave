@@ -71,7 +71,7 @@ namespace ViewWeave.Editor
         Button localPreviewButton;
         Button devicePreviewButton;
         Button stopPreviewButton;
-    Button closePreviewButton;
+        Button closePreviewButton;
         Button setFocusButton;
         Button horizontalOrbitButton;
         Button verticalOrbitButton;
@@ -354,11 +354,9 @@ namespace ViewWeave.Editor
             localPreviewButton = new Button(() => StartPreview(false)) { text = "Start Local Edit Mode Preview" };
             devicePreviewButton = new Button(() => StartPreview(true)) { text = "Start Looking Glass Device Preview" };
             stopPreviewButton = new Button(StopPreview) { text = "Stop Preview", name = "pauseResumePreview" };
-            closePreviewButton = new Button(ClosePreview) { text = "Close Preview", name = "closePreview" };
             buttonRow.Add(localPreviewButton);
             buttonRow.Add(devicePreviewButton);
             buttonRow.Add(stopPreviewButton);
-            buttonRow.Add(closePreviewButton);
             foldout.Add(buttonRow);
 
             var previewActions = new VisualElement { style = { flexDirection = FlexDirection.Column } };
@@ -530,6 +528,8 @@ namespace ViewWeave.Editor
         void BuildAdvancedSection()
         {
             Foldout foldout = AddFoldout("Advanced", false);
+            closePreviewButton = new Button(ClosePreview) { text = "Close Preview", name = "closePreview" };
+            foldout.Add(closePreviewButton);
             ObjectField sourceField = new ObjectField("Rig Source Camera") { objectType = typeof(Camera), allowSceneObjects = true, value = renderer == null ? null : renderer.sourceCamera };
             sourceField.SetEnabled(false);
             foldout.Add(sourceField);

@@ -33,6 +33,8 @@ The registered primary texture and SDK-facing input retain stable identities acr
 
 ## Pause, resume, close, and handoff
 
+In the Inspector, `Close Preview` is in the `Advanced` section, collapsed by default. Start, Pause, and Resume are the ordinary preview controls.
+
 | Action | Mode producer and Unity textures | Lease | Process Bridge endpoint |
 | --- | --- | --- | --- |
 | Pause Preview | Retained after submissions drain | Same generation retained | Hidden and parked |
@@ -97,18 +99,20 @@ The fixed input can add GPU copy/scaling cost. Fewer rendered views or smaller s
 
 ## Candidate and installed build identity
 
-Both sample projects were cold-verified on 2026-10-09 with package commit `eb527e1ec126ec99d35e9990d8dce0119b855b4d` and Native DLL SHA-256 `A6A062343710AF2362DAF7B923A9BB98BDD5D381D896C68AE3190CA55655FBC7`. This is dated sample evidence, not a claim about their current contents after later package updates. The current Native artifact/source implementation has DLL SHA-256 `655FDB898CF7B9F9733A1880828B740B62FB74E0C3ECDF9D825C07794F6388CD`, size 208,896 bytes, and 51 exports. Its Native Windows fake/WARP CTest suite passed 12/12, source review passed, and the artifact is included in the generated distribution packages. This artifact was not installed in the sample Editors during the 2026-10-09 device validation.
-
-Current-source Roslyn compilation passed for Core and Bridge runtime Editor/Player configurations, `Bridge.Editor`, and the focused `QuiltPlaybackSafetyTests` source. This was compilation only; Unity Test Runner tests were not executed. Native tests use fake/WARP resources and do not load the official Looking Glass Bridge SDK or verify a physical display.
+On 2026-10-09, both sample projects were cold-verified with package commit `eb527e1ec126ec99d35e9990d8dce0119b855b4d` and Native DLL SHA-256 `A6A062343710AF2362DAF7B923A9BB98BDD5D381D896C68AE3190CA55655FBC7`. Later that day, both samples were updated and cold-verified with package commit `5234b834381afd91a896714ad6d8f9dcbd9f6f95` and Native DLL SHA-256 `655FDB898CF7B9F9733A1880828B740B62FB74E0C3ECDF9D825C07794F6388CD` (208,896 bytes, 51 exports). These are dated identities, not claims about sample contents after subsequent updates. The current Native artifact/source implementation passed 12/12 Windows fake/WARP CTests and source review; its managed runtime Editor/Player configurations, `Bridge.Editor`, and focused playback-safety test source compiled. Unity Test Runner was not run. Native tests use fake/WARP resources and do not load the official Looking Glass Bridge SDK.
 
 ## Bounded URP device observations
 
-All following physical observations used Windows Unity 6000.6.4f1, the updated URP sample, package commit `eb527e1`, and installed DLL A6A...FBC7. They are not evidence for the newer 655F... candidate. HDRP device output was not tested.
+The following bounded observations used Windows Unity 6000.6.4f1, URP package commit `5234b834381afd91a896714ad6d8f9dcbd9f6f95`, and Native DLL SHA-256 `655FDB898CF7B9F9733A1880828B740B62FB74E0C3ECDF9D825C07794F6388CD`. HDRP hardware output was not tested.
 
 | Transition | Device observation | Managed/lease observation | Result boundary |
 | --- | --- | --- | --- |
-| Edit Preview Close/Start, then active Edit Preview → Play | On the URP sample, the user confirmed visible output and fresh move/Undo in both modes | The same process endpoint was reused across each handoff | One Close/Start and one Edit-to-Play transition were confirmed on the 2026-10-09 installed build |
-| Active Play → Edit Preview | Initially black; after one producer-quilt readback, the user reported visible output on the same lease | No new endpoint or lease was created during the observed recovery | The readback may have affected timing; the cause of the black interval is unknown and repeatable recovery is not established |
-| A later reverse handoff | The user later reported visible output, but a subsequent poll found the Editor worker stopped with an error and no current owner | Live output after that report was not established | The image report does not prove recovery; the reverse handoff remains unresolved |
+| Edit Preview Close/Start | Human confirmed the image and fresh move/Undo after the restarted preview | Same process endpoint; new lease generation | One successful URP cycle on this dated candidate |
+| Active Edit Preview → Play | Human confirmed the image and fresh move/Undo in Play | Same endpoint; a new generation became Ready | One successful URP handoff on this dated candidate |
+| Active Play → Edit Preview | Initially black; the human later reported that an image and fresh move/Undo were visible | Before managed verification, the preview owner had disappeared and the worker was Idle/stopped with an error | Live recovery was not verified; reverse handoff remains unresolved |
 
-These observations used the sample identity dated above and do not test the current Native artifact/source implementation on hardware. Native fake/WARP tests passed 12/12. The current-source runtime Editor/Player configurations, `Bridge.Editor`, and focused playback-safety test source compiled; Unity Test Runner was not run. The new Native artifact has not been physically tested. HDRP hardware handoffs, device hot-plug, physical size, optical image quality, and runtime performance remain unverified.
+The 655F artifact has therefore had limited URP hardware exercise, but the reverse handoff remains unresolved. Intermittent black output has also been reported during manual Start/Pause/Close and Play cycles. A related diagnostic change preserves the first stop reason and suppresses a secondary Core callback; the Inspector Advanced section is collapsed by default. These diagnostic/UI changes do not establish a black-output fix. No output-counter or GPU-completion value proves display scanout. HDRP hardware handoffs, device hot-plug, physical size, optical image quality, and runtime performance remain unverified. A prior image appearing during a different dated A6A test after a producer readback is not evidence about the 655F candidate or the cause of the black interval.
+
+## Native trace and presentation limits
+
+Set `LKG_NATIVE_TRACE` in the Unity process environment before starting the Editor to collect Native trace records. A trace can help correlate lifecycle and draw calls, but accepted submissions, worker completion counters, and producer GPU completion do not confirm Bridge display presentation or scanout. Trace writes occur on diagnostic paths and can affect timing. A later image by itself does not establish which operation restored output or prove a live owner.
