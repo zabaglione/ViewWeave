@@ -35,7 +35,7 @@ namespace ViewWeave
             {
                 int count = 0;
                 foreach (BridgeWorkerRecoveryRecord record in FindRecords())
-                    if (record != null && !record.IsLegacySession && record.NativeHandle != 0 && !record.NativeReleased) count++;
+                    if (record != null && !record.IsLegacySession && record.NativeHandle != 0 && !record.NativeContextOwnershipReleased) count++;
                 return count;
             }
         }
@@ -56,18 +56,47 @@ namespace ViewWeave
             reaper.RestoreRecords();
             finalShutdownOwnsNativeContexts = true;
             foreach (Lease lease in reaper.leases)
-                if (lease.record.NativeReleased && !lease.proofStarted) StartGpuProof(lease);
+                if (lease.record.NativeContextOwnershipReleased && !lease.proofStarted) StartGpuProof(lease);
         }
 
         internal static void MarkFinalShutdownCollected()
         {
             BridgeWorkerReaper reaper = Ensure();
             reaper.RestoreRecords();
+            BridgeNativeModuleIdentity finalIdentity = default;
+            bool finalIdentityKnown = false;
+#if UNITY_EDITOR
+            if (Application.isEditor && Application.platform == RuntimePlatform.WindowsEditor)
+            {
+                if (!BridgeNativeImageGuard.TryValidateGlobalCalls(out bool loaded, out finalIdentity, out _) || !loaded)
+                    return;
+                if (!finalIdentity.IsKnown) return;
+                finalIdentityKnown = true;
+            }
+#endif
             foreach (Lease lease in reaper.leases)
             {
                 if (lease.record.IsLegacySession) continue;
-                lease.record.NativeReleased = true;
-                lease.record.NeedsClose = false;
+                if (lease.record.IsPreviewLease)
+                {
+                    if (finalIdentityKnown && !SameModule(lease.record.NativeModuleIdentity, finalIdentity))
+                    {
+                        lease.record.SetDiagnostic("Final shutdown belonged to a different Bridge module image; preview lease remains retained.");
+                        continue;
+                    }
+                    lease.record.FinalModuleTeardownProven = true;
+                    lease.record.PreviewLeaseReturnProven = true;
+                    lease.record.NeedsClose = false;
+#if UNITY_EDITOR
+                    if (!lease.record.NotifyEditorPreviewOwnerReturnProven())
+                        lease.record.SetDiagnostic("Editor preview rejected matching final module teardown proof; resources remain retained.");
+#endif
+                }
+                else
+                {
+                    lease.record.NativeReleased = true;
+                    lease.record.NeedsClose = false;
+                }
             }
         }
 
@@ -105,21 +134,25 @@ namespace ViewWeave
             }
         }
 
-        internal static void Enqueue(IntPtr handle, RenderTexture texture, CommandBuffer command, bool needsClose, BridgeNativeModuleIdentity moduleIdentity)
+        internal static void Enqueue(IntPtr handle, RenderTexture texture, CommandBuffer command, bool needsClose,
+            BridgeNativeModuleIdentity moduleIdentity, bool previewLease,
+            BridgeWorkerNative.PreviewLeaseIdentityV1 leaseIdentity, bool leaseReturnRequested)
         {
-            EnqueueCore(handle, texture, command, needsClose, moduleIdentity, null);
+            EnqueueCore(handle, texture, command, needsClose, moduleIdentity, null, previewLease, leaseIdentity, leaseReturnRequested);
         }
 
 #if UNITY_EDITOR
         internal static void EnqueueEditorPreview(IntPtr handle, RenderTexture texture, CommandBuffer command, bool needsClose,
-            BridgeNativeModuleIdentity moduleIdentity, BridgeEditorPreviewRetentionRecord previewOwner)
+            BridgeNativeModuleIdentity moduleIdentity, BridgeEditorPreviewRetentionRecord previewOwner, bool previewLease,
+            BridgeWorkerNative.PreviewLeaseIdentityV1 leaseIdentity, bool leaseReturnRequested)
         {
-            EnqueueCore(handle, texture, command, needsClose, moduleIdentity, previewOwner);
+            EnqueueCore(handle, texture, command, needsClose, moduleIdentity, previewOwner, previewLease, leaseIdentity, leaseReturnRequested);
         }
 #endif
 
         static void EnqueueCore(IntPtr handle, RenderTexture texture, CommandBuffer command, bool needsClose,
-            BridgeNativeModuleIdentity moduleIdentity, BridgeEditorPreviewRetentionRecord previewOwner)
+            BridgeNativeModuleIdentity moduleIdentity, BridgeEditorPreviewRetentionRecord previewOwner, bool previewLease,
+            BridgeWorkerNative.PreviewLeaseIdentityV1 leaseIdentity, bool leaseReturnRequested)
         {
             if (handle == IntPtr.Zero) return;
             BridgeWorkerReaper reaper = Ensure();
@@ -127,8 +160,16 @@ namespace ViewWeave
             {
                 if (lease.record != null && lease.record.NativeHandle == handle.ToInt64())
                 {
+                    if (lease.record.IsPreviewLease != previewLease ||
+                        (previewLease && (lease.record.PreviewLeaseIdentity.endpointId != leaseIdentity.endpointId ||
+                                          lease.record.PreviewLeaseIdentity.leaseGeneration != leaseIdentity.leaseGeneration)))
+                    {
+                        lease.record.SetDiagnostic("A duplicate native handle was handed off with a different lease identity; resources remain retained.");
+                        return;
+                    }
                     if (lease.command == null) lease.command = command;
                     lease.record.NeedsClose |= needsClose;
+                    lease.record.PreviewLeaseReturnRequested = leaseReturnRequested;
 #if UNITY_EDITOR
                     if (previewOwner != null && !lease.record.AttachEditorPreviewOwner(previewOwner))
                         throw new InvalidOperationException("Bridge preview recovery record is already associated with another owner.");
@@ -137,8 +178,16 @@ namespace ViewWeave
                 }
             }
             BridgeWorkerRecoveryRecord record = FindRecord(handle.ToInt64());
-            if (record == null) record = BridgeWorkerRecoveryRecord.Create(handle, texture, needsClose, ++nextGeneration, moduleIdentity);
+            if (record == null) record = previewLease
+                ? BridgeWorkerRecoveryRecord.CreatePreviewLease(handle, texture, needsClose, ++nextGeneration, moduleIdentity, leaseIdentity)
+                : BridgeWorkerRecoveryRecord.Create(handle, texture, needsClose, ++nextGeneration, moduleIdentity);
             else record.NeedsClose |= needsClose;
+            if (record.IsPreviewLease != previewLease)
+            {
+                record.SetDiagnostic("The worker recovery handoff changed lease type; resources remain retained.");
+                return;
+            }
+            record.PreviewLeaseReturnRequested = leaseReturnRequested;
 #if UNITY_EDITOR
             if (previewOwner != null && !record.AttachEditorPreviewOwner(previewOwner))
                 throw new InvalidOperationException("Bridge preview recovery record is already associated with another owner.");
@@ -259,6 +308,11 @@ namespace ViewWeave
                 }
                 try
                 {
+                    if (lease.record.IsPreviewLease)
+                    {
+                        PumpPreviewLease(lease);
+                        continue;
+                    }
                     if (lease.record.IsLegacySession && !lease.record.NativeReleased)
                     {
                         if (!TryAcknowledgeLegacyClose(lease))
@@ -328,6 +382,109 @@ namespace ViewWeave
                 }
             }
             return leases.Count == 0;
+        }
+
+        void PumpPreviewLease(Lease lease)
+        {
+            BridgeWorkerRecoveryRecord record = lease.record;
+            if (record == null || record.NativeHandle == 0) return;
+            if (!record.HasValidPreviewLeaseIdentity)
+            {
+                record.SetDiagnostic("Preview lease token has no valid persisted endpoint identity; resources remain retained.");
+                return;
+            }
+            if (!record.FinalModuleTeardownProven)
+            {
+                if (!record.PreviewLeaseReturnRequested)
+                {
+                    BridgeWorkerNative.PreviewLeaseIdentityV1 returnIdentity = record.PreviewLeaseIdentity;
+                    int requestResult = BridgeWorkerNative.lkg_worker_request_preview_lease_return_v1(
+                        record.GetHandle(), ref returnIdentity);
+                    if (requestResult == BridgeWorkerNative.PreviewLeaseResultBusy) return;
+                    if (requestResult != BridgeWorkerNative.PreviewLeaseResultOk)
+                    {
+                        record.SetDiagnostic("Preview lease return request is unproven (code " + requestResult + "); resources remain retained.");
+                        Warn(lease, record.Diagnostic);
+                        return;
+                    }
+                    record.PreviewLeaseReturnRequested = true;
+                    record.NeedsClose = false;
+                }
+
+                BridgeWorkerNative.PreviewLeaseIdentityV1 identity = record.PreviewLeaseIdentity;
+                int statusResult = BridgeWorkerNative.lkg_worker_get_preview_lease_status_v1(
+                    record.GetHandle(), ref identity, out BridgeWorkerNative.PreviewLeaseStatusV1 leaseStatus);
+                if (statusResult != BridgeWorkerNative.PreviewLeaseResultOk || !IsValidLeaseStatus(leaseStatus, identity))
+                {
+                    record.SetDiagnostic("Preview lease return status is unavailable, stale, or invalid; resources remain retained.");
+                    Warn(lease, record.Diagnostic);
+                    return;
+                }
+                if (leaseStatus.state == BridgeWorkerNative.PreviewLeaseStateFaulted)
+                {
+                    record.SetDiagnostic("Native preview lease return faulted (code " + leaseStatus.lastResult + "); resources remain retained.");
+                    Warn(lease, record.Diagnostic);
+                    return;
+                }
+                if (leaseStatus.state != BridgeWorkerNative.PreviewLeaseStateReturnedProven) return;
+                record.PreviewLeaseReturnProven = true;
+            }
+
+#if UNITY_EDITOR
+            if (!record.NotifyEditorPreviewOwnerReturnProven())
+            {
+                record.SetDiagnostic("Editor preview rejected the exact native lease return proof; resources remain retained.");
+                return;
+            }
+#endif
+            if (!lease.proofStarted) StartGpuProof(lease);
+            PumpGpuProof(lease);
+            if (!record.HasGpuReleaseProof) return;
+            ReleaseCommand(lease);
+#if UNITY_EDITOR
+            if (!record.EditorPreviewCoreResourcesReleased) return;
+#endif
+            if (!record.RetirePreviewLeaseTransferTextureAfterProof()) return;
+            if (!record.FinalModuleTeardownProven)
+            {
+                BridgeWorkerNative.PreviewLeaseIdentityV1 identity = record.PreviewLeaseIdentity;
+                int acknowledgeResult = BridgeWorkerNative.lkg_worker_ack_preview_lease_return_v1(record.GetHandle(), ref identity);
+                if (acknowledgeResult == BridgeWorkerNative.PreviewLeaseResultBusy) return;
+                if (acknowledgeResult != BridgeWorkerNative.PreviewLeaseResultOk)
+                {
+                    record.SetDiagnostic("Native preview lease acknowledgement is unproven (code " + acknowledgeResult + "); resources remain retained.");
+                    Warn(lease, record.Diagnostic);
+                    return;
+                }
+                record.PreviewLeaseAcknowledged = true;
+            }
+#if UNITY_EDITOR
+            if (!record.NotifyEditorPreviewOwnerComplete())
+            {
+                record.SetDiagnostic("Editor preview owner did not confirm this exact lease recovery record; resources remain retained.");
+                return;
+            }
+#endif
+            if (!record.CanRelease) return;
+            record.ReleaseProvenResources();
+            DestroyImmediate(record);
+            leases.Remove(lease);
+        }
+
+        static bool IsValidLeaseStatus(BridgeWorkerNative.PreviewLeaseStatusV1 status,
+            BridgeWorkerNative.PreviewLeaseIdentityV1 expected)
+        {
+            return status.structSize == (uint)System.Runtime.InteropServices.Marshal.SizeOf(typeof(BridgeWorkerNative.PreviewLeaseStatusV1)) &&
+                   status.version == 1 && status.reserved0 == 0 && status.reserved1 == 0 && status.state <= BridgeWorkerNative.PreviewLeaseStateFaulted &&
+                   status.endpointId == expected.endpointId && status.leaseGeneration == expected.leaseGeneration &&
+                   (status.state != BridgeWorkerNative.PreviewLeaseStateReturnedProven ||
+                    status.lastResult == 0 && status.workerStatus.state == 4);
+        }
+
+        static bool SameModule(BridgeNativeModuleIdentity left, BridgeNativeModuleIdentity right)
+        {
+            return left.IsKnown && right.IsKnown && left.BaseAddress == right.BaseAddress &&
+                   string.Equals(left.FullPath, right.FullPath, StringComparison.OrdinalIgnoreCase);
         }
 
         bool TryAcknowledgeLegacyClose(Lease lease)

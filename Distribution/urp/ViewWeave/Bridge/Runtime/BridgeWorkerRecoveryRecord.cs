@@ -14,6 +14,15 @@ namespace ViewWeave
         [SerializeField] RenderTexture transferTexture;
         [SerializeField] bool needsClose;
         [SerializeField] bool nativeReleased;
+        [SerializeField] bool previewLease;
+        [SerializeField] uint previewLeaseIdentityStructSize;
+        [SerializeField] uint previewLeaseIdentityVersion;
+        [SerializeField] long previewLeaseEndpointIdBits;
+        [SerializeField] long previewLeaseGenerationBits;
+        [SerializeField] bool previewLeaseReturnRequested;
+        [SerializeField] bool previewLeaseReturnProven;
+        [SerializeField] bool previewLeaseAcknowledged;
+        [SerializeField] bool finalModuleTeardownProven;
         [SerializeField] string nativeModulePath = string.Empty;
         [SerializeField] long nativeModuleBaseAddress;
         [SerializeField] bool gpuFenceIssued;
@@ -37,11 +46,30 @@ namespace ViewWeave
         internal bool HadTransferTexture => hadTransferTexture;
         internal bool NeedsClose { get => needsClose; set => needsClose = value; }
         internal bool NativeReleased { get => nativeReleased; set => nativeReleased = value; }
+        internal bool IsPreviewLease => previewLease;
+        internal BridgeWorkerNative.PreviewLeaseIdentityV1 PreviewLeaseIdentity => new BridgeWorkerNative.PreviewLeaseIdentityV1
+        {
+            structSize = previewLeaseIdentityStructSize,
+            version = previewLeaseIdentityVersion,
+            endpointId = unchecked((ulong)previewLeaseEndpointIdBits),
+            leaseGeneration = unchecked((ulong)previewLeaseGenerationBits)
+        };
+        internal bool HasValidPreviewLeaseIdentity => previewLeaseIdentityStructSize == 24 && previewLeaseIdentityVersion == 1 &&
+            previewLeaseEndpointIdBits != 0 && previewLeaseGenerationBits != 0;
+        internal bool PreviewLeaseReturnRequested { get => previewLeaseReturnRequested; set => previewLeaseReturnRequested |= value; }
+        internal bool PreviewLeaseReturnProven { get => previewLeaseReturnProven; set => previewLeaseReturnProven |= value; }
+        internal bool PreviewLeaseAcknowledged { get => previewLeaseAcknowledged; set => previewLeaseAcknowledged |= value; }
+        internal bool FinalModuleTeardownProven { get => finalModuleTeardownProven; set => finalModuleTeardownProven |= value; }
+        internal bool NativeContextOwnershipReleased => previewLease
+            ? previewLeaseAcknowledged || finalModuleTeardownProven
+            : nativeReleased;
         internal BridgeGpuProofMode GpuProofMode => gpuProofMode;
         internal bool HasGpuReleaseProof => !hadTransferTexture ||
             (gpuProofMode == BridgeGpuProofMode.ReadbackTail && readbackCompleted && readbackValid) ||
             (gpuProofMode == BridgeGpuProofMode.FenceAndReadback && gpuFenceIssued && gpuFencePassed && readbackCompleted && readbackValid);
-        internal bool CanRelease => nativeReleased && HasGpuReleaseProof;
+        internal bool CanRelease => (previewLease
+            ? finalModuleTeardownProven || previewLeaseAcknowledged && previewLeaseReturnProven
+            : nativeReleased) && HasGpuReleaseProof;
         internal string Diagnostic => diagnostic;
 
         internal static BridgeWorkerRecoveryRecord Create(IntPtr handle, RenderTexture texture, bool closePending, long generation,
@@ -57,6 +85,19 @@ namespace ViewWeave
             record.nativeModulePath = moduleIdentity.FullPath;
             record.nativeModuleBaseAddress = moduleIdentity.BaseAddress.ToInt64();
             record.diagnostic = "Native worker lease is retained until native and GPU completion are proven.";
+            return record;
+        }
+
+        internal static BridgeWorkerRecoveryRecord CreatePreviewLease(IntPtr handle, RenderTexture texture, bool returnPending, long generation,
+            BridgeNativeModuleIdentity moduleIdentity, BridgeWorkerNative.PreviewLeaseIdentityV1 leaseIdentity)
+        {
+            BridgeWorkerRecoveryRecord record = Create(handle, texture, returnPending, generation, moduleIdentity);
+            record.previewLease = true;
+            record.previewLeaseIdentityStructSize = leaseIdentity.structSize;
+            record.previewLeaseIdentityVersion = leaseIdentity.version;
+            record.previewLeaseEndpointIdBits = unchecked((long)leaseIdentity.endpointId);
+            record.previewLeaseGenerationBits = unchecked((long)leaseIdentity.leaseGeneration);
+            record.diagnostic = "Native preview lease is retained until return, GPU, and owner-release proofs complete.";
             return record;
         }
 
@@ -101,6 +142,13 @@ namespace ViewWeave
         {
             return editorPreviewOwner == null || editorPreviewOwner.MarkWorkerRecoveryComplete(this);
         }
+
+        internal bool NotifyEditorPreviewOwnerReturnProven()
+        {
+            return editorPreviewOwner == null || editorPreviewOwner.MarkWorkerReturnProven(this);
+        }
+
+        internal bool EditorPreviewCoreResourcesReleased => editorPreviewOwner == null || editorPreviewOwner.CoreResourcesReleased;
 #endif
 
         internal IntPtr GetHandle() { return new IntPtr(nativeHandle); }
@@ -133,18 +181,35 @@ namespace ViewWeave
             diagnostic = new string(chars.ToArray());
         }
 
+        internal bool RetirePreviewLeaseTransferTextureAfterProof()
+        {
+            if (!previewLease || !(previewLeaseReturnProven || finalModuleTeardownProven) || !HasGpuReleaseProof) return false;
+#if UNITY_EDITOR
+            if (!EditorPreviewCoreResourcesReleased) return false;
+#endif
+            ReleaseTransferTexture();
+            return transferTexture == null;
+        }
+
         internal void ReleaseProvenResources()
         {
             if (!CanRelease) return;
-            if (transferTexture != null)
-            {
-                if (RenderTexture.active == transferTexture) RenderTexture.active = null;
-                if (transferTexture.IsCreated()) transferTexture.Release();
-                DestroyImmediate(transferTexture);
-                transferTexture = null;
-            }
+            ReleaseTransferTexture();
             nativeHandle = 0;
-            SetDiagnostic("Native worker and transfer texture were released after completion proof.");
+            SetDiagnostic(previewLease
+                ? previewLeaseAcknowledged
+                    ? "Preview lease was acknowledged and its transfer texture was released after completion proof."
+                    : "Preview lease was invalidated by matching final module shutdown and its transfer texture was released after completion proof."
+                : "Native worker and transfer texture were released after completion proof.");
+        }
+
+        void ReleaseTransferTexture()
+        {
+            if (transferTexture == null) return;
+            if (RenderTexture.active == transferTexture) RenderTexture.active = null;
+            if (transferTexture.IsCreated()) transferTexture.Release();
+            DestroyImmediate(transferTexture);
+            transferTexture = null;
         }
     }
 }

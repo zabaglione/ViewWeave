@@ -1,5 +1,10 @@
 #include "bridge_worker_transport.h"
 
+static bool LkgPreviewLeaseIdentityValid(const LkgWorkerPreviewLeaseIdentityV1* identity) {
+    return identity && identity->structSize == sizeof(LkgWorkerPreviewLeaseIdentityV1) && identity->version == 1 &&
+        identity->endpointId != 0 && identity->leaseGeneration != 0;
+}
+
 extern "C" LKG_EXPORT void* lkg_worker_begin(const char*, const char*, uint32_t, void*) { return nullptr; }
 extern "C" LKG_EXPORT int32_t lkg_worker_poll(void*, LkgWorkerStatus*) { return -1; }
 extern "C" LKG_EXPORT int32_t lkg_worker_close(void*) { return -1; }
@@ -8,6 +13,38 @@ extern "C" LKG_EXPORT int32_t lkg_worker_set_preview_paused(void*, uint32_t) { r
 extern "C" LKG_EXPORT int32_t lkg_worker_get_preview_pause_state(void*, uint32_t* phase) {
     if (phase) *phase = LKG_WORKER_PREVIEW_FAULTED;
     return -2;
+}
+extern "C" LKG_EXPORT int32_t lkg_worker_acquire_preview_lease_v1(const char* runtimePath, const char* applicationName, uint32_t, void*, void** leaseHandle,
+    LkgWorkerPreviewLeaseIdentityV1* identity) {
+    if (leaseHandle) *leaseHandle = nullptr;
+    if (!leaseHandle || !identity || !runtimePath || !runtimePath[0] || !applicationName || !applicationName[0])
+        return LKG_WORKER_PREVIEW_LEASE_RESULT_INVALID_ARGUMENT;
+    identity->structSize = sizeof(LkgWorkerPreviewLeaseIdentityV1);
+    identity->version = 1;
+    identity->endpointId = 0;
+    identity->leaseGeneration = 0;
+    return LKG_WORKER_PREVIEW_LEASE_RESULT_UNSUPPORTED;
+}
+extern "C" LKG_EXPORT int32_t lkg_worker_request_preview_lease_return_v1(void* handle, const LkgWorkerPreviewLeaseIdentityV1* identity) {
+    if (!handle || !LkgPreviewLeaseIdentityValid(identity)) return LKG_WORKER_PREVIEW_LEASE_RESULT_INVALID_ARGUMENT;
+    return LKG_WORKER_PREVIEW_LEASE_RESULT_UNSUPPORTED;
+}
+extern "C" LKG_EXPORT int32_t lkg_worker_get_preview_lease_status_v1(void* handle, const LkgWorkerPreviewLeaseIdentityV1* identity,
+    LkgWorkerPreviewLeaseStatusV1* status) {
+    if (!handle || !LkgPreviewLeaseIdentityValid(identity) || !status) return LKG_WORKER_PREVIEW_LEASE_RESULT_INVALID_ARGUMENT;
+    status->structSize = sizeof(LkgWorkerPreviewLeaseStatusV1);
+    status->version = 1;
+    status->state = LKG_WORKER_PREVIEW_LEASE_FAULTED;
+    status->endpointId = 0;
+    status->leaseGeneration = 0;
+    status->lastResult = -2;
+    status->reserved1 = 0;
+    status->workerStatus = {};
+    return LKG_WORKER_PREVIEW_LEASE_RESULT_UNSUPPORTED;
+}
+extern "C" LKG_EXPORT int32_t lkg_worker_ack_preview_lease_return_v1(void* handle, const LkgWorkerPreviewLeaseIdentityV1* identity) {
+    if (!handle || !LkgPreviewLeaseIdentityValid(identity)) return LKG_WORKER_PREVIEW_LEASE_RESULT_INVALID_ARGUMENT;
+    return LKG_WORKER_PREVIEW_LEASE_RESULT_UNSUPPORTED;
 }
 extern "C" LKG_EXPORT int32_t lkg_worker_release(void*) { return -1; }
 extern "C" LKG_EXPORT void* lkg_worker_make_draw_data(void*, void*, uint32_t, uint32_t, float, float) { return nullptr; }

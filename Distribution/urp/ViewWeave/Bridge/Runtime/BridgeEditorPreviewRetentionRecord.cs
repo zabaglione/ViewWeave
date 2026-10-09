@@ -17,6 +17,8 @@ namespace ViewWeave
         [SerializeField] bool workerProofExpected;
         [SerializeField] bool workerRecoveryAttached;
         [SerializeField] bool workerRecoveryComplete = true;
+        [SerializeField] bool workerReturnProven = true;
+        [SerializeField] bool coreResourcesReleased;
         [SerializeField] bool stopRequested;
         [SerializeField] bool detached;
         [SerializeField] bool gpuFencePassed;
@@ -32,6 +34,8 @@ namespace ViewWeave
         internal BridgeWorkerRecoveryRecord WorkerRecoveryRecord => workerRecoveryRecord;
         internal bool WorkerHandoffComplete => !workerProofExpected || workerRecoveryAttached;
         internal bool WorkerRecoveryComplete => !workerProofExpected || workerRecoveryComplete;
+        internal bool WorkerReturnProven => !workerProofExpected || workerReturnProven;
+        internal bool CoreResourcesReleased => coreResourcesReleased;
         internal bool WorkerProofExpectedForDiagnostics => workerProofExpected;
         internal bool StopRequested => stopRequested;
         internal bool Detached => detached;
@@ -39,7 +43,8 @@ namespace ViewWeave
         internal bool GpuProofComplete => textures == null || textures.Length == 0 ||
             (gpuProofMode == BridgeGpuProofMode.ReadbackTail && gpuReadbackComplete && gpuReadbackValid) ||
             (gpuProofMode == BridgeGpuProofMode.FenceAndReadback && gpuFencePassed && gpuReadbackComplete && gpuReadbackValid);
-        internal bool CanRelease => stopRequested && detached && WorkerHandoffComplete && WorkerRecoveryComplete && GpuProofComplete;
+        internal bool CanReleaseCoreResources => stopRequested && detached && WorkerHandoffComplete && WorkerReturnProven && GpuProofComplete;
+        internal bool CanRelease => CanReleaseCoreResources && WorkerRecoveryComplete && coreResourcesReleased;
         internal string Diagnostic => diagnostic ?? string.Empty;
 
         internal static BridgeEditorPreviewRetentionRecord Create(GameObject owner, QuiltRenderer quiltRenderer)
@@ -62,6 +67,7 @@ namespace ViewWeave
             tracked.Add(texture);
             textures = tracked.ToArray();
             detached = false;
+            coreResourcesReleased = false;
             gpuFencePassed = false;
             gpuReadbackComplete = false;
             gpuReadbackValid = false;
@@ -84,7 +90,12 @@ namespace ViewWeave
         {
             workerProofExpected = expected;
             if (expected) workerRecoveryComplete = false;
-            else if (!workerRecoveryAttached) workerRecoveryComplete = true;
+            if (expected) workerReturnProven = false;
+            else if (!workerRecoveryAttached)
+            {
+                workerRecoveryComplete = true;
+                workerReturnProven = true;
+            }
         }
 
         internal bool AttachWorkerRecoveryRecord(BridgeWorkerRecoveryRecord recoveryRecord)
@@ -95,12 +106,22 @@ namespace ViewWeave
             workerProofExpected = true;
             workerRecoveryAttached = true;
             workerRecoveryComplete = false;
+            workerReturnProven = false;
+            coreResourcesReleased = false;
+            return true;
+        }
+
+        internal bool MarkWorkerReturnProven(BridgeWorkerRecoveryRecord recoveryRecord)
+        {
+            if (recoveryRecord == null || !ReferenceEquals(workerRecoveryRecord, recoveryRecord)) return false;
+            workerReturnProven = true;
             return true;
         }
 
         internal bool MarkWorkerRecoveryComplete(BridgeWorkerRecoveryRecord recoveryRecord)
         {
             if (recoveryRecord == null || !ReferenceEquals(workerRecoveryRecord, recoveryRecord)) return false;
+            workerReturnProven = true;
             workerRecoveryComplete = true;
             return true;
         }
@@ -119,6 +140,7 @@ namespace ViewWeave
                 foreach (RenderTexture texture in value)
                     if (texture != null && !all.Contains(texture)) all.Add(texture);
             textures = all.ToArray();
+            coreResourcesReleased = false;
             for (int i = 0; i < textures.Length; i++)
                 if (textures[i] != null) textures[i].hideFlags |= HideFlags.HideAndDontSave | HideFlags.DontUnloadUnusedAsset;
             detached = true;
@@ -168,21 +190,30 @@ namespace ViewWeave
         internal void ReleaseAfterProof()
         {
             if (!CanRelease || releaseInProgress) return;
-            releaseInProgress = true;
-            foreach (RenderTexture texture in Textures)
-            {
-                if (texture == null) continue;
-                if (RenderTexture.active == texture) RenderTexture.active = null;
-                if (texture.IsCreated()) texture.Release();
-                DestroyImmediate(texture);
-            }
-            textures = Array.Empty<RenderTexture>();
-            if (producer != null) DestroyImmediate(producer);
-            producer = null;
-            renderer = null;
-            workerRecoveryRecord = null;
-            diagnostic = "Editor preview resources were released after independent GPU and worker proof.";
             DestroyImmediate(this);
+        }
+
+        internal void ReleaseCoreResourcesAfterProof()
+        {
+            if (!CanReleaseCoreResources || coreResourcesReleased || releaseInProgress) return;
+            releaseInProgress = true;
+            try
+            {
+                foreach (RenderTexture texture in Textures)
+                {
+                    if (texture == null) continue;
+                    if (RenderTexture.active == texture) RenderTexture.active = null;
+                    if (texture.IsCreated()) texture.Release();
+                    DestroyImmediate(texture);
+                }
+                textures = Array.Empty<RenderTexture>();
+                if (producer != null) DestroyImmediate(producer);
+                producer = null;
+                renderer = null;
+                coreResourcesReleased = true;
+                diagnostic = "Editor preview resources were released after Core GPU and native return proof; lease acknowledgement is pending.";
+            }
+            finally { releaseInProgress = false; }
         }
     }
 }

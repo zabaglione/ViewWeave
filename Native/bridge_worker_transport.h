@@ -40,6 +40,42 @@ typedef struct LkgWorkerStatus {
     char error[256];
 } LkgWorkerStatus;
 
+typedef enum LkgWorkerPreviewLeaseStateV1 {
+    LKG_WORKER_PREVIEW_LEASE_ACTIVE = 0,
+    LKG_WORKER_PREVIEW_LEASE_RETURNING = 1,
+    LKG_WORKER_PREVIEW_LEASE_RETURNED_PROVEN = 2,
+    LKG_WORKER_PREVIEW_LEASE_FAULTED = 3
+} LkgWorkerPreviewLeaseStateV1;
+
+typedef enum LkgWorkerPreviewLeaseResultV1 {
+    LKG_WORKER_PREVIEW_LEASE_RESULT_OK = 0,
+    LKG_WORKER_PREVIEW_LEASE_RESULT_BUSY = 1,
+    LKG_WORKER_PREVIEW_LEASE_RESULT_INVALID_ARGUMENT = -1,
+    LKG_WORKER_PREVIEW_LEASE_RESULT_UNSUPPORTED = -2,
+    LKG_WORKER_PREVIEW_LEASE_RESULT_RESTART_REQUIRED = -3,
+    LKG_WORKER_PREVIEW_LEASE_RESULT_NATIVE_FAILURE = -4,
+    LKG_WORKER_PREVIEW_LEASE_RESULT_STALE = -5
+} LkgWorkerPreviewLeaseResultV1;
+
+typedef struct LkgWorkerPreviewLeaseIdentityV1 {
+    uint32_t structSize;
+    uint32_t version;
+    uint64_t endpointId;
+    uint64_t leaseGeneration;
+} LkgWorkerPreviewLeaseIdentityV1;
+
+typedef struct LkgWorkerPreviewLeaseStatusV1 {
+    uint32_t structSize;
+    uint32_t version;
+    uint32_t state;
+    uint32_t reserved0;
+    uint64_t endpointId;
+    uint64_t leaseGeneration;
+    int32_t lastResult;
+    uint32_t reserved1;
+    LkgWorkerStatus workerStatus;
+} LkgWorkerPreviewLeaseStatusV1;
+
 typedef enum LkgWorkerFinalShutdownStateV1 {
     LKG_WORKER_FINAL_SHUTDOWN_NONE = 0,
     LKG_WORKER_FINAL_SHUTDOWN_DRAINING = 1,
@@ -95,6 +131,9 @@ typedef struct LkgWorkerDisplaySnapshotItemV1 {
 static_assert(sizeof(LkgWorkerFinalShutdownStatusV1) == 8 * sizeof(uint32_t), "final shutdown status ABI must be eight 32-bit fields");
 static_assert(sizeof(LkgWorkerDisplaySnapshotStatusV1) == 304, "display snapshot status V1 ABI size must remain stable");
 static_assert(sizeof(LkgWorkerDisplaySnapshotItemV1) == 76, "display snapshot item V1 ABI size must remain stable");
+static_assert(sizeof(LkgWorkerStatus) == 312, "worker status ABI must remain stable");
+static_assert(sizeof(LkgWorkerPreviewLeaseIdentityV1) == 24, "preview lease identity V1 ABI size must remain stable");
+static_assert(sizeof(LkgWorkerPreviewLeaseStatusV1) == 352, "preview lease status V1 ABI size must remain stable");
 #endif
 
 LKG_EXPORT void* lkg_worker_begin(const char* runtimePath, const char* applicationName, uint32_t displayOrdinal, void* producerDevice);
@@ -104,6 +143,23 @@ LKG_EXPORT int32_t lkg_worker_reset_transfer(void* handle);
 /* Pause/resume are asynchronous requests. Poll get_preview_pause_state until the requested phase is acknowledged. */
 LKG_EXPORT int32_t lkg_worker_set_preview_paused(void* handle, uint32_t paused);
 LKG_EXPORT int32_t lkg_worker_get_preview_pause_state(void* handle, uint32_t* phase);
+/*
+ * Preview lease handles are opaque registry tokens and are accepted by the existing
+ * worker operations while active. Acquire returns 0 when accepted (the worker can
+ * still be Connecting), 1 for retryable busy/return/ACK pending, and a negative
+ * LkgWorkerPreviewLeaseResultV1 value for a hard error. On every nonzero acquire
+ * result, handle and identity endpoint/generation are zero. Return fences new
+ * submissions immediately. ReturnedProven means producer work drained, stable-input
+ * transfer proof completed, and SDK hide acknowledged; it is not Unity retention or
+ * consumer GPU proof. ACK is required after those external proofs and gates the next
+ * acquire. Unknown or stale tokens/generations are rejected.
+ */
+LKG_EXPORT int32_t lkg_worker_acquire_preview_lease_v1(const char* runtimePath, const char* applicationName,
+    uint32_t displayOrdinal, void* producerDevice, void** leaseHandle, LkgWorkerPreviewLeaseIdentityV1* identity);
+LKG_EXPORT int32_t lkg_worker_request_preview_lease_return_v1(void* leaseHandle, const LkgWorkerPreviewLeaseIdentityV1* identity);
+LKG_EXPORT int32_t lkg_worker_get_preview_lease_status_v1(void* leaseHandle, const LkgWorkerPreviewLeaseIdentityV1* identity,
+    LkgWorkerPreviewLeaseStatusV1* status);
+LKG_EXPORT int32_t lkg_worker_ack_preview_lease_return_v1(void* leaseHandle, const LkgWorkerPreviewLeaseIdentityV1* identity);
 LKG_EXPORT int32_t lkg_worker_release(void* handle);
 LKG_EXPORT void* lkg_worker_make_draw_data(void* handle, void* texture, uint32_t columns, uint32_t rows, float aspect, float zoom);
 LKG_EXPORT int32_t lkg_worker_cancel_draw_data(void* drawData);

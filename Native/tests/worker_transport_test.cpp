@@ -30,6 +30,8 @@ int32_t lkg_worker_test_get_transfer_slot_identity(void* handle, uintptr_t* prod
     uintptr_t* workerTexture, uint64_t* generation);
 uint32_t lkg_worker_test_host_device_create_count(void);
 uintptr_t lkg_worker_test_host_device_identity(void);
+int32_t lkg_worker_test_get_preview_lease_resources(void* handle, uint64_t* endpointId,
+    uint64_t* generation, uint64_t* sessionId, uintptr_t* stableInputTexture);
 void lkg_worker_test_force_adapter_mismatch(void);
 int32_t lkg_worker_test_set_d3d12_timeout(void* handle, uint64_t timeoutMilliseconds);
 void lkg_worker_test_throw_during_cleanup(void);
@@ -62,6 +64,7 @@ static std::atomic<bool> g_drawEntered{false};
 static std::atomic<uint64_t> g_fakeSessionCounter{0};
 static std::atomic<uint64_t> g_lastCreatedSession{0};
 static std::atomic<uint64_t> g_lastDrawSession{0};
+static std::atomic<uintptr_t> g_lastDrawTextureIdentity{0};
 static std::atomic<uint32_t> g_sessionDestroyCount{0};
 static std::atomic<uint32_t> g_visibilityCalls{0};
 static std::atomic<uint32_t> g_visibilityHideCalls{0};
@@ -79,6 +82,7 @@ static std::atomic<bool> g_testReleaseDisplayQuery{false};
 static std::atomic<bool> g_workerClaimed{false};
 static std::atomic<unsigned long> g_producerThread{0};
 static std::atomic<unsigned long> g_workerThread{0};
+static std::atomic<unsigned long> g_lastDisplayQueryThread{0};
 static std::atomic<bool> g_copyVerified{false};
 static std::atomic<bool> g_testingD3D12{false};
 static std::atomic<uint8_t> g_expectedRed{ 0x22 };
@@ -140,6 +144,22 @@ static bool WaitPreviewPausePhase(void* handle, uint32_t phase, uint32_t timeout
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     } while (GetTickCount64() < deadline);
     return PreviewPausePhase(handle) == phase;
+}
+
+static bool WaitPreviewLeaseState(void* handle, const LkgWorkerPreviewLeaseIdentityV1& identity,
+    uint32_t state, uint32_t timeoutMs = 5000) {
+    const ULONGLONG deadline = GetTickCount64() + timeoutMs;
+    LkgWorkerPreviewLeaseStatusV1 status{};
+    do {
+        if (lkg_worker_get_preview_lease_status_v1(handle, &identity, &status) == 0 && status.state == state)
+            return true;
+        Sleep(1);
+    } while (GetTickCount64() < deadline);
+    return lkg_worker_get_preview_lease_status_v1(handle, &identity, &status) == 0 && status.state == state;
+}
+
+static bool WaitLeaseWorkerState(void* handle, uint32_t state, uint32_t timeoutMs = 5000) {
+    return WaitState(handle, state, timeoutMs);
 }
 
 static ULONG ReferenceCount(ID3D11Device* device) {
@@ -281,6 +301,21 @@ static bool WaitForDisplaySnapshot(void* handle, uint64_t generation, uint32_t t
         uint32_t required = 0;
         const int32_t result = lkg_worker_get_display_snapshot_v1(handle, &status, nullptr, 0, &required);
         if ((result == 0 || result == -3) && status.snapshotGeneration >= generation && status.pending == 0) return true;
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    return false;
+}
+
+static bool WaitForMetadataClose(void* handle, uint32_t timeoutMs = 2000) {
+    const auto start = GetTickCount64();
+    while (GetTickCount64() - start < timeoutMs) {
+        LkgWorkerDisplaySnapshotStatusV1 status{};
+        status.structSize = sizeof(status);
+        status.version = 1;
+        uint32_t required = 0;
+        const int32_t result = lkg_worker_get_display_snapshot_v1(handle, &status, nullptr, 0, &required);
+        if ((result == 0 || result == -3) && status.state == LKG_WORKER_CLOSED &&
+            status.pending == 0 && status.cleanupFinished == 1) return true;
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
     return false;
@@ -753,6 +788,324 @@ static void TestPreviewPauseVisibilityFailuresDoNotAcknowledge() {
     ReleaseAfterFault(handle, "failed resume context release");
 }
 
+static void TestPreviewLeaseReusesSessionAndStableSdkInput() {
+    ResetVisibilityTestState();
+    Check(g_hostInitializeCount.load() == 0 && g_hostUninitializeCount.load() == 0,
+        "preview lease test starts with an uninitialized fake SDK");
+
+    void* startupMetadata = lkg_worker_begin_metadata_v1("TEST-RUNTIME", "ViewWeave");
+    Check(startupMetadata != nullptr && WaitForDisplaySnapshot(startupMetadata, 1),
+        "legacy startup metadata performs its initial query before the first preview lease");
+    Check(lkg_worker_close(startupMetadata) == 0 && WaitForMetadataClose(startupMetadata),
+        "legacy startup metadata closes only after its initial query and cleanup proof");
+    Check(lkg_worker_end_metadata_v1(startupMetadata) == 0 && g_hostInitializeCount.load() == 1 &&
+        g_hostUninitializeCount.load() == 0,
+        "legacy metadata releases its worker while preserving exact application SDK ownership");
+
+    auto acquire = [](void** handle, LkgWorkerPreviewLeaseIdentityV1* identity) {
+        return lkg_worker_acquire_preview_lease_v1("TEST-RUNTIME", "ViewWeave", 0,
+            g_device.Get(), handle, identity);
+    };
+    void* firstHandle = nullptr;
+    LkgWorkerPreviewLeaseIdentityV1 firstIdentity{};
+    Check(acquire(&firstHandle, &firstIdentity) == LKG_WORKER_PREVIEW_LEASE_RESULT_OK && firstHandle != nullptr &&
+        firstIdentity.structSize == sizeof(firstIdentity) && firstIdentity.version == 1 &&
+        firstIdentity.endpointId != 0 && firstIdentity.leaseGeneration != 0,
+        "first preview lease acquires an opaque versioned token");
+    Check(WaitLeaseWorkerState(firstHandle, LKG_WORKER_READY), "first preview lease becomes ready");
+    const uint32_t firstWorkerThread = lkg_worker_test_thread_id(firstHandle);
+    Check(firstWorkerThread != 0, "preview lease has a persistent SDK owner thread");
+    const HWND firstWindow = lkg_worker_test_window(firstHandle);
+    Check(firstWindow != nullptr, "first lease creates a Bridge owner window");
+
+    uint64_t firstEndpoint = 0;
+    uint64_t firstGeneration = 0;
+    uint64_t firstSession = 0;
+    uintptr_t firstStableInput = 0;
+    Check(lkg_worker_test_get_preview_lease_resources(firstHandle, &firstEndpoint, &firstGeneration,
+        &firstSession, &firstStableInput) == 0 && firstEndpoint == firstIdentity.endpointId &&
+        firstGeneration == firstIdentity.leaseGeneration && firstSession != 0 && firstStableInput != 0,
+        "first lease owns a session and profile-sized stable SDK input");
+
+    void* busyHandle = reinterpret_cast<void*>(static_cast<uintptr_t>(1));
+    LkgWorkerPreviewLeaseIdentityV1 busyIdentity{ 0xFFFFFFFFu, 9, 77, 88 };
+    Check(acquire(&busyHandle, &busyIdentity) == LKG_WORKER_PREVIEW_LEASE_RESULT_BUSY && busyHandle == nullptr &&
+        busyIdentity.structSize == sizeof(busyIdentity) && busyIdentity.version == 1 &&
+        busyIdentity.endpointId == 0 && busyIdentity.leaseGeneration == 0,
+        "concurrent acquire is retryable and clears all output identity fields");
+    Check(lkg_worker_ack_preview_lease_return_v1(firstHandle, &firstIdentity) == LKG_WORKER_PREVIEW_LEASE_RESULT_BUSY,
+        "active lease cannot be acknowledged as returned");
+    LkgWorkerPreviewLeaseIdentityV1 staleIdentity = firstIdentity;
+    ++staleIdentity.leaseGeneration;
+    Check(lkg_worker_request_preview_lease_return_v1(firstHandle, &staleIdentity) == LKG_WORKER_PREVIEW_LEASE_RESULT_STALE,
+        "stale lease generation cannot request return");
+    Check(lkg_worker_request_preview_lease_return_v1(reinterpret_cast<void*>(static_cast<uintptr_t>(0x12345)),
+        &firstIdentity) == LKG_WORKER_PREVIEW_LEASE_RESULT_STALE,
+        "unknown lease token is rejected rather than treated as a returned proof");
+
+    auto callback = reinterpret_cast<void (*)(int, void*)>(lkg_worker_render_event_func());
+    auto firstTexture = MakeTexture(DXGI_FORMAT_R8G8B8A8_UNORM, 16, 16);
+    void* draw = lkg_worker_make_draw_data(firstHandle, firstTexture.Get(), 4, 4, 1.0f, 1.0f);
+    Check(draw != nullptr, "first lease accepts a profile-grid render");
+    void* consumedFirstLeaseDrawCallback = draw;
+    callback(0, draw);
+    Check(WaitCompleted(firstHandle, 1, 5000), "first lease draw completes through stable input");
+    Check(g_lastDrawSession.load(std::memory_order_acquire) == firstSession &&
+        g_lastDrawTextureIdentity.load(std::memory_order_acquire) == firstStableInput,
+        "Bridge receives the persistent stable input rather than a transfer slot");
+    Check(lkg_worker_make_draw_data(firstHandle, firstTexture.Get(), 4, 3, 1.0f, 1.0f) == nullptr,
+        "incompatible source grid is rejected without remapping");
+
+    LkgWorkerStatus beforeReturn{};
+    Check(lkg_worker_poll(firstHandle, &beforeReturn) == 0, "poll first lease before return");
+    void* delayedDraw = lkg_worker_make_draw_data(firstHandle, firstTexture.Get(), 4, 4, 1.0f, 1.0f);
+    Check(delayedDraw != nullptr, "unsubmitted draw token created before lease return");
+
+    Check(lkg_worker_request_preview_lease_return_v1(firstHandle, &firstIdentity) == 0 &&
+        lkg_worker_request_preview_lease_return_v1(firstHandle, &firstIdentity) == 0,
+        "duplicate lease return request is idempotent");
+    Check(lkg_worker_make_draw_data(firstHandle, firstTexture.Get(), 4, 4, 1.0f, 1.0f) == nullptr,
+        "new submissions are rejected as soon as lease return is requested");
+    callback(0, delayedDraw);
+    LkgWorkerPreviewLeaseStatusV1 returnedDrawStatus{};
+    const int32_t statusAfterReturn = lkg_worker_get_preview_lease_status_v1(firstHandle, &firstIdentity, &returnedDrawStatus);
+    Check(statusAfterReturn == 0 && returnedDrawStatus.workerStatus.completed == beforeReturn.completed &&
+        returnedDrawStatus.workerStatus.dropped >= beforeReturn.dropped + 1,
+        "late draw callback is dropped and cannot submit after return begins");
+    Check(lkg_worker_pending_count() == 1, "returning lease is counted as outstanding ownership");
+    Check(lkg_worker_ack_preview_lease_return_v1(firstHandle, &firstIdentity) == LKG_WORKER_PREVIEW_LEASE_RESULT_BUSY,
+        "return cannot be acknowledged before native hide and drain proof");
+    Check(WaitPreviewLeaseState(firstHandle, firstIdentity, LKG_WORKER_PREVIEW_LEASE_RETURNED_PROVEN),
+        "lease return is proven after hide and producer drain");
+    LkgWorkerPreviewLeaseStatusV1 firstReturned{};
+    Check(lkg_worker_get_preview_lease_status_v1(firstHandle, &firstIdentity, &firstReturned) == 0 &&
+        firstReturned.lastResult == 0 && firstReturned.workerStatus.state == LKG_WORKER_CLOSED &&
+        firstReturned.endpointId == firstEndpoint && firstReturned.leaseGeneration == firstGeneration,
+        "returned lease status carries its identity and closed worker status");
+    Check(lkg_worker_pending_count() == 1, "unacknowledged return remains outstanding");
+    void* unackedHandle = reinterpret_cast<void*>(static_cast<uintptr_t>(1));
+    LkgWorkerPreviewLeaseIdentityV1 unackedIdentity{ 0xFFFFFFFFu, 9, 77, 88 };
+    Check(acquire(&unackedHandle, &unackedIdentity) == LKG_WORKER_PREVIEW_LEASE_RESULT_BUSY &&
+        unackedHandle == nullptr && unackedIdentity.endpointId == 0 && unackedIdentity.leaseGeneration == 0,
+        "returned but unacknowledged lease blocks the next acquire");
+    Check(lkg_worker_ack_preview_lease_return_v1(firstHandle, &firstIdentity) == 0 &&
+        lkg_worker_ack_preview_lease_return_v1(firstHandle, &firstIdentity) == 0 &&
+        lkg_worker_pending_count() == 0,
+        "return acknowledgement is idempotent and releases the acquire barrier");
+    Check(lkg_worker_get_preview_lease_status_v1(firstHandle, &firstIdentity, &firstReturned) == 0 &&
+        firstReturned.state == LKG_WORKER_PREVIEW_LEASE_RETURNED_PROVEN && firstReturned.lastResult == 0 &&
+        firstReturned.workerStatus.state == LKG_WORKER_CLOSED,
+        "acknowledged return proof remains bound to its original generation");
+    LkgWorkerStatus stalePoll{};
+    Check(lkg_worker_poll(firstHandle, &stalePoll) == LKG_WORKER_PREVIEW_LEASE_RESULT_STALE,
+        "old generation handle is stale after acknowledgement");
+    Check(lkg_worker_make_draw_data(firstHandle, firstTexture.Get(), 4, 4, 1.0f, 1.0f) == nullptr,
+        "old generation cannot create draw data after acknowledgement");
+    firstTexture.Reset();
+
+    void* idleMetadata = lkg_worker_begin_metadata_v1("test-runtime", "ViewWeave");
+    Check(idleMetadata != nullptr, "idle metadata query attaches to the parked endpoint");
+    Check(WaitForDisplaySnapshot(idleMetadata, 1), "idle metadata proxy runs its initial query on the endpoint");
+    std::vector<LkgWorkerDisplaySnapshotItemV1> displayItems;
+    LkgWorkerDisplaySnapshotStatusV1 displayStatus = GetDisplaySnapshot(idleMetadata, displayItems);
+    Check(displayStatus.result == 0 && displayStatus.pending == 0 && displayStatus.itemCount == 1 &&
+        displayStatus.snapshotGeneration == 1 && displayItems[0].profile.quilt_columns == 4 &&
+        displayItems[0].profile.quilt_rows == 4,
+        "idle metadata proxy publishes its own initial snapshot generation");
+    uint64_t refreshGeneration = 0;
+    Check(lkg_worker_request_display_refresh_v1(idleMetadata, &refreshGeneration) == 0 && refreshGeneration != 0,
+        "idle metadata refresh is accepted on the persistent owner");
+    Check(WaitForDisplaySnapshot(idleMetadata, refreshGeneration), "idle endpoint publishes refreshed display metadata");
+    Check(g_lastDisplayQueryThread.load(std::memory_order_acquire) == firstWorkerThread,
+        "idle metadata refresh runs on the same persistent SDK owner thread");
+    displayStatus = GetDisplaySnapshot(idleMetadata, displayItems);
+    Check(displayStatus.result == 0 && displayStatus.pending == 0 && displayStatus.itemCount == 1 &&
+        displayStatus.snapshotGeneration == refreshGeneration &&
+        displayItems[0].profile.quilt_columns == 4 && displayItems[0].profile.quilt_rows == 4,
+        "idle metadata snapshot reads the same SDK owner without creating a worker");
+    LkgWorkerPhysicalDisplayInfoV1 metadataPhysical{};
+    metadataPhysical.structSize = sizeof(metadataPhysical);
+    metadataPhysical.version = 1;
+    Check(lkg_worker_get_physical_display_v1(idleMetadata, &metadataPhysical) == 0 && metadataPhysical.valid == 1 &&
+        metadataPhysical.pixelWidth == 1920 && metadataPhysical.pixelHeight == 1080,
+        "metadata proxy physical display lookup uses its captured snapshot");
+    Check(lkg_worker_end_metadata_v1(idleMetadata) == -3,
+        "metadata proxy cannot end before its close proof is complete");
+    Check(lkg_worker_close(idleMetadata) == 0 && WaitForMetadataClose(idleMetadata),
+        "metadata proxy close waits for its query and proves closure without closing the endpoint");
+    Check(lkg_worker_pending_count() == 1,
+        "closed metadata proxy remains pending until its owner releases the handle");
+    Check(lkg_worker_end_metadata_v1(idleMetadata) == 0 && lkg_worker_pending_count() == 0,
+        "metadata proxy releases only after closed cleanup proof");
+    Check(g_hostInitializeCount.load() == 1 && g_hostUninitializeCount.load() == 0 &&
+        g_sessionDestroyCount.load() == 0,
+        "metadata refresh preserves the initialized SDK and hidden session");
+
+    g_testHoldDisplayQuery.store(true, std::memory_order_release);
+    g_testDisplayQueryEntered.store(false, std::memory_order_release);
+    g_testReleaseDisplayQuery.store(false, std::memory_order_release);
+    void* closingMetadata = lkg_worker_begin_metadata_v1("test-runtime", "ViewWeave");
+    Check(closingMetadata != nullptr, "in-flight metadata proxy begins on the parked endpoint");
+    const auto queryWaitStart = GetTickCount64();
+    while (!g_testDisplayQueryEntered.load(std::memory_order_acquire) && GetTickCount64() - queryWaitStart < 2000)
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    Check(g_testDisplayQueryEntered.load(std::memory_order_acquire),
+        "metadata proxy initial query entered the SDK owner thread");
+    Check(lkg_worker_close(closingMetadata) == 0,
+        "metadata close is accepted while its owner-thread query is in flight");
+    std::vector<LkgWorkerDisplaySnapshotItemV1> inFlightItems;
+    LkgWorkerDisplaySnapshotStatusV1 inFlightStatus = GetDisplaySnapshot(closingMetadata, inFlightItems);
+    Check(inFlightStatus.state == LKG_WORKER_CLOSING && inFlightStatus.pending == 1 &&
+        inFlightStatus.cleanupFinished == 0 && lkg_worker_end_metadata_v1(closingMetadata) == -3,
+        "metadata close cannot claim cleanup while the owner query is still blocked");
+    g_testReleaseDisplayQuery.store(true, std::memory_order_release);
+    Check(WaitForMetadataClose(closingMetadata),
+        "in-flight metadata cancellation completes only after the owner query returns");
+    Check(lkg_worker_end_metadata_v1(closingMetadata) == 0 &&
+        g_lastDisplayQueryThread.load(std::memory_order_acquire) == firstWorkerThread &&
+        g_sessionDestroyCount.load() == 0 && g_hostUninitializeCount.load() == 0,
+        "in-flight metadata close releases its proxy without destroying the persistent endpoint");
+    g_testHoldDisplayQuery.store(false, std::memory_order_release);
+
+    void* secondHandle = nullptr;
+    LkgWorkerPreviewLeaseIdentityV1 secondIdentity{};
+    Check(acquire(&secondHandle, &secondIdentity) == 0 && secondHandle != nullptr &&
+        secondIdentity.endpointId == firstIdentity.endpointId &&
+        secondIdentity.leaseGeneration > firstIdentity.leaseGeneration,
+        "next lease keeps endpoint identity and advances its generation");
+    Check(WaitLeaseWorkerState(secondHandle, LKG_WORKER_READY), "second preview lease becomes ready");
+    Check(lkg_worker_test_window(secondHandle) == firstWindow,
+        "reacquire retains the same Bridge owner window");
+    Check(lkg_worker_get_preview_lease_status_v1(firstHandle, &firstIdentity, &firstReturned) == 0 &&
+        firstReturned.state == LKG_WORKER_PREVIEW_LEASE_RETURNED_PROVEN &&
+        firstReturned.workerStatus.state == LKG_WORKER_CLOSED,
+        "old ACKed generation still reports its own return proof after a newer acquire");
+    Check(lkg_worker_ack_preview_lease_return_v1(firstHandle, &firstIdentity) == 0 &&
+        lkg_worker_request_preview_lease_return_v1(firstHandle, &firstIdentity) == LKG_WORKER_PREVIEW_LEASE_RESULT_STALE,
+        "old ACK retry remains idempotent while return requests reject the acknowledged generation");
+    LkgWorkerStatus beforeStaleCallback{};
+    Check(lkg_worker_poll(secondHandle, &beforeStaleCallback) == 0, "poll new generation before stale callback replay");
+    callback(0, consumedFirstLeaseDrawCallback);
+    LkgWorkerStatus afterStaleCallback{};
+    Check(lkg_worker_poll(secondHandle, &afterStaleCallback) == 0 &&
+        afterStaleCallback.submitted == beforeStaleCallback.submitted &&
+        afterStaleCallback.completed == beforeStaleCallback.completed &&
+        afterStaleCallback.dropped == beforeStaleCallback.dropped,
+        "consumed old-generation callback replay cannot affect the new lease after its source is released");
+    uint64_t secondEndpoint = 0;
+    uint64_t secondGeneration = 0;
+    uint64_t secondSession = 0;
+    uintptr_t secondStableInput = 0;
+    Check(lkg_worker_test_get_preview_lease_resources(secondHandle, &secondEndpoint, &secondGeneration,
+        &secondSession, &secondStableInput) == 0 && secondEndpoint == firstEndpoint &&
+        secondGeneration == secondIdentity.leaseGeneration && secondSession == firstSession &&
+        secondStableInput == firstStableInput,
+        "reacquire preserves the endpoint, Bridge session, and stable SDK input identity");
+    Check(g_visibilityState.load(std::memory_order_acquire) == 1 && g_sessionDestroyCount.load() == 0,
+        "reacquire shows the same session without destroying it");
+
+    void* activeMetadata = lkg_worker_begin_metadata_v1("TEST-RUNTIME", "ViewWeave");
+    Check(activeMetadata != nullptr && WaitForDisplaySnapshot(activeMetadata, 1),
+        "active lease metadata proxy runs its initial query on the same endpoint");
+    uint64_t activeRefreshGeneration = 0;
+    Check(lkg_worker_request_display_refresh_v1(activeMetadata, &activeRefreshGeneration) == 0 &&
+        WaitForDisplaySnapshot(activeMetadata, activeRefreshGeneration),
+        "active lease metadata refresh completes without replacing the rendering lease");
+    Check(lkg_worker_close(activeMetadata) == 0 && WaitForMetadataClose(activeMetadata) &&
+        lkg_worker_end_metadata_v1(activeMetadata) == 0,
+        "active metadata proxy closes and ends independently of its rendering lease");
+    LkgWorkerStatus activeAfterMetadata{};
+    Check(lkg_worker_poll(secondHandle, &activeAfterMetadata) == 0 && activeAfterMetadata.state == LKG_WORKER_READY &&
+        activeAfterMetadata.completed == beforeStaleCallback.completed,
+        "metadata query preserves active lease render status");
+
+    Check(lkg_worker_reset_transfer(secondHandle) == 0, "quiescent lease transfer slots reset for a new quality size");
+    auto resizedTexture = MakeTexture(DXGI_FORMAT_R8G8B8A8_UNORM, 32, 16);
+    draw = lkg_worker_make_draw_data(secondHandle, resizedTexture.Get(), 4, 4, 1.0f, 1.0f);
+    Check(draw != nullptr, "second lease accepts a resized source quilt with the fixed grid");
+    callback(0, draw);
+    Check(WaitCompleted(secondHandle, 1, 5000), "resized source quilt uploads and draws");
+    Check(g_lastDrawSession.load() == firstSession && g_lastDrawTextureIdentity.load() == firstStableInput,
+        "resized quality source still draws through the same stable input and session");
+
+    Check(lkg_worker_close_all() == 0, "close_all requests lease return without finalizing the endpoint");
+    Check(lkg_worker_request_preview_lease_return_v1(secondHandle, &secondIdentity) == 0,
+        "close_all return can be observed idempotently by the lease owner");
+    Check(WaitPreviewLeaseState(secondHandle, secondIdentity, LKG_WORKER_PREVIEW_LEASE_RETURNED_PROVEN),
+        "close_all parks the endpoint after proving return");
+    Check(lkg_worker_pending_count() == 1, "close_all return remains pending until acknowledgement");
+    Check(lkg_worker_ack_preview_lease_return_v1(secondHandle, &secondIdentity) == 0,
+        "close_all parked lease acknowledgement");
+
+    void* thirdHandle = nullptr;
+    LkgWorkerPreviewLeaseIdentityV1 thirdIdentity{};
+    Check(acquire(&thirdHandle, &thirdIdentity) == 0 && thirdHandle != nullptr &&
+        thirdIdentity.endpointId == firstEndpoint,
+        "close_all does not prevent a later lease on the parked endpoint");
+    Check(WaitLeaseWorkerState(thirdHandle, LKG_WORKER_READY), "third preview lease becomes ready");
+    uint64_t thirdEndpoint = 0;
+    uint64_t thirdGeneration = 0;
+    uint64_t thirdSession = 0;
+    uintptr_t thirdStableInput = 0;
+    Check(lkg_worker_test_get_preview_lease_resources(thirdHandle, &thirdEndpoint, &thirdGeneration,
+        &thirdSession, &thirdStableInput) == 0 && thirdEndpoint == firstEndpoint &&
+        thirdSession == firstSession && thirdStableInput == firstStableInput && lkg_worker_test_window(thirdHandle) == firstWindow,
+        "third lease after close_all preserves the same SDK resources");
+
+    for (uint32_t cycle = 0; cycle < 8; ++cycle) {
+        void* returningHandle = thirdHandle;
+        const LkgWorkerPreviewLeaseIdentityV1 returningIdentity = thirdIdentity;
+        Check(lkg_worker_request_preview_lease_return_v1(thirdHandle, &thirdIdentity) == 0 &&
+            WaitPreviewLeaseState(thirdHandle, thirdIdentity, LKG_WORKER_PREVIEW_LEASE_RETURNED_PROVEN),
+            "reacquire race cycle proves prior lease return");
+        Check(lkg_worker_ack_preview_lease_return_v1(thirdHandle, &thirdIdentity) == 0,
+            "reacquire race cycle acknowledges prior generation");
+        thirdHandle = nullptr;
+        thirdIdentity = {};
+        Check(acquire(&thirdHandle, &thirdIdentity) == 0 && thirdHandle != nullptr &&
+            thirdIdentity.endpointId == firstEndpoint && thirdIdentity.leaseGeneration > returningIdentity.leaseGeneration,
+            "immediate reacquire after return proof preserves endpoint and advances generation");
+        Check(WaitLeaseWorkerState(thirdHandle, LKG_WORKER_READY),
+            "worker observes the fully published generation during immediate reacquire");
+        uint64_t cycleEndpoint = 0;
+        uint64_t cycleGeneration = 0;
+        uint64_t cycleSession = 0;
+        uintptr_t cycleStableInput = 0;
+        Check(lkg_worker_test_get_preview_lease_resources(thirdHandle, &cycleEndpoint, &cycleGeneration,
+            &cycleSession, &cycleStableInput) == 0 && cycleEndpoint == firstEndpoint &&
+            cycleGeneration == thirdIdentity.leaseGeneration && cycleSession == firstSession &&
+            cycleStableInput == firstStableInput && lkg_worker_test_window(thirdHandle) == firstWindow,
+            "repeated immediate reacquire keeps session, input, and owner window stable");
+        Check(lkg_worker_get_preview_lease_status_v1(returningHandle, &returningIdentity,
+            &firstReturned) == 0 && firstReturned.state == LKG_WORKER_PREVIEW_LEASE_RETURNED_PROVEN &&
+            firstReturned.workerStatus.state == LKG_WORKER_CLOSED,
+            "reacquire race retains the prior generation proof independently");
+    }
+
+    void* finalMetadata = lkg_worker_begin_metadata_v1("TEST-RUNTIME", "ViewWeave");
+    Check(finalMetadata != nullptr && WaitForDisplaySnapshot(finalMetadata, 1),
+        "final shutdown metadata proxy completes its initial query");
+    Check(lkg_worker_close(finalMetadata) == 0 && WaitForMetadataClose(finalMetadata),
+        "final shutdown metadata proxy is closed before endpoint teardown");
+
+    Check(lkg_worker_request_final_shutdown() == 0, "explicit final shutdown closes active lease and endpoint");
+    LkgWorkerFinalShutdownStatusV1 finalStatus{};
+    finalStatus.structSize = sizeof(finalStatus);
+    finalStatus.version = 1;
+    Check(lkg_worker_wait_final_shutdown_v1(5000, &finalStatus) == 0 &&
+        finalStatus.state == LKG_WORKER_FINAL_SHUTDOWN_COMPLETE && finalStatus.hostJoined == 1 &&
+        finalStatus.registeredContexts == 0,
+        "final shutdown proves SDK release and collects the endpoint");
+    std::vector<LkgWorkerDisplaySnapshotItemV1> finalItems;
+    LkgWorkerDisplaySnapshotStatusV1 finalSnapshot = GetDisplaySnapshot(finalMetadata, finalItems);
+    Check(finalSnapshot.state == LKG_WORKER_CLOSED && finalSnapshot.cleanupFinished == 1 &&
+        lkg_worker_end_metadata_v1(finalMetadata) == 0,
+        "metadata close proof remains readable and releasable after explicit endpoint finalization");
+    Check(lkg_worker_pending_count() == 0 && g_hostInitializeCount.load() == 1 &&
+        g_hostUninitializeCount.load() == 1 && g_sessionDestroyCount.load() == 1,
+        "final shutdown uninitializes once and closes the single persistent session once");
+}
+
 static void TestTransferResetResize() {
     void* handle = nullptr;
     BeginContext(&handle);
@@ -1059,6 +1412,7 @@ int32_t lkg_bridge_version(char*, uint32_t) { return 0; }
 int32_t lkg_bridge_get_display_count(uint32_t* count) {
     if (!count) return -1;
     if (g_workerThread.load(std::memory_order_acquire) != GetCurrentThreadId()) return -99;
+    g_lastDisplayQueryThread.store(GetCurrentThreadId(), std::memory_order_release);
     if (g_testHoldDisplayQuery.load(std::memory_order_acquire)) {
         g_testDisplayQueryEntered.store(true, std::memory_order_release);
         while (!g_testReleaseDisplayQuery.load(std::memory_order_acquire)) Sleep(1);
@@ -1121,6 +1475,7 @@ int32_t lkg_bridge_smoke_draw(uint64_t session, void* texture, uint32_t, uint32_
     if (g_drawFailure.load()) return -202;
     VerifyWorkerTexture(texture);
     g_lastDrawSession.store(session, std::memory_order_release);
+    g_lastDrawTextureIdentity.store(reinterpret_cast<uintptr_t>(texture), std::memory_order_release);
     g_drawEntered.store(true, std::memory_order_release);
     while (g_holdDraw.load(std::memory_order_acquire)) Sleep(1);
     ++g_drawCount;
@@ -1512,6 +1867,11 @@ int main(int argc, char** argv) {
         TestPreviewPauseResumePreservesSessionAndDrains();
         TestPreviewPauseVisibilityFailuresDoNotAcknowledge();
         std::fprintf(stdout, "worker_preview_pause_test pass\n");
+        return 0;
+    }
+    if (argc == 2 && std::strcmp(argv[1], "--preview-lease-only") == 0) {
+        TestPreviewLeaseReusesSessionAndStableSdkInput();
+        std::fprintf(stdout, "worker_preview_lease_test pass\n");
         return 0;
     }
     TestD3D12RingColors();

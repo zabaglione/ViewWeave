@@ -170,9 +170,11 @@ namespace ViewWeave
                         if (!record.Detached) { complete = false; continue; }
                     }
                     if (!record.GpuProofComplete && !PumpGpuProof(record, waitForProof)) { complete = false; continue; }
-                    if (!record.CanRelease) { complete = false; continue; }
                     Attempts.Remove(record);
-                    record.ReleaseAfterProof();
+                    if (record.CanReleaseCoreResources && !record.CoreResourcesReleased)
+                        record.ReleaseCoreResourcesAfterProof();
+                    if (record.CanRelease) record.ReleaseAfterProof();
+                    else complete = false;
                 }
                 catch (Exception error)
                 {

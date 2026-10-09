@@ -28,6 +28,41 @@ namespace ViewWeave
         }
 
         [StructLayout(LayoutKind.Sequential)]
+        internal struct PreviewLeaseIdentityV1
+        {
+            public uint structSize;
+            public uint version;
+            public ulong endpointId;
+            public ulong leaseGeneration;
+        }
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
+        internal struct PreviewLeaseStatusV1
+        {
+            public uint structSize;
+            public uint version;
+            public uint state;
+            public uint reserved0;
+            public ulong endpointId;
+            public ulong leaseGeneration;
+            public int lastResult;
+            public uint reserved1;
+            public Status workerStatus;
+        }
+
+        internal const uint PreviewLeaseStateActive = 0;
+        internal const uint PreviewLeaseStateReturning = 1;
+        internal const uint PreviewLeaseStateReturnedProven = 2;
+        internal const uint PreviewLeaseStateFaulted = 3;
+        internal const int PreviewLeaseResultOk = 0;
+        internal const int PreviewLeaseResultBusy = 1;
+        internal const int PreviewLeaseResultInvalid = -1;
+        internal const int PreviewLeaseResultUnsupported = -2;
+        internal const int PreviewLeaseResultRestartRequired = -3;
+        internal const int PreviewLeaseResultNativeFailure = -4;
+        internal const int PreviewLeaseResultStale = -5;
+
+        [StructLayout(LayoutKind.Sequential)]
         internal struct FinalShutdownStatusV1
         {
             public uint structSize;
@@ -53,6 +88,18 @@ namespace ViewWeave
 
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr lkg_worker_begin([MarshalAs(UnmanagedType.LPUTF8Str)] string runtimePath, [MarshalAs(UnmanagedType.LPUTF8Str)] string applicationName, uint displayOrdinal, IntPtr producerDevice);
+        [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern int lkg_worker_acquire_preview_lease_v1(
+            [MarshalAs(UnmanagedType.LPUTF8Str)] string runtimePath,
+            [MarshalAs(UnmanagedType.LPUTF8Str)] string applicationName,
+            uint displayOrdinal, IntPtr producerDevice, out IntPtr leaseHandle, out PreviewLeaseIdentityV1 identity);
+        [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern int lkg_worker_request_preview_lease_return_v1(IntPtr leaseHandle, ref PreviewLeaseIdentityV1 identity);
+        [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern int lkg_worker_get_preview_lease_status_v1(IntPtr leaseHandle, ref PreviewLeaseIdentityV1 identity,
+            out PreviewLeaseStatusV1 status);
+        [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern int lkg_worker_ack_preview_lease_return_v1(IntPtr leaseHandle, ref PreviewLeaseIdentityV1 identity);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
         internal static extern int lkg_worker_poll(IntPtr handle, out Status status);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]

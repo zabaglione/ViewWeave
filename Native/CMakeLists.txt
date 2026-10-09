@@ -3,6 +3,10 @@ project(lookingglass_bridge_shim LANGUAGES CXX)
 
 include(CTest)
 
+if (WIN32)
+  include("${CMAKE_CURRENT_SOURCE_DIR}/stable_sdk_input_d3d11.cmake")
+endif()
+
 if (APPLE)
   enable_language(OBJCXX)
 endif()
@@ -60,6 +64,7 @@ if (NOT LKG_TRANSPORT_TESTS_ONLY)
     endif()
     target_compile_definitions(lookingglass_bridge_shim PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
     target_link_libraries(lookingglass_bridge_shim PRIVATE user32 d3d11 d3d12 dxgi)
+    lkg_add_stable_sdk_input(lookingglass_bridge_shim)
   elseif(APPLE)
     if (NOT DEFINED UNITY_PLUGIN_API_DIR OR UNITY_PLUGIN_API_DIR STREQUAL "")
       set(UNITY_PLUGIN_API_DIR "$ENV{UNITY_PLUGIN_API_DIR}")
@@ -159,6 +164,7 @@ if (WIN32 AND BUILD_TESTING)
   target_include_directories(lookingglass_worker_transport_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
   target_compile_definitions(lookingglass_worker_transport_test PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX LKG_WORKER_TRANSPORT_TESTING)
   target_link_libraries(lookingglass_worker_transport_test PRIVATE d3d11 d3d12 dxgi user32)
+  lkg_add_stable_sdk_input(lookingglass_worker_transport_test)
   add_test(NAME lookingglass_worker_transport_test COMMAND lookingglass_worker_transport_test)
   set_tests_properties(lookingglass_worker_transport_test PROPERTIES TIMEOUT 60)
   add_test(NAME lookingglass_worker_cleanup_exception_test
@@ -176,6 +182,10 @@ if (WIN32 AND BUILD_TESTING)
   add_test(NAME lookingglass_worker_preview_pause_test
     COMMAND lookingglass_worker_transport_test --preview-pause-only)
   set_tests_properties(lookingglass_worker_preview_pause_test PROPERTIES TIMEOUT 30)
+  add_test(NAME lookingglass_worker_preview_lease_test
+    COMMAND lookingglass_worker_transport_test --preview-lease-only)
+  set_tests_properties(lookingglass_worker_preview_lease_test PROPERTIES TIMEOUT 30)
+  lkg_add_stable_sdk_input_test(lookingglass_stable_sdk_input_d3d11_test)
 
   if (NOT LKG_TRANSPORT_TESTS_ONLY)
     add_library(lkg_fake_bridge_runtime SHARED tests/fake_bridge_runtime.cpp)

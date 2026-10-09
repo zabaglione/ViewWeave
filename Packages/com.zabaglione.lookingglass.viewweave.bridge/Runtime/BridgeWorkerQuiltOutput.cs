@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
@@ -119,7 +120,7 @@ namespace ViewWeave
         {
             get
             {
-                int managed = BridgeWorkerReaper.PendingCount;
+                int managed = Math.Max(BridgeWorkerReaper.PendingCount, PendingLeaseAcquisitionCount());
                 if (Application.isEditor)
                 {
                     if (!BridgeNativeImageGuard.TryValidateGlobalCalls(out bool loaded, out _, out _)) return Math.Max(1, managed);
@@ -130,12 +131,19 @@ namespace ViewWeave
                 catch (EntryPointNotFoundException) { return managed; }
             }
         }
+        static int PendingLeaseAcquisitionCount()
+        {
+            int count = 0;
+            foreach (BridgeWorkerQuiltOutput output in Resources.FindObjectsOfTypeAll<BridgeWorkerQuiltOutput>())
+                if (output != null && output.previewLeaseAcquirePending) count++;
+            return count;
+        }
         internal static bool HasNativeHandle
         {
             get
             {
                 foreach (BridgeWorkerQuiltOutput output in Resources.FindObjectsOfTypeAll<BridgeWorkerQuiltOutput>())
-                    if (output != null && output.handle != IntPtr.Zero) return true;
+                    if (output != null && (output.handle != IntPtr.Zero || output.previewLeaseAcquirePending)) return true;
                 return BridgeWorkerReaper.PendingCount != 0;
             }
         }
@@ -190,11 +198,18 @@ namespace ViewWeave
         bool editorPreviewSubmissionsPaused;
 #endif
         bool disposalInProgress;
+        bool previewLease;
+        bool previewLeaseAcquirePending;
+        bool previewLeaseReturnRequested;
+        double previewLeaseAcquireStartedAt;
+        BridgeWorkerNative.PreviewLeaseIdentityV1 previewLeaseIdentity;
         long sessionGeneration;
         long lastReaperHandoffGeneration;
         BridgeNativeModuleIdentity nativeModuleIdentity;
         internal IntPtr NativeHandle => handle;
         internal BridgeNativeModuleIdentity NativeModuleIdentity => nativeModuleIdentity;
+        internal bool UsesPreviewLease => previewLease;
+        internal BridgeWorkerNative.PreviewLeaseIdentityV1 PreviewLeaseIdentity => previewLeaseIdentity;
         public long SessionGeneration => sessionGeneration;
         public long LastReaperHandoffGeneration => lastReaperHandoffGeneration;
         public event Action<long> PlaybackReaperHandoff;
@@ -596,6 +611,9 @@ namespace ViewWeave
             }
             if (BridgeWorkerLifecycle.RecoveryPending)
                 return Fail("Bridge worker shutdown recovery is still pending");
+            if (UsesPersistentPreviewLease(route) &&
+                (BridgeWorkerReaper.PendingCount != 0 || PendingLeaseAcquisitionCount() != 0 || HasOtherNativeWorker(this)))
+                return Fail("Another Bridge worker lease is active or still returning; wait for its cleanup before starting this worker.");
             if (!BridgeGraphicsBackendPolicy.TrySelect(
                 route,
                 Application.platform,
@@ -623,6 +641,10 @@ namespace ViewWeave
             transferAntiAliasingDiagnostic = 0;
             transferDimensionName = string.Empty;
             nativeModuleIdentity = default;
+            previewLease = false;
+            previewLeaseAcquirePending = false;
+            previewLeaseReturnRequested = false;
+            previewLeaseIdentity = default;
 #if UNITY_EDITOR
             if (!BridgeNativeImageGuard.TryInspectEditorProcess(out string imageGuardError)) return Fail(imageGuardError);
 #endif
@@ -643,6 +665,22 @@ namespace ViewWeave
 #if UNITY_EDITOR
             if (!BridgeNativeImageGuard.TryCaptureCurrentIdentity(out nativeModuleIdentity, out imageGuardError)) return Fail(imageGuardError);
 #endif
+            sessionGeneration = ++nextSessionGeneration;
+            if (UsesPersistentPreviewLease(route))
+            {
+                previewLease = true;
+                previewLeaseAcquireStartedAt = Time.realtimeSinceStartupAsDouble;
+                if (!TryAcquirePreviewLease()) return false;
+                if (previewLeaseAcquirePending)
+                {
+                    state = WorkerState.Connecting;
+                    LastError = string.Empty;
+                    return true;
+                }
+                state = WorkerState.Connecting;
+                LastError = string.Empty;
+                return true;
+            }
             try
             {
 #if UNITY_EDITOR
@@ -654,14 +692,120 @@ namespace ViewWeave
             catch (EntryPointNotFoundException) { return Fail("Bridge worker ABI entry point is missing"); }
             catch (Exception error) { return Fail(Sanitize(error.Message)); }
             if (handle == IntPtr.Zero) return Fail("Bridge worker begin failed");
-            sessionGeneration = ++nextSessionGeneration;
             state = WorkerState.Connecting;
             LastError = string.Empty;
             return true;
         }
 
+        static bool UsesPersistentPreviewLease(BridgeGraphicsBackendRoute route)
+        {
+            return route == BridgeGraphicsBackendRoute.Worker || route == BridgeGraphicsBackendRoute.EditorPreview
+                ? Application.platform == RuntimePlatform.WindowsEditor || Application.platform == RuntimePlatform.WindowsPlayer
+                : false;
+        }
+
+        static bool HasOtherNativeWorker(BridgeWorkerQuiltOutput current)
+        {
+            foreach (BridgeWorkerQuiltOutput output in Resources.FindObjectsOfTypeAll<BridgeWorkerQuiltOutput>())
+                if (output != null && output != current && (output.handle != IntPtr.Zero || output.previewLeaseAcquirePending)) return true;
+            return false;
+        }
+
+        bool TryAcquirePreviewLease()
+        {
+            if (Time.realtimeSinceStartupAsDouble - previewLeaseAcquireStartedAt > 10.0)
+            {
+                previewLeaseAcquirePending = false;
+                return Fail("Bridge preview endpoint remained busy or unverified for 10 seconds.");
+            }
+#if UNITY_EDITOR
+            if (!BridgeNativeImageGuard.TryValidateOwnerIdentity(nativeModuleIdentity, out string identityError))
+            {
+                if (BridgeNativeImageGuard.IsValidationPending)
+                {
+                    previewLeaseAcquirePending = true;
+                    state = WorkerState.Connecting;
+                    return true;
+                }
+                return Fail(identityError);
+            }
+#endif
+            IntPtr acquiredHandle;
+            BridgeWorkerNative.PreviewLeaseIdentityV1 acquiredIdentity;
+            int result;
+            try
+            {
+                if (Marshal.SizeOf(typeof(BridgeWorkerNative.PreviewLeaseIdentityV1)) != 24 ||
+                    Marshal.SizeOf(typeof(BridgeWorkerNative.PreviewLeaseStatusV1)) != 352)
+                    return Fail("Bridge preview lease ABI layout does not match the supported version.");
+                result = BridgeWorkerNative.lkg_worker_acquire_preview_lease_v1(runtimePath, applicationName,
+                    displayOrdinal, IntPtr.Zero, out acquiredHandle, out acquiredIdentity);
+            }
+            catch (DllNotFoundException) { return Fail("Bridge worker native library is missing."); }
+            catch (EntryPointNotFoundException)
+            {
+                return Fail("The loaded Bridge native library does not support persistent preview leases. Update the package and restart the Unity Editor.");
+            }
+            catch (Exception error) { return Fail(Sanitize(error.Message)); }
+
+            if (result == BridgeWorkerNative.PreviewLeaseResultBusy)
+            {
+                if (acquiredHandle != IntPtr.Zero || acquiredIdentity.endpointId != 0 || acquiredIdentity.leaseGeneration != 0)
+                    return Fail("Bridge returned a handle for a busy preview lease request; ownership is ambiguous and was rejected.");
+                if (Time.realtimeSinceStartupAsDouble - previewLeaseAcquireStartedAt > 10.0)
+                {
+                    previewLeaseAcquirePending = false;
+                    return Fail("Bridge preview endpoint remained busy for 10 seconds.");
+                }
+                previewLeaseAcquirePending = true;
+                state = WorkerState.Connecting;
+                return true;
+            }
+            if (result != BridgeWorkerNative.PreviewLeaseResultOk)
+            {
+                if (acquiredHandle != IntPtr.Zero)
+                {
+                    handle = acquiredHandle;
+                    previewLeaseIdentity = acquiredIdentity;
+                    previewLeaseAcquirePending = false;
+                    state = WorkerState.Fault;
+                }
+                string reason = result == BridgeWorkerNative.PreviewLeaseResultUnsupported
+                    ? "Persistent preview leases are unsupported by the loaded Bridge native library."
+                    : result == BridgeWorkerNative.PreviewLeaseResultRestartRequired
+                        ? "The Bridge endpoint configuration changed; restart the Unity Editor before reconnecting."
+                        : result == BridgeWorkerNative.PreviewLeaseResultStale
+                            ? "Bridge rejected a stale preview lease identity."
+                            : "Bridge preview lease acquisition failed (code " + result.ToString(CultureInfo.InvariantCulture) + ").";
+                return Fail(reason);
+            }
+            if (acquiredHandle == IntPtr.Zero || acquiredIdentity.structSize != 24 || acquiredIdentity.version != 1 ||
+                acquiredIdentity.endpointId == 0 || acquiredIdentity.leaseGeneration == 0)
+            {
+                handle = acquiredHandle;
+                previewLeaseIdentity = acquiredIdentity;
+                previewLeaseAcquirePending = false;
+                if (handle != IntPtr.Zero)
+                {
+                    state = WorkerState.Fault;
+                    return Fail("Bridge returned an invalid preview lease token or identity; native ownership remains retained.");
+                }
+                return Fail("Bridge accepted a preview lease without a valid token and identity.");
+            }
+            handle = acquiredHandle;
+            previewLeaseIdentity = acquiredIdentity;
+            previewLeaseAcquirePending = false;
+            state = WorkerState.Connecting;
+            return true;
+        }
+
         public void Poll()
         {
+            if (handle == IntPtr.Zero && previewLeaseAcquirePending)
+            {
+                if (!TryAcquirePreviewLease()) return;
+                if (handle == IntPtr.Zero) return;
+            }
             if (handle == IntPtr.Zero || state == WorkerState.Closed) return;
 #if UNITY_EDITOR
             if (!BridgeNativeImageGuard.TryValidateOwnerIdentity(nativeModuleIdentity, out string imageGuardError))
@@ -833,7 +977,19 @@ namespace ViewWeave
             {
                 NotifyDisplayRefreshCancelled("Connected display refresh was cancelled because its Bridge output stopped.");
                 BridgeDisplayDiscovery.Cancel(this);
-                if (handle == IntPtr.Zero) { ReleaseOwnedResources(); return; }
+                if (handle == IntPtr.Zero)
+                {
+                    previewLeaseAcquirePending = false;
+#if UNITY_EDITOR
+                    if (editorPreviewRetentionRecord != null && editorPreviewRetentionRecord.WorkerRecoveryRecord == null)
+                        editorPreviewRetentionRecord.SetWorkerProofExpected(false);
+#endif
+                    previewLease = false;
+                    previewLeaseReturnRequested = false;
+                    previewLeaseIdentity = default;
+                    ReleaseOwnedResources();
+                    return;
+                }
                 bool needsClose = false;
 #if UNITY_EDITOR
                 if (!BridgeNativeImageGuard.TryValidateOwnerIdentity(nativeModuleIdentity, out string imageGuardError))
@@ -845,9 +1001,20 @@ namespace ViewWeave
 #endif
                 try
                 {
+                if (previewLease)
+                {
+                    int returnResult = BridgeWorkerNative.lkg_worker_request_preview_lease_return_v1(handle, ref previewLeaseIdentity);
+                    previewLeaseReturnRequested = returnResult == BridgeWorkerNative.PreviewLeaseResultOk;
+                    needsClose = !previewLeaseReturnRequested;
+                    if (needsClose && returnResult != BridgeWorkerNative.PreviewLeaseResultBusy)
+                        LastError = "Bridge preview lease return request is pending (code " + returnResult + ")";
+                }
+                else
+                {
                     int closeResult = BridgeWorkerNative.lkg_worker_close(handle);
                     needsClose = closeResult != 0;
                     if (needsClose) LastError = "Bridge worker close pending (code " + closeResult + ")";
+                }
                 }
                 catch (Exception error)
                 {
@@ -880,7 +1047,8 @@ namespace ViewWeave
         }
 
 #if UNITY_EDITOR
-        void TransferOwnedResourcesToReaper(bool needsClose, Action<IntPtr, RenderTexture, CommandBuffer, bool, BridgeNativeModuleIdentity, BridgeEditorPreviewRetentionRecord> enqueue,
+        void TransferOwnedResourcesToReaper(bool needsClose, Action<IntPtr, RenderTexture, CommandBuffer, bool, BridgeNativeModuleIdentity,
+            BridgeEditorPreviewRetentionRecord, bool, BridgeWorkerNative.PreviewLeaseIdentityV1, bool> enqueue,
             BridgeEditorPreviewRetentionRecord previewOwner)
         {
             if (enqueue == null) throw new ArgumentNullException(nameof(enqueue));
@@ -894,13 +1062,15 @@ namespace ViewWeave
             transferSrgb = false;
             command = null;
             state = WorkerState.Closed;
-            enqueue(ownedHandle, ownedTexture, ownedCommand, needsClose, nativeModuleIdentity, previewOwner);
+            enqueue(ownedHandle, ownedTexture, ownedCommand, needsClose, nativeModuleIdentity, previewOwner,
+                previewLease, previewLeaseIdentity, previewLeaseReturnRequested);
             RecordReaperHandoff(sessionGeneration);
             BridgeDisplayDiscovery.NotifyWorkerCleanupHandedOff(this, ownedHandle, sessionGeneration);
         }
 #endif
 
-        internal void TransferOwnedResourcesToReaper(bool needsClose, Action<IntPtr, RenderTexture, CommandBuffer, bool, BridgeNativeModuleIdentity> enqueue)
+        internal void TransferOwnedResourcesToReaper(bool needsClose, Action<IntPtr, RenderTexture, CommandBuffer, bool, BridgeNativeModuleIdentity,
+            bool, BridgeWorkerNative.PreviewLeaseIdentityV1, bool> enqueue)
         {
             if (enqueue == null) throw new ArgumentNullException(nameof(enqueue));
             if (handle == IntPtr.Zero) return;
@@ -913,7 +1083,8 @@ namespace ViewWeave
             transferSrgb = false;
             command = null;
             state = WorkerState.Closed;
-            enqueue(ownedHandle, ownedTexture, ownedCommand, needsClose, nativeModuleIdentity);
+            enqueue(ownedHandle, ownedTexture, ownedCommand, needsClose, nativeModuleIdentity,
+                previewLease, previewLeaseIdentity, previewLeaseReturnRequested);
             RecordReaperHandoff(sessionGeneration);
             BridgeDisplayDiscovery.NotifyWorkerCleanupHandedOff(this, ownedHandle, sessionGeneration);
         }
@@ -968,7 +1139,7 @@ namespace ViewWeave
             return true;
         }
 
-        bool Fail(string message) { LastError = message; state = WorkerState.Fault; if (handle != IntPtr.Zero) Dispose(); return false; }
+        bool Fail(string message) { LastError = message; state = WorkerState.Fault; if (handle != IntPtr.Zero || previewLease || previewLeaseAcquirePending) Dispose(); return false; }
         void FailFromStatus(string fallback) { LastError = string.IsNullOrEmpty(status.error) ? fallback : Sanitize(status.error); state = WorkerState.Fault; Dispose(); }
         static bool IsValidStatus(BridgeWorkerNative.Status value)
         {
@@ -984,6 +1155,7 @@ namespace ViewWeave
         {
             if (command != null) { command.Release(); command = null; }
             ReleaseTransferTexture();
+            previewLeaseAcquirePending = false;
             state = WorkerState.Closed;
         }
         void ReleaseTransferTexture()

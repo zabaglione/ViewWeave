@@ -25,6 +25,8 @@ int main(int argc, char** argv) {
         "lkg_bridge_render_event_func", "lkg_bridge_make_draw_data",
         "lkg_bridge_make_close_data", "lkg_bridge_smoke_draw", "lkg_worker_begin", "lkg_worker_poll",
         "lkg_worker_close", "lkg_worker_reset_transfer", "lkg_worker_release", "lkg_worker_make_draw_data",
+        "lkg_worker_acquire_preview_lease_v1", "lkg_worker_request_preview_lease_return_v1",
+        "lkg_worker_get_preview_lease_status_v1", "lkg_worker_ack_preview_lease_return_v1",
         "lkg_worker_cancel_draw_data", "lkg_worker_render_event_func", "lkg_worker_render_event_id",
         "lkg_worker_close_all", "lkg_worker_collect_closed", "lkg_worker_pending_count", "lkg_worker_shutdown_host",
         "lkg_worker_request_final_shutdown", "lkg_worker_get_final_shutdown_status_v1", "lkg_worker_wait_final_shutdown_v1",
@@ -90,6 +92,40 @@ int main(int argc, char** argv) {
           "unsupported vendor calibration is explicitly unavailable");
     Check(getWorkerPhysical && getWorkerPhysical(nullptr, &workerPhysical) == -2 && workerPhysical.valid == 0,
           "unsupported cached calibration is explicitly unavailable");
+    using AcquireLeaseFn = int32_t (*)(const char*, const char*, uint32_t, void*, void**, LkgWorkerPreviewLeaseIdentityV1*);
+    using ReturnLeaseFn = int32_t (*)(void*, const LkgWorkerPreviewLeaseIdentityV1*);
+    using LeaseStatusFn = int32_t (*)(void*, const LkgWorkerPreviewLeaseIdentityV1*, LkgWorkerPreviewLeaseStatusV1*);
+    auto acquireLease = reinterpret_cast<AcquireLeaseFn>(dlsym(library, "lkg_worker_acquire_preview_lease_v1"));
+    auto requestLeaseReturn = reinterpret_cast<ReturnLeaseFn>(dlsym(library, "lkg_worker_request_preview_lease_return_v1"));
+    auto getLeaseStatus = reinterpret_cast<LeaseStatusFn>(dlsym(library, "lkg_worker_get_preview_lease_status_v1"));
+    auto ackLeaseReturn = reinterpret_cast<ReturnLeaseFn>(dlsym(library, "lkg_worker_ack_preview_lease_return_v1"));
+    void* leaseHandle = reinterpret_cast<void*>(1);
+    LkgWorkerPreviewLeaseIdentityV1 leaseIdentity{};
+    Check(acquireLease && acquireLease("runtime", "application", 0, nullptr, &leaseHandle, &leaseIdentity) == -2 &&
+              leaseHandle == nullptr && leaseIdentity.structSize == sizeof(leaseIdentity) && leaseIdentity.version == 1 &&
+              leaseIdentity.endpointId == 0 && leaseIdentity.leaseGeneration == 0,
+          "unsupported preview lease acquire clears output identity and handle");
+    leaseIdentity.structSize = sizeof(leaseIdentity);
+    leaseIdentity.version = 1;
+    leaseIdentity.endpointId = 77;
+    leaseIdentity.leaseGeneration = 88;
+    Check(requestLeaseReturn && requestLeaseReturn(reinterpret_cast<void*>(1), &leaseIdentity) == -2,
+          "unsupported preview lease return is rejected");
+    Check(requestLeaseReturn(reinterpret_cast<void*>(1), nullptr) == -1,
+          "preview lease return validates identity ABI");
+    LkgWorkerPreviewLeaseStatusV1 leaseStatus{};
+    Check(getLeaseStatus && getLeaseStatus(reinterpret_cast<void*>(1), &leaseIdentity, &leaseStatus) == -2 &&
+              leaseStatus.structSize == sizeof(leaseStatus) && leaseStatus.version == 1 &&
+              leaseStatus.state == LKG_WORKER_PREVIEW_LEASE_FAULTED && leaseStatus.lastResult == -2,
+          "unsupported preview lease status remains explicitly faulted");
+    Check(ackLeaseReturn && ackLeaseReturn(reinterpret_cast<void*>(1), &leaseIdentity) == -2,
+          "unsupported preview lease ACK is rejected");
+    leaseIdentity.leaseGeneration = 0;
+    Check(ackLeaseReturn(reinterpret_cast<void*>(1), &leaseIdentity) == -1,
+          "preview lease ACK rejects a zero generation");
+    leaseIdentity.version = 0;
+    Check(ackLeaseReturn(reinterpret_cast<void*>(1), &leaseIdentity) == -1,
+          "preview lease ACK validates identity ABI");
     Check(dlclose(library) == 0, "unsupported shim unloads");
     std::puts("unsupported_shim_abi_test pass");
     return 0;

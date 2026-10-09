@@ -117,6 +117,276 @@ namespace ViewWeave.BridgeSessionValidation
         }
 
         [Test]
+        public void PreviewLeaseNativeLayoutsMatchVersionedAbi()
+        {
+            Assert.AreEqual(24, System.Runtime.InteropServices.Marshal.SizeOf(typeof(BridgeWorkerNative.PreviewLeaseIdentityV1)));
+            Assert.AreEqual(312, System.Runtime.InteropServices.Marshal.SizeOf(typeof(BridgeWorkerNative.Status)));
+            Assert.AreEqual(352, System.Runtime.InteropServices.Marshal.SizeOf(typeof(BridgeWorkerNative.PreviewLeaseStatusV1)));
+        }
+
+        [Test]
+        public void PreviewLeaseRecoveryRequiresReturnProofGpuProofAndAcknowledgement()
+        {
+            var texture = new RenderTexture(8, 8, 0);
+            var identity = new BridgeWorkerNative.PreviewLeaseIdentityV1
+            {
+                structSize = 24,
+                version = 1,
+                endpointId = 41,
+                leaseGeneration = 7
+            };
+            BridgeWorkerRecoveryRecord record = BridgeWorkerRecoveryRecord.CreatePreviewLease(
+                new System.IntPtr(9), texture, true, 13, default, identity);
+            try
+            {
+                record.SetGpuProofMode(BridgeGpuProofMode.ReadbackTail);
+                record.PreviewLeaseReturnProven = true;
+                Assert.IsFalse(record.CanRelease, "Native return proof cannot replace transfer-texture GPU proof.");
+                record.SetGpuProof(false, true, true, true);
+                Assert.IsFalse(record.CanRelease, "NativeReleased cannot substitute for a lease acknowledgement.");
+                record.NativeReleased = true;
+                Assert.IsFalse(record.CanRelease);
+                record.PreviewLeaseAcknowledged = true;
+                record.PreviewLeaseReturnProven = true;
+                Assert.IsTrue(record.CanRelease);
+
+                BridgeWorkerRecoveryRecord acknowledgementOnly = BridgeWorkerRecoveryRecord.CreatePreviewLease(
+                    new System.IntPtr(10), null, false, 14, default, identity);
+                try
+                {
+                    acknowledgementOnly.PreviewLeaseAcknowledged = true;
+                    Assert.IsFalse(acknowledgementOnly.CanRelease, "Lease acknowledgement cannot substitute for persisted Native return proof.");
+                    acknowledgementOnly.NativeReleased = true;
+                    Assert.IsFalse(acknowledgementOnly.CanRelease, "Legacy NativeReleased cannot substitute for matching final-module teardown proof.");
+                    acknowledgementOnly.FinalModuleTeardownProven = true;
+                    Assert.IsTrue(acknowledgementOnly.CanRelease);
+                }
+                finally { Object.DestroyImmediate(acknowledgementOnly); }
+            }
+            finally
+            {
+                if (texture != null) Object.DestroyImmediate(texture);
+                Object.DestroyImmediate(record);
+            }
+        }
+
+        [Test]
+        public void PreviewLeaseStatusRejectsUnknownOrMismatchedIdentity()
+        {
+            var identity = new BridgeWorkerNative.PreviewLeaseIdentityV1
+            {
+                structSize = 24,
+                version = 1,
+                endpointId = 99,
+                leaseGeneration = 5
+            };
+            var status = new BridgeWorkerNative.PreviewLeaseStatusV1
+            {
+                structSize = 352,
+                version = 1,
+                state = BridgeWorkerNative.PreviewLeaseStateReturnedProven,
+                endpointId = identity.endpointId,
+                leaseGeneration = identity.leaseGeneration,
+                workerStatus = new BridgeWorkerNative.Status { state = 4 }
+            };
+            MethodInfo validate = typeof(BridgeWorkerReaper).GetMethod("IsValidLeaseStatus", BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.IsNotNull(validate);
+            Assert.IsTrue((bool)validate.Invoke(null, new object[] { status, identity }));
+            status.leaseGeneration++;
+            Assert.IsFalse((bool)validate.Invoke(null, new object[] { status, identity }));
+            status.leaseGeneration = identity.leaseGeneration;
+            status.version = 0;
+            Assert.IsFalse((bool)validate.Invoke(null, new object[] { status, identity }));
+            status.version = 1;
+            status.state = 4;
+            Assert.IsFalse((bool)validate.Invoke(null, new object[] { status, identity }));
+            status.state = BridgeWorkerNative.PreviewLeaseStateReturnedProven;
+            status.lastResult = -4;
+            Assert.IsFalse((bool)validate.Invoke(null, new object[] { status, identity }));
+            status.lastResult = 0;
+            status.workerStatus.state = 1;
+            Assert.IsFalse((bool)validate.Invoke(null, new object[] { status, identity }));
+        }
+
+        [Test]
+        public void PreviewLeaseRecoveryIdentityAndReturnIntentSurviveEditorSerialization()
+        {
+            var identity = new BridgeWorkerNative.PreviewLeaseIdentityV1
+            {
+                structSize = 24,
+                version = 1,
+                endpointId = 0x1020304050607080UL,
+                leaseGeneration = 0x1122334455667788UL
+            };
+            BridgeWorkerRecoveryRecord original = BridgeWorkerRecoveryRecord.CreatePreviewLease(
+                new System.IntPtr(53), null, false, 29, default, identity);
+            BridgeWorkerRecoveryRecord restored = ScriptableObject.CreateInstance<BridgeWorkerRecoveryRecord>();
+            try
+            {
+                original.PreviewLeaseReturnRequested = true;
+                original.PreviewLeaseReturnProven = true;
+                string serialized = UnityEditor.EditorJsonUtility.ToJson(original);
+                UnityEditor.EditorJsonUtility.FromJsonOverwrite(serialized, restored);
+
+                Assert.IsTrue(restored.IsPreviewLease);
+                Assert.IsTrue(restored.HasValidPreviewLeaseIdentity);
+                Assert.AreEqual(identity.structSize, restored.PreviewLeaseIdentity.structSize);
+                Assert.AreEqual(identity.version, restored.PreviewLeaseIdentity.version);
+                Assert.AreEqual(identity.endpointId, restored.PreviewLeaseIdentity.endpointId);
+                Assert.AreEqual(identity.leaseGeneration, restored.PreviewLeaseIdentity.leaseGeneration);
+                Assert.IsTrue(restored.PreviewLeaseReturnRequested);
+                Assert.IsTrue(restored.PreviewLeaseReturnProven);
+                Assert.IsFalse(restored.PreviewLeaseAcknowledged);
+                Assert.IsFalse(restored.FinalModuleTeardownProven);
+                Assert.IsFalse(restored.CanRelease, "A restored return request is not Native ACK or final-module proof.");
+            }
+            finally
+            {
+                if (original != null) Object.DestroyImmediate(original);
+                if (restored != null) Object.DestroyImmediate(restored);
+            }
+        }
+
+        [Test]
+        public void CancellingBusyPreviewLeaseAcquireClearsOnlyLocalRetryState()
+        {
+            var host = new GameObject("Preview lease acquire cancellation test");
+            host.SetActive(false);
+            BridgeWorkerQuiltOutput output = host.AddComponent<BridgeWorkerQuiltOutput>();
+            try
+            {
+                SetPrivateField(output, "previewLease", true);
+                SetPrivateField(output, "previewLeaseAcquirePending", true);
+                SetPrivateField(output, "state", BridgeWorkerQuiltOutput.WorkerState.Connecting);
+
+                MethodInfo dispose = typeof(BridgeWorkerQuiltOutput).GetMethod("Dispose", BindingFlags.Instance | BindingFlags.Public);
+                Assert.IsNotNull(dispose);
+                dispose.Invoke(output, null);
+
+                Assert.AreEqual(BridgeWorkerQuiltOutput.WorkerState.Closed, output.State);
+                Assert.AreEqual(System.IntPtr.Zero, output.NativeHandle);
+                Assert.IsFalse((bool)GetPrivateField(output, "previewLeaseAcquirePending"));
+                Assert.IsFalse((bool)GetPrivateField(output, "previewLease"));
+            }
+            finally
+            {
+                if (host != null) Object.DestroyImmediate(host);
+            }
+        }
+
+        static object GetPrivateField(object target, string name)
+        {
+            FieldInfo field = target.GetType().GetField(name, BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(field, name);
+            return field.GetValue(target);
+        }
+
+        static void SetPrivateField(object target, string name, object value)
+        {
+            FieldInfo field = target.GetType().GetField(name, BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(field, name);
+            field.SetValue(target, value);
+        }
+
+        [Test]
+        public void EditorPreviewCoreResourcesRetireBeforeLeaseAcknowledgementCompletesRecovery()
+        {
+            var producer = new GameObject("Preview lease barrier producer");
+            BridgeEditorPreviewRetentionRecord owner = BridgeEditorPreviewRetentionRecord.Create(producer, null);
+            var texture = new RenderTexture(8, 8, 0);
+            var identity = new BridgeWorkerNative.PreviewLeaseIdentityV1
+            {
+                structSize = 24,
+                version = 1,
+                endpointId = 23,
+                leaseGeneration = 11
+            };
+            BridgeWorkerRecoveryRecord recovery = BridgeWorkerRecoveryRecord.CreatePreviewLease(
+                new System.IntPtr(31), null, false, 17, default, identity);
+            try
+            {
+                Assert.IsTrue(texture.Create());
+                owner.SetWorkerProofExpected(true);
+                Assert.IsTrue(recovery.AttachEditorPreviewOwner(owner));
+                owner.MarkStopRequested();
+                Assert.IsTrue(owner.SetTextures(new[] { texture }));
+                owner.SetGpuProofMode(BridgeGpuProofMode.ReadbackTail);
+                owner.SetGpuProof(false, true, true);
+                Assert.IsTrue(recovery.NotifyEditorPreviewOwnerReturnProven());
+                Assert.IsTrue(owner.CanReleaseCoreResources);
+                Assert.IsFalse(owner.CanRelease, "The retention record must stay alive until lease acknowledgement.");
+
+                owner.ReleaseCoreResourcesAfterProof();
+                Assert.IsTrue(owner.CoreResourcesReleased);
+                Assert.IsFalse(owner.CanRelease);
+                Assert.IsTrue(recovery.NotifyEditorPreviewOwnerComplete());
+                Assert.IsTrue(owner.CanRelease);
+            }
+            finally
+            {
+                if (owner != null) Object.DestroyImmediate(owner);
+                if (recovery != null) Object.DestroyImmediate(recovery);
+                if (texture != null) Object.DestroyImmediate(texture);
+                if (producer != null) Object.DestroyImmediate(producer);
+            }
+        }
+
+        [Test]
+        public void PreviewLeaseTransferTextureRetiresOnlyAfterNativeGpuAndCoreProof()
+        {
+            var producer = new GameObject("Preview lease transfer retirement producer");
+            BridgeEditorPreviewRetentionRecord owner = BridgeEditorPreviewRetentionRecord.Create(producer, null);
+            var transfer = new RenderTexture(8, 8, 0);
+            var identity = new BridgeWorkerNative.PreviewLeaseIdentityV1
+            {
+                structSize = 24,
+                version = 1,
+                endpointId = 29,
+                leaseGeneration = 19
+            };
+            BridgeWorkerRecoveryRecord recovery = BridgeWorkerRecoveryRecord.CreatePreviewLease(
+                new System.IntPtr(37), transfer, false, 23, default, identity);
+            try
+            {
+                Assert.IsTrue(transfer.Create());
+                owner.SetWorkerProofExpected(true);
+                Assert.IsTrue(recovery.AttachEditorPreviewOwner(owner));
+                owner.MarkStopRequested();
+                Assert.IsTrue(owner.SetTextures(System.Array.Empty<RenderTexture>()));
+                recovery.SetGpuProofMode(BridgeGpuProofMode.ReadbackTail);
+                recovery.PreviewLeaseReturnProven = true;
+
+                Assert.IsFalse(recovery.RetirePreviewLeaseTransferTextureAfterProof(),
+                    "A Native return proof alone cannot retire the transfer texture.");
+                Assert.AreSame(transfer, recovery.TransferTexture);
+                recovery.SetGpuProof(false, true, true, true);
+                Assert.IsFalse(recovery.RetirePreviewLeaseTransferTextureAfterProof(),
+                    "The transfer texture remains until the Editor Core resource owner confirms retirement.");
+                Assert.AreSame(transfer, recovery.TransferTexture);
+
+                owner.ReleaseCoreResourcesAfterProof();
+                Assert.IsTrue(owner.CoreResourcesReleased);
+                Assert.IsTrue(recovery.RetirePreviewLeaseTransferTextureAfterProof());
+                Assert.IsTrue(recovery.HadTransferTexture, "The original transfer-resource proof requirement must remain serialized.");
+                Assert.IsTrue(recovery.HasGpuReleaseProof, "Retiring the texture must preserve its completed GPU proof.");
+                Assert.IsTrue(recovery.TransferTexture == null);
+                Assert.IsFalse(recovery.CanRelease, "Resource retirement is not Native lease acknowledgement.");
+
+                recovery.PreviewLeaseAcknowledged = true;
+                Assert.IsTrue(recovery.CanRelease);
+                recovery.ReleaseProvenResources();
+                Assert.AreEqual(System.IntPtr.Zero, recovery.GetHandle());
+            }
+            finally
+            {
+                if (owner != null) Object.DestroyImmediate(owner);
+                if (recovery != null) Object.DestroyImmediate(recovery);
+                if (transfer != null) Object.DestroyImmediate(transfer);
+                if (producer != null) Object.DestroyImmediate(producer);
+            }
+        }
+
+        [Test]
         public void LegacyCloseRequiresMatchingVersionedSafeSessionStatus()
         {
             const ulong session = 42;
@@ -517,7 +787,8 @@ namespace ViewWeave.BridgeSessionValidation
                 owner.MarkStopRequested();
                 owner.SetWorkerProofExpected(false);
                 Assert.IsTrue(owner.SetTextures(System.Array.Empty<RenderTexture>()));
-                Assert.IsTrue(owner.CanRelease);
+                Assert.IsTrue(owner.CanReleaseCoreResources);
+                Assert.IsFalse(owner.CanRelease);
 
                 Assert.IsTrue(BridgeEditorPreviewRetention.Pump(true));
                 Assert.IsTrue(producer == null);

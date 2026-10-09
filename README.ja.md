@@ -6,7 +6,7 @@ Looking Glass向けの非公式Unity SDKです。URPまたはHDRPの通常のシ
 
 Looking Glassに表示するときは、利用者自身のUnity projectをEditor PlayするかPlayerとして起動します。UnityがQuiltを描画し、インストール済みで起動中の公式Looking Glass Bridge runtimeが機器へ届けます。SDK内のTests/Bridge Unityプロジェクトやデモアプリを別途起動する必要はありません。
 
-通常runtime Sessionの対応環境はUnity 6000.6.4f1、Windows、URPまたはHDRPです。Bridge WorkerはEditor PlayとWindows PlayerからD3D11またはD3D12で出力し、Legacy DirectはD3D11のみです。Rigの制作向けに、ViewWeaveRigから明示的に開始する別のEdit Mode previewもあります。これはPlay ModeやRigの通常Bridge Sessionを開始しません。D3D11/D3D12 deviceのURP/HDRP fixtureでStart/Stop/Restartとpending 0を確認しました。2026-10-09には、実URPのWindows D3D12 sceneで一度のPause/Resume後に画像が再表示されたことを利用者が確認しました。これは単一の操作であり、機器全般の検証ではありません。実寸scaleと画像品質は未検証です。隔離Editor fixtureではDomain Reload後のpreview cleanupと手動restartを確認しました。3本のFile > Exit probeではhelperによる停止・回収後にgateのpending 0を確認しましたが、Editor正常終了は未確認です。詳細は[Graphics backends](docs/ja/graphics-backends.md)を参照してください。通常のmacOS Sessionは対象外です。Bridge runtimeとLooking Glass機器を別途用意してください。
+通常runtime Sessionの対応環境はUnity 6000.6.4f1、Windows、URPまたはHDRPです。Bridge WorkerはEditor PlayとWindows PlayerからD3D11またはD3D12で出力し、Legacy DirectはD3D11のみです。Rigの制作向けに、ViewWeaveRigから明示的に開始するEdit Mode previewもあります。これはPlay ModeやRigの通常Bridge Sessionを開始しません。review済みNative release candidateのSHA-256は`A6A062343710AF2362DAF7B923A9BB98BDD5D381D896C68AE3190CA55655FBC7`です。Native fake/WARP CTestは12/12件成功し、managed Editor/Player codeは7つのUnity assemblyを参照してRoslyn compileに成功しました。Unity licenseが必要なtestは未実施です。URP sampleはPackage Managerによる更新とUnity再起動まで旧6a297a8 packageを使用します。表示対象の移動とUndoを含む一度のPause/Resumeは、旧packageとDLL SHA-256 `4E5E1FF81C7C1C227D45E5D38E23FB84F1AAB8A8444EF327D639E1AEB619532B`で確認された過去の結果で、現在のcandidateは検証しません。`Close Preview`後のStartと、Play/Device Previewを逆方向に切り替えた後の黒画面は実機再検証待ちです。実寸scale、画像品質、性能は未検証です。詳細は[Bridge output lifecycle](docs/ja/bridge-output-lifecycle.md)と[Graphics backends](docs/ja/graphics-backends.md)を参照してください。通常のmacOS Sessionは対象外です。Bridge runtimeとLooking Glass機器を別途用意してください。
 
 macOS Metalは明示opt-inのbounded実験です。通常SessionはMetalを受け付けず、macOS native shimはUPMに含まれません。限定的な手順と未検証範囲は[Graphics backends](docs/ja/graphics-backends.md)を参照してください。
 
@@ -61,7 +61,7 @@ ViewWeaveRig Inspectorまたは`Window > ViewWeave > Rig Authoring`を使うと�
 
 ## Edit ModeでRigを制作・プレビューする
 
-Rigの`Preview`カテゴリから`Start Local Edit Mode Preview`または`Start Looking Glass Device Preview`を明示的に開始します。`Pause Preview`は進行中の処理をdrainしてdevice windowを隠しますが、同じproducer、RenderTexture、Workerと所有権lockを保持します。`Resume Preview`で同じsessionを再表示します。targetや構造設定を変更するときは`Close Preview`で完全にdrain・解放してください。Authoring windowのRig切替・close、Play移行、reload、Editor終了も完全終了経路を使います。現在のNative Release pause protocolはCTest 10/10 PASSです。URP/HDRPのlocal managed testではpause/resume、FOV変更、Closeを2/2で確認しました。2026-10-09、利用者は実URPの`test.unity` sceneをWindows D3D12で一度Pause/Resumeし、Resume後の再表示と表示対象の移動・Undoの反映を確認しました。この単一scene・単一cycleは反復運用やHDRP機器での動作を示しません。実寸scale、画像品質、性能は未検証です。詳しくは[Graphics backends](docs/ja/graphics-backends.md)を参照してください。
+Rigの`Preview`カテゴリから`Start Local Edit Mode Preview`または`Start Looking Glass Device Preview`を明示的に開始します。`Pause Preview`は処理をdrainしてdevice windowを隠し、そのpreviewのproducer、RenderTexture、output leaseを保持します。`Resume Preview`は同じleaseを続けます。`Close Preview`はmode producerを終了してlease返却を要求します。まずNativeが旧source textureを参照しなくなったことを通知し、その後managed側がCore/transferとproducerのGPU完了を待ってtextureを破棄し、ACKを送ります。NativeはACK受信後にだけ次generationの取得を許可します。process単位のBridge endpointはmode間でhidden/parked状態を保ちます。PlayとEdit Mode previewは同じendpointを同時に使わず、交互に所有します。Qualityと`Full`/`Half`/`Quarter` view densityの変更は、直前の処理をdrainした後、producer側のQuiltサイズへ反映できます。SDKへ渡すinputは接続profileの寸法とgridを保つため、変更にGPU scaling負荷が追加されることがあります。`Close Preview`後のStartとPlay/preview逆方向切替で黒くなる報告は未解決で、修正後の検証対象です。状態図と範囲は[Bridge output lifecycle](docs/ja/bridge-output-lifecycle.md)を参照してください。
 
 PreviewにはRig設定を基にした別のEditor-owned producerを使います。開始・停止だけでpreview状態が保存sceneへ書き戻されることはありません。`Camera & Focus`や`Rendering`などで行った通常の編集は、各設定の保存先へ反映されます。詳しくは[制作フロー](docs/ja/quilt-authoring.md#edit-mode-authoring-preview)を参照してください。
 
@@ -86,6 +86,7 @@ HDRPとVFX GraphはLinear color spaceが必須です。HDRP Wizardの`Lightmap E
 
 - [Getting started](docs/ja/getting-started.md): Editor PlayとPlayerの手順
 - [Compatibility](docs/ja/compatibility.md): 対応条件と既知の制約
+- [Bridge output lifecycle](docs/ja/bridge-output-lifecycle.md): previewのpause、mode lease、quality変更、現在の検証範囲
 - [Windows validation](docs/windows-validation.md): 実行済み試験と結果
 - [Shutdown validation](docs/shutdown-validation-20261008.md): Windows shutdown lifecycle、歴史的AV記録と現在の検証状態
 - [残作業と受け入れ計画](docs/remaining-work-plan.md): 次に行う作業と完了条件

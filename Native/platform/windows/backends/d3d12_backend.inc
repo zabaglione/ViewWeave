@@ -429,7 +429,7 @@ static void ProcessD3D12WorkerJob(WorkerContext& context, const WorkerContext::J
     }
     int32_t drawResult = -1;
     try {
-        drawResult = lkg_bridge_smoke_draw(session, slot.producerTexture.Get(), job.columns, job.rows, job.aspect, job.zoom);
+        drawResult = DrawWorkerImage(context, workerContext, session, slot.producerTexture.Get(), job);
     } catch (...) {
         SetFault(context, 27, "D3D12 Bridge draw threw after consumer copy completed");
         D3D12WorkerJobRetire(context, job.slot);
