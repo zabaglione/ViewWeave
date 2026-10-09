@@ -25,6 +25,22 @@ namespace ViewWeave.BridgeEditorPreviewValidation
 {
     public sealed class BridgeEditorPreviewGpuTests
     {
+        static BridgeWorkerQuiltOutput pauseBaselineOutput;
+        static long pauseBaselineGeneration;
+        static IntPtr pauseBaselineHandle;
+        static uint pauseBaselineSubmissions;
+        static uint pauseBaselineCompleted;
+        static int pauseBaselineRetentionPending;
+        static readonly string[] PhysicalObserverSnapshotEnvironmentVariables =
+        {
+            "LKG_BRIDGE_SNAPSHOT",
+            "LKG_BRIDGE_SNAPSHOT_SESSION_SUFFIX",
+            "LKG_BRIDGE_SNAPSHOT_FRAME_SEQUENCE"
+        };
+
+        [DllImport("ucrtbase.dll", EntryPoint = "getenv", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi, ExactSpelling = true)]
+        static extern IntPtr GetWindowsCrtEnvironmentVariable(string name);
+
         const string DevicePlayTransitionRigName = "ViewWeave_DevicePreviewPlayTransition_Rig";
         const string DevicePlayTransitionTargetName = "ViewWeave_DevicePreviewPlayTransition_Target";
         const string DevicePlayTransitionPipelineName = "ViewWeave_DevicePreviewPlayTransition_Pipeline";
@@ -716,7 +732,7 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                 if (producerRenderer != null) producerRenderer.QuiltRendered -= completionCallback;
                 if (previewAttempted)
                 {
-                    PreviewApi.Stop();
+                    PreviewApi.Close();
                     BridgeEditorPreviewRetention.RequestStop(true);
                 }
                 fixture.Dispose();
@@ -763,7 +779,7 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                 if (window != null) window.Close();
                 if (previewAttempted)
                 {
-                    PreviewApi.Stop();
+                    PreviewApi.Close();
                     BridgeEditorPreviewRetention.RequestStop(true);
                 }
                 if (secondaryRig != null) Object.DestroyImmediate(secondaryRig.gameObject);
@@ -805,7 +821,7 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                 if (previewAttempted && !Application.isPlaying &&
                     (PreviewApi.IsActive || PreviewApi.IsStopping || BridgeEditorPreviewRetention.PendingCount != 0))
                 {
-                    PreviewApi.Stop();
+                    PreviewApi.Close();
                     BridgeEditorPreviewRetention.RequestStop(true);
                 }
                 if (previewAttempted && !Application.isPlaying)
@@ -824,7 +840,7 @@ namespace ViewWeave.BridgeEditorPreviewValidation
         }
 
         [UnityTest]
-        public IEnumerator DeviceEditorPreviewStartsStopsAndRestartsWhenExplicitlyEnabled()
+        public IEnumerator DeviceEditorPreviewPausesAndResumesSameWorkerWhenExplicitlyEnabled()
         {
             if (Environment.GetEnvironmentVariable("VIEWWEAVE_EDITOR_PREVIEW_DEVICE_TEST") != "1")
                 Assert.Ignore("Set VIEWWEAVE_EDITOR_PREVIEW_DEVICE_TEST=1 only when a Looking Glass Bridge and device are available.");
@@ -863,23 +879,489 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                 previewAttempted = true;
                 StartDevicePreview(fixture.Rig);
                 yield return WaitForDeviceWorker("first");
+                BridgeWorkerQuiltOutput firstOutput = PreviewApi.ProducerOutput;
+                Assert.IsNotNull(firstOutput);
+                long firstGeneration = firstOutput.SessionGeneration;
+                IntPtr firstHandle = firstOutput.NativeHandle;
+                RenderTexture firstQuilt = PreviewApi.Texture;
+                RenderTexture firstTransfer = PreviewApi.TransferTexture(firstOutput);
                 StopDevicePreview("first");
                 yield return WaitForDeviceStop("first");
+                Assert.IsTrue(firstQuilt != null && firstQuilt.IsCreated(), "Pause must retain the Core quilt texture.");
+                Assert.IsTrue(firstTransfer != null && firstTransfer.IsCreated(), "Pause must retain the Bridge transfer texture.");
 
                 StartDevicePreview(fixture.Rig);
                 yield return WaitForDeviceWorker("restart");
+                Assert.AreSame(firstOutput, PreviewApi.ProducerOutput);
+                Assert.AreEqual(firstGeneration, PreviewApi.ProducerOutput.SessionGeneration);
+                Assert.AreEqual(firstHandle, PreviewApi.ProducerOutput.NativeHandle);
+                Assert.AreSame(firstQuilt, PreviewApi.Texture);
+                Assert.AreSame(firstTransfer, PreviewApi.TransferTexture(firstOutput));
+                yield return WaitFor(() => firstOutput.Completed > pauseBaselineCompleted,
+                    "Resuming the same device preview did not complete a fresh submission.");
                 StopDevicePreview("restart");
                 yield return WaitForDeviceStop("restart");
+                PreviewApi.Close();
+                yield return WaitForDeviceClose("paused-close");
             }
             finally
             {
                 if (previewAttempted)
                 {
-                    PreviewApi.Stop();
+                    PreviewApi.Close();
                     BridgeEditorPreviewRetention.RequestStop(true);
                 }
                 fixture.Dispose();
             }
+        }
+
+        [UnityTest]
+        public IEnumerator DevicePreviewPhysicalFramingObserverAcrossTwoCycles()
+        {
+            if (Environment.GetEnvironmentVariable("VIEWWEAVE_EDITOR_PREVIEW_PHYSICAL_OBSERVER_TEST") != "1")
+                Assert.Ignore("Set VIEWWEAVE_EDITOR_PREVIEW_PHYSICAL_OBSERVER_TEST=1 only for an owned isolated URP project with Bridge and a connected display.");
+
+            string snapshotEnvironmentIssue = GetPhysicalObserverSnapshotEnvironmentIssue();
+            Assert.IsNull(snapshotEnvironmentIssue,
+                "PHYSICAL_OBSERVER_REFUSED reason=" + (snapshotEnvironmentIssue ?? string.Empty));
+            string bridgeSnapshotBasePath = Environment.GetEnvironmentVariable("LKG_BRIDGE_SNAPSHOT");
+
+            Assert.IsTrue(BridgeGraphicsBackendPolicy.TrySelect(
+                BridgeGraphicsBackendRoute.EditorPreview,
+                Application.platform,
+                Application.isEditor,
+                Application.isPlaying,
+                SystemInfo.graphicsDeviceType,
+                SystemInfo.renderingThreadingMode,
+                out BridgeGraphicsBackendDecision backend,
+                out string backendError), backendError);
+            Assert.AreEqual(UnityEngine.Rendering.GraphicsDeviceType.Direct3D12, SystemInfo.graphicsDeviceType,
+                "The physical observer should match the reported D3D12 device path.");
+
+            var fixture = new Fixture(false);
+            bool previewAttempted = false;
+            GameObject referenceCameraObject = null;
+            try
+            {
+                fixture.Setup();
+                ConfigurePhysicalObserverFixture(fixture, out referenceCameraObject,
+                    out UniversalAdditionalCameraData sourceData, out UniversalAdditionalCameraData referenceData);
+                ViewWeaveRig rig = fixture.Rig;
+                QuiltRenderer renderer = rig.Renderer;
+                Camera sourceCamera = renderer.sourceCamera;
+                PhysicalObserverCameraState sourceCameraAtStart = new PhysicalObserverCameraState(sourceCamera);
+                BridgeWorkerQuiltOutput output = rig.GetComponent<BridgeWorkerQuiltOutput>();
+                ViewWeaveBridgeSession session = rig.GetComponent<ViewWeaveBridgeSession>();
+                Assert.IsNotNull(output);
+                Assert.IsNotNull(session);
+                Assert.AreEqual(QuiltQualityPreset.Preview, session.Quality);
+                Assert.AreEqual(QuiltViewRenderMode.Full, renderer.viewRenderMode);
+                Assert.IsTrue(renderer.physicalFraming.enabled);
+                Assert.IsTrue(renderer.useRenderRequests);
+                Assert.AreEqual(344.650177f, renderer.physicalFraming.visibleApertureWidthMillimeters, 0.0001f);
+                Assert.AreEqual(193.865723f, renderer.physicalFraming.visibleApertureHeightMillimeters, 0.0001f);
+                Assert.AreEqual(1f, renderer.physicalFraming.unitsPerMeter, 0.0001f);
+                Assert.AreEqual(26.9914665f, referenceCameraObject.GetComponent<Camera>().fieldOfView, 0.0001f);
+
+                Debug.Log("EDITOR_PREVIEW_PHYSICAL_OBSERVER environment unity=" + Application.unityVersion +
+                    ", graphics=" + SystemInfo.graphicsDeviceType + ", route=" + backend.Route +
+                    ", pipeline=" + (GraphicsSettings.currentRenderPipeline == null ? "BuiltIn" : GraphicsSettings.currentRenderPipeline.GetType().FullName) +
+                    ", urpPackageVersion=" + GetUrpPackageVersion() +
+                    ", quality=" + session.Quality + ", qualityGrid=1920x1080/8x6/48, viewMode=" + renderer.viewRenderMode +
+                    ", physical=344.650177x193.865723mm/unitsPerMeter1, focusBase=" + renderer.settings.cameraDistance.ToString("R", System.Globalization.CultureInfo.InvariantCulture) +
+                    ", fov=" + sourceCamera.fieldOfView.ToString("R", System.Globalization.CultureInfo.InvariantCulture) +
+                    ", near=" + sourceCamera.nearClipPlane.ToString("R", System.Globalization.CultureInfo.InvariantCulture) +
+                    ", far=" + sourceCamera.farClipPlane.ToString("R", System.Globalization.CultureInfo.InvariantCulture) +
+                    ", useRenderRequests=" + renderer.useRenderRequests + ", runtimePathEmpty=true, app=ViewWeave, ordinal=0" +
+                    ", sourceUacd=" + DescribeObserverCameraData(sourceData) +
+                    ", referenceUacd=" + DescribeObserverCameraData(referenceData));
+
+                previewAttempted = true;
+                SetPhysicalObserverPhaseColor(sourceCamera, referenceCameraObject.GetComponent<Camera>(), Color.green);
+                Debug.Log("EDITOR_PREVIEW_PHYSICAL_OBSERVER phaseColor phase=physical-first expectedColor=green rgb=0,1,0");
+                StartDevicePreview(rig);
+                yield return WaitForPhysicalObserverCompletion("physical-first");
+                BridgeWorkerQuiltOutput firstOutput = PreviewApi.ProducerOutput;
+                Assert.IsNotNull(firstOutput);
+                long firstGeneration = firstOutput.SessionGeneration;
+                LogPhysicalObserverState("physical-first", "green", rig, sourceCamera, sourceCameraAtStart, sourceData, referenceData, firstOutput);
+                StopDevicePreview("physical-first");
+                yield return WaitForDeviceStop("physical-first");
+                sourceCameraAtStart.AssertUnchanged(sourceCamera, sourceData);
+                DateTime physicalFirstSnapshotTime = LatestBridgeFrameFiveWrite(bridgeSnapshotBasePath);
+
+                Assert.AreEqual(QuiltQualityPreset.Preview, session.Quality);
+                Assert.AreEqual(QuiltViewRenderMode.Full, renderer.viewRenderMode);
+                Assert.IsTrue(renderer.physicalFraming.enabled);
+                Assert.IsNull(sourceCamera.targetTexture);
+                SetPhysicalObserverPhaseColor(sourceCamera, referenceCameraObject.GetComponent<Camera>(), Color.magenta);
+                Debug.Log("EDITOR_PREVIEW_PHYSICAL_OBSERVER phaseColor phase=physical-restart expectedColor=magenta rgb=1,0,1");
+                StartDevicePreview(rig);
+                yield return WaitForPhysicalObserverCompletion("physical-restart", pauseBaselineCompleted + 1);
+                BridgeWorkerQuiltOutput secondOutput = PreviewApi.ProducerOutput;
+                Assert.IsNotNull(secondOutput);
+                Assert.AreSame(firstOutput, secondOutput);
+                Assert.AreEqual(firstOutput.NativeHandle, secondOutput.NativeHandle);
+                Assert.AreEqual(firstGeneration, secondOutput.SessionGeneration,
+                    "Resume after a user Stop request must retain the Worker generation.");
+                LogPhysicalObserverState("physical-restart", "magenta", rig, sourceCamera, sourceCameraAtStart, sourceData, referenceData, secondOutput);
+                if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("LKG_BRIDGE_SNAPSHOT")))
+                    yield return WaitForBridgeSnapshotContent("physical-restart", Environment.GetEnvironmentVariable("LKG_BRIDGE_SNAPSHOT"), 0, true, physicalFirstSnapshotTime);
+
+                double holdSeconds = GetPhysicalObserverHoldSeconds();
+                if (holdSeconds > 0.0) yield return HoldPhysicalPreviewForObservation(holdSeconds);
+
+                StopDevicePreview("physical-restart");
+                yield return WaitForDeviceStop("physical-restart");
+                sourceCameraAtStart.AssertUnchanged(sourceCamera, sourceData);
+                PreviewApi.Close();
+                yield return WaitForDeviceClose("physical-paused-close");
+                Assert.IsFalse(PreviewApi.IsActive);
+                Assert.IsFalse(PreviewApi.IsStopping);
+                Assert.AreEqual(0, BridgeWorkerQuiltOutput.ShutdownPendingCount);
+                Assert.AreEqual(0, BridgeEditorPreviewRetention.PendingCount);
+            }
+            finally
+            {
+                if (previewAttempted)
+                {
+                    if (PreviewApi.IsActive && !PreviewApi.IsStopping) PreviewApi.Close();
+                    BridgeEditorPreviewRetention.RequestStop(true);
+                    Debug.Log("EDITOR_PREVIEW_PHYSICAL_OBSERVER cleanup active=" + PreviewApi.IsActive +
+                        ", stopping=" + PreviewApi.IsStopping + ", nativePending=" + BridgeWorkerQuiltOutput.ShutdownPendingCount +
+                        ", retentionPending=" + BridgeEditorPreviewRetention.PendingCount +
+                        ", status=" + ToAscii(PreviewApi.Status) + ", error=" + ToAscii(PreviewApi.LastError));
+                }
+                fixture.Dispose();
+                if (referenceCameraObject != null) Object.DestroyImmediate(referenceCameraObject);
+            }
+        }
+
+        static void ConfigurePhysicalObserverFixture(Fixture fixture, out GameObject referenceCameraObject,
+            out UniversalAdditionalCameraData sourceData, out UniversalAdditionalCameraData referenceData)
+        {
+            ViewWeaveRig rig = fixture.Rig;
+            rig.gameObject.SetActive(false);
+            rig.ApplyProfile(new QuiltQualityProfile(1920, 1080, 8, 6, 48, 1f, 40f));
+            QuiltRenderer renderer = rig.Renderer;
+            Camera sourceCamera = renderer.sourceCamera;
+            sourceCamera.transform.SetPositionAndRotation(new Vector3(0f, 0f, 5f), Quaternion.Euler(0f, 180f, 0f));
+            sourceCamera.enabled = false;
+            sourceCamera.clearFlags = CameraClearFlags.SolidColor;
+            sourceCamera.backgroundColor = new Color(0.19215687f, 0.3019608f, 0.4745098f, 0f);
+            sourceCamera.nearClipPlane = 0.3f;
+            sourceCamera.farClipPlane = 6.2f;
+            sourceCamera.fieldOfView = 26.9914665f;
+            sourceCamera.allowMSAA = true;
+            sourceData = ConfigurePhysicalObserverCameraData(sourceCamera);
+
+            referenceCameraObject = new GameObject("ViewWeave Physical Observer Reference Camera");
+            referenceCameraObject.transform.SetPositionAndRotation(new Vector3(0f, 0.84f, 4.43f), Quaternion.Euler(0f, 180f, 0f));
+            Camera referenceCamera = referenceCameraObject.AddComponent<Camera>();
+            referenceCamera.clearFlags = CameraClearFlags.SolidColor;
+            referenceCamera.backgroundColor = sourceCamera.backgroundColor;
+            referenceCamera.fieldOfView = 26.9914665f;
+            referenceCamera.nearClipPlane = 0.3f;
+            referenceCamera.farClipPlane = 1000f;
+            referenceData = ConfigurePhysicalObserverCameraData(referenceCamera);
+            renderer.referenceCamera = referenceCamera;
+            renderer.followReferenceFieldOfView = true;
+            renderer.useRenderRequests = true;
+            renderer.viewRenderMode = QuiltViewRenderMode.Full;
+            renderer.settings.quiltWidth = 1920;
+            renderer.settings.quiltHeight = 1080;
+            renderer.settings.columns = 8;
+            renderer.settings.rows = 6;
+            renderer.settings.views = 48;
+            renderer.settings.viewAspect = 1f;
+            renderer.settings.fieldOfView = 26.9914665f;
+            renderer.settings.cameraDistance = 4.17f;
+            renderer.settings.viewCone = 40f;
+            renderer.physicalFraming = new QuiltPhysicalFraming
+            {
+                enabled = true,
+                visibleApertureWidthMillimeters = 344.650177f,
+                visibleApertureHeightMillimeters = 193.865723f,
+                unitsPerMeter = 1f
+            };
+
+            BridgeWorkerQuiltOutput output = rig.gameObject.AddComponent<BridgeWorkerQuiltOutput>();
+            output.initializeOnEnable = false;
+            output.runtimePath = string.Empty;
+            output.applicationName = "ViewWeave";
+            output.displayOrdinal = 0;
+            rig.SetOutput(output);
+            ViewWeaveBridgeSession session = rig.gameObject.AddComponent<ViewWeaveBridgeSession>();
+            session.startOnEnable = false;
+            session.runtimePath = string.Empty;
+            session.applicationName = "ViewWeave";
+            session.displayOrdinal = 0;
+            Assert.IsTrue(session.SetQuality(QuiltQualityPreset.Preview));
+            if (!rig.ConfigureComponents()) throw new AssertionException("The physical observer fixture Rig could not configure its Bridge output.");
+            renderer.useRenderRequests = true;
+            renderer.viewRenderMode = QuiltViewRenderMode.Full;
+            renderer.settings.fieldOfView = 26.9914665f;
+            renderer.settings.cameraDistance = 4.17f;
+            renderer.physicalFraming = new QuiltPhysicalFraming
+            {
+                enabled = true,
+                visibleApertureWidthMillimeters = 344.650177f,
+                visibleApertureHeightMillimeters = 193.865723f,
+                unitsPerMeter = 1f
+            };
+            rig.gameObject.SetActive(true);
+        }
+
+        static UniversalAdditionalCameraData ConfigurePhysicalObserverCameraData(Camera camera)
+        {
+            UniversalAdditionalCameraData data = camera.GetComponent<UniversalAdditionalCameraData>();
+            if (data == null) data = camera.gameObject.AddComponent<UniversalAdditionalCameraData>();
+            data.renderType = CameraRenderType.Base;
+            data.renderPostProcessing = true;
+            data.antialiasing = AntialiasingMode.TemporalAntiAliasing;
+            data.antialiasingQuality = AntialiasingQuality.High;
+            data.volumeLayerMask = 1;
+            return data;
+        }
+
+        static void SetPhysicalObserverPhaseColor(Camera sourceCamera, Camera referenceCamera, Color color)
+        {
+            sourceCamera.clearFlags = CameraClearFlags.SolidColor;
+            sourceCamera.backgroundColor = color;
+            referenceCamera.clearFlags = CameraClearFlags.SolidColor;
+            referenceCamera.backgroundColor = color;
+        }
+
+        static string DescribeObserverCameraData(UniversalAdditionalCameraData data)
+        {
+            return "postProcessing=" + data.renderPostProcessing + ", aa=" + data.antialiasing +
+                ", aaQuality=" + data.antialiasingQuality + ", volumeMask=" + data.volumeLayerMask.value +
+                ", renderType=" + data.renderType;
+        }
+
+        static string GetUrpPackageVersion()
+        {
+            UnityEditor.PackageManager.PackageInfo[] packages = UnityEditor.PackageManager.PackageInfo.GetAllRegisteredPackages();
+            for (int i = 0; i < packages.Length; ++i)
+                if (packages[i] != null && packages[i].name == "com.unity.render-pipelines.universal") return packages[i].version;
+            return "unavailable";
+        }
+
+        static IEnumerator WaitForPhysicalObserverCompletion(string label, uint minimumCompletedFrames = 5)
+        {
+            double startedAt = EditorApplication.timeSinceStartup;
+            double deadline = startedAt + 45.0;
+            double nextLog = startedAt + 5.0;
+            while (EditorApplication.timeSinceStartup < deadline)
+            {
+                BridgeWorkerQuiltOutput output = PreviewApi.ProducerOutput;
+                QuiltRenderer producer = PreviewApi.ProducerRenderer;
+                if (output != null && output.Ready && output.Submissions >= minimumCompletedFrames &&
+                    output.Completed >= minimumCompletedFrames && producer != null && producer.HasRenderedQuilt)
+                {
+                    QuiltRenderSnapshot snapshot = producer.LatestSnapshot;
+                    Assert.IsTrue(snapshot.IsValid, "The observer should capture the completed producer render plan.");
+                    Assert.AreEqual(QuiltViewRenderMode.Full, snapshot.ViewRenderMode);
+                    Assert.AreEqual(48, snapshot.LastRenderedViewCount);
+                    Assert.IsTrue(snapshot.Geometry.physicalFramingEnabled);
+                    Assert.AreEqual(344.650177f, snapshot.Geometry.visibleApertureWidthMillimeters, 0.0001f);
+                    Assert.AreEqual(193.865723f, snapshot.Geometry.visibleApertureHeightMillimeters, 0.0001f);
+                    Assert.AreEqual(1f, snapshot.Geometry.unitsPerMeter, 0.0001f);
+                    Assert.AreEqual(0.3f, snapshot.Geometry.nearClip, 0.0001f);
+                    Assert.AreEqual(6.2f, snapshot.Geometry.farClip, 0.0001f);
+                    Debug.Log("EDITOR_PREVIEW_PHYSICAL_OBSERVER completed phase=" + label +
+                        ", status=" + ToAscii(PreviewApi.Status) + ", error=" + ToAscii(PreviewApi.LastError) +
+                        ", generation=" + output.SessionGeneration + ", submissions=" + output.Submissions +
+                        ", completed=" + output.Completed + ", views=" + snapshot.LastRenderedViewCount +
+                        ", layout=" + snapshot.Layout.QuiltWidth + "x" + snapshot.Layout.QuiltHeight +
+                        ", physical=" + snapshot.Geometry.visibleApertureWidthMillimeters.ToString("R", System.Globalization.CultureInfo.InvariantCulture) +
+                        "x" + snapshot.Geometry.visibleApertureHeightMillimeters.ToString("R", System.Globalization.CultureInfo.InvariantCulture) +
+                        "mm, near=" + snapshot.Geometry.nearClip.ToString("R", System.Globalization.CultureInfo.InvariantCulture) +
+                        ", far=" + snapshot.Geometry.farClip.ToString("R", System.Globalization.CultureInfo.InvariantCulture) +
+                        ", textureCreated=" + (PreviewApi.Texture != null && PreviewApi.Texture.IsCreated()) +
+                        ", textureSize=" + (PreviewApi.Texture == null ? "null" : PreviewApi.Texture.width + "x" + PreviewApi.Texture.height) +
+                        ", visualProof=none");
+                    yield break;
+                }
+                if (!string.IsNullOrEmpty(PreviewApi.LastError))
+                    Assert.Fail("Physical observer preview error in " + label + ": " + ToAscii(PreviewApi.LastError));
+                if (EditorApplication.timeSinceStartup >= nextLog)
+                {
+                    Debug.Log("EDITOR_PREVIEW_PHYSICAL_OBSERVER wait phase=" + label +
+                        ", elapsed=" + (EditorApplication.timeSinceStartup - startedAt).ToString("F1", System.Globalization.CultureInfo.InvariantCulture) +
+                        ", active=" + PreviewApi.IsActive + ", stopping=" + PreviewApi.IsStopping +
+                        ", status=" + ToAscii(PreviewApi.Status) + ", generation=" + (output == null ? 0 : output.SessionGeneration) +
+                        ", worker=" + (output == null ? "null" : output.State.ToString()) +
+                        ", submissions=" + (output == null ? 0 : output.Submissions) + ", completed=" + (output == null ? 0 : output.Completed) +
+                        ", error=" + ToAscii(PreviewApi.LastError));
+                    nextLog += 5.0;
+                }
+                yield return null;
+            }
+            Assert.Fail("Physical observer did not reach Ready and five completed submissions in " + label +
+                ". status=" + ToAscii(PreviewApi.Status) + ", error=" + ToAscii(PreviewApi.LastError) +
+                ", output=" + DescribePhysicalObserverOutput(PreviewApi.ProducerOutput));
+        }
+
+        static string DescribePhysicalObserverOutput(BridgeWorkerQuiltOutput output)
+        {
+            if (output == null) return "null";
+            return "state=" + output.State + ", ready=" + output.Ready + ", generation=" + output.SessionGeneration +
+                ", submissions=" + output.Submissions + ", completed=" + output.Completed +
+                ", status=" + ToAscii(PreviewApi.Status) + ", error=" + ToAscii(output.LastError);
+        }
+
+        static void LogPhysicalObserverState(string phase, string expectedColor, ViewWeaveRig rig, Camera sourceCamera,
+            PhysicalObserverCameraState startState, UniversalAdditionalCameraData sourceData,
+            UniversalAdditionalCameraData referenceData, BridgeWorkerQuiltOutput output)
+        {
+            QuiltRenderer producer = PreviewApi.ProducerRenderer;
+            Camera producerCamera = producer == null ? null : producer.sourceCamera;
+            UniversalAdditionalCameraData producerData = producerCamera == null ? null : producerCamera.GetComponent<UniversalAdditionalCameraData>();
+            Debug.Log("EDITOR_PREVIEW_PHYSICAL_OBSERVER state phase=" + phase +
+                ", expectedColor=" + expectedColor +
+                ", active=" + PreviewApi.IsActive + ", stopping=" + PreviewApi.IsStopping +
+                ", status=" + ToAscii(PreviewApi.Status) + ", error=" + ToAscii(PreviewApi.LastError) +
+                ", generation=" + output.SessionGeneration + ", ready=" + output.Ready +
+                ", submissions=" + output.Submissions + ", completed=" + output.Completed +
+                ", layout=" + output.Profile.QuiltWidth + "x" + output.Profile.QuiltHeight + "/" + output.Profile.Columns + "x" + output.Profile.Rows +
+                ", sourceCamera=" + DescribePhysicalObserverCamera(sourceCamera) +
+                ", sourceStateRestored=" + startState.Matches(sourceCamera, sourceData) +
+                ", sourceUacd={" + DescribeObserverCameraData(sourceData) + "}" +
+                ", referenceUacd={" + DescribeObserverCameraData(referenceData) + "}" +
+                ", producerCamera=" + DescribePhysicalObserverCamera(producerCamera) +
+                ", producerUacd={" + (producerData == null ? "missing" : DescribeObserverCameraData(producerData)) + "}" +
+                ", sourceSettings=" + rig.Renderer.settings.quiltWidth + "x" + rig.Renderer.settings.quiltHeight +
+                "/" + rig.Renderer.settings.columns + "x" + rig.Renderer.settings.rows + "/" + rig.Renderer.settings.views +
+                ", physical=" + rig.Renderer.physicalFraming.enabled +
+                ", sourceTextureCreated=" + (producer != null && producer.QuiltTexture != null && producer.QuiltTexture.IsCreated()) +
+                ", visualProof=none");
+        }
+
+        static string DescribePhysicalObserverCamera(Camera camera)
+        {
+            if (camera == null) return "null";
+            return "enabled=" + camera.enabled + ", targetTexture=" + (camera.targetTexture == null ? "null" : camera.targetTexture.width + "x" + camera.targetTexture.height) +
+                ", fov=" + camera.fieldOfView.ToString("R", System.Globalization.CultureInfo.InvariantCulture) +
+                ", near=" + camera.nearClipPlane.ToString("R", System.Globalization.CultureInfo.InvariantCulture) +
+                ", far=" + camera.farClipPlane.ToString("R", System.Globalization.CultureInfo.InvariantCulture) +
+                ", aspect=" + camera.aspect.ToString("R", System.Globalization.CultureInfo.InvariantCulture) +
+                ", rect=" + camera.rect + ", mask=" + camera.cullingMask +
+                ", pos=" + camera.transform.position + ", rot=" + camera.transform.rotation;
+        }
+
+        static double GetPhysicalObserverHoldSeconds()
+        {
+            string value = Environment.GetEnvironmentVariable("VIEWWEAVE_EDITOR_PREVIEW_PHYSICAL_OBSERVER_HOLD_SECONDS");
+            if (string.IsNullOrWhiteSpace(value)) return 0.0;
+            if (!double.TryParse(value, System.Globalization.NumberStyles.Float,
+                    System.Globalization.CultureInfo.InvariantCulture, out double seconds) || double.IsNaN(seconds) || double.IsInfinity(seconds))
+                throw new AssertionException("The physical observer hold must be a finite number of seconds.");
+            return Math.Max(0.0, Math.Min(seconds, 120.0));
+        }
+
+        static IEnumerator HoldPhysicalPreviewForObservation(double seconds)
+        {
+            double startedAt = EditorApplication.timeSinceStartup;
+            double deadline = startedAt + seconds;
+            Debug.Log("PHYSICAL_OBSERVER_HOLD_BEGIN seconds=" + seconds.ToString("F1", System.Globalization.CultureInfo.InvariantCulture) +
+                ", active=" + PreviewApi.IsActive + ", status=" + ToAscii(PreviewApi.Status) + ", visualProof=none");
+            while (EditorApplication.timeSinceStartup < deadline)
+            {
+                if (!PreviewApi.IsActive || PreviewApi.IsStopping)
+                    Assert.Fail("Physical observer preview stopped during hold. status=" + ToAscii(PreviewApi.Status) +
+                        ", error=" + ToAscii(PreviewApi.LastError));
+                yield return null;
+            }
+            Debug.Log("PHYSICAL_OBSERVER_HOLD_END elapsed=" + (EditorApplication.timeSinceStartup - startedAt).ToString("F1", System.Globalization.CultureInfo.InvariantCulture) +
+                ", active=" + PreviewApi.IsActive + ", status=" + ToAscii(PreviewApi.Status) + ", visualProof=none");
+        }
+
+        readonly struct PhysicalObserverCameraState
+        {
+            readonly Camera camera;
+            readonly RenderTexture targetTexture;
+            readonly Vector3 position;
+            readonly Quaternion rotation;
+            readonly Matrix4x4 projection;
+            readonly Rect rect;
+            readonly int cullingMask;
+            readonly float fieldOfView, aspect, nearClip, farClip;
+            readonly bool enabled, allowMsaa, postProcessing;
+            readonly AntialiasingMode antialiasing;
+            readonly int volumeMask;
+
+            internal PhysicalObserverCameraState(Camera value)
+            {
+                camera = value;
+                targetTexture = value.targetTexture;
+                position = value.transform.position;
+                rotation = value.transform.rotation;
+                projection = value.projectionMatrix;
+                rect = value.rect;
+                cullingMask = value.cullingMask;
+                fieldOfView = value.fieldOfView;
+                aspect = value.aspect;
+                nearClip = value.nearClipPlane;
+                farClip = value.farClipPlane;
+                enabled = value.enabled;
+                allowMsaa = value.allowMSAA;
+                UniversalAdditionalCameraData data = value.GetComponent<UniversalAdditionalCameraData>();
+                postProcessing = data != null && data.renderPostProcessing;
+                antialiasing = data == null ? AntialiasingMode.None : data.antialiasing;
+                volumeMask = data == null ? 0 : data.volumeLayerMask.value;
+            }
+
+            internal bool Matches(Camera value, UniversalAdditionalCameraData data)
+            {
+                return value != null && ReferenceEquals(camera, value) && ReferenceEquals(targetTexture, value.targetTexture) &&
+                    position == value.transform.position && rotation == value.transform.rotation && projection == value.projectionMatrix &&
+                    rect == value.rect && cullingMask == value.cullingMask && fieldOfView == value.fieldOfView &&
+                    aspect == value.aspect && nearClip == value.nearClipPlane && farClip == value.farClipPlane &&
+                    enabled == value.enabled && allowMsaa == value.allowMSAA && data != null &&
+                    postProcessing == data.renderPostProcessing && antialiasing == data.antialiasing && volumeMask == data.volumeLayerMask.value;
+            }
+
+            internal void AssertUnchanged(Camera value, UniversalAdditionalCameraData data)
+            {
+                Assert.IsTrue(Matches(value, data), "The source camera or its UACD settings changed across the device preview lifecycle.");
+            }
+        }
+
+        static string GetPhysicalObserverSnapshotEnvironmentIssue()
+        {
+            for (int i = 0; i < PhysicalObserverSnapshotEnvironmentVariables.Length; i++)
+            {
+                string name = PhysicalObserverSnapshotEnvironmentVariables[i];
+                if (Environment.GetEnvironmentVariable(name) != null)
+                    return "snapshot environment variable is set in managed Process: " + name;
+            }
+
+            if (Application.platform != RuntimePlatform.WindowsEditor)
+                return "Windows CRT environment cannot be inspected on this platform";
+
+            for (int i = 0; i < PhysicalObserverSnapshotEnvironmentVariables.Length; i++)
+            {
+                string name = PhysicalObserverSnapshotEnvironmentVariables[i];
+                IntPtr value;
+                try
+                {
+                    value = GetWindowsCrtEnvironmentVariable(name);
+                }
+                catch (DllNotFoundException)
+                {
+                    return "Windows CRT getenv is unavailable";
+                }
+                catch (EntryPointNotFoundException)
+                {
+                    return "Windows CRT getenv is unavailable";
+                }
+
+                if (value != IntPtr.Zero)
+                    return "snapshot environment variable is set in Windows CRT: " + name;
+            }
+
+            return null;
         }
 
         [UnityTest]
@@ -976,22 +1458,27 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                 StopDevicePreview("content-first");
                 yield return WaitForDeviceStop("content-first");
 
+                DateTime firstSnapshotTime = LatestBridgeFrameFiveWrite(bridgeSnapshotBasePath);
                 priorSnapshotSessions = CountBridgeFrameFiveSnapshots(bridgeSnapshotBasePath);
                 SetPreviewTargetColor(fixture.TargetObject, Color.magenta);
                 StartDevicePreview(fixture.Rig);
                 yield return WaitForDeviceWorker("content-restart");
-                yield return WaitForDevicePreviewContent("content-restart", true);
+                yield return WaitForDevicePreviewContent("content-restart", true, pauseBaselineCompleted + 1);
                 if (validateBridgeSnapshots)
-                    yield return WaitForBridgeSnapshotContent("content-restart", bridgeSnapshotBasePath, priorSnapshotSessions, true);
+                    yield return WaitForBridgeSnapshotContent("content-restart", bridgeSnapshotBasePath, priorSnapshotSessions, true, firstSnapshotTime);
                 BridgeWorkerQuiltOutput secondOutput = PreviewApi.ProducerOutput;
                 Assert.IsNotNull(secondOutput);
-                Assert.AreNotEqual(firstGeneration, secondOutput.SessionGeneration,
-                    "Restart must create a new Worker session generation.");
+                Assert.AreSame(firstOutput, secondOutput);
+                Assert.AreEqual(firstOutput.NativeHandle, secondOutput.NativeHandle);
+                Assert.AreEqual(firstGeneration, secondOutput.SessionGeneration,
+                    "Resume must retain the same Worker session generation.");
                 LogDevicePreviewCycle("content-restart", nativeTracePath, secondOutput);
                 if (observerHoldSeconds > 0.0)
                     yield return HoldMagentaPreviewForObservation(observerHoldSeconds);
                 StopDevicePreview("content-restart");
                 yield return WaitForDeviceStop("content-restart");
+                PreviewApi.Close();
+                yield return WaitForDeviceClose("content-paused-close");
                 Assert.IsFalse(PreviewApi.IsActive);
                 Assert.IsFalse(PreviewApi.IsStopping);
                 Assert.AreEqual(0, BridgeWorkerQuiltOutput.ShutdownPendingCount);
@@ -1001,7 +1488,7 @@ namespace ViewWeave.BridgeEditorPreviewValidation
             {
                 if (previewAttempted)
                 {
-                    if (PreviewApi.IsActive && !PreviewApi.IsStopping) PreviewApi.Stop();
+                    if (PreviewApi.IsActive && !PreviewApi.IsStopping) PreviewApi.Close();
                     BridgeEditorPreviewRetention.RequestStop(true);
                     Debug.Log("EDITOR_PREVIEW_RESTART cleanup active=" + PreviewApi.IsActive +
                         ", stopping=" + PreviewApi.IsStopping +
@@ -1482,6 +1969,13 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                 Assert.IsNotNull(previewOutput);
                 Assert.Greater(previewOutput.Submissions, 0);
                 Assert.Greater(previewOutput.Completed, 0);
+                StopDevicePreview("before-play");
+                yield return WaitForDeviceStop("before-play");
+                Assert.IsTrue(PreviewApi.IsActive && PreviewApi.IsPaused,
+                    "The device preview must remain owned and paused before the Play transition.");
+                Debug.Log("EDITOR_PREVIEW_DEVICE_PLAY pausedBeforeTransition=true, generation=" + previewOutput.SessionGeneration +
+                    ", nativePending=" + BridgeWorkerQuiltOutput.ShutdownPendingCount +
+                    ", retentionPending=" + BridgeEditorPreviewRetention.PendingCount);
 
                 playModeObserver = state =>
                 {
@@ -1566,7 +2060,7 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                 if (previewAttempted && !Application.isPlaying &&
                     (PreviewApi.IsActive || PreviewApi.IsStopping || BridgeEditorPreviewRetention.PendingCount != 0))
                 {
-                    PreviewApi.Stop();
+                    PreviewApi.Close();
                     BridgeEditorPreviewRetention.RequestStop(true);
                 }
                 if (!crossedPlayMode)
@@ -1858,9 +2352,8 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                 " preview. elapsedSeconds=" + (EditorApplication.timeSinceStartup - startedAt).ToString("F1", System.Globalization.CultureInfo.InvariantCulture));
         }
 
-        static IEnumerator WaitForDevicePreviewContent(string label, bool expectMagenta)
+        static IEnumerator WaitForDevicePreviewContent(string label, bool expectMagenta, uint minimumCompletedFrames = 5)
         {
-            const uint minimumCompletedFrames = 5;
             double startedAt = EditorApplication.timeSinceStartup;
             double deadline = startedAt + 30.0;
             uint lastSampledCompleted = uint.MaxValue;
@@ -1907,7 +2400,8 @@ namespace ViewWeave.BridgeEditorPreviewValidation
             string label,
             string snapshotBasePath,
             int priorSnapshotSessions,
-            bool expectMagenta)
+            bool expectMagenta,
+            DateTime newerThanUtc = default)
         {
             double deadline = EditorApplication.timeSinceStartup + 30.0;
             string frameThreePath = string.Empty;
@@ -1917,15 +2411,16 @@ namespace ViewWeave.BridgeEditorPreviewValidation
             while (EditorApplication.timeSinceStartup < deadline)
             {
                 string[] frameFivePaths = GetBridgeFrameFiveSnapshotPaths(snapshotBasePath);
-                if (frameFivePaths.Length > priorSnapshotSessions)
+                string newestFrameFive = null;
+                for (int i = 0; i < frameFivePaths.Length; i++)
                 {
-                    string newestFrameFive = frameFivePaths[0];
-                    for (int i = 1; i < frameFivePaths.Length; i++)
-                    {
-                        if (File.GetLastWriteTimeUtc(frameFivePaths[i]) > File.GetLastWriteTimeUtc(newestFrameFive))
-                            newestFrameFive = frameFivePaths[i];
-                    }
-
+                    if (newestFrameFive == null || File.GetLastWriteTimeUtc(frameFivePaths[i]) > File.GetLastWriteTimeUtc(newestFrameFive))
+                        newestFrameFive = frameFivePaths[i];
+                }
+                bool hasNewSnapshot = frameFivePaths.Length > priorSnapshotSessions ||
+                    (newestFrameFive != null && newerThanUtc != default && File.GetLastWriteTimeUtc(newestFrameFive) > newerThanUtc);
+                if (hasNewSnapshot)
+                {
                     frameFivePath = newestFrameFive;
                     frameThreePath = frameFivePath.Replace(".frame-005.bridge.png", ".frame-003.bridge.png");
                     bool frameThreeRead = TryReadBridgeSnapshotPixels(frameThreePath, expectMagenta, out frameThreeStats, out bool frameThreeMatches);
@@ -1955,6 +2450,18 @@ namespace ViewWeave.BridgeEditorPreviewValidation
         }
 
         static int CountBridgeFrameFiveSnapshots(string snapshotBasePath) => GetBridgeFrameFiveSnapshotPaths(snapshotBasePath).Length;
+
+        static DateTime LatestBridgeFrameFiveWrite(string snapshotBasePath)
+        {
+            string[] paths = GetBridgeFrameFiveSnapshotPaths(snapshotBasePath);
+            DateTime latest = default;
+            for (int i = 0; i < paths.Length; i++)
+            {
+                DateTime write = File.GetLastWriteTimeUtc(paths[i]);
+                if (write > latest) latest = write;
+            }
+            return latest;
+        }
 
         static double GetRestartObserverHoldSeconds()
         {
@@ -2146,8 +2653,16 @@ namespace ViewWeave.BridgeEditorPreviewValidation
 
         static void StopDevicePreview(string label)
         {
+            pauseBaselineOutput = PreviewApi.ProducerOutput;
+            Assert.IsNotNull(pauseBaselineOutput, "An active preview output is required before pausing.");
+            pauseBaselineGeneration = pauseBaselineOutput.SessionGeneration;
+            pauseBaselineHandle = pauseBaselineOutput.NativeHandle;
+            pauseBaselineSubmissions = pauseBaselineOutput.Submissions;
+            pauseBaselineCompleted = pauseBaselineOutput.Completed;
+            pauseBaselineRetentionPending = BridgeEditorPreviewRetention.PendingCount;
             Assert.IsTrue(PreviewApi.Stop(), "The device preview Stop request should be accepted.");
-            Debug.Log("EDITOR_PREVIEW_DEVICE stop_requested phase=" + label);
+            Debug.Log("EDITOR_PREVIEW_DEVICE pause_requested phase=" + label + ", generation=" + pauseBaselineGeneration +
+                ", submissions=" + pauseBaselineSubmissions);
         }
 
         static IEnumerator WaitForDeviceStop(string label)
@@ -2156,29 +2671,65 @@ namespace ViewWeave.BridgeEditorPreviewValidation
             double deadline = startedAt + 30.0;
             while (EditorApplication.timeSinceStartup < deadline)
             {
+                BridgeWorkerQuiltOutput output = PreviewApi.ProducerOutput;
+                if (PreviewApi.IsActive && PreviewApi.IsPaused && !PreviewApi.IsStopping &&
+                    object.ReferenceEquals(output, pauseBaselineOutput) && output != null && output.Ready &&
+                    output.SessionGeneration == pauseBaselineGeneration && output.NativeHandle == pauseBaselineHandle &&
+                    output.Submissions == pauseBaselineSubmissions &&
+                    BridgeEditorPreviewRetention.PendingCount == pauseBaselineRetentionPending &&
+                    !BridgeEditorPreviewRetention.HasStoppingRecords &&
+                    BridgeWorkerQuiltOutput.ShutdownPendingCount == 0)
+                {
+                    Debug.Log("EDITOR_PREVIEW_DEVICE paused phase=" + label + ", active=true, generation=" + output.SessionGeneration +
+                        ", submissions=" + output.Submissions + ", retainedRecords=" + BridgeEditorPreviewRetention.PendingCount +
+                        ", stoppingRecords=false, nativePending=0, elapsedSeconds=" +
+                        (EditorApplication.timeSinceStartup - startedAt).ToString("F1", System.Globalization.CultureInfo.InvariantCulture));
+                    uint pausedSubmissions = output.Submissions;
+                    for (int i = 0; i < 3; i++) yield return null;
+                    Assert.AreEqual(pausedSubmissions, output.Submissions, "A paused preview must not submit additional quilts.");
+                    yield break;
+                }
+                yield return null;
+            }
+            Assert.Fail("Device preview did not acknowledge reusable pause during " + label + ". active=" +
+                PreviewApi.IsActive + ", paused=" + PreviewApi.IsPaused + ", stopping=" + PreviewApi.IsStopping + ", retentionPending=" +
+                BridgeEditorPreviewRetention.PendingCount + ", nativePending=" + BridgeWorkerQuiltOutput.ShutdownPendingCount +
+                ", elapsedSeconds=" + (EditorApplication.timeSinceStartup - startedAt).ToString("F1", System.Globalization.CultureInfo.InvariantCulture) +
+                ", records=" + PreviewApi.DescribeRetentionRecords());
+        }
+
+        static IEnumerator WaitForDeviceClose(string label)
+        {
+            double startedAt = EditorApplication.timeSinceStartup;
+            double deadline = startedAt + 30.0;
+            while (EditorApplication.timeSinceStartup < deadline)
+            {
                 if (!PreviewApi.IsActive && !PreviewApi.IsStopping && BridgeEditorPreviewRetention.PendingCount == 0 &&
                     BridgeWorkerQuiltOutput.ShutdownPendingCount == 0)
                 {
-                    Debug.Log("EDITOR_PREVIEW_DEVICE stopped phase=" + label + ", active=false, pending=0, elapsedSeconds=" +
+                    Debug.Log("EDITOR_PREVIEW_DEVICE fully_closed phase=" + label + ", active=false, pending=0, elapsedSeconds=" +
                         (EditorApplication.timeSinceStartup - startedAt).ToString("F1", System.Globalization.CultureInfo.InvariantCulture));
                     yield break;
                 }
                 yield return null;
             }
-            Assert.Fail("Device preview did not complete Worker handoff and GPU proof during " + label + " Stop. active=" +
+            Assert.Fail("Device preview did not complete full close from Paused during " + label + ". active=" +
                 PreviewApi.IsActive + ", stopping=" + PreviewApi.IsStopping + ", retentionPending=" +
                 BridgeEditorPreviewRetention.PendingCount + ", nativePending=" + BridgeWorkerQuiltOutput.ShutdownPendingCount +
-                ", elapsedSeconds=" + (EditorApplication.timeSinceStartup - startedAt).ToString("F1", System.Globalization.CultureInfo.InvariantCulture) +
                 ", records=" + PreviewApi.DescribeRetentionRecords());
         }
 
         static IEnumerator RunLocalPreview(bool hdrp)
         {
             var fixture = new Fixture(hdrp);
+            var previewRoot = new VisualElement();
+            ViewWeaveRigInspectorUI previewUi = null;
             bool previewAttempted = false;
             try
             {
                 fixture.Setup();
+                previewUi = new ViewWeaveRigInspectorUI(previewRoot, () => fixture.Rig, () => null, _ => { });
+                previewUi.Rebuild();
                 QuiltRenderer sourceRenderer = fixture.Rig.Renderer;
                 float storedAspect = sourceRenderer.settings.viewAspect;
                 float storedDistance = sourceRenderer.settings.cameraDistance;
@@ -2195,6 +2746,10 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                 previewAttempted = true;
                 if (!PreviewApi.Start(fixture.Rig, false, out string startError))
                     throw new AssertionException("Local Editor preview did not start: " + startError);
+                previewUi.Refresh();
+                Button closeButton = previewRoot.Q<Button>("closePreview");
+                Assert.IsNotNull(closeButton, "The authoring UI should expose a separate full-close action.");
+                Assert.IsTrue(closeButton.enabledInHierarchy, "Full close should be available while the preview is running.");
 
                 yield return WaitFor(() => PreviewApi.IsActive && IsCreated(PreviewApi.Texture),
                     "Local Editor preview did not produce a created quilt texture.");
@@ -2255,21 +2810,60 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                 Assert.AreSame(first, PreviewApi.Texture, "A rejected structural change must not rebuild or replace preview textures.");
                 Debug.Log("EDITOR_PREVIEW_GPU profile_mutation pipeline=" + (hdrp ? "HDRP" : "URP") + ", rejected=true, profileUnchanged=true");
 
+                QuiltRenderer beforePauseProducer = PreviewApi.ProducerRenderer;
+                RenderTexture beforePauseView = PreviewApi.ViewTexture;
+                long beforePauseRevision = producerRenderer.LatestSnapshot.Revision;
+                int retentionPendingBeforePause = BridgeEditorPreviewRetention.PendingCount;
                 PreviewApi.Stop();
+                yield return WaitFor(() => PreviewApi.IsPaused && PreviewApi.IsActive && !PreviewApi.IsStopping,
+                    "Editor preview did not acknowledge a reusable local pause.");
+                Assert.AreSame(producerRenderer, PreviewApi.ProducerRenderer, "Pause must retain the producer instance.");
+                Assert.AreSame(first, PreviewApi.Texture, "Pause must retain the Core quilt texture.");
+                Assert.AreSame(beforePauseView, PreviewApi.ViewTexture, "Pause must retain the Core view texture.");
+                Assert.AreEqual(retentionPendingBeforePause, BridgeEditorPreviewRetention.PendingCount,
+                    "Pause must not add a GPU retention stop record.");
+                previewUi.Refresh();
+                Assert.AreEqual("Resume Preview", previewRoot.Q<Button>("pauseResumePreview")?.text);
+                Assert.IsTrue(closeButton.enabledInHierarchy, "Full close must remain available while the preview is paused.");
+                Assert.IsTrue(sourceRenderer.TryGetFraming(out QuiltCameraFraming pausedFraming));
+                float resumedFieldOfView = pausedFraming.VerticalFieldOfView + 1f;
+                Assert.IsTrue(sourceRenderer.TrySetFraming(new QuiltCameraFraming(resumedFieldOfView,
+                    pausedFraming.FocusDistance, pausedFraming.PhysicalFramingEnabled, pausedFraming.ApertureWidthMillimeters,
+                    pausedFraming.ApertureHeightMillimeters, pausedFraming.UnitsPerMeter), out string pausedMutationError),
+                    "Allowed framing changes should be accepted while paused and applied on resume: " + pausedMutationError);
+                InvalidOperationException pausedProfileError = Assert.Throws<InvalidOperationException>(
+                    () => fixture.Rig.ApplyProfile(new QuiltQualityProfile(256, 128, 4, 2, 8, 1f, 20f)));
+                StringAssert.Contains("Editor preview owns this Rig", pausedProfileError.Message);
+                Assert.AreEqual(originalProfile.QuiltWidth, fixture.Rig.Profile.QuiltWidth,
+                    "Paused ownership must continue to reject structural profile changes.");
+                for (int frame = 0; frame < 3; ++frame) yield return null;
+                Assert.AreEqual(beforePauseRevision, producerRenderer.LatestSnapshot.Revision,
+                    "Paused preview must not render or mutate its snapshot.");
+
+                Assert.IsTrue(PreviewApi.Start(fixture.Rig, false, out startError), "The same Rig should resume its paused local preview: " + startError);
+                yield return WaitFor(() => !PreviewApi.IsPaused && PreviewApi.IsActive && producerRenderer.LatestSnapshot.Revision > beforePauseRevision &&
+                    Mathf.Abs(producerRenderer.LatestSnapshot.Geometry.fieldOfView - resumedFieldOfView) < 0.001f,
+                    "The local preview did not render a fresh frame after resume.");
+                Assert.AreSame(beforePauseProducer, PreviewApi.ProducerRenderer, "Resume must reuse the same producer instance.");
+                Assert.AreSame(first, PreviewApi.Texture, "Resume must reuse the same Core quilt texture.");
+                Assert.AreSame(beforePauseView, PreviewApi.ViewTexture, "Resume must reuse the same Core view texture.");
+
+                PreviewApi.Close();
                 yield return WaitFor(() => !PreviewApi.IsActive && !PreviewApi.IsStopping &&
                     BridgeEditorPreviewRetention.PendingCount == 0 && (!first || !first.IsCreated()),
-                    "Editor preview resources did not complete stop and GPU proof.");
-                Assert.IsTrue(BridgeEditorPreviewRetention.RequestStop(true));
+                    "Editor preview lifecycle close did not complete its GPU proof.");
                 Assert.AreEqual(0, BridgeEditorPreviewRetention.PendingCount);
-                Debug.Log("EDITOR_PREVIEW_GPU stop pipeline=" + (hdrp ? "HDRP" : "URP") + ", active=false, pending=0");
+                Debug.Log("EDITOR_PREVIEW_GPU pause_resume pipeline=" + (hdrp ? "HDRP" : "URP") + ", sameProducer=true, sameCoreTextures=true");
             }
             finally
             {
                 if (previewAttempted)
                 {
-                    PreviewApi.Stop();
+                    PreviewApi.Close();
                     BridgeEditorPreviewRetention.RequestStop(true);
                 }
+                previewUi?.Dispose();
+                previewRoot.Clear();
                 fixture.Dispose();
             }
         }
@@ -2580,6 +3174,7 @@ namespace ViewWeave.BridgeEditorPreviewValidation
         {
             static readonly Type Service = Type.GetType("ViewWeave.Editor.BridgeEditorPreview, ViewWeave.Bridge.Editor", true);
             static readonly PropertyInfo ActiveProperty = Service.GetProperty("IsActive", BindingFlags.Static | BindingFlags.NonPublic);
+            static readonly PropertyInfo PausedProperty = Service.GetProperty("IsPaused", BindingFlags.Static | BindingFlags.NonPublic);
             static readonly PropertyInfo StoppingProperty = Service.GetProperty("IsStopping", BindingFlags.Static | BindingFlags.NonPublic);
             static readonly PropertyInfo StatusProperty = Service.GetProperty("Status", BindingFlags.Static | BindingFlags.NonPublic);
             static readonly PropertyInfo LastErrorProperty = Service.GetProperty("LastError", BindingFlags.Static | BindingFlags.NonPublic);
@@ -2589,8 +3184,10 @@ namespace ViewWeave.BridgeEditorPreviewValidation
             static readonly FieldInfo ViewTextureField = typeof(QuiltRenderer).GetField("viewTexture", BindingFlags.Instance | BindingFlags.NonPublic);
             static readonly FieldInfo ProducerOutputField = Service.GetField("producerOutput", BindingFlags.Static | BindingFlags.NonPublic);
             static readonly FieldInfo ProducerCameraField = Service.GetField("producerCamera", BindingFlags.Static | BindingFlags.NonPublic);
+            static readonly FieldInfo TransferTextureField = typeof(BridgeWorkerQuiltOutput).GetField("transferTexture", BindingFlags.Instance | BindingFlags.NonPublic);
             static readonly MethodInfo StartMethod = Service.GetMethod("Start", BindingFlags.Static | BindingFlags.NonPublic);
             static readonly MethodInfo StopMethod = Service.GetMethod("Stop", BindingFlags.Static | BindingFlags.NonPublic);
+            static readonly MethodInfo CloseMethod = Service.GetMethod("CloseForTargetChange", BindingFlags.Static | BindingFlags.NonPublic);
             static readonly MethodInfo RequestRefreshMethod = Service.GetMethod("RequestRefresh", BindingFlags.Static | BindingFlags.NonPublic);
             static readonly Type RetentionRecord = Type.GetType("ViewWeave.BridgeEditorPreviewRetentionRecord, ViewWeave.Bridge", true);
             static readonly PropertyInfo ValidationPendingProperty = typeof(BridgeWorkerQuiltOutput).Assembly
@@ -2598,6 +3195,7 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                 .GetProperty("IsValidationPending", BindingFlags.Static | BindingFlags.NonPublic);
 
             internal static bool IsActive => (bool)ActiveProperty.GetValue(null);
+            internal static bool IsPaused => (bool)PausedProperty.GetValue(null);
             internal static bool IsStopping => (bool)StoppingProperty.GetValue(null);
             internal static string Status => (string)StatusProperty.GetValue(null) ?? string.Empty;
             internal static string LastError => (string)LastErrorProperty.GetValue(null) ?? string.Empty;
@@ -2607,6 +3205,7 @@ namespace ViewWeave.BridgeEditorPreviewValidation
             internal static QuiltRenderer ProducerRenderer => (QuiltRenderer)ProducerRendererField.GetValue(null);
             internal static RenderTexture ViewTexture => (RenderTexture)ViewTextureField.GetValue(ProducerRenderer);
             internal static BridgeWorkerQuiltOutput ProducerOutput => (BridgeWorkerQuiltOutput)ProducerOutputField.GetValue(null);
+            internal static RenderTexture TransferTexture(BridgeWorkerQuiltOutput output) => (RenderTexture)TransferTextureField.GetValue(output);
             internal static string DescribeCameras(Camera sourceCamera, GameObject targetObject)
             {
                 Camera producer = (Camera)ProducerCameraField.GetValue(null);
@@ -2634,6 +3233,8 @@ namespace ViewWeave.BridgeEditorPreviewValidation
             }
 
             internal static bool Stop() => (bool)StopMethod.Invoke(null, null);
+
+            internal static void Close() => CloseMethod.Invoke(null, new object[] { "Unity preview test cleanup." });
 
             internal static void RequestRefresh() => RequestRefreshMethod.Invoke(null, null);
 

@@ -4,6 +4,11 @@ extern "C" LKG_EXPORT void* lkg_worker_begin(const char*, const char*, uint32_t,
 extern "C" LKG_EXPORT int32_t lkg_worker_poll(void*, LkgWorkerStatus*) { return -1; }
 extern "C" LKG_EXPORT int32_t lkg_worker_close(void*) { return -1; }
 extern "C" LKG_EXPORT int32_t lkg_worker_reset_transfer(void*) { return -1; }
+extern "C" LKG_EXPORT int32_t lkg_worker_set_preview_paused(void*, uint32_t) { return -2; }
+extern "C" LKG_EXPORT int32_t lkg_worker_get_preview_pause_state(void*, uint32_t* phase) {
+    if (phase) *phase = LKG_WORKER_PREVIEW_FAULTED;
+    return -2;
+}
 extern "C" LKG_EXPORT int32_t lkg_worker_release(void*) { return -1; }
 extern "C" LKG_EXPORT void* lkg_worker_make_draw_data(void*, void*, uint32_t, uint32_t, float, float) { return nullptr; }
 extern "C" LKG_EXPORT int32_t lkg_worker_cancel_draw_data(void*) { return -1; }

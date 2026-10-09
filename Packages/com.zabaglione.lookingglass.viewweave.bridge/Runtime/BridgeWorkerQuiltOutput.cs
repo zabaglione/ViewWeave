@@ -187,6 +187,7 @@ namespace ViewWeave
 #if UNITY_EDITOR
         object editorPreviewOwner;
         BridgeEditorPreviewRetentionRecord editorPreviewRetentionRecord;
+        bool editorPreviewSubmissionsPaused;
 #endif
         bool disposalInProgress;
         long sessionGeneration;
@@ -443,6 +444,7 @@ namespace ViewWeave
             if (owner == null || retentionRecord == null) { error = "An Editor preview owner and retention record are required."; return false; }
             if (editorPreviewOwner != null || playbackToken != null) { error = "Bridge output is already owned."; return false; }
             editorPreviewRetentionRecord = retentionRecord;
+            editorPreviewSubmissionsPaused = false;
             if (!TryBeginCore(BridgeGraphicsBackendRoute.EditorPreview))
             {
                 error = LastError;
@@ -459,8 +461,111 @@ namespace ViewWeave
 
         internal bool TrySubmitEditorPreview(object owner, RenderTexture quiltTexture, QuiltLayout layout)
         {
-            if (owner == null || !ReferenceEquals(editorPreviewOwner, owner) || playbackToken != null) return false;
+            if (owner == null || !ReferenceEquals(editorPreviewOwner, owner) || playbackToken != null || editorPreviewSubmissionsPaused) return false;
             return SubmitCore(quiltTexture, layout);
+        }
+
+        internal bool TrySetEditorPreviewPaused(object owner, bool paused, out string error)
+        {
+            error = string.Empty;
+            if (owner == null || !ReferenceEquals(editorPreviewOwner, owner) || playbackToken != null)
+            {
+                error = "The active Editor preview does not own this Bridge output.";
+                return false;
+            }
+            if (state != WorkerState.Ready || handle == IntPtr.Zero)
+            {
+                error = "The Bridge worker must be Ready before pausing or resuming the Editor preview.";
+                return false;
+            }
+            if (paused) editorPreviewSubmissionsPaused = true;
+#if UNITY_EDITOR
+            if (!BridgeNativeImageGuard.TryValidateOwnerIdentity(nativeModuleIdentity, out string imageGuardError))
+            {
+                error = imageGuardError;
+                return false;
+            }
+#endif
+            try
+            {
+                int result = BridgeWorkerNative.lkg_worker_set_preview_paused(handle, paused ? 1u : 0u);
+                if (result != 0)
+                {
+                    error = "Bridge worker rejected the Editor preview pause request (code " + result.ToString(CultureInfo.InvariantCulture) + ").";
+                    return false;
+                }
+                return true;
+            }
+            catch (EntryPointNotFoundException)
+            {
+                error = "The loaded Bridge native library does not support reusable preview pause. Restart the Unity Editor after updating the package.";
+                return false;
+            }
+            catch (DllNotFoundException)
+            {
+                error = "Bridge worker native library is missing.";
+                return false;
+            }
+            catch (Exception exception)
+            {
+                error = Sanitize(exception.Message);
+                return false;
+            }
+        }
+
+        internal bool EditorPreviewImageValidationPending => BridgeNativeImageGuard.IsValidationPending;
+
+        internal bool TryGetEditorPreviewPausePhase(object owner, out EditorPreviewPausePhase phase, out string error)
+        {
+            phase = EditorPreviewPausePhase.Faulted;
+            error = string.Empty;
+            if (owner == null || !ReferenceEquals(editorPreviewOwner, owner) || playbackToken != null || handle == IntPtr.Zero)
+            {
+                error = "The active Editor preview does not own a live Bridge worker.";
+                return false;
+            }
+#if UNITY_EDITOR
+            if (!BridgeNativeImageGuard.TryValidateOwnerIdentity(nativeModuleIdentity, out string imageGuardError))
+            {
+                error = imageGuardError;
+                return false;
+            }
+#endif
+            try
+            {
+                if (BridgeWorkerNative.lkg_worker_get_preview_pause_state(handle, out uint nativePhase) != 0)
+                {
+                    error = "Bridge worker could not report the Editor preview pause state.";
+                    return false;
+                }
+                if (nativePhase > (uint)EditorPreviewPausePhase.Faulted)
+                {
+                    error = "Bridge worker returned an invalid Editor preview pause state.";
+                    return false;
+                }
+                phase = (EditorPreviewPausePhase)nativePhase;
+                return true;
+            }
+            catch (EntryPointNotFoundException)
+            {
+                error = "The loaded Bridge native library does not support reusable preview pause. Restart the Unity Editor after updating the package.";
+                return false;
+            }
+            catch (DllNotFoundException)
+            {
+                error = "Bridge worker native library is missing.";
+                return false;
+            }
+            catch (Exception exception)
+            {
+                error = Sanitize(exception.Message);
+                return false;
+            }
+        }
+
+        internal void CompleteEditorPreviewResume(object owner)
+        {
+            if (owner != null && ReferenceEquals(editorPreviewOwner, owner)) editorPreviewSubmissionsPaused = false;
         }
 
         internal bool EndEditorPreview(object owner, BridgeEditorPreviewRetentionRecord retentionRecord)
@@ -469,8 +574,11 @@ namespace ViewWeave
                 !ReferenceEquals(editorPreviewRetentionRecord, retentionRecord)) return false;
             Dispose();
             editorPreviewOwner = null;
+            editorPreviewSubmissionsPaused = false;
             return retentionRecord.WorkerHandoffComplete;
         }
+
+        internal enum EditorPreviewPausePhase : uint { Running = 0, Pausing = 1, Paused = 2, Resuming = 3, Faulted = 4 }
 #endif
 
         bool TryBeginCore(BridgeGraphicsBackendRoute route)

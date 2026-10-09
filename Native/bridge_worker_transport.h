@@ -14,6 +14,14 @@ typedef enum LkgWorkerState {
     LKG_WORKER_CLOSED = 4
 } LkgWorkerState;
 
+typedef enum LkgWorkerPreviewPausePhase {
+    LKG_WORKER_PREVIEW_RUNNING = 0,
+    LKG_WORKER_PREVIEW_PAUSING = 1,
+    LKG_WORKER_PREVIEW_PAUSED = 2,
+    LKG_WORKER_PREVIEW_RESUMING = 3,
+    LKG_WORKER_PREVIEW_FAULTED = 4
+} LkgWorkerPreviewPausePhase;
+
 typedef struct LkgWorkerStatus {
     uint32_t state;
     uint32_t displayIndex;
@@ -93,6 +101,9 @@ LKG_EXPORT void* lkg_worker_begin(const char* runtimePath, const char* applicati
 LKG_EXPORT int32_t lkg_worker_poll(void* handle, LkgWorkerStatus* status);
 LKG_EXPORT int32_t lkg_worker_close(void* handle);
 LKG_EXPORT int32_t lkg_worker_reset_transfer(void* handle);
+/* Pause/resume are asynchronous requests. Poll get_preview_pause_state until the requested phase is acknowledged. */
+LKG_EXPORT int32_t lkg_worker_set_preview_paused(void* handle, uint32_t paused);
+LKG_EXPORT int32_t lkg_worker_get_preview_pause_state(void* handle, uint32_t* phase);
 LKG_EXPORT int32_t lkg_worker_release(void* handle);
 LKG_EXPORT void* lkg_worker_make_draw_data(void* handle, void* texture, uint32_t columns, uint32_t rows, float aspect, float zoom);
 LKG_EXPORT int32_t lkg_worker_cancel_draw_data(void* drawData);

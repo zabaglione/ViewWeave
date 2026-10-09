@@ -71,6 +71,7 @@ namespace ViewWeave.Editor
         Button localPreviewButton;
         Button devicePreviewButton;
         Button stopPreviewButton;
+    Button closePreviewButton;
         Button setFocusButton;
         Button horizontalOrbitButton;
         Button verticalOrbitButton;
@@ -352,10 +353,12 @@ namespace ViewWeave.Editor
             var buttonRow = new VisualElement { style = { flexDirection = FlexDirection.Column } };
             localPreviewButton = new Button(() => StartPreview(false)) { text = "Start Local Edit Mode Preview" };
             devicePreviewButton = new Button(() => StartPreview(true)) { text = "Start Looking Glass Device Preview" };
-            stopPreviewButton = new Button(StopPreview) { text = "Stop Preview" };
+            stopPreviewButton = new Button(StopPreview) { text = "Stop Preview", name = "pauseResumePreview" };
+            closePreviewButton = new Button(ClosePreview) { text = "Close Preview", name = "closePreview" };
             buttonRow.Add(localPreviewButton);
             buttonRow.Add(devicePreviewButton);
             buttonRow.Add(stopPreviewButton);
+            buttonRow.Add(closePreviewButton);
             foldout.Add(buttonRow);
 
             var previewActions = new VisualElement { style = { flexDirection = FlexDirection.Column } };
@@ -1201,7 +1204,18 @@ namespace ViewWeave.Editor
         {
             if (rig == null || BridgeEditorPreview.Target != rig) return;
             previewContainer?.MarkDirtyRepaint();
-            BridgeEditorPreview.Stop();
+            if (BridgeEditorPreview.IsPaused)
+            {
+                if (!BridgeEditorPreview.Start(rig, BridgeEditorPreview.OutputToDevice, out string error)) ShowPreviewError(error);
+            }
+            else BridgeEditorPreview.Stop();
+            RefreshPreview();
+        }
+
+        void ClosePreview()
+        {
+            if (rig == null || BridgeEditorPreview.Target != rig) return;
+            BridgeEditorPreview.CloseForTargetChange("Preview is closing at the user's request.");
             RefreshPreview();
         }
 
@@ -1214,7 +1228,13 @@ namespace ViewWeave.Editor
             bool canStart = !isPlayTransition && !BridgeEditorPreview.IsActive && !BridgeEditorPreview.IsStopping;
             localPreviewButton?.SetEnabled(canStart);
             devicePreviewButton?.SetEnabled(canStart);
-            stopPreviewButton?.SetEnabled(!isPlayTransition && activeForRig && !BridgeEditorPreview.IsStopping);
+            if (stopPreviewButton != null)
+            {
+                stopPreviewButton.text = BridgeEditorPreview.IsPaused ? "Resume Preview" :
+                    BridgeEditorPreview.IsTransitioningPause ? "Pause Pending" : "Pause Preview";
+                stopPreviewButton.SetEnabled(!isPlayTransition && activeForRig && !BridgeEditorPreview.IsStopping && !BridgeEditorPreview.IsTransitioningPause);
+            }
+            closePreviewButton?.SetEnabled(!isPlayTransition && activeForRig && !BridgeEditorPreview.IsStopping);
             setFocusButton?.SetEnabled(CanAuthor());
             horizontalOrbitButton?.SetEnabled(CanAuthor());
             verticalOrbitButton?.SetEnabled(CanAuthor());
@@ -1222,11 +1242,11 @@ namespace ViewWeave.Editor
             selectedViewField?.SetEnabled(activeForRig && previewMode == PreviewViewMode.SelectedLogicalView);
 
             if (activeForOtherRig)
-                previewStatus.text = "An Edit Mode preview is active for " + BridgeEditorPreview.Target.name + ". Stop it from that Rig before starting another preview.";
+                previewStatus.text = "An Edit Mode preview is active for " + BridgeEditorPreview.Target.name + ". Close it from that Rig before starting another preview.";
             else if (BridgeEditorPreview.IsStopping)
                 previewStatus.text = BridgeEditorPreview.Status ?? "Preview is stopping.";
             else if (activeForRig)
-                previewStatus.text = BridgeEditorPreview.Status ?? "Preview is active.";
+                previewStatus.text = BridgeEditorPreview.Status ?? (BridgeEditorPreview.IsPaused ? "Preview is paused." : "Preview is active.");
             else
                 previewStatus.text = "No Edit Mode preview is active.";
 

@@ -54,7 +54,7 @@ namespace ViewWeave.Editor
             EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
             view?.Dispose();
             if (BridgeEditorPreview.IsActive && !BridgeEditorPreview.IsStopping && BridgeEditorPreview.Target == rig)
-                BridgeEditorPreview.Stop();
+                BridgeEditorPreview.CloseForTargetChange("Preview is closing because its authoring window closed.");
             view = null;
         }
 
@@ -102,7 +102,7 @@ namespace ViewWeave.Editor
         {
             if (rig == nextRig) return;
             if (ShouldStopPreviewOnRigChange(rig, nextRig, BridgeEditorPreview.Target, BridgeEditorPreview.IsActive, BridgeEditorPreview.IsStopping))
-                BridgeEditorPreview.Stop();
+                BridgeEditorPreview.CloseForTargetChange("Preview is closing because the authoring window changed Rigs.");
             rig = nextRig;
             focusTarget = ResolveSelectionTarget(rig);
             if (rigField != null) rigField.SetValueWithoutNotify(rig);

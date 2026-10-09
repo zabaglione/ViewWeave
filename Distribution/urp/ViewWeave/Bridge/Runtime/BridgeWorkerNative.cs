@@ -83,5 +83,9 @@ namespace ViewWeave
         internal static extern int lkg_worker_get_final_shutdown_status_v1(ref FinalShutdownStatusV1 status);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
         internal static extern int lkg_worker_wait_final_shutdown_v1(uint timeoutMilliseconds, ref FinalShutdownStatusV1 status);
+        [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern int lkg_worker_set_preview_paused(IntPtr handle, uint paused);
+        [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern int lkg_worker_get_preview_pause_state(IntPtr handle, out uint phase);
     }
 }

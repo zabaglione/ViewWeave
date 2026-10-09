@@ -31,6 +31,7 @@ bool lkg_bridge_worker_claim();
 void lkg_bridge_worker_release_claim();
 void lkg_bridge_worker_enter();
 void lkg_bridge_worker_leave();
+int32_t lkg_bridge_set_session_visible(uint64_t session, uint32_t visible);
 extern "C" int32_t lkg_bridge_sdk_shutdown_faulted(void);
 extern "C" int32_t lkg_bridge_sdk_shutdown_incomplete(void);
 extern "C" int32_t lkg_bridge_close_sdk_admission(void);
@@ -53,6 +54,8 @@ struct WorkerContext {
     std::vector<LkgWorkerDisplaySnapshotItemV1> displaySnapshot;
     IUnknown* producerDevice = nullptr;
     LkgWorkerStatus status{};
+    uint32_t previewPausePhase = LKG_WORKER_PREVIEW_RUNNING;
+    bool previewPauseDesired = false;
     LkgWorkerPhysicalDisplayInfoV1 physicalDisplay{ static_cast<uint32_t>(sizeof(LkgWorkerPhysicalDisplayInfoV1)), 1, 0, 0, 0.0f, 0 };
     std::atomic<bool> closeRequested{false};
     std::atomic<bool> finished{false};
@@ -616,6 +619,8 @@ static void SetFault(WorkerContext& context, uint32_t code, const char* text) {
     std::lock_guard<std::mutex> lock(context.mutex);
     SetError(context, code, text);
     context.status.state = LKG_WORKER_FAULT;
+    context.previewPausePhase = LKG_WORKER_PREVIEW_FAULTED;
+    context.previewPauseDesired = false;
     context.closeRequested.store(true, std::memory_order_release);
     context.condition.notify_all();
     TraceWorker("fault");
@@ -1085,13 +1090,19 @@ static void RunWorker(WorkerContext* context, WorkerHost* host) {
         PumpWorkerMessages(*context);
         WorkerContext::Job job{};
         uint64_t displayRefreshGeneration = 0;
+        uint32_t visibilityRequest = UINT32_MAX;
         {
             std::unique_lock<std::mutex> lock(context->mutex);
             context->condition.wait_for(lock, std::chrono::milliseconds(10), [&] {
                 return context->jobCount != 0 || context->displayRefreshPending ||
+                    (context->previewPausePhase == LKG_WORKER_PREVIEW_PAUSED && !context->previewPauseDesired) ||
                     (context->closeRequested.load(std::memory_order_acquire) && context->pendingTokens == 0);
             });
-            if (context->closeRequested.load(std::memory_order_acquire)) context->displayRefreshPending = false;
+            const bool closing = context->closeRequested.load(std::memory_order_acquire);
+            if (closing) {
+                context->displayRefreshPending = false;
+                context->previewPauseDesired = false;
+            }
             if (context->jobCount == 0 && context->closeRequested.load(std::memory_order_acquire) && context->pendingTokens == 0) break;
             if (context->displayRefreshPending) {
                 displayRefreshGeneration = context->displayRequestedGeneration;
@@ -1102,6 +1113,52 @@ static void RunWorker(WorkerContext* context, WorkerHost* host) {
                 RefreshDisplaySnapshot(*context, displayRefreshGeneration);
                 continue;
             }
+            if (!closing) {
+                if (context->previewPausePhase == LKG_WORKER_PREVIEW_PAUSED) {
+                    if (context->previewPauseDesired) continue;
+                    context->previewPausePhase = LKG_WORKER_PREVIEW_RESUMING;
+                    visibilityRequest = 1;
+                } else if (context->previewPausePhase == LKG_WORKER_PREVIEW_RESUMING) {
+                    visibilityRequest = 1;
+                } else if (context->previewPauseDesired) {
+                    if (context->previewPausePhase == LKG_WORKER_PREVIEW_RUNNING)
+                        context->previewPausePhase = LKG_WORKER_PREVIEW_PAUSING;
+                    bool slotsDrained = !context->slotsInitializing && context->pendingTokens == 0 &&
+                        context->jobCount == 0 && !context->inFlightJob;
+                    for (const WorkerContext::Slot& slot : context->slots) slotsDrained = slotsDrained && !slot.inUse;
+                    if (context->previewPausePhase == LKG_WORKER_PREVIEW_PAUSING && slotsDrained)
+                        visibilityRequest = 0;
+                } else if (context->previewPausePhase == LKG_WORKER_PREVIEW_PAUSING) {
+                    context->previewPausePhase = LKG_WORKER_PREVIEW_RUNNING;
+                }
+            }
+            if (visibilityRequest != UINT32_MAX) {
+                lock.unlock();
+                int32_t visibleResult = -1;
+                try { visibleResult = lkg_bridge_set_session_visible(session, visibilityRequest); }
+                catch (...) { visibleResult = -1; }
+                bool visibilityFailed = false;
+                {
+                    std::lock_guard<std::mutex> stateLock(context->mutex);
+                    if (visibleResult != 0) {
+                        context->previewPausePhase = LKG_WORKER_PREVIEW_FAULTED;
+                        visibilityFailed = true;
+                    } else if (visibilityRequest == 0) {
+                        context->previewPausePhase = context->previewPauseDesired &&
+                            !context->closeRequested.load(std::memory_order_acquire)
+                            ? LKG_WORKER_PREVIEW_PAUSED : LKG_WORKER_PREVIEW_RESUMING;
+                    } else {
+                        context->previewPausePhase = context->previewPauseDesired &&
+                            !context->closeRequested.load(std::memory_order_acquire)
+                            ? LKG_WORKER_PREVIEW_PAUSING : LKG_WORKER_PREVIEW_RUNNING;
+                    }
+                    context->condition.notify_all();
+                }
+                if (visibilityFailed)
+                    SetFault(*context, 23, visibilityRequest ? "Bridge preview resume failed" : "Bridge preview pause failed");
+                continue;
+            }
+            if (!closing && context->previewPausePhase == LKG_WORKER_PREVIEW_PAUSED) continue;
             if (!PopJob(*context, job)) continue;
             context->inFlightJob = true;
             context->inFlightSlot = job.slot;
@@ -1364,6 +1421,22 @@ LKG_EXPORT uintptr_t lkg_worker_test_context_device_identity(void* handle) {
     return context ? context->testWorkerDeviceIdentity.load(std::memory_order_acquire) : 0;
 }
 
+LKG_EXPORT int32_t lkg_worker_test_get_transfer_slot_identity(void* handle, uintptr_t* producerTexture,
+    uintptr_t* workerTexture, uint64_t* generation) {
+    if (!handle || !producerTexture || !workerTexture || !generation) return -1;
+    auto* context = static_cast<WorkerContext*>(handle);
+    std::lock_guard<std::mutex> registryLock(registryMutex);
+    if (registry.find(context) == registry.end()) return -2;
+    std::lock_guard<std::mutex> lock(context->mutex);
+    const WorkerContext::Slot& slot = context->slots[0];
+    *producerTexture = reinterpret_cast<uintptr_t>(slot.d3d12Slot
+        ? static_cast<void*>(slot.sourceTexture12.Get()) : static_cast<void*>(slot.producerTexture.Get()));
+    *workerTexture = reinterpret_cast<uintptr_t>(slot.d3d12Slot
+        ? static_cast<void*>(slot.sharedTexture12.Get()) : static_cast<void*>(slot.workerTexture.Get()));
+    *generation = slot.generation;
+    return 0;
+}
+
 LKG_EXPORT uint32_t lkg_worker_test_host_device_create_count(void) {
     std::lock_guard<std::mutex> lock(hostRegistryMutex);
     return persistentHost ? persistentHost->testWorkerDeviceCreateCount.load(std::memory_order_acquire) : 0;
@@ -1474,9 +1547,43 @@ LKG_EXPORT int32_t lkg_worker_close(void* handle) {
     if (registry.find(context) == registry.end()) return -2;
     std::lock_guard<std::mutex> lock(context->mutex);
     if (context->status.state == LKG_WORKER_CLOSED || context->status.state == LKG_WORKER_FAULT) return 0;
+    context->previewPauseDesired = false;
     context->closeRequested.store(true, std::memory_order_release);
     if (context->status.state == LKG_WORKER_CONNECTING || context->status.state == LKG_WORKER_READY) context->status.state = LKG_WORKER_CLOSING;
     context->condition.notify_all();
+    return 0;
+}
+
+LKG_EXPORT int32_t lkg_worker_set_preview_paused(void* handle, uint32_t paused) {
+    if (!handle || paused > 1) return -1;
+    auto* context = static_cast<WorkerContext*>(handle);
+    std::lock_guard<std::mutex> registryLock(registryMutex);
+    if (registry.find(context) == registry.end()) return -2;
+    if (finalShutdownRequested) return -4;
+    std::lock_guard<std::mutex> lock(context->mutex);
+    if (context->metadataOnly || context->status.state != LKG_WORKER_READY ||
+        context->closeRequested.load(std::memory_order_acquire)) return -3;
+    if (context->previewPausePhase == LKG_WORKER_PREVIEW_FAULTED) return -5;
+    context->previewPauseDesired = paused != 0;
+    if (paused != 0) {
+        if (context->previewPausePhase == LKG_WORKER_PREVIEW_RUNNING ||
+            context->previewPausePhase == LKG_WORKER_PREVIEW_RESUMING)
+            context->previewPausePhase = LKG_WORKER_PREVIEW_PAUSING;
+    } else if (context->previewPausePhase == LKG_WORKER_PREVIEW_PAUSED) {
+        context->previewPausePhase = LKG_WORKER_PREVIEW_RESUMING;
+    }
+    context->condition.notify_all();
+    return 0;
+}
+
+LKG_EXPORT int32_t lkg_worker_get_preview_pause_state(void* handle, uint32_t* phase) {
+    if (!handle || !phase) return -1;
+    auto* context = static_cast<WorkerContext*>(handle);
+    std::lock_guard<std::mutex> registryLock(registryMutex);
+    if (registry.find(context) == registry.end()) return -2;
+    std::lock_guard<std::mutex> lock(context->mutex);
+    *phase = context->status.state == LKG_WORKER_FAULT
+        ? LKG_WORKER_PREVIEW_FAULTED : context->previewPausePhase;
     return 0;
 }
 
@@ -1486,7 +1593,8 @@ LKG_EXPORT int32_t lkg_worker_reset_transfer(void* handle) {
     std::lock_guard<std::mutex> registryLock(registryMutex);
     if (registry.find(context) == registry.end()) return -1;
     std::lock_guard<std::mutex> lock(context->mutex);
-    if (context->status.state != LKG_WORKER_READY || context->closeRequested.load(std::memory_order_acquire)) return -3;
+    if (context->status.state != LKG_WORKER_READY || context->closeRequested.load(std::memory_order_acquire) ||
+        context->previewPausePhase != LKG_WORKER_PREVIEW_RUNNING || context->previewPauseDesired) return -3;
     if (context->slotsInitializing || context->pendingTokens != 0 || context->jobCount != 0 || context->inFlightJob) return -2;
     for (const WorkerContext::Slot& slot : context->slots) {
         if (slot.inUse) return -2;
@@ -1527,7 +1635,8 @@ LKG_EXPORT void* lkg_worker_make_draw_data(void* handle, void* texture, uint32_t
     std::lock_guard<std::mutex> registryLock(registryMutex);
     if (finalShutdownRequested || registry.find(context) == registry.end()) return nullptr;
     std::lock_guard<std::mutex> lock(context->mutex);
-    if (context->status.state != LKG_WORKER_READY || context->closeRequested.load(std::memory_order_acquire) || context->pendingTokens >= 3) {
+    if (context->status.state != LKG_WORKER_READY || context->closeRequested.load(std::memory_order_acquire) ||
+        context->previewPauseDesired || context->previewPausePhase != LKG_WORKER_PREVIEW_RUNNING || context->pendingTokens >= 3) {
         ++context->status.dropped;
         return nullptr;
     }
@@ -1597,6 +1706,7 @@ LKG_EXPORT int32_t lkg_worker_close_all(void) {
         for (WorkerContext* context : registry) {
             if (!context) continue;
             std::lock_guard<std::mutex> lock(context->mutex);
+            context->previewPauseDesired = false;
             context->closeRequested.store(true, std::memory_order_release);
             if (context->status.state == LKG_WORKER_CONNECTING || context->status.state == LKG_WORKER_READY)
                 context->status.state = LKG_WORKER_CLOSING;

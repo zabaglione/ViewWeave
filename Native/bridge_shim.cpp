@@ -84,6 +84,7 @@ struct Session {
     bool registered{};
     bool snapshotAttempted{};
     bool cleanupFailed{};
+    bool visible{true};
 };
 
 #if defined(_WIN32)
@@ -1243,7 +1244,7 @@ LKG_EXPORT uint64_t lkg_bridge_create_d3d11_session(void* device, uint32_t displ
     }
     try {
         std::lock_guard<std::mutex> lock(g_mutex);
-        g_sessions.emplace(id, Session{window, dx, nullptr, display, 0, false, false, false, false});
+        g_sessions.emplace(id, Session{window, dx, nullptr, display, 0, 0, false, false, false, false, true});
         trace_sessionf(id, "create_stored window=%lu device=%p display=%u session_count=%llu",
                        window, dx, display, static_cast<unsigned long long>(g_sessions.size()));
     } catch (...) {
@@ -1252,6 +1253,33 @@ LKG_EXPORT uint64_t lkg_bridge_create_d3d11_session(void* device, uint32_t displ
         return 0;
     }
     return id;
+}
+
+// Internal worker-only operation. The transport invokes this on the persistent
+// SDK owner thread after all producer/copy proofs have drained.
+int32_t lkg_bridge_set_session_visible(uint64_t id, uint32_t visible) {
+    if (visible > 1) return -1;
+    if (!g_worker_scope) return -8;
+    if (direct_call_rejected()) return -6;
+    if (!has_sdk_ownership() || !g_initialized) return -7;
+    std::lock_guard<std::mutex> lock(g_mutex);
+    const auto found = g_sessions.find(id);
+    if (found == g_sessions.end()) return -2;
+    Session& session = found->second;
+    if (session.closing || !session.window) return -3;
+    if (session.visible == (visible != 0)) return 0;
+    if (!g_show_window) return -4;
+    bool changed = false;
+    try { changed = g_show_window(session.window, visible != 0); }
+    catch (...) { changed = false; }
+    trace_sessionf(id, "worker_visibility window=%lu visible=%u result=%d thread_id=%lu",
+                   session.window, visible, changed ? 1 : 0, trace_thread_id());
+    if (!changed) {
+        g_last_error = visible ? "Bridge window resume failed" : "Bridge window pause failed";
+        return -5;
+    }
+    session.visible = visible != 0;
+    return 0;
 }
 
 LKG_EXPORT int32_t lkg_bridge_destroy_session(uint64_t id) { if (direct_call_rejected()) return -6; if (!has_sdk_ownership()) return -7; std::lock_guard<std::mutex> lock(g_mutex); auto it = g_sessions.find(id); if (it == g_sessions.end()) return -1; it->second.closing = true; return 0; }

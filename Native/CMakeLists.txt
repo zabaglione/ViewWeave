@@ -173,6 +173,9 @@ if (WIN32 AND BUILD_TESTING)
   add_test(NAME lookingglass_persistent_d3d11_device_test
     COMMAND lookingglass_worker_transport_test --persistent-d3d11-device-only)
   set_tests_properties(lookingglass_persistent_d3d11_device_test PROPERTIES TIMEOUT 30)
+  add_test(NAME lookingglass_worker_preview_pause_test
+    COMMAND lookingglass_worker_transport_test --preview-pause-only)
+  set_tests_properties(lookingglass_worker_preview_pause_test PROPERTIES TIMEOUT 30)
 
   if (NOT LKG_TRANSPORT_TESTS_ONLY)
     add_library(lkg_fake_bridge_runtime SHARED tests/fake_bridge_runtime.cpp)

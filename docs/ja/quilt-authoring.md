@@ -26,7 +26,7 @@ flowchart TB
     Preview -->|Device| Device["Start Looking Glass Device Preview"]
     Local --> Inspect["Quiltまたは論理viewを確認"]
     Device --> Inspect
-    Inspect --> Stop["Refresh PreviewまたはStop Preview"]
+    Inspect --> Stop["Pause PreviewまたはClose Preview"]
 ```
 
 `Camera & Focus`には`Focus Target`、`Use Selection`、`Set Focus From Target Center`、水平・垂直Orbit操作があります。objectをfieldへdragして指定できます。`Set Focus From Target Center`は要求するfocusを設定する明示操作です。physical framingがoffなら保存済み`Focus Distance`を更新し、onなら保存済みbase focus distanceを変更せずFOVを解きます。対象を選ぶだけではRig設定を変更しません。FocusとCamera操作では、ロード済みMain Stageまたは同一Prefab Stage内のobjectを対象にします。persistent assetとisolated Preview Sceneは拒否します。同じMain Stageのロード済みadditive sceneは許可します。`Scene View Controls`には`Show Near / Far`、`Show Extreme Views`、`Show 3D Focus Cursor`があり、技術用`QuiltRenderer` Inspectorと同じEditor設定を共有します。`Frame Focus Plane Center in Scene View`はzero-parallax面の中心をScene Viewに表示します。
@@ -76,7 +76,7 @@ flowchart TB
     Policy -->|busyまたは構造field| Reject["値を変えずに拒否"]
 ```
 
-native DLLまたはexportが変わるBridge UPM更新では、previewと通常Sessionを停止し、Package Managerでpackageを更新してからUnity Editorを再起動してください。Editor processが読み込んだnative imageは保持されます。native-image guardはimageが古い、重複している、または検証できない場合に呼び出しを拒否できますが、DLLをunload・reloadしません。Editorを終了した状態でpackageを更新する方法もありますが、Bridgeの再使用前にEditorの再起動が必要です。
+native DLLまたはexportが変わるBridge UPM更新では、previewと通常Sessionを停止し、Package Managerでpackageを更新してからUnity Editorを再起動してください。Editor processが読み込んだnative imageは保持されます。プロセス全体のSDK ownerと読み込み済みnative imageはEditor終了まで保持されます。 If the loaded DLL prevents replacement, exit and restart Unity before using Bridge again. native-image guardはimageが古い、重複している、または検証できない場合に呼び出しを拒否できますが、DLLをunload・reloadしません。Editorを終了した状態でpackageを更新する方法もありますが、Bridgeの再使用前にEditorの再起動が必要です。
 
 `Physical Display Framing` foldoutは既定で折りたたまれています。展開し、`Visible Aperture Width (mm)`、`Visible Aperture Height (mm)`、projectの`Unity Units per Meter`（既定値`1`）を設定してから`Use Physical 1:1 Framing`を有効にします。寸法が未設定または無効なら使用できません。有効にすると、実効view aspectは幅÷高さから、実効カメラ距離は縦FOVから算出され、zero-parallax面が設定した物理高さに1:1のscene scaleで収まります。source/base quality profileと保存済み`Focus Distance`は変更されません。有効中は保存済み距離のfieldが隠れ、入力が有効ならread-onlyの`Effective Focus Distance`が表示されます。算出したaspectと距離が実効Scene View gizmo、preview、runtime描画でbase値をoverrideします。FOV fieldは既存のFOV追従設定に従い、追従中のReference Cameraまたは保存済みQuilt FOVを編集します。FOVを変更すると算出距離も更新されます。このmodeでは`Set Focus From Target Center`は要求されたfocus距離に合うようFOVを解きますが、保存済みbase focus距離は変わりません。下のstatusにはgeometry source、実効aspect、aperture寸法、対角寸法が表示されます。
 
@@ -102,11 +102,23 @@ flowchart TB
 
 `Rendering` foldoutは既定で開いており、`Quilt View Render Mode`、local preview用のRig Quality Profile、source Rigの設定を表示します。`Session Quality`は接続中のBridge Sessionを編集し、新しいSessionでは`Balanced`が既定値です。Session未接続時のdevice previewも接続機器のprofileと`Balanced`を使います。local previewはRig profileを使います。previewまたはSessionがRigを所有している間、Rig Quality Profileと構造的なlayout設定は変更できません。変更する前にpreview/Sessionを停止してください。稼働中Sessionでは`Session Quality`を使い、既存のquality reconfiguration pathにより再接続せず変更できます。`Full`、`Half`、`Quarter`は次のframe境界で描画するlogical viewを切り替えますが、Quilt gridとlogical view数は変わりません。これらの操作はactive renderer-owner policyに従います。描画／completion通知、録画／再生lease、display metadata refresh、cleanup中は変更が拒否され、理由が表示される場合があります。
 
-`Preview`には明示開始する2つの操作があります。`Start Local Edit Mode Preview`はEditor内にQuiltを表示し、`Start Looking Glass Device Preview`はWindows D3D11/D3D12 Bridge Workerを通して接続機器へ送ります。device previewには公式Bridge runtimeが必要です。どちらも別のEditor-owned producerを使い、通常のSRP render callbackの外で描画します。Play Modeや選択したRigの通常Bridge Sessionは開始しません。先に通常Sessionを停止します。preview専用producerへ設定をコピーするため、previewの開始・停止で状態を保存sceneへ書き戻しません。`Stop Preview`を使ってください。Authoring windowで別Rigへ切り替えるとpreview停止を要求し、preview対象Rigを表示中のwindowを閉じた場合も停止を要求します。
+`Preview`には明示開始する2つの操作があります。`Start Local Edit Mode Preview`はEditor内にQuiltを表示し、`Start Looking Glass Device Preview`はWindows D3D11/D3D12 Bridge Workerを通して接続機器へ送ります。device previewには公式Bridge runtimeが必要です。どちらも別のEditor-owned producerを使い、通常のSRP render callbackの外で描画します。Play Modeや対象Rigの通常Bridge Sessionは開始しません。先に通常Sessionを停止します。preview専用producerを使うため、preview操作で状態を保存sceneへ書き戻しません。`Pause Preview`は新規送信を止め、進行中の処理をdrainしてdevice windowを隠しますが、同じproducer、RenderTexture、Worker session、所有権lockを保持します。
 
-同じWindows Editor内でdevice previewまたはrender Sessionを停止して再開する場合、producerが同じadapterを使う限りpersistent Worker hostのD3D11 deviceを再利用します。adapter変更またはdevice removalはrestartが必要なerrorとして拒否し、deviceを暗黙に作り直しません。native Bridge DLLを更新した場合は、Bridgeを再使用する前にUnity Editorを閉じて起動し直してください。
+```mermaid
+flowchart TB
+    Running["Preview running"] --> Pausing["Pause Preview: drain後にdevice windowを隠す"]
+    Pausing --> Paused["Paused: 同じproducer、RenderTexture、Workerを保持"]
+    Paused --> Resuming["Resume Preview: 同じsessionを再表示"]
+    Resuming --> Running
+    Running --> Closing["Close Preview、Rig切替、window close、Play、reload、quit"]
+    Paused --> Closing
+    Closing --> Closed["完全drainとproof後に所有権を解放"]
+```
+Local previewは最後の画像を保持します。`Resume Preview`は同じpreview sessionを再表示します。完全にdrain・解放するには`Close Preview`を使います。これにより構造設定のlockが解除され、preview ownerも解放されます。The process-wide SDK owner and loaded native image remain until Editor shutdown.Authoring windowのRig切替・preview対象windowのclose、Play移行、reload、Editor終了では一時停止ではなく完全終了を要求します。一時停止中も構造設定はlockされ、display refreshは保持中のWorker経由で続きます。
 
-preview開始・停止時は`Preview` sectionのstatusとerrorを確認してください。Local previewはUnity内に表示し、device previewはBridgeへ送信します。running状態や送信成功はsoftware側の進行を示すだけで、機器に画像が表示されたことや光学的な見え方を保証しません。機器出力を確認する場合はLooking Glass本体を直接確認してください。
+次の図は再利用可能な一時停止と完全終了を区別します。完全終了ではproducerとGPU/Workerの所有権proofを待ってからresourceを解放します。Native Releaseのpause protocolはdrain-before-hide、pause/resume acknowledgement、同一session resource保持、pause中からの完全終了を含むCTest 10/10に合格しました。これはfake Bridge runtimeとtest adapterによるNative worker契約の検証です。隔離URP/HDRP local previewのmanaged testはpause/resume、一時停止中のFOV変更、完全Closeを2/2で確認しました。公式device上のpause/resume表示は未検証です。
+
+preview開始・pause・resume・close時は`Preview` sectionのstatusとerrorを確認してください。Local previewはUnity内に表示し、device previewはBridgeへ送信します。running状態や送信成功はsoftware側の進行を示すだけで、機器に画像が表示されたことや光学的な見え方を保証しません。機器出力を確認する場合はLooking Glass本体を直接確認してください。Native DLLまたはexportを変えるpackage更新では、`Close Preview`と通常Session停止で所有権を解放し、Package Managerで更新した後にUnityを再起動してください。native-image guardは古い・重複・確認できないloaded imageを拒否できますが、DLLをunload/reloadする機能はありません。
 
 Editor previewの自動更新は0.2秒周期（5Hz）を目標とします。明示的なrefreshやparameter編集は、より早いrenderを要求できます。実際の更新頻度・性能は測定していません。隔離Unity 6000.6.4f1 Core projectでauthoring/playback testとQuilt Capture GPU smokeがpassしました。URP/HDRPのsoftware preview testでは、800 x 450 mm、1 Unity unit/meterの設定でproducer、gizmo、render snapshotのgeometryが一致し、FOVを60度から45度へ変えた際に実効focus距離が更新され、base設定が維持されることを確認しました。URP fixtureを使用したWindows D3D11/D3D12のdevice-preview→Play lifecycle testは、domain reloadとscene reloadの両方が有効な設定でpassし、D3D12ではdomain/scene reloadの両方を無効にした設定でもpassしました。Editor producer停止後にRuntime Sessionが描画を完了し、停止時にnativeとpreview-retentionのpending数が0となり、Edit Mode復帰後にpreviewは自動再開しませんでした。これらの検証は接続機器のcalibration値や光学的な1:1表示を検証するものではありません。報告されたaperture寸法を機器の表示領域と照合し、実機でscaleを確認してください。検証範囲と制約は[Windows validation](../windows-validation.md)と[Graphics backends](graphics-backends.md)を参照してください。
 

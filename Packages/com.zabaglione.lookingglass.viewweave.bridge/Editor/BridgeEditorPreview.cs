@@ -11,6 +11,7 @@ namespace ViewWeave.Editor
     [InitializeOnLoad]
     internal static class BridgeEditorPreview
     {
+        internal enum PreviewState { Idle, Running, Pausing, Paused, Resuming, Closing }
         const double RenderIntervalSeconds = 0.2;
         static readonly object OwnerToken = new object();
 
@@ -30,12 +31,18 @@ namespace ViewWeave.Editor
         static QuiltQualityPreset qualityAtStart;
         static string configuredRuntimePathAtStart;
         static string configuredApplicationNameAtStart;
+        static string configuredOutputRuntimePathAtStart;
+        static string configuredOutputApplicationNameAtStart;
+        static uint configuredOutputDisplayOrdinalAtStart;
         static string runtimePathAtStart;
         static string applicationNameAtStart;
         static uint displayOrdinalAtStart;
         static bool outputToDevice;
         static bool active;
         static bool stopping;
+        static bool resumeAfterPause;
+        static bool nativePauseRequestPending;
+        static PreviewState previewState;
         static bool rendering;
         static bool profileApplied;
         static bool restartAfterStop;
@@ -64,6 +71,10 @@ namespace ViewWeave.Editor
 
         internal static ViewWeaveRig Target => target;
         internal static bool IsActive => active && !stopping;
+        internal static bool IsPaused => previewState == PreviewState.Paused;
+        internal static bool IsTransitioningPause => previewState == PreviewState.Pausing || previewState == PreviewState.Resuming;
+        internal static bool OutputToDevice => outputToDevice;
+        internal static PreviewState State => previewState;
         internal static bool IsStopping => stopping || BridgeEditorPreviewRetention.HasStoppingRecords;
         internal static bool CanApplyDisplaySnapshotToRig(ViewWeaveRig rig)
         {
@@ -91,6 +102,20 @@ namespace ViewWeave.Editor
                 return FailStart("Editor Rig Preview must start outside SRP render callbacks.", out error);
             if (GraphicsSettings.currentRenderPipeline == null)
                 return FailStart("Editor Rig Preview requires an active Scriptable Render Pipeline.", out error);
+            if (active && !stopping)
+            {
+                if (target != rig || outputToDevice != outputToDeviceValue)
+                    return FailStart("A different Rig or preview mode is already retained. Close the current preview before switching targets.", out error);
+                if (previewState == PreviewState.Pausing)
+                {
+                    resumeAfterPause = true;
+                    error = string.Empty;
+                    return true;
+                }
+                if (previewState == PreviewState.Paused)
+                    return RequestResume(rig, outputToDeviceValue, out error);
+                return FailStart("Editor Rig Preview is already active or resuming.", out error);
+            }
             if (IsActive || stopping)
                 return FailStart("An Editor Rig Preview is already active or stopping.", out error);
             if (BridgeEditorPreviewRetention.HasPending)
@@ -135,6 +160,9 @@ namespace ViewWeave.Editor
             if (outputToDevice && !ResolveDeviceConfiguration(out string resolveError)) return ResetFailedStart(resolveError, out error);
             configuredRuntimePathAtStart = sourceSession == null ? string.Empty : sourceSession.runtimePath;
             configuredApplicationNameAtStart = sourceSession == null ? "ViewWeave" : sourceSession.applicationName;
+            configuredOutputRuntimePathAtStart = sourceOutput == null ? string.Empty : sourceOutput.runtimePath;
+            configuredOutputApplicationNameAtStart = sourceOutput == null ? "ViewWeave" : sourceOutput.applicationName;
+            configuredOutputDisplayOrdinalAtStart = sourceOutput == null ? 0u : sourceOutput.displayOrdinal;
             pipelineAtStart = GraphicsSettings.currentRenderPipeline;
             sourceSettingsAtStart = rig.Renderer.settings.Clone();
             qualityAtStart = sourceSession == null ? QuiltQualityPreset.Balanced : sourceSession.Quality;
@@ -181,6 +209,8 @@ namespace ViewWeave.Editor
                 }
                 active = true;
                 stopping = false;
+                previewState = PreviewState.Running;
+                resumeAfterPause = false;
                 QuiltDisplaySettingsResolver.NotifyChanged();
                 lastMsaaSamples = 0;
                 lastError = string.Empty;
@@ -211,16 +241,21 @@ namespace ViewWeave.Editor
 
         internal static bool Stop()
         {
-            if (active && !stopping) BeginStop(false, string.Empty);
+            if (active && !stopping) BeginPause();
             else if (BridgeEditorPreviewRetention.HasPending) BridgeEditorPreviewRetention.Pump();
             return true;
+        }
+
+        internal static void CloseForTargetChange(string reason)
+        {
+            if (active || stopping || producerObject != null) BeginStop(false, reason);
         }
 
         internal static void RequestRefresh()
         {
             if (!IsActive) return;
             refreshRequested = true;
-            QueueEditorRender();
+            if (previewState == PreviewState.Running) QueueEditorRender();
         }
 
         internal static bool TryRequestDisplayRefresh(BridgeWorkerQuiltOutput rigOutput, out string error)
@@ -255,11 +290,158 @@ namespace ViewWeave.Editor
         static bool ResolveDeviceConfiguration(out string error)
         {
             error = string.Empty;
-            string configuredPath = sourceSession == null ? string.Empty : sourceSession.runtimePath;
+            string configuredPath = sourceSession != null ? sourceSession.runtimePath : sourceOutput == null ? string.Empty : sourceOutput.runtimePath;
             if (!BridgeRuntimeLocator.TryResolve(configuredPath, out runtimePathAtStart, out error)) return false;
-            applicationNameAtStart = sourceSession == null || string.IsNullOrWhiteSpace(sourceSession.applicationName) ? "ViewWeave" : sourceSession.applicationName;
-            displayOrdinalAtStart = sourceSession == null ? 0u : sourceSession.displayOrdinal;
+            string configuredApplication = sourceSession != null ? sourceSession.applicationName : sourceOutput == null ? "ViewWeave" : sourceOutput.applicationName;
+            applicationNameAtStart = string.IsNullOrWhiteSpace(configuredApplication) ? "ViewWeave" : configuredApplication;
+            displayOrdinalAtStart = sourceSession != null ? sourceSession.displayOrdinal : sourceOutput == null ? 0u : sourceOutput.displayOrdinal;
             return true;
+        }
+
+        static void BeginPause()
+        {
+            if (!active || stopping || previewState == PreviewState.Paused || previewState == PreviewState.Pausing) return;
+            refreshRequested = false;
+            resumeAfterPause = false;
+            if (!outputToDevice)
+            {
+                previewState = PreviewState.Paused;
+                status = "Local preview paused";
+                lastError = string.Empty;
+                QuiltDisplaySettingsResolver.NotifyChanged();
+                return;
+            }
+            if (producerOutput == null || !producerOutput.Ready)
+            {
+                BeginStop(false, "The Bridge worker was not Ready, so the preview could not be paused safely and is closing instead.");
+                return;
+            }
+            previewState = PreviewState.Pausing;
+            nativePauseRequestPending = true;
+            status = "Pausing preview";
+            lastError = string.Empty;
+            QuiltDisplaySettingsResolver.NotifyChanged();
+            TryIssueNativePauseRequest();
+        }
+
+        static bool TryIssueNativePauseRequest()
+        {
+            if (!nativePauseRequestPending) return true;
+            if (producerOutput == null || producerOutput.EditorPreviewImageValidationPending) return false;
+            if (!producerOutput.TrySetEditorPreviewPaused(OwnerToken, true, out string error))
+            {
+                if (producerOutput.EditorPreviewImageValidationPending) return false;
+                BeginStop(false, "Reusable preview pause failed: " + Sanitize(error));
+                return false;
+            }
+            nativePauseRequestPending = false;
+            return true;
+        }
+
+        static bool RequestResume(ViewWeaveRig rig, bool deviceOutput, out string error)
+        {
+            error = string.Empty;
+            if (rig == null || rig != target || deviceOutput != outputToDevice || producerObject == null || producerRenderer == null)
+                return FailStart("The paused preview no longer matches this Rig and output mode. Close it before starting another preview.", out error);
+            if (!rig.isActiveAndEnabled)
+                return FailStart("The paused preview target is no longer active.", out error);
+            if (!ValidatePreviewStage(rig, out string stageError))
+                return FailStart("The paused preview target is no longer valid: " + Sanitize(stageError), out error);
+            if (!rig.ValidateRig(out string rigError))
+                return FailStart("The paused preview target is no longer valid: " + Sanitize(rigError), out error);
+            if (GraphicsSettings.currentRenderPipeline != pipelineAtStart)
+            {
+                restartAfterStop = true;
+                BeginStop(true, "Preview is rebuilding after a render-pipeline change.");
+                return true;
+            }
+            if (NeedsRebuild())
+            {
+                restartAfterStop = true;
+                BeginStop(true, "Preview is rebuilding after a layout, quality, or MSAA change.");
+                return true;
+            }
+            if (deviceOutput)
+            {
+                if (producerOutput == null || !producerOutput.Ready || producerOutput.RequiresReconnect)
+                {
+                    BeginStop(false, "The paused Bridge connection is no longer valid. Stop and reconnect before resuming.");
+                    return FailStart("The paused Bridge connection is no longer valid. Stop and reconnect before resuming.", out error);
+                }
+                if (producerOutput.EditorPreviewImageValidationPending)
+                {
+                    resumeAfterPause = true;
+                    return true;
+                }
+                if (!producerOutput.TryGetEditorPreviewPausePhase(OwnerToken, out BridgeWorkerQuiltOutput.EditorPreviewPausePhase nativePhase, out error))
+                {
+                    if (producerOutput.EditorPreviewImageValidationPending)
+                    {
+                        resumeAfterPause = true;
+                        error = string.Empty;
+                        return true;
+                    }
+                    BeginStop(false, "Bridge pause state could not be verified: " + Sanitize(error));
+                    return false;
+                }
+                if (nativePhase != BridgeWorkerQuiltOutput.EditorPreviewPausePhase.Paused)
+                {
+                    if (previewState == PreviewState.Pausing)
+                    {
+                        resumeAfterPause = true;
+                        error = string.Empty;
+                        return true;
+                    }
+                    error = "Bridge worker has not acknowledged the paused state yet.";
+                    return false;
+                }
+                if (!producerOutput.TrySetEditorPreviewPaused(OwnerToken, false, out error))
+                {
+                    if (producerOutput.EditorPreviewImageValidationPending)
+                    {
+                        resumeAfterPause = true;
+                        error = string.Empty;
+                        return true;
+                    }
+                    BeginStop(false, "Reusable preview resume failed: " + Sanitize(error));
+                    return false;
+                }
+                resumeAfterPause = false;
+                previewState = PreviewState.Resuming;
+                status = "Resuming preview";
+                lastError = string.Empty;
+                QuiltDisplaySettingsResolver.NotifyChanged();
+                QueueEditorRender();
+                return true;
+            }
+
+            CompleteLocalResume();
+            return true;
+        }
+
+        static void CompleteLocalResume()
+        {
+            CopySourceSettings(target, false);
+            previewState = PreviewState.Running;
+            refreshRequested = true;
+            nextRenderTime = 0;
+            status = "Local preview running";
+            lastError = string.Empty;
+            QuiltDisplaySettingsResolver.NotifyChanged();
+            QueueEditorRender();
+        }
+
+        static void CompleteDeviceResume()
+        {
+            if (producerOutput != null) producerOutput.CompleteEditorPreviewResume(OwnerToken);
+            CopySourceSettings(target, true);
+            previewState = PreviewState.Running;
+            refreshRequested = true;
+            nextRenderTime = 0;
+            status = "Looking Glass preview running";
+            lastError = string.Empty;
+            QuiltDisplaySettingsResolver.NotifyChanged();
+            QueueEditorRender();
         }
 
         static void BuildProducer(ViewWeaveRig sourceRig)
@@ -429,8 +611,10 @@ namespace ViewWeave.Editor
             }
             if (GraphicsSettings.currentRenderPipeline != pipelineAtStart)
             {
-                restartAfterStop = true;
-                BeginStop(false, "Preview is rebuilding after a render-pipeline change.");
+                restartAfterStop = previewState == PreviewState.Running;
+                BeginStop(restartAfterStop, previewState == PreviewState.Running
+                    ? "Preview is rebuilding after a render-pipeline change."
+                    : "Preview closed after a render-pipeline change while paused or transitioning.");
                 return;
             }
             if (!target.ValidateRig(out string validationError))
@@ -443,10 +627,12 @@ namespace ViewWeave.Editor
                 BeginStop(false, stageError);
                 return;
             }
-            if (NeedsRebuild())
+            if (NeedsRebuild() && previewState != PreviewState.Paused)
             {
-                restartAfterStop = true;
-                BeginStop(false, "Preview is rebuilding after a layout, quality, or MSAA change.");
+                restartAfterStop = previewState == PreviewState.Running;
+                BeginStop(restartAfterStop, previewState == PreviewState.Running
+                    ? "Preview is rebuilding after a layout, quality, or MSAA change."
+                    : "Preview closed after an incompatible change during a pause transition.");
                 return;
             }
             if (outputToDevice && target.Renderer.physicalFraming != null && target.Renderer.physicalFraming.enabled &&
@@ -495,6 +681,7 @@ namespace ViewWeave.Editor
                     BeginStop(false, "Preview stopped because the physical aperture aspect no longer matches the connected display.");
                     return;
                 }
+                if (AdvancePauseState()) return;
                 if (!producerRenderer.TryGetEffectiveSettings(out _, out string framingError))
                     throw new InvalidOperationException("Physical framing is invalid: " + Sanitize(framingError));
                 if (refreshRequested || EditorApplication.timeSinceStartup >= nextRenderTime) RenderPreview();
@@ -503,6 +690,77 @@ namespace ViewWeave.Editor
             catch (Exception exception)
             {
                 BeginStop(false, "Editor preview stopped after an error: " + Sanitize(exception.Message));
+            }
+        }
+
+        static bool AdvancePauseState()
+        {
+            if (previewState == PreviewState.Running || previewState == PreviewState.Idle || previewState == PreviewState.Closing)
+                return false;
+            if (!outputToDevice)
+            {
+                if (previewState == PreviewState.Pausing) previewState = PreviewState.Paused;
+                if (previewState == PreviewState.Paused && resumeAfterPause)
+                {
+                    resumeAfterPause = false;
+                    CompleteLocalResume();
+                    return false;
+                }
+                return previewState != PreviewState.Running;
+            }
+            if (producerOutput == null || !producerOutput.Ready)
+            {
+                BeginStop(false, "The paused Bridge worker is no longer Ready.");
+                return true;
+            }
+            if (producerOutput.EditorPreviewImageValidationPending) return true;
+            if (previewState == PreviewState.Pausing && nativePauseRequestPending)
+            {
+                TryIssueNativePauseRequest();
+                return true;
+            }
+            if (!producerOutput.TryGetEditorPreviewPausePhase(OwnerToken, out BridgeWorkerQuiltOutput.EditorPreviewPausePhase nativePhase, out string error))
+            {
+                if (producerOutput.EditorPreviewImageValidationPending) return true;
+                BeginStop(false, "Bridge pause state could not be verified: " + Sanitize(error));
+                return true;
+            }
+            if (nativePhase == BridgeWorkerQuiltOutput.EditorPreviewPausePhase.Faulted)
+            {
+                BeginStop(false, "Bridge worker faulted while pausing or resuming the preview.");
+                return true;
+            }
+            switch (previewState)
+            {
+                case PreviewState.Pausing:
+                    if (nativePhase == BridgeWorkerQuiltOutput.EditorPreviewPausePhase.Paused)
+                    {
+                        previewState = PreviewState.Paused;
+                        status = "Looking Glass preview paused";
+                        QuiltDisplaySettingsResolver.NotifyChanged();
+                        if (resumeAfterPause)
+                        {
+                            if (!RequestResume(target, true, out error))
+                                BeginStop(false, "Preview resume request failed: " + Sanitize(error));
+                        }
+                    }
+                    return true;
+                case PreviewState.Paused:
+                    if (resumeAfterPause)
+                    {
+                        if (!RequestResume(target, true, out error))
+                            BeginStop(false, "Preview resume request failed: " + Sanitize(error));
+                    }
+                    return true;
+                case PreviewState.Resuming:
+                    if (nativePhase == BridgeWorkerQuiltOutput.EditorPreviewPausePhase.Running)
+                    {
+                        CompleteDeviceResume();
+                        return false;
+                    }
+                    return true;
+                default:
+                    return false;
             }
         }
 
@@ -598,6 +856,8 @@ namespace ViewWeave.Editor
                 if (quality != qualityAtStart) return true;
                 if (sourceSession != null && (sourceSession.runtimePath != configuredRuntimePathAtStart ||
                     sourceSession.applicationName != configuredApplicationNameAtStart || sourceSession.displayOrdinal != displayOrdinalAtStart)) return true;
+                if (sourceOutput != null && (sourceOutput.runtimePath != configuredOutputRuntimePathAtStart ||
+                    sourceOutput.applicationName != configuredOutputApplicationNameAtStart || sourceOutput.displayOrdinal != configuredOutputDisplayOrdinalAtStart)) return true;
             }
             QuiltLayout desiredLayout = producerRenderer == null ? current.GetLayout() : producerRenderer.settings.GetLayout();
             int desiredMsaa = GetDesiredMsaaSamples(target.Renderer.sourceCamera, target.Renderer.GuardBehaviour as IQuiltMsaaProvider, desiredLayout);
@@ -696,6 +956,9 @@ namespace ViewWeave.Editor
             if (!string.IsNullOrEmpty(reason)) { lastError = Sanitize(reason); status = "Stopping preview"; }
             active = false;
             stopping = true;
+            previewState = PreviewState.Closing;
+            resumeAfterPause = false;
+            nativePauseRequestPending = false;
             QuiltDisplaySettingsResolver.NotifyChanged();
             refreshRequested = false;
             restartAfterStop |= restart;
@@ -762,6 +1025,8 @@ namespace ViewWeave.Editor
             producerRenderer = null;
             producerOutput = null;
             retentionRecord = null;
+            previewState = PreviewState.Idle;
+            nativePauseRequestPending = false;
             DisposeMutationOwnerRegistrations();
             bool restart = restartAfterStop;
             restartAfterStop = false;
@@ -901,6 +1166,9 @@ namespace ViewWeave.Editor
             DisposeMutationOwnerRegistrations();
             active = false;
             stopping = false;
+            previewState = PreviewState.Idle;
+            nativePauseRequestPending = false;
+            resumeAfterPause = false;
             rendering = false;
             profileApplied = false;
             refreshRequested = false;

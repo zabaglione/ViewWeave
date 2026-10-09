@@ -26,6 +26,8 @@ uint32_t lkg_worker_test_thread_id(void* handle);
 HWND lkg_worker_test_window(void* handle);
 uint32_t lkg_worker_test_message_count(void* handle);
 uintptr_t lkg_worker_test_context_device_identity(void* handle);
+int32_t lkg_worker_test_get_transfer_slot_identity(void* handle, uintptr_t* producerTexture,
+    uintptr_t* workerTexture, uint64_t* generation);
 uint32_t lkg_worker_test_host_device_create_count(void);
 uintptr_t lkg_worker_test_host_device_identity(void);
 void lkg_worker_test_force_adapter_mismatch(void);
@@ -55,6 +57,20 @@ static std::string g_fakeLastError;
 static std::atomic<bool> g_drawFailure{false};
 static std::atomic<bool> g_drawThrow{false};
 static std::atomic<uint32_t> g_drawCount{0};
+static std::atomic<bool> g_holdDraw{false};
+static std::atomic<bool> g_drawEntered{false};
+static std::atomic<uint64_t> g_fakeSessionCounter{0};
+static std::atomic<uint64_t> g_lastCreatedSession{0};
+static std::atomic<uint64_t> g_lastDrawSession{0};
+static std::atomic<uint32_t> g_sessionDestroyCount{0};
+static std::atomic<uint32_t> g_visibilityCalls{0};
+static std::atomic<uint32_t> g_visibilityHideCalls{0};
+static std::atomic<uint32_t> g_visibilityShowCalls{0};
+static std::atomic<uint32_t> g_visibilityState{1};
+static std::atomic<uint32_t> g_visibilityThread{0};
+static std::atomic<uint32_t> g_visibilityDrawCount{0};
+static std::atomic<uint64_t> g_visibilitySession{0};
+static std::atomic<int32_t> g_visibilityFailureFor{-1};
 static std::atomic<int> g_testCalibrationMode{0};
 static std::atomic<uint32_t> g_testDisplayCount{1};
 static std::atomic<bool> g_testHoldDisplayQuery{false};
@@ -109,6 +125,21 @@ static bool WaitReady(void* handle, uint32_t timeoutMs = 2000) {
             status.state, status.lastErrorCode, status.error);
     }
     return false;
+}
+
+static uint32_t PreviewPausePhase(void* handle) {
+    uint32_t phase = UINT32_MAX;
+    Check(lkg_worker_get_preview_pause_state(handle, &phase) == 0, "query preview pause phase");
+    return phase;
+}
+
+static bool WaitPreviewPausePhase(void* handle, uint32_t phase, uint32_t timeoutMs = 2000) {
+    const auto deadline = GetTickCount64() + timeoutMs;
+    do {
+        if (PreviewPausePhase(handle) == phase) return true;
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    } while (GetTickCount64() < deadline);
+    return PreviewPausePhase(handle) == phase;
 }
 
 static ULONG ReferenceCount(ID3D11Device* device) {
@@ -595,6 +626,133 @@ static void TestTypelessSource() {
     EndContext(handle);
 }
 
+static void ResetVisibilityTestState() {
+    g_holdDraw.store(false, std::memory_order_release);
+    g_drawEntered.store(false, std::memory_order_release);
+    g_visibilityCalls.store(0, std::memory_order_release);
+    g_visibilityHideCalls.store(0, std::memory_order_release);
+    g_visibilityShowCalls.store(0, std::memory_order_release);
+    g_visibilityState.store(1, std::memory_order_release);
+    g_visibilityThread.store(0, std::memory_order_release);
+    g_visibilityDrawCount.store(0, std::memory_order_release);
+    g_visibilitySession.store(0, std::memory_order_release);
+    g_visibilityFailureFor.store(-1, std::memory_order_release);
+    g_lastDrawSession.store(0, std::memory_order_release);
+    g_sessionDestroyCount.store(0, std::memory_order_release);
+}
+
+static void TestPreviewPauseResumePreservesSessionAndDrains() {
+    ResetVisibilityTestState();
+    void* handle = nullptr;
+    BeginContext(&handle);
+    Check(PreviewPausePhase(handle) == LKG_WORKER_PREVIEW_RUNNING, "preview starts in running phase");
+    Check(lkg_worker_set_preview_paused(handle, 2) == -1, "invalid preview pause value rejected");
+    Check(lkg_worker_get_preview_pause_state(handle, nullptr) == -1, "null preview phase output rejected");
+
+    auto texture = MakeTexture(DXGI_FORMAT_R8G8B8A8_UNORM, 32, 32);
+    auto callback = reinterpret_cast<void (*)(int, void*)>(lkg_worker_render_event_func());
+    g_holdDraw.store(true, std::memory_order_release);
+    void* token = lkg_worker_make_draw_data(handle, texture.Get(), 4, 3, 1.0f, 1.0f);
+    Check(token != nullptr, "pre-pause render token accepted");
+    callback(0, token);
+    const auto drawDeadline = GetTickCount64() + 2000;
+    while (!g_drawEntered.load(std::memory_order_acquire) && GetTickCount64() < drawDeadline)
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    Check(g_drawEntered.load(std::memory_order_acquire), "render entered before pause request");
+    const uint64_t session = g_lastCreatedSession.load(std::memory_order_acquire);
+    const uintptr_t workerDeviceBefore = lkg_worker_test_host_device_identity();
+    Check(session != 0 && workerDeviceBefore != 0 && g_lastDrawSession.load() == session,
+        "persistent session and host device created");
+    const uint32_t destroyCountBeforePause = g_sessionDestroyCount.load(std::memory_order_acquire);
+    Check(lkg_worker_set_preview_paused(handle, 1) == 0, "pause request accepted");
+    Check(PreviewPausePhase(handle) == LKG_WORKER_PREVIEW_PAUSING, "pause request published as pausing");
+    Check(lkg_worker_make_draw_data(handle, texture.Get(), 4, 3, 1.0f, 1.0f) == nullptr,
+        "new submissions rejected immediately while pausing");
+    Check(g_visibilityHideCalls.load(std::memory_order_acquire) == 0,
+        "window is not hidden while producer draw is in flight");
+    g_holdDraw.store(false, std::memory_order_release);
+    Check(WaitCompleted(handle, 1, 2000), "in-flight producer draw drains before hide");
+    Check(WaitPreviewPausePhase(handle, LKG_WORKER_PREVIEW_PAUSED), "pause acknowledged after draw drain");
+    uintptr_t producerSlotBefore = 0;
+    uintptr_t workerSlotBefore = 0;
+    uint64_t slotGenerationBefore = 0;
+    Check(lkg_worker_test_get_transfer_slot_identity(handle, &producerSlotBefore, &workerSlotBefore,
+        &slotGenerationBefore) == 0 && producerSlotBefore != 0 && workerSlotBefore != 0,
+        "transfer slots remain allocated while paused");
+    Check(g_visibilityHideCalls.load(std::memory_order_acquire) == 1 &&
+        g_visibilityState.load(std::memory_order_acquire) == 0, "pause hides the existing session window");
+    Check(g_visibilityDrawCount.load(std::memory_order_acquire) >= 1,
+        "hide occurs after the in-flight draw completed");
+    Check(g_visibilitySession.load(std::memory_order_acquire) == session,
+        "pause visibility applies to the original session");
+    Check(g_visibilityThread.load(std::memory_order_acquire) == lkg_worker_test_thread_id(handle),
+        "pause visibility runs on persistent worker owner thread");
+    LkgWorkerStatus pausedStatus{};
+    Check(lkg_worker_poll(handle, &pausedStatus) == 0 && pausedStatus.state == LKG_WORKER_READY,
+        "paused worker remains ready");
+    Check(lkg_worker_make_draw_data(handle, texture.Get(), 4, 3, 1.0f, 1.0f) == nullptr,
+        "submissions remain rejected while paused");
+
+    Check(lkg_worker_set_preview_paused(handle, 0) == 0, "resume request accepted");
+    Check(WaitPreviewPausePhase(handle, LKG_WORKER_PREVIEW_RUNNING), "resume acknowledged after show");
+    Check(g_visibilityShowCalls.load(std::memory_order_acquire) == 1 &&
+        g_visibilityState.load(std::memory_order_acquire) == 1, "resume shows the same session window");
+    Check(g_visibilitySession.load(std::memory_order_acquire) == session &&
+        g_visibilityThread.load(std::memory_order_acquire) == lkg_worker_test_thread_id(handle),
+        "resume remains on the same session and owner thread");
+    Check(lkg_worker_test_host_device_identity() == workerDeviceBefore &&
+        g_fakeSessionCounter.load(std::memory_order_acquire) == session &&
+        g_sessionDestroyCount.load(std::memory_order_acquire) == destroyCountBeforePause,
+        "pause/resume does not recreate the session or worker device");
+    token = lkg_worker_make_draw_data(handle, texture.Get(), 4, 3, 1.0f, 1.0f);
+    Check(token != nullptr, "render submission accepted after resume");
+    callback(0, token);
+    Check(WaitCompleted(handle, 2, 2000), "render completes after resume");
+    Check(g_lastDrawSession.load(std::memory_order_acquire) == session &&
+        g_sessionDestroyCount.load(std::memory_order_acquire) == destroyCountBeforePause,
+        "resumed render continues through the original live session");
+    uintptr_t producerSlotAfter = 0;
+    uintptr_t workerSlotAfter = 0;
+    uint64_t slotGenerationAfter = 0;
+    Check(lkg_worker_test_get_transfer_slot_identity(handle, &producerSlotAfter, &workerSlotAfter,
+        &slotGenerationAfter) == 0 && producerSlotAfter == producerSlotBefore &&
+        workerSlotAfter == workerSlotBefore && slotGenerationAfter == slotGenerationBefore,
+        "resume preserves producer and worker transfer slots and generation");
+
+    Check(lkg_worker_set_preview_paused(handle, 1) == 0, "second pause accepted before close");
+    Check(WaitPreviewPausePhase(handle, LKG_WORKER_PREVIEW_PAUSED), "second pause acknowledged");
+    EndContext(handle);
+    Check(g_sessionDestroyCount.load(std::memory_order_acquire) == destroyCountBeforePause + 1,
+        "session is destroyed only by close after preview pause/resume");
+}
+
+static void TestPreviewPauseVisibilityFailuresDoNotAcknowledge() {
+    void* handle = nullptr;
+    ResetVisibilityTestState();
+    BeginContext(&handle);
+    g_visibilityFailureFor.store(0, std::memory_order_release);
+    Check(lkg_worker_set_preview_paused(handle, 1) == 0, "failing pause request accepted asynchronously");
+    Check(WaitState(handle, LKG_WORKER_FAULT, 2000), "failed hide faults worker");
+    Check(PreviewPausePhase(handle) == LKG_WORKER_PREVIEW_FAULTED &&
+        g_visibilityHideCalls.load(std::memory_order_acquire) == 0 &&
+        g_visibilityState.load(std::memory_order_acquire) == 1,
+        "failed hide never acknowledges paused");
+    ReleaseAfterFault(handle, "failed pause context release");
+
+    ResetVisibilityTestState();
+    BeginContext(&handle);
+    Check(lkg_worker_set_preview_paused(handle, 1) == 0, "pause before resume failure accepted");
+    Check(WaitPreviewPausePhase(handle, LKG_WORKER_PREVIEW_PAUSED), "pause before resume failure acknowledged");
+    g_visibilityFailureFor.store(1, std::memory_order_release);
+    Check(lkg_worker_set_preview_paused(handle, 0) == 0, "failing resume request accepted asynchronously");
+    Check(WaitState(handle, LKG_WORKER_FAULT, 2000), "failed show faults worker");
+    Check(PreviewPausePhase(handle) == LKG_WORKER_PREVIEW_FAULTED &&
+        g_visibilityShowCalls.load(std::memory_order_acquire) == 0 &&
+        g_visibilityState.load(std::memory_order_acquire) == 0,
+        "failed show never acknowledges running");
+    ReleaseAfterFault(handle, "failed resume context release");
+}
+
 static void TestTransferResetResize() {
     void* handle = nullptr;
     BeginContext(&handle);
@@ -928,8 +1086,29 @@ int32_t lkg_bridge_get_physical_display_v1(uint32_t, LkgBridgePhysicalDisplayInf
     info->valid = 1;
     return 0;
 }
-uint64_t lkg_bridge_create_d3d11_session(void* device, uint32_t) { return device ? 1 : 0; }
-int32_t lkg_bridge_destroy_session(uint64_t) { return 0; }
+uint64_t lkg_bridge_create_d3d11_session(void* device, uint32_t) {
+    if (!device) return 0;
+    const uint64_t id = g_fakeSessionCounter.fetch_add(1, std::memory_order_acq_rel) + 1;
+    g_lastCreatedSession.store(id, std::memory_order_release);
+    return id;
+}
+int32_t lkg_bridge_destroy_session(uint64_t) {
+    g_sessionDestroyCount.fetch_add(1, std::memory_order_acq_rel);
+    return 0;
+}
+int32_t lkg_bridge_set_session_visible(uint64_t session, uint32_t visible) {
+    if (visible > 1) return -8;
+    g_visibilityCalls.fetch_add(1, std::memory_order_acq_rel);
+    g_visibilityThread.store(GetCurrentThreadId(), std::memory_order_release);
+    g_visibilitySession.store(session, std::memory_order_release);
+    g_visibilityDrawCount.store(g_drawCount.load(std::memory_order_acquire), std::memory_order_release);
+    int32_t expectedFailure = static_cast<int32_t>(visible);
+    if (g_visibilityFailureFor.compare_exchange_strong(expectedFailure, -1, std::memory_order_acq_rel)) return -5;
+    if (visible) g_visibilityShowCalls.fetch_add(1, std::memory_order_acq_rel);
+    else g_visibilityHideCalls.fetch_add(1, std::memory_order_acq_rel);
+    g_visibilityState.store(visible, std::memory_order_release);
+    return 0;
+}
 void* lkg_bridge_render_event_func(void) {
     return reinterpret_cast<void*>(+[](int eventId, void* data) {
         if (eventId == 1) delete static_cast<uint64_t*>(data);
@@ -937,10 +1116,13 @@ void* lkg_bridge_render_event_func(void) {
 }
 void* lkg_bridge_make_draw_data(uint64_t, void*, uint32_t, uint32_t, float, float) { return nullptr; }
 void* lkg_bridge_make_close_data(uint64_t session) { return new uint64_t(session); }
-int32_t lkg_bridge_smoke_draw(uint64_t, void* texture, uint32_t, uint32_t, float, float) {
+int32_t lkg_bridge_smoke_draw(uint64_t session, void* texture, uint32_t, uint32_t, float, float) {
     if (g_drawThrow.load()) throw std::runtime_error("stub draw exception");
     if (g_drawFailure.load()) return -202;
     VerifyWorkerTexture(texture);
+    g_lastDrawSession.store(session, std::memory_order_release);
+    g_drawEntered.store(true, std::memory_order_release);
+    while (g_holdDraw.load(std::memory_order_acquire)) Sleep(1);
     ++g_drawCount;
     return 0;
 }
@@ -1326,11 +1508,19 @@ int main(int argc, char** argv) {
         std::fprintf(stdout, "persistent_d3d11_device_test pass\n");
         return 0;
     }
+    if (argc == 2 && std::strcmp(argv[1], "--preview-pause-only") == 0) {
+        TestPreviewPauseResumePreservesSessionAndDrains();
+        TestPreviewPauseVisibilityFailuresDoNotAcknowledge();
+        std::fprintf(stdout, "worker_preview_pause_test pass\n");
+        return 0;
+    }
     TestD3D12RingColors();
     TestCachedPhysicalDisplayCalibration();
     TestMetadataOnlyRefreshLifecycle();
     TestPersistentSdkConfigurationMismatchIsRejected();
     TestActiveWorkerDisplayRefreshDoesNotMutateRenderStatus();
+    TestPreviewPauseResumePreservesSessionAndDrains();
+    TestPreviewPauseVisibilityFailuresDoNotAcknowledge();
     TestTypelessSource();
     TestTransferResetResize();
     TestBoundedCompletion();
