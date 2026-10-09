@@ -112,6 +112,13 @@ static HANDLE g_sdk_ownership_handle = nullptr;
 static bool g_sdk_ownership_faulted = false;
 static bool g_sdk_initialization_attempted = false;
 static bool g_sdk_admission_closed = false;
+static std::atomic<bool> g_host_sdk_reserved{false};
+static std::atomic<bool> g_host_sdk_finalizing{false};
+static bool g_host_sdk_finalization_attempted = false;
+static int32_t g_host_sdk_finalization_result = 0;
+static std::wstring g_host_sdk_library_path;
+static std::string g_host_sdk_application_name;
+static bool canonical_library_path(const char* path, std::wstring* result);
 #endif
 static std::atomic<bool> g_worker_active{false};
 static thread_local bool g_worker_scope = false;
@@ -306,7 +313,11 @@ extern "C" uint64_t lkg_bridge_d3d12_submit(ID3D12GraphicsCommandList* list, ID3
 #endif
 
 static bool direct_call_rejected() {
-    return g_worker_active.load(std::memory_order_acquire) && !g_worker_scope;
+    if (g_worker_active.load(std::memory_order_acquire) && !g_worker_scope) return true;
+#if defined(_WIN32)
+    if (g_host_sdk_reserved.load(std::memory_order_acquire) && !g_worker_scope) return true;
+#endif
+    return false;
 }
 
 bool lkg_bridge_worker_claim() {
@@ -446,13 +457,104 @@ static bool uninitialize_sdk_owned(uint64_t sessionId, const char* source) {
         result = false;
     }
     trace_shutdownf(sessionId, "uninitialize_bridge end result=%d source=%s", result ? 1 : 0, source ? source : "unknown");
-    g_initialized = false;
     if (result) {
+        g_initialized = false;
         release_sdk_ownership_after_success();
     } else {
         retain_sdk_ownership_fault();
     }
     return result;
+}
+
+extern "C" int32_t lkg_bridge_worker_host_begin_sdk(const char* runtimePath, const char* applicationName) {
+    if (!g_worker_scope) return -6;
+    if (!runtimePath || !*runtimePath || !applicationName || !*applicationName) return -1;
+
+    std::wstring canonicalPath;
+    if (!canonical_library_path(runtimePath, &canonicalPath)) {
+        g_last_error = "Worker SDK runtime path could not be canonicalized";
+        return -2;
+    }
+
+    if (g_host_sdk_reserved.load(std::memory_order_acquire)) {
+        if (_wcsicmp(g_host_sdk_library_path.c_str(), canonicalPath.c_str()) != 0 ||
+            g_host_sdk_application_name != applicationName) {
+            g_last_error = "Persistent worker host already owns the Bridge SDK for a different runtime path or application name";
+            return -20;
+        }
+        if (!g_library || !g_initialized || g_sdk_ownership_faulted) {
+            g_last_error = "Persistent worker host Bridge SDK ownership is faulted";
+            return -21;
+        }
+        return 0;
+    }
+
+    if (g_library || g_initialized || has_sdk_ownership()) {
+        g_last_error = "Persistent worker host cannot adopt a Bridge SDK loaded outside its ownership";
+        return -21;
+    }
+
+    const int32_t loadResult = lkg_bridge_load(runtimePath);
+    if (loadResult != 0) return -22;
+    const int32_t initializeResult = lkg_bridge_initialize(applicationName);
+    if (initializeResult != 0) {
+        if (g_sdk_initialization_attempted || g_sdk_ownership_handle) {
+            g_host_sdk_library_path = canonicalPath;
+            g_host_sdk_application_name = applicationName;
+            g_host_sdk_reserved.store(true, std::memory_order_release);
+        }
+        return -21;
+    }
+
+    g_host_sdk_library_path = canonicalPath;
+    g_host_sdk_application_name = applicationName;
+    g_host_sdk_finalization_attempted = false;
+    g_host_sdk_finalization_result = 0;
+    g_host_sdk_reserved.store(true, std::memory_order_release);
+    return 0;
+}
+
+extern "C" int32_t lkg_bridge_worker_host_finalize_sdk(void) {
+    if (!g_worker_scope) return -6;
+    if (g_host_sdk_finalization_attempted) return g_host_sdk_finalization_result;
+    g_host_sdk_finalization_attempted = true;
+    if (!g_host_sdk_reserved.load(std::memory_order_acquire)) {
+        g_host_sdk_finalization_result = (g_sdk_initialization_attempted || g_sdk_ownership_faulted) ? -1 : 0;
+        return g_host_sdk_finalization_result;
+    }
+
+    g_host_sdk_finalizing.store(true, std::memory_order_release);
+    bool uninitialized = false;
+    try {
+        if (!g_sdk_ownership_handle || g_sdk_ownership_faulted || !g_initialized || !g_uninitialize) {
+            g_last_error = "Persistent worker host cannot prove Bridge SDK ownership for final shutdown";
+        } else {
+            trace_shutdownf(0, "uninitialize_bridge begin source=worker_host_final_shutdown");
+            uninitialized = g_uninitialize();
+            trace_shutdownf(0, "uninitialize_bridge end result=%d source=worker_host_final_shutdown", uninitialized ? 1 : 0);
+        }
+    } catch (...) {
+        g_last_error = "Bridge SDK final uninitialize threw an exception";
+        uninitialized = false;
+    }
+
+    if (!uninitialized) {
+        retain_sdk_ownership_fault();
+        g_host_sdk_finalization_result = -2;
+        g_host_sdk_finalizing.store(false, std::memory_order_release);
+        return g_host_sdk_finalization_result;
+    }
+
+    g_initialized = false;
+    // Keep the vendor runtime resident. Its SDK lifetime is finalized here, while
+    // module unloading remains deferred to process teardown.
+    release_sdk_ownership_after_success();
+    g_host_sdk_library_path.clear();
+    g_host_sdk_application_name.clear();
+    g_host_sdk_reserved.store(false, std::memory_order_release);
+    g_host_sdk_finalization_result = 0;
+    g_host_sdk_finalizing.store(false, std::memory_order_release);
+    return 0;
 }
 #endif
 
@@ -635,6 +737,9 @@ static bool bind_symbols() {
 
 LKG_EXPORT int32_t lkg_bridge_load(const char* path) {
     if (direct_call_rejected()) return -6;
+#if defined(_WIN32)
+    if (g_host_sdk_reserved.load(std::memory_order_acquire)) return -6;
+#endif
     if (!path || !*path) return -1;
     tracef("load_begin thread_id=%lu", trace_thread_id());
     std::lock_guard<std::mutex> lock(g_mutex);
@@ -711,6 +816,9 @@ LKG_EXPORT int32_t lkg_bridge_load(const char* path) {
 
 LKG_EXPORT void lkg_bridge_unload(void) {
     if (direct_call_rejected()) return;
+#if defined(_WIN32)
+    if (g_host_sdk_reserved.load(std::memory_order_acquire) && !g_host_sdk_finalizing.load(std::memory_order_acquire)) return;
+#endif
     std::lock_guard<std::mutex> lock(g_mutex);
     if (!g_sessions.empty()) return;
 #if defined(_WIN32)
@@ -731,6 +839,9 @@ LKG_EXPORT void lkg_bridge_unload(void) {
 
 LKG_EXPORT int32_t lkg_bridge_initialize(const char* app) {
     if (direct_call_rejected()) return -6;
+#if defined(_WIN32)
+    if (g_host_sdk_reserved.load(std::memory_order_acquire)) return -6;
+#endif
     if (!g_initialize || !app) return -1;
 #if defined(_WIN32)
     if (!acquire_sdk_ownership()) {
@@ -764,6 +875,9 @@ LKG_EXPORT int32_t lkg_bridge_initialize(const char* app) {
 
 LKG_EXPORT void lkg_bridge_uninitialize(void) {
     if (direct_call_rejected()) return;
+#if defined(_WIN32)
+    if (g_host_sdk_reserved.load(std::memory_order_acquire) && !g_host_sdk_finalizing.load(std::memory_order_acquire)) return;
+#endif
     std::lock_guard<std::mutex> lock(g_mutex);
     if (!g_sessions.empty()) return;
     tracef("uninitialize_begin thread_id=%lu", trace_thread_id());
@@ -790,6 +904,7 @@ LKG_EXPORT uint32_t lkg_bridge_successful_draw_count(void) { std::lock_guard<std
 LKG_EXPORT int32_t lkg_bridge_is_initialized(void) { return direct_call_rejected() ? -6 : (g_initialized ? 1 : 0); }
 
 LKG_EXPORT int32_t lkg_bridge_version(char* out, uint32_t capacity) {
+    if (direct_call_rejected()) return -6;
     if (!g_version) return -1;
     unsigned long major = 0, minor = 0, build = 0; int postfix = 0;
     if (!g_version(&major, &minor, &build, &postfix, nullptr)) return -2;
@@ -994,7 +1109,17 @@ static void lkg_render_event(int eventId, void* data) {
             if (retainedDevice) retainedDevice->AddRef();
             if (retainedTexture) retainedTexture->AddRef();
 
-            bool cleanupSafe = !session.cleanupFailed && release_bridge_texture(drawData->session, session, true);
+            bool cleanupSafe = !session.cleanupFailed;
+            if (cleanupSafe && session.window) {
+                bool hidden = false;
+                try { hidden = g_show_window && g_show_window(session.window, false); }
+                catch (...) { hidden = false; }
+                if (!hidden) {
+                    cleanupSafe = false;
+                    g_last_error = "Bridge window hide was not proven during session cleanup";
+                }
+            }
+            if (cleanupSafe) cleanupSafe = release_bridge_texture(drawData->session, session, true);
             if (cleanupSafe && session.device) {
                 if (g_release_device) {
                     trace_shutdownf(drawData->session, "release_device_dx begin");
@@ -1010,7 +1135,11 @@ static void lkg_render_event(int eventId, void* data) {
                 }
             }
             const bool lastSession = g_sessions.size() == 1;
-            if (cleanupSafe && lastSession && g_initialized) {
+            if (cleanupSafe && lastSession && g_initialized
+#if defined(_WIN32)
+                && !g_host_sdk_reserved.load(std::memory_order_acquire)
+#endif
+                ) {
                 tracef("uninitialize_begin thread_id=%lu", trace_thread_id());
                 bool result = false;
                 if (g_uninitialize) result = uninitialize_sdk_owned(drawData->session, "last_session_close");

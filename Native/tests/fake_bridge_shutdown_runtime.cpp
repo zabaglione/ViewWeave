@@ -14,6 +14,7 @@ std::vector<LkgFakeBridgeEvent> g_events;
 ID3D11Device* g_device = nullptr;
 uint64_t g_generation = 0;
 uint64_t g_sequence = 0;
+bool g_contextGenerationStarted = false;
 bool g_failDraw = false;
 bool g_blockDraw = false;
 bool g_failUninitialize = false;
@@ -49,6 +50,7 @@ extern "C" __declspec(dllexport) void __cdecl lkg_fake_bridge_reset() {
         g_events.clear();
         g_sequence = 0;
         g_generation = 0;
+        g_contextGenerationStarted = false;
         g_failDraw = false;
         g_blockDraw = false;
         g_failUninitialize = false;
@@ -94,6 +96,8 @@ extern "C" __declspec(dllexport) void __cdecl lkg_fake_bridge_release_draw() {
 
 extern "C" __declspec(dllexport) void __cdecl lkg_fake_bridge_set_uninitialize_mode(int32_t failUninitialize, int32_t blockUninitialize) {
     std::lock_guard<std::mutex> lock(g_mutex);
+    if (!g_uninitializeEntered) g_uninitializeEntered = CreateEventW(nullptr, TRUE, FALSE, nullptr);
+    if (!g_uninitializeRelease) g_uninitializeRelease = CreateEventW(nullptr, TRUE, blockUninitialize == 0, nullptr);
     g_failUninitialize = failUninitialize != 0;
     g_blockUninitialize = blockUninitialize != 0;
     if (g_uninitializeEntered) ResetEvent(g_uninitializeEntered);
@@ -138,6 +142,7 @@ extern "C" __declspec(dllexport) bool initialize_bridge(const wchar_t*) {
     {
         std::lock_guard<std::mutex> lock(g_mutex);
         ++g_generation;
+        g_contextGenerationStarted = false;
     }
     Record(LKG_FAKE_EVENT_INITIALIZE, nullptr, 1);
     return true;
@@ -153,7 +158,7 @@ extern "C" __declspec(dllexport) bool uninitialize_bridge() {
     {
         std::lock_guard<std::mutex> lock(g_mutex);
         if (!g_uninitializeEntered) g_uninitializeEntered = CreateEventW(nullptr, TRUE, FALSE, nullptr);
-        if (!g_uninitializeRelease) g_uninitializeRelease = CreateEventW(nullptr, TRUE, TRUE, nullptr);
+        if (!g_uninitializeRelease) g_uninitializeRelease = CreateEventW(nullptr, TRUE, !g_blockUninitialize, nullptr);
         entered = g_uninitializeEntered;
         release = g_uninitializeRelease;
         failUninitialize = g_failUninitialize;
@@ -233,6 +238,8 @@ extern "C" __declspec(dllexport) bool instance_window_dx(IUnknown* device, unsig
     if (FAILED(device->QueryInterface(IID_PPV_ARGS(&queried)))) return false;
     {
         std::lock_guard<std::mutex> lock(g_mutex);
+        if (g_contextGenerationStarted) ++g_generation;
+        else g_contextGenerationStarted = true;
         if (g_device) g_device->Release();
         g_device = queried;
     }
@@ -241,8 +248,8 @@ extern "C" __declspec(dllexport) bool instance_window_dx(IUnknown* device, unsig
     return true;
 }
 
-extern "C" __declspec(dllexport) bool show_window(unsigned long, bool) {
-    Record(LKG_FAKE_EVENT_SHOW_WINDOW, nullptr, 1);
+extern "C" __declspec(dllexport) bool show_window(unsigned long, bool visible) {
+    Record(LKG_FAKE_EVENT_SHOW_WINDOW, nullptr, visible ? 1 : 0);
     return true;
 }
 

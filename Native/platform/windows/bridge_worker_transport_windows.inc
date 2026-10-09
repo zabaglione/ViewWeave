@@ -34,6 +34,8 @@ void lkg_bridge_worker_leave();
 extern "C" int32_t lkg_bridge_sdk_shutdown_faulted(void);
 extern "C" int32_t lkg_bridge_sdk_shutdown_incomplete(void);
 extern "C" int32_t lkg_bridge_close_sdk_admission(void);
+extern "C" int32_t lkg_bridge_worker_host_begin_sdk(const char* runtimePath, const char* applicationName);
+extern "C" int32_t lkg_bridge_worker_host_finalize_sdk(void);
 
 struct WorkerContext {
     std::mutex mutex;
@@ -55,6 +57,7 @@ struct WorkerContext {
     std::atomic<bool> closeRequested{false};
     std::atomic<bool> finished{false};
     bool hosted = false;
+    bool sdkHostFatalFailure = false;
     std::condition_variable condition;
     struct Slot {
         ComPtr<ID3D11Texture2D> producerTexture;
@@ -124,6 +127,8 @@ struct WorkerHost {
     bool stopRequested = false;
     bool stopped = false;
     bool joined = false;
+    bool sdkFaulted = false;
+    int32_t sdkFinalizationResult = 0;
     std::thread thread;
 #if defined(_WIN32)
     HMODULE moduleReference = nullptr;
@@ -412,15 +417,13 @@ static WorkerHost* GetPersistentHost() {
         host->thread = std::thread([host]() {
             for (;;) {
                 WorkerContext* context = nullptr;
+                bool finalize = false;
                 {
                     std::unique_lock<std::mutex> lock(host->mutex);
                     host->condition.wait_for(lock, std::chrono::milliseconds(10), [&] { return host->queued || host->stopRequested; });
                     if (!host->queued && host->stopRequested) {
-                        host->stopped = true;
-                        host->condition.notify_all();
-                        return;
-                    }
-                    if (!host->queued) {
+                        finalize = true;
+                    } else if (!host->queued) {
                         lock.unlock();
                         MSG message{};
                         for (uint32_t count = 0; count < 64; ++count) {
@@ -436,14 +439,28 @@ static WorkerHost* GetPersistentHost() {
                             DispatchMessageW(&message);
                         }
                         continue;
+                    } else {
+                        context = host->queued;
+                        host->queued = nullptr;
+                        host->active = context;
                     }
-                    context = host->queued;
-                    host->queued = nullptr;
-                    host->active = context;
+                }
+                if (finalize) {
+                    lkg_bridge_worker_enter();
+                    const int32_t finalResult = host->sdkFaulted ? -1 : lkg_bridge_worker_host_finalize_sdk();
+                    lkg_bridge_worker_leave();
+                    {
+                        std::lock_guard<std::mutex> lock(host->mutex);
+                        host->sdkFinalizationResult = finalResult;
+                        host->stopped = true;
+                        host->condition.notify_all();
+                    }
+                    return;
                 }
                 RunWorker(context);
                 {
                     std::lock_guard<std::mutex> lock(host->mutex);
+                    if (!context->cleanupProven || context->sdkHostFatalFailure) host->sdkFaulted = true;
                     context->finished.store(true, std::memory_order_release);
                     lkg_bridge_worker_release_claim();
                     host->active = nullptr;
@@ -467,7 +484,8 @@ static bool SubmitToPersistentHost(WorkerContext* context) {
     WorkerHost* host = GetPersistentHost();
     if (!host) return false;
     std::lock_guard<std::mutex> lock(host->mutex);
-    if (finalShutdownAdmissionClosed.load(std::memory_order_acquire) || host->stopRequested || host->queued || host->active) return false;
+    if (finalShutdownAdmissionClosed.load(std::memory_order_acquire) || host->stopRequested || host->sdkFaulted ||
+        host->queued || host->active) return false;
     context->hosted = true;
     host->queued = context;
     host->condition.notify_all();
@@ -482,7 +500,7 @@ extern "C" LKG_EXPORT int32_t lkg_worker_shutdown_host(uint32_t timeoutMilliseco
     }
     if (!host) return 0;
     std::unique_lock<std::mutex> lock(host->mutex);
-    if (host->joined) return 0;
+    if (host->joined) return host->sdkFinalizationResult == 0 ? 0 : -2;
     host->stopRequested = true;
     if (host->queued) host->queued->closeRequested.store(true, std::memory_order_release);
     if (host->active) host->active->closeRequested.store(true, std::memory_order_release);
@@ -490,6 +508,10 @@ extern "C" LKG_EXPORT int32_t lkg_worker_shutdown_host(uint32_t timeoutMilliseco
     const bool stopped = host->condition.wait_for(lock, std::chrono::milliseconds(timeoutMilliseconds), [&] { return host->stopped && !host->active && !host->queued; });
     if (!stopped) return -1;
     if (host->thread.joinable()) host->thread.join();
+    if (host->sdkFinalizationResult != 0) {
+        host->joined = true;
+        return -2;
+    }
 #if defined(_WIN32)
     if (host->moduleReference) FreeLibrary(host->moduleReference);
     host->moduleReference = nullptr;
@@ -754,8 +776,6 @@ static void RunWorker(WorkerContext* context) {
     ComPtr<ID3D11Device> workerDevice;
     ComPtr<ID3D11DeviceContext> workerDeviceContext;
     uint64_t session = 0;
-    bool loaded = false;
-    bool initialized = false;
     const char* runtimePath = context->runtimePath.c_str();
 
     auto cleanup = [&]() {
@@ -792,16 +812,7 @@ static void RunWorker(WorkerContext* context) {
             }
             session = 0;
         }
-        if (initialized && cleanupProven) {
-            lkg_bridge_uninitialize();
-            initialized = false;
-            if (lkg_bridge_sdk_shutdown_faulted() != 0) cleanupProven = false;
-        }
         if (lkg_bridge_sdk_shutdown_faulted() != 0) cleanupProven = false;
-        if (loaded && cleanupProven) {
-            lkg_bridge_unload();
-            loaded = false;
-        }
 #if defined(LKG_WORKER_TRANSPORT_TESTING)
         if (cleanupProven && testThrowDuringWorkerCleanup.exchange(false, std::memory_order_acq_rel))
             throw std::runtime_error("injected worker cleanup exception");
@@ -881,26 +892,13 @@ static void RunWorker(WorkerContext* context) {
     }
 
     try {
-    const int32_t initializedResult = lkg_bridge_is_initialized();
-    if (initializedResult != 0) {
-        SetBridgeFault(*context, 1, "bridge_is_initialized", initializedResult);
+    const int32_t beginResult = lkg_bridge_worker_host_begin_sdk(runtimePath, context->applicationName.c_str());
+    if (beginResult != 0) {
+        context->sdkHostFatalFailure = beginResult != -20 && beginResult != -22;
+        SetBridgeFault(*context, beginResult == -20 ? 23 : 3, "worker_host_sdk_begin", beginResult);
         finish();
         return;
     }
-    const int32_t loadResult = lkg_bridge_load(runtimePath);
-    if (loadResult != 0) {
-        SetBridgeFault(*context, 2, "bridge_load", loadResult);
-        finish();
-        return;
-    }
-    loaded = true;
-    const int32_t initializeResult = lkg_bridge_initialize(context->applicationName.c_str());
-    if (initializeResult != 0) {
-        SetBridgeFault(*context, 3, "bridge_initialize", initializeResult);
-        finish();
-        return;
-    }
-    initialized = true;
     if (context->metadataOnly) {
         for (;;) {
             uint64_t generation = 0;
@@ -1557,6 +1555,7 @@ LKG_EXPORT int32_t lkg_worker_get_final_shutdown_status_v1(LkgWorkerFinalShutdow
     WorkerHost* host = nullptr;
     bool hostRunning = false;
     bool hostJoined = true;
+    bool hostFaulted = false;
     {
         std::lock_guard<std::mutex> hostRegistryLock(hostRegistryMutex);
         host = persistentHost;
@@ -1565,13 +1564,14 @@ LKG_EXPORT int32_t lkg_worker_get_final_shutdown_status_v1(LkgWorkerFinalShutdow
         std::lock_guard<std::mutex> hostLock(host->mutex);
         hostJoined = host->joined;
         hostRunning = !host->stopped && !host->joined;
+        hostFaulted = host->sdkFaulted || host->sdkFinalizationResult != 0;
     }
 
     const bool sdkFaulted = lkg_bridge_sdk_shutdown_faulted() != 0;
     const bool sdkIncomplete = lkg_bridge_sdk_shutdown_incomplete() != 0;
     uint32_t state = finalShutdownState.load(std::memory_order_acquire);
     int32_t lastResult = finalShutdownLastResult.load(std::memory_order_acquire);
-    if (sdkFaulted) {
+    if (sdkFaulted || (requested && hostFaulted)) {
         state = LKG_WORKER_FINAL_SHUTDOWN_FAULT;
         lastResult = -2;
     } else if (requested && registeredContexts == 0 && hostJoined && !sdkIncomplete) {

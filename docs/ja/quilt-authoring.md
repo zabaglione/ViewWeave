@@ -31,7 +31,9 @@ flowchart TB
 
 `Camera & Focus`には`Focus Target`、`Use Selection`、`Set Focus From Target Center`、水平・垂直Orbit操作があります。objectをfieldへdragして指定できます。`Set Focus From Target Center`は要求するfocusを設定する明示操作です。physical framingがoffなら保存済み`Focus Distance`を更新し、onなら保存済みbase focus distanceを変更せずFOVを解きます。対象を選ぶだけではRig設定を変更しません。FocusとCamera操作では、ロード済みMain Stageまたは同一Prefab Stage内のobjectを対象にします。persistent assetとisolated Preview Sceneは拒否します。同じMain Stageのロード済みadditive sceneは許可します。`Scene View Controls`には`Show Near / Far`、`Show Extreme Views`、`Show 3D Focus Cursor`があり、技術用`QuiltRenderer` Inspectorと同じEditor設定を共有します。`Frame Focus Plane Center in Scene View`はzero-parallax面の中心をScene Viewに表示します。
 
-Bridge outputを接続している場合、機器変更後に`Refresh Connected Displays`を使い、display profileとphysical calibrationのsnapshotを更新します。Sessionまたはdevice previewのworkerがReadyなら同じworkerが処理し、Edit Modeでidleなら一時的なmetadata-only ownerがBridge SDKを照会します。他のworker、metadata request、cleanupがSDKを所有している間は実行できません。idle時は、問い合わせに成功しても結果は候補として保持され、metadata workerの終了と`end_metadata`によるSDK所有権の解放を確認した後にsnapshotが公開されます。statusに`Closing metadata worker`や`Waiting for Bridge metadata worker release`が表示される場合があり、cleanup timeout時は`Metadata cleanup timed out; waiting for native release proof`を表示します。button横のstatusとerrorを確認してください。Unity Editorはnative pluginをプロセスへ読み込むため、Bridge packageのnative DLLを更新した場合やmetadata refresh exportを追加した場合はEditorの再起動が必要です。[Unity native plug-in Inspector](https://docs.unity3d.com/6000.0/Documentation/Manual/plug-in-inspector.html)を参照してください。
+Bridge outputを接続している場合、機器変更後に`Refresh Connected Displays`を使い、display profileとphysical calibrationのsnapshotを更新します。これは明示的なrefreshです。snapshotは最後に成功した要求の結果を示し、vendorの自動hotplugは通知しません。Sessionまたはdevice previewのworkerがReadyなら同じworkerが処理し、Edit ModeでidleならWindows SDKはpersistent owner host上のmetadata contextから照会されます。metadata contextを閉じるとcontextごとのmetadata資源は解放されますが、SDK所有権は維持されます。SDKとowner hostはEditorまたはPlayer processの終了処理まで維持されます。要求を処理できるReady workerがなく、別contextまたはcleanupが進行中の場合、refreshは一時的に利用できないことがあります。statusに`Closing metadata worker`や`Waiting for Bridge metadata worker release`が表示される場合があり、cleanup timeout時は`Metadata cleanup timed out; waiting for native release proof`を表示します。button横のstatusとerrorを確認してください。Unity Editorはnative pluginをプロセスへ読み込むため、Bridge packageのnative DLLを更新した場合やmetadata refresh exportを追加した場合はEditorの再起動が必要です。[Unity native plug-in Inspector](https://docs.unity3d.com/6000.0/Documentation/Manual/plug-in-inspector.html)を参照してください。
+
+refreshが成功すると、device profileは現在のEditor session内で同じRigのPlay/Stop間も利用でき、必要な時点で復元されます。この処理でRigのsource aspect、framing、profileは変更されず、sceneへのdirty設定や保存も行われません。またsnapshot eventを再度発火しません。Rigのclone、output設定変更、reconnect、Editor再起動後はcacheが無効になるため、`Refresh Connected Displays`をもう一度実行してください。Bridge runtimeまたはapplication設定を変更した場合も、再使用前にUnity EditorまたはPlayer processを再起動してください。
 
 ### Scripting APIと稼働中の変更
 
@@ -61,9 +63,11 @@ if (output != null) output.ConnectedDisplaySnapshotChanged += OnDisplaySnapshotC
 flowchart TB
     Refresh["TryRequestDisplayRefresh"] --> Owner{"Bridge ownerを使用可能?"}
     Owner -->|Ready worker| Live["稼働中workerで更新"]
-    Owner -->|Idle| Metadata["metadata-only ownerで照会"]
+    Owner -->|Idle| Metadata["persistent SDK owner host上のmetadata contextで照会"]
     Live --> Snapshot["display snapshotを公開"]
-    Metadata --> Snapshot
+    Metadata --> ContextClose["metadata contextを閉じSDK ownerを維持"]
+    ContextClose --> Snapshot
+    ProcessExit["Editor / Playerの最終process shutdown"] --> Uninitialize["owner host threadで一度だけuninitialize"]
     Snapshot --> Match{"requestとoutput設定が一致?"}
     Match -->|Yes| Apply["Use Connected Display Size: Undo付きでcopyして有効化"]
     Match -->|No| Keep["Rigを変更しない"]

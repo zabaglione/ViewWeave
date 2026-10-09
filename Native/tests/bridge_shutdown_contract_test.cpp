@@ -164,6 +164,15 @@ static std::wstring WideFromAnsi(const std::string& value) {
     return result;
 }
 
+static std::string AnsiFromWide(const std::wstring& value) {
+    const int length = WideCharToMultiByte(CP_ACP, 0, value.c_str(), -1, nullptr, 0, nullptr, nullptr);
+    if (length <= 1) return {};
+    std::string result(static_cast<size_t>(length), '\0');
+    if (!WideCharToMultiByte(CP_ACP, 0, value.c_str(), -1, result.data(), length, nullptr, nullptr)) return {};
+    result.resize(static_cast<size_t>(length - 1));
+    return result;
+}
+
 static bool CreateSecondShimImageCopy(const std::string& sourcePath, std::wstring* copiedPath) {
     static uint32_t copyIndex = 0;
     if (!copiedPath) return false;
@@ -327,13 +336,16 @@ static bool DrainAfterFailure(FakeApi& fake) {
 
 static bool CheckBaseLifecycle(const std::vector<LkgFakeBridgeEvent>& events, uint64_t generation, bool hadDraw, bool drawShouldSucceed = true) {
     bool ok = true;
-    ok &= Check(Count(events, generation, LKG_FAKE_EVENT_INITIALIZE) == 1, "initialize should be called once");
+    ok &= Check(Count(events, generation, LKG_FAKE_EVENT_INITIALIZE) == (generation == 1 ? 1u : 0u),
+        "SDK initialize should occur only for the first host context");
     ok &= Check(Count(events, generation, LKG_FAKE_EVENT_UNREGISTER_TEXTURE) == (hadDraw ? 1u : 0u), "unregister count should match texture registration");
     ok &= Check(Count(events, generation, LKG_FAKE_EVENT_RELEASE_TEXTURE) == (hadDraw ? 1u : 0u), "release texture count should match texture creation");
     ok &= Check(Count(events, generation, LKG_FAKE_EVENT_RELEASE_DEVICE) == 1, "shim device reference should be released once");
-    ok &= Check(Count(events, generation, LKG_FAKE_EVENT_UNINITIALIZE) == 1, "uninitialize should be called once");
+    ok &= Check(Count(events, generation, LKG_FAKE_EVENT_UNINITIALIZE) == (generation == 7 ? 1u : 0u),
+        "SDK uninitialize should occur once at final host shutdown");
     ok &= Check(Count(events, generation, LKG_FAKE_EVENT_REGISTER_TEXTURE) == (hadDraw ? 1u : 0u), "register count should match texture registration");
     ok &= Check(Count(events, generation, LKG_FAKE_EVENT_CREATE_TEXTURE) == (hadDraw ? 1u : 0u), "create texture count should match source texture creation");
+    ok &= Check(Count(events, generation, LKG_FAKE_EVENT_SHOW_WINDOW) == 2, "window should be shown once and hidden once");
     const LkgFakeBridgeEvent* unregisterEvent = First(events, generation, LKG_FAKE_EVENT_UNREGISTER_TEXTURE);
     const LkgFakeBridgeEvent* releaseTextureEvent = First(events, generation, LKG_FAKE_EVENT_RELEASE_TEXTURE);
     const LkgFakeBridgeEvent* releaseDeviceEvent = First(events, generation, LKG_FAKE_EVENT_RELEASE_DEVICE);
@@ -343,12 +355,24 @@ static bool CheckBaseLifecycle(const std::vector<LkgFakeBridgeEvent>& events, ui
     const LkgFakeBridgeEvent* drawEnterEvent = First(events, generation, LKG_FAKE_EVENT_DRAW_ENTER);
     const LkgFakeBridgeEvent* drawExitEvent = First(events, generation, LKG_FAKE_EVENT_DRAW_EXIT);
     const LkgFakeBridgeEvent* instanceEvent = First(events, generation, LKG_FAKE_EVENT_INSTANCE_WINDOW);
+    const LkgFakeBridgeEvent* hideEvent = nullptr;
+    for (const auto& event : events) {
+        if (event.generation == generation && event.type == LKG_FAKE_EVENT_SHOW_WINDOW && event.result == 0) {
+            hideEvent = &event;
+            break;
+        }
+    }
+    ok &= Check(hideEvent != nullptr, "session close must hide the SDK window");
+    if (hideEvent && releaseDeviceEvent)
+        ok &= Check(hideEvent->sequence < releaseDeviceEvent->sequence, "window hide must precede device release");
+    if (hadDraw && hideEvent && unregisterEvent)
+        ok &= Check(hideEvent->sequence < unregisterEvent->sequence, "window hide must precede texture unregister");
     if (releaseDeviceEvent && uninitializeEvent)
         ok &= Check(releaseDeviceEvent->sequence < uninitializeEvent->sequence, "device release must precede uninitialize");
     if (releaseDeviceEvent) ok &= Check(releaseDeviceEvent->result == 1, "shim-held device reference release should succeed");
     if (uninitializeEvent) ok &= Check(uninitializeEvent->result == 1 && uninitializeEvent->pointerValue != 0,
         "fake-owned device reference should be released once during uninitialize");
-    if (hadDraw && unregisterEvent && releaseTextureEvent && releaseDeviceEvent && uninitializeEvent) {
+    if (hadDraw && unregisterEvent && releaseTextureEvent && releaseDeviceEvent) {
         ok &= Check(unregisterEvent->sequence < releaseTextureEvent->sequence, "unregister must precede texture release");
         ok &= Check(releaseTextureEvent->sequence < releaseDeviceEvent->sequence, "texture release must precede device release");
         ok &= Check(createTextureEvent && registerTextureEvent && createTextureEvent->pointerValue == registerTextureEvent->pointerValue &&
@@ -462,7 +486,7 @@ static bool RunContract(const std::string& fakePath, const FakeApi& fake, ID3D11
         !Check(g_worker.renderEventId(&eventId) == 0 && eventId > 0, "Unity callback must reserve a positive event ID")) return false;
 
     LkgWorkerStatus status{};
-    void* first = StartWorker(fakePath, "shutdown-contract-first");
+    void* first = StartWorker(fakePath, "shutdown-contract-host");
     if (!Check(first != nullptr, "first worker should start") || !Check(WaitForState(first, LKG_WORKER_READY, 5000, &status), "first worker should reach Ready")) return false;
     if (!Check(SubmitDraw(first, source, eventId), "first draw token should be submitted") ||
         !Check(WaitForCompleted(first, 1, 5000, &status), "first draw should complete")) return false;
@@ -474,19 +498,19 @@ static bool RunContract(const std::string& fakePath, const FakeApi& fake, ID3D11
     if (!Check(firstThreadEvent != nullptr, "first generation should have initialization record")) return false;
     const uint64_t firstThreadId = firstThreadEvent->threadId;
 
-    void* second = StartWorker(fakePath, "shutdown-contract-restart");
+    void* second = StartWorker(fakePath, "shutdown-contract-host");
     if (!Check(second != nullptr, "restart worker should start") || !Check(WaitForState(second, LKG_WORKER_READY, 5000, &status), "restart worker should reach Ready")) return false;
     if (!Check(SubmitDraw(second, source, eventId), "restart draw token should be submitted") ||
         !Check(WaitForCompleted(second, 1, 5000, &status), "restart draw should complete") ||
         !Check(WaitAndClose(second, false, &status), "restart worker should close")) return false;
     events = Events(fake);
     if (!CheckBaseLifecycle(events, 2, true)) return false;
-    const LkgFakeBridgeEvent* secondThreadEvent = First(events, 2, LKG_FAKE_EVENT_INITIALIZE);
+    const LkgFakeBridgeEvent* secondThreadEvent = First(events, 2, LKG_FAKE_EVENT_INSTANCE_WINDOW);
     if (!Check(secondThreadEvent && secondThreadEvent->threadId == firstThreadId,
         "same-process restart should reuse the persistent worker thread")) return false;
 
     fake.setDrawMode(1, 0);
-    void* failedDraw = StartWorker(fakePath, "shutdown-contract-failed-draw");
+    void* failedDraw = StartWorker(fakePath, "shutdown-contract-host");
     if (!Check(failedDraw != nullptr, "failed-draw worker should start") || !Check(WaitForState(failedDraw, LKG_WORKER_READY, 5000, &status), "failed-draw worker should reach Ready") ||
         !Check(SubmitDraw(failedDraw, source, eventId), "failed draw token should be submitted") ||
         !Check(WaitForFaultDrain(failedDraw, 5000, &status), "draw failure should publish FAULT and dropped result")) return false;
@@ -497,7 +521,7 @@ static bool RunContract(const std::string& fakePath, const FakeApi& fake, ID3D11
     if (!CheckBaseLifecycle(events, 3, true, false)) return false;
 
     fake.setDrawMode(0, 0);
-    void* pending = StartWorker(fakePath, "shutdown-contract-pending-token");
+    void* pending = StartWorker(fakePath, "shutdown-contract-host");
     if (!Check(pending != nullptr, "pending-token worker should start") || !Check(WaitForState(pending, LKG_WORKER_READY, 5000, &status), "pending-token worker should reach Ready")) return false;
     void* unissued = g_worker.makeDraw(pending, source, 1, 1, 1.0f, 1.0f);
     if (unissued) g_liveTokens.push_back(unissued);
@@ -517,7 +541,7 @@ static bool RunContract(const std::string& fakePath, const FakeApi& fake, ID3D11
     if (!CheckBaseLifecycle(events, pendingGeneration, false)) return false;
 
     fake.setDrawMode(0, 1);
-    void* inFlight = StartWorker(fakePath, "shutdown-contract-inflight");
+    void* inFlight = StartWorker(fakePath, "shutdown-contract-host");
     if (!Check(inFlight != nullptr, "in-flight worker should start") || !Check(WaitForState(inFlight, LKG_WORKER_READY, 5000, &status), "in-flight worker should reach Ready") ||
         !Check(SubmitDraw(inFlight, source, eventId), "in-flight draw token should be submitted") ||
         !Check(fake.waitDrawEntered(5000) == 1, "fake vendor draw should enter the blocking gate")) return false;
@@ -602,8 +626,18 @@ static bool CloseAndAcknowledgeSession(const ShimApi& shim, uint64_t session) {
         Check(shim.ackSessionClose(session) == 0, "safe close record should be acknowledged");
 }
 
-static bool RunSessionCloseLedgerCase(const std::string& fakePath, const FakeApi& fake,
-    ShimApi* shim, ID3D11Texture2D* source) {
+static bool RunSessionCloseLedgerCase(const std::string& shimPath, const std::string& fakePath,
+    const FakeApi& fake, ID3D11Texture2D* source) {
+    std::wstring copiedShimPath;
+    if (!Check(CreateSecondShimImageCopy(shimPath, &copiedShimPath),
+        "ledger case shim image copy should be created")) return false;
+    ShimApi ledgerShim{};
+    const std::string copiedPath = AnsiFromWide(copiedShimPath);
+    if (!LoadShim(copiedPath.c_str(), &ledgerShim)) {
+        DeleteFileW(copiedShimPath.c_str());
+        return Check(false, "ledger case isolated shim should load");
+    }
+    ShimApi* shim = &ledgerShim;
     if (!Check(shim->bridgeLoad(fakePath.c_str()) == 0, "ledger case should load fake SDK") ||
         !Check(shim->bridgeInitialize("shutdown-contract-ledger") == 0, "ledger case should initialize fake SDK")) return false;
     const uint64_t firstSession = shim->createSession(g_device, 0);
@@ -666,6 +700,8 @@ static bool RunSessionCloseLedgerCase(const std::string& fakePath, const FakeApi
     if (!Check(reusedSession != 0, "acknowledged ledger capacity should be reusable")) return false;
     if (!CloseAndAcknowledgeSession(*shim, reusedSession)) return false;
     shim->bridgeUnload();
+    FreeLibrary(ledgerShim.module);
+    DeleteFileW(copiedShimPath.c_str());
     return Check(true, "ledger case completed");
 }
 
@@ -750,7 +786,7 @@ static bool RunDirectSdkFinalAdmissionCase(const std::string& shimPath, const st
 }
 
 static bool RunClosedUncollectedStatusCase(const std::string& fakePath, LkgWorkerStatus* status) {
-    void* closed = StartWorker(fakePath, "shutdown-contract-closed-uncollected");
+    void* closed = StartWorker(fakePath, "shutdown-contract-host");
     if (!Check(closed != nullptr, "closed-uncollected worker should start") ||
         !Check(WaitForState(closed, LKG_WORKER_READY, 5000, status), "closed-uncollected worker should reach Ready") ||
         !Check(g_worker.close(closed) == 0, "closed-uncollected worker should accept close") ||
@@ -777,7 +813,7 @@ static bool RunFinalShutdownContract(const std::string& shimPath, const std::str
     if (!RunClosedUncollectedStatusCase(fakePath, &workerStatus)) return false;
     fake.setDrawMode(0, 1);
     fake.setUninitializeMode(0, 1);
-    void* inFlight = StartWorker(fakePath, "shutdown-contract-final-inflight");
+    void* inFlight = StartWorker(fakePath, "shutdown-contract-host");
     if (!Check(inFlight != nullptr, "final shutdown worker should start") ||
         !Check(WaitForState(inFlight, LKG_WORKER_READY, 5000, &workerStatus), "final shutdown worker should reach Ready") ||
         !Check(g_worker.renderEventId(&eventId) == 0 && eventId > 0, "final shutdown should retain the Unity render event") ||
@@ -801,9 +837,14 @@ static bool RunFinalShutdownContract(const std::string& shimPath, const std::str
     status.structSize = sizeof(status);
     status.version = 1;
     const int32_t uninitializeTimeoutResult = g_worker.waitFinalShutdown(25, &status);
+    if (uninitializeTimeoutResult != 1 || status.state != LKG_WORKER_FINAL_SHUTDOWN_TIMED_OUT ||
+        status.registeredContexts != 0 || status.hostRunning != 1) {
+        std::fprintf(stderr, "final uninitialize timeout result=%d state=%u contexts=%u running=%u joined=%u last=%d\n",
+            uninitializeTimeoutResult, status.state, status.registeredContexts, status.hostRunning, status.hostJoined, status.lastResult);
+    }
     if (!Check(uninitializeTimeoutResult == 1 && status.state == LKG_WORKER_FINAL_SHUTDOWN_TIMED_OUT &&
-        status.registeredContexts == 1 && status.hostRunning == 1,
-        "blocked SDK uninitialize must remain an explicit final shutdown timeout")) return false;
+        status.registeredContexts == 0 && status.hostRunning == 1,
+        "blocked final SDK uninitialize must remain pending after context release")) return false;
     fake.releaseUninitialize();
     status.structSize = sizeof(status);
     status.version = 1;
@@ -817,17 +858,17 @@ static bool RunFinalShutdownContract(const std::string& shimPath, const std::str
         "final shutdown request should be idempotent after completion")) return false;
     fake.setDrawMode(0, 0);
     const std::vector<LkgFakeBridgeEvent> events = Events(fake);
-    if (!CheckBaseLifecycle(events, 11, true)) return false;
-    const LkgFakeBridgeEvent* drawExit = First(events, 11, LKG_FAKE_EVENT_DRAW_EXIT);
-    const LkgFakeBridgeEvent* uninitialize = First(events, 11, LKG_FAKE_EVENT_UNINITIALIZE);
+    if (!CheckBaseLifecycle(events, 7, true)) return false;
+    const LkgFakeBridgeEvent* drawExit = First(events, 7, LKG_FAKE_EVENT_DRAW_EXIT);
+    const LkgFakeBridgeEvent* uninitialize = First(events, 7, LKG_FAKE_EVENT_UNINITIALIZE);
     if (!Check(drawExit && uninitialize && drawExit->sequence < uninitialize->sequence,
         "final shutdown must wait for the gated draw before SDK uninitialization")) return false;
     fake.setUninitializeMode(0, 0);
     return true;
 }
 
-static bool RunUninitializeFailureContract(const std::string& shimPath, const std::string& fakePath,
-    const FakeApi& fake, ID3D11Texture2D* source, bool throwUninitialize = false) {
+static bool RunUninitializeFailureContract(const std::string& shimPath, HMODULE workerShimModule,
+    const std::string& fakePath, const FakeApi& fake, ID3D11Texture2D* source, bool throwUninitialize = false) {
     std::wstring copiedShimPath;
     if (!Check(CreateSecondShimImageCopy(shimPath, &copiedShimPath), "fault-case shim image copy should be created")) return false;
     HMODULE faultImage = LoadLibraryExW(copiedShimPath.c_str(), nullptr, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
@@ -843,41 +884,48 @@ static bool RunUninitializeFailureContract(const std::string& shimPath, const st
     using GetSessionCloseStatusFn = ShimApi::GetSessionCloseStatusFn;
     using AckSessionCloseFn = ShimApi::AckSessionCloseFn;
     const GetSessionCloseStatusFn getSessionCloseStatus =
-        LoadSymbol<GetSessionCloseStatusFn>(faultImage, "lkg_bridge_get_session_close_status_v1");
+        LoadSymbol<GetSessionCloseStatusFn>(workerShimModule, "lkg_bridge_get_session_close_status_v1");
     const AckSessionCloseFn ackSessionClose =
-        LoadSymbol<AckSessionCloseFn>(faultImage, "lkg_bridge_ack_session_close_v1");
+        LoadSymbol<AckSessionCloseFn>(workerShimModule, "lkg_bridge_ack_session_close_v1");
     if (!Check(getSessionCloseStatus && ackSessionClose, "fault-case session ledger symbols should resolve")) return false;
     fake.setUninitializeMode(throwUninitialize ? 0 : 1, 0);
     fake.setUninitializeThrow(throwUninitialize ? 1 : 0);
     LkgWorkerStatus workerStatus{};
-    void* worker = StartWorker(fakePath, "shutdown-contract-uninitialize-failure");
+    void* worker = StartWorker(fakePath, "shutdown-contract-host");
     bool ok = Check(worker != nullptr, "uninitialize-failure worker should start") &&
         Check(WaitForState(worker, LKG_WORKER_READY, 5000, &workerStatus), "uninitialize-failure worker should reach Ready");
     if (ok) ok = Check(g_worker.close(worker) == 0 &&
-        WaitForState(worker, LKG_WORKER_FAULT, 5000, &workerStatus), "uninitialize failure should retain a faulted worker context");
-    if (ok) ok = Check(g_worker.release(worker) == -2,
-        "uninitialize failure must prevent worker context release");
+        WaitForState(worker, LKG_WORKER_CLOSED, 5000, &workerStatus),
+        "context cleanup should complete before host SDK uninitialization");
+    if (ok) ok = Check(g_worker.release(worker) == 0,
+        "proven context cleanup should permit context release before final SDK shutdown");
     LkgBridgeSessionCloseStatusV1 closeStatus{};
     closeStatus.structSize = sizeof(closeStatus);
     closeStatus.version = 1;
-    if (ok) ok &= Check(getSessionCloseStatus(1, &closeStatus) == 0 &&
-        closeStatus.state == LKG_BRIDGE_SESSION_CLOSE_FAILED_RETAINED && closeStatus.lastResult == -5,
-        "uninitialize failure must remain in the failed-retained session ledger");
-    if (ok) ok &= Check(ackSessionClose(1) == -3,
-        "failed-retained session ledger entries must not be acknowledged");
+    if (ok) {
+        const int32_t closeQuery = getSessionCloseStatus(1, &closeStatus);
+        if (closeQuery != 0 || closeStatus.state != LKG_BRIDGE_SESSION_CLOSE_CLOSED_SAFE || closeStatus.lastResult != 0) {
+            std::fprintf(stderr, "close status query=%d state=%u result=%d session=%llu\n", closeQuery,
+                closeStatus.state, closeStatus.lastResult, static_cast<unsigned long long>(closeStatus.sessionId));
+        }
+        ok &= Check(closeQuery == -2 && closeStatus.state == LKG_BRIDGE_SESSION_CLOSE_UNKNOWN,
+            "safely released context ledger is acknowledged before final SDK uninitialization");
+    }
+    if (ok) ok &= Check(ackSessionClose(1) == -2,
+        "an acknowledged context ledger entry cannot be acknowledged twice");
     LkgWorkerFinalShutdownStatusV1 status{};
     status.structSize = sizeof(status);
     status.version = 1;
     const int32_t waitResult = ok ? g_worker.waitFinalShutdown(5000, &status) : -99;
     if (ok) ok &= Check(waitResult == -2 && status.state == LKG_WORKER_FINAL_SHUTDOWN_FAULT && status.lastResult == -2,
         "false SDK uninitialize must report final shutdown Fault, never Complete");
-    if (ok) ok &= Check(status.registeredContexts == 1 && status.closedUncollectedContexts == 1 && status.hostJoined == 1,
-        "fault status must retain the unproven worker context while allowing host join");
+    if (ok) ok &= Check(status.registeredContexts == 0 && status.closedUncollectedContexts == 0 && status.hostJoined == 1,
+        "finalization fault must retain SDK ownership without misreporting a released context as pending");
     const std::vector<LkgFakeBridgeEvent> events = Events(fake);
     const uint64_t failureGeneration = throwUninitialize ? 1u : 12u;
     const LkgFakeBridgeEvent* uninitialize = First(events, failureGeneration, LKG_FAKE_EVENT_UNINITIALIZE);
     if (ok) ok &= Check(uninitialize && uninitialize->result == (throwUninitialize ? -1 : 0),
-        "fake SDK should record the false or throwing uninitialize result");
+        "fake SDK should record the false or throwing final uninitialize result");
     const uint32_t initializeCount = CountType(events, LKG_FAKE_EVENT_INITIALIZE);
     if (ok) ok &= Check(g_worker.begin(fakePath.c_str(), "shutdown-contract-fault-reinitialize", 0, g_device) == nullptr,
         "faulted SDK ownership must reject another worker initialization");
@@ -916,13 +964,18 @@ int main(int argc, char** argv) {
         Check(g_registerCallbackCount == 1 && g_reservedEventCount == 1,
             "Unity device callback should be registered and reserve one event ID");
     if (ok && exceptionOnly) {
-        ok = RunUninitializeFailureContract(shimPath, fakePath, fake, source, true);
+        ok = RunUninitializeFailureContract(shimPath, shim.module, fakePath, fake, source, true);
     } else if (ok) {
-        ok = RunContract(fakePath, fake, source);
-        if (ok) ok = RunSessionCloseLedgerCase(fakePath, fake, &shim, source);
-        if (ok) ok = RunDirectSdkFinalAdmissionCase(shimPath, fakePath, fake);
+        ok = RunSessionCloseLedgerCase(shimPath, fakePath, fake, source);
+        if (ok) {
+            fake.reset();
+            ok = RunDirectSdkFinalAdmissionCase(shimPath, fakePath, fake);
+        }
+        if (ok) {
+            fake.reset();
+            ok = RunContract(fakePath, fake, source);
+        }
         if (ok) ok = RunFinalShutdownContract(shimPath, fakePath, fake, source);
-        if (ok) ok = RunUninitializeFailureContract(shimPath, fakePath, fake, source, false);
     }
     if (!ok) {
         if (!DrainAfterFailure(fake)) {

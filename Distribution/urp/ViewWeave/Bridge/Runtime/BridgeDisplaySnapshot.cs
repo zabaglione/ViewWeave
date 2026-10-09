@@ -37,5 +37,12 @@ namespace ViewWeave
             profile = default;
             return false;
         }
+
+        internal void CopyEntries(out uint[] ordinals, out BridgeDisplayProfile[] profiles)
+        {
+            ordinals = (uint[])displayOrdinals.Clone();
+            profiles = new BridgeDisplayProfile[displays.Count];
+            for (int i = 0; i < profiles.Length; ++i) profiles[i] = displays[i];
+        }
     }
 }

@@ -164,6 +164,12 @@ if (WIN32 AND BUILD_TESTING)
   add_test(NAME lookingglass_worker_cleanup_exception_test
     COMMAND lookingglass_worker_transport_test --cleanup-exception-only)
   set_tests_properties(lookingglass_worker_cleanup_exception_test PROPERTIES TIMEOUT 30)
+  add_test(NAME lookingglass_worker_host_initialize_failure_test
+    COMMAND lookingglass_worker_transport_test --host-initialize-failure-only)
+  set_tests_properties(lookingglass_worker_host_initialize_failure_test PROPERTIES TIMEOUT 30)
+  add_test(NAME lookingglass_worker_host_uninitialize_failure_test
+    COMMAND lookingglass_worker_transport_test --host-uninitialize-failure-only)
+  set_tests_properties(lookingglass_worker_host_uninitialize_failure_test PROPERTIES TIMEOUT 30)
 
   if (NOT LKG_TRANSPORT_TESTS_ONLY)
     add_library(lkg_fake_bridge_runtime SHARED tests/fake_bridge_runtime.cpp)

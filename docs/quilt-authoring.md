@@ -31,7 +31,9 @@ flowchart TB
 
 `Camera & Focus` provides `Focus Target`, `Use Selection`, `Set Focus From Target Center`, and horizontal/vertical orbit controls. The selected target may be dragged into the field. `Set Focus From Target Center` is the explicit operation that sets the requested focus: it changes stored `Focus Distance` when physical framing is off, and solves FOV while leaving the stored base focus distance unchanged when physical framing is on. Selecting a target alone does not change Rig settings. Focus and camera operations require objects in the loaded Main Stage or the same Prefab Stage. Isolated Preview Scenes and persistent assets are rejected. Additive loaded scenes in the Main Stage are allowed. The `Scene View Controls` foldout exposes `Show Near / Far`, `Show Extreme Views`, and `Show 3D Focus Cursor`; these share the technical `QuiltRenderer` Inspector preferences. `Frame Focus Plane Center in Scene View` frames the zero-parallax plane center.
 
-When a Bridge output is attached, use `Refresh Connected Displays` to refresh the cached display profile and physical calibration after a display change. A ready Session or device-preview worker handles the request; while Edit Mode is idle, the SDK is queried through a temporary metadata-only owner. The request is unavailable while another worker, metadata request, or cleanup owns the Bridge SDK. For an idle query, a successful result remains a candidate until the metadata worker closes and `end_metadata` confirms SDK ownership release; the snapshot is published only afterward. The status may show `Closing metadata worker` and `Waiting for Bridge metadata worker release`; a cleanup timeout reports `Metadata cleanup timed out; waiting for native release proof`. Read the status and error beside the button. Unity loads native plugins into the Editor process, so updating the Bridge package's native DLL or adding its metadata-refresh exports requires restarting the Editor; see [Unity native plug-in Inspector](https://docs.unity3d.com/6000.0/Documentation/Manual/plug-in-inspector.html).
+When a Bridge output is attached, use `Refresh Connected Displays` to refresh the cached display profile and physical calibration after a display change. This is an explicit refresh; the snapshot reflects the last successful request and does not report automatic vendor hotplug. A ready Session or device-preview worker handles the request; while Edit Mode is idle, the Windows SDK is queried through a metadata context on the persistent owner host. Closing that context releases its per-context metadata resources, not SDK ownership. The SDK and owner host remain alive until final Editor or Player process shutdown. If no ready worker can serve the request, another open context or cleanup can make refresh temporarily unavailable. The status may show `Closing metadata worker` and `Waiting for Bridge metadata worker release`; a cleanup timeout reports `Metadata cleanup timed out; waiting for native release proof`. Read the status and error beside the button. Unity loads native plugins into the Editor process, so updating the Bridge package's native DLL or adding its metadata-refresh exports requires restarting the Editor; see [Unity native plug-in Inspector](https://docs.unity3d.com/6000.0/Documentation/Manual/plug-in-inspector.html).
+
+After a successful refresh, the device profile remains available for the same Rig across Play and Stop in the current Editor session and is restored when needed. This does not change the Rig's source aspect, framing, or profile, mark the scene dirty, save the scene, or fire the snapshot event a second time. A cloned Rig, output configuration change, reconnect, or Editor restart invalidates the cached profile; run `Refresh Connected Displays` again. Changing the Bridge runtime or application configuration also requires restarting the Unity Editor or Player process before reuse.
 
 ### Scripting API and live changes
 
@@ -61,9 +63,11 @@ if (output != null) output.ConnectedDisplaySnapshotChanged += OnDisplaySnapshotC
 flowchart TB
     Refresh["TryRequestDisplayRefresh"] --> Owner{"Bridge owner available?"}
     Owner -->|Ready worker| Live["Refresh through active worker"]
-    Owner -->|Idle| Metadata["Query through metadata-only owner"]
+    Owner -->|Idle| Metadata["Query in metadata context on persistent SDK owner host"]
     Live --> Snapshot["Publish display snapshot"]
-    Metadata --> Snapshot
+    Metadata --> ContextClose["Close metadata context; retain SDK owner"]
+    ContextClose --> Snapshot
+    ProcessExit["Final Editor / Player process shutdown"] --> Uninitialize["Uninitialize once on owner host thread"]
     Snapshot --> Match{"Request and output config match?"}
     Match -->|Yes| Apply["Use Connected Display Size: copy and enable with Undo"]
     Match -->|No| Keep["Keep Rig unchanged"]

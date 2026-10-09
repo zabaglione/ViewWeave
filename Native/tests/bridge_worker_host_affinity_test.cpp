@@ -20,7 +20,11 @@ static void TestPersistentHostIdleQuit() {
     Check(threadId != 0, "persistent host idle quit thread id");
     EndContext(handle);
     Check(PostThreadMessageW(threadId, WM_QUIT, 0, 0) != FALSE, "post idle host quit");
-    Sleep(50);
+    Check(lkg_worker_shutdown_host(5000) == 0, "idle host final SDK shutdown and join");
+    Check(g_hostInitializeCount.load() == 1 && g_hostUninitializeCount.load() == 1 &&
+        g_hostLoadCount.load() == 1 && g_hostUnloadCount.load() == 0 &&
+        g_hostFinalizerThread.load() == threadId && !g_fakeHostSdkOwned.load(),
+        "host initializes once and finalizes SDK once on its owner thread");
     void* rejected = lkg_worker_begin("test-runtime", "worker-transport-test", 0, nullptr);
     Check(rejected == nullptr, "idle host quit rejects new begin");
 }

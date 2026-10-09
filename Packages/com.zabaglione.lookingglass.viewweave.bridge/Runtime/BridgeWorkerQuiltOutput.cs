@@ -3,6 +3,9 @@ using System.Globalization;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace ViewWeave
 {
@@ -14,6 +17,11 @@ namespace ViewWeave
         string connectedSnapshotRuntimePath;
         string connectedSnapshotApplicationName;
         uint connectedSnapshotDisplayOrdinal;
+        BridgeDisplaySnapshot connectedDisplaySnapshot;
+#if UNITY_EDITOR
+        [SerializeField, HideInInspector] BridgeDisplaySnapshotEditorCache editorConnectedDisplaySnapshotCache;
+        bool restoringEditorSnapshotCache;
+#endif
         public string runtimePath;
         public string applicationName = "ViewWeave";
         public uint displayOrdinal;
@@ -41,7 +49,17 @@ namespace ViewWeave
             }
         }
         /// <summary>Returns the last snapshot result, even when this output's current configuration no longer matches it.</summary>
-        public BridgeDisplaySnapshot ConnectedDisplaySnapshot { get; private set; }
+        public BridgeDisplaySnapshot ConnectedDisplaySnapshot
+        {
+            get
+            {
+#if UNITY_EDITOR
+                TryRestoreEditorSnapshotCache();
+#endif
+                return connectedDisplaySnapshot;
+            }
+            private set => connectedDisplaySnapshot = value;
+        }
         internal long LatestDisplayRefreshToken { get; private set; }
         public string DisplayRefreshStatus { get; private set; }
         public WorkerState State => state;
@@ -260,10 +278,20 @@ namespace ViewWeave
                 if (!TryRefreshMatchesCurrentProfile(snapshot, requestedDisplayOrdinal, out string profileError))
                 {
                     RequiresReconnect = true;
+#if UNITY_EDITOR
+                    editorConnectedDisplaySnapshotCache = null;
+#endif
                     DisplayRefreshStatus = profileError;
                 }
-                else DisplayRefreshStatus = snapshot == null ? "Connected display refresh returned no snapshot." :
-                    "Connected displays refreshed: " + snapshot.Displays.Count.ToString(CultureInfo.InvariantCulture) + " found.";
+                else
+                {
+#if UNITY_EDITOR
+                    editorConnectedDisplaySnapshotCache = BridgeDisplaySnapshotEditorCache.TryCreate(this, snapshot,
+                        RequiresReconnect, configuredRuntimePath, configuredApplicationName, configuredDisplayOrdinal);
+#endif
+                    DisplayRefreshStatus = snapshot == null ? "Connected display refresh returned no snapshot." :
+                        "Connected displays refreshed: " + snapshot.Displays.Count.ToString(CultureInfo.InvariantCulture) + " found.";
+                }
                 try { ConnectedDisplaySnapshotChanged?.Invoke(snapshot); }
                 catch { }
                 try { ConnectedDisplayRefreshCompleted?.Invoke(requestToken, snapshot, string.Empty); }
@@ -304,6 +332,33 @@ namespace ViewWeave
             DisplayRefreshStatus = requested ? "Refreshing connected display list..." : error;
             return requested;
         }
+
+#if UNITY_EDITOR
+        void TryRestoreEditorSnapshotCache()
+        {
+            if (restoringEditorSnapshotCache || connectedDisplaySnapshot != null ||
+                editorConnectedDisplaySnapshotCache == null || Application.isPlaying) return;
+            restoringEditorSnapshotCache = true;
+            try
+            {
+                ViewWeaveBridgeSession session = GetComponent<ViewWeaveBridgeSession>();
+                string currentRuntime = session == null ? runtimePath : session.runtimePath;
+                string currentApplication = session == null ? applicationName : session.applicationName;
+                uint currentOrdinal = session == null ? displayOrdinal : session.displayOrdinal;
+                if (!editorConnectedDisplaySnapshotCache.TryRestore(this, RequiresReconnect,
+                        currentRuntime, currentApplication, currentOrdinal, out BridgeDisplaySnapshot restored))
+                {
+                    editorConnectedDisplaySnapshotCache = null;
+                    return;
+                }
+                connectedDisplaySnapshot = restored;
+                connectedSnapshotRuntimePath = currentRuntime ?? string.Empty;
+                connectedSnapshotApplicationName = currentApplication ?? string.Empty;
+                connectedSnapshotDisplayOrdinal = currentOrdinal;
+            }
+            finally { restoringEditorSnapshotCache = false; }
+        }
+#endif
 
         bool IsCurrentDisplayRefreshConfiguration(string requestedRuntimePath, string requestedApplicationName,
             uint requestedOrdinal, bool activeWorkerRefresh)

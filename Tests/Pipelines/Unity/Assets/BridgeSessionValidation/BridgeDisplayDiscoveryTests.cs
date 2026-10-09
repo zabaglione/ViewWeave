@@ -347,6 +347,60 @@ namespace ViewWeave.BridgeSessionValidation
         }
 
         [Test]
+        public void CleanupProofAtDeadlinePublishesCandidateBeforeTimeoutCheck()
+        {
+            double now = 0;
+            BridgeDisplayDiscovery.SetTestTimeProvider(() => now);
+            int successCount = 0;
+            int failureCount = 0;
+            BridgeDisplayDiscovery.StartIdleRequestForTests(new IntPtr(60), new object(),
+                value =>
+                {
+                    successCount++;
+                    Assert.AreEqual(1, value.Displays.Count);
+                }, _ => failureCount++);
+
+            BridgeDisplayDiscovery.TickForTests();
+            Assert.AreEqual(1, adapter.CloseCount);
+            Assert.IsTrue(BridgeDisplayDiscovery.IsBusy);
+            now = 21;
+            adapter.Status.state = 4;
+            adapter.Status.cleanupFinished = 1;
+            BridgeDisplayDiscovery.TickForTests();
+
+            Assert.IsFalse(BridgeDisplayDiscovery.IsBusy);
+            Assert.AreEqual(1, adapter.EndCount);
+            Assert.AreEqual(1, successCount);
+            Assert.AreEqual(0, failureCount);
+        }
+
+        [Test]
+        public void BusyEndAtCleanupDeadlineStillTimesOutAndRetainsOwner()
+        {
+            double now = 0;
+            BridgeDisplayDiscovery.SetTestTimeProvider(() => now);
+            int successCount = 0;
+            int failureCount = 0;
+            BridgeDisplayDiscovery.StartIdleRequestForTests(new IntPtr(62), new object(),
+                _ => successCount++, _ => failureCount++);
+
+            BridgeDisplayDiscovery.TickForTests();
+            Assert.AreEqual(1, adapter.CloseCount);
+            now = 21;
+            adapter.Status.state = 4;
+            adapter.Status.cleanupFinished = 1;
+            adapter.EndResults.Enqueue(-3);
+            BridgeDisplayDiscovery.TickForTests();
+
+            Assert.IsTrue(BridgeDisplayDiscovery.IsBusy, "Native ownership must remain retained until end_metadata succeeds.");
+            Assert.AreEqual(1, adapter.EndCount);
+            Assert.AreEqual(0, successCount, "A candidate must not publish when end_metadata has not proved release.");
+            Assert.AreEqual(1, failureCount);
+            StringAssert.Contains("cleanup timed out", BridgeDisplayDiscovery.LastError);
+            Assert.AreEqual("Metadata cleanup timed out; waiting for native release proof", BridgeDisplayDiscovery.Status);
+        }
+
+        [Test]
         public void CleanupDeadlineDiscardsCandidateButRetainsAdmissionUntilNativeProof()
         {
             double now = 0;

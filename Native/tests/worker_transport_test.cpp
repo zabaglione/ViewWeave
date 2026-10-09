@@ -8,6 +8,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstring>
+#include <cctype>
 #include <cstdlib>
 #include <thread>
 #include <vector>
@@ -15,6 +16,7 @@
 #include <deque>
 #include <mutex>
 #include <array>
+#include <string>
 
 using Microsoft::WRL::ComPtr;
 
@@ -33,6 +35,18 @@ extern "C" int32_t lkg_worker_shutdown_host(uint32_t timeoutMilliseconds);
 
 static ComPtr<ID3D11Device> g_device;
 static std::atomic<bool> g_initializeFailure{false};
+static std::atomic<uint32_t> g_hostInitializeCount{0};
+static std::atomic<uint32_t> g_hostUninitializeCount{0};
+static std::atomic<uint32_t> g_hostLoadCount{0};
+static std::atomic<uint32_t> g_hostUnloadCount{0};
+static std::atomic<bool> g_fakeHostSdkOwned{false};
+static std::atomic<bool> g_fakeHostFaulted{false};
+static std::atomic<bool> g_fakeHostFinalizationFailure{false};
+static std::atomic<unsigned long> g_hostFinalizerThread{0};
+static std::mutex g_fakeHostConfigMutex;
+static std::string g_fakeHostRuntime;
+static std::string g_fakeHostApplication;
+static std::string g_fakeLastError;
 static std::atomic<bool> g_drawFailure{false};
 static std::atomic<bool> g_drawThrow{false};
 static std::atomic<uint32_t> g_drawCount{0};
@@ -231,7 +245,7 @@ static void TestMetadataOnlyRefreshLifecycle() {
     g_testHoldDisplayQuery.store(false);
     g_testDisplayQueryEntered.store(false);
     g_testReleaseDisplayQuery.store(false);
-    void* handle = lkg_worker_begin_metadata_v1("metadata-runtime", "worker-metadata-test");
+    void* handle = lkg_worker_begin_metadata_v1("test-runtime", "worker-transport-test");
     Check(handle != nullptr, "metadata-only begin");
 #if defined(LKG_WORKER_TRANSPORT_TESTING)
     Check(lkg_worker_test_window(handle) == nullptr, "metadata-only worker creates no window");
@@ -324,8 +338,49 @@ static void TestMetadataInitializationFailureIsPublished() {
     Check(status.state == LKG_WORKER_FAULT && status.snapshotGeneration == status.requestedGeneration &&
         status.result != 0 && status.pending == 0 && status.cleanupFinished == 1 && status.error[0] != '\0',
         "metadata initialization failure completes snapshot with an error");
-    Check(lkg_worker_end_metadata_v1(handle) == 0, "metadata init failure owner releases handle");
+    Check(lkg_worker_end_metadata_v1(handle) == -3,
+        "metadata init failure retains the context because SDK cleanup was not proven");
     g_initializeFailure.store(false);
+}
+
+static void TestPersistentSdkConfigurationMismatchIsRejected() {
+    auto expectMismatch = [](const char* path, const char* app, const char* label) {
+        void* handle = lkg_worker_begin_metadata_v1(path, app);
+        Check(handle != nullptr, "mismatched metadata context accepted for asynchronous fault reporting");
+        Check(WaitState(handle, LKG_WORKER_FAULT, 2000), "mismatched metadata configuration faults context");
+        std::vector<LkgWorkerDisplaySnapshotItemV1> items;
+        LkgWorkerDisplaySnapshotStatusV1 status{};
+        const auto start = GetTickCount64();
+        do {
+            status = GetDisplaySnapshot(handle, items);
+            if (status.cleanupFinished) break;
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        } while (GetTickCount64() - start < 2000);
+        if (!(status.cleanupFinished == 1 && status.result != 0 && status.error[0] != '\0' &&
+            std::strstr(status.error, "different runtime path or application name") != nullptr)) {
+            std::fprintf(stderr, "configuration mismatch label=%s error=%s\n", label, status.error);
+        }
+        Check(status.cleanupFinished == 1 && status.result != 0 && status.error[0] != '\0' &&
+            std::strstr(status.error, "different runtime path or application name") != nullptr,
+            "persistent SDK reports an explicit configuration mismatch");
+        Check(lkg_worker_end_metadata_v1(handle) == 0, "mismatched metadata context releases independently");
+    };
+    expectMismatch("different-runtime", "worker-transport-test", "runtime");
+    expectMismatch("test-runtime", "different-application", "application");
+    Check(g_hostInitializeCount.load() == 1 && g_hostUninitializeCount.load() == 0 &&
+        g_fakeHostSdkOwned.load(), "configuration mismatch preserves host SDK ownership");
+}
+
+static void TestMetadataAfterRenderReusesPersistentSdk() {
+    void* handle = lkg_worker_begin_metadata_v1("TEST-RUNTIME", "worker-transport-test");
+    Check(handle != nullptr, "metadata after render begin with canonical equivalent path");
+    Check(WaitForDisplaySnapshot(handle, 1), "metadata after render query ready");
+    Check(lkg_worker_close(handle) == 0, "metadata after render close");
+    Check(WaitState(handle, LKG_WORKER_CLOSED, 2000), "metadata after render context cleanup");
+    Check(lkg_worker_end_metadata_v1(handle) == 0, "metadata after render context release");
+    Check(g_hostInitializeCount.load() == 1 && g_hostUninitializeCount.load() == 0 &&
+        g_hostLoadCount.load() == 1 && g_hostUnloadCount.load() == 0,
+        "metadata-render-metadata uses one host SDK initialization until final shutdown");
 }
 
 static void TestActiveWorkerDisplayRefreshDoesNotMutateRenderStatus() {
@@ -571,13 +626,7 @@ static void TestFaultCases() {
 }
 
 static void TestInitializationAndDrawFault() {
-    g_initializeFailure.store(true);
-    void* handle = lkg_worker_begin("test-runtime", "worker-transport-test", 0, nullptr);
-    Check(handle != nullptr, "initializer failure begin");
-    Check(WaitState(handle, LKG_WORKER_FAULT, 2000), "initializer failure fault");
-    ReleaseAfterFault(handle, "initializer failure release");
-    g_initializeFailure.store(false);
-
+    void* handle = nullptr;
     BeginContext(&handle);
     g_drawFailure.store(true);
     auto texture = MakeTexture(DXGI_FORMAT_R8G8B8A8_UNORM, 16, 16);
@@ -680,17 +729,71 @@ static void VerifyWorkerTexture(void* texturePointer) {
     g_copyVerified.store(true);
 }
 
-int32_t lkg_bridge_load(const char*) { return 0; }
-void lkg_bridge_unload(void) {}
-int32_t lkg_bridge_initialize(const char*) { return g_initializeFailure.load() ? -101 : 0; }
-void lkg_bridge_uninitialize(void) {}
+int32_t lkg_bridge_load(const char*) { g_hostLoadCount.fetch_add(1); return 0; }
+void lkg_bridge_unload(void) { g_hostUnloadCount.fetch_add(1); }
+int32_t lkg_bridge_initialize(const char*) {
+    g_hostInitializeCount.fetch_add(1);
+    return g_initializeFailure.load() ? -101 : 0;
+}
+void lkg_bridge_uninitialize(void) { g_hostUninitializeCount.fetch_add(1); }
 int32_t lkg_bridge_is_idle(void) { return 1; }
-int32_t lkg_bridge_last_error(char* utf8, uint32_t capacity) { if (utf8 && capacity) utf8[0] = 0; return 0; }
+int32_t lkg_bridge_last_error(char* utf8, uint32_t capacity) {
+    if (!utf8 || !capacity) return 0;
+    std::lock_guard<std::mutex> lock(g_fakeHostConfigMutex);
+    std::snprintf(utf8, capacity, "%s", g_fakeLastError.c_str());
+    return static_cast<int32_t>(g_fakeLastError.size());
+}
 uint32_t lkg_bridge_successful_draw_count(void) { return g_drawCount.load(); }
 int32_t lkg_bridge_is_initialized(void) { return 0; }
-extern "C" int32_t lkg_bridge_sdk_shutdown_faulted(void) { return 0; }
+extern "C" int32_t lkg_bridge_sdk_shutdown_faulted(void) { return g_fakeHostFaulted.load() ? 1 : 0; }
 extern "C" int32_t lkg_bridge_close_sdk_admission(void) { return 0; }
-extern "C" int32_t lkg_bridge_sdk_shutdown_incomplete(void) { return 0; }
+extern "C" int32_t lkg_bridge_sdk_shutdown_incomplete(void) { return g_fakeHostSdkOwned.load() ? 1 : 0; }
+extern "C" int32_t lkg_bridge_worker_host_begin_sdk(const char* runtimePath, const char* applicationName) {
+    if (g_workerThread.load(std::memory_order_acquire) != GetCurrentThreadId()) return -6;
+    auto canonicalize = [](const char* value) {
+        std::string result = value ? value : "";
+        for (char& character : result) {
+            if (character == '/') character = '\\';
+            character = static_cast<char>(std::tolower(static_cast<unsigned char>(character)));
+        }
+        return result;
+    };
+    const std::string requestedPath = canonicalize(runtimePath);
+    const std::string requestedApplication = applicationName ? applicationName : "";
+    std::lock_guard<std::mutex> lock(g_fakeHostConfigMutex);
+    if (g_fakeHostSdkOwned.load()) {
+        if (requestedPath != g_fakeHostRuntime || requestedApplication != g_fakeHostApplication) {
+            g_fakeLastError = "Persistent worker host already owns the Bridge SDK for a different runtime path or application name";
+            return -20;
+        }
+        return g_fakeHostFaulted.load() ? -21 : 0;
+    }
+    g_hostLoadCount.fetch_add(1);
+    g_fakeHostRuntime = requestedPath;
+    g_fakeHostApplication = requestedApplication;
+    g_fakeHostSdkOwned.store(true);
+    const int32_t result = lkg_bridge_initialize(applicationName);
+    if (result != 0) {
+        g_fakeHostFaulted.store(true);
+        g_fakeLastError = "Bridge initialize returned false";
+        return -21;
+    }
+    g_fakeLastError.clear();
+    return 0;
+}
+extern "C" int32_t lkg_bridge_worker_host_finalize_sdk(void) {
+    g_hostFinalizerThread.store(GetCurrentThreadId());
+    if (!g_fakeHostSdkOwned.load()) return g_fakeHostFaulted.load() ? -1 : 0;
+    g_hostUninitializeCount.fetch_add(1);
+    if (g_fakeHostFinalizationFailure.load()) {
+        g_fakeHostFaulted.store(true);
+        return -2;
+    }
+    g_fakeHostSdkOwned.store(false);
+    g_fakeHostRuntime.clear();
+    g_fakeHostApplication.clear();
+    return 0;
+}
 extern "C" int32_t lkg_bridge_get_session_close_status_v1(uint64_t session, LkgBridgeSessionCloseStatusV1* status) {
     if (!status || status->structSize != sizeof(LkgBridgeSessionCloseStatusV1) || status->version != 1) return -1;
     status->sessionId = session;
@@ -896,7 +999,7 @@ static void TestD3D12RingColors() {
         return;
     }
     g_testingD3D12.store(true);
-    void* handle = lkg_worker_begin("test-runtime", "worker-transport-d3d12-test", 0, g_testD3D12Device.Get());
+    void* handle = lkg_worker_begin("test-runtime", "worker-transport-test", 0, g_testD3D12Device.Get());
     Check(handle != nullptr, "D3D12 worker begin");
     Check(WaitReady(handle), "D3D12 worker ready");
     auto callback = reinterpret_cast<void (*)(int, void*)>(lkg_worker_render_event_func());
@@ -932,7 +1035,7 @@ static void TestD3D12RingColors() {
     Check(WaitCompleted(handle, targetDraws, 5000), "D3D12 ring final completion");
     Check(lkg_worker_reset_transfer(handle) == 0, "D3D12 ring drained reset");
     EndContext(handle);
-    handle = lkg_worker_begin("test-runtime", "worker-transport-d3d12-typeless-test", 0, g_testD3D12Device.Get());
+    handle = lkg_worker_begin("test-runtime", "worker-transport-test", 0, g_testD3D12Device.Get());
     Check(handle != nullptr, "D3D12 typeless worker begin");
     Check(WaitReady(handle), "D3D12 typeless worker ready");
     const std::array<uint8_t, 3> typelessRgb = { 63, 127, 191 };
@@ -947,7 +1050,7 @@ static void TestD3D12RingColors() {
     Check(WaitCompleted(handle, 1, 5000), "D3D12 typeless completion");
     Check(lkg_worker_reset_transfer(handle) == 0, "D3D12 typeless drained reset");
     EndContext(handle);
-    handle = lkg_worker_begin("test-runtime", "worker-transport-d3d12-gate-test", 0, g_testD3D12Device.Get());
+    handle = lkg_worker_begin("test-runtime", "worker-transport-test", 0, g_testD3D12Device.Get());
     Check(handle != nullptr, "D3D12 gate worker begin");
     Check(WaitReady(handle), "D3D12 gate worker ready");
     const std::array<uint8_t, 3> gatedRgb = { 91, 143, 207 };
@@ -978,7 +1081,7 @@ static void TestD3D12RingColors() {
     Check(lkg_worker_poll(handle, &drainedGateStatus) == 0 && drainedGateStatus.completed == 1,
           "D3D12 gated frame completion count");
     EndContext(handle);
-    handle = lkg_worker_begin("test-runtime", "worker-transport-d3d12-consumer-timeout-test", 0, g_testD3D12Device.Get());
+    handle = lkg_worker_begin("test-runtime", "worker-transport-test", 0, g_testD3D12Device.Get());
     Check(handle != nullptr, "D3D12 consumer timeout worker begin");
     Check(WaitReady(handle), "D3D12 consumer timeout worker ready");
     Check(lkg_worker_test_set_d3d12_timeout(handle, 40) == 0, "D3D12 consumer timeout setup");
@@ -1003,7 +1106,7 @@ static void TestD3D12RingColors() {
     }
     Check(lkg_worker_release(handle) == -2, "D3D12 consumer timeout remains pending");
     ReleaseAfterFault(handle, "D3D12 late consumer completion cleanup");
-    handle = lkg_worker_begin("test-runtime", "worker-transport-d3d12-timeout-test", 0, g_testD3D12Device.Get());
+    handle = lkg_worker_begin("test-runtime", "worker-transport-test", 0, g_testD3D12Device.Get());
     Check(handle != nullptr, "D3D12 timeout worker begin");
     Check(WaitReady(handle), "D3D12 timeout worker ready");
     Check(lkg_worker_test_set_d3d12_timeout(handle, 40) == 0, "D3D12 test timeout setup");
@@ -1027,7 +1130,7 @@ static void TestD3D12RingColors() {
     ReleaseAfterFault(handle, "D3D12 late producer cleanup");
     g_testD3D12GateValue.store(3);
     g_testD3D12Generation.store(2);
-    handle = lkg_worker_begin("test-runtime", "worker-transport-d3d12-generation-test", 0, g_testD3D12Device.Get());
+    handle = lkg_worker_begin("test-runtime", "worker-transport-test", 0, g_testD3D12Device.Get());
     Check(handle != nullptr, "D3D12 generation worker begin");
     Check(WaitReady(handle), "D3D12 generation worker ready");
     auto staleTexture = MakeD3D12PatternTexture({ 71, 112, 183 });
@@ -1058,8 +1161,8 @@ static void TestD3D12RingColors() {
         lkg_worker_test_d3d12_set_removed(false);
         Check(lkg_worker_pending_count() == 0, "D3D12 unknown submission pending drained after removal");
     };
-    verifyUnknownSubmission(0, "worker-transport-d3d12-return-zero-test");
-    verifyUnknownSubmission(UINT64_MAX, "worker-transport-d3d12-return-max-test");
+    verifyUnknownSubmission(0, "worker-transport-test");
+    verifyUnknownSubmission(UINT64_MAX, "worker-transport-test");
     g_testingD3D12.store(false);
     g_testD3D12Device.Reset();
     g_testD3D12Queue.Reset();
@@ -1069,13 +1172,15 @@ static void TestD3D12RingColors() {
 
 static void TestCleanupExceptionRetainsContext(void) {
     const ULONG referencesBeforeBegin = ReferenceCount(g_device.Get());
-    void* handle = lkg_worker_begin("test-runtime", "worker-transport-cleanup-exception-test", 0, g_device.Get());
+    void* handle = lkg_worker_begin("test-runtime", "worker-transport-test", 0, g_device.Get());
     Check(handle != nullptr, "cleanup-exception worker begin");
     Check(WaitReady(handle), "cleanup-exception worker ready");
     lkg_worker_test_throw_during_cleanup();
     Check(lkg_worker_close(handle) == 0, "cleanup-exception close accepted");
     Check(WaitState(handle, LKG_WORKER_FAULT, 5000), "cleanup exception faults worker");
-    Check(lkg_worker_shutdown_host(5000) == 0, "cleanup exception worker host join");
+    Check(lkg_worker_shutdown_host(5000) == -2, "cleanup exception retains host SDK module pin");
+    Check(g_hostUninitializeCount.load() == 0 && g_fakeHostSdkOwned.load(),
+        "unproven context cleanup prevents process SDK finalization");
     Check(ReferenceCount(g_device.Get()) > referencesBeforeBegin,
         "cleanup exception retains producer-device references after worker exit");
     Check(lkg_worker_release(handle) == -2, "cleanup exception prevents worker release");
@@ -1097,10 +1202,31 @@ int main(int argc, char** argv) {
         std::fprintf(stdout, "worker_cleanup_exception_test pass\n");
         return 0;
     }
+    if (argc == 2 && std::strcmp(argv[1], "--host-initialize-failure-only") == 0) {
+        TestMetadataInitializationFailureIsPublished();
+        Check(lkg_worker_shutdown_host(5000) == -2, "host initialization fault retains SDK owner state");
+        Check(g_hostInitializeCount.load() == 1 && g_hostUninitializeCount.load() == 0 &&
+            g_fakeHostSdkOwned.load(), "failed SDK initialization is not finalized as success");
+        std::fprintf(stdout, "worker_host_initialize_failure_test pass\n");
+        return 0;
+    }
+    if (argc == 2 && std::strcmp(argv[1], "--host-uninitialize-failure-only") == 0) {
+        void* handle = nullptr;
+        BeginContext(&handle);
+        EndContext(handle);
+        g_fakeHostFinalizationFailure.store(true);
+        Check(lkg_worker_shutdown_host(5000) == -2, "failed host uninitialize remains incomplete");
+        Check(g_hostUninitializeCount.load() == 1 && g_fakeHostSdkOwned.load(),
+            "failed final uninitialize is attempted once and retains SDK ownership");
+        Check(lkg_worker_begin_metadata_v1("test-runtime", "worker-transport-test") == nullptr,
+            "finalization fault rejects further SDK contexts");
+        std::fprintf(stdout, "worker_host_uninitialize_failure_test pass\n");
+        return 0;
+    }
     TestD3D12RingColors();
     TestCachedPhysicalDisplayCalibration();
     TestMetadataOnlyRefreshLifecycle();
-    TestMetadataInitializationFailureIsPublished();
+    TestPersistentSdkConfigurationMismatchIsRejected();
     TestActiveWorkerDisplayRefreshDoesNotMutateRenderStatus();
     TestTypelessSource();
     TestTransferResetResize();
@@ -1112,6 +1238,7 @@ int main(int argc, char** argv) {
     TestCloseDrainAndExclusiveBegin();
     TestCloseAllRetiresLateToken();
 #if defined(LKG_WORKER_TRANSPORT_TESTING)
+    TestMetadataAfterRenderReusesPersistentSdk();
     TestPersistentHostThreadReuse();
     TestWorkerMessagePump();
     TestPersistentHostIdleQuit();

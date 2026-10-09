@@ -240,7 +240,11 @@ namespace ViewWeave
             {
                 bool validationPending = IsOwnerValidationPending();
                 UpdateCleanupValidationPause(validationPending);
-                CheckTimeout(validationPending);
+                bool deferIdleCleanupTimeout = !validationPending &&
+                    requestKind == RequestKind.IdleMetadataOwner && closeRequested;
+                BridgeDisplayMetadataRecoveryRecord deferredCleanupRecord = deferIdleCleanupTimeout ? recoveryRecord : null;
+                IntPtr deferredCleanupHandle = deferIdleCleanupTimeout ? handle : IntPtr.Zero;
+                CheckTimeout(validationPending || deferIdleCleanupTimeout);
                 if (validationPending)
                 {
                     if (!requestTimedOut && !requestCancelled)
@@ -260,7 +264,13 @@ namespace ViewWeave
                     if (!closeRequested) return;
                 }
                 if (requestKind == RequestKind.IdleMetadataOwner)
+                {
                     TickIdleMetadata();
+                    if (deferredCleanupRecord != null &&
+                        requestKind == RequestKind.IdleMetadataOwner && closeRequested &&
+                        ReferenceEquals(recoveryRecord, deferredCleanupRecord) && handle == deferredCleanupHandle)
+                        CheckTimeout(false);
+                }
                 else if (requestKind == RequestKind.ActiveWorker)
                     TickActiveWorker();
             }

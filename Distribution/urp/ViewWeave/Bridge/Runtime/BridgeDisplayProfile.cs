@@ -23,6 +23,54 @@ namespace ViewWeave
             CalibrationDpi = HasPhysicalCalibration ? physical.dpi : 0f;
         }
 
+        BridgeDisplayProfile(uint displayIndex, uint width, uint height, float aspect, float viewcone,
+            int quiltWidth, int quiltHeight, int columns, int rows, bool hasPhysicalCalibration,
+            float physicalWidthMillimeters, float physicalHeightMillimeters, float calibrationDpi)
+        {
+            DisplayIndex = displayIndex;
+            Width = width;
+            Height = height;
+            Aspect = aspect;
+            Viewcone = viewcone;
+            QuiltWidth = quiltWidth;
+            QuiltHeight = quiltHeight;
+            Columns = columns;
+            Rows = rows;
+            HasPhysicalCalibration = hasPhysicalCalibration;
+            PhysicalWidthMillimeters = physicalWidthMillimeters;
+            PhysicalHeightMillimeters = physicalHeightMillimeters;
+            CalibrationDpi = calibrationDpi;
+        }
+
+        internal static bool TryCreateCached(uint displayIndex, uint width, uint height, float aspect, float viewcone,
+            int quiltWidth, int quiltHeight, int columns, int rows, bool hasPhysicalCalibration,
+            float physicalWidthMillimeters, float physicalHeightMillimeters, float calibrationDpi,
+            out BridgeDisplayProfile profile)
+        {
+            profile = default;
+            if (width == 0 || height == 0 || !IsFinite(aspect) || aspect <= 0f || !IsFinite(viewcone) ||
+                viewcone < 0f || viewcone >= 179f || quiltWidth <= 0 || quiltHeight <= 0 || columns <= 0 || rows <= 0)
+                return false;
+            if (hasPhysicalCalibration)
+            {
+                if (!IsFinite(physicalWidthMillimeters) || !IsFinite(physicalHeightMillimeters) ||
+                    !IsFinite(calibrationDpi) || physicalWidthMillimeters <= 0f ||
+                    physicalHeightMillimeters <= 0f || calibrationDpi <= 0f)
+                    return false;
+                float physicalAspect = physicalWidthMillimeters / physicalHeightMillimeters;
+                if (!IsFinite(physicalAspect) || Math.Abs(physicalAspect - aspect) / aspect > 0.05f) return false;
+            }
+            else if (physicalWidthMillimeters != 0f || physicalHeightMillimeters != 0f || calibrationDpi != 0f)
+            {
+                return false;
+            }
+
+            profile = new BridgeDisplayProfile(displayIndex, width, height, aspect, viewcone,
+                quiltWidth, quiltHeight, columns, rows, hasPhysicalCalibration,
+                physicalWidthMillimeters, physicalHeightMillimeters, calibrationDpi);
+            return profile.IsValid;
+        }
+
         static bool TryConvertCalibration(BridgeNative.DisplayInfo display, BridgeWorkerNative.PhysicalDisplayInfoV1 physical, out float widthMm, out float heightMm)
         {
             widthMm = 0f;

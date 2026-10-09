@@ -1,28 +1,29 @@
 {
   "artifact": "lookingglass_bridge_shim.dll",
-  "sha256": "1A0BD4FCAA130ED8A0A40418F655D28B6D7C624F4F5F77328015928504C50887",
+  "sha256": "D46AAADDFC035FCC3AF3FAD5B6886AF7DE1D9E0816846C4A5874A52F815944DF",
   "nativeSourceHashes": {
-    "Native/bridge_shim.cpp": "1A4DB50B7265E7232961E1A5A5D982D9A8267383E09A0048D68381D7499D40C4",
+    "Native/CMakeLists.txt": "69D2CFC6B311D57BA7C533D6387EE7B01C827E161BB5E2EAA454FA603E064717",
+    "Native/bridge_d3d12_internal.h": "6B06A4792E547BDAE65EE91908CB565ED5FA1B89AD5C6E7A6EE627D6933FE154",
+    "Native/bridge_shim.cpp": "F539E6B5B8BFAB5B65A819C128D5EED37CA497AB62A0501ECB13D72E77D4148E",
     "Native/bridge_shim.h": "B33943E3D0BA4F5E3E7177008542BF48E94AD17846CB421C5AF834F07B687954",
-    "Native/bridge_worker_transport.cpp": "C93D2945C4B12131C2D21C3123092011CD193D9FAD14A1F316D73787B96EF6A6",
-    "Native/bridge_worker_transport.h": "366EF535D4E27E1BA895E57412B222AADC2B3157B5BC0680293AADB7A4053811",
     "Native/bridge_worker_common.cpp": "D57B45EA0B65FA2B3BD953853529E5005A629321D035C090C1C3D6C620C9E39B",
     "Native/bridge_worker_common.h": "48ACE99B1F5C90842FB2E6B5AE6021AD835891486BC65C3969C2427F5DB96FD4",
-    "Native/bridge_d3d12_internal.h": "6B06A4792E547BDAE65EE91908CB565ED5FA1B89AD5C6E7A6EE627D6933FE154",
-    "Native/CMakeLists.txt": "7DC27354D8D5D6D87CBD393D20129170B6D1AD8EF2C430259616D8CE85AB5BE4",
-    "Native/platform/windows/bridge_worker_transport_windows.inc": "84665698BD56C31201552A73F0CB6EF9C7090201C356A54C8D7047D8790991F0",
+    "Native/bridge_worker_transport.cpp": "C93D2945C4B12131C2D21C3123092011CD193D9FAD14A1F316D73787B96EF6A6",
+    "Native/bridge_worker_transport.h": "366EF535D4E27E1BA895E57412B222AADC2B3157B5BC0680293AADB7A4053811",
+    "Native/platform/unsupported/bridge_worker_transport_unsupported.inc": "AC24813DAF9C0DB6D64BF6B08AAF450FD4676118959A2DD33FF0DD232821333D",
     "Native/platform/windows/backends/d3d11_backend.inc": "8358D013E24979837AF3419B23223675E211C51CAA667F78672194E5585ADDDF",
-    "Native/platform/windows/backends/d3d12_backend.inc": "AE913E68B1D6D11BB551A2D85DDAC4CCE5990C7E92678801D00F1383BA38BCB0",
     "Native/platform/windows/backends/d3d11_d3d12_interop.inc": "FDF55A669CE099FA48B95683678ABE7F51592AA1B9E55BF097B90482F7398B28",
-    "Native/tests/portable_common_test.cpp": "ED50427D073E0FFE9692E2749DDD076EEABD3AEA3ACA6E2D481F15D0FA82772E",
-    "Native/tests/worker_transport_test.cpp": "ECA07FC24E96BCCD723CFE03ABC1CF86A32F79B26A1EA2E7EF1120FC3B7F4CAE",
+    "Native/platform/windows/backends/d3d12_backend.inc": "AE913E68B1D6D11BB551A2D85DDAC4CCE5990C7E92678801D00F1383BA38BCB0",
+    "Native/platform/windows/bridge_worker_transport_windows.inc": "BCD8108E8D29F997C47E329C26F13E8B6BA4C8F1177FEF0736632FF55CE3B63E",
     "Native/tests/bridge_loader_lifecycle_test.cpp": "FA9E38EAF6B4492F02F2F4F45C0FDB59AEFA3227EA37116AE84EF971D19CAC3B",
-    "Native/tests/bridge_shutdown_contract_test.cpp": "D7F23157F7DB811F372BF750CEA168D00B5F8E475BEDE0F233724713DAC32F6A",
     "Native/tests/bridge_shutdown_contract.h": "407273B9AC0330ED817CD85B22BEF2070F1365BCD64B2398A9F6C638FE546B58",
-    "Native/tests/fake_bridge_runtime.cpp": "3639075BF270849DBAA8903C9466F78B913085462B9CE8E5DF36C4FC31A6CAF8",
+    "Native/tests/bridge_shutdown_contract_test.cpp": "5FF2677DBF79B43F571E12E9276793D8910B96018C7E42627D38D501CB39B9C0",
+    "Native/tests/bridge_worker_host_affinity_test.cpp": "87779E3B8D309A7C232CB0712A7BA1662F7FAA7E4DD0A4FD5974A5DF24183A0B",
     "Native/tests/fake_bridge_missing.cpp": "89D4BB907704FC1A8FE1FDAD152A983779F0CED85808B77DEA9263C0B5C05FD3",
-    "Native/tests/fake_bridge_shutdown_runtime.cpp": "2FE78057114A09F1636951F71023C07A59384D357924529E8B5BDE53230D6D68",
-    "Native/platform/unsupported/bridge_worker_transport_unsupported.inc": "AC24813DAF9C0DB6D64BF6B08AAF450FD4676118959A2DD33FF0DD232821333D"
+    "Native/tests/fake_bridge_runtime.cpp": "3639075BF270849DBAA8903C9466F78B913085462B9CE8E5DF36C4FC31A6CAF8",
+    "Native/tests/fake_bridge_shutdown_runtime.cpp": "5F79C774C021FF9BD57414CD6AB2F2F02295D202CCD7115FBAC48A56B17244C3",
+    "Native/tests/portable_common_test.cpp": "ED50427D073E0FFE9692E2749DDD076EEABD3AEA3ACA6E2D481F15D0FA82772E",
+    "Native/tests/worker_transport_test.cpp": "0E44FDEB0A60BEC3326E5006AFA20BDE271DE892D0652B908E075910FD38D8FB"
   },
   "compilerVersion": "MSVC 19.44.35217.0",
   "targetArchitecture": "x64",
@@ -30,11 +31,11 @@
   "pluginApiUnityVersion": "6000.6.4f1",
   "buildDirectory": "Native/build-worker-release-vs/Release (currentWindowsReleaseBuild)",
   "generator": "Visual Studio 17 2022; MSBuild 17.14.23",
-  "independentCTest": "Current packaged Windows DLL: currentWindowsReleaseBuild local Release build and CTest passed 6/6, including metadata refresh lifecycle and hot-plug bounds regressions. Historical evidence blocks remain candidate-specific.",
+  "independentCTest": "Current packaged Windows DLL: Native Release CTest passed 8/8, including persistent SDK host lifetime, metadata-to-render reuse, configuration mismatch, initialization/finalization failure retention, shutdown ordering, and window-hide ordering. Tests use fake Bridge runtimes; no physical-device claim is made.",
   "d3d12HardwareValidation": "Historical only: NVIDIA RTX 3090 Ti D3D12 shared-resource handoff, ring reuse, typeless formats, timeout, late completion, device-removal seam, and generation coverage were previously exercised. These observations are not fresh validation for this DLL.",
-  "validationLimits": "The packaged DLL matches currentWindowsReleaseBuild and the listed source hashes. Native Release CTest uses fake Bridge runtimes; the new metadata worker was not run against a physical device. A separate earlier metadata probe read calibration data from the installed Bridge 2.6.3 API, but that probe does not validate this packaged worker path. No optical-scale or performance claim is made.",
+  "validationLimits": "The packaged DLL matches currentWindowsReleaseBuild and the listed nativeSourceHashes. Native Release CTest uses fake Bridge runtimes and verifies window hide before texture/device release; it does not prove native window destruction or physical-device rendering. No optical-scale or performance claim is made.",
   "license": "Apache-2.0",
-  "generatedAt": "2026-10-08T16:45:42Z",
+  "generatedAt": "2026-10-09T00:20:50Z",
   "unityD3D12InterfaceSelection": "The current DLL in currentWindowsReleaseBuild was built with the local Unity 6000.6.4f1 PluginAPI and the v8-preferred D3D12 interface selection. The pinned NativeRenderingPlugin v7-header run and CI records under freshWindowsReleaseEvidence refer to a prior artifact and do not rebuild or validate the current DLL.",
   "freshWindowsReleaseEvidence": {
     "artifactSha256": "81CBF29737B1D1A13FBB3C1EEAB6265F3B0B076F41AB8C23B6E9229B17F0AEA9",
@@ -306,21 +307,21 @@
     "baseCommit": "cdb6933"
   },
   "currentWindowsReleaseBuild": {
-    "artifactSha256": "1A0BD4FCAA130ED8A0A40418F655D28B6D7C624F4F5F77328015928504C50887",
-    "dllSha256": "1A0BD4FCAA130ED8A0A40418F655D28B6D7C624F4F5F77328015928504C50887",
-    "sourceBaseCommit": "4337e0d3ec63df45ab6753b11ecf9ab1a7376188",
-    "sourceState": "Built from the current shared working tree; source hashes are recorded in nativeSourceHashes.",
+    "artifactSha256": "D46AAADDFC035FCC3AF3FAD5B6886AF7DE1D9E0816846C4A5874A52F815944DF",
+    "dllSha256": "D46AAADDFC035FCC3AF3FAD5B6886AF7DE1D9E0816846C4A5874A52F815944DF",
+    "sourceBaseCommit": "22c8e830ad8d88a423a3ec43f9659f48efe65b00",
+    "sourceState": "Built from the shared working tree based on 22c8e830ad8d88a423a3ec43f9659f48efe65b00 with uncommitted Native SDK-host lifetime changes; current source hashes are recorded in nativeSourceHashes.",
     "compiler": "MSVC 19.44.35217.0",
     "targetArchitecture": "x64",
     "configuration": "Release",
     "generator": "Visual Studio 17 2022; MSBuild 17.14.23",
     "unityPluginApi": "6000.6.4f1",
     "buildDirectory": "Native/build-worker-release-vs/Release",
-    "buildCommand": "cmake --build Native/build-worker-release-vs --config Release --parallel 4",
+    "buildCommand": "cmake --build Native/build-worker-release-vs --config Release --target lookingglass_worker_transport_test lookingglass_bridge_shutdown_contract_test --parallel 6",
     "localCTest": {
-      "passed": 6,
-      "total": 6,
-      "elapsedSeconds": 17.72,
+      "passed": 8,
+      "total": 8,
+      "elapsedSeconds": 7.8,
       "evidencePath": "Native/build-worker-release-vs/Testing/Temporary/LastTest.log",
       "tests": [
         {
@@ -333,6 +334,12 @@
           "name": "lookingglass_worker_cleanup_exception_test"
         },
         {
+          "name": "lookingglass_worker_host_initialize_failure_test"
+        },
+        {
+          "name": "lookingglass_worker_host_uninitialize_failure_test"
+        },
+        {
           "name": "lookingglass_bridge_loader_lifecycle_test"
         },
         {
@@ -343,6 +350,14 @@
         }
       ]
     },
-    "notes": "The packaged DLL copies match this artifact SHA-256. Current Native CTest used fake Bridge runtimes; historical evidence remains unchanged."
+    "notes": "The packaged DLL copies match this artifact SHA-256. Current Native CTest used fake Bridge runtimes; historical evidence remains unchanged.",
+    "freshHardwareEvidence": {
+      "case": "metadata-refresh-session-toolbar-play-stop-refresh",
+      "completedUtc": "2026-10-09",
+      "evidencePath": ".local/current-sample-state/2026-10-09/refresh-2da34c050b2f4e0493e4308a7dfa693b",
+      "result": "PASS. On Unity 6000.6.4f1 with the official Bridge 2.6.3 runtime, a metadata refresh succeeded before Play, the automatic Session rendered and completed one frame, direct toolbar Exit Play Mode without an explicit Session.Stop preserved the same Rig's connected display aspect (1.77778), and a second metadata refresh succeeded. Native SDK initialize and final uninitialize each occurred once; Editor exited naturally with code 0 and no crash.",
+      "configuration": "D3D12; Enter Play Mode options disabled Domain Reload and Scene Reload; Preview quality; Half view rendering mode; physical framing disabled.",
+      "limits": "This is one URP fixture lifecycle regression run. It verifies refresh and Session lifecycle behavior, not optical output, scale, image quality, performance, or other Unity projects/pipelines."
+    }
   }
 }
