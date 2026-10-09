@@ -160,6 +160,16 @@ LKG_EXPORT int32_t lkg_worker_request_preview_lease_return_v1(void* leaseHandle,
 LKG_EXPORT int32_t lkg_worker_get_preview_lease_status_v1(void* leaseHandle, const LkgWorkerPreviewLeaseIdentityV1* identity,
     LkgWorkerPreviewLeaseStatusV1* status);
 LKG_EXPORT int32_t lkg_worker_ack_preview_lease_return_v1(void* leaseHandle, const LkgWorkerPreviewLeaseIdentityV1* identity);
+/*
+ * Lease-only draw admission API. drawData is cleared on every nonzero result.
+ * BUSY is reserved for a valid, ready, running lease with all request fields valid
+ * when the three-token admission queue is full; that result does not AddRef texture
+ * or allocate a draw payload. Other lifecycle failures return STALE or NATIVE_FAILURE,
+ * and invalid identity/request arguments return INVALID_ARGUMENT.
+ */
+LKG_EXPORT int32_t lkg_worker_try_make_preview_draw_data_v1(void* leaseHandle,
+    const LkgWorkerPreviewLeaseIdentityV1* identity, void* texture, uint32_t columns, uint32_t rows,
+    float aspect, float zoom, void** drawData);
 LKG_EXPORT int32_t lkg_worker_release(void* handle);
 LKG_EXPORT void* lkg_worker_make_draw_data(void* handle, void* texture, uint32_t columns, uint32_t rows, float aspect, float zoom);
 LKG_EXPORT int32_t lkg_worker_cancel_draw_data(void* drawData);

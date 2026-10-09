@@ -2,22 +2,24 @@
 
 # Bridge output lifecycle
 
-The Edit Mode device preview and Play output use one process-level Looking Glass Bridge endpoint. They take turns owning an exclusive output lease. Closing one mode starts a proof-and-ACK return sequence; it does not destroy the process endpoint. The shared-endpoint implementation is present in the reviewed source candidate. Full physical Close/Start and Edit/Play handoff validation is still pending, so the diagrams describe the contract and do not guarantee that the reported black-output cases are fixed.
+Edit Mode device preview and Play output share one process-level Looking Glass Bridge endpoint. Each mode gets an exclusive, generation-scoped lease to submit quilts. Closing a mode returns its lease; it does not normally destroy the process-level SDK session, registered primary texture, or hidden Bridge endpoint.
 
-## Process owner and mode lease
+This page distinguishes the current Native artifact/source implementation from the sample projects and from verified device behavior. The current source implements an explicit Busy admission result and is included in the generated distribution packages. The reverse Play-to-Edit black/delayed output issue remains unresolved.
 
-The process owner keeps the Native Bridge SDK session, owner thread and window, the SDK-registered primary texture, and the fixed-size SDK-facing input alive. The endpoint is hidden while no output lease is active. One mode lease at a time owns its Unity producer, camera state, variable-size Quilt/transfer textures, and GPU work for that generation.
+## Process ownership and mode leases
+
+The process owner keeps the Native Bridge session, worker thread/window, SDK-registered primary texture, and fixed-profile SDK input alive between mode owners. The endpoint is hidden and parked when no lease owns output. An Edit Preview or Play lease owns that generation's Unity producer, camera state, variable-size quilt/transfer resources, and their GPU work. Only one mode owns the endpoint at a time.
 
 ```mermaid
 flowchart LR
     subgraph Process[Unity process lifetime]
-        subgraph Lease[One exclusive output lease]
-            Mode[Play OR Edit Mode device preview]
-            Producer[Unity producer and quality-sized Quilt]
+        subgraph Lease[One exclusive mode lease]
+            Mode[Play or Edit Mode preview]
+            Producer[Unity producer and quality-sized quilt]
         end
-        Stable[Fixed profile-sized SDK input]
+        Stable[Fixed-profile SDK input]
         Primary[SDK-registered primary texture]
-        Endpoint[Native Bridge session, owner thread, and window]
+        Endpoint[Native Bridge session, worker, and hidden window]
     end
     Mode --> Producer
     Producer -->|GPU copy or per-tile scale| Stable
@@ -27,31 +29,29 @@ flowchart LR
     Bridge --> Display[Looking Glass display]
 ```
 
-The registered primary texture and the Native input keep the same identities across mode leases. A producer Quilt can have different dimensions as quality changes, but its logical grid must remain the same as the fixed device profile. Full process shutdown is the boundary that destroys the endpoint, releases its registered textures, and uninitializes the SDK.
+The registered primary texture and SDK-facing input retain stable identities across lease generations. Producer quilt dimensions may change with quality while the logical device grid remains fixed. Full process shutdown is a separate boundary: it closes lease admission and permits final SDK/native cleanup only after the matching module/registry and Unity GPU cleanup proofs are available.
 
 ## Pause, resume, close, and handoff
 
-| Action | Mode producer and Unity textures | Output lease | Process Bridge endpoint |
+| Action | Mode producer and Unity textures | Lease | Process Bridge endpoint |
 | --- | --- | --- | --- |
-| Pause Preview | Retained after submissions drain | Retained with the same generation | Hidden and parked; SDK session stays initialized |
-| Resume Preview | Reused | Same generation resumes | Shown again through the same endpoint |
-| Close Preview | Retired after native return proof and Core/transfer/producer GPU proofs | Native reports return proof; managed ACK follows texture retirement | Hidden and parked; next lease is blocked until ACK |
-| Play/Edit handoff | Old mode is stopped and its textures are retired after both proof stages | Old generation is acknowledged before a new exclusive generation is acquired | Same endpoint remains parked between owners |
-| Process shutdown | Retired after required Unity GPU proof | Lease acquisition closes; verified final teardown replaces the normal handoff ACK | Release after matching Native module/registry final-cleanup proof |
+| Pause Preview | Retained after submissions drain | Same generation retained | Hidden and parked |
+| Resume Preview | Reused | Same generation resumes | Shown through the same endpoint |
+| Close Preview | Retired after native source-use and managed/Core GPU proofs | Return proof, resource retirement, then ACK | Hidden and parked; next lease waits for return/ACK |
+| Edit/Play handoff | Old producer and textures are retired before the next mode owns them | New exclusive generation after old-generation handoff | Same endpoint remains parked between owners |
+| Process shutdown | Retired after required Unity GPU proof | Admission closes; final teardown proof can replace normal handoff ACK | SDK endpoint, registered textures, and worker are released only at final cleanup |
 
-Closing a mode gates new submissions and asks Native to return the current generation. Native drains its queued source work, hides the endpoint, and reports `ReturnedProven` once it no longer references that mode's Unity source textures. This notification is not the managed ACK. After receiving it, managed code waits for Core/transfer and producer GPU completion, retires the old Unity textures and mode ownership, then sends `ACK` to Native. Native blocks acquisition of the next generation until that ACK arrives. A later Start can then acquire a new generation over the same process endpoint.
-
-The managed ACK confirms that Unity-side resources for the returned generation have been retired. It does not claim that a frame has reached the display scanout. Unity reload and normal Stop return the active mode lease through the same proof-then-ACK order; they do not perform final SDK uninitialization. Only process shutdown performs that final cleanup.
+Normal return order is strict. Native first reports `ReturnedProven` for the old source textures. Managed code then waits for Core/transfer and producer GPU completion, retires the old mode textures and ownership, and sends the generation ACK. Native allows the next lease only after that ACK. A Native status query is historical metadata; it is not the managed ACK and does not prove a current output owner or visible frame. A producer/GPU completion count also does not prove Bridge scanout.
 
 ```mermaid
 sequenceDiagram
-    participant Old as Current mode (Play or Edit preview)
+    participant Old as Current mode
     participant Unity as Unity producer and GPU
     participant Worker as Native worker
     participant Endpoint as Process Bridge endpoint
     participant Next as Next mode
     Old->>Worker: Gate submissions and request return for generation N
-    Worker->>Endpoint: Drain Native source work and hide endpoint
+    Worker->>Endpoint: Drain source work and hide endpoint
     Endpoint-->>Worker: Native source-use proof
     Worker-->>Old: ReturnedProven for generation N
     Old->>Unity: Wait for Core/transfer and producer GPU proofs
@@ -61,23 +61,54 @@ sequenceDiagram
     Worker-->>Next: Permit next generation acquisition
     Next->>Endpoint: Acquire exclusive generation N+1
     Endpoint-->>Next: Grant same parked endpoint
-    Next->>Worker: Submit using the new mode resources
+    Next->>Worker: Submit with new mode resources
 ```
 
-The same order applies to `Close Preview` → Start, Edit Preview → Play, and Play → Edit Preview. A device/profile change that changes the adapter, Native grid, or output format beyond the supported RGBA8 typeless/UNORM/SRGB family is incompatible with the existing endpoint; close output and restart the Unity Editor before reconnecting or using that profile. No live Native profile or device hot-swap is promised.
+Unity reload and normal Stop return an active mode lease through this path; they do not uninitialize the process SDK session. For process shutdown, admission closes. Final cleanup may release resources only after the matching Native module/registry teardown and required Unity GPU proof are established. Normal handoff ACK is not required once final teardown itself is proven.
+
+## Native admission outcomes
+
+The current Native source candidate adds a lease-only draw-data admission call. It validates the lease identity, lifecycle state, quilt descriptor, and fixed logical grid before reporting an outcome.
+
+```mermaid
+flowchart TD
+    Submit[Submit quilt for current lease] --> Valid{Valid active Ready lease and request?}
+    Valid -->|No| Reject[Reject as invalid, stale, or Native failure]
+    Valid -->|Yes| Queue{Three-token admission queue full?}
+    Queue -->|No| Accept[Accept draw token; retain source texture]
+    Queue -->|Yes| Busy[Return Busy; allocate no draw payload or texture reference]
+    Busy --> Policy{Managed caller policy}
+    Policy -->|Edit Preview| Retry[Retry while keeping current owner and generation]
+    Policy -->|Playback| Skip[Skip this frame and continue playback]
+    Reject --> Stop[Stop or clean up the failed mode; keep resources until proven safe]
+```
+
+`Accepted` means the Native queue accepted a draw token; it does not prove GPU completion or display presentation. `Busy` is reserved for a valid, ready, running lease whose three-token admission queue is full. It does not AddRef the submitted texture or allocate a draw payload. Managed Edit Preview retries while retaining its current producer, endpoint, and generation. Quilt playback skips only that frame and continues. Invalid arguments, stale generations, lifecycle conflicts, and Native faults remain errors; they do not follow the retry path.
+
+The current source candidate also resets Native worker submission/completion/drop statistics when a new lease generation is acquired. These values are diagnostic counters, not source-retirement, Unity GPU-release, ACK, or display-scanout proofs. Managed submission attempts, Native accepted submissions, and completed worker work are different events and should not be compared as if they were one counter. In particular, the older A6A DLL loaded by the samples exposed process-scope counters; those observations are not per-generation evidence.
+
+An incompatible adapter, device, logical quilt grid, output format outside the supported RGBA8 typeless/UNORM/SRGB family, or Native profile may require closing output and restarting the Unity Editor. This path does not promise Native profile/device hot-swap.
 
 ## Quality and rendered view density
 
-`Preview`, `Balanced`, and `Native` quality profiles can change the producer Quilt dimensions after earlier GPU work has drained. `Full`, `Half`, and `Quarter` view density can change how many views are rendered while preserving the completed Quilt grid. The Native helper copies a same-size source or performs a GPU per-tile scale into the fixed profile-sized SDK input. Each tile clamps its sampling inside that view, so resampling does not read pixels from a neighboring view. The SDK input and registered primary texture remain stable across these quality changes.
+`Preview`, `Balanced`, and `Native` quality profiles can change producer quilt dimensions after prior GPU work drains. `Full`, `Half`, and `Quarter` view density change the number of rendered views while preserving the completed quilt grid. Native copies same-size inputs or performs GPU per-tile scaling into the fixed-profile SDK input. Each tile clamps sampling to its own view, preventing pixels from adjacent views from bleeding into it.
 
-The fixed input can add GPU copy or scaling cost. Fewer rendered views or smaller source Quilts do not promise a proportional increase in transport frame rate, and performance has not been measured for this path. A change to the logical grid, an incompatible output format, adapter, device, or Native profile is outside the live quality-change path and can require an Editor restart.
+The fixed input can add GPU copy/scaling cost. Fewer rendered views or smaller source quilts do not promise a proportional increase in transport frame rate. The latest Native copy/scale tests are fake/WARP tests, not a performance benchmark. The internal mode lease does not add a public SDK component or a new public control API.
 
-These controls use the existing Rig and Session settings. The generation lease is an internal lifetime mechanism; it does not add a public SDK component or a new public control API.
+## Candidate and installed build identity
 
-## Validation status and limits
+Both sample projects were cold-verified on 2026-10-09 with package commit `eb527e1ec126ec99d35e9990d8dce0119b855b4d` and Native DLL SHA-256 `A6A062343710AF2362DAF7B923A9BB98BDD5D381D896C68AE3190CA55655FBC7`. This is dated sample evidence, not a claim about their current contents after later package updates. The current Native artifact/source implementation has DLL SHA-256 `655FDB898CF7B9F9733A1880828B740B62FB74E0C3ECDF9D825C07794F6388CD`, size 208,896 bytes, and 51 exports. Its Native Windows fake/WARP CTest suite passed 12/12, source review passed, and the artifact is included in the generated distribution packages. This artifact was not installed in the sample Editors during the 2026-10-09 device validation.
 
-The latest reviewed Native release candidate has SHA-256 `A6A062343710AF2362DAF7B923A9BB98BDD5D381D896C68AE3190CA55655FBC7`. Its Native fake/WARP CTest suite passed 12/12, and the managed Editor/Player code compiled against seven Unity assemblies with Roslyn. Unity licensing-dependent tests were not run. These checks do not load the official Bridge SDK or verify device presentation.
+Current-source Roslyn compilation passed for Core and Bridge runtime Editor/Player configurations, `Bridge.Editor`, and the focused `QuiltPlaybackSafetyTests` source. This was compilation only; Unity Test Runner tests were not executed. Native tests use fake/WARP resources and do not load the official Looking Glass Bridge SDK or verify a physical display.
 
-The only reported physical-device observation is historical: on the URP sample's earlier 6a297a8 package with Native DLL SHA-256 `4E5E1FF81C7C1C227D45E5D38E23FB84F1AAB8A8444EF327D639E1AEB619532B`, the user confirmed one Pause/Resume cycle; the image returned, and a moved object plus Undo were reflected. This does not validate the current Native candidate. The user also reported black output after `Close Preview` followed by Start and after switching between Play and Edit Mode device preview in the reverse direction. Those cases remain pending physical validation.
+## Bounded URP device observations
 
-A source-DLL candidate has been reviewed and adopted, but the URP sample still uses its older 6a297a8 package until Package Manager updates it and Unity restarts. The 12/12 fake/WARP Native suite and managed compilation do not verify lease handoffs with the official Bridge SDK. Actual-device Close/Start and Play/Edit handoff cycles, HDRP hardware output, device hot-plug, physical size, optical image quality, and runtime performance remain unverified.
+All following physical observations used Windows Unity 6000.6.4f1, the updated URP sample, package commit `eb527e1`, and installed DLL A6A...FBC7. They are not evidence for the newer 655F... candidate. HDRP device output was not tested.
+
+| Transition | Device observation | Managed/lease observation | Result boundary |
+| --- | --- | --- | --- |
+| Edit Preview Close/Start, then active Edit Preview → Play | On the URP sample, the user confirmed visible output and fresh move/Undo in both modes | The same process endpoint was reused across each handoff | One Close/Start and one Edit-to-Play transition were confirmed on the 2026-10-09 installed build |
+| Active Play → Edit Preview | Initially black; after one producer-quilt readback, the user reported visible output on the same lease | No new endpoint or lease was created during the observed recovery | The readback may have affected timing; the cause of the black interval is unknown and repeatable recovery is not established |
+| A later reverse handoff | The user later reported visible output, but a subsequent poll found the Editor worker stopped with an error and no current owner | Live output after that report was not established | The image report does not prove recovery; the reverse handoff remains unresolved |
+
+These observations used the sample identity dated above and do not test the current Native artifact/source implementation on hardware. Native fake/WARP tests passed 12/12. The current-source runtime Editor/Player configurations, `Bridge.Editor`, and focused playback-safety test source compiled; Unity Test Runner was not run. The new Native artifact has not been physically tested. HDRP hardware handoffs, device hot-plug, physical size, optical image quality, and runtime performance remain unverified.

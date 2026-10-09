@@ -940,7 +940,15 @@ namespace ViewWeave.Editor
                 producerRenderer.RenderEditorPreviewAtBoundary(retentionRecord);
                 layout = producerRenderer.QuiltTexture == null ? producerRenderer.settings.GetLayout() : producerRenderer.LatestSnapshot.Layout;
                 if (outputToDevice && !producerOutput.TrySubmitEditorPreview(OwnerToken, producerRenderer.QuiltTexture, layout))
+                {
+                    if (producerOutput.LastSubmissionOutcome == BridgeWorkerSubmissionOutcome.RetryableBusy)
+                    {
+                        status = "Bridge worker is busy; retrying the preview quilt.";
+                        nextRenderTime = EditorApplication.timeSinceStartup;
+                        return;
+                    }
                     throw new InvalidOperationException(string.IsNullOrEmpty(producerOutput.LastError) ? "Bridge Worker rejected the preview quilt." : producerOutput.LastError);
+                }
                 lastMsaaSamples = producerRenderer.ViewAntiAliasingSamples;
                 nextRenderTime = EditorApplication.timeSinceStartup + RenderIntervalSeconds;
                 status = outputToDevice ? "Looking Glass preview running" : "Local preview running";

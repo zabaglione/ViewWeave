@@ -27,6 +27,7 @@ int main(int argc, char** argv) {
         "lkg_worker_close", "lkg_worker_reset_transfer", "lkg_worker_release", "lkg_worker_make_draw_data",
         "lkg_worker_acquire_preview_lease_v1", "lkg_worker_request_preview_lease_return_v1",
         "lkg_worker_get_preview_lease_status_v1", "lkg_worker_ack_preview_lease_return_v1",
+        "lkg_worker_try_make_preview_draw_data_v1",
         "lkg_worker_cancel_draw_data", "lkg_worker_render_event_func", "lkg_worker_render_event_id",
         "lkg_worker_close_all", "lkg_worker_collect_closed", "lkg_worker_pending_count", "lkg_worker_shutdown_host",
         "lkg_worker_request_final_shutdown", "lkg_worker_get_final_shutdown_status_v1", "lkg_worker_wait_final_shutdown_v1",
@@ -95,10 +96,14 @@ int main(int argc, char** argv) {
     using AcquireLeaseFn = int32_t (*)(const char*, const char*, uint32_t, void*, void**, LkgWorkerPreviewLeaseIdentityV1*);
     using ReturnLeaseFn = int32_t (*)(void*, const LkgWorkerPreviewLeaseIdentityV1*);
     using LeaseStatusFn = int32_t (*)(void*, const LkgWorkerPreviewLeaseIdentityV1*, LkgWorkerPreviewLeaseStatusV1*);
+    using TryMakePreviewDrawDataFn = int32_t (*)(void*, const LkgWorkerPreviewLeaseIdentityV1*, void*, uint32_t,
+        uint32_t, float, float, void**);
     auto acquireLease = reinterpret_cast<AcquireLeaseFn>(dlsym(library, "lkg_worker_acquire_preview_lease_v1"));
     auto requestLeaseReturn = reinterpret_cast<ReturnLeaseFn>(dlsym(library, "lkg_worker_request_preview_lease_return_v1"));
     auto getLeaseStatus = reinterpret_cast<LeaseStatusFn>(dlsym(library, "lkg_worker_get_preview_lease_status_v1"));
     auto ackLeaseReturn = reinterpret_cast<ReturnLeaseFn>(dlsym(library, "lkg_worker_ack_preview_lease_return_v1"));
+    auto tryMakePreviewDrawData = reinterpret_cast<TryMakePreviewDrawDataFn>(
+        dlsym(library, "lkg_worker_try_make_preview_draw_data_v1"));
     void* leaseHandle = reinterpret_cast<void*>(1);
     LkgWorkerPreviewLeaseIdentityV1 leaseIdentity{};
     Check(acquireLease && acquireLease("runtime", "application", 0, nullptr, &leaseHandle, &leaseIdentity) == -2 &&
@@ -120,6 +125,13 @@ int main(int argc, char** argv) {
           "unsupported preview lease status remains explicitly faulted");
     Check(ackLeaseReturn && ackLeaseReturn(reinterpret_cast<void*>(1), &leaseIdentity) == -2,
           "unsupported preview lease ACK is rejected");
+    void* drawData = reinterpret_cast<void*>(1);
+    Check(tryMakePreviewDrawData && tryMakePreviewDrawData(reinterpret_cast<void*>(1), &leaseIdentity,
+        reinterpret_cast<void*>(1), 4, 4, 1.0f, 1.0f, &drawData) == -2 && drawData == nullptr,
+        "unsupported lease draw admission clears output and reports unsupported");
+    Check(tryMakePreviewDrawData(reinterpret_cast<void*>(1), &leaseIdentity,
+        reinterpret_cast<void*>(1), 0, 4, 1.0f, 1.0f, &drawData) == -1 && drawData == nullptr,
+        "unsupported lease draw admission rejects invalid descriptors before backend status");
     leaseIdentity.leaseGeneration = 0;
     Check(ackLeaseReturn(reinterpret_cast<void*>(1), &leaseIdentity) == -1,
           "preview lease ACK rejects a zero generation");

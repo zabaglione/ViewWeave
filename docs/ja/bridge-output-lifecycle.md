@@ -2,22 +2,24 @@
 
 # Bridge出力のライフサイクル
 
-Edit Modeの実機previewとPlay出力は、process単位で一つのLooking Glass Bridge endpointを共有し、排他的なoutput leaseを交互に取得します。一方のmodeを閉じるとproofとACKを伴う返却sequenceを開始しますが、process endpointは破棄しません。共有endpoint実装はreview済みsource candidateに含まれています。実機でのClose/StartとEdit/Play handoff検証は未完了のため、図は設計上の契約を示し、報告済みの黒画面問題が解消したことを保証しません。
+Edit Modeの実機previewとPlay出力は、process単位のLooking Glass Bridge endpointを共有します。各modeはquilt送信のため、generation単位で排他的なleaseを取得します。modeを閉じるとleaseを返しますが、通常はprocess単位のSDK session、登録済みprimary texture、非表示のBridge endpointを破棄しません。
 
-## Process ownerとmode lease
+このページでは現在のNative artifact/source implementation、sample project、実機で確認できた動作を区別します。現在のsourceには明示的なBusy admission結果が実装され、生成済みdistribution packageに含まれています。PlayからEditへ戻す際の黒画面・遅延表示は未解決です。
 
-Process ownerはNative Bridge SDK session、owner threadとwindow、SDKへ登録したprimary texture、固定サイズのSDK向けinputを保持します。output leaseがなければendpointは非表示です。同時に一つだけ取得できるmode leaseが、そのgenerationのUnity producer、camera状態、可変サイズのQuilt/transfer texture、GPU処理を所有します。
+## Process ownershipとmode lease
+
+Process ownerはNative Bridge session、worker thread/window、SDK登録済みprimary texture、固定profileのSDK inputをmode間で保持します。lease ownerがいないときendpointは非表示でparkします。Edit PreviewまたはPlayのleaseは、そのgenerationのUnity producer、camera状態、可変サイズのquilt/transfer resource、GPU処理を所有します。同時にendpointを所有できるmodeは一つです。
 
 ```mermaid
 flowchart LR
     subgraph Process[Unity process lifetime]
-        subgraph Lease[One exclusive output lease]
-            Mode[Play OR Edit Mode device preview]
-            Producer[Unity producer and quality-sized Quilt]
+        subgraph Lease[One exclusive mode lease]
+            Mode[Play or Edit Mode preview]
+            Producer[Unity producer and quality-sized quilt]
         end
-        Stable[Fixed profile-sized SDK input]
+        Stable[Fixed-profile SDK input]
         Primary[SDK-registered primary texture]
-        Endpoint[Native Bridge session, owner thread, and window]
+        Endpoint[Native Bridge session, worker, and hidden window]
     end
     Mode --> Producer
     Producer -->|GPU copy or per-tile scale| Stable
@@ -27,31 +29,29 @@ flowchart LR
     Bridge --> Display[Looking Glass display]
 ```
 
-登録済みprimary textureとNative inputは、mode lease間で同じidentityを保ちます。producer Quiltの寸法はquality変更で変わることがありますが、logical gridは接続device profileの固定gridに合わせます。endpointの破棄、登録textureの解放、SDK uninitializeはprocess終了時だけ行います。
+登録済みprimary textureとSDK向けinputはlease generation間で同じidentityを保ちます。producer quiltの寸法はqualityで変わる場合がありますが、logical device gridは固定です。process shutdownは別の境界です。一致するmodule/registryとUnity GPU cleanupのproofを確認した場合だけ、lease admissionを閉じてNative/SDKを最終cleanupします。
 
 ## Pause、Resume、Close、handoff
 
-| 操作 | Mode producerとUnity texture | Output lease | Process Bridge endpoint |
+| 操作 | Mode producerとUnity texture | Lease | Process Bridge endpoint |
 | --- | --- | --- | --- |
-| Pause Preview | submitをdrainした後も保持 | 同じgenerationのleaseを保持 | 非表示でparkし、SDK sessionを維持 |
-| Resume Preview | 再利用 | 同じgenerationを再開 | 同じendpointで再表示 |
-| Close Preview | Native return proofとCore/transfer/producer GPU proof後に破棄 | Nativeの返却proof後、texture破棄を済ませてmanaged ACK | 非表示でparkし、ACKまで次のleaseを禁止 |
-| Play/Edit handoff | 旧modeを止め、両段階のproof後にtextureを破棄 | 旧generationへのACK後に新generationを排他的に取得 | owner間は同じendpointをpark状態で維持 |
-| Process shutdown | 必要なUnity GPU proof後にretire | lease取得を停止し、検証済みfinal teardownで通常handoff ACKを置き換え | 一致するNative module/registryの最終cleanup proof後に解放 |
+| Pause Preview | submit drain後も保持 | 同じgenerationを保持 | 非表示でpark |
+| Resume Preview | 再利用 | 同じgenerationを再開 | 同じendpointで表示 |
+| Close Preview | Native source使用終了とmanaged/Core GPU proof後に破棄 | return proof、resource破棄、その後ACK | 非表示でpark。返却/ACK後に次leaseを許可 |
+| Edit/Play handoff | 次modeが所有する前に旧producerとtextureを破棄 | 旧generationのhandoff後に新しい排他的generation | owner間は同じendpointをpark |
+| Process shutdown | 必要なUnity GPU proof後に破棄 | admissionを閉じる。証明済み最終teardownが通常handoff ACKの代わりになる | 最終cleanup時にSDK endpoint、登録texture、workerを解放 |
 
-modeを閉じると新規submitを止め、現在のgenerationをNativeへ返却要求します。Nativeはsource workをdrainしてendpointを隠し、旧modeのUnity textureを参照しなくなった時点で`ReturnedProven`を通知します。この通知はmanaged ACKではありません。managed側は通知後にCore/transferとproducerのGPU完了を待ち、旧Unity textureとmode所有権を破棄してからNativeへ`ACK`を送ります。NativeはACKを受け取るまで次generationの取得を許可しません。その後のStartは同じprocess endpointで新generationを取得できます。
-
-managed ACKは返却generationのUnity-side resourceが破棄されたことを確認します。frameがdisplay scanoutまで到達したことを示すものではありません。Unity reloadと通常Stopも、同じproof後にACKを送る順序でactive mode leaseを返します。最終SDK uninitializeは行わず、process shutdownだけが最終cleanupを行います。
+通常の返却順序は固定です。まずNativeが旧source textureの参照終了を`ReturnedProven`として通知します。managed側は次にCore/transferとproducer GPU完了を待ち、旧mode textureとownershipを破棄してからgeneration ACKを送ります。NativeはACK受信後にだけ次leaseを許可します。Native status queryは履歴metadataであり、managed ACKでも現在のoutput ownerや表示frameの証明でもありません。producer/GPU完了counterもBridge scanoutを証明しません。
 
 ```mermaid
 sequenceDiagram
-    participant Old as Current mode (Play or Edit preview)
+    participant Old as Current mode
     participant Unity as Unity producer and GPU
     participant Worker as Native worker
     participant Endpoint as Process Bridge endpoint
     participant Next as Next mode
     Old->>Worker: Gate submissions and request return for generation N
-    Worker->>Endpoint: Drain Native source work and hide endpoint
+    Worker->>Endpoint: Drain source work and hide endpoint
     Endpoint-->>Worker: Native source-use proof
     Worker-->>Old: ReturnedProven for generation N
     Old->>Unity: Wait for Core/transfer and producer GPU proofs
@@ -61,23 +61,54 @@ sequenceDiagram
     Worker-->>Next: Permit next generation acquisition
     Next->>Endpoint: Acquire exclusive generation N+1
     Endpoint-->>Next: Grant same parked endpoint
-    Next->>Worker: Submit using the new mode resources
+    Next->>Worker: Submit with new mode resources
 ```
 
-同じ順序を`Close Preview`→Start、Edit Preview→Play、Play→Edit Previewで使います。device/profile変更でadapter、Native grid、対応するRGBA8 typeless/UNORM/SRGB familyの範囲を超えるoutput formatが変わり、既存endpointとの互換性がなくなった場合は安全に再利用できません。outputを閉じ、Unity Editorを再起動してから再接続または非互換profileを使います。Native profileやdeviceのlive hot-swapは保証しません。
+Unity reloadと通常Stopはこの経路でactive mode leaseを返しますが、process SDK sessionはuninitializeしません。Process shutdownではadmissionを閉じます。一致するNative module/registry teardownと必要なUnity GPU proofを確認した後だけ最終cleanupします。最終teardown自体を証明できた場合、通常handoff ACKは不要です。
+
+## Native admissionの結果
+
+現在のNative source candidateはlease専用draw-data admission callを追加します。outcomeを返す前にlease identity、lifecycle状態、quilt descriptor、固定logical gridを検証します。
+
+```mermaid
+flowchart TD
+    Submit[Submit quilt for current lease] --> Valid{Valid active Ready lease and request?}
+    Valid -->|No| Reject[Reject as invalid, stale, or Native failure]
+    Valid -->|Yes| Queue{Three-token admission queue full?}
+    Queue -->|No| Accept[Accept draw token; retain source texture]
+    Queue -->|Yes| Busy[Return Busy; allocate no draw payload or texture reference]
+    Busy --> Policy{Managed caller policy}
+    Policy -->|Edit Preview| Retry[Retry while keeping current owner and generation]
+    Policy -->|Playback| Skip[Skip this frame and continue playback]
+    Reject --> Stop[Stop or clean up the failed mode; keep resources until proven safe]
+```
+
+`Accepted`はNative queueがdraw tokenを受け取ったという意味です。GPU完了やdevice表示を証明しません。`Busy`は有効・Ready・running状態のleaseで、3 tokenのadmission queueが満杯のときに限って返します。このとき送信textureへのAddRefやdraw payloadの割り当てはありません。managed Edit Previewはproducer、endpoint、generationを保持したまま再試行します。Quilt playbackは該当frameだけをskipして続行します。invalid argument、stale generation、lifecycle conflict、Native faultはerrorであり、retry対象ではありません。
+
+現在のsource candidateは新しいlease generationの取得時にNative workerのsubmitted/completed/dropped統計をresetします。これらは診断用counterであり、source retirement、Unity GPU release、ACK、display scanoutのproofではありません。managed submit試行、Nativeが受理したsubmit、worker処理完了は別々のeventなので、同じcounterのように比較できません。特にsampleに入っている旧A6A DLLのcounter観察はprocess scopeであり、generationごとの証拠ではありません。
+
+互換性のないadapter/device、logical quilt grid、RGBA8 typeless/UNORM/SRGB family外のoutput format、Native profileに変更する場合、outputを閉じてUnity Editorを再起動する必要がある場合があります。Native profile/deviceのlive hot-swapは保証しません。
 
 ## Qualityと描画view密度
 
-`Preview`、`Balanced`、`Native` quality profileは、先行GPU処理をdrainした後にproducer Quiltの寸法を変更できます。`Full`、`Half`、`Quarter` view densityは、完成Quiltのgridを保ったまま描画するview数を変更できます。Native helperは同一サイズのsourceをcopyし、それ以外はGPU上でfixed profile-sized SDK inputへviewごとにscaleします。各tile内でsampling範囲をclampするため、隣接viewのpixelを読み込みません。SDK inputと登録primary textureはquality変更後も安定します。
+`Preview`、`Balanced`、`Native` quality profileは、以前のGPU処理をdrainした後にproducer quiltの寸法を変更できます。`Full`、`Half`、`Quarter` view densityは完成quiltのgridを保ったまま描画するview数を変更します。Nativeは同じ寸法ならcopyし、それ以外では固定profileのSDK inputへview単位でGPU scalingします。sampling範囲は各tile内にclampするため、隣のviewからpixelを読み込みません。
 
-固定inputはGPU copyまたはscalingの負荷を追加します。描画view数やsource Quiltを減らしても、transport frame rateが同じ割合で向上するとは限りません。この経路の性能は未測定です。logical grid、非互換output format、adapter、device、Native profileの変更はlive quality経路の対象外で、Editor再起動が必要になることがあります。
+固定inputへのcopy/scalingでGPU負荷が増える場合があります。描画viewやsource quiltを減らしても、transport frame rateが同じ割合で向上するとは限りません。最新Nativeのcopy/scale試験はfake/WARPによるもので、性能benchmarkではありません。内部mode leaseはpublic SDK componentやpublic control APIを追加しません。
 
-これらの操作には既存のRigとSession設定を使います。generation leaseは内部のlifetime管理で、public SDK componentやpublic control APIを追加しません。
+## Candidateと導入済みbuild
 
-## 検証範囲と制約
+両sample projectは2026-10-09にpackage commit `eb527e1ec126ec99d35e9990d8dce0119b855b4d`、Native DLL SHA-256 `A6A062343710AF2362DAF7B923A9BB98BDD5D381D896C68AE3190CA55655FBC7`でcold verificationされました。これは日付時点のsample記録で、後日のpackage更新後も同じ内容だという意味ではありません。現在のNative artifact/source implementationはSHA-256 `655FDB898CF7B9F9733A1880828B740B62FB74E0C3ECDF9D825C07794F6388CD`、208,896 bytes、51 exportsです。Native Windows fake/WARP CTestは12/12件成功し、source review済みで、artifactは生成済みdistribution packageに含まれています。このartifactは2026-10-09の実機検証時にはsample Editorへ導入されていませんでした。
 
-最新のreview済みNative release candidateのSHA-256は`A6A062343710AF2362DAF7B923A9BB98BDD5D381D896C68AE3190CA55655FBC7`です。Native fake/WARP CTestは12/12件成功し、managed Editor/Player codeは7つのUnity assemblyを参照してRoslyn compileに成功しました。Unity licenseが必要なtestは未実施です。これらはofficial Bridge SDKをloadせず、実機表示も検証しません。
+現在sourceのRoslyn compileはCore/Bridge runtimeのEditor・Player構成、`Bridge.Editor`、focused `QuiltPlaybackSafetyTests` sourceで成功しました。これはcompileのみです。Unity Test Runnerは未実行で、Native試験もofficial Looking Glass Bridge SDKをloadせず、実機を検証しません。
 
-実機で確認された唯一の観察は過去のものです。URP sampleの旧6a297a8 packageとNative DLL SHA-256 `4E5E1FF81C7C1C227D45E5D38E23FB84F1AAB8A8444EF327D639E1AEB619532B`で、利用者は一度のPause/Resumeを確認し、映像が戻り、objectの移動とUndoも反映されました。これは現在のNative candidateを検証しません。利用者からは`Close Preview`後のStart、およびPlayとEdit Mode device previewを逆方向に切り替えた後に黒画面になる報告もあります。これらは実機での再検証待ちです。
+## URP実機での限定観察
 
-source DLL candidateはreview・採用済みですが、URP sampleはPackage Managerによる更新とUnity再起動まで旧6a297a8 packageを使用しています。12/12件のfake/WARP Native suiteとmanaged compileは、official Bridge SDKを使ったlease handoffを検証しません。実機Close/StartとPlay/Edit handoff、HDRP実機出力、device hot-plug、物理寸法、光学的画質、runtime性能は未検証です。
+以下はすべてWindows Unity 6000.6.4f1、更新済みURP sample、package commit `eb527e1`、導入済みDLL A6A...FBC7での観察です。新しい655F...candidateの実機検証ではありません。HDRPの実機出力は試していません。
+
+| 遷移 | 実機での観察 | managed/leaseでの観察 | 判定範囲 |
+| --- | --- | --- | --- |
+| Edit Preview Close/Start、その後active Edit Preview → Play | URP sampleで映像と新たな移動/Undoが両modeで反映されたと利用者が確認 | 各handoffで同じprocess endpointを再利用 | 2026-10-09の導入済みbuildでClose/Start一回とEditからPlay一回を確認 |
+| Active Play → Edit Preview | 最初は黒。producer quiltを一度readbackした後、同じleaseで映像が見えたとの報告 | 観察された復帰中にendpoint/leaseの再作成なし | readbackが時間に影響した可能性があり、黒画面の原因は不明。反復可能な復帰は未証明 |
+| 後の逆handoff | 後に映像が見えたとの報告があったが、その後のpollではEditor worker停止とerror、current ownerなしを確認 | 報告後のlive outputは確認できていない | 表示報告は復帰を証明しない。逆handoffは未解決 |
+
+これらの観察は上記の日付付きsample identityを使っており、現在のNative artifact/source implementationを実機検証したものではありません。Native fake/WARP testは12/12件成功しました。current-sourceのruntime Editor/Player構成、`Bridge.Editor`、focused playback-safety test sourceがcompile済みで、Unity Test Runnerは未実行です。新しいNative artifactの実機検証は未実施です。HDRP実機handoff、device hot-plug、物理寸法、光学画質、runtime性能も未検証です。

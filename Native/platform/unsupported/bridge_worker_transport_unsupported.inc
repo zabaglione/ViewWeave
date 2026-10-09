@@ -1,4 +1,5 @@
 #include "bridge_worker_transport.h"
+#include "bridge_worker_common.h"
 
 static bool LkgPreviewLeaseIdentityValid(const LkgWorkerPreviewLeaseIdentityV1* identity) {
     return identity && identity->structSize == sizeof(LkgWorkerPreviewLeaseIdentityV1) && identity->version == 1 &&
@@ -44,6 +45,21 @@ extern "C" LKG_EXPORT int32_t lkg_worker_get_preview_lease_status_v1(void* handl
 }
 extern "C" LKG_EXPORT int32_t lkg_worker_ack_preview_lease_return_v1(void* handle, const LkgWorkerPreviewLeaseIdentityV1* identity) {
     if (!handle || !LkgPreviewLeaseIdentityValid(identity)) return LKG_WORKER_PREVIEW_LEASE_RESULT_INVALID_ARGUMENT;
+    return LKG_WORKER_PREVIEW_LEASE_RESULT_UNSUPPORTED;
+}
+extern "C" LKG_EXPORT int32_t lkg_worker_try_make_preview_draw_data_v1(void* handle,
+    const LkgWorkerPreviewLeaseIdentityV1* identity, void* texture, uint32_t columns, uint32_t rows,
+    float aspect, float zoom, void** drawData) {
+    if (drawData) *drawData = nullptr;
+    if (!handle || !LkgPreviewLeaseIdentityValid(identity) || !texture || !drawData)
+        return LKG_WORKER_PREVIEW_LEASE_RESULT_INVALID_ARGUMENT;
+    lkg::common::ImageDescriptor request{};
+    request.columns = columns;
+    request.rows = rows;
+    request.aspect = aspect;
+    request.zoom = zoom;
+    if (lkg::common::ValidateDrawRequest(request) != lkg::common::ValidationResult::Valid)
+        return LKG_WORKER_PREVIEW_LEASE_RESULT_INVALID_ARGUMENT;
     return LKG_WORKER_PREVIEW_LEASE_RESULT_UNSUPPORTED;
 }
 extern "C" LKG_EXPORT int32_t lkg_worker_release(void*) { return -1; }

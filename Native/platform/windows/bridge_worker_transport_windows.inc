@@ -816,6 +816,9 @@ LKG_EXPORT int32_t lkg_worker_acquire_preview_lease_v1(const char* runtimePath, 
             context->status.state = LKG_WORKER_CONNECTING;
             context->status.lastErrorCode = 0;
             context->status.error[0] = '\0';
+            context->status.submitted = 0;
+            context->status.completed = 0;
+            context->status.dropped = 0;
             context->currentLeaseToken = tokenHandle;
             context->leaseGeneration = token->generation;
             context->leaseActive = true;
@@ -2601,6 +2604,67 @@ LKG_EXPORT void* lkg_worker_make_draw_data(void* handle, void* texture, uint32_t
     }
     ++context->pendingTokens;
     return reinterpret_cast<void*>(static_cast<uintptr_t>(id));
+}
+
+LKG_EXPORT int32_t lkg_worker_try_make_preview_draw_data_v1(void* leaseHandle,
+    const LkgWorkerPreviewLeaseIdentityV1* identity, void* texture, uint32_t columns, uint32_t rows,
+    float aspect, float zoom, void** drawData) {
+    if (drawData) *drawData = nullptr;
+    if (!leaseHandle || !ValidPreviewLeaseIdentity(identity) || !texture || !drawData)
+        return LKG_WORKER_PREVIEW_LEASE_RESULT_INVALID_ARGUMENT;
+
+    lkg::common::ImageDescriptor request{};
+    request.columns = columns;
+    request.rows = rows;
+    request.aspect = aspect;
+    request.zoom = zoom;
+    if (lkg::common::ValidateDrawRequest(request) != lkg::common::ValidationResult::Valid)
+        return LKG_WORKER_PREVIEW_LEASE_RESULT_INVALID_ARGUMENT;
+
+    std::lock_guard<std::mutex> registryLock(registryMutex);
+    PreviewLeaseTokenRecord* leaseToken = FindPreviewLeaseTokenLocked(leaseHandle);
+    if (!leaseToken || !PreviewLeaseIdentityMatches(*leaseToken, identity))
+        return LKG_WORKER_PREVIEW_LEASE_RESULT_STALE;
+    if (leaseToken->acknowledged || leaseToken->state != LKG_WORKER_PREVIEW_LEASE_ACTIVE ||
+        !leaseToken->context || leaseToken->context != previewLeaseEndpoint ||
+        leaseToken->context->leaseEndpointId != identity->endpointId)
+        return LKG_WORKER_PREVIEW_LEASE_RESULT_STALE;
+
+    WorkerContext* context = leaseToken->context;
+    std::lock_guard<std::mutex> contextLock(context->mutex);
+    if (!context->previewLeaseEndpoint || !context->leaseActive || context->leaseGeneration != identity->leaseGeneration ||
+        context->currentLeaseToken != leaseHandle || context->closeRequested.load(std::memory_order_acquire) ||
+        context->leaseReturnRequested.load(std::memory_order_acquire))
+        return LKG_WORKER_PREVIEW_LEASE_RESULT_STALE;
+    if (finalShutdownRequested || context->status.state == LKG_WORKER_FAULT || context->renderFault)
+        return LKG_WORKER_PREVIEW_LEASE_RESULT_NATIVE_FAILURE;
+    if (context->status.state != LKG_WORKER_READY || context->previewPauseDesired ||
+        context->previewPausePhase != LKG_WORKER_PREVIEW_RUNNING)
+        return LKG_WORKER_PREVIEW_LEASE_RESULT_NATIVE_FAILURE;
+    if (columns != static_cast<uint32_t>(context->fixedDisplayProfile.quilt_columns) ||
+        rows != static_cast<uint32_t>(context->fixedDisplayProfile.quilt_rows))
+        return LKG_WORKER_PREVIEW_LEASE_RESULT_INVALID_ARGUMENT;
+    if (context->pendingTokens >= 3) {
+        ++context->status.dropped;
+        return LKG_WORKER_PREVIEW_LEASE_RESULT_BUSY;
+    }
+
+    const uint64_t id = nextTokenId.fetch_add(1, std::memory_order_relaxed);
+    if (id == 0 || id == UINT64_MAX) return LKG_WORKER_PREVIEW_LEASE_RESULT_NATIVE_FAILURE;
+    std::unique_ptr<WorkerDrawData> data(new (std::nothrow) WorkerDrawData{
+        id, context, reinterpret_cast<IUnknown*>(texture), columns, rows, aspect, zoom, identity->leaseGeneration });
+    if (!data) return LKG_WORKER_PREVIEW_LEASE_RESULT_NATIVE_FAILURE;
+    data->texture->AddRef();
+    try {
+        std::lock_guard<std::mutex> tokenLock(tokenMutex);
+        auto inserted = tokenRegistry.emplace(id, std::move(data));
+        if (!inserted.second) return LKG_WORKER_PREVIEW_LEASE_RESULT_NATIVE_FAILURE;
+    } catch (...) {
+        return LKG_WORKER_PREVIEW_LEASE_RESULT_NATIVE_FAILURE;
+    }
+    ++context->pendingTokens;
+    *drawData = reinterpret_cast<void*>(static_cast<uintptr_t>(id));
+    return LKG_WORKER_PREVIEW_LEASE_RESULT_OK;
 }
 
 LKG_EXPORT int32_t lkg_worker_cancel_draw_data(void* drawData) {

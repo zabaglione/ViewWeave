@@ -168,6 +168,12 @@ static ULONG ReferenceCount(ID3D11Device* device) {
     return device->Release();
 }
 
+static ULONG ReferenceCount(IUnknown* object) {
+    if (!object) return 0;
+    object->AddRef();
+    return object->Release();
+}
+
 static ComPtr<ID3D11Texture2D> MakeTexture(DXGI_FORMAT format, uint32_t width, uint32_t height) {
     D3D11_TEXTURE2D_DESC desc{};
     desc.Width = width;
@@ -866,6 +872,10 @@ static void TestPreviewLeaseReusesSessionAndStableSdkInput() {
         "duplicate lease return request is idempotent");
     Check(lkg_worker_make_draw_data(firstHandle, firstTexture.Get(), 4, 4, 1.0f, 1.0f) == nullptr,
         "new submissions are rejected as soon as lease return is requested");
+    void* rejectedLeaseDraw = reinterpret_cast<void*>(1);
+    Check(lkg_worker_try_make_preview_draw_data_v1(firstHandle, &firstIdentity, firstTexture.Get(),
+        4, 4, 1.0f, 1.0f, &rejectedLeaseDraw) == LKG_WORKER_PREVIEW_LEASE_RESULT_STALE && !rejectedLeaseDraw,
+        "draw admission reports returning lease as stale instead of retryable queue busy");
     callback(0, delayedDraw);
     LkgWorkerPreviewLeaseStatusV1 returnedDrawStatus{};
     const int32_t statusAfterReturn = lkg_worker_get_preview_lease_status_v1(firstHandle, &firstIdentity, &returnedDrawStatus);
@@ -980,11 +990,16 @@ static void TestPreviewLeaseReusesSessionAndStableSdkInput() {
         firstReturned.state == LKG_WORKER_PREVIEW_LEASE_RETURNED_PROVEN &&
         firstReturned.workerStatus.state == LKG_WORKER_CLOSED,
         "old ACKed generation still reports its own return proof after a newer acquire");
+    const uint64_t firstSubmitted = firstReturned.workerStatus.submitted;
+    const uint64_t firstCompleted = firstReturned.workerStatus.completed;
+    const uint64_t firstDropped = firstReturned.workerStatus.dropped;
     Check(lkg_worker_ack_preview_lease_return_v1(firstHandle, &firstIdentity) == 0 &&
         lkg_worker_request_preview_lease_return_v1(firstHandle, &firstIdentity) == LKG_WORKER_PREVIEW_LEASE_RESULT_STALE,
         "old ACK retry remains idempotent while return requests reject the acknowledged generation");
     LkgWorkerStatus beforeStaleCallback{};
-    Check(lkg_worker_poll(secondHandle, &beforeStaleCallback) == 0, "poll new generation before stale callback replay");
+    Check(lkg_worker_poll(secondHandle, &beforeStaleCallback) == 0 &&
+        beforeStaleCallback.submitted == 0 && beforeStaleCallback.completed == 0 && beforeStaleCallback.dropped == 0,
+        "new lease generation starts render counters at zero");
     callback(0, consumedFirstLeaseDrawCallback);
     LkgWorkerStatus afterStaleCallback{};
     Check(lkg_worker_poll(secondHandle, &afterStaleCallback) == 0 &&
@@ -1016,7 +1031,8 @@ static void TestPreviewLeaseReusesSessionAndStableSdkInput() {
         "active metadata proxy closes and ends independently of its rendering lease");
     LkgWorkerStatus activeAfterMetadata{};
     Check(lkg_worker_poll(secondHandle, &activeAfterMetadata) == 0 && activeAfterMetadata.state == LKG_WORKER_READY &&
-        activeAfterMetadata.completed == beforeStaleCallback.completed,
+        activeAfterMetadata.submitted == 0 && activeAfterMetadata.completed == 0 &&
+        activeAfterMetadata.dropped == 0,
         "metadata query preserves active lease render status");
 
     Check(lkg_worker_reset_transfer(secondHandle) == 0, "quiescent lease transfer slots reset for a new quality size");
@@ -1025,6 +1041,17 @@ static void TestPreviewLeaseReusesSessionAndStableSdkInput() {
     Check(draw != nullptr, "second lease accepts a resized source quilt with the fixed grid");
     callback(0, draw);
     Check(WaitCompleted(secondHandle, 1, 5000), "resized source quilt uploads and draws");
+    LkgWorkerStatus afterSecondGenerationDraw{};
+    Check(lkg_worker_poll(secondHandle, &afterSecondGenerationDraw) == 0 &&
+        afterSecondGenerationDraw.submitted == 1 && afterSecondGenerationDraw.completed == 1 &&
+        afterSecondGenerationDraw.dropped == 0,
+        "first draw in the new generation increments only its own counters");
+    LkgWorkerPreviewLeaseStatusV1 firstAfterSecondDraw{};
+    Check(lkg_worker_get_preview_lease_status_v1(firstHandle, &firstIdentity, &firstAfterSecondDraw) == 0 &&
+        firstAfterSecondDraw.workerStatus.submitted == firstSubmitted &&
+        firstAfterSecondDraw.workerStatus.completed == firstCompleted &&
+        firstAfterSecondDraw.workerStatus.dropped == firstDropped,
+        "new-generation draws do not mutate the prior generation return snapshot");
     Check(g_lastDrawSession.load() == firstSession && g_lastDrawTextureIdentity.load() == firstStableInput,
         "resized quality source still draws through the same stable input and session");
 
@@ -1081,6 +1108,81 @@ static void TestPreviewLeaseReusesSessionAndStableSdkInput() {
             firstReturned.workerStatus.state == LKG_WORKER_CLOSED,
             "reacquire race retains the prior generation proof independently");
     }
+
+    auto admissionTexture = MakeTexture(DXGI_FORMAT_R8G8B8A8_UNORM, 32, 32);
+    const ULONG admissionReferenceBase = ReferenceCount(static_cast<IUnknown*>(admissionTexture.Get()));
+    LkgWorkerStatus admissionStart{};
+    Check(lkg_worker_poll(thirdHandle, &admissionStart) == 0 && admissionStart.state == LKG_WORKER_READY &&
+        admissionStart.submitted == 0 && admissionStart.completed == 0 && admissionStart.dropped == 0,
+        "draw admission starts from clean counters on the current lease generation");
+    LkgWorkerPreviewLeaseIdentityV1 malformedIdentity = thirdIdentity;
+    malformedIdentity.structSize = 0;
+    void* rejectedAdmission = reinterpret_cast<void*>(1);
+    Check(lkg_worker_try_make_preview_draw_data_v1(thirdHandle, &malformedIdentity, admissionTexture.Get(),
+        4, 4, 1.0f, 1.0f, &rejectedAdmission) == LKG_WORKER_PREVIEW_LEASE_RESULT_INVALID_ARGUMENT && !rejectedAdmission,
+        "draw admission rejects malformed identity and clears output");
+    Check(lkg_worker_try_make_preview_draw_data_v1(reinterpret_cast<void*>(static_cast<uintptr_t>(0x12345)),
+        &thirdIdentity, admissionTexture.Get(), 4, 4, 1.0f, 1.0f, &rejectedAdmission) ==
+        LKG_WORKER_PREVIEW_LEASE_RESULT_STALE && !rejectedAdmission,
+        "draw admission rejects an unknown opaque handle");
+    LkgWorkerPreviewLeaseIdentityV1 staleDrawIdentity = thirdIdentity;
+    ++staleDrawIdentity.leaseGeneration;
+    Check(lkg_worker_try_make_preview_draw_data_v1(thirdHandle, &staleDrawIdentity, admissionTexture.Get(),
+        4, 4, 1.0f, 1.0f, &rejectedAdmission) == LKG_WORKER_PREVIEW_LEASE_RESULT_STALE && !rejectedAdmission,
+        "draw admission rejects a stale generation");
+
+    void* queuedDraws[3]{};
+    for (uint32_t i = 0; i < 3; ++i) {
+        Check(lkg_worker_try_make_preview_draw_data_v1(thirdHandle, &thirdIdentity, admissionTexture.Get(),
+            4, 4, 1.0f, 1.0f, &queuedDraws[i]) == LKG_WORKER_PREVIEW_LEASE_RESULT_OK && queuedDraws[i],
+            "draw admission accepts each slot up to the bounded queue capacity");
+    }
+    const ULONG admissionReferenceFull = ReferenceCount(static_cast<IUnknown*>(admissionTexture.Get()));
+    Check(admissionReferenceFull == admissionReferenceBase + 3,
+        "each accepted draw payload owns one source reference");
+    void* overCapacityDraw = reinterpret_cast<void*>(1);
+    Check(lkg_worker_try_make_preview_draw_data_v1(thirdHandle, &thirdIdentity, admissionTexture.Get(),
+        4, 4, 1.0f, 1.0f, &overCapacityDraw) == LKG_WORKER_PREVIEW_LEASE_RESULT_BUSY && !overCapacityDraw &&
+        ReferenceCount(static_cast<IUnknown*>(admissionTexture.Get())) == admissionReferenceFull,
+        "only a valid saturated queue returns busy and the rejected request allocates no payload or reference");
+    Check(lkg_worker_try_make_preview_draw_data_v1(thirdHandle, &thirdIdentity, admissionTexture.Get(),
+        0, 4, 1.0f, 1.0f, &overCapacityDraw) == LKG_WORKER_PREVIEW_LEASE_RESULT_INVALID_ARGUMENT && !overCapacityDraw,
+        "invalid descriptor remains invalid rather than being masked by queue busy");
+    Check(lkg_worker_try_make_preview_draw_data_v1(thirdHandle, &thirdIdentity, admissionTexture.Get(),
+        3, 3, 1.0f, 1.0f, &overCapacityDraw) == LKG_WORKER_PREVIEW_LEASE_RESULT_INVALID_ARGUMENT && !overCapacityDraw,
+        "profile-incompatible grid remains invalid rather than being masked by queue busy");
+    LkgWorkerStatus fullQueueStatus{};
+    Check(lkg_worker_poll(thirdHandle, &fullQueueStatus) == 0 && fullQueueStatus.submitted == 0 &&
+        fullQueueStatus.completed == 0 && fullQueueStatus.dropped == 1,
+        "saturated admission increments only the drop counter");
+    callback(0, queuedDraws[0]);
+    callback(0, queuedDraws[1]);
+    callback(0, queuedDraws[2]);
+    Check(WaitCompleted(thirdHandle, 3, 5000), "admitted draws complete after queue drain");
+    LkgWorkerStatus drainedQueueStatus{};
+    Check(lkg_worker_poll(thirdHandle, &drainedQueueStatus) == 0 && drainedQueueStatus.submitted == 3 &&
+        drainedQueueStatus.completed == 3 && drainedQueueStatus.dropped == 1 &&
+        lkg_worker_reset_transfer(thirdHandle) == 0,
+        "drained admission retires exactly three accepted payloads and one saturated drop");
+    void* replacementDraw = nullptr;
+    Check(lkg_worker_try_make_preview_draw_data_v1(thirdHandle, &thirdIdentity, admissionTexture.Get(),
+        4, 4, 1.0f, 1.0f, &replacementDraw) == LKG_WORKER_PREVIEW_LEASE_RESULT_OK && replacementDraw,
+        "draw admission accepts again after the full queue drains");
+    callback(0, replacementDraw);
+    Check(WaitCompleted(thirdHandle, 4, 5000), "post-drain admitted draw completes");
+    Check(lkg_worker_poll(thirdHandle, &drainedQueueStatus) == 0 && drainedQueueStatus.submitted == 4 &&
+        drainedQueueStatus.completed == 4 && drainedQueueStatus.dropped == 1,
+        "post-drain draw increments the new generation counters without another drop");
+
+    Check(lkg_worker_set_preview_paused(thirdHandle, 1) == 0 &&
+        WaitPreviewPausePhase(thirdHandle, LKG_WORKER_PREVIEW_PAUSED),
+        "lease pause reaches its acknowledged paused phase");
+    Check(lkg_worker_try_make_preview_draw_data_v1(thirdHandle, &thirdIdentity, admissionTexture.Get(),
+        4, 4, 1.0f, 1.0f, &rejectedAdmission) == LKG_WORKER_PREVIEW_LEASE_RESULT_NATIVE_FAILURE && !rejectedAdmission,
+        "paused lease admission is rejected as a lifecycle failure, never queue busy");
+    Check(lkg_worker_set_preview_paused(thirdHandle, 0) == 0 &&
+        WaitPreviewPausePhase(thirdHandle, LKG_WORKER_PREVIEW_RUNNING),
+        "lease resumes after paused admission rejection");
 
     void* finalMetadata = lkg_worker_begin_metadata_v1("TEST-RUNTIME", "ViewWeave");
     Check(finalMetadata != nullptr && WaitForDisplaySnapshot(finalMetadata, 1),

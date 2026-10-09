@@ -10,6 +10,13 @@ using UnityEditor;
 
 namespace ViewWeave
 {
+    internal enum BridgeWorkerSubmissionOutcome
+    {
+        Rejected,
+        RetryableBusy,
+        Accepted
+    }
+
     [DisallowMultipleComponent]
     public sealed class BridgeWorkerQuiltOutput : MonoBehaviour, IQuiltOutput
     {
@@ -111,6 +118,7 @@ namespace ViewWeave
             return true;
         }
         public string LastError { get; private set; }
+        internal BridgeWorkerSubmissionOutcome LastSubmissionOutcome { get; private set; }
         public uint Submissions { get; private set; }
         /// <summary>Counts Submit calls passing readiness, handle, texture, and complete-grid checks; it does not imply queue submission or native completion.</summary>
         public uint SubmissionAttempts { get; private set; }
@@ -476,6 +484,7 @@ namespace ViewWeave
 
         internal bool TrySubmitEditorPreview(object owner, RenderTexture quiltTexture, QuiltLayout layout)
         {
+            LastSubmissionOutcome = BridgeWorkerSubmissionOutcome.Rejected;
             if (owner == null || !ReferenceEquals(editorPreviewOwner, owner) || playbackToken != null || editorPreviewSubmissionsPaused) return false;
             return SubmitCore(quiltTexture, layout);
         }
@@ -867,6 +876,7 @@ namespace ViewWeave
 
         public void Submit(RenderTexture quiltTexture, QuiltLayout layout)
         {
+            LastSubmissionOutcome = BridgeWorkerSubmissionOutcome.Rejected;
             if (playbackToken != null) return;
 #if UNITY_EDITOR
             if (editorPreviewOwner != null) return;
@@ -887,6 +897,7 @@ namespace ViewWeave
 
         internal bool TrySubmitPlayback(object token, RenderTexture quiltTexture, QuiltLayout layout)
         {
+            LastSubmissionOutcome = BridgeWorkerSubmissionOutcome.Rejected;
             if (token == null || !ReferenceEquals(playbackToken, token)) return false;
             return SubmitCore(quiltTexture, layout);
         }
@@ -916,6 +927,7 @@ namespace ViewWeave
 
         bool SubmitCore(RenderTexture quiltTexture, QuiltLayout layout)
         {
+            LastSubmissionOutcome = BridgeWorkerSubmissionOutcome.Rejected;
             QuiltTexture = quiltTexture;
             Layout = layout;
             if (state != WorkerState.Ready || handle == IntPtr.Zero) return false;
@@ -946,9 +958,33 @@ namespace ViewWeave
             try { Graphics.Blit(quiltTexture, transferTexture, new Vector2(1f, -1f), new Vector2(0f, 1f)); }
             finally { RenderTexture.active = previous; }
             IntPtr drawData;
-            try { drawData = BridgeWorkerNative.lkg_worker_make_draw_data(handle, transferNativePtr, (uint)layout.Columns, (uint)layout.Rows, layout.AspectRatio, zoom); }
+            try
+            {
+                if (previewLease)
+                {
+                    int result = BridgeWorkerNative.lkg_worker_try_make_preview_draw_data_v1(handle, ref previewLeaseIdentity,
+                        transferNativePtr, (uint)layout.Columns, (uint)layout.Rows, layout.AspectRatio, zoom, out drawData);
+                    if (result == 1)
+                    {
+                        LastSubmissionOutcome = BridgeWorkerSubmissionOutcome.RetryableBusy;
+                        LastError = string.Empty;
+                        return false;
+                    }
+                    if (result != 0)
+                        return Fail("Bridge worker preview draw-data request failed (code " + result.ToString(CultureInfo.InvariantCulture) + ").");
+                }
+                else
+                {
+                    drawData = BridgeWorkerNative.lkg_worker_make_draw_data(handle, transferNativePtr,
+                        (uint)layout.Columns, (uint)layout.Rows, layout.AspectRatio, zoom);
+                }
+            }
             catch (Exception error) { LastError = Sanitize(error.Message); return false; }
-            if (drawData == IntPtr.Zero) return false;
+            if (drawData == IntPtr.Zero)
+            {
+                if (previewLease) return Fail("Bridge worker returned no draw data for an accepted preview submission.");
+                return false;
+            }
             bool executeAttempted = false;
             try
             {
@@ -958,6 +994,8 @@ namespace ViewWeave
                 executeAttempted = true;
                 Graphics.ExecuteCommandBuffer(command);
                 Submissions++;
+                LastSubmissionOutcome = BridgeWorkerSubmissionOutcome.Accepted;
+                LastError = string.Empty;
                 return true;
             }
             catch (Exception error)

@@ -293,6 +293,14 @@ namespace ViewWeave
                 SetTailFence();
                 if (!submitted)
                 {
+                    if (output.LastSubmissionOutcome == BridgeWorkerSubmissionOutcome.RetryableBusy)
+                    {
+                        skippedFrames++;
+                        recoveryRecord.SetFrame(index, skippedFrames);
+                        statusMessage = "Bridge worker is busy; skipped frame " + (index + 1).ToString(System.Globalization.CultureInfo.InvariantCulture) +
+                            " and will continue playback. Total skipped: " + skippedFrames.ToString(System.Globalization.CultureInfo.InvariantCulture) + ".";
+                        return;
+                    }
                     string reason = string.IsNullOrEmpty(output.LastError) ? "Bridge rejected a playback frame." : "Bridge rejected a playback frame: " + output.LastError;
                     if (!string.IsNullOrEmpty(output.LastError)) session.NotifyPlaybackFailure(sessionToken, reason);
                     BeginCleanup(string.IsNullOrEmpty(output.LastError), reason);

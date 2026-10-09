@@ -113,6 +113,9 @@ namespace ViewWeave
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr lkg_worker_make_draw_data(IntPtr handle, IntPtr texture, uint columns, uint rows, float aspect, float zoom);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern int lkg_worker_try_make_preview_draw_data_v1(IntPtr leaseHandle,
+            ref PreviewLeaseIdentityV1 identity, IntPtr texture, uint columns, uint rows, float aspect, float zoom, out IntPtr drawData);
+        [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
         internal static extern int lkg_worker_cancel_draw_data(IntPtr drawData);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr lkg_worker_render_event_func();

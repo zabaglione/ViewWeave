@@ -29,6 +29,25 @@ namespace ViewWeave.BridgeSessionValidation
         }
 
         [Test]
+        public void RejectedPlaybackOwnerAttemptClearsPreviousBusyOutcome()
+        {
+            GameObject host = new GameObject("QuiltPlaybackSafety.BusyOutcome");
+            host.SetActive(false);
+            BridgeWorkerQuiltOutput output = host.AddComponent<BridgeWorkerQuiltOutput>();
+            output.initializeOnEnable = false;
+            host.SetActive(true);
+            try
+            {
+                typeof(BridgeWorkerQuiltOutput).GetField("<LastSubmissionOutcome>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)
+                    .SetValue(output, BridgeWorkerSubmissionOutcome.RetryableBusy);
+                bool submitted = output.TrySubmitPlayback(new object(), null, default(QuiltLayout));
+                Assert.IsFalse(submitted);
+                Assert.AreEqual(BridgeWorkerSubmissionOutcome.Rejected, output.LastSubmissionOutcome);
+            }
+            finally { Object.DestroyImmediate(host); }
+        }
+
+        [Test]
         public void FinalQuitKeepsPendingReadbackOrFenceInProgress()
         {
             Type policy = typeof(BridgeWorkerQuiltOutput).Assembly.GetType("ViewWeave.BridgePlaybackCleanupPolicy", true);
