@@ -2,7 +2,9 @@
 
 # Bridge出力のライフサイクル
 
-Edit Modeの実機previewとPlay出力は、process単位のLooking Glass Bridge endpointを共有します。各modeはquilt送信のため、generation単位で排他的なleaseを取得します。modeを閉じるとleaseを返しますが、通常はprocess単位のSDK session、登録済みprimary texture、endpointを破棄しません。persistent preview endpointではPauseやlease返却後も最後のSDK primary imageを表示したままにし、producer処理がdrainした後にNative owner threadがcached geometryを使って最大5Hzで同じprimaryを再描画できます。このstatic redraw経路は追加のsource texture copyやSDK texture-copy API callを行わず、texture登録やSDK visibilityも変更しません。これはplugin側の呼び出しを説明するもので、vendor内部の実装については断定しません。
+> 対象読者: Unity／描画基盤の技術者。このページは本文記載の技術的な設計・実装・手順を扱います。利用者向けの導入・運用手順は[ユーザーガイド](user-guide.md)、技術文書一覧は[技術者向けガイド](technical-guide.md)を参照してください。
+
+このページではWindows Bridge Workerのlifecycleを説明します。macOS Looking Glass Goは別の`BridgeMetalQuiltOutput`経路を使います。現行条件と証拠は[macOS Metal](macos-metal.md)と[2026-10-10検証記録](../macos-metal-validation-20261010.md)を参照してください。WindowsではEdit Modeのdevice previewとPlay出力がprocess単位のLooking Glass Bridge endpointを共有します。各modeはquilt送信のため、generation単位で排他的なleaseを取得します。modeを閉じるとleaseを返しますが、通常はprocess単位のSDK session、登録済みprimary texture、endpointを破棄しません。persistent preview endpointではPauseやlease返却後も最後のSDK primary imageを表示したままにし、producer処理がdrainした後にNative owner threadがcached geometryを使って最大5Hzで同じprimaryを再描画できます。このstatic redraw経路は追加のsource texture copyやSDK texture-copy API callを行わず、texture登録やSDK visibilityも変更しません。これはplugin側の呼び出しを説明するもので、vendor内部の実装については断定しません。
 
 このページでは公開済みNative artifact、private static-present比較candidate、実機で確認できた動作を区別します。現在のsourceには明示的なBusy admission結果が実装され、生成済みdistribution packageに含まれています。private URP比較candidateではPause/owner間のstatic redrawを試しました。結果は後述の日付付き観察に限られ、広範なlifecycleの信頼性や一般的な修正を証明しません。
 

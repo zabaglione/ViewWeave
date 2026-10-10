@@ -2,6 +2,8 @@
 
 # 旧Looking Glass専用Render Pipelineの調査
 
+> 対象読者: Unity／描画基盤の技術者。このページは本文記載の技術的な設計・実装・手順を扱います。利用者向けの導入・運用手順は[ユーザーガイド](user-guide.md)、技術文書一覧は[技術者向けガイド](technical-guide.md)を参照してください。
+
 対象は[wotakuro/LookingGlassRenderPipeline](https://github.com/wotakuro/LookingGlassRenderPipeline)です。公開されている古いUnity向け実装で、現在はpublic archiveです。作者から利用許可を得ているとの情報がありますが、このリポジトリにはその実装コードやライセンス文書を取り込んでいません。以下は公開コードの構造を調べた記録と、ViewWeave側で独自に実装した内容です。
 
 ## 高い描画速度につながり得る構造

@@ -87,6 +87,8 @@ namespace ViewWeave.Editor
             sourceCamera.nearClipPlane = framingCamera.nearClipPlane;
             sourceCamera.farClipPlane = framingCamera.farClipPlane;
             sourceCamera.cullingMask = framingCamera.cullingMask;
+            sourceCamera.clearFlags = framingCamera.clearFlags;
+            sourceCamera.backgroundColor = framingCamera.backgroundColor;
             quilt.settings.fieldOfView = framingCamera.fieldOfView;
             quilt.settings.cameraDistance = FocusDepthOrDefault(sourceCamera, selectedObject, 10f);
         }

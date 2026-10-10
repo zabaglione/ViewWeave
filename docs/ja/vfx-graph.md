@@ -2,7 +2,11 @@
 
 # URP/HDRP VFX Graph の利用
 
-URPのVFX Graphは、通常のQuilt用Cameraとは別の1x1補助Cameraで制御する実験的な経路を用意しています。`UrpVfxCameraDriver`はURP対応の実装です。補助CameraはVFXの通常のGPU simulationをフレームごとに一度だけ進めることを意図し、Quiltの視点ごとにsimulationを繰り返さない設計です。URPのSimple Burst driver経路は既存の検証範囲に含まれます。HDRPでは同等のruntime driverを提供していません。混在したURP/HDRPのVFX matrixでは5/20通過、15/20未通過でした。HDRPの通常Cameraは、template cloneとForceImportを使った単独canaryでStandardRequestおよび通常Cameraの差分を確認できた条件があります。未通過にはQuilt tile 0の差分が出ないpriming条件が含まれ、実行順に依存する観測結果が残っています。HDRPのpaused/live、GRD、8/48 viewsをruntime対応として扱いません。独自のVFX Graph、sorting、soft depth、複雑な透明の対応は確認していません。
+[ユーザーガイド](user-guide.md) · [技術者向けガイド](technical-guide.md)
+
+## 現在の利用範囲
+
+URPのVFX Graphには実験的なdriver経路があり、Linear color spaceが必要です。HDRPには同等のruntime driverはありません。あらゆるgraph、effect、透明表現への対応を示すものではないため、利用前に以下の条件を確認してください。
 
 ## 設定
 
@@ -14,6 +18,11 @@ VFX GraphはLinear color spaceで使用してください。Unity Editorの`Proj
 2. 同じRig GameObjectへ`UrpVfxCameraDriver`を追加します。`enableDriver`を有効にし、`vfxLayers`をVFXオブジェクトのレイヤーに設定します。VFXレイヤーはsource Cameraのculling maskと重ねます。
 3. `driverFieldOfView`をVFXの範囲に合わせます。初期値は90度です。VFXのboundsが補助Cameraの視錐台に入ることを確認してください。
 4. 通常の自動描画では`QuiltRenderer.autoRender`を有効にします。`RenderQuilt()`を手動で呼ぶ場合は、`runWhenManualRendering`を有効にしてから呼び出します。
+
+## 日付付き検証と実装の補足
+
+URPのVFX Graphは、通常のQuilt用Cameraとは別の1x1補助Cameraで制御する実験的な経路を用意しています。`UrpVfxCameraDriver`はURP対応の実装です。補助CameraはVFXの通常のGPU simulationをフレームごとに一度だけ進めることを意図し、Quiltの視点ごとにsimulationを繰り返さない設計です。URPのSimple Burst driver経路は既存の検証範囲に含まれます。HDRPでは同等のruntime driverを提供していません。混在したURP/HDRPのVFX matrixでは5/20通過、15/20未通過でした。HDRPの通常Cameraは、template cloneとForceImportを使った単独canaryでStandardRequestおよび通常Cameraの差分を確認できた条件があります。未通過にはQuilt tile 0の差分が出ないpriming条件が含まれ、実行順に依存する観測結果が残っています。HDRPのpaused/live、GRD、8/48 viewsをruntime対応として扱いません。独自のVFX Graph、sorting、soft depth、複雑な透明の対応は確認していません。
+
 
 HDRPのVFX Graphはruntime driverの対応範囲外です。HDRP側で通常CameraのVFX表示を確認する場合は、source Cameraを有効にし、template cloneとForceImportを含む専用診断fixtureを使ってください。診断では通常Cameraの単独測定で4423 changed pixelsを記録した一方、同じmatrix実行のStandardRequestとenabled-during-submit variantは0でした。別Editorでの単独再実行では通常CameraとStandardRequestの双方が4423でした。単独canaryのpassは複数視点のruntime対応を意味せず、実行履歴依存が残ります。
 

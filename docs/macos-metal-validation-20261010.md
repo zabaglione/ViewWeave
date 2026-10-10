@@ -1,5 +1,7 @@
 # macOS Metal verification — 2026-10-10
 
+> Audience: Unity and rendering developers. This is a dated research or validation record limited to the revision, platform, and conditions stated here; it does not establish support for other configurations. For current support and setup, see [Compatibility](compatibility.md) and [Getting started](getting-started.md). Browse the [Technical guide](technical-guide.md) or [User guide](user-guide.md).
+
 This record covers the initial owned-window Looking Glass Go output and its separation into shared, Metal and Windows responsibilities. Usage is documented in [macOS Metal](macos-metal.md), and source boundaries in [Platform architecture](bridge-platform-architecture.md).
 
 ## Configuration

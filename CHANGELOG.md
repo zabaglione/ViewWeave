@@ -1,8 +1,18 @@
 # Changelog
 
+> Audience: ViewWeave developers and release contributors. This is a change record; dated test results apply only to the conditions stated. For current support and setup, see [Compatibility](docs/compatibility.md) and [Getting started](docs/getting-started.md). Browse the [Technical Guide](docs/technical-guide.md) or [User Guide](docs/user-guide.md).
+
 ## Unreleased
 
 This repository is a prototype and is not a formal 0.1 release.
+
+- Documentation now has separate user and technical entry points in English and Japanese, with an illustrated eight-step setup guide and a three-step UPM Sample Quick Start.
+- URP and HDRP Quick Start Samples each contain one scene shared by Metal and Windows D3D11/D3D12. The helper selects the transport without starting output or resetting user settings. Both Samples were imported and visually accepted on Looking Glass Go using Unity 6000.6.4f1 / Metal; Windows native rendering and Player builds were not checked in this run. See the [Quick Start validation record](docs/quick-start-validation-20261010.md).
+- Rig creation copies the reference camera's background, including HDRP clear-color settings. The Windows Rig UI provides manual Start/Stop controls. Disabled Windows Sessions defer dependency initialization, and Inspector refresh handles destroyed targets. The targeted Editor suite passed 36/36.
+
+### Earlier implementation and validation records
+
+The following records retain their original validation scope. Open gates stated here describe those earlier runs; use [Compatibility](docs/compatibility.md) for the current platform status.
 
 - Repository and all four UPM packages use Apache-2.0 for independently authored code. Bridge runtime, Unity, trademark, and other third-party rights remain separate.
 - Core renders a quilt through one dedicated Camera and N view requests. URP/HDRP use the Standard RenderRequest path; Built-in is outside the support target.

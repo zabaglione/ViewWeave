@@ -2,6 +2,8 @@
 
 # Remaining Work and Acceptance Plan
 
+> Audience: Unity and rendering developers. This is a dated research or validation record limited to the revision, platform, and conditions stated here; it does not establish support for other configurations. For current support and setup, see [Compatibility](compatibility.md) and [Getting started](getting-started.md). Browse the [Technical guide](technical-guide.md) or [User guide](user-guide.md).
+
 Baseline date: 2026-10-08 JST. For new test evidence, use the UTC timestamp in each Unity XML; do not treat a run-folder name as the execution time. Scope: Unity 6000.6.4f1, Windows, URP/HDRP, and the official Looking Glass Bridge path. Keep the validation baseline, current changes, limited fixtures, and physical-display results distinct. Work remains incomplete until evidence meets its completion criteria.
 
 ## Status as of 2026-10-08

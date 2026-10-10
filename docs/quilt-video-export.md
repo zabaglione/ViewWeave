@@ -1,6 +1,14 @@
 # Quilt Video Export
 
+[User Guide](user-guide.md) · [Technical Guide](technical-guide.md)
+
+## User workflow
+
 `Window > ViewWeave > Quilt Video Export` converts an already completed quilt PNG recording into a silent H.264 MP4. It is a post-process: it does not render views, capture the screen, or change the source PNG sequence.
+
+Complete a PNG sequence first, install FFmpeg and ffprobe separately, then open the export window, select the completed recording, and choose a new MP4 output path. The source PNGs remain available. Audio is not included in the MP4.
+
+## Export validation and implementation details
 
 The export flow validates a completed sequence before starting the external encoder. Its output contains video only; any audio WAV remains a separate file.
 

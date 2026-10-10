@@ -2,11 +2,17 @@
 
 # Quiltのカメラ範囲とフォーカスを調整する
 
+[ユーザーガイド](user-guide.md) · [技術者向けガイド](technical-guide.md)
+
+## ユーザー向けの操作
+
 Rigを使う場合は、統合された`ViewWeaveRig` Inspectorまたは対象を固定するAuthoring windowから操作します。`ViewWeaveRig`を選択または固定し、`Window > ViewWeave > Rig Authoring`を開きます。`Focus Target`を直接指定するかfieldへdragし、focus設定を明示するには`Set Focus From Target Center`を実行します。physical framingがoffなら`Focus Distance`を更新し、onなら保存済みbase focus distanceを保ってFOVを解きます。framingには`Camera & Focus`、previewには`Preview`を使います。Unityの選択を変更してもwindowのRigは維持されます。
 
 Sceneビューの紫の面はゼロ視差面、青緑はNear Clip、橙色はFar Clipです。単体`QuiltRenderer`を編集する場合はGameObjectを選択し、技術用Inspectorの`Camera Framing`で`Focus Distance`、FOV、`Near Clip`、`Far Clip`を調整します。紫の面中央のハンドルをカメラの前後へドラッグして`Focus Distance`を調整することもできます。
 
 ゼロ視差面は、その距離にある被写体が表示面に重なるようにする基準面です。`Focus Distance`（`Quilt Settings > Camera Distance`）は、実効フレーミングカメラのワールド位置からカメラ前方へ測るUnity unitsです。紫の面がその地点に置かれ、ギズモの線と距離ラベルで位置を確認できます。単位はUnity sceneのスケールに従うため、project側で1 unitを1mとしていない場合は実メートルとは一致しません。`Focus Distance`は立体視の視差を調整します。被写界深度（Depth of Field）、オートフォーカス、Volumeのフォーカス距離は変更しません。
+
+## Cameraの実行時挙動と実装メモ
 
 単体`QuiltRenderer`の技術操作では、Near/Farの範囲は専用`sourceCamera`のクリップ距離を使います。`Reference Camera`が設定されている場合、実行時の位置と向きはそのCameraのworld poseをQuilt描画前に専用カメラへ反映します。`Follow Reference Field Of View`が有効なら、技術用Inspectorの`Vertical Field Of View`値は各Quilt描画前に参照カメラから同期されるため、保存値は次の描画で上書きされます。統合Rig UIの`Reference Vertical Field Of View`はReference Camera本体を編集します。FOV追従を無効にするとQuilt側で指定したFOVを編集できます。physical framing以外では`viewAspect`、`Camera Distance`、`viewCone`、Near/Farは自動同期しません。physical framingでは描画用の実効aspectとカメラ距離を算出しますが、baseの`viewAspect`と保存済み`Camera Distance`は上書きせず、clip距離と`viewCone`も既存値を保ちます。通常描画は元の参照カメラの設定やTransformを変更しません。
 
@@ -32,6 +38,8 @@ flowchart TB
 `Camera & Focus`には`Focus Target`、Focus/Fit操作、physical framingの切替、水平・垂直Orbit操作があります。objectをfieldへ直接指定するかdragして設定できます。physical framingがoffの場合、`Set Focus From Target Center`はtarget中心までの前方距離を保存済み`Focus Distance`へ設定し、FOVを維持します。onの場合は`Set Physical Focus From Target Center`と表示され、aperture寸法、units、保存済みbase distanceを維持したまま、target中心をzero-parallax面に置くよう縦FOVを調整します。成功statusにはphysical framing時の変更前後のFOVと実効focus距離が表示されます。
 
 `Fit View To Target`は有効なRenderer bounds（ない場合は有効なCollider bounds）全体を10%の余白で現在のviewに収めるよう、縦FOVとfocus距離を調整します。Camera姿勢とtarget scaleは変えません。physical framing中は無効です。先に`Use Physical 1:1 Framing`をoffにしてください。boundsが空、設定が無効、またはboundsのcornerがsource Cameraのnear/far clip plane外なら変更しません。Focus/Fit操作とphysical framing切替に成功すると、active preview（device previewを含む）も更新されます。Focus Targetを設定しただけではRig設定を変更しません。FocusとCamera操作では、ロード済みMain Stageまたは同一Prefab Stage内のobjectを対象にします。persistent assetとisolated Preview Sceneは拒否します。同じMain Stageのロード済みadditive sceneは許可します。`Scene View Controls`には`Show Near / Far`、`Show Extreme Views`、`Show 3D Focus Cursor`があり、技術用`QuiltRenderer` Inspectorと同じEditor設定を共有します。`Frame Focus Plane Center in Scene View`はzero-parallax面の中心をScene Viewに表示します。
+
+## Display更新とAPIの挙動
 
 Bridge outputを接続している場合、機器変更後に`Refresh Connected Displays`を使い、display profileとphysical calibrationのsnapshotを更新します。これは明示的なrefreshです。snapshotは最後に成功した要求の結果を示し、vendorの自動hotplugは通知しません。Sessionまたはdevice previewのworkerがReadyなら同じworkerが処理し、Edit ModeでidleならWindows SDKはpersistent owner host上のmetadata contextから照会されます。metadata contextを閉じるとcontextごとのmetadata資源は解放されますが、SDK所有権は維持されます。SDKとowner hostはEditorまたはPlayer processの終了処理まで維持されます。要求を処理できるReady workerがなく、別contextまたはcleanupが進行中の場合、refreshは一時的に利用できないことがあります。statusに`Closing metadata worker`や`Waiting for Bridge metadata worker release`が表示される場合があり、cleanup timeout時は`Metadata cleanup timed out; waiting for native release proof`を表示します。button横のstatusとerrorを確認してください。Unity Editorはnative pluginをプロセスへ読み込むため、Bridge packageのnative DLLを更新した場合やmetadata refresh exportを追加した場合はEditorの再起動が必要です。[Unity native plug-in Inspector](https://docs.unity3d.com/6000.0/Documentation/Manual/plug-in-inspector.html)を参照してください。
 

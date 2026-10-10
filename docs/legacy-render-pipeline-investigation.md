@@ -2,6 +2,8 @@
 
 # Investigation of the Legacy Looking Glass Render Pipeline
 
+> Audience: Unity and rendering developers. This is a dated research or validation record limited to the revision, platform, and conditions stated here; it does not establish support for other configurations. For current support and setup, see [Compatibility](compatibility.md) and [Getting started](getting-started.md). Browse the [Technical guide](technical-guide.md) or [User guide](user-guide.md).
+
 The subject is [wotakuro/LookingGlassRenderPipeline](https://github.com/wotakuro/LookingGlassRenderPipeline), an older public Unity implementation that is now archived. There is information that the author granted permission to use it, but this repository does not include its implementation code or license document. This page records an inspection of the public code structure and the independent implementation in ViewWeave.
 
 ## Structures That May Explain High Rendering Speed

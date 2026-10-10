@@ -2,6 +2,8 @@
 
 # Looking Glass Official Unity SDK Feature Research
 
+> Audience: Unity and rendering developers. This is a dated research or validation record limited to the revision, platform, and conditions stated here; it does not establish support for other configurations. For current support and setup, see [Compatibility](compatibility.md) and [Getting started](getting-started.md). Browse the [Technical guide](technical-guide.md) or [User guide](user-guide.md).
+
 Research date: 2026-10-07
 
 This page summarizes features documented for the official SDK and separates ViewWeave alternatives from items that remain unverified. The official Plugin is proprietary in its current distribution, so ViewWeave uses public APIs and documentation as references for independent implementation and does not reproduce its code. The official product page lists Plugin 3.2.8 and 4.0.0 Beta. Detailed public 4.0 documentation is for 4.0.1 alpha. Because these versions differ, individual features or known issues are not universally attributed to the current Beta.

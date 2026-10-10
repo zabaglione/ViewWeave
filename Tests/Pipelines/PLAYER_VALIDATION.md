@@ -1,5 +1,7 @@
 # URP Player GRD validation
 
+> Audience: Unity and rendering developers. This is a bounded validation procedure; results apply only to the stated setup and run. For current support and user setup, see [Compatibility](../../docs/compatibility.md) and [Getting started](../../docs/getting-started.md). Browse the [Technical Guide](../../docs/technical-guide.md) or [User Guide](../../docs/user-guide.md).
+
 `PlayerValidationBuilder.Build()` creates a generated scene and a Development Windows Player without a Bridge or device display. The scene contains serialized URP Lit material and mesh references. BRG KeepAll retains the required BRG shader variants; serialized material and mesh references are retained separately by the generated scene. The build settings enable GRD so its resources are not stripped from the Player validation build.
 
 The Player runs URP with GPU Resident Drawer disabled and enabled at 1, 8, and 48 views, waits ten frames before each mutation, checks green sphere tile centroids and `mutationFrame == output.LastRenderedFrame`, records GRD counters, and checks automatic rendering stop/restart. It writes per-case JSON, before/after PNG files, and `summary.json`; exit code 0 means all checks passed.

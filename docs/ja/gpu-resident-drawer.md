@@ -2,6 +2,8 @@
 
 # GPU Resident Drawerの検証状況
 
+> 対象読者: Unity／描画基盤の技術者。このページは本文記載の技術的な設計・実装・手順を扱います。利用者向けの導入・運用手順は[ユーザーガイド](user-guide.md)、技術文書一覧は[技術者向けガイド](technical-guide.md)を参照してください。
+
 本SDKでは、Unity 6.6のGPU Resident Drawer（GRD）を独自multiview高速化とは別に検証します。URPでは、旧LateUpdate自動描画とGRDを組み合わせた条件で移動反映の遅延を確認し、現在の自動描画タイミングで修正しました。これは旧描画タイミングとの組み合わせに関する結果であり、GRD自体の一般的な遅延を示すものではありません。GRDのdraw call最適化と、Bridge interopのスレッド停止は別問題です。GRD有効化による速度優位やBridge停止の解決は確認していません。
 
 Unity `6000.6.4f1`、Windows D3D11でEditor GRD/VolumeStack回帰27/27、URP通常thread PlayerのGRD OFF/ON・1/8/48視点6ケースを確認しました。HDRP PlayerでもPreview、Balanced、NativeのGRD OFF/ON各6条件を48 viewで確認し、GRD ONの76 renderer、3,648 visible instancesを記録しました。これは描画正確性の確認であり、HDRP性能の測定ではありません。別の固定条件の性能比較では48視点CPU submission p50がGRD Off 17.3311 ms、On 15.0732 msで、Onが約13.0%低くなりました。GPU時間とrender thread時間は欠測で、一般的な速度優位は未確定です。MetalとHDRPのGRD性能は未検証です。Bridge Worker通常threadは別のGPU preview継続確認を行いましたが、GRDとの組み合わせた性能値はありません。

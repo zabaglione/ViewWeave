@@ -2,6 +2,8 @@
 
 # Multiview Rendering Approaches
 
+> Audience: Unity and rendering developers. This is a dated research or validation record limited to the revision, platform, and conditions stated here; it does not establish support for other configurations. For current support and setup, see [Compatibility](compatibility.md) and [Getting started](getting-started.md). Browse the [Technical guide](technical-guide.md) or [User guide](user-guide.md).
+
 Core currently uses 1 Camera and draws views through N `StandardRequest` calls. It does not place many Cameras in the scene, but CPU frustum tests, shadows, draw submission, and post-processing are repeated per view. The goal is not to reduce the Camera count; it is to reuse work common across views and reduce the number of expensive full renders.
 
 ## Approach Comparison

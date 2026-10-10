@@ -2,6 +2,8 @@
 
 # Comparison with Official Features
 
+> Audience: Unity and rendering developers. This is a dated research or validation record limited to the revision, platform, and conditions stated here; it does not establish support for other configurations. For current support and setup, see [Compatibility](compatibility.md) and [Getting started](getting-started.md). Browse the [Technical guide](technical-guide.md) or [User guide](user-guide.md).
+
 This table summarizes features described in Looking Glass Factory's official materials and the implementation status of ViewWeave for users. ViewWeave is an independent, unofficial SDK and does not guarantee source or complete feature compatibility with the official SDK. For details, see [Official SDK Feature Research](official-sdk-feature-research.md); for feature procedures, see [Quilt Capture](quilt-capture.md) and [Camera Framing](quilt-authoring.md).
 
 | Feature | Confirmed in official material | ViewWeave status |

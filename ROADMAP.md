@@ -2,6 +2,8 @@
 
 # Development Roadmap
 
+> Audience: Unity, rendering, and package developers. This page is a development plan, not a support declaration. For current user workflows, see the [User Guide](docs/user-guide.md); for engineering references, see the [Technical Guide](docs/technical-guide.md).
+
 There are no fixed dates. Move to the next phase when its acceptance criteria are met. This is a plan; unimplemented features are not represented as currently supported.
 
 ## M0: Distribution, Rights, and Measurement Foundations

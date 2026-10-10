@@ -2,6 +2,8 @@
 
 # 残作業と受け入れ計画
 
+> 対象読者: Unity／描画基盤の技術者。このページは本文記載の技術的な設計・実装・手順を扱います。利用者向けの導入・運用手順は[ユーザーガイド](user-guide.md)、技術文書一覧は[技術者向けガイド](technical-guide.md)を参照してください。
+
 基準日: 2026-10-08 JST。新しい試験証跡の日付は各Unity XMLのUTC timestampを参照し、run folder名を実行時刻とみなしません。対象はUnity 6000.6.4f1、Windows、URP/HDRP、公式Looking Glass Bridge経路です。検証時baseline、今回の変更、限定fixture、実機表示の結果を分けます。作業は完了条件を満たす証拠が揃うまで未完了です。
 
 ## 2026-10-08時点の状態

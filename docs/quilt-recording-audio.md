@@ -2,6 +2,14 @@
 
 # Quilt PNG and audio recording
 
+[User Guide](user-guide.md) · [Technical Guide](technical-guide.md)
+
+## User workflow
+
+Audio capture is optional and currently requires Windows Editor Play with Mono audio output. Stop Play, set **Edit > Project Settings > Audio > Default Speaker Mode** to **Mono**, then re-enter Play and choose **Start PNG Sequence + Audio** in **Window > ViewWeave > Quilt Capture**. The project audio setting affects the whole project. To avoid changing it, use the regular silent PNG sequence.
+
+## Recording format and implementation details
+
 ViewWeave can optionally record the Unity audio mix alongside a Quilt PNG sequence. Audio capture is opt-in; the existing `StartRecording(outputRoot, fps, frameCount)` API continues to create a silent PNG sequence. Call `StartRecordingWithAudio(...)` or choose **Start PNG Sequence + Audio** in **Window > ViewWeave > Quilt Capture** to request audio.
 
 The diagram shows the relationship between the optional audio path and its output files. The existing API without audio creates only a PNG sequence; when audio is selected, each Quilt frame is paired with Mono WAV samples stored in a separate file.

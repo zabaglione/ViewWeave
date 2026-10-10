@@ -1,5 +1,7 @@
 # D3D12 Bridge worker implementation and validation
 
+> Audience: Unity and rendering developers. This is a dated research or validation record limited to the revision, platform, and conditions stated here; it does not establish support for other configurations. For current support and setup, see [Compatibility](compatibility.md) and [Getting started](getting-started.md). Browse the [Technical guide](technical-guide.md) or [User guide](user-guide.md).
+
 ## Production route
 
 The standard `BridgeWorkerQuiltOutput` route accepts Windows D3D11 and D3D12 Unity graphics devices in Editor Play and Windows Player. With D3D12, Unity renders the Quilt on its D3D12 device. The native worker opens a shared resource on a D3D11 device from the same GPU adapter and sends the rendered views through the installed Looking Glass Bridge runtime. The production path shares GPU resources and does not read image pixels back to the CPU.

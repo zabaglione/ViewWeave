@@ -2,6 +2,8 @@
 
 # Bridge platform boundaries
 
+> Audience: Unity, rendering, and package developers. This page covers the technical design, implementation, or procedure stated below. For user workflows, see the [User guide](user-guide.md); for the complete technical index, see the [Technical guide](technical-guide.md).
+
 The Bridge package separates shared data and orchestration from platform transport. Namespaces, assemblies, existing script GUIDs, and public component types are preserved so existing scenes can keep their references.
 
 | Responsibility | Managed source under the Bridge package | Native source |

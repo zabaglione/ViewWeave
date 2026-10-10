@@ -59,10 +59,16 @@ namespace ViewWeave
 
         void Awake()
         {
-            ResolveDependencies();
             State = SessionState.Idle;
             LastError = string.Empty;
-            initialized = true;
+            // An inactive Windows transport must not replace another backend's binding.
+            if (enabled) InitializeDependencies();
+        }
+
+        void InitializeDependencies()
+        {
+            ResolveDependencies();
+            if (!initialized) return;
             if (output.State != BridgeWorkerQuiltOutput.WorkerState.Closed)
             {
                 Fail("Bridge worker was already active before session initialization");
@@ -71,7 +77,8 @@ namespace ViewWeave
 
         void OnEnable()
         {
-            ResolveDependencies();
+            if (!initialized) InitializeDependencies();
+            else ResolveDependencies();
             if (startOnEnable) pendingStart = true;
         }
 

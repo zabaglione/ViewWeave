@@ -67,3 +67,9 @@ Tests/Pipelines/Unity/Assets/Samples/ViewWeaveBridge/WindowsHdrpLit/
 
 Tests/Metal/Unity/Assets/Resources/PerformanceTestRunInfo.json*
 Tests/Metal/Unity/Assets/Resources/PerformanceTestRunSettings.json*
+
+# UPM samples are source assets even when a global *~ ignore is installed.
+!Packages/**/Samples~/
+!Packages/**/Samples~/**
+!Distribution/**/Samples~/
+!Distribution/**/Samples~/**

@@ -1,6 +1,14 @@
 # Quilt Playback
 
+[User Guide](user-guide.md) · [Technical Guide](technical-guide.md)
+
+## User workflow
+
 The Bridge package provides an Editor window at **Window > ViewWeave > Quilt Playback**. It plays a validated full-quilt PNG or a completed QuiltRecorder output folder through an already-running output. Choose the ViewWeave Rig as the target. Windows Editor Play supports a Ready Bridge Session on Direct3D 11/12; macOS Editor Play supports the running Metal output for Looking Glass Go. Playback does not start the display output or modify Unity time settings.
+
+Select the target Rig, open the Playback window, choose a full Quilt PNG or completed sequence, validate it, then use Play/Pause/Resume/Stop. The device output must already be running in Play Mode.
+
+## Implementation details
 
 This flow uses the existing output and a temporary operation lease. The same session and unchanged ownership state are required before live rendering can resume.
 

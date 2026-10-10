@@ -2,6 +2,10 @@
 
 # Windows HDRP Litサンプル
 
+[ユーザーガイド](https://github.com/zabaglione/ViewWeave/blob/main/docs/ja/user-guide.md) · [技術者向けガイド](https://github.com/zabaglione/ViewWeave/blob/main/docs/ja/technical-guide.md)
+
+これは既存のWindows Bridge手順を保つ任意のlegacy sampleです。初回利用ではHDRP Quick Startを使ってください。
+
 Windows D3D11またはD3D12のEditor PlayまたはPlayerで、HDRPの基本Lit表示を確認する任意のsampleです。Unity 6000.6.4f1のHDRP projectにViewWeave HDRP配布packageをGit URLから追加し、`Window > Package Management > Package Manager`のSamplesから`Windows HDRP Lit`をImportします。配布packageにはCore、HDRP、Bridgeが含まれます。HDRPではLinear color spaceが必要です。Quilt描画中のExposureはadapterが全view共通のFixed値に調整します。
 
 ## 使い方

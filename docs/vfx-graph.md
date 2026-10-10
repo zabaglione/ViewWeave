@@ -2,7 +2,11 @@
 
 # Using VFX Graph with URP/HDRP
 
-URP VFX Graph has an experimental control path using a separate 1x1 auxiliary Camera rather than the regular Quilt Camera. `UrpVfxCameraDriver` is the URP implementation. The auxiliary Camera is intended to advance the normal GPU VFX simulation once per frame, rather than repeat simulation for every Quilt view. The URP Simple Burst driver path is within the existing validation scope. No equivalent runtime driver is provided for HDRP. A mixed URP/HDRP VFX matrix passed 5/20 and did not pass 15/20. There are conditions where HDRP's regular Camera showed a difference from StandardRequest and the normal Camera in a standalone canary using a template clone and ForceImport. Non-passing cases include priming where Quilt tile 0 showed no difference; execution-order-dependent observations remain. Do not treat HDRP paused/live, GRD, or 8/48 views as runtime support. Custom VFX Graph content, sorting, soft depth, and complex transparency are unverified.
+[User Guide](user-guide.md) · [Technical Guide](technical-guide.md)
+
+## Current user-facing status
+
+URP VFX Graph has an experimental driver path that requires Linear color space. HDRP has no equivalent runtime driver. This does not establish support for every graph, effect, or transparency setup; review the conditions below before using VFX in a project.
 
 ## Configure
 
@@ -14,6 +18,11 @@ Use VFX Graph with Linear color space. In the Unity Editor, set `Project Setting
 2. Add `UrpVfxCameraDriver` to the same Rig GameObject. Enable `enableDriver`, and set `vfxLayers` to the VFX object's layer. The VFX layer must overlap the source Camera's culling mask.
 3. Set `driverFieldOfView` to fit the VFX. It defaults to 90 degrees. Confirm the VFX bounds lie inside the auxiliary Camera's frustum.
 4. For regular automatic rendering, enable `QuiltRenderer.autoRender`. To call `RenderQuilt()` manually, enable `runWhenManualRendering` first.
+
+## Dated validation and implementation notes
+
+URP VFX Graph has an experimental control path using a separate 1x1 auxiliary Camera rather than the regular Quilt Camera. `UrpVfxCameraDriver` is the URP implementation. The auxiliary Camera is intended to advance the normal GPU VFX simulation once per frame, rather than repeat simulation for every Quilt view. The URP Simple Burst driver path is within the existing validation scope. No equivalent runtime driver is provided for HDRP. A mixed URP/HDRP VFX matrix passed 5/20 and did not pass 15/20. There are conditions where HDRP's regular Camera showed a difference from StandardRequest and the normal Camera in a standalone canary using a template clone and ForceImport. Non-passing cases include priming where Quilt tile 0 showed no difference; execution-order-dependent observations remain. Do not treat HDRP paused/live, GRD, or 8/48 views as runtime support. Custom VFX Graph content, sorting, soft depth, and complex transparency are unverified.
+
 
 VFX Graph on HDRP is outside the runtime-driver support scope. To inspect regular-Camera VFX display on HDRP, enable the source Camera and use the dedicated diagnostic fixture that includes a template clone and ForceImport. In one standalone-Camera measurement, 4423 pixels changed, while StandardRequest and the enabled-during-submit variant in the same matrix run both had 0. A separate single run in another Editor measured 4423 for both the regular Camera and StandardRequest. A pass in a standalone canary does not establish multiview runtime support; execution-history dependence remains.
 

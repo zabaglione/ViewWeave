@@ -1,5 +1,7 @@
 # Resumed HDRP VFX performance capture
 
+> Audience: Unity and rendering developers. This is a dated research or validation record limited to the revision, platform, and conditions stated here; it does not establish support for other configurations. For current support and setup, see [Compatibility](compatibility.md) and [Getting started](getting-started.md). Browse the [Technical guide](technical-guide.md) or [User guide](user-guide.md).
+
 This internal diagnostic records a resumed run in the user's HDRP VFX Learning Templates project on Direct3D12, at Balanced quality with a 3840x2160 quilt. The view schedule was Full (48 views), Half (24), Quarter (12), Full (48), Off, then Restored Full (48). Each phase used 60 warmup frames and 120 measured samples. Analysis used the first 732 valid-prefix records from 856 raw records. The package remained pinned to version 5892.
 
 The FPS column is the reciprocal of the median Editor frame time; it is not physical display refresh. CPU submission time is `QuiltRenderer.LastCpuSubmissionTicks`; it covers view preparation, rendering, and copy, and excludes texture allocation/clear, Bridge submission, and final cleanup.
@@ -77,19 +79,19 @@ At edit-mode preflight, the saved scene and host position were `(-51.04, 1.13, 4
 
 ### Continued-run evidence
 
-- [Quality samples](../.local/dx12-followup/continued-20261007/quality-native-preview-balanced-native.csv)
-- [Rendered viewport sizes](../.local/dx12-followup/continued-20261007/viewport-sizes.csv)
-- [Occlusion gate](../.local/dx12-followup/continued-20261007/occlusion-gate.txt) and [effective async-compute gate](../.local/dx12-followup/continued-20261007/async-gate-final.txt)
-- [Three-frame BufferD3D12 trace with parent paths and call counts](../.local/dx12-followup/continued-20261007/buffer-resource-profiler-3frames.txt) and [restored Profiler flags](../.local/dx12-followup/continued-20261007/profiler-final-flags.txt)
-- [Post-profiler runtime state](../.local/dx12-followup/continued-20261007/runtime-closeout.txt), [restored runtime state](../.local/dx12-followup/continued-20261007/runtime-restored-final.txt), and [final scene/settings hash verification](../.local/dx12-followup/continued-20261007/final-integrity-20261007.txt)
-- [Initial SDK one-shot result](../.local/dx12-followup/continued-20261007/sdk-one-shot-result.txt), [ordinal-zero SDK pass summary](../.local/dx12-followup/continued-20261007/sdk-ordinal0-pass-summary.txt), [live display ordinal/profile](../.local/dx12-followup/continued-20261007/bridge-display-ordinal.txt), and [pre-test recovery snapshot](../.local/dx12-followup/continued-20261007/recovery-preflight.json)
-- [Final runtime readback after the ordinal-zero test](../.local/dx12-followup/continued-20261007/runtime-post-ordinal0-final.txt), [final asset hashes and Profiler state](../.local/dx12-followup/continued-20261007/final-integrity-post-ordinal0-20261007.txt), and [post-test static checks](../.local/dx12-followup/continued-20261007/static-checks-post-ordinal0-20261007.txt)
+- Quality samples (`../.local/dx12-followup/continued-20261007/quality-native-preview-balanced-native.csv`)
+- Rendered viewport sizes (`../.local/dx12-followup/continued-20261007/viewport-sizes.csv`)
+- Occlusion gate (`../.local/dx12-followup/continued-20261007/occlusion-gate.txt`) and effective async-compute gate (`../.local/dx12-followup/continued-20261007/async-gate-final.txt`)
+- Three-frame BufferD3D12 trace with parent paths and call counts (`../.local/dx12-followup/continued-20261007/buffer-resource-profiler-3frames.txt`) and restored Profiler flags (`../.local/dx12-followup/continued-20261007/profiler-final-flags.txt`)
+- Post-profiler runtime state (`../.local/dx12-followup/continued-20261007/runtime-closeout.txt`), restored runtime state (`../.local/dx12-followup/continued-20261007/runtime-restored-final.txt`), and final scene/settings hash verification (`../.local/dx12-followup/continued-20261007/final-integrity-20261007.txt`)
+- Initial SDK one-shot result (`../.local/dx12-followup/continued-20261007/sdk-one-shot-result.txt`), ordinal-zero SDK pass summary (`../.local/dx12-followup/continued-20261007/sdk-ordinal0-pass-summary.txt`), live display ordinal/profile (`../.local/dx12-followup/continued-20261007/bridge-display-ordinal.txt`), and pre-test recovery snapshot (`../.local/dx12-followup/continued-20261007/recovery-preflight.json`)
+- Final runtime readback after the ordinal-zero test (`../.local/dx12-followup/continued-20261007/runtime-post-ordinal0-final.txt`), final asset hashes and Profiler state (`../.local/dx12-followup/continued-20261007/final-integrity-post-ordinal0-20261007.txt`), and post-test static checks (`../.local/dx12-followup/continued-20261007/static-checks-post-ordinal0-20261007.txt`)
 
 ## Retained evidence
 
-- [Density capture, valid prefix](../.local/dx12-followup/resumed-20261007/balanced-density-valid.csv) and [raw density capture](../.local/dx12-followup/resumed-20261007/balanced-density.csv)
-- [Fresh warmed Profiler capture](../.local/dx12-followup/resumed-20261007/fresh-full-profiler-warmed.csv)
-- [Balanced full quilt image](../.local/dx12-followup/resumed-20261007/balanced-full-quilt.png) and [tile audit](../.local/dx12-followup/resumed-20261007/balanced-full-quilt-audit.csv)
-- [GRD phase capture](../.local/dx12-followup/resumed-20261007/grd-aba.csv), [crash summary](../.local/dx12-followup/resumed-20261007/grd-aba-crash-summary.txt), and [final cleanup summary](../.local/dx12-followup/resumed-20261007/grd-aba-final-cleanup.json)
-- [Verified pre/post settings hashes](../.local/dx12-followup/resumed-20261007/grd-aba-asset-hashes-after-crash.json)
+- Density capture, valid prefix (`../.local/dx12-followup/resumed-20261007/balanced-density-valid.csv`) and raw density capture (`../.local/dx12-followup/resumed-20261007/balanced-density.csv`)
+- Fresh warmed Profiler capture (`../.local/dx12-followup/resumed-20261007/fresh-full-profiler-warmed.csv`)
+- Balanced full quilt image (`../.local/dx12-followup/resumed-20261007/balanced-full-quilt.png`) and tile audit (`../.local/dx12-followup/resumed-20261007/balanced-full-quilt-audit.csv`)
+- GRD phase capture (`../.local/dx12-followup/resumed-20261007/grd-aba.csv`), crash summary (`../.local/dx12-followup/resumed-20261007/grd-aba-crash-summary.txt`), and final cleanup summary (`../.local/dx12-followup/resumed-20261007/grd-aba-final-cleanup.json`)
+- Verified pre/post settings hashes (`../.local/dx12-followup/resumed-20261007/grd-aba-asset-hashes-after-crash.json`)
 - [Prior HDRP/DX12 investigation context](dx12-performance-investigation.md)

@@ -2,6 +2,8 @@
 
 # 公式機能との比較
 
+> 対象読者: Unity／描画基盤の技術者。このページは本文記載の技術的な設計・実装・手順を扱います。利用者向けの導入・運用手順は[ユーザーガイド](user-guide.md)、技術文書一覧は[技術者向けガイド](technical-guide.md)を参照してください。
+
 この表はLooking Glass Factory公式資料に載る機能とViewWeaveの実装状況を、利用者向けに整理したものです。ViewWeaveは独立した非公式SDKであり、公式SDKとのソース互換性や完全な機能互換性を保証しません。詳細は[公式機能の調査](official-sdk-feature-research.md)、各機能の操作手順は[Quilt保存](quilt-capture.md)と[カメラ調整](quilt-authoring.md)を参照してください。
 
 | 機能 | 公式資料で確認したこと | ViewWeaveの状況 |

@@ -1,5 +1,7 @@
 # Remaining-work validation record - 2026-10-08 JST (test evidence captured 2026-10-07 UTC)
 
+> Audience: Unity and rendering developers. This is a dated research or validation record limited to the revision, platform, and conditions stated here; it does not establish support for other configurations. For current support and setup, see [Compatibility](../compatibility.md) and [Getting started](../getting-started.md). Browse the [Technical guide](../technical-guide.md) or [User guide](../user-guide.md).
+
 ## Capture tests
 
 On Unity 6000.6.4f1 with URP 17.6.0 / HDRP 17.6.0, DX12 (-force-d3d12), and an RTX 3090 Ti, the current change set passed:

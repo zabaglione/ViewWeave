@@ -1,5 +1,7 @@
 # Windows validation status
 
+> Audience: Unity and rendering developers. This is a dated research or validation record limited to the revision, platform, and conditions stated here; it does not establish support for other configurations. For current support and setup, see [Compatibility](compatibility.md) and [Getting started](getting-started.md). Browse the [Technical guide](technical-guide.md) or [User guide](user-guide.md).
+
 Current shutdown status is summarized in [Shutdown validation](shutdown-validation-20261008.md): the tested URP Garden and HDRP VFX Editor runs completed Play, Stop, one `File > Exit` request, and natural exit code 0. The earlier access violations remain in the historical record with unknown causes; successful current fixtures do not establish that those incidents were fixed.
 
 This document records the current Windows validation boundary. The 123-test D3D11 PlayMode run used an older package snapshot and predates the current VFX color-space guard and Editor Play / HDRP template adaptations; keep its results separate from current D3D12 integration evidence.

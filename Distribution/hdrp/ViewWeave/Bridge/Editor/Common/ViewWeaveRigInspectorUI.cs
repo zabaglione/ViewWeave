@@ -78,6 +78,7 @@ namespace ViewWeave.Editor
         bool playModeTransitioning;
         bool referenceCameraWasEditable;
         bool updatingFramingControls;
+        bool disposed;
         string framingStatusOverride = string.Empty;
 
         public ViewWeaveRigInspectorUI(VisualElement root, Func<ViewWeaveRig> rigProvider,
@@ -91,6 +92,7 @@ namespace ViewWeave.Editor
 
         public void Rebuild()
         {
+            if (disposed) return;
             CancelPendingCalibrationCopy();
             structuralMutationFields.Clear();
             transportMutationFields.Clear();
@@ -111,6 +113,12 @@ namespace ViewWeave.Editor
                 return;
             }
 
+            if (renderer == null)
+            {
+                root.Add(new HelpBox("This Rig is missing its QuiltRenderer. Restore the component before editing rendering or output settings.", HelpBoxMessageType.Error));
+                return;
+            }
+
             AddIntro();
             BuildCameraSection();
             BuildRenderingSection();
@@ -123,11 +131,20 @@ namespace ViewWeave.Editor
 
         public void Dispose()
         {
+            disposed = true;
             CancelPendingCalibrationCopy();
         }
 
         public void Refresh(bool updateSelectionTarget = false)
         {
+            if (disposed) return;
+            // A scene close can destroy the target before Unity disables its Inspector.
+            if (rig == null || renderer == null)
+            {
+                if ((rig == null && rigObject != null) || (renderer == null && rendererObject != null) ||
+                    (rig != null && (rig.Renderer != null || rig.GetComponent<QuiltRenderer>() != null))) Rebuild();
+                return;
+            }
             UpdateSerializedObjects();
             if (autoRenderToggle != null && rig != null && autoRenderToggle.value != rig.AutoRender)
                 autoRenderToggle.SetValueWithoutNotify(rig.AutoRender);

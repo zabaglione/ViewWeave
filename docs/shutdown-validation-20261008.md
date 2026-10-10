@@ -1,5 +1,7 @@
 # Windows shutdown validation (2026-10-08)
 
+> Audience: Unity and rendering developers. This is a dated research or validation record limited to the revision, platform, and conditions stated here; it does not establish support for other configurations. For current support and setup, see [Compatibility](compatibility.md) and [Getting started](getting-started.md). Browse the [Technical guide](technical-guide.md) or [User guide](user-guide.md).
+
 This note records the Windows shutdown lifecycle changes and their current evidence. It does not attribute historical access violations to a particular component or claim they are fixed.
 
 ## Shutdown behavior

@@ -2,6 +2,12 @@
 
 # Save and record Quilts
 
+[User Guide](user-guide.md) · [Technical Guide](technical-guide.md)
+
+## User workflow
+
+Open **Window > ViewWeave > Quilt Capture** during Play to save the latest completed Quilt or record a PNG sequence from an Auto Render Rig. Use [Quilt PNG and audio recording](quilt-recording-audio.md) to opt into a separate WAV file. For encoder and test implementation details, see the [Technical Guide](technical-guide.md).
+
 ViewWeave Core can save a completed Quilt as a still image and save Quilts emitted by Auto Render during Play as a PNG sequence. Recording does not render additional views.
 
 The diagram shows silent PNG recording and the explicit opt-in path for Mono audio recording. Both use the completed Quilt, but audio is saved to a separate WAV and is not muxed by the MP4 exporter.

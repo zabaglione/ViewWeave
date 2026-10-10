@@ -2,6 +2,8 @@
 
 # 構成
 
+> 対象読者: Unity／描画基盤の技術者。このページは本文記載の技術的な設計・実装・手順を扱います。利用者向けの導入・運用手順は[ユーザーガイド](user-guide.md)、技術文書一覧は[技術者向けガイド](technical-guide.md)を参照してください。
+
 ViewWeaveは公式SDKとは独立して開発している非公式のUnity SDKです。Core、URP adapter、HDRP adapter、Bridge outputを分離しています。正式な対象はUnity 6000.6.4f1で検証しているURP/HDRPです。Built-inはサポート対象外で、CoreはStandard RenderRequest経路を要求します。
 
 ## 現在のデータ経路
@@ -31,7 +33,7 @@ URP/HDRPでは専用Guardと`RenderPipeline.StandardRequest`を使います。`V
 
 ## 出力とBridge
 
-Sessionは機器のprofileを動的に選択し、自動検出を主経路とします。通常の利用では公式Bridge runtimeを別途用意します。`BridgeQuiltOutput`/Legacy DirectはWindows D3D11のみです。標準の`BridgeWorkerQuiltOutput`はWindows D3D11とD3D12のEditor PlayおよびPlayerで使う経路です。D3D12ではUnityのD3D12 deviceから同じGPU上のD3D11 workerへQuiltをGPU共有し、workerが公式Bridgeへ送ります。この経路はCPU画像readbackを使いません。通常のBridge SessionはEdit Modeでは動作しません。制作向けにはWindows D3D11/D3D12で明示的に開始する別系統の`ViewWeaveRig` Editor previewを利用できます。通常のSessionやPlaybackとは別の処理です。URP/HDRP local GPU fixtureでlayout再構築とStop/readback proof、retention pending 0を確認しました。D3D11/D3D12 device fixtureではURP/HDRPの3840x2160 display profile、7680x4320・8x6/48 view Quiltを使い、Start/Restart各1 submission/1 completion、Stop後native/retention pending 0を確認しました。手動光学確認は保留中です。隔離Editor fixtureではDomain Reload後のcleanupと手動restartを確認しました。3本のFile > Exit probeではhelperによる停止・回収後にgateのpending 0を確認しましたが、Editor正常終了は未確認です。own-window close callbackの直接確認も未実施です。通常のSessionはWindowsのみです。`BridgeMetalExperimentalOutput`は最大3 quiltに制限した独立componentですが、macOS native shimはUPM未同梱で、実機運用をサポートしません。ABI、手動artifact条件、寿命検証の詳細は[Graphics backends](graphics-backends.md)を参照してください。
+Sessionは機器のprofileを動的に選択し、自動検出を主経路とします。通常の利用では公式Bridge runtimeを別途用意します。`BridgeQuiltOutput`/Legacy DirectはWindows D3D11のみです。標準の`BridgeWorkerQuiltOutput`はWindows D3D11とD3D12のEditor PlayおよびPlayerで使う経路です。D3D12ではUnityのD3D12 deviceから同じGPU上のD3D11 workerへQuiltをGPU共有し、workerが公式Bridgeへ送ります。この経路はCPU画像readbackを使いません。通常のBridge SessionはEdit Modeでは動作しません。制作向けにはWindows D3D11/D3D12で明示的に開始する別系統の`ViewWeaveRig` Editor previewを利用できます。通常のSessionやPlaybackとは別の処理です。URP/HDRP local GPU fixtureでlayout再構築とStop/readback proof、retention pending 0を確認しました。D3D11/D3D12 device fixtureではURP/HDRPの3840x2160 display profile、7680x4320・8x6/48 view Quiltを使い、Start/Restart各1 submission/1 completion、Stop後native/retention pending 0を確認しました。手動光学確認は保留中です。隔離Editor fixtureではDomain Reload後のcleanupと手動restartを確認しました。3本のFile > Exit probeではhelperによる停止・回収後にgateのpending 0を確認しましたが、Editor正常終了は未確認です。own-window close callbackの直接確認も未実施です。通常SessionはWindowsのみです。macOS Looking Glass Goはarm64 native shimをpackageに含む独立した`BridgeMetalQuiltOutput`経路を使います。Unity 6000.6.4f1、Apple M3 Max、macOS 26.6.2でURP/HDRP templateのEdit Mode device previewを限定条件で確認し、接続Goでの向き・奥行き・明るさは利用者確認済みです。これは全視点・色・scaleの光学品質や一般性能を保証しません。従来の`BridgeMetalExperimentalOutput`は別の有限診断経路です。現行条件は[macOS Metal](macos-metal.md)と[日付付き検証記録](../macos-metal-validation-20261010.md)を、旧実験のABIと寿命境界は[Graphics backends](graphics-backends.md)を参照してください。
 
 WorkerはUnity render thread側のQuilt copyとworker所有のD3D11 device、3 slot共有GPU ring、worker側の描画、WM message pump、shutdown/reopenを分離します。RTX 3090 Tiでshared-resource handoff、ring reuse、typeless format、timeout、late completion、device-removal seam、generationを含むD3D11 baseline込み349 draw testを通過し、fake Bridge runtimeを使ったloader lifecycle 100 cycleも通過しました。Unity D3D12 Editor PlayはURP/HDRPのDomain Reload enabled/disabledで各2 cycleを確認しました。固定fixtureのD3D12 Player matrixではURP/HDRPのDevelopment/Release各runがPreview、Balanced、Native、Previewを完了し、Native qualityのPlayer実行もこのmatrix内で確認済みです。Developmentは各pipelineでNative restartを10回、Releaseは1回行いました。ユーザーHDRP VFX Learning Templates projectもsnapshot 8adda27cでNative 7680x4320・48 viewsのEditor PlayとIdle/Closed・pending 0の停止を確認しました。このmatrixではGRD設定を切り替えていません。任意projectの全48 views光学品質、WARP、他GPUは未検証です。Windows CIではhardware D3D12をskipします。
 
@@ -41,7 +43,7 @@ Bridge経路ではUnity render threadからのcopy、Bridge workerの描画、WM
 
 ## 確認済み範囲と未検証範囲
 
-Unity 6000.6.4f1、Windows、D3D11でURP/HDRPの基本Lit、Bloom、透明Lit、uGUI、粒子、UI Toolkitの試験を行っています。これらの結果は個別のfixture条件に限られ、すべての素材や描画経路への対応を意味しません。HDRPではLinear color spaceが必須です。HDRP adapterはquilt viewのscopeだけ専用Volume overrideを有効にし、Motion Blur、SSR、SSGI、volumetric fog/cloudを抑え、Exposureをquilt全view共通のFixed EVにします。元stackがFixedならEVを保ち、通常Fog、Sky、BloomとMainCamera/元Volume/Project Settingsは変更しません。通常SessionでのmacOS出力は未対応です。Metal native実験は物理Mac/Bridgeで未検証です。長時間動作と性能の一般化も未確認です。
+Unity 6000.6.4f1、Windows、D3D11でURP/HDRPの基本Lit、Bloom、透明Lit、uGUI、粒子、UI Toolkitの試験を行っています。これらの結果は個別のfixture条件に限られ、すべての素材や描画経路への対応を意味しません。HDRPではLinear color spaceが必須です。HDRP adapterはquilt viewのscopeだけ専用Volume overrideを有効にし、Motion Blur、SSR、SSGI、volumetric fog/cloudを抑え、Exposureをquilt全view共通のFixed EVにします。元stackがFixedならEVを保ち、通常Fog、Sky、BloomとMainCamera/元Volume/Project Settingsは変更しません。通常macOS Sessionは未対応です。別系統のLooking Glass Go Metal previewはURP/HDRP templateの限定条件で確認し、向き・奥行き・明るさの利用者確認を得ましたが、全視点の光学品質、色測定、長時間動作、一般性能は未検証です。[日付付きmacOS検証](../macos-metal-validation-20261010.md)を参照してください。従来の有限`BridgeMetalExperimentalOutput`実験は現在のGo経路とは別です。
 
 次の項目は対応範囲を決めるための検証対象です。
 

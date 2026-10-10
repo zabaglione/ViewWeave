@@ -1,5 +1,7 @@
 # DX12 HDRP performance investigation
 
+> Audience: Unity and rendering developers. This is a dated research or validation record limited to the revision, platform, and conditions stated here; it does not establish support for other configurations. For current support and setup, see [Compatibility](compatibility.md) and [Getting started](getting-started.md). Browse the [Technical guide](technical-guide.md) or [User guide](user-guide.md).
+
 ## Scope
 
 This note records a short, read-only capture of the current HDRP quilt workload and test-only SDK density and camera-batch fixture runs. These are diagnostic snapshots, not a benchmark or a release-performance claim. The profiled scene was the HDRP VFX Learning Templates scene in `E:\My project (34)`, at Balanced quality, a 3840x2160 quilt, and 48 views. The Editor scene was dirty before capture; the capture did not save or modify it.

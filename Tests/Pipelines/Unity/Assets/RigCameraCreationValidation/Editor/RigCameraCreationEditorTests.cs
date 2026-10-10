@@ -97,6 +97,8 @@ namespace ViewWeave.RigCameraCreationValidation
             framingCamera.nearClipPlane = 0.23f;
             framingCamera.farClipPlane = 143f;
             framingCamera.cullingMask = 1 << 12;
+            framingCamera.clearFlags = CameraClearFlags.SolidColor;
+            framingCamera.backgroundColor = Color.black;
             Vector3 originalPosition = framingCamera.transform.position;
             Quaternion originalRotation = framingCamera.transform.rotation;
             float originalFov = framingCamera.fieldOfView;
@@ -116,6 +118,8 @@ namespace ViewWeave.RigCameraCreationValidation
             Assert.That(targetCamera.nearClipPlane, Is.EqualTo(originalNear).Within(0.0001f));
             Assert.That(targetCamera.farClipPlane, Is.EqualTo(originalFar).Within(0.0001f));
             Assert.That(targetCamera.cullingMask, Is.EqualTo(originalCullingMask));
+            Assert.That(targetCamera.clearFlags, Is.EqualTo(CameraClearFlags.SolidColor));
+            Assert.That(targetCamera.backgroundColor, Is.EqualTo(Color.black));
             Assert.That(renderer.settings.fieldOfView, Is.EqualTo(originalFov).Within(0.0001f));
             Assert.That(renderer.referenceCamera, Is.SameAs(framingCamera));
             Assert.That(renderer.followReferenceFieldOfView, Is.True);

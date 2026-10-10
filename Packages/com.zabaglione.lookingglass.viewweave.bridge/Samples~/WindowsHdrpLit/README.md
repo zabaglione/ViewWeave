@@ -2,6 +2,10 @@
 
 # Windows HDRP Lit sample
 
+[User Guide](https://github.com/zabaglione/ViewWeave/blob/main/docs/user-guide.md) · [Technical Guide](https://github.com/zabaglione/ViewWeave/blob/main/docs/technical-guide.md)
+
+This is an optional legacy sample for its existing Windows Bridge workflow; use HDRP Quick Start for the primary first-run path.
+
 This optional sample demonstrates basic HDRP Lit rendering in Unity Editor Play or a Player on Windows D3D11 or D3D12. Add the ViewWeave HDRP distribution package to a Unity 6000.6.4f1 HDRP project from its Git URL, then import `Windows HDRP Lit` from Samples under `Window > Package Management > Package Manager`. The distribution package contains Core, HDRP, and Bridge. HDRP requires Linear color space. During Quilt rendering, the adapter applies a shared Fixed Exposure value across all views.
 
 ## Usage

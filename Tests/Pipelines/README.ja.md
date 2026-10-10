@@ -2,6 +2,8 @@
 
 # Pipeline smoke tests
 
+> 対象読者: Unity／描画基盤の技術者。このページは試験環境の準備と実行方法を説明します。結果は各runに記載した条件の範囲です。現在の対応条件は[対応表](../../docs/ja/compatibility.md)、導入手順は[使い始める](../../docs/ja/getting-started.md)、技術資料一覧は[技術者向けガイド](../../docs/ja/technical-guide.md)を参照してください。利用者向け操作は[ユーザーガイド](../../docs/ja/user-guide.md)を参照してください。
+
 `Tests/Pipelines/Unity`は、Core、URP、HDRP、Bridgeのvalidationを実行するUnity projectです。fresh cloneではUnity Hubで開く前にrepository rootから`python tools/prepare_sample_tests.py`を実行してください。Bridge packageのSamplesをignoredな`Tests/Pipelines/Unity/Assets/Samples/ViewWeaveBridge`へcopyします。Unity Hubの`Add`からこのフォルダを開き、Unity 6000.6.4f1を選択してください。
 
 ## Test Runnerで実行する

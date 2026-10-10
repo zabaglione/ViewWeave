@@ -2,44 +2,26 @@
 
 # ViewWeave documentation
 
-Choose a guide based on the task: usage procedures, implementation design, or validation history. Each validation record is limited to the Unity version, pipeline, API, and fixture stated in that document.
+Choose one of two entrances: the [User Guide](user-guide.md) for using ViewWeave in a Unity project, or the [Technical Guide](technical-guide.md) for implementation, tests, dated records, and research. License texts remain separate from both guides.
 
-```mermaid
-flowchart LR
-    Need["Your task"] --> User["User guides"]
-    Need --> Dev["Developer design"]
-    Need --> Evidence["Validation and acceptance"]
-```
+## User view
 
-The links below are grouped by purpose.
+- [User Guide](user-guide.md): scene setup and everyday operation, including preview, camera framing, quality, capture, and playback.
+- [Getting Started](getting-started.md): illustrated first-use walkthrough.
+- [Compatibility](compatibility.md): current platform conditions and known limitations.
+- [Quilt camera authoring](quilt-authoring.md): adjust focus, framing, and the Edit Mode preview.
+- [Quilt Capture](quilt-capture.md): save a still Quilt or record a PNG sequence.
+- [Quilt Playback](quilt-playback.md): play saved Quilts through an existing output.
+- [Audio recording](quilt-recording-audio.md): save Mono audio to a separate WAV alongside a PNG sequence.
+- [Video export](quilt-video-export.md): create a silent MP4 from a completed PNG sequence.
+- [macOS Metal / Looking Glass Go](macos-metal.md): setup and current scope for the separate macOS path.
+- [VFX Graph](vfx-graph.md): pipeline and color-space conditions.
 
-## User guides
+## Technical view
 
-- [Getting started](getting-started.md): install a package, create a Rig, display a Cube, and run a Player or start an explicit Edit Mode preview.
-- [Compatibility](compatibility.md): supported platforms, Graphics APIs, pipelines, and known limitations.
-- [Quilt capture](quilt-capture.md): save a completed Quilt, record a PNG sequence, and pause or resume.
-- [Quilt playback](quilt-playback.md): play saved Quilts through an existing Bridge session.
-- [Quilt recording audio](quilt-recording-audio.md): save Mono audio to a separate WAV alongside a PNG sequence.
-- [Quilt video export](quilt-video-export.md): create a silent MP4 from a completed PNG sequence.
-- [Quilt camera authoring](quilt-authoring.md): Rig-based focus, framing, Scene View controls, and the separate Edit Mode preview workflow.
-- [VFX Graph](vfx-graph.md): pipeline-specific VFX Graph conditions.
+Start at the [Technical Guide](technical-guide.md). It links architecture, backend boundaries, package development, performance, test procedures, validation records, research, and contribution workflow. Validation and research documents state their date, revision, and conditions; they are not general support guarantees. Use [Compatibility](compatibility.md) for current user-facing conditions.
 
-## Developer guides
+## Licenses and notices
 
-- [Architecture](architecture.md): components from Core through pipeline adapters to Bridge output.
-- [Graphics backends](graphics-backends.md): regular Windows paths and the bounded Metal experiment.
-- [Performance](performance.md): past measurements under fixed conditions, limitations, and reproduction steps.
-- [Legacy render pipeline investigation](legacy-render-pipeline-investigation.md): legacy implementation research and projection reuse.
-- [Bridge package update safety](bridge-package-update-safety.md): consistency when updating managed/native packages.
-- [Native shutdown trace](native-shutdown-trace.md): how to read shutdown traces and their boundaries.
-
-## Validation history and acceptance
-
-- [Windows validation](windows-validation.md): executed Windows Editor/Player tests and unverified conditions.
-- [Shutdown validation](shutdown-validation-20261008.md): shutdown-gate validation and historical AV records as of 2026-10-08.
-- [Remaining work plan](remaining-work-plan.md): current state, remaining tasks, and completion criteria.
-- [DX12 HDRP performance investigation](dx12-performance-investigation.md): view-count comparison on an HDRP fixture.
-- [Remaining-work validation record](benchmarks/remaining-work-validation-20261007.md): details of the bounded experiment captured on 2026-10-07.
-- [SDK feature comparison](sdk-feature-comparison.md): feature comparison with the official SDK and validation scope.
-- [Unity feature coverage](unity-feature-coverage.md): fixture status by Unity feature.
-- [Third-party notices](THIRD_PARTY_NOTICES.md): third-party code and license notices.
+- [Apache-2.0 license](../LICENSE)
+- [Third-party notices](THIRD_PARTY_NOTICES.md)

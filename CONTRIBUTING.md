@@ -1,5 +1,7 @@
 # Contributing
 
+> Audience: Unity and package contributors. This document covers repository contribution procedures. Browse the [Technical Guide](docs/technical-guide.md) for engineering references or the [User Guide](docs/user-guide.md) for product setup and operation.
+
 This prototype is intended for community review. Keep runtime and Editor assemblies/directories separate where practical and preserve Unity `.meta` files. Do not copy proprietary source code, headers, or binaries into this repository. Record the provenance and license of third-party source or assets in `docs/THIRD_PARTY_NOTICES.md`.
 
 English is the default language for repository documentation. When adding or changing user-facing documentation, update the corresponding Japanese page under `docs/ja/` or the adjacent `*.ja.md` file where one exists; link both language versions at the top of each page. See [README.ja.md](README.ja.md) for Japanese project information.

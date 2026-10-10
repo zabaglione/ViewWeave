@@ -1,5 +1,7 @@
 # D3D12 to D3D11 WARP interop capability probe
 
+> Audience: Unity and rendering developers. This is a bounded D3D12-to-D3D11 capability probe; it does not verify the production Bridge Worker or device presentation. For current support and setup, see [Compatibility](../../../docs/compatibility.md) and [Getting started](../../../docs/getting-started.md). Browse the [Technical Guide](../../../docs/technical-guide.md) or [User Guide](../../../docs/user-guide.md).
+
 This standalone Windows test checks whether the local WARP adapter supports the small shared-texture path used by the native bridge. It explicitly selects `IDXGIFactory4::EnumWarpAdapter`; it never selects a hardware adapter or silently falls back. It creates D3D12 and D3D11 devices for the same adapter LUID, shares three 32 by 32 `R8G8B8A8_UNORM` default-heap textures through temporary NT handles, fills them on a D3D12 queue, waits on a bounded D3D12 fence, and checks the top-left pixel of each D3D11 private-copy readback over three reuse rounds. Each texture receives a different color in each round to detect stale prior-round contents.
 
 Configure and build with CMake and a Visual Studio 2022 C++ toolchain:

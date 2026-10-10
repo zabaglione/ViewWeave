@@ -2,6 +2,8 @@
 
 # Investigation of XR Display Providers and Their Application to ViewWeave
 
+> Audience: Unity and rendering developers. This is a dated research or validation record limited to the revision, platform, and conditions stated here; it does not establish support for other configurations. For current support and setup, see [Compatibility](compatibility.md) and [Getting started](getting-started.md). Browse the [Technical guide](technical-guide.md) or [User guide](user-guide.md).
+
 Research date: 2026-10-07
 
 ## Current Direction

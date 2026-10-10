@@ -12,6 +12,7 @@
     "com.unity.render-pipelines.high-definition": "17.6.0",
     "com.unity.modules.imageconversion": "1.0.0",
     "com.unity.modules.audio": "1.0.0",
+    "com.unity.modules.animation": "1.0.0",
     "com.unity.modules.jsonserialize": "1.0.0",
     "com.unity.modules.uielements": "1.0.0"
   },
@@ -21,6 +22,11 @@
     "hdrp"
   ],
   "samples": [
+    {
+      "displayName": "HDRP Quick Start",
+      "description": "Ready-to-open HDRP scene with a black background, animated primitives and a configured Bridge Rig for macOS Metal or Windows D3D11/D3D12.",
+      "path": "Samples~/QuickStartHDRP"
+    },
     {
       "displayName": "Windows HDRP Lit",
       "description": "Optional Windows Bridge demo scene for HDRP; the Bridge Worker supports D3D11 and D3D12, and standard Cube and Box scenes need no sample import.",

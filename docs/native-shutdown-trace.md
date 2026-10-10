@@ -1,5 +1,7 @@
 # Native shutdown trace
 
+> Audience: Unity and rendering developers. This is a dated research or validation record limited to the revision, platform, and conditions stated here; it does not establish support for other configurations. For current support and setup, see [Compatibility](compatibility.md) and [Getting started](getting-started.md). Browse the [Technical guide](technical-guide.md) or [User guide](user-guide.md).
+
 The Windows native bridge shim and worker transport have opt-in shutdown tracing for teardown investigations. Set `LKG_NATIVE_TRACE` to a new absolute file path before starting the Unity Editor process. The native code does not enable or change the setting at runtime. With the variable unset or empty, shutdown trace writes are skipped.
 
 The shim records process and thread IDs, `GetTickCount64` time, session ID, and begin/end or skipped records around vendor `unregister_texture_dx`, `release_texture_dx`, `release_device_dx`, and `uninitialize_bridge` calls. A skipped record includes the state or missing-symbol flags that selected the branch. A vendor end `result` is the returned value; it does not by itself prove that a resource was released. The current shim has no separate window-close API call to trace.

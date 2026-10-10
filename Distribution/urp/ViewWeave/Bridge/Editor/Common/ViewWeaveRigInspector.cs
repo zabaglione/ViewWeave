@@ -53,7 +53,16 @@ namespace ViewWeave.Editor
         }
 
         void OnUndoRedo() => view?.Rebuild();
-        void OnEditorUpdate() => view?.Refresh();
+        void OnEditorUpdate()
+        {
+            if (target == null)
+            {
+                view?.Dispose();
+                view = null;
+                return;
+            }
+            view?.Refresh();
+        }
         void OnPlayModeStateChanged(PlayModeStateChange state) => view?.OnPlayModeStateChanged(state);
 
         static UnityEngine.Object ResolveSelectionTarget(ViewWeaveRig rig)

@@ -4,4 +4,16 @@ Install this folder from the repository using Unity Package Manager:
 
     https://github.com/zabaglione/ViewWeave.git?path=/Distribution/hdrp#main
 
-Use Unity 6000.6.4f1 with the matching Unity HDRP render pipeline. Start with an ordinary Cube or Box, right-click the Main Camera in the Hierarchy, and choose ViewWeave > Bridge Rig to create a child rig; no sample import or object script is required. On Apple Silicon macOS 26.0 or later, the menu creates Metal output for Looking Glass Go in Desktop Mode; URP has been verified on the device. See the [macOS Metal guide](https://github.com/zabaglione/ViewWeave/blob/main/docs/macos-metal.md). Regular Bridge Worker Sessions support Windows D3D11 and D3D12 Editor Play and Player. D3D12 shares GPU resources with a D3D11 worker on the same adapter and does not read image pixels back to the CPU. For Edit Mode authoring, open the ViewWeaveRig Inspector or Window > ViewWeave > Rig Authoring, assign a Focus Target, then explicitly start Start Local Edit Mode Preview or Start Looking Glass Device Preview. This is a separate Editor preview, not a regular Session. It requires a supported Windows Editor D3D11/D3D12 GPU with GPU ownership proof support; device preview also requires the official Looking Glass Bridge runtime. See the [Quilt authoring guide](https://github.com/zabaglione/ViewWeave/blob/main/docs/quilt-authoring.md). Install and run the Looking Glass Bridge runtime separately. Legacy Direct output is D3D11-only. The optional Windows sample is imported only through Package Manager Samples.
+Use Unity 6000.6.4f1 with the matching Unity HDRP render pipeline. Install and start the official Looking Glass Bridge runtime and connect your display.
+
+## Quick Start
+
+1. In Package Manager, select this package and import **HDRP Quick Start** from **Samples**.
+2. Open **QuickStart.unity**. The scene selects Metal or Windows D3D11/D3D12 automatically.
+3. Select **ViewWeave Bridge Rig** and click **Preview > Start Looking Glass Device Preview**. Use Local Preview without a device; enter Play for animation.
+
+All ordinary camera, focus, rendering, preview, capture and output controls are on **ViewWeave Rig**. The sample uses Quarter view density and Balanced resolution; choose Full for smoother viewpoint changes. No sample generator is required. The existing Windows Lit generator remains an optional separate sample.
+
+macOS output targets Apple Silicon, macOS 26.0 or later, Metal and Looking Glass Go in Desktop Mode. Windows Bridge Worker output uses D3D11/D3D12. See [Compatibility](https://github.com/zabaglione/ViewWeave/blob/main/docs/compatibility.md) for tested scope and limitations.
+
+[User guide and illustrated setup](https://github.com/zabaglione/ViewWeave/blob/main/docs/user-guide.md) | [Technical guide](https://github.com/zabaglione/ViewWeave/blob/main/docs/technical-guide.md) | [日本語](https://github.com/zabaglione/ViewWeave/blob/main/docs/ja/user-guide.md)

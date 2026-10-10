@@ -2,6 +2,8 @@
 
 # 性能の実測と再現手順
 
+> 対象読者: Unity／描画基盤の技術者。このページは本文記載の技術的な設計・実装・手順を扱います。利用者向けの導入・運用手順は[ユーザーガイド](user-guide.md)、技術文書一覧は[技術者向けガイド](technical-guide.md)を参照してください。
+
 以下の数値は過去の固定harnessで得た結果です。現行製品のFPSや今回の投影計算変更による改善量を表しません。計測条件はBridgeなしのWindows Development Player、Unity 6000.6.4f1、URP 17.6、Direct3D11、NVIDIA GeForce RTX 3090 Ti、graphics multi-threading有効、固定128x96 tile、共有Lit mesh約75個、120 frame warmup、1000 frameを3 runです。`QuiltRenderer.LastCpuSubmissionTicks`をCPU submission時間として記録し、GPU frame timeやpresent latencyは計測していません。
 
 この図は、既存のVolumeStack cacheを含む固定harness測定と、別途行ったprivate Garden A/B/A trialを分けます。private trialでは計測誤差を超える改善がなく、採用していません。

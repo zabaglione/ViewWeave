@@ -2,6 +2,8 @@
 
 # Pipeline Smoke Tests
 
+> Audience: Unity and rendering developers. This page describes test setup and execution; test results apply only to their documented run conditions. For current support and setup, see [Compatibility](../../docs/compatibility.md) and [Getting started](../../docs/getting-started.md). Browse the [Technical Guide](../../docs/technical-guide.md) or [User Guide](../../docs/user-guide.md).
+
 `Tests/Pipelines/Unity` is the Unity project used to validate Core, URP, HDRP, and Bridge. On a fresh clone, run `python tools/prepare_sample_tests.py` from the repository root before opening the project in Unity Hub. This copies Bridge package Samples to the ignored path `Tests/Pipelines/Unity/Assets/Samples/ViewWeaveBridge`. In Unity Hub, choose `Add`, open this folder, and select Unity 6000.6.4f1.
 
 ## Run from the Test Runner

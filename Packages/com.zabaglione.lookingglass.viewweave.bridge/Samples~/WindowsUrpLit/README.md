@@ -2,6 +2,10 @@
 
 # Windows URP Lit sample
 
+[User Guide](https://github.com/zabaglione/ViewWeave/blob/main/docs/user-guide.md) · [Technical Guide](https://github.com/zabaglione/ViewWeave/blob/main/docs/technical-guide.md)
+
+This is an optional legacy sample for its existing Windows Bridge workflow; use URP Quick Start for the primary first-run path.
+
 This optional sample demonstrates basic URP Lit rendering in Unity Editor Play or a Player on Windows D3D11 or D3D12. Add the ViewWeave URP distribution package to a Unity 6000.6.4f1 URP project from its Git URL, then import `Windows URP Lit` from Samples under `Window > Package Management > Package Manager`. The distribution package contains Core, URP, and Bridge.
 
 ## Usage

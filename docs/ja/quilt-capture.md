@@ -2,6 +2,12 @@
 
 # Quilt の保存と連番録画
 
+[ユーザーガイド](user-guide.md) · [技術者向けガイド](technical-guide.md)
+
+## ユーザー向けの操作
+
+Play中に**Window > ViewWeave > Quilt Capture**を開くと、Auto Render Rigが最後に描画したQuiltを保存するか、PNG連番を録画できます。WAVを別途作成する場合は[Quilt PNGと音声の録音](quilt-recording-audio.md)を参照してください。encoderや試験の実装詳細は[技術者向けガイド](technical-guide.md)にあります。
+
 ViewWeave Core には、完成した Quilt を静止画として保存する機能と、Play 中に Auto Render が出力した Quilt を PNG 連番として保存する機能があります。録画のために追加の視点を描画することはありません。
 
 図はsilent PNG recordingと明示opt-inのMono audio recordingを示します。両方とも完成Quiltを共有しますが、音声は別WAVになりMP4 exporterへmuxされません。

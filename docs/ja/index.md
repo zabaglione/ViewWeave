@@ -1,43 +1,27 @@
 [English](../index.md)
 
-# ViewWeave ドキュメント
+# ViewWeave ドキュメント目次
 
-利用手順、開発設計、検証履歴から目的に合う資料を選べます。各検証記録は、文書に記載されたUnity・pipeline・Graphics API・fixtureの範囲に限られます。
+入口は二つです。Unity projectでViewWeaveを使う方は[ユーザーガイド](user-guide.md)、実装、試験、日付付き記録、調査を読む方は[技術者向けガイド](technical-guide.md)から始めてください。ライセンス本文はどちらのガイドにも含めず、独立して掲載しています。
 
-```mermaid
-flowchart LR
-    Need["目的"] --> User["利用者向け手順"]
-    Need --> Dev["開発者向け設計"]
-    Need --> Evidence["検証履歴と受け入れ"]
-```
+## ユーザー視点
 
-## 利用者向け
+- [ユーザーガイド](user-guide.md): sceneの準備と日常操作。Preview、カメラ構図、品質、保存、再生を案内します。
+- [使い始める](getting-started.md): 画像付きの初回導入手順。
+- [対応表](compatibility.md): 現在のplatform条件と既知の制約。
+- [Quiltカメラの調整](quilt-authoring.md): focus、構図、Edit Mode previewを調整します。
+- [Quilt Capture](quilt-capture.md): 静止Quiltの保存とPNG連番の録画。
+- [Quilt Playback（英語）](../quilt-playback.md): 稼働中のoutputから保存済みQuiltを再生します。
+- [音声録音](quilt-recording-audio.md): Mono音声をPNG連番と別のWAVへ保存します。
+- [動画書き出し（英語）](../quilt-video-export.md): 完成したPNG連番から無音MP4を作成します。
+- [macOS Metal / Looking Glass Go](macos-metal.md): 独立したmacOS経路の導入と現在の対象範囲。
+- [VFX Graph](vfx-graph.md): pipelineとcolor spaceの条件。
 
-- [導入と使い方](getting-started.md): package導入、Rig作成、Cube表示、Player実行、明示的なEdit Mode preview。
-- [対応条件](compatibility.md): 対応platform、Graphics API、pipeline、既知の制約。
-- [Quiltの保存と録画](quilt-capture.md): 完成Quiltの保存、PNG連番、Pause/Resume。
-- [Quiltの再生](../quilt-playback.md): 既存Bridge sessionから保存済みQuiltを再生。
-- [音声録音](quilt-recording-audio.md): Mono音声をPNG連番と別のWAVへ保存。
-- [動画書き出し](../quilt-video-export.md): 完成したPNG連番から無音MP4を作成。
-- [Quiltカメラの調整](quilt-authoring.md): Rigからのfocus、framing、Scene View操作、独立したEdit Mode preview。
-- [VFX Graph](vfx-graph.md): pipeline別のVFX Graph条件。
+## 技術者視点
 
-## 開発者向け
+[技術者向けガイド](technical-guide.md)から、構成、backend境界、package開発、性能、試験手順、検証記録、調査、開発参加方法を辿れます。検証・調査資料は、記載された日付、revision、条件に限る記録であり、一般的な対応保証ではありません。現在の利用条件は[対応表](compatibility.md)を参照してください。
 
-- [Architecture](architecture.md): Core、pipeline adapter、Bridge outputの構成。
-- [Graphics backends](graphics-backends.md): Windows通常経路と限定Metal実験。
-- [Performance](../performance.md): 固定条件での過去計測、制約、再現方法。
-- [Legacy render pipeline investigation](../legacy-render-pipeline-investigation.md): 旧実装の調査と投影計算の再利用。
-- [Bridge package update safety](../bridge-package-update-safety.md): managed/native package更新時の整合性。
-- [Native shutdown trace](../native-shutdown-trace.md): shutdown traceの読み方と対象範囲。
+## ライセンスと表記
 
-## 検証履歴と受け入れ
-
-- [Windows validation](../windows-validation.md): Windows Editor/Playerで実行した試験と未検証条件。
-- [Shutdown validation](../shutdown-validation-20261008.md): 2026-10-08時点のshutdown gate検証と歴史的AV記録。
-- [Remaining work plan](../remaining-work-plan.md): 現在の状態、残作業、完了条件。
-- [DX12 HDRP performance investigation](../dx12-performance-investigation.md): HDRP fixtureでの視点数比較。
-- [Remaining-work validation record](../benchmarks/remaining-work-validation-20261007.md): 2026-10-07に行った限定実験の詳細。
-- [SDK feature comparison](../sdk-feature-comparison.md): 公式SDKとの機能比較と検証範囲。
-- [Unity feature coverage](../unity-feature-coverage.md): Unity機能別のfixture状況。
-- [Third-party notices](THIRD_PARTY_NOTICES.md): 外部コードとライセンス表記。
+- [Apache-2.0ライセンス](../../LICENSE)
+- [第三者ライセンス表記](THIRD_PARTY_NOTICES.md)

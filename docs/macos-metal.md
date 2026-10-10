@@ -2,7 +2,11 @@
 
 # macOS Metal / Looking Glass Go
 
-Use Unity **6000.6.4f1**, URP or HDRP **17.6**, an Apple Silicon Mac, and an installed Looking Glass Bridge runtime. The bundled arm64 plugin requires **macOS 26.0 or later**. Short Editor Play tests with URP/HDRP template scenes verified Go output, recording, Stop and Restart; HDRP Player execution and prolonged operation remain unverified. Connect the Go in Desktop Mode, extend the desktop at its native **1440 × 2560** resolution, and run Bridge.
+[User Guide](user-guide.md) · [Technical Guide](technical-guide.md)
+
+## User setup and operation
+
+Use Unity **6000.6.4f1**, URP or HDRP **17.6**, an Apple Silicon Mac, and an installed Looking Glass Bridge runtime. The bundled arm64 plugin requires **macOS 26.0 or later**. This is a dedicated Looking Glass Go/Metal output path. Connect the Go in Desktop Mode, extend the desktop at its native **1440 × 2560** resolution, and run Bridge. Consult [Compatibility](compatibility.md) and the dated [Metal verification record](macos-metal-validation-20261010.md) for the tested scope; HDRP Player execution and prolonged operation remain unverified.
 
 Select the scene camera and choose **GameObject > ViewWeave > Bridge Rig**. On macOS this creates a `BridgeMetalQuiltOutput` backend. Configure the rig through the **ViewWeave Rig** component: **Rendering > Output Quality** selects Preview, Balanced, or Native; **Bridge** provides startup, runtime path, application name, display ordinal, output status, and Start/Stop controls. Enter Play mode to start output. Stop output and wait for GPU retirement before changing quality or transport, then start it again. A blank runtime path discovers the newest installed Bridge in `/Applications` or `~/Applications`. An explicit dylib, its directory, or the Bridge `.app` and `LKG_BRIDGE_PATH` are also accepted.
 
@@ -13,6 +17,10 @@ In Edit Mode, open **Preview** on ViewWeave Rig and choose **Start Local Edit Mo
 For saved Quilts, enter Play and start Metal output, then choose **Capture & Playback > Playback**. Select a full Quilt PNG or completed PNG recording folder, validate it, and use Play / Pause / Resume / Stop. Its dimensions, grid, aspect, and available camera geometry must match the active output. Playback pauses normal Quilt rendering; normal Stop or sequence completion restores it only while the same output and Rig configuration remain valid. Output Stop, Play exit, and script reload invalidate playback and retain GPU resources until retirement proof completes. The scene stores the attached backend: moving a scene between macOS and Windows does not automatically replace its output component.
 
 The initial implementation accepts Go device identifiers (`LKG-E`), unrotated native screens, conventional RGB calibration with no subpixel cell table, and zero cell-pattern mode. Other devices and calibration patterns fail with an error. Choose Preview, Balanced, or Native before starting. The full grid is retained at every quality level, including the Go's 66-view grid when returned by Bridge. Rendering 66 views can be expensive; start with Preview.
+
+## Implementation and verification notes
+
+Short Editor Play tests with URP/HDRP template scenes verified Go output, recording, Stop and Restart. These are bounded observations, not a general runtime guarantee.
 
 ## Native plugin build
 

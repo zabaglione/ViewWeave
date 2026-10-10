@@ -2,6 +2,8 @@
 
 # Unity Multiview Rendering Optimization Examples
 
+> Audience: Unity and rendering developers. This is a dated research or validation record limited to the revision, platform, and conditions stated here; it does not establish support for other configurations. For current support and setup, see [Compatibility](compatibility.md) and [Getting started](getting-started.md). Browse the [Technical guide](technical-guide.md) or [User guide](user-guide.md).
+
 Research date: 2026-10-07
 
 This research covers Unity multiview rendering and Quilt generation for Looking Glass displays. In the sources reviewed, no published Unity implementation was found that accelerates true 48-view rendering while preserving ordinary URP/HDRP materials, VFX, transparency, and Volumes. The examples below distinguish Unity features, research prototypes, and research that replaces the normal Render Pipeline.

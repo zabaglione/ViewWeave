@@ -15,7 +15,14 @@ namespace ViewWeave.HDRP.Editor
             public bool IsSupported => GraphicsSettings.currentRenderPipeline is HDRenderPipelineAsset;
             public MonoBehaviour AddAdapter(GameObject target, Camera framingCamera)
             {
-                if (target.GetComponent<HDAdditionalCameraData>() == null) target.AddComponent<HDAdditionalCameraData>();
+                HDAdditionalCameraData targetData = target.GetComponent<HDAdditionalCameraData>();
+                if (targetData == null) targetData = target.AddComponent<HDAdditionalCameraData>();
+                HDAdditionalCameraData framingData = framingCamera != null ? framingCamera.GetComponent<HDAdditionalCameraData>() : null;
+                if (framingData != null)
+                {
+                    targetData.clearColorMode = framingData.clearColorMode;
+                    targetData.backgroundColorHDR = framingData.backgroundColorHDR;
+                }
                 return target.GetComponent<HdrpQuiltCamera>() ?? target.AddComponent<HdrpQuiltCamera>();
             }
         }

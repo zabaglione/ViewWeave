@@ -2,6 +2,10 @@
 
 # Windows URP Litサンプル
 
+[ユーザーガイド](https://github.com/zabaglione/ViewWeave/blob/main/docs/ja/user-guide.md) · [技術者向けガイド](https://github.com/zabaglione/ViewWeave/blob/main/docs/ja/technical-guide.md)
+
+これは既存のWindows Bridge手順を保つ任意のlegacy sampleです。初回利用ではURP Quick Startを使ってください。
+
 Windows D3D11またはD3D12のEditor PlayまたはPlayerで、URPの基本Lit表示を確認する任意のsampleです。Unity 6000.6.4f1のURP projectにViewWeave URP配布packageをGit URLから追加し、`Window > Package Management > Package Manager`のSamplesから`Windows URP Lit`をImportします。配布packageにはCore、URP、Bridgeが含まれます。
 
 ## 使い方

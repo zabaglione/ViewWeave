@@ -2,6 +2,20 @@
 
 # 対応表
 
+[ユーザーガイド](user-guide.md) · [技術者向けガイド](technical-guide.md)
+
+## 現在の利用範囲
+
+- **Windows Bridge Worker:** Unity 6000.6.4f1、URPまたはHDRPのEditor Play／Windows Playerで、D3D11またはD3D12を使う構成を対象にしています。公式Looking Glass Bridge runtimeと接続displayが必要です。Legacy Directは別のD3D11専用経路です。
+- **macOS Looking Glass Go:** Apple Silicon向けの独立したMetal経路です。対象OS、Editor、機器の条件は[macOS Metalガイド](macos-metal.md)を参照してください。Windowsの通常Bridge Sessionとは別です。
+- **Edit Mode Preview:** 通常のPlay Mode Sessionとは別に明示開始する制作向けPreviewです。出力方法はplatformと接続displayにより異なります。
+
+Quick StartのSample sceneはWindows上で再検証していません。特定のprojectや機器で利用する前に、以下の経路別条件と[日付付きWindows／macOS記録](technical-guide.md)を確認してください。あらゆるUnity構成、effect、displayへの対応を保証するものではありません。
+
+## 技術的な証跡と日付付き記録
+
+以下の実装詳細と個別試験結果は、記載したrevision、fixture、機器、条件に限られます。一般的な対応保証ではなく、個別の証跡として参照してください。
+
 通常runtime Sessionの対象はUnity 6000.6.4f1、Windows、URPまたはHDRPです。Bridge Worker経路はD3D11/D3D12のEditor PlayとWindows Playerに対応します。Unity D3D12のQuiltは同じGPU上のD3D11 workerへ共有され、公式Looking Glass Bridge runtimeへ送られます。この経路は画像のCPU readbackを行いません。Legacy Direct経路はD3D11のみです。別機能として`ViewWeaveRig`から明示開始するWindows Editor D3D11/D3D12のEdit Mode previewがありますが、これは通常SessionをPlay Mode外で利用可能にするものではありません。URP/HDRP local GPU fixtureで8 view描画、layout再構築、proof後の旧texture retirement、Stop/readback、retention pending 0を確認しました。D3D11/D3D12 deviceのURP/HDRP fixtureは3840x2160 display profile、7680x4320・8x6/48 viewでStart/Stop/Restartを確認し、Start/Restart各1 submission/1 completion、Stop後native/retention pending 0でした。手動光学確認は保留中です。隔離hidden Editor fixtureでDomain Reload後のpreview cleanupと明示restartを確認しましたが、File > Exit quit gateの資源回収は3 probeで確認済みですが、全Editor processがteardown中に0xC0000005で終了し、正常終了は未確認です。詳細は[Graphics backends](graphics-backends.md)を参照してください。macOSに通常managed Sessionの表示経路はありません。対応の検証状況は下表と[Windows validation](../windows-validation.md)を参照してください。公式APIのsource互換は保証しません。macOSのLooking Glass GoはApple Silicon上の専用`BridgeMetalQuiltOutput`を使います。Windowsの通常Sessionから独立した経路で、arm64 native shimをpackageに含めます。導入と検証状況は[macOS Metal](macos-metal.md)を参照してください。従来の有限`BridgeMetalExperimentalOutput`は別の診断経路です。Windows終了処理にはworker/Legacy D3D11のfinal drain、session close ledger、GPU proofを追加しました。Local Native full CTestはUnity PluginAPIとpinned headerの両方で6/6、Editor/Player shutdown fixturesはNative/managed completion proof後の自然終了を確認しています。以前のfull Bridge fixtureでは自動WM_CLOSE候補を含むpackageでnative/managed drain後の自然終了を確認しました。V6ではWindows D3D12 Editorの実GUI File > Exit一回から、GPU proof前のowned textureをgate内でretireし、native host join、managed ownership zero、Editor自然終了code 0までを確認しました。過去のaccess violation原因は不明で、V6はその原因を除去した証明ではありません。save/cancel GUI試験は未完了です。新Edit Mode previewの手動光学確認も未実施で、Domain Reload後のpreview cleanupと明示restartは隔離fixtureで確認済みですが、File > Exit quit gateの資源回収は3 probeで確認済みですが、全Editor processがteardown中に0xC0000005で終了し、正常終了は未確認です。詳細は[Graphics backends](graphics-backends.md)を参照してください。通常Bridgeの48-view光学品質と性能は引き続き未検証です。検証範囲は[shutdown validation](../shutdown-validation-20261008.md)を参照してください。手順と制約は[Graphics backends](graphics-backends.md)を参照してください。
 
 品質変更は転送を静止させ、同一host・windowで資源を再設定してから自動描画へ復帰します。明示的な`StopSession()`/`StartSession()`は独立した再起動手段です。

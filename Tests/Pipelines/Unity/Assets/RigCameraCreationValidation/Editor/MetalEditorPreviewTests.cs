@@ -69,6 +69,26 @@ namespace ViewWeave.RigCameraCreationValidation
         }
 
         [UnityTest]
+        public IEnumerator ClosingRigWhileInspectorExistsDoesNotRefreshDestroyedTargets()
+        {
+            ViewWeaveRig rig = CreateRig();
+            var inspector = UnityEditor.Editor.CreateEditor(rig);
+            try
+            {
+                inspector.CreateInspectorGUI();
+                Object.DestroyImmediate(host);
+                host = null;
+                yield return null;
+                yield return null;
+                LogAssert.NoUnexpectedReceived();
+            }
+            finally
+            {
+                Object.DestroyImmediate(inspector);
+            }
+        }
+
+        [UnityTest]
         public IEnumerator LocalPreviewPauseClosePreservesSourceAndReleasesOwnership()
         {
             ViewWeaveRig rig = CreateRig();

@@ -1,15 +1,17 @@
 # ViewWeave HDRP
 
-ViewWeave is an independently developed, unofficial Unity SDK for Looking Glass displays. It is not an official Looking Glass Factory product.
+> For HDRP integration developers. Use the [User Guide](../../docs/user-guide.md) for setup and operation, or the [Technical Guide](../../docs/technical-guide.md) for implementation and test records.
 
-This source package is for repository development and tests. End users should install the self-contained `Distribution/hdrp` Git package, which bundles Core, Bridge, and HDRP.
+This source package provides the ViewWeave HDRP adapter for repository development and tests. End users should install the self-contained [`Distribution/hdrp` package](../../Distribution/hdrp/README.md), which includes Core, Bridge, and HDRP.
 
-The supported regular Bridge output environment is Unity 6000.6.4f1, HDRP 17.6, Windows, and D3D11; it works in Windows D3D11 Editor Play and Windows D3D11 Player. A separate explicitly started `ViewWeaveRig` Editor preview is available in Edit Mode on Windows D3D11/D3D12. URP/HDRP local GPU fixtures passed for layout rebuild and proof-based Stop/readback with zero pending retention. D3D11 and D3D12 device fixtures passed URP/HDRP Start/Stop/Restart at a 3840x2160 display profile with a 7680x4320, 8x6/48-view Quilt; each Start and Restart submitted/completed once, and Stop left native/retention pending at zero. Manual optical review remains pending. A targeted Editor fixture confirmed Domain Reload cleanup and explicit restart; see [Graphics backends](https://github.com/zabaglione/ViewWeave/blob/main/docs/graphics-backends.md) for File > Exit results; normal Editor exit remains unverified. Regular D3D12 Bridge output and macOS output are unsupported. Install the Looking Glass Bridge runtime separately and connect a display.
+HDRP projects require Linear color space.
 
-Set Player Settings Color Space to Linear. Standard HDRP template Cube and Box objects can be displayed using their ordinary HDRP materials and lights. Create `GameObject > ViewWeave > Bridge Rig`; no sample import or object-specific script is needed.
+## Quick Start
 
-`HdrpQuiltCamera` adapts effects for quilt rendering with a temporary Volume override while each quilt is rendered. Its default adaptation suppresses Motion Blur, SSR, SSGI, volumetric fog, and volumetric clouds in that scope. TAA is temporarily disabled and restored. Auto Exposure is converted to one fixed exposure across all quilt views, default EV 12; an existing Fixed exposure value is retained. Normal Fog, Sky, Bloom, the MainCamera, original Volume Profiles, and Project Settings remain unchanged.
+1. Import **HDRP Quick Start** from the distribution package's Package Manager **Samples** tab.
+2. Open `QuickStart.unity` in the imported sample.
+3. Select **ViewWeave Bridge Rig** and start **Preview > Start Looking Glass Device Preview**. To inspect the Quilt without a display, choose **Start Local Edit Mode Preview**.
 
-Optional examples are available from Package Manager Samples and are not copied into project Assets until explicitly imported. The HDRP sample generator is only a convenience for creating a demonstration scene.
+Edit Mode Preview shows a static scene. For animation on a connected display, enter Play and explicitly choose **Bridge > Start Output**; output does not start automatically.
 
-See [Getting started](../../docs/getting-started.md) and [Compatibility](../../docs/compatibility.md).
+The macOS Looking Glass Go route uses the separate Metal output. The Windows Quick Start scene has not been revalidated. See [Compatibility](../../docs/compatibility.md) and the [macOS Metal guide](../../docs/macos-metal.md) for current conditions. The optional Windows HDRP Lit sample remains available as a separate Bridge demonstration.

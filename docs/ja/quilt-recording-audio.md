@@ -2,6 +2,14 @@
 
 # Quilt PNGと音声の録音
 
+[ユーザーガイド](user-guide.md) · [技術者向けガイド](technical-guide.md)
+
+## ユーザー向けの操作
+
+音声録音は任意機能で、現状はWindows Editor PlayとMono音声出力が必要です。Playを止めて、**Edit > Project Settings > Audio > Default Speaker Mode**を**Mono**に設定し、Playを再開してから**Window > ViewWeave > Quilt Capture**で**Start PNG Sequence + Audio**を選びます。このproject設定はproject全体に影響します。変更したくない場合は通常の無音PNG連番を使ってください。
+
+## 録画形式と実装の詳細
+
 ViewWeaveはQuiltのPNG連番とともに、Unityのaudio mixを任意で録音できます。音声captureは明示的なopt-inです。既存の`StartRecording(outputRoot, fps, frameCount)` APIは引き続き無音のPNG連番を作成します。音声を要求するには`StartRecordingWithAudio(...)`を呼ぶか、`Window > ViewWeave > Quilt Capture`で**Start PNG Sequence + Audio**を選択します。
 
 図は任意の音声経路と出力ファイルの関係を示します。音声を選ばない既存APIはPNG連番だけを作り、音声を選ぶとQuilt frameごとにMono WAV sampleを対応付けて別ファイルに保存します。

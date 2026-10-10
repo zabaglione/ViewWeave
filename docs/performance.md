@@ -2,6 +2,8 @@
 
 # Performance Measurements and Reproduction Steps
 
+> Audience: Unity and rendering developers. This is a dated research or validation record limited to the revision, platform, and conditions stated here; it does not establish support for other configurations. For current support and setup, see [Compatibility](compatibility.md) and [Getting started](getting-started.md). Browse the [Technical guide](technical-guide.md) or [User guide](user-guide.md).
+
 The figures below come from a historical fixed harness. They do not represent current product FPS or the improvement from the recent projection-matrix calculation change. Conditions were a Windows Development Player without Bridge, Unity 6000.6.4f1, URP 17.6, Direct3D11, NVIDIA GeForce RTX 3090 Ti, graphics multithreading enabled, fixed 128x96 tiles, about 75 shared Lit meshes, 120-frame warmup, and 1000 frames over 3 runs. `QuiltRenderer.LastCpuSubmissionTicks` records CPU submission time; GPU frame time and present latency were not measured.
 
 The diagram separates the fixed harness measurement with the existing VolumeStack cache from a separate private Garden A/B/A trial. The private trial found no improvement beyond measurement error and was not adopted.

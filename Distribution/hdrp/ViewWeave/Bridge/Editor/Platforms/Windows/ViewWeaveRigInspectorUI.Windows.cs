@@ -19,6 +19,7 @@ namespace ViewWeave.Editor
         FloatField zoomField;
         Label sessionStatus;
         Label sessionError;
+        Button startWindowsButton, stopWindowsButton;
         Button refreshConnectedDisplaysButton;
         Label connectedDisplaysStatus;
         bool pendingCalibrationCopy;
@@ -78,6 +79,10 @@ namespace ViewWeave.Editor
                 transportMutationFields.Add(AddBoundProperty(foldout, sessionObject, "runtimePath", "Bridge Runtime Path"));
                 transportMutationFields.Add(AddBoundProperty(foldout, sessionObject, "applicationName", "Application Name"));
                 transportMutationFields.Add(AddBoundProperty(foldout, sessionObject, "displayOrdinal", "Display Ordinal"));
+                startWindowsButton = new Button(() => { session.StartSession(); Refresh(); }) { name = "startOutput", text = "Start Output" };
+                stopWindowsButton = new Button(() => { session.StopSession(); Refresh(); }) { name = "stopOutput", text = "Stop Output" };
+                foldout.Add(startWindowsButton);
+                foldout.Add(stopWindowsButton);
             }
             if (output != null)
             {
@@ -412,6 +417,10 @@ namespace ViewWeave.Editor
         void RefreshSessionStatusWindows()
         {
             if (session == null) return;
+            bool active = session.State == ViewWeaveBridgeSession.SessionState.Connecting || session.State == ViewWeaveBridgeSession.SessionState.Rendering || session.State == ViewWeaveBridgeSession.SessionState.Reconfiguring;
+            bool closing = session.State == ViewWeaveBridgeSession.SessionState.Closing || BridgeWorkerQuiltOutput.ShutdownPendingCount != 0;
+            startWindowsButton?.SetEnabled(EditorApplication.isPlaying && !playModeTransitioning && session.isActiveAndEnabled && !active && !closing && !BridgeDisplayDiscovery.IsBusy && !BridgeWorkerLifecycle.RecoveryPending);
+            stopWindowsButton?.SetEnabled(EditorApplication.isPlaying && !playModeTransitioning && active);
             if (sessionStatus != null) sessionStatus.text = "Session state: " + session.State;
             if (sessionError != null) sessionError.text = string.IsNullOrEmpty(session.LastError) ? string.Empty : "Session error: " + session.LastError;
             if (qualityField != null && qualityField.value != (Enum)session.Quality) qualityField.SetValueWithoutNotify(session.Quality);
