@@ -225,11 +225,12 @@ namespace ViewWeave.Editor
             physicalFramingEnabledToggle = new Toggle("Use Physical 1:1 Framing")
             {
                 name = "physicalFramingEnabled",
-                value = renderer != null && renderer.physicalFraming != null && renderer.physicalFraming.enabled
+                value = renderer != null && renderer.physicalFraming != null && renderer.physicalFraming.enabled,
+                tooltip = "Off by default. Turn this on explicitly to use the configured physical display size for 1:1 framing."
             };
             physicalFramingEnabledToggle.RegisterValueChangedCallback(evt => SetPhysicalFramingEnabled(evt.newValue));
             foldout.Add(physicalFramingEnabledToggle);
-            var physicalToggleHelp = new HelpBox("Use the display's physical size for 1:1 zero-parallax framing. Use Connected Display Size below to read calibration from Bridge and enable this setting.", HelpBoxMessageType.Info);
+            var physicalToggleHelp = new HelpBox("Physical 1:1 framing is off by default. Use Connected Display Size below to copy calibrated dimensions; this keeps the current switch state. Turn the switch on explicitly to enable 1:1 framing.", HelpBoxMessageType.Info);
             physicalToggleHelp.style.whiteSpace = WhiteSpace.Normal;
             foldout.Add(physicalToggleHelp);
             var physicalFoldout = new Foldout { text = "Physical Display Framing", value = false };
@@ -775,7 +776,7 @@ namespace ViewWeave.Editor
             bool canCopyMutation = renderer.TryCheckMutation(QuiltRendererMutationKind.Framing, out mutationReason);
             if (canCopy && canCopyMutation && renderer.TryGetFraming(out QuiltCameraFraming currentFraming))
                 canCopyMutation = renderer.TryCheckMutation(new QuiltRendererMutationRequest(new QuiltCameraFraming(
-                    currentFraming.VerticalFieldOfView, currentFraming.FocusDistance, true,
+                    currentFraming.VerticalFieldOfView, currentFraming.FocusDistance, currentFraming.PhysicalFramingEnabled,
                     calibration.widthMillimeters, calibration.heightMillimeters, currentFraming.UnitsPerMeter)), out mutationReason);
             bool canRequestCalibration = output != null && !BridgeDisplayDiscovery.IsBusy &&
                 BridgeEditorPreview.CanRefreshDisplaysForRig(rig) &&
@@ -783,8 +784,8 @@ namespace ViewWeave.Editor
                 (session == null || session.State == ViewWeaveBridgeSession.SessionState.Idle || session.State == ViewWeaveBridgeSession.SessionState.Rendering);
             copyConnectedDisplayButton?.SetEnabled(canCopy ? canCopyMutation : canRequestCalibration && canCopyMutation);
             if (copyConnectedDisplayButton != null) copyConnectedDisplayButton.tooltip = canCopyMutation
-                ? canCopy ? "Copy the latest valid Bridge calibration into the Rig's serialized aperture fields."
-                    : canRequestCalibration ? "Refresh Bridge metadata now, then copy calibration if this Rig remains unchanged."
+                ? canCopy ? "Copy the latest valid Bridge calibration into the Rig's aperture fields without changing whether physical 1:1 framing is enabled."
+                    : canRequestCalibration ? "Refresh Bridge metadata now, then copy the aperture dimensions if this Rig remains unchanged; the current framing switch state is preserved."
                     : "Refresh Connected Displays is unavailable while a Bridge owner is starting, stopping, or recovering."
                 : mutationReason;
             if (!string.IsNullOrEmpty(framingStatusOverride)) physicalFramingStatus.text += " " + framingStatusOverride;
@@ -795,7 +796,7 @@ namespace ViewWeave.Editor
             if (renderer == null || !renderer.TryGetFraming(out QuiltCameraFraming framing)) return;
             if (QuiltDisplaySettingsResolver.TryGetConnectedPhysicalCalibration(renderer, out QuiltEditorDisplayProfile profile))
             {
-                CommitFraming(new QuiltCameraFraming(framing.VerticalFieldOfView, framing.FocusDistance, true,
+                CommitFraming(new QuiltCameraFraming(framing.VerticalFieldOfView, framing.FocusDistance, framing.PhysicalFramingEnabled,
                     profile.widthMillimeters, profile.heightMillimeters, framing.UnitsPerMeter), "Copy Connected Display Size");
                 return;
             }
@@ -877,7 +878,7 @@ namespace ViewWeave.Editor
                 return;
             }
 
-            bool copied = CommitFraming(new QuiltCameraFraming(expectedFraming.VerticalFieldOfView, expectedFraming.FocusDistance, true,
+            bool copied = CommitFraming(new QuiltCameraFraming(expectedFraming.VerticalFieldOfView, expectedFraming.FocusDistance, expectedFraming.PhysicalFramingEnabled,
                 profile.PhysicalWidthMillimeters, profile.PhysicalHeightMillimeters, expectedFraming.UnitsPerMeter),
                 "Copy Connected Display Size");
             if (!copied) SetPhysicalStatus("Connected calibration was found but could not be applied under the current renderer owner policy.");

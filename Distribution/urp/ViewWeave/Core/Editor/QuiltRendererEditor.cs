@@ -168,7 +168,7 @@ namespace ViewWeave.Editor
                 using (new EditorGUI.DisabledScope(!renderer.TryCheckMutation(QuiltRendererMutationKind.Framing, out _)))
                 {
                     if (GUILayout.Button("Use Connected Display Size") && renderer.TryGetFraming(out QuiltCameraFraming framing))
-                        TrySetFramingValue(renderer, new QuiltCameraFraming(framing.VerticalFieldOfView, framing.FocusDistance, true,
+                        TrySetFramingValue(renderer, new QuiltCameraFraming(framing.VerticalFieldOfView, framing.FocusDistance, framing.PhysicalFramingEnabled,
                             calibration.widthMillimeters, calibration.heightMillimeters, framing.UnitsPerMeter), "Copy Connected Display Size");
                 }
                 EditorGUILayout.LabelField("Calibration DPI", calibration.dpi.ToString("0.##", CultureInfo.InvariantCulture));

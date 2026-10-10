@@ -6,7 +6,7 @@ namespace ViewWeave
     [Serializable]
     public sealed class QuiltPhysicalFraming
     {
-        public bool enabled;
+        public bool enabled = false;
         [Min(0f)] public float visibleApertureWidthMillimeters;
         [Min(0f)] public float visibleApertureHeightMillimeters;
         [Min(0.001f)] public float unitsPerMeter = 1f;

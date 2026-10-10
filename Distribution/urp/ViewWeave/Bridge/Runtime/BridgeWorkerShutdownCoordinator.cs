@@ -8,6 +8,8 @@ namespace ViewWeave
         const double ShutdownTimeoutSeconds = 10.0;
         static BridgeWorkerShutdownCoordinator instance;
         static bool requestAttempted;
+        static bool nativeShutdownRequested;
+        static bool nativeCloseAllAttempted;
         static bool finalStatusComplete;
         static bool finalizationReady;
         static bool timedOut;
@@ -17,6 +19,25 @@ namespace ViewWeave
 
 #if UNITY_EDITOR
         internal static Func<bool> nativeStatusCompleteOverrideForTests;
+        internal static Func<bool> nativeValidationPendingOverrideForTests;
+        internal static Func<bool> inspectEditorProcessOverrideForTests;
+        internal static Func<NativeValidationResultForTests> nativeValidationOverrideForTests;
+        internal static Func<int> closeAllNativeWorkersOverrideForTests;
+        internal static Func<int> requestFinalShutdownOverrideForTests;
+        internal static Func<NativeStatusReadResultForTests> nativeStatusReadOverrideForTests;
+
+        internal struct NativeValidationResultForTests
+        {
+            internal bool CallsAllowed;
+            internal bool ModuleLoaded;
+            internal string Error;
+        }
+
+        internal struct NativeStatusReadResultForTests
+        {
+            internal bool Succeeded;
+            internal BridgeWorkerNative.FinalShutdownStatusV1 Status;
+        }
 #endif
 
         internal static bool FinalizationReady => finalizationReady;
@@ -64,6 +85,9 @@ namespace ViewWeave
             if (Application.platform != RuntimePlatform.WindowsEditor && Application.platform != RuntimePlatform.WindowsPlayer) return true;
             if (Application.platform == RuntimePlatform.WindowsEditor) BridgeEditorPreviewRetention.RequestStop(false);
             if (Application.platform == RuntimePlatform.WindowsEditor) BridgeDisplayDiscovery.CancelForReload();
+#if UNITY_EDITOR
+            if (Application.platform == RuntimePlatform.WindowsEditor) RefreshPendingNativeValidation();
+#endif
             if (BridgeWorkerShutdownPolicy.CanQuitImmediately(finalizationReady, requestAttempted || HasPotentialWorkerActivity())) return true;
             EnsureHost();
             if (!requestAttempted)
@@ -78,51 +102,14 @@ namespace ViewWeave
 #endif
                 try { StopManagedWorkers(); }
                 catch (Exception error) { WarnOnce("Stopping Bridge worker outputs failed: " + Sanitize(error.Message)); }
-                bool nativeCallsAllowed = true;
-                bool nativeModuleLoaded = true;
-#if UNITY_EDITOR
-                if (Application.platform == RuntimePlatform.WindowsEditor)
-                {
-                    nativeCallsAllowed = BridgeNativeImageGuard.TryValidateGlobalCalls(out nativeModuleLoaded, out _, out string imageError);
-                    if (!nativeCallsAllowed) WarnOnce(imageError);
-                }
-#endif
-                if (!nativeCallsAllowed || !nativeModuleLoaded)
-                {
-                    WarnOnce("Native shutdown calls are blocked until the expected Bridge shim image is available; resources remain retained.");
-                    BridgeWorkerReaper.PrepareForFinalShutdown();
-                    return false;
-                }
-                try
-                {
-                    int closeAllResult = BridgeWorkerQuiltOutput.CloseAllNativeWorkers();
-                    if (closeAllResult != 0) WarnOnce("Bridge worker close-all returned code " + closeAllResult + ".");
-                }
-                catch (DllNotFoundException) { WarnOnce("Bridge worker native library is unavailable during final shutdown."); }
-                catch (EntryPointNotFoundException) { WarnOnce("Bridge worker close-all ABI is unavailable during final shutdown."); }
-                catch (Exception error) { WarnOnce("Bridge worker close-all failed: " + Sanitize(error.Message)); }
                 BridgeWorkerReaper.PrepareForFinalShutdown();
-                try
-                {
-                    if (TryReadNativeStatus(out BridgeWorkerNative.FinalShutdownStatusV1 existing) && existing.state != 0)
-                    {
-                        finalStatusComplete = BridgeWorkerShutdownPolicy.IsNativeComplete(existing);
-                    }
-                    else
-                    {
-                        int result = BridgeWorkerNative.lkg_worker_request_final_shutdown();
-                        if (result != 0) WarnOnce("Final worker shutdown request failed with code " + result + ".");
-                    }
-                }
-                catch (DllNotFoundException) { WarnOnce("Bridge worker native library is unavailable during final shutdown."); }
-                catch (EntryPointNotFoundException) { WarnOnce("Bridge worker final shutdown ABI is unavailable."); }
-                catch (Exception error) { WarnOnce("Final worker shutdown request failed: " + Sanitize(error.Message)); }
             }
             else
             {
                 timedOut = false;
                 deadline = Time.realtimeSinceStartupAsDouble + ShutdownTimeoutSeconds;
             }
+            PumpNativeShutdownRequest();
             return false;
         }
 
@@ -143,13 +130,18 @@ namespace ViewWeave
 #if UNITY_EDITOR
                 if (Application.platform == RuntimePlatform.WindowsEditor)
                 {
-                    if (!BridgeNativeImageGuard.TryValidateGlobalCalls(out bool moduleLoaded, out _, out string imageError) || !moduleLoaded)
+                    if (!TryValidateNativeCalls(out bool moduleLoaded, out string imageError) || !moduleLoaded)
                     {
                         WarnOnce(string.IsNullOrEmpty(imageError) ? "The expected Bridge shim is not loaded; final shutdown remains unproven." : imageError);
                         return;
                     }
                 }
 #endif
+                if (!nativeShutdownRequested && !finalStatusComplete)
+                {
+                    WarnOnce("Editor quit bypassed the quit gate before a native final shutdown request was accepted.");
+                    return;
+                }
                 int result = BridgeWorkerNative.lkg_worker_wait_final_shutdown_v1(5000, ref status);
                 if (result == 0 && BridgeWorkerShutdownPolicy.IsNativeComplete(status))
                 {
@@ -190,7 +182,8 @@ namespace ViewWeave
 #if UNITY_EDITOR
             if (Application.platform == RuntimePlatform.WindowsEditor)
             {
-                if (!BridgeNativeImageGuard.TryValidateGlobalCalls(out bool moduleLoaded, out _, out _)) return true;
+                RefreshPendingNativeValidation();
+                if (!TryValidateNativeCalls(out bool moduleLoaded, out _)) return true;
                 if (!moduleLoaded) return false;
             }
 #endif
@@ -264,6 +257,7 @@ namespace ViewWeave
 #endif
             BridgeWorkerReaper.PumpNow();
             if (Application.platform == RuntimePlatform.WindowsEditor) BridgeEditorPreviewRetention.Pump(false);
+            PumpNativeShutdownRequest();
             if (!finalStatusComplete) PumpNativeStatus();
             if (finalStatusComplete)
             {
@@ -319,6 +313,8 @@ namespace ViewWeave
                 }
 #endif
                 if (!TryReadNativeStatus(out BridgeWorkerNative.FinalShutdownStatusV1 status)) return;
+                if (BridgeWorkerShutdownPolicy.IsValidNativeStatus(status) && status.state != 0)
+                    nativeShutdownRequested = true;
                 if (BridgeWorkerShutdownPolicy.IsNativeComplete(status))
                 {
                     finalStatusComplete = true;
@@ -342,9 +338,17 @@ namespace ViewWeave
                 version = 1
             };
 #if UNITY_EDITOR
+            if (nativeStatusReadOverrideForTests != null)
+            {
+                NativeStatusReadResultForTests testResult = nativeStatusReadOverrideForTests();
+                status = testResult.Status;
+                return testResult.Succeeded;
+            }
+#endif
+#if UNITY_EDITOR
             if (Application.platform == RuntimePlatform.WindowsEditor)
             {
-                if (!BridgeNativeImageGuard.TryValidateGlobalCalls(out bool moduleLoaded, out _, out string imageError))
+                if (!TryValidateNativeCalls(out bool moduleLoaded, out string imageError))
                 {
                     WarnOnce(imageError);
                     return false;
@@ -357,6 +361,188 @@ namespace ViewWeave
             WarnOnce("Final worker shutdown status query failed with code " + result + ".");
             return false;
         }
+
+        static void PumpNativeShutdownRequest()
+        {
+            if (!requestAttempted || nativeShutdownRequested || finalStatusComplete) return;
+            if (!TryValidateNativeCalls(out bool moduleLoaded, out string imageError))
+            {
+                if (!string.IsNullOrEmpty(imageError)) WarnOnce(imageError);
+                WarnOnce("Native shutdown calls are blocked until the expected Bridge shim image is available; resources remain retained.");
+                return;
+            }
+            if (!moduleLoaded)
+            {
+                if (!HasManagedShutdownActivity())
+                {
+                    finalStatusComplete = true;
+                    warningWritten = false;
+                }
+                return;
+            }
+
+            if (!nativeCloseAllAttempted)
+            {
+                try
+                {
+                    if (!TryInvokeCloseAll(out bool invoked, out bool closeAllModuleLoaded, out int closeAllResult, out string closeAllError))
+                    {
+                        if (!string.IsNullOrEmpty(closeAllError)) WarnOnce(closeAllError);
+                        return;
+                    }
+                    if (!closeAllModuleLoaded)
+                    {
+                        if (!HasManagedShutdownActivity())
+                        {
+                            finalStatusComplete = true;
+                            warningWritten = false;
+                        }
+                        return;
+                    }
+                    if (invoked) nativeCloseAllAttempted = true;
+                    if (invoked && closeAllResult != 0) WarnOnce("Bridge worker close-all returned code " + closeAllResult + ".");
+                }
+                catch (DllNotFoundException) { WarnOnce("Bridge worker native library is unavailable during final shutdown."); }
+                catch (EntryPointNotFoundException) { WarnOnce("Bridge worker close-all ABI is unavailable during final shutdown."); }
+                catch (Exception error) { WarnOnce("Bridge worker close-all failed: " + Sanitize(error.Message)); }
+            }
+
+            try
+            {
+                if (TryReadNativeStatus(out BridgeWorkerNative.FinalShutdownStatusV1 existing) &&
+                    BridgeWorkerShutdownPolicy.IsValidNativeStatus(existing) && existing.state != 0)
+                {
+                    nativeShutdownRequested = true;
+                    finalStatusComplete = BridgeWorkerShutdownPolicy.IsNativeComplete(existing);
+                    if (finalStatusComplete) warningWritten = false;
+                    return;
+                }
+
+                if (!TryInvokeFinalShutdownRequest(out bool invoked, out bool requestModuleLoaded, out int result, out string requestError))
+                {
+                    if (!string.IsNullOrEmpty(requestError)) WarnOnce(requestError);
+                    return;
+                }
+                if (!requestModuleLoaded)
+                {
+                    if (!HasManagedShutdownActivity())
+                    {
+                        finalStatusComplete = true;
+                        warningWritten = false;
+                    }
+                    return;
+                }
+                if (invoked && result == 0) nativeShutdownRequested = true;
+                else if (invoked) WarnOnce("Final worker shutdown request failed with code " + result + ".");
+            }
+            catch (DllNotFoundException) { WarnOnce("Bridge worker native library is unavailable during final shutdown."); }
+            catch (EntryPointNotFoundException) { WarnOnce("Bridge worker final shutdown ABI is unavailable."); }
+            catch (Exception error) { WarnOnce("Final worker shutdown request failed: " + Sanitize(error.Message)); }
+        }
+
+        static bool HasManagedShutdownActivity()
+        {
+            if (BridgeWorkerReaper.PendingCount != 0 || BridgeWorkerReaper.HasUnprovenResources ||
+                BridgeWorkerQuiltOutput.HasNativeHandle || BridgeEditorPreviewRetention.HasPending ||
+                BridgeDisplayDiscovery.IsBusy || !PlaybackQuitCleanupComplete()) return true;
+            foreach (BridgeQuiltOutput output in Resources.FindObjectsOfTypeAll<BridgeQuiltOutput>())
+                if (output != null && output.Session != 0) return true;
+            return false;
+        }
+
+        static bool TryInvokeCloseAll(out bool invoked, out bool moduleLoaded, out int result, out string error)
+        {
+            invoked = false;
+            moduleLoaded = true;
+            result = -1;
+            error = string.Empty;
+#if UNITY_EDITOR
+            if (closeAllNativeWorkersOverrideForTests != null)
+            {
+                result = closeAllNativeWorkersOverrideForTests();
+                invoked = true;
+                return true;
+            }
+            if (Application.platform == RuntimePlatform.WindowsEditor && !TryValidateNativeCalls(out moduleLoaded, out error)) return false;
+#endif
+            if (!moduleLoaded) return true;
+            result = BridgeWorkerNative.lkg_worker_close_all();
+            invoked = true;
+            return true;
+        }
+
+        static bool TryInvokeFinalShutdownRequest(out bool invoked, out bool moduleLoaded, out int result, out string error)
+        {
+            invoked = false;
+            moduleLoaded = true;
+            result = -1;
+            error = string.Empty;
+#if UNITY_EDITOR
+            if (requestFinalShutdownOverrideForTests != null)
+            {
+                result = requestFinalShutdownOverrideForTests();
+                invoked = true;
+                return true;
+            }
+            if (Application.platform == RuntimePlatform.WindowsEditor && !TryValidateNativeCalls(out moduleLoaded, out error)) return false;
+#endif
+            if (!moduleLoaded) return true;
+            result = BridgeWorkerNative.lkg_worker_request_final_shutdown();
+            invoked = true;
+            return true;
+        }
+
+        static bool IsNativeValidationPending()
+        {
+#if UNITY_EDITOR
+            if (nativeValidationPendingOverrideForTests != null) return nativeValidationPendingOverrideForTests();
+            return BridgeNativeImageGuard.IsValidationPending;
+#else
+            return false;
+#endif
+        }
+
+        static bool RefreshPendingNativeValidation()
+        {
+#if UNITY_EDITOR
+            if (Application.platform != RuntimePlatform.WindowsEditor || !IsNativeValidationPending()) return true;
+            bool valid = inspectEditorProcessOverrideForTests != null
+                ? inspectEditorProcessOverrideForTests()
+                : BridgeNativeImageGuard.TryInspectEditorProcess(out _);
+            return valid;
+#else
+            return true;
+#endif
+        }
+
+        static bool TryValidateNativeCalls(out bool moduleLoaded, out string error)
+        {
+            moduleLoaded = true;
+            error = string.Empty;
+#if UNITY_EDITOR
+            if (Application.platform == RuntimePlatform.WindowsEditor)
+            {
+                if (IsNativeValidationPending() && !RefreshPendingNativeValidation())
+                {
+                    error = "Native image validation did not approve the loaded Bridge shim.";
+                    return false;
+                }
+                if (nativeValidationOverrideForTests != null)
+                {
+                    NativeValidationResultForTests result = nativeValidationOverrideForTests();
+                    moduleLoaded = result.ModuleLoaded;
+                    error = result.Error ?? string.Empty;
+                    return result.CallsAllowed;
+                }
+                return BridgeNativeImageGuard.TryValidateGlobalCalls(out moduleLoaded, out _, out error);
+            }
+#endif
+            return true;
+        }
+
+#if UNITY_EDITOR
+        internal static void PumpNativeShutdownRequestForTests() => PumpNativeShutdownRequest();
+#endif
 
         static void WarnOnce(string message)
         {

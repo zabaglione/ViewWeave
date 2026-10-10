@@ -13,6 +13,48 @@ namespace ViewWeave.BridgeSessionValidation
 {
     public sealed class BridgeWorkerShutdownPolicyTests
     {
+        const BindingFlags StaticPrivate = BindingFlags.Static | BindingFlags.NonPublic;
+
+        sealed class NativeShutdownTestState : System.IDisposable
+        {
+            static readonly string[] FieldNames =
+            {
+                "requestAttempted", "nativeShutdownRequested", "nativeCloseAllAttempted", "finalStatusComplete",
+                "finalizationReady", "timedOut", "warningWritten", "deadline", "nativeStatusCompleteOverrideForTests",
+                "nativeValidationPendingOverrideForTests", "inspectEditorProcessOverrideForTests", "nativeValidationOverrideForTests",
+                "closeAllNativeWorkersOverrideForTests", "requestFinalShutdownOverrideForTests", "nativeStatusReadOverrideForTests"
+            };
+
+            readonly FieldInfo[] fields = new FieldInfo[FieldNames.Length];
+            readonly object[] values = new object[FieldNames.Length];
+
+            internal NativeShutdownTestState()
+            {
+                for (int i = 0; i < FieldNames.Length; i++)
+                {
+                    fields[i] = typeof(BridgeWorkerShutdownCoordinator).GetField(FieldNames[i], StaticPrivate);
+                    Assert.IsNotNull(fields[i], "Missing shutdown test state field " + FieldNames[i]);
+                    values[i] = fields[i].GetValue(null);
+                }
+            }
+
+            internal void Set(string fieldName, object value)
+            {
+                for (int i = 0; i < FieldNames.Length; i++)
+                    if (FieldNames[i] == fieldName)
+                    {
+                        fields[i].SetValue(null, value);
+                        return;
+                    }
+                Assert.Fail("Unknown shutdown test state field " + fieldName);
+            }
+
+            public void Dispose()
+            {
+                for (int i = 0; i < fields.Length; i++) fields[i].SetValue(null, values[i]);
+            }
+        }
+
         [Test]
         public void D3D11SelectsReadbackTailWithoutFenceSupport()
         {
@@ -115,6 +157,166 @@ namespace ViewWeave.BridgeSessionValidation
             status.hostRunning = 2;
             Assert.IsFalse(BridgeWorkerShutdownPolicy.IsNativeComplete(status));
             Assert.IsTrue(BridgeWorkerShutdownPolicy.HasNativeActivity(status));
+        }
+
+        [Test]
+        public void NativeShutdownRetriesPendingValidationThenSubmitsOnce()
+        {
+            using (var state = new NativeShutdownTestState())
+            {
+                bool validationPending = true;
+                int inspections = 0;
+                int closeAllCalls = 0;
+                int statusReads = 0;
+                int requests = 0;
+                state.Set("requestAttempted", true);
+                state.Set("nativeShutdownRequested", false);
+                state.Set("nativeCloseAllAttempted", false);
+                state.Set("finalStatusComplete", false);
+                state.Set("finalizationReady", false);
+                state.Set("nativeValidationPendingOverrideForTests", (System.Func<bool>)(() => validationPending));
+                state.Set("inspectEditorProcessOverrideForTests", (System.Func<bool>)(() =>
+                {
+                    inspections++;
+                    if (inspections == 1) return false;
+                    validationPending = false;
+                    return true;
+                }));
+                state.Set("nativeValidationOverrideForTests", (System.Func<BridgeWorkerShutdownCoordinator.NativeValidationResultForTests>)(() =>
+                    new BridgeWorkerShutdownCoordinator.NativeValidationResultForTests { CallsAllowed = true, ModuleLoaded = true }));
+                state.Set("closeAllNativeWorkersOverrideForTests", (System.Func<int>)(() => { closeAllCalls++; return 0; }));
+                state.Set("nativeStatusReadOverrideForTests", (System.Func<BridgeWorkerShutdownCoordinator.NativeStatusReadResultForTests>)(() =>
+                {
+                    statusReads++;
+                    return new BridgeWorkerShutdownCoordinator.NativeStatusReadResultForTests
+                    {
+                        Succeeded = true,
+                        Status = new BridgeWorkerNative.FinalShutdownStatusV1 { structSize = 32, version = 1 }
+                    };
+                }));
+                state.Set("requestFinalShutdownOverrideForTests", (System.Func<int>)(() => { requests++; return 0; }));
+
+                BridgeWorkerShutdownCoordinator.PumpNativeShutdownRequestForTests();
+                Assert.AreEqual(0, closeAllCalls, "A pending identity check must not invoke native close-all.");
+                Assert.AreEqual(0, requests, "A pending identity check must not submit the native shutdown request.");
+                BridgeWorkerShutdownCoordinator.PumpNativeShutdownRequestForTests();
+                BridgeWorkerShutdownCoordinator.PumpNativeShutdownRequestForTests();
+
+                Assert.AreEqual(2, inspections);
+                Assert.AreEqual(1, closeAllCalls);
+                Assert.AreEqual(1, statusReads);
+                Assert.AreEqual(1, requests);
+                Assert.IsTrue((bool)typeof(BridgeWorkerShutdownCoordinator).GetField("nativeShutdownRequested", StaticPrivate).GetValue(null));
+            }
+        }
+
+        [Test]
+        public void NativeShutdownRequestErrorIsRetriedUntilAccepted()
+        {
+            using (var state = new NativeShutdownTestState())
+            {
+                int requests = 0;
+                int statusReads = 0;
+                state.Set("requestAttempted", true);
+                state.Set("nativeShutdownRequested", false);
+                state.Set("nativeCloseAllAttempted", false);
+                state.Set("finalStatusComplete", false);
+                state.Set("nativeValidationPendingOverrideForTests", (System.Func<bool>)(() => false));
+                state.Set("nativeValidationOverrideForTests", (System.Func<BridgeWorkerShutdownCoordinator.NativeValidationResultForTests>)(() =>
+                    new BridgeWorkerShutdownCoordinator.NativeValidationResultForTests { CallsAllowed = true, ModuleLoaded = true }));
+                state.Set("closeAllNativeWorkersOverrideForTests", (System.Func<int>)(() => 0));
+                state.Set("nativeStatusReadOverrideForTests", (System.Func<BridgeWorkerShutdownCoordinator.NativeStatusReadResultForTests>)(() =>
+                {
+                    statusReads++;
+                    return new BridgeWorkerShutdownCoordinator.NativeStatusReadResultForTests
+                    {
+                        Succeeded = statusReads > 1,
+                        Status = new BridgeWorkerNative.FinalShutdownStatusV1 { structSize = 32, version = 1 }
+                    };
+                }));
+                state.Set("requestFinalShutdownOverrideForTests", (System.Func<int>)(() => ++requests == 1 ? -7 : 0));
+
+                BridgeWorkerShutdownCoordinator.PumpNativeShutdownRequestForTests();
+                Assert.AreEqual(1, requests);
+                Assert.AreEqual(1, statusReads);
+                Assert.IsFalse((bool)typeof(BridgeWorkerShutdownCoordinator).GetField("nativeShutdownRequested", StaticPrivate).GetValue(null));
+
+                BridgeWorkerShutdownCoordinator.PumpNativeShutdownRequestForTests();
+
+                Assert.AreEqual(2, requests);
+                Assert.AreEqual(2, statusReads);
+                Assert.IsTrue((bool)typeof(BridgeWorkerShutdownCoordinator).GetField("nativeShutdownRequested", StaticPrivate).GetValue(null));
+            }
+        }
+
+        [Test]
+        public void NativeShutdownIdentityBlockKeepsRequestUnsent()
+        {
+            using (var state = new NativeShutdownTestState())
+            {
+                int inspections = 0;
+                int closeAllCalls = 0;
+                int requests = 0;
+                state.Set("requestAttempted", true);
+                state.Set("nativeShutdownRequested", false);
+                state.Set("nativeCloseAllAttempted", false);
+                state.Set("finalStatusComplete", false);
+                state.Set("nativeValidationPendingOverrideForTests", (System.Func<bool>)(() => true));
+                state.Set("inspectEditorProcessOverrideForTests", (System.Func<bool>)(() => { inspections++; return false; }));
+                state.Set("nativeValidationOverrideForTests", (System.Func<BridgeWorkerShutdownCoordinator.NativeValidationResultForTests>)(() =>
+                    new BridgeWorkerShutdownCoordinator.NativeValidationResultForTests { CallsAllowed = true, ModuleLoaded = true }));
+                state.Set("closeAllNativeWorkersOverrideForTests", (System.Func<int>)(() => { closeAllCalls++; return 0; }));
+                state.Set("requestFinalShutdownOverrideForTests", (System.Func<int>)(() => { requests++; return 0; }));
+
+                BridgeWorkerShutdownCoordinator.PumpNativeShutdownRequestForTests();
+                BridgeWorkerShutdownCoordinator.PumpNativeShutdownRequestForTests();
+
+                Assert.AreEqual(2, inspections);
+                Assert.AreEqual(0, closeAllCalls);
+                Assert.AreEqual(0, requests);
+                Assert.IsFalse((bool)typeof(BridgeWorkerShutdownCoordinator).GetField("nativeShutdownRequested", StaticPrivate).GetValue(null));
+            }
+        }
+
+        [Test]
+        public void VerifiedUnloadedNativeModuleAllowsQuitWithoutManagedResources()
+        {
+            Assert.AreEqual(0, BridgeWorkerReaper.PendingCount);
+            Assert.IsFalse(BridgeWorkerReaper.HasUnprovenResources);
+            Assert.IsFalse(BridgeWorkerQuiltOutput.HasNativeHandle);
+            Assert.IsFalse(BridgeEditorPreviewRetention.HasPending);
+            Assert.IsFalse(BridgeDisplayDiscovery.IsBusy);
+            Assert.IsTrue(BridgeQuiltPlaybackLease.FinalQuitCleanupComplete);
+            Assert.IsFalse(BridgeWorkerLifecycle.FinalShutdownPending);
+
+            using (var state = new NativeShutdownTestState())
+            {
+                int closeAllCalls = 0;
+                int requests = 0;
+                state.Set("requestAttempted", false);
+                state.Set("nativeShutdownRequested", false);
+                state.Set("nativeCloseAllAttempted", false);
+                state.Set("finalStatusComplete", false);
+                state.Set("finalizationReady", false);
+                state.Set("nativeValidationPendingOverrideForTests", (System.Func<bool>)(() => false));
+                state.Set("nativeValidationOverrideForTests", (System.Func<BridgeWorkerShutdownCoordinator.NativeValidationResultForTests>)(() =>
+                    new BridgeWorkerShutdownCoordinator.NativeValidationResultForTests { CallsAllowed = true, ModuleLoaded = false }));
+                state.Set("closeAllNativeWorkersOverrideForTests", (System.Func<int>)(() => { closeAllCalls++; return 0; }));
+                state.Set("requestFinalShutdownOverrideForTests", (System.Func<int>)(() => { requests++; return 0; }));
+
+                Assert.IsTrue(BridgeWorkerShutdownCoordinator.RequestQuit());
+
+                Assert.AreEqual(0, closeAllCalls);
+                Assert.AreEqual(0, requests);
+                Assert.IsFalse((bool)typeof(BridgeWorkerShutdownCoordinator).GetField("nativeShutdownRequested", StaticPrivate).GetValue(null));
+
+                state.Set("requestAttempted", true);
+                BridgeWorkerShutdownCoordinator.PumpNativeShutdownRequestForTests();
+                Assert.IsTrue((bool)typeof(BridgeWorkerShutdownCoordinator).GetField("finalStatusComplete", StaticPrivate).GetValue(null),
+                    "A validated unloaded module with no retained resources should complete without calling native shutdown.");
+                Assert.AreEqual(0, closeAllCalls);
+                Assert.AreEqual(0, requests);
+            }
         }
 
         [Test]
@@ -1052,8 +1254,9 @@ namespace ViewWeave.BridgeSessionValidation
             Assert.IsFalse(BridgeDisplayDiscovery.IsBusy,
                 "This test must not pump display discovery while it is active.");
 
-            const BindingFlags StaticPrivate = BindingFlags.Static | BindingFlags.NonPublic;
             FieldInfo requestAttemptedField = typeof(BridgeWorkerShutdownCoordinator).GetField("requestAttempted", StaticPrivate);
+            FieldInfo nativeShutdownRequestedField = typeof(BridgeWorkerShutdownCoordinator).GetField("nativeShutdownRequested", StaticPrivate);
+            FieldInfo nativeCloseAllAttemptedField = typeof(BridgeWorkerShutdownCoordinator).GetField("nativeCloseAllAttempted", StaticPrivate);
             FieldInfo finalStatusCompleteField = typeof(BridgeWorkerShutdownCoordinator).GetField("finalStatusComplete", StaticPrivate);
             FieldInfo finalizationReadyField = typeof(BridgeWorkerShutdownCoordinator).GetField("finalizationReady", StaticPrivate);
             FieldInfo timedOutField = typeof(BridgeWorkerShutdownCoordinator).GetField("timedOut", StaticPrivate);
@@ -1064,6 +1267,8 @@ namespace ViewWeave.BridgeSessionValidation
             FieldInfo finalShutdownRequestedField = typeof(BridgeWorkerFinalShutdownRecord)
                 .GetField("finalShutdownRequested", BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.IsNotNull(requestAttemptedField);
+            Assert.IsNotNull(nativeShutdownRequestedField);
+            Assert.IsNotNull(nativeCloseAllAttemptedField);
             Assert.IsNotNull(finalStatusCompleteField);
             Assert.IsNotNull(finalizationReadyField);
             Assert.IsNotNull(timedOutField);
@@ -1075,7 +1280,8 @@ namespace ViewWeave.BridgeSessionValidation
 
             object[] priorCoordinatorState =
             {
-                requestAttemptedField.GetValue(null), finalStatusCompleteField.GetValue(null), finalizationReadyField.GetValue(null),
+                requestAttemptedField.GetValue(null), nativeShutdownRequestedField.GetValue(null), nativeCloseAllAttemptedField.GetValue(null),
+                finalStatusCompleteField.GetValue(null), finalizationReadyField.GetValue(null),
                 timedOutField.GetValue(null), warningWrittenField.GetValue(null), deadlineField.GetValue(null),
                 BridgeWorkerShutdownCoordinator.nativeStatusCompleteOverrideForTests
             };
@@ -1102,6 +1308,8 @@ namespace ViewWeave.BridgeSessionValidation
                 Assert.IsTrue(retention.SetTextures(new[] { texture }));
 
                 requestAttemptedField.SetValue(null, true);
+                nativeShutdownRequestedField.SetValue(null, true);
+                nativeCloseAllAttemptedField.SetValue(null, true);
                 finalStatusCompleteField.SetValue(null, false);
                 finalizationReadyField.SetValue(null, false);
                 timedOutField.SetValue(null, true);
@@ -1136,13 +1344,15 @@ namespace ViewWeave.BridgeSessionValidation
             }
             finally
             {
-                BridgeWorkerShutdownCoordinator.nativeStatusCompleteOverrideForTests = (System.Func<bool>)priorCoordinatorState[6];
+                BridgeWorkerShutdownCoordinator.nativeStatusCompleteOverrideForTests = (System.Func<bool>)priorCoordinatorState[8];
                 requestAttemptedField.SetValue(null, priorCoordinatorState[0]);
-                finalStatusCompleteField.SetValue(null, priorCoordinatorState[1]);
-                finalizationReadyField.SetValue(null, priorCoordinatorState[2]);
-                timedOutField.SetValue(null, priorCoordinatorState[3]);
-                warningWrittenField.SetValue(null, priorCoordinatorState[4]);
-                deadlineField.SetValue(null, priorCoordinatorState[5]);
+                nativeShutdownRequestedField.SetValue(null, priorCoordinatorState[1]);
+                nativeCloseAllAttemptedField.SetValue(null, priorCoordinatorState[2]);
+                finalStatusCompleteField.SetValue(null, priorCoordinatorState[3]);
+                finalizationReadyField.SetValue(null, priorCoordinatorState[4]);
+                timedOutField.SetValue(null, priorCoordinatorState[5]);
+                warningWrittenField.SetValue(null, priorCoordinatorState[6]);
+                deadlineField.SetValue(null, priorCoordinatorState[7]);
                 recoveryPendingField.SetValue(null, priorRecoveryPending);
                 lifecycleFinalPendingField.SetValue(null, priorLifecycleFinalPending);
 

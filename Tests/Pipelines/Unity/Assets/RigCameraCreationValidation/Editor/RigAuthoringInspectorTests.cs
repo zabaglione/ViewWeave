@@ -331,8 +331,9 @@ namespace ViewWeave.RigCameraCreationValidation
             }
         }
 
-        [Test]
-        public void ConnectedDisplaySizeCopiesCalibrationEnablesFramingAndUndoRestoresBoth()
+        [TestCase(false)]
+        [TestCase(true)]
+        public void ConnectedDisplaySizeCopiesCalibrationAndPreservesFramingToggleAndUndoRestoresBoth(bool physicalFramingEnabled)
         {
             GameObject rigObject = new GameObject("Connected Calibration Copy Rig");
             UnityEditor.Editor editor = null;
@@ -341,7 +342,8 @@ namespace ViewWeave.RigCameraCreationValidation
             {
                 ViewWeaveRig rig = rigObject.AddComponent<ViewWeaveRig>();
                 QuiltRenderer renderer = rigObject.GetComponent<QuiltRenderer>();
-                renderer.physicalFraming.enabled = false;
+                Assert.That(renderer.physicalFraming.enabled, Is.False, "physical 1:1 framing must default off");
+                renderer.physicalFraming.enabled = physicalFramingEnabled;
                 renderer.physicalFraming.visibleApertureWidthMillimeters = 120f;
                 renderer.physicalFraming.visibleApertureHeightMillimeters = 80f;
                 renderer.physicalFraming.unitsPerMeter = 2f;
@@ -353,13 +355,13 @@ namespace ViewWeave.RigCameraCreationValidation
                 Assert.That(copyButton.enabledInHierarchy, Is.True);
 
                 Invoke(view, "CopyConnectedDisplaySize");
-                Assert.That(renderer.physicalFraming.enabled, Is.True, "copying calibration should enable physical framing in the same operation");
+                Assert.That(renderer.physicalFraming.enabled, Is.EqualTo(physicalFramingEnabled), "copying dimensions must preserve the current physical framing switch state");
                 Assert.That(renderer.physicalFraming.visibleApertureWidthMillimeters, Is.EqualTo(344.65018f).Within(0.01f));
                 Assert.That(renderer.physicalFraming.visibleApertureHeightMillimeters, Is.EqualTo(193.86572f).Within(0.01f));
                 Assert.That(renderer.physicalFraming.unitsPerMeter, Is.EqualTo(2f), "copy must preserve project units per meter");
 
                 Undo.PerformUndo();
-                Assert.That(renderer.physicalFraming.enabled, Is.False);
+                Assert.That(renderer.physicalFraming.enabled, Is.EqualTo(physicalFramingEnabled));
                 Assert.That(renderer.physicalFraming.visibleApertureWidthMillimeters, Is.EqualTo(120f).Within(0.001f));
                 Assert.That(renderer.physicalFraming.visibleApertureHeightMillimeters, Is.EqualTo(80f).Within(0.001f));
                 Assert.That(renderer.physicalFraming.unitsPerMeter, Is.EqualTo(2f).Within(0.001f));
