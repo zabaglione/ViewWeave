@@ -336,19 +336,25 @@ namespace ViewWeave.BridgeSessionValidation
             };
             try
             {
-                Type actionType = typeof(Action<IntPtr, RenderTexture, CommandBuffer, bool>);
-                MethodInfo transfer = outputType.GetMethod("TransferOwnedResourcesToReaper", BindingFlags.Instance | BindingFlags.NonPublic, null, new[] { typeof(bool), actionType }, null);
-                Assert.IsNotNull(transfer);
-                var enqueue = new Action<IntPtr, RenderTexture, CommandBuffer, bool>((handle, transferredTexture, transferredCommand, needsClose) =>
+                var enqueue = new Action<IntPtr, RenderTexture, CommandBuffer, bool, BridgeNativeModuleIdentity, bool,
+                    BridgeWorkerNative.PreviewLeaseIdentityV1, bool>((handle, transferredTexture, transferredCommand, needsClose,
+                    moduleIdentity, previewLease, previewLeaseIdentity, previewLeaseReturnRequested) =>
                 {
                     enqueueCount++;
                     Assert.AreEqual(new IntPtr(17), handle);
                     Assert.AreSame(texture, transferredTexture);
                     Assert.AreSame(command, transferredCommand);
                     Assert.IsFalse(needsClose);
+                    Assert.IsFalse(moduleIdentity.IsKnown);
+                    Assert.IsFalse(previewLease);
+                    Assert.AreEqual(0u, previewLeaseIdentity.structSize);
+                    Assert.AreEqual(0u, previewLeaseIdentity.version);
+                    Assert.AreEqual(0ul, previewLeaseIdentity.endpointId);
+                    Assert.AreEqual(0ul, previewLeaseIdentity.leaseGeneration);
+                    Assert.IsFalse(previewLeaseReturnRequested);
                 });
-                transfer.Invoke(output, new object[] { false, enqueue });
-                transfer.Invoke(output, new object[] { false, enqueue });
+                output.TransferOwnedResourcesToReaper(false, enqueue);
+                output.TransferOwnedResourcesToReaper(false, enqueue);
                 Assert.AreEqual(1, enqueueCount);
                 Assert.IsTrue(callbackSawDetachedFields);
             }

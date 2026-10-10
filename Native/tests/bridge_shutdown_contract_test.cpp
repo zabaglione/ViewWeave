@@ -186,6 +186,34 @@ static bool CreateSecondShimImageCopy(const std::string& sourcePath, std::wstrin
     return !sourceWide.empty() && CopyFileW(sourceWide.c_str(), copiedPath->c_str(), FALSE) != 0;
 }
 
+static bool CreateSecondFakeImageCopy(const std::string& sourcePath, std::wstring* copiedPath) {
+    static uint32_t copyIndex = 0;
+    if (!copiedPath) return false;
+    wchar_t tempDirectory[MAX_PATH]{};
+    const DWORD length = GetTempPathW(MAX_PATH, tempDirectory);
+    if (!length || length >= MAX_PATH) return false;
+    wchar_t fileName[96]{};
+    swprintf_s(fileName, L"ViewWeaveFakeSdkImage-%lu-%u.dll", static_cast<unsigned long>(GetCurrentProcessId()), ++copyIndex);
+    *copiedPath = std::wstring(tempDirectory) + fileName;
+    const std::wstring sourceWide = WideFromAnsi(sourcePath);
+    return !sourceWide.empty() && CopyFileW(sourceWide.c_str(), copiedPath->c_str(), FALSE) != 0;
+}
+
+static std::string QuoteCommandArgument(const std::string& value) {
+    std::string result = "\"";
+    size_t slashes = 0;
+    for (char c : value) {
+        if (c == '\\') { ++slashes; continue; }
+        if (c == '\"') result.append(slashes * 2 + 1, '\\');
+        else result.append(slashes, '\\');
+        slashes = 0;
+        result.push_back(c);
+    }
+    result.append(slashes * 2, '\\');
+    result.push_back('\"');
+    return result;
+}
+
 template<typename T>
 static T LoadSymbol(HMODULE module, const char* name) {
     return reinterpret_cast<T>(GetProcAddress(module, name));
@@ -480,14 +508,20 @@ static bool LoadWorkerApi(HMODULE module) {
         g_worker.waitFinalShutdown;
 }
 
-static bool RunContract(const std::string& fakePath, const FakeApi& fake, ID3D11Texture2D* source) {
+static bool RunContract(const std::string& fakePath, FakeApi& fake, ID3D11Texture2D* source) {
     int eventId = 0;
     if (!Check(g_reservedEventCount == 1, "Unity callback must reserve exactly one event ID") ||
         !Check(g_worker.renderEventId(&eventId) == 0 && eventId > 0, "Unity callback must reserve a positive event ID")) return false;
 
     LkgWorkerStatus status{};
     void* first = StartWorker(fakePath, "shutdown-contract-host");
-    if (!Check(first != nullptr, "first worker should start") || !Check(WaitForState(first, LKG_WORKER_READY, 5000, &status), "first worker should reach Ready")) return false;
+    if (!Check(first != nullptr, "first worker should start")) return false;
+    if (!WaitForState(first, LKG_WORKER_READY, 5000, &status)) {
+        std::fprintf(stderr, "first worker state=%u errorCode=%u error=%s\n", status.state, status.lastErrorCode, status.error);
+        return Check(false, "first worker should reach Ready");
+    }
+    if (!fake.getEvents && !Check(LoadFakeApi(fakePath.c_str(), &fake),
+        "fake API should resolve after the worker owner loads the runtime")) return false;
     if (!Check(SubmitDraw(first, source, eventId), "first draw token should be submitted") ||
         !Check(WaitForCompleted(first, 1, 5000, &status), "first draw should complete")) return false;
     if (!Check(WaitAndClose(first, true, &status), "first worker should close after duplicate close") ||
@@ -569,7 +603,9 @@ static bool RunContract(const std::string& fakePath, const FakeApi& fake, ID3D11
 
 static bool RunSdkImageOwnershipCase(const std::string& shimPath, const std::string& fakePath, const FakeApi& fake) {
     std::wstring copiedShimPath;
-    if (!Check(CreateSecondShimImageCopy(shimPath, &copiedShimPath), "second shim image copy should be created")) return false;
+    std::wstring copiedFakePath;
+    if (!Check(CreateSecondShimImageCopy(shimPath, &copiedShimPath), "second shim image copy should be created") ||
+        !Check(CreateSecondFakeImageCopy(fakePath, &copiedFakePath), "second fake SDK image copy should be created")) return false;
     HMODULE secondImage = LoadLibraryExW(copiedShimPath.c_str(), nullptr, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
     if (!Check(secondImage != nullptr, "second shim image should load from a distinct path")) {
         DeleteFileW(copiedShimPath.c_str());
@@ -583,23 +619,36 @@ static bool RunSdkImageOwnershipCase(const std::string& shimPath, const std::str
     second.bridgeUninitialize = LoadSymbol<ShimApi::BridgeUninitializeFn>(secondImage, "lkg_bridge_uninitialize");
     bool ok = Check(second.bridgeLoad && second.bridgeUnload && second.bridgeInitialize && second.bridgeUninitialize,
         "second image SDK entrypoints should resolve");
-    if (ok) ok = Check(second.bridgeLoad(fakePath.c_str()) == 0, "second image should load the same runtime before ownership claim");
-    const std::vector<LkgFakeBridgeEvent> before = Events(fake);
+    const std::string copiedFakePathAnsi = AnsiFromWide(copiedFakePath);
+    if (ok) ok = Check(second.bridgeLoad(copiedFakePathAnsi.c_str()) == 0,
+        "second image should load a distinct runtime before ownership claim");
+    FakeApi secondFake{};
+    if (ok) ok = Check(LoadFakeApi(copiedFakePathAnsi.c_str(), &secondFake),
+        "second runtime API should resolve after its owning shim loads it");
+    const std::vector<LkgFakeBridgeEvent> before = ok ? Events(fake) : std::vector<LkgFakeBridgeEvent>{};
+    const std::vector<LkgFakeBridgeEvent> secondBefore = ok ? Events(secondFake) : std::vector<LkgFakeBridgeEvent>{};
     const uint32_t initBefore = CountType(before, LKG_FAKE_EVENT_INITIALIZE);
     const uint32_t uninitBefore = CountType(before, LKG_FAKE_EVENT_UNINITIALIZE);
+    const uint32_t secondInitBefore = CountType(secondBefore, LKG_FAKE_EVENT_INITIALIZE);
+    const uint32_t secondUninitBefore = CountType(secondBefore, LKG_FAKE_EVENT_UNINITIALIZE);
     if (ok) ok = Check(second.bridgeInitialize("shutdown-contract-non-owner") == -7,
         "second shim image must reject SDK initialization while another image owns it");
     if (ok) {
         second.bridgeUninitialize();
         const std::vector<LkgFakeBridgeEvent> after = Events(fake);
-        ok &= Check(CountType(after, LKG_FAKE_EVENT_INITIALIZE) == initBefore,
-            "non-owner initialize must not call the vendor SDK");
-        ok &= Check(CountType(after, LKG_FAKE_EVENT_UNINITIALIZE) == uninitBefore,
-            "non-owner uninitialize must not call the vendor SDK");
+        const std::vector<LkgFakeBridgeEvent> secondAfter = Events(secondFake);
+        ok &= Check(CountType(after, LKG_FAKE_EVENT_INITIALIZE) == initBefore &&
+            CountType(after, LKG_FAKE_EVENT_UNINITIALIZE) == uninitBefore,
+            "non-owner calls must not reach the current SDK owner");
+        ok &= Check(CountType(secondAfter, LKG_FAKE_EVENT_INITIALIZE) == secondInitBefore &&
+            CountType(secondAfter, LKG_FAKE_EVENT_UNINITIALIZE) == secondUninitBefore,
+            "non-owner calls must not reach the second SDK runtime");
     }
     if (second.bridgeUnload) second.bridgeUnload();
+    if (secondFake.module) FreeLibrary(secondFake.module);
     FreeLibrary(secondImage);
     DeleteFileW(copiedShimPath.c_str());
+    DeleteFileW(copiedFakePath.c_str());
     return ok;
 }
 
@@ -626,20 +675,10 @@ static bool CloseAndAcknowledgeSession(const ShimApi& shim, uint64_t session) {
         Check(shim.ackSessionClose(session) == 0, "safe close record should be acknowledged");
 }
 
-static bool RunSessionCloseLedgerCase(const std::string& shimPath, const std::string& fakePath,
-    const FakeApi& fake, ID3D11Texture2D* source) {
-    std::wstring copiedShimPath;
-    if (!Check(CreateSecondShimImageCopy(shimPath, &copiedShimPath),
-        "ledger case shim image copy should be created")) return false;
-    ShimApi ledgerShim{};
-    const std::string copiedPath = AnsiFromWide(copiedShimPath);
-    if (!LoadShim(copiedPath.c_str(), &ledgerShim)) {
-        DeleteFileW(copiedShimPath.c_str());
-        return Check(false, "ledger case isolated shim should load");
-    }
+static bool RunSessionCloseLedgerCase(ShimApi& ledgerShim, const FakeApi& fake, ID3D11Texture2D* source) {
     ShimApi* shim = &ledgerShim;
-    if (!Check(shim->bridgeLoad(fakePath.c_str()) == 0, "ledger case should load fake SDK") ||
-        !Check(shim->bridgeInitialize("shutdown-contract-ledger") == 0, "ledger case should initialize fake SDK")) return false;
+    if (!Check(shim->bridgeInitialize("shutdown-contract-ledger") == 0,
+        "ledger case should initialize the guarded fake SDK")) return false;
     const uint64_t firstSession = shim->createSession(g_device, 0);
     if (!Check(firstSession != 0, "ledger case should create the first session") ||
         !QueryCloseStatus(*shim, firstSession, LKG_BRIDGE_SESSION_CLOSE_PENDING, 0,
@@ -700,13 +739,10 @@ static bool RunSessionCloseLedgerCase(const std::string& shimPath, const std::st
     if (!Check(reusedSession != 0, "acknowledged ledger capacity should be reusable")) return false;
     if (!CloseAndAcknowledgeSession(*shim, reusedSession)) return false;
     shim->bridgeUnload();
-    FreeLibrary(ledgerShim.module);
-    DeleteFileW(copiedShimPath.c_str());
     return Check(true, "ledger case completed");
 }
 
-static bool RunDirectSdkFinalAdmissionCase(const std::string& shimPath, const std::string& fakePath,
-    const FakeApi& fake) {
+static bool RunDirectSdkFinalAdmissionCase(const std::string& shimPath, const std::string& fakePath) {
     std::wstring ownerPath;
     if (!Check(CreateSecondShimImageCopy(shimPath, &ownerPath), "direct-sdk owner image copy should be created")) return false;
     HMODULE ownerModule = LoadLibraryExW(ownerPath.c_str(), nullptr, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
@@ -727,10 +763,13 @@ static bool RunDirectSdkFinalAdmissionCase(const std::string& shimPath, const st
     bool ok = Check(owner.bridgeLoad && owner.bridgeUnload && owner.bridgeInitialize && owner.bridgeUninitialize &&
         requestFinal && getFinalStatus, "direct-sdk final symbols should resolve");
     if (ok) ok = Check(owner.bridgeLoad(fakePath.c_str()) == 0, "direct-sdk owner should load the fake runtime");
-    fake.setEmptyUninitialize(1);
+    FakeApi fake{};
+    if (ok) ok = Check(LoadFakeApi(fakePath.c_str(), &fake), "direct-sdk owner fake API should resolve after guarded load");
+    if (ok) fake.setEmptyUninitialize(1);
     if (ok) ok = Check(owner.bridgeInitialize("shutdown-contract-direct-sdk") == 0,
         "direct SDK initialization should acquire process ownership");
-    const std::vector<LkgFakeBridgeEvent> beforeFinal = Events(fake);
+    const std::vector<LkgFakeBridgeEvent> beforeFinal = fake.getEvents
+        ? Events(fake) : std::vector<LkgFakeBridgeEvent>{};
     const uint32_t initializedCount = CountType(beforeFinal, LKG_FAKE_EVENT_INITIALIZE);
     const uint32_t uninitializedCount = CountType(beforeFinal, LKG_FAKE_EVENT_UNINITIALIZE);
     if (ok) ok = Check(requestFinal() == 0, "final shutdown should close direct SDK admission");
@@ -743,7 +782,9 @@ static bool RunDirectSdkFinalAdmissionCase(const std::string& shimPath, const st
         "active direct SDK ownership must keep final shutdown incomplete");
 
     std::wstring nonOwnerPath;
+    std::wstring nonOwnerFakePath;
     if (ok) ok = Check(CreateSecondShimImageCopy(shimPath, &nonOwnerPath), "non-owner image copy should be created");
+    if (ok) ok = Check(CreateSecondFakeImageCopy(fakePath, &nonOwnerFakePath), "non-owner fake SDK image copy should be created");
     HMODULE nonOwnerModule = ok ? LoadLibraryExW(nonOwnerPath.c_str(), nullptr,
         LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS) : nullptr;
     if (ok) ok = Check(nonOwnerModule != nullptr, "non-owner image should load");
@@ -754,18 +795,34 @@ static bool RunDirectSdkFinalAdmissionCase(const std::string& shimPath, const st
         nonOwner.bridgeUnload = LoadSymbol<ShimApi::BridgeUnloadFn>(nonOwnerModule, "lkg_bridge_unload");
         nonOwner.bridgeInitialize = LoadSymbol<ShimApi::BridgeInitializeFn>(nonOwnerModule, "lkg_bridge_initialize");
         nonOwner.bridgeUninitialize = LoadSymbol<ShimApi::BridgeUninitializeFn>(nonOwnerModule, "lkg_bridge_uninitialize");
+        const std::string nonOwnerFakePathAnsi = AnsiFromWide(nonOwnerFakePath);
         if (ok) ok = Check(nonOwner.bridgeLoad && nonOwner.bridgeUnload && nonOwner.bridgeInitialize && nonOwner.bridgeUninitialize &&
-            nonOwner.bridgeLoad(fakePath.c_str()) == 0, "non-owner image should load runtime symbols");
+            nonOwner.bridgeLoad(nonOwnerFakePathAnsi.c_str()) == 0, "non-owner image should load a distinct fake runtime");
+        FakeApi nonOwnerFake{};
+        if (ok) ok = Check(LoadFakeApi(nonOwnerFakePathAnsi.c_str(), &nonOwnerFake),
+            "non-owner fake API should resolve after guarded load");
+        const std::vector<LkgFakeBridgeEvent> nonOwnerBefore = nonOwnerFake.getEvents
+            ? Events(nonOwnerFake) : std::vector<LkgFakeBridgeEvent>{};
+        const uint32_t nonOwnerInitBefore = CountType(nonOwnerBefore, LKG_FAKE_EVENT_INITIALIZE);
+        const uint32_t nonOwnerUninitBefore = CountType(nonOwnerBefore, LKG_FAKE_EVENT_UNINITIALIZE);
         if (ok) ok = Check(nonOwner.bridgeInitialize("shutdown-contract-final-non-owner") == -7,
             "non-owner image must not initialize while direct SDK owner is active");
         if (ok) nonOwner.bridgeUninitialize();
-        const std::vector<LkgFakeBridgeEvent> afterNonOwner = Events(fake);
-        if (ok) ok = Check(CountType(afterNonOwner, LKG_FAKE_EVENT_INITIALIZE) == initializedCount &&
+        const std::vector<LkgFakeBridgeEvent> afterNonOwner = fake.getEvents
+            ? Events(fake) : std::vector<LkgFakeBridgeEvent>{};
+        if (ok) ok = Check(fake.getEvents && CountType(afterNonOwner, LKG_FAKE_EVENT_INITIALIZE) == initializedCount &&
             CountType(afterNonOwner, LKG_FAKE_EVENT_UNINITIALIZE) == uninitializedCount,
             "non-owner lifecycle calls must not reach the vendor SDK");
+        const std::vector<LkgFakeBridgeEvent> nonOwnerAfter = nonOwnerFake.getEvents
+            ? Events(nonOwnerFake) : std::vector<LkgFakeBridgeEvent>{};
+        if (ok) ok = Check(nonOwnerFake.getEvents && CountType(nonOwnerAfter, LKG_FAKE_EVENT_INITIALIZE) == nonOwnerInitBefore &&
+            CountType(nonOwnerAfter, LKG_FAKE_EVENT_UNINITIALIZE) == nonOwnerUninitBefore,
+            "non-owner lifecycle calls must not reach the second vendor SDK");
         if (nonOwner.bridgeUnload) nonOwner.bridgeUnload();
+        if (nonOwnerFake.module) FreeLibrary(nonOwnerFake.module);
         FreeLibrary(nonOwnerModule);
         DeleteFileW(nonOwnerPath.c_str());
+        DeleteFileW(nonOwnerFakePath.c_str());
     }
 
     if (ok) owner.bridgeUninitialize();
@@ -778,10 +835,12 @@ static bool RunDirectSdkFinalAdmissionCase(const std::string& shimPath, const st
         "final shutdown must permanently reject direct SDK reinitialization");
     if (ok) ok = Check(CountType(Events(fake), LKG_FAKE_EVENT_INITIALIZE) == initializedCount,
         "post-final SDK initialization must not reach the vendor SDK");
+    if (fake.setEmptyUninitialize) fake.setEmptyUninitialize(0);
     if (owner.bridgeUnload) owner.bridgeUnload();
+    if (fake.module) FreeLibrary(fake.module);
     FreeLibrary(ownerModule);
     DeleteFileW(ownerPath.c_str());
-    fake.setEmptyUninitialize(0);
+    DeleteFileW(nonOwnerFakePath.c_str());
     return ok;
 }
 
@@ -857,7 +916,8 @@ static bool RunFinalShutdownContract(const std::string& shimPath, const std::str
     if (!Check(g_worker.pendingCount() == 0 && g_worker.requestFinalShutdown() == 0,
         "final shutdown request should be idempotent after completion")) return false;
     fake.setDrawMode(0, 0);
-    const std::vector<LkgFakeBridgeEvent> events = Events(fake);
+    const std::vector<LkgFakeBridgeEvent> events = fake.getEvents
+        ? Events(fake) : std::vector<LkgFakeBridgeEvent>{};
     if (!CheckBaseLifecycle(events, 7, true)) return false;
     const LkgFakeBridgeEvent* drawExit = First(events, 7, LKG_FAKE_EVENT_DRAW_EXIT);
     const LkgFakeBridgeEvent* uninitialize = First(events, 7, LKG_FAKE_EVENT_UNINITIALIZE);
@@ -867,33 +927,30 @@ static bool RunFinalShutdownContract(const std::string& shimPath, const std::str
     return true;
 }
 
-static bool RunUninitializeFailureContract(const std::string& shimPath, HMODULE workerShimModule,
-    const std::string& fakePath, const FakeApi& fake, ID3D11Texture2D* source, bool throwUninitialize = false) {
-    std::wstring copiedShimPath;
-    if (!Check(CreateSecondShimImageCopy(shimPath, &copiedShimPath), "fault-case shim image copy should be created")) return false;
-    HMODULE faultImage = LoadLibraryExW(copiedShimPath.c_str(), nullptr, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
-    if (!Check(faultImage != nullptr, "fault-case shim image should load")) {
-        DeleteFileW(copiedShimPath.c_str());
-        return false;
-    }
-    if (!LoadWorkerApi(faultImage)) {
-        FreeLibrary(faultImage);
-        DeleteFileW(copiedShimPath.c_str());
-        return Check(false, "fault-case final shutdown symbols should resolve");
-    }
+static bool RunUninitializeFailureContract(ShimApi& faultShim, const std::string& fakePath,
+    FakeApi& fake, bool throwUninitialize = false) {
+    if (!LoadWorkerApi(faultShim.module)) return Check(false, "fault-case final shutdown symbols should resolve");
     using GetSessionCloseStatusFn = ShimApi::GetSessionCloseStatusFn;
     using AckSessionCloseFn = ShimApi::AckSessionCloseFn;
     const GetSessionCloseStatusFn getSessionCloseStatus =
-        LoadSymbol<GetSessionCloseStatusFn>(workerShimModule, "lkg_bridge_get_session_close_status_v1");
+        LoadSymbol<GetSessionCloseStatusFn>(faultShim.module, "lkg_bridge_get_session_close_status_v1");
     const AckSessionCloseFn ackSessionClose =
-        LoadSymbol<AckSessionCloseFn>(workerShimModule, "lkg_bridge_ack_session_close_v1");
+        LoadSymbol<AckSessionCloseFn>(faultShim.module, "lkg_bridge_ack_session_close_v1");
     if (!Check(getSessionCloseStatus && ackSessionClose, "fault-case session ledger symbols should resolve")) return false;
-    fake.setUninitializeMode(throwUninitialize ? 0 : 1, 0);
-    fake.setUninitializeThrow(throwUninitialize ? 1 : 0);
     LkgWorkerStatus workerStatus{};
     void* worker = StartWorker(fakePath, "shutdown-contract-host");
-    bool ok = Check(worker != nullptr, "uninitialize-failure worker should start") &&
-        Check(WaitForState(worker, LKG_WORKER_READY, 5000, &workerStatus), "uninitialize-failure worker should reach Ready");
+    bool ok = Check(worker != nullptr, "uninitialize-failure worker should start");
+    if (ok && !WaitForState(worker, LKG_WORKER_READY, 5000, &workerStatus)) {
+        std::fprintf(stderr, "uninitialize-failure worker state=%u errorCode=%u error=%s\n",
+            workerStatus.state, workerStatus.lastErrorCode, workerStatus.error);
+        ok = Check(false, "uninitialize-failure worker should reach Ready");
+    }
+    if (ok && !fake.getEvents) ok = Check(LoadFakeApi(fakePath.c_str(), &fake),
+        "fault-case fake API should resolve after the worker owner loads the runtime");
+    if (ok) {
+        fake.setUninitializeMode(throwUninitialize ? 0 : 1, 0);
+        fake.setUninitializeThrow(throwUninitialize ? 1 : 0);
+    }
     if (ok) ok = Check(g_worker.close(worker) == 0 &&
         WaitForState(worker, LKG_WORKER_CLOSED, 5000, &workerStatus),
         "context cleanup should complete before host SDK uninitialization");
@@ -921,7 +978,8 @@ static bool RunUninitializeFailureContract(const std::string& shimPath, HMODULE 
         "false SDK uninitialize must report final shutdown Fault, never Complete");
     if (ok) ok &= Check(status.registeredContexts == 0 && status.closedUncollectedContexts == 0 && status.hostJoined == 1,
         "finalization fault must retain SDK ownership without misreporting a released context as pending");
-    const std::vector<LkgFakeBridgeEvent> events = Events(fake);
+    const std::vector<LkgFakeBridgeEvent> events = fake.getEvents
+        ? Events(fake) : std::vector<LkgFakeBridgeEvent>{};
     const uint64_t failureGeneration = throwUninitialize ? 1u : 12u;
     const LkgFakeBridgeEvent* uninitialize = First(events, failureGeneration, LKG_FAKE_EVENT_UNINITIALIZE);
     if (ok) ok &= Check(uninitialize && uninitialize->result == (throwUninitialize ? -1 : 0),
@@ -932,56 +990,47 @@ static bool RunUninitializeFailureContract(const std::string& shimPath, HMODULE 
     if (ok) ok &= Check(CountType(Events(fake), LKG_FAKE_EVENT_INITIALIZE) == initializeCount,
         "faulted SDK retry must not call vendor initialize");
     g_worker.shutdownHost(5000);
-    fake.setUninitializeMode(0, 0);
-    fake.setUninitializeThrow(0);
-    if (ok) {
-        FreeLibrary(faultImage);
-        DeleteFileW(copiedShimPath.c_str());
-    }
+    if (fake.setUninitializeMode) fake.setUninitializeMode(0, 0);
+    if (fake.setUninitializeThrow) fake.setUninitializeThrow(0);
     return ok;
 }
 }
 
-int main(int argc, char** argv) {
-    const bool exceptionOnly = argc == 4 && std::string(argv[3]) == "--uninitialize-exception";
-    if (argc != 3 && !exceptionOnly) return 2;
-    const std::string shimPath = FullPath(argv[1]);
-    const std::string fakePath = FullPath(argv[2]);
-    if (shimPath.empty() || fakePath.empty()) return 3;
-
+static bool RunChildCase(const std::string& mode, const std::string& shimPath, const std::string& fakePath) {
     FakeApi fake{};
     ShimApi shim{};
-    if (!LoadFakeApi(fakePath.c_str(), &fake)) return 4;
-    fake.reset();
     g_harnessThread = GetCurrentThreadId();
-    if (!CreateWarpDevice()) return 5;
+    if (!CreateWarpDevice()) return Check(false, "WARP device should be created");
     ID3D11Texture2D* source = CreateSourceTexture();
-    if (!source) return 6;
-    if (!LoadShim(shimPath.c_str(), &shim)) return 7;
-    if (!LoadWorkerApi(shim.module)) return 9;
+    if (!source) return Check(false, "source texture should be created");
+    if (!LoadShim(shimPath.c_str(), &shim)) return Check(false, "test shim should load");
+    if (!LoadWorkerApi(shim.module)) return Check(false, "worker contract symbols should resolve");
     shim.pluginLoad(&g_interfaces);
     bool ok = Check(g_deviceCallback != nullptr, "UnityPluginLoad should register a device callback") &&
         Check(g_registerCallbackCount == 1 && g_reservedEventCount == 1,
             "Unity device callback should be registered and reserve one event ID");
-    if (ok && exceptionOnly) {
-        ok = RunUninitializeFailureContract(shimPath, shim.module, fakePath, fake, source, true);
-    } else if (ok) {
-        ok = RunSessionCloseLedgerCase(shimPath, fakePath, fake, source);
-        if (ok) {
-            fake.reset();
-            ok = RunDirectSdkFinalAdmissionCase(shimPath, fakePath, fake);
-        }
-        if (ok) {
-            fake.reset();
-            ok = RunContract(fakePath, fake, source);
-        }
-        if (ok) ok = RunFinalShutdownContract(shimPath, fakePath, fake, source);
+    const bool directCase = mode == "direct-final";
+    const bool workerLoadedCase = mode == "worker-final" || mode == "uninitialize-exception";
+    if (ok && !directCase && !workerLoadedCase) {
+        ok = Check(shim.bridgeLoad(fakePath.c_str()) == 0, "SDK owner shim should guard-load its fake runtime");
+        if (ok) ok = Check(LoadFakeApi(fakePath.c_str(), &fake), "fake API should resolve after its owner loads the runtime");
+        if (ok) fake.reset();
     }
-    if (!ok) {
-        if (!DrainAfterFailure(fake)) {
-            std::fprintf(stderr, "FAIL: could not confirm worker drain; leaving shim loaded until process exit\n");
-            ExitProcess(10);
-        }
+    if (ok && mode == "ledger") {
+        ok = RunSessionCloseLedgerCase(shim, fake, source);
+    } else if (ok && mode == "direct-final") {
+        ok = RunDirectSdkFinalAdmissionCase(shimPath, fakePath);
+    } else if (ok && mode == "worker-final") {
+        ok = RunContract(fakePath, fake, source);
+        if (ok) ok = RunFinalShutdownContract(shimPath, fakePath, fake, source);
+    } else if (ok && mode == "uninitialize-exception") {
+        ok = RunUninitializeFailureContract(shim, fakePath, fake, true);
+    } else if (ok) {
+        ok = Check(false, "unknown shutdown contract child case");
+    }
+    if (!ok && fake.getEvents && !DrainAfterFailure(fake)) {
+        std::fprintf(stderr, "FAIL: could not confirm worker drain; leaving shim loaded until process exit\n");
+        ExitProcess(10);
     }
     if (shim.pluginUnload) shim.pluginUnload();
     ok = ok && Check(g_unregisterCallbackCount == 1 && g_deviceCallback == nullptr,
@@ -992,9 +1041,54 @@ int main(int argc, char** argv) {
         g_device = nullptr;
     }
     if (shim.module) FreeLibrary(shim.module);
-    fake.reset();
     if (fake.module) FreeLibrary(fake.module);
-    if (!ok) return 8;
+    return ok;
+}
+
+static bool RunChildProcess(const char* executable, const std::string& mode,
+    const std::string& shimPath, const std::string& fakePath) {
+    std::string command = QuoteCommandArgument(executable) + " --case " + QuoteCommandArgument(mode) +
+        " " + QuoteCommandArgument(shimPath) + " " + QuoteCommandArgument(fakePath);
+    STARTUPINFOA startup{};
+    startup.cb = sizeof(startup);
+    PROCESS_INFORMATION process{};
+    if (!CreateProcessA(executable, command.data(), nullptr, nullptr, FALSE, 0, nullptr, nullptr, &startup, &process)) {
+        std::fprintf(stderr, "FAIL: could not start shutdown case %s, error=%lu\n", mode.c_str(), GetLastError());
+        return false;
+    }
+    WaitForSingleObject(process.hProcess, INFINITE);
+    DWORD exitCode = 1;
+    GetExitCodeProcess(process.hProcess, &exitCode);
+    CloseHandle(process.hThread);
+    CloseHandle(process.hProcess);
+    if (exitCode != 0) std::fprintf(stderr, "FAIL: shutdown case %s exited %lu\n", mode.c_str(), exitCode);
+    return exitCode == 0;
+}
+
+int main(int argc, char** argv) {
+    if (argc == 5 && std::string(argv[1]) == "--case") {
+        const std::string shimPath = FullPath(argv[3]);
+        const std::string fakePath = FullPath(argv[4]);
+        if (shimPath.empty() || fakePath.empty()) return 3;
+        const bool ok = RunChildCase(argv[2], shimPath, fakePath);
+        if (!ok) return 8;
+        std::puts("PASS: native Bridge shutdown case completed");
+        return 0;
+    }
+    const bool exceptionOnly = argc == 4 && std::string(argv[3]) == "--uninitialize-exception";
+    if (argc != 3 && !exceptionOnly) return 2;
+    const std::string shimPath = FullPath(argv[1]);
+    const std::string fakePath = FullPath(argv[2]);
+    if (shimPath.empty() || fakePath.empty()) return 3;
+    char executable[MAX_PATH]{};
+    const DWORD executableLength = GetModuleFileNameA(nullptr, executable, MAX_PATH);
+    if (!executableLength || executableLength >= MAX_PATH) return 4;
+    const std::vector<std::string> cases = exceptionOnly
+        ? std::vector<std::string>{"uninitialize-exception"}
+        : std::vector<std::string>{"ledger", "direct-final", "worker-final"};
+    for (const std::string& mode : cases) {
+        if (!RunChildProcess(executable, mode, shimPath, fakePath)) return 8;
+    }
     std::puts("PASS: native Bridge shutdown contract scenarios completed");
     return 0;
 }

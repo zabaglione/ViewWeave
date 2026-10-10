@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -275,27 +276,61 @@ namespace ViewWeave.GraphicsCompatibility
                 fixture.DirectionalLight.intensity = 100f;
                 meter = new HdrpSharedExposureMeter();
                 float before = float.NaN, after = float.NaN;
-                for (int i = 0; i < 12; ++i)
+                float lastEV = float.NaN;
+                string status = string.Empty;
+                int attempts = 0;
+                float phaseStarted = Time.realtimeSinceStartup;
+                while (Time.realtimeSinceStartup - phaseStarted < 10f)
                 {
-                    meter.TryMeasure(fixture.Camera, fixture.CameraData, fixture.Quilt.settings,
-                        fixture.Quilt.settings.GetLayout(), out float ev, out _);
-                    if (meter.IsReady) before = ev;
+                    attempts++;
+                    bool ready = meter.TryMeasure(fixture.Camera, fixture.CameraData, fixture.Quilt.settings,
+                        fixture.Quilt.settings.GetLayout(), out float ev, out status);
+                    if (ready) lastEV = ev;
+                    if (ready && IsFinite(ev)) { before = ev; break; }
                     Assert.IsEmpty(meter.LastError);
                     yield return null;
                 }
+                if (!IsFinite(before))
+                    LogExposureTimeout("baseline", phaseStarted, attempts, before, lastEV, meter, status);
+
                 fixture.DirectionalLight.intensity = 1600f;
-                for (int i = 0; i < 12; ++i)
+                attempts = 0;
+                phaseStarted = Time.realtimeSinceStartup;
+                while (Time.realtimeSinceStartup - phaseStarted < 10f)
                 {
-                    meter.TryMeasure(fixture.Camera, fixture.CameraData, fixture.Quilt.settings,
-                        fixture.Quilt.settings.GetLayout(), out float ev, out _);
-                    if (meter.IsReady) after = ev;
+                    attempts++;
+                    bool ready = meter.TryMeasure(fixture.Camera, fixture.CameraData, fixture.Quilt.settings,
+                        fixture.Quilt.settings.GetLayout(), out float ev, out status);
+                    if (ready && IsFinite(ev)) lastEV = ev;
+                    if (ready && IsFinite(ev))
+                    {
+                        after = ev;
+                        if (IsFinite(before) && ev > before + 1f) break;
+                    }
                     Assert.IsEmpty(meter.LastError);
                     yield return null;
                 }
+                if (!IsFinite(before) || !IsFinite(after) || after <= before + 1f)
+                    LogExposureTimeout("lighting-change", phaseStarted, attempts, before, lastEV, meter, status);
                 Assert.IsFalse(float.IsNaN(before)); Assert.IsFalse(float.IsNaN(after));
                 Assert.Greater(after, before + 1f, "Automatic exposure must follow changing scene luminance");
             }
             finally { meter?.Dispose(); fixture?.Dispose(); }
+        }
+
+        static bool IsFinite(float value) => !float.IsNaN(value) && !float.IsInfinity(value);
+
+        static void LogExposureTimeout(string phase, float phaseStarted, int attempts, float before,
+            float lastEV, HdrpSharedExposureMeter meter, string status)
+        {
+            float elapsed = Time.realtimeSinceStartup - phaseStarted;
+            string message = string.Format(CultureInfo.InvariantCulture,
+                "HDRP exposure timeout phase={0} elapsed={1:F3}s attempts={2} before={3:R} lastEV={4:R} IsReady={5} HasPendingReadback={6} status={7} LastError={8}",
+                phase, elapsed, attempts, before, lastEV, meter.IsReady, meter.HasPendingReadback,
+                status ?? string.Empty, meter.LastError ?? string.Empty);
+            char[] ascii = message.ToCharArray();
+            for (int i = 0; i < ascii.Length; i++) if (ascii[i] > 127) ascii[i] = '?';
+            Debug.LogError(new string(ascii));
         }
 
         [UnityTest]

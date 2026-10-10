@@ -46,6 +46,7 @@ namespace ViewWeave.BridgeEditorPreviewValidation
         const string DevicePlayTransitionPipelineName = "ViewWeave_DevicePreviewPlayTransition_Pipeline";
         const string DevicePlayTransitionRendererDataName = "ViewWeave_DevicePreviewPlayTransition_RendererData";
         const string DevicePlayTransitionStatePrefix = "ViewWeave.EditorPreview.DevicePlayTransition.";
+        const string DevicePlayTransitionExitingEditModeObservedKey = DevicePlayTransitionStatePrefix + "exitingEditModeObserved";
         const string DevicePlayTransitionAssetFolderPrefix = "Assets/__ViewWeaveDevicePlayTransition_";
 
         [UnityTest]
@@ -1875,12 +1876,11 @@ namespace ViewWeave.BridgeEditorPreviewValidation
 
             bool previewAttempted = false;
             bool crossedPlayMode = false;
-            bool exitingEditModeObserved = false;
+            SessionState.SetBool(DevicePlayTransitionExitingEditModeObservedKey, false);
             var fixture = new Fixture(false);
             BridgeWorkerQuiltOutput sourceOutput = null;
             ViewWeaveBridgeSession session = null;
             Action<BridgeDisplaySnapshot> onSnapshot = null;
-            Action<PlayModeStateChange> playModeObserver = null;
             try
             {
                 string pipelineAssetDirectory = CreateOwnedDeviceTransitionAssetFolder();
@@ -1977,12 +1977,10 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                     ", nativePending=" + BridgeWorkerQuiltOutput.ShutdownPendingCount +
                     ", retentionPending=" + BridgeEditorPreviewRetention.PendingCount);
 
-                playModeObserver = state =>
-                {
-                    if (state == PlayModeStateChange.ExitingEditMode) exitingEditModeObserved = true;
-                };
-                EditorApplication.playModeStateChanged += playModeObserver;
+                EditorApplication.playModeStateChanged -= CaptureDeviceTransitionExitingEditMode;
+                EditorApplication.playModeStateChanged += CaptureDeviceTransitionExitingEditMode;
                 yield return new EnterPlayMode();
+                EditorApplication.playModeStateChanged -= CaptureDeviceTransitionExitingEditMode;
                 crossedPlayMode = true;
                 Assert.IsTrue(Application.isPlaying, "Unity must enter Play mode for the device transition check.");
                 ViewWeaveRig reloadedRig = FindSceneRig(DevicePlayTransitionRigName);
@@ -1994,7 +1992,8 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                 sourceOutput = reloadedRig.GetComponent<BridgeWorkerQuiltOutput>();
                 Assert.IsNotNull(session, "The reloaded device-transition Rig must retain its Bridge Session component.");
                 Assert.IsNotNull(sourceOutput, "The reloaded device-transition Rig must retain its Bridge output component.");
-                yield return WaitForDevicePreviewStop(session, sourceOutput, () => exitingEditModeObserved);
+                yield return WaitForDevicePreviewStop(session, sourceOutput,
+                    SessionState.GetBool(DevicePlayTransitionExitingEditModeObservedKey, false));
                 Debug.Log("EDITOR_PREVIEW_DEVICE_PLAY editorProducerStopped=true retentionPending=0 nativePending=0");
 
                 double runtimeStartedAt = EditorApplication.timeSinceStartup;
@@ -2044,7 +2043,8 @@ namespace ViewWeave.BridgeEditorPreviewValidation
             }
             finally
             {
-                if (playModeObserver != null) EditorApplication.playModeStateChanged -= playModeObserver;
+                EditorApplication.playModeStateChanged -= CaptureDeviceTransitionExitingEditMode;
+                SessionState.EraseBool(DevicePlayTransitionExitingEditModeObservedKey);
                 if (onSnapshot != null && sourceOutput != null) sourceOutput.ConnectedDisplaySnapshotChanged -= onSnapshot;
                 if (Application.isPlaying && session == null)
                 {
@@ -2098,6 +2098,12 @@ namespace ViewWeave.BridgeEditorPreviewValidation
             SessionState.SetString(DevicePlayTransitionStatePrefix + "defaultPath", defaultPath);
             SessionState.SetString(DevicePlayTransitionStatePrefix + "qualityPath", qualityPath);
             CaptureDeviceTransitionPlayOptions(previousOptionsEnabled, previousOptions);
+        }
+
+        static void CaptureDeviceTransitionExitingEditMode(PlayModeStateChange state)
+        {
+            if (state == PlayModeStateChange.ExitingEditMode)
+                SessionState.SetBool(DevicePlayTransitionExitingEditModeObservedKey, true);
         }
 
         static string CreateOwnedDeviceTransitionAssetFolder()
@@ -2182,7 +2188,7 @@ namespace ViewWeave.BridgeEditorPreviewValidation
         static IEnumerator WaitForDevicePreviewStop(
             ViewWeaveBridgeSession session,
             BridgeWorkerQuiltOutput sourceOutput,
-            Func<bool> exitingEditModeObserved)
+            bool exitingEditModeObserved)
         {
             const double timeoutSeconds = 30.0;
             double startedAt = EditorApplication.timeSinceStartup;
@@ -2196,7 +2202,7 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                 if (elapsed >= nextLogAt - startedAt)
                 {
                     Debug.Log("EDITOR_PREVIEW_DEVICE_STOP_WAIT elapsed=" + elapsed.ToString("F1", System.Globalization.CultureInfo.InvariantCulture) +
-                        ", " + DescribeDevicePreviewStopState(session, sourceOutput, exitingEditModeObserved()));
+                        ", " + DescribeDevicePreviewStopState(session, sourceOutput, exitingEditModeObserved));
                     nextLogAt += 5.0;
                 }
                 yield return null;
@@ -2205,7 +2211,7 @@ namespace ViewWeave.BridgeEditorPreviewValidation
             if (!stopped())
             {
                 string diagnostic = "elapsed=" + (EditorApplication.timeSinceStartup - startedAt).ToString("F1", System.Globalization.CultureInfo.InvariantCulture) +
-                    ", " + DescribeDevicePreviewStopState(session, sourceOutput, exitingEditModeObserved());
+                    ", " + DescribeDevicePreviewStopState(session, sourceOutput, exitingEditModeObserved);
                 Debug.Log("EDITOR_PREVIEW_DEVICE_STOP_TIMEOUT " + diagnostic);
                 Assert.Fail("The Edit Mode device producer did not stop and prove its resources before runtime startup. " + diagnostic);
             }

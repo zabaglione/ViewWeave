@@ -52,7 +52,10 @@ namespace ViewWeave.SrpExtensionValidation
                 yield return null;
                 yield return null;
                 fixture.Capture(false);
+                fixture.AssertCustomPassTargetsRestored();
                 fixture.Capture(true);
+                fixture.AssertCustomPassTargetsRestored();
+                fixture.AssertViewScopeRestoresTargetsAfterException();
                 fixture.AssertResult("hdrp-custom-pass");
             }
             finally
@@ -331,7 +334,11 @@ namespace ViewWeave.SrpExtensionValidation
         {
             HD.HDRenderPipelineAsset pipeline;
             HD.CustomPassVolume volume;
+            HD.CustomPassVolume unrelatedTargetVolume;
+            HD.CustomPassVolume globalVolume;
             MarkerCustomPass pass;
+            Camera unrelatedCamera;
+            HdrpQuiltCamera guard;
             protected override string Name => "HDRP";
             protected override string LitShaderName => "HDRP/Lit";
             protected override int ExecutionCount => MarkerCustomPass.ExecutionCount;
@@ -388,7 +395,7 @@ namespace ViewWeave.SrpExtensionValidation
                 data.volumeLayerMask = 1 << 31;
                 data.clearColorMode = HD.HDAdditionalCameraData.ClearColorMode.Color;
                 data.backgroundColorHDR = Color.black;
-                HdrpQuiltCamera guard = cameraObject.AddComponent<HdrpQuiltCamera>();
+                guard = cameraObject.AddComponent<HdrpQuiltCamera>();
                 GameObject volumeObject = new GameObject("HdrpCustomPassVolume");
                 volumeObject.layer = 31;
                 volumeObject.transform.SetParent(Root.transform, false);
@@ -401,7 +408,70 @@ namespace ViewWeave.SrpExtensionValidation
                 pass = volume.AddPassOfType<MarkerCustomPass>();
                 pass.targetColorBuffer = HD.CustomPass.TargetBuffer.Camera;
                 pass.targetDepthBuffer = HD.CustomPass.TargetBuffer.None;
+                var unrelatedCameraObject = new GameObject("UnrelatedCustomPassCamera");
+                unrelatedCameraObject.transform.SetParent(Root.transform, false);
+                Owned.Add(unrelatedCameraObject);
+                unrelatedCamera = unrelatedCameraObject.AddComponent<Camera>();
+                unrelatedCamera.enabled = false;
+                var unrelatedVolumeObject = new GameObject("UnrelatedCustomPassVolume");
+                unrelatedVolumeObject.transform.SetParent(Root.transform, false);
+                Owned.Add(unrelatedVolumeObject);
+                unrelatedTargetVolume = unrelatedVolumeObject.AddComponent<HD.CustomPassVolume>();
+                unrelatedTargetVolume.targetCamera = unrelatedCamera;
+                unrelatedTargetVolume.isGlobal = false;
+                var globalVolumeObject = new GameObject("GlobalCustomPassVolume");
+                globalVolumeObject.transform.SetParent(Root.transform, false);
+                Owned.Add(globalVolumeObject);
+                globalVolume = globalVolumeObject.AddComponent<HD.CustomPassVolume>();
+                globalVolume.isGlobal = true;
+                globalVolume.targetCamera = null;
                 return guard;
+            }
+
+            public void AssertCustomPassTargetsRestored()
+            {
+                Assert.AreSame(Camera, volume.targetCamera, "source-targeted custom pass camera was not restored");
+                Assert.IsTrue(volume.enabled, "source-targeted custom pass volume enabled state changed");
+                Assert.AreSame(unrelatedCamera, unrelatedTargetVolume.targetCamera, "unrelated custom pass target changed");
+                Assert.IsTrue(unrelatedTargetVolume.enabled, "unrelated custom pass volume enabled state changed");
+                Assert.IsNull(globalVolume.targetCamera, "global custom pass target changed");
+                Assert.IsTrue(globalVolume.enabled, "global custom pass volume enabled state changed");
+            }
+
+            public void AssertViewScopeRestoresTargetsAfterException()
+            {
+                var context = new QuiltRenderContext(Camera, Camera, Quilt.settings.GetLayout(),
+                    Quilt.settings, new[] { 0 }, Camera.projectionMatrix);
+                IQuiltRenderSession session = guard.BeginQuiltRender(context);
+                bool observedExpectedException = false;
+                try
+                {
+                    Camera viewCamera = session.GetViewCamera(0);
+                    try
+                    {
+                        using (session.BeginView(viewCamera, 0))
+                        {
+                            Assert.AreSame(viewCamera, volume.targetCamera, "source-targeted custom pass was not retargeted to the isolated view");
+                            Assert.IsTrue(volume.enabled, "source-targeted custom pass volume enabled state changed during the view scope");
+                            Assert.AreSame(unrelatedCamera, unrelatedTargetVolume.targetCamera, "unrelated custom pass target was retargeted");
+                            Assert.IsTrue(unrelatedTargetVolume.enabled, "unrelated custom pass volume enabled state changed");
+                            Assert.IsNull(globalVolume.targetCamera, "global custom pass target was retargeted");
+                            Assert.IsTrue(globalVolume.enabled, "global custom pass volume enabled state changed");
+                            throw new InvalidOperationException("expected custom pass scope exception");
+                        }
+                    }
+                    catch (InvalidOperationException exception)
+                    {
+                        Assert.AreEqual("expected custom pass scope exception", exception.Message);
+                        observedExpectedException = true;
+                    }
+                }
+                finally
+                {
+                    session.Dispose();
+                }
+                Assert.IsTrue(observedExpectedException, "custom pass scope exception was not observed");
+                AssertCustomPassTargetsRestored();
             }
 
             protected override void SetExtensionEnabled(bool enabled)

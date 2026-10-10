@@ -1,12 +1,18 @@
 # Windows validation status
 
+For the narrowly identified Unity shutdown fault at `Unity.dll+0x44383df` and the Windows Bridge standard-handle load-path investigation, see [Windows stdout crash investigation (2026-10-11)](windows-stdout-crash-20261011.md). This dated note supplements the historical records below; it does not resolve unrelated access violations or generalize to other crash buckets.
+
+On revision `2630bf4`, the Windows standard-handle load guard passed the full native CTest suite (15/15) and the transport-only variant (11/11), with UPM distribution checks passing. The focused real-device Editor Preview pause/resume test passed on HDRP/D3D11 and URP/D3D12; live module sampling in the rechecks confirmed the synchronized package shim and official Bridge runtime paths and hashes. See the dated investigation for per-run exit and evidence limits.
+
 > Audience: Unity and rendering developers. This is a dated research or validation record limited to the revision, platform, and conditions stated here; it does not establish support for other configurations. For current support and setup, see [Compatibility](compatibility.md) and [Getting started](getting-started.md). Browse the [Technical guide](technical-guide.md) or [User guide](user-guide.md).
 
 Current shutdown status is summarized in [Shutdown validation](shutdown-validation-20261008.md): the tested URP Garden and HDRP VFX Editor runs completed Play, Stop, one `File > Exit` request, and natural exit code 0. The earlier access violations remain in the historical record with unknown causes; successful current fixtures do not establish that those incidents were fixed.
 
 This document records the current Windows validation boundary. The 123-test D3D11 PlayMode run used an older package snapshot and predates the current VFX color-space guard and Editor Play / HDRP template adaptations; keep its results separate from current D3D12 integration evidence.
 
-The HDRP and URP defaults changed to isolated per-view histories. The current implementations have been exercised in bounded Metal Editor/Player fixtures, but no Windows D3D11, D3D12, or Windows Player run has validated these new history paths. Older Windows measurements in this document belong to prior package snapshots/shared-camera behavior and are not evidence for the current defaults. URP Quilt TAA now uses public `Camera.Render()` rather than `StandardRequest`; its Windows execution is a new validation gate. See the [URP history validation](urp-view-history-validation-20261011.md).
+The HDRP and URP defaults changed to isolated per-view histories. On revision `62d0e0c` with local fixes, selected URP/HDRP Editor PlayMode suites passed 22/22 on both D3D11 and D3D12, and the HDRP D3D11 device pause/resume EditMode test passed 1/1. Windows Player validation and direct checks of URP TAA history accumulation and view separation remain unperformed. Older Windows measurements in this document belong to prior package snapshots/shared-camera behavior and are not evidence for the current defaults. URP Quilt TAA now uses public `Camera.Render()` rather than `StandardRequest`; direct Windows validation of its history path remains a gate. See the [URP history validation](urp-view-history-validation-20261011.md).
+
+Follow-up Windows validation on fetched revision `62d0e0c` initially found two HDRP PlayMode fixture failures on both D3D11 and D3D12. With the local HDRP history-renderer and fixture synchronization changes documented in the [dated stdout investigation](windows-stdout-crash-20261011.md#post-fix-verification-on-the-same-fetched-revision), the same selected 22-case PlayMode set passed 22/22 on both APIs, and the focused HDRP device pause/resume EditMode test passed 1/1 on D3D11. This covers those fixtures on Editor hardware only; Windows Players, URP Quilt TAA, and exhaustive optical correctness remain unverified.
 
 ## HDRP isolated-view history validation (2026-10-10)
 
