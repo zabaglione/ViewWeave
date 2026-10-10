@@ -12,6 +12,20 @@
 
 Quick StartのSample sceneはWindows上で再検証していません。特定のprojectや機器で利用する前に、以下の経路別条件と[日付付きWindows／macOS記録](technical-guide.md)を確認してください。あらゆるUnity構成、effect、displayへの対応を保証するものではありません。
 
+## 現在の開発版の確認範囲
+
+現在は実験的な開発版です。現在のpackage・Sampleと過去の限定試験を区別してください。
+
+| 範囲 | 確認済み | 未検証・制限 |
+| --- | --- | --- |
+| URP/HDRP Quick Start Sample | ローカルからUPM Importし、macOS MetalのEditor Previewと短時間のPlayをGoで確認。向き・立体感、HDRPの明るさをユーザーが確認。 | このSampleのWindowsでのGit/UPM導入、D3D11/D3D12実機出力、Playerビルド。[Quick Start記録](../quick-start-validation-20261010.md)を参照。 |
+| 現在同梱するWindows DLL | fake Bridge callbackとWARP/test adapterを用いた限定native test 6件が通過。 | このDLLそのもののUnity runtime統合、公式Bridge接続、実機表示。過去のEditor/Player試験や非公開の比較版は現在のartifactを検証したものではありません。[来歴](../../Packages/com.zabaglione.lookingglass.viewweave.bridge/Plugins/native-provenance.json)を参照。 |
+| macOS runtime | Apple Silicon／GoのEditor試験とURP診断Playerの限定試験。 | Quick StartのPlayer、HDRP Player、Intel runtime、他機器・校正、長時間運用、全視点の光学・色測定、通常のウィンドウ終了やEditor終了時のGPU回収。 |
+| 配布・導入 | 生成配布物とローカルpackageのImportを確認。 | 公開後の認証なしのGit導入とクリーンな利用者環境での導入。同梱macOS shimはリンカーによるad hoc署名で、Developer ID署名ではありません。公証と利用者環境のGatekeeper受入は未検証です。 |
+| 外部権利・来歴 | 固定した公開Unity PluginAPIのライセンス通知全文を同梱。macOSヘッダのハッシュを記録。公式Bridge runtimeは別途導入。 | インストール版Windows Unity PluginAPIの個別ヘッダのハッシュ・通知は保持されていません。Bridgeの商用利用・再配布条件は利用者の契約によります。[第三者ライセンス表記](THIRD_PARTY_NOTICES.md)を参照。 |
+
+以降の過去の失敗や未解決のVFX・終了処理は、それぞれ記載した試験条件での結果です。ビルド成功やローカルQuilt描画を、実機の光学品質や一般的な対応の証明とは扱いません。
+
 ## 技術的な証跡と日付付き記録
 
 以下の実装詳細と個別試験結果は、記載したrevision、fixture、機器、条件に限られます。一般的な対応保証ではなく、個別の証跡として参照してください。

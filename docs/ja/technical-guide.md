@@ -17,6 +17,8 @@
 
 ## 検証と性能の記録
 
+- [公開準備と残る確認（英語）](../publication-readiness.md)には、ライセンス通知の同梱、未確認の来歴・導入、過去のCI artifactについて記載しています。
+
 以下は日付または条件を限定した記録であり、一般的な対応保証ではありません。現在の対応範囲は[対応表](compatibility.md)で確認してください。
 
 - Windows: [Windows検証](../windows-validation.md)、[終了処理の検証](../shutdown-validation-20261008.md)、[Native終了trace](../native-shutdown-trace.md)、[残作業の検証記録](../benchmarks/remaining-work-validation-20261007.md)。

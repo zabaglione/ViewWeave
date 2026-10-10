@@ -857,5 +857,17 @@
     "nativeTestsPassed": 6,
     "nativeTestsTotal": 6,
     "hardwareValidation": "not performed"
+  },
+  "licenseScope": "Apache-2.0 applies to original ViewWeave code only; external Unity PluginAPI declarations and the separately installed Bridge runtime have separate terms.",
+  "unityPluginApiProvenance": {
+    "source": "Installed Unity 6000.6.4f1 PluginAPI, as recorded at build time",
+    "headerSha256": null,
+    "fileSpecificNoticesVerified": false,
+    "verificationLimit": "Individual build header hashes and file-specific notices were not retained. No equivalence to the pinned public NativeRenderingPlugin headers is asserted.",
+    "thirdPartyNotice": "../NOTICE.md",
+    "licenseFiles": [
+      "../ThirdPartyLicenses/Unity-Companion-License.txt",
+      "../ThirdPartyLicenses/Unity-NativeRenderingPlugin-MIT.txt"
+    ]
   }
 }

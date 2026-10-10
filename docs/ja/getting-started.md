@@ -33,7 +33,7 @@ Sampleには黒い背景、赤いCube、青いSphere、黄色いCapsule、カメ
 | URP | `https://github.com/zabaglione/ViewWeave.git?path=/Distribution/urp#main` |
 | HDRP | `https://github.com/zabaglione/ViewWeave.git?path=/Distribution/hdrp#main` |
 
-配布packageにはCore、Bridge、選択したパイプラインが含まれます。同じプロジェクトに両版を入れないでください。private repositoryへのアクセスにはGitHubの権限とGit認証が必要です。認証tokenをURLへ埋め込まないでください。
+配布packageにはCore、Bridge、選択したパイプラインが含まれます。同じプロジェクトに両版を入れないでください。公開されたGitHubリポジトリはGitHub認証なしで取得できます。アクセス制限のあるコピーを使う場合はリポジトリの権限とGit認証が必要です。認証tokenをURLへ埋め込まないでください。
 
 更新後はEditorを正常終了し、再起動してnative pluginを読み込み直します。`#main`は開発版です。revisionを固定する場合はcommit hashやtagを指定します。更新方法とnative pluginが切り替わらない場合の対処は[package更新](../bridge-package-update-safety.md)と[更新時のトラブル](../native-plugin-update-troubleshooting.md)を参照してください。
 
@@ -115,5 +115,7 @@ FullからQuarterへ変えると、重いシーンではフレームレートが
 ## Playerをbuildする
 
 シーンを保存し、**File > Build Profiles**へ追加します。macOSはMetal、WindowsはDX11またはDX12でビルドします。Sampleは自動起動をオフにしているため、Playerへ表示する場合は、Rigの**Bridge**で**Start Output On Enable**（Metal）または**Start Session On Enable**（Windows）を有効にしてから保存・ビルドしてください。OSを変えたときは、選択された出力側の起動設定とOutput Qualityを再確認します。
+
+これはビルド手順であり、Quick Start SampleのPlayer動作を確認した結果ではありません。このSampleのPlayerビルド、WindowsでのUPM導入と実機出力は未検証です。macOSの確認はローカルpackageをImportしたEditorで行っており、公開後の認証なしのGit導入は未確認です。ネイティブ署名や実機の制限を含む現在の確認範囲は、[対応表](compatibility.md#現在の開発版の確認範囲)を参照してください。
 
 表示できない場合は[対応表](compatibility.md)と[macOS Metalガイド](macos-metal.md)を確認してください。設計、性能測定、テストプロジェクト、検証記録は[技術者向けガイド](technical-guide.md)にまとめています。

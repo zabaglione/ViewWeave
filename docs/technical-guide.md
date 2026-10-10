@@ -14,6 +14,7 @@
 - [macOS Metal guide](macos-metal.md) describes the dedicated Looking Glass Go path and its setup boundaries.
 - [Bridge package](../Packages/com.zabaglione.lookingglass.viewweave.bridge/README.md), [URP package](../Packages/com.zabaglione.lookingglass.viewweave.urp/README.md), and [HDRP package](../Packages/com.zabaglione.lookingglass.viewweave.hdrp/README.md) explain the source packages and their relationship to the self-contained distributions.
 - [Bridge Editor package update safety](bridge-package-update-safety.md) records the managed/native update boundary.
+- [Publication preparation](publication-readiness.md) lists the license-notice packaging and remaining provenance, installation, and artifact checks before a public release.
 
 ## Validation and performance records
 

@@ -147,15 +147,26 @@
     "Native/tests/unsupported_shim_abi_test.cpp": "6115552bce9d8cb909f354f149f5e2a3dd9bee00e2a6bca8f32a8e4dac044546",
     "Native/tests/worker_transport_test.cpp": "ea64aefcd7696acc09e549fe6145249abec64b56cec6eefc83f6fe5b40002e84"
   },
+  "originalCodeLicense": "Apache-2.0",
   "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
   "python": "3.15.0",
+  "thirdPartyNotice": "../../NOTICE.md",
   "unityNativeRenderingPlugin": {
     "commit": "522254181faf188efa8b50c3e3bf6fce720b26e4",
+    "headerLicenseNotices": {
+      "IUnityGraphics.h": "Unity Companion License",
+      "IUnityGraphicsMetal.h": "Repository-level MIT notice; includes UCL IUnityInterface.h",
+      "IUnityInterface.h": "Unity Companion License"
+    },
     "headerSha256": {
       "IUnityGraphics.h": "e95a8ac359897b5746494db84ae594d6f59f3709c2ec20bd869d592ed4bbf4f7",
       "IUnityGraphicsMetal.h": "b328b3fee4f25d1de9d21d08dcdf4e6f10293a099a773c9914765f1325062cf7",
       "IUnityInterface.h": "e23e267b57c049b438307542d62c30fbcd3fa77b6dac3b08842eae0df10b8239"
     },
+    "licenseFiles": [
+      "../../ThirdPartyLicenses/Unity-Companion-License.txt",
+      "../../ThirdPartyLicenses/Unity-NativeRenderingPlugin-MIT.txt"
+    ],
     "providedPath": "${UNITY_PLUGIN_API_DIR}",
     "repository": "https://github.com/Unity-Technologies/NativeRenderingPlugin",
     "source": "provided"

@@ -12,6 +12,20 @@
 
 The Quick Start sample scene has not been revalidated on Windows. Check the route-specific conditions below and in the [dated Windows and macOS records](technical-guide.md) before relying on a particular project or device. These conditions do not promise support for every Unity configuration, effect, or display.
 
+## Current development version validation
+
+This is an experimental development version. Distinguish the current packages and Samples from historical test fixtures:
+
+| Scope | Confirmed | Unverified or limited |
+| --- | --- | --- |
+| URP/HDRP Quick Start Samples | Local UPM import, macOS Metal Editor Preview and bounded Play checks on Looking Glass Go; the user accepted orientation, depth, and HDRP brightness. | Windows Git/UPM import, D3D11/D3D12 device output, and Player builds of these Samples. See the [Quick Start record](quick-start-validation-20261010.md). |
+| Current packaged Windows DLL | Six focused native tests passed with fake Bridge callbacks and WARP/test adapters. | Unity runtime integration, official Bridge and physical-display output for this exact DLL. Older Windows Editor/Player fixtures and private candidates do not validate the current artifact. See its [provenance](../Packages/com.zabaglione.lookingglass.viewweave.bridge/Plugins/native-provenance.json). |
+| macOS runtime | Dedicated Apple Silicon / Go Editor and URP diagnostic Player fixtures passed bounded tests. | Quick Start Players, HDRP Player, Intel runtime, other displays/calibrations, prolonged operation, exhaustive optical/color checks, and ordinary window-close/Editor-quit GPU proof. |
+| Distribution and installation | Generated distributions and local package imports were checked. | Anonymous Git installation after public access is enabled and clean end-user installation. The macOS shim has an ad hoc linker signature, not a Developer ID signature; notarization and end-user Gatekeeper acceptance are unverified. |
+| External rights and provenance | Full notices for the pinned public Unity PluginAPI reference are included; macOS header hashes are recorded. Official Bridge runtime is not bundled. | Exact individual header hashes/notices of the installed Windows Unity PluginAPI were not retained. Bridge commercial-use and redistribution rights depend on the user's applicable agreement. See [Third-Party Notices](THIRD_PARTY_NOTICES.md). |
+
+Historical failures and unresolved VFX/shutdown conditions below remain applicable to their stated fixtures. Compiling successfully or rendering a local Quilt does not establish physical optical quality or general support.
+
 ## Technical evidence and dated records
 
 The implementation details and individual test results below apply only to the stated revisions, fixtures, devices, and conditions. Use them as evidence, not as general guarantees.

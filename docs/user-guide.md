@@ -6,7 +6,7 @@
 
 ## Install and open a sample
 
-Use Unity 6000.6.4f1 with a URP or HDRP project. The repository is private, so GitHub access is required. Install one self-contained package from Package Manager:
+Use Unity 6000.6.4f1 with a URP or HDRP project. Install one self-contained package from **Package Manager > + > Install package from git URL**:
 
 - URP: `https://github.com/zabaglione/ViewWeave.git?path=/Distribution/urp#main`
 - HDRP: `https://github.com/zabaglione/ViewWeave.git?path=/Distribution/hdrp#main`

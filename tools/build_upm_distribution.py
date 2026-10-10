@@ -167,21 +167,35 @@ def build(kind: str, target: Path) -> None:
     quick_start = "Samples~/QuickStart" + kind.upper()
     copy_component(bridge, target, quick_start, quick_start)
 
-    # Keep the repository license and a plain attribution record at the package root.
+    # Provenance references are relative to each JSON file, also after flattening.
+    plugins = target / "ViewWeave/Bridge/Plugins"
+    for relative, key, prefix in (
+        ("native-provenance.json", "unityPluginApiProvenance", "../../../"),
+        ("macOS/native-provenance.json", "unityNativeRenderingPlugin", "../../../../"),
+    ):
+        path = plugins / relative
+        data = json.loads(path.read_text(encoding="utf-8"))
+        notice = data if relative.startswith("macOS/") else data[key]
+        notice["thirdPartyNotice"] = prefix + "NOTICE.md"
+        data[key]["licenseFiles"] = [
+            prefix + "ThirdPartyLicenses/Unity-Companion-License.txt",
+            prefix + "ThirdPartyLicenses/Unity-NativeRenderingPlugin-MIT.txt",
+        ]
+        path.write_text(json.dumps(data, indent=2, sort_keys=relative.startswith("macOS/")) + "\n", encoding="utf-8")
+
+    # Keep original-code and external PluginAPI notices at the package root.
     shutil.copy2(ROOT / "LICENSE", target / "LICENSE")
-    write_text(
-        target / "NOTICE.md",
-        "ViewWeave distribution notice\n\n"
-        "This package is generated from the ViewWeave repository. The bundled native bridge "
-        "Windows artifact and its source hashes are documented in ViewWeave/Bridge/Plugins/native-provenance.json; "
-        "the macOS artifact is documented in ViewWeave/Bridge/Plugins/macOS/native-provenance.json.\n",
-    )
+    shutil.copy2(bridge / "NOTICE.md", target / "NOTICE.md")
+    copy_component(bridge, target, "ThirdPartyLicenses", "ThirdPartyLicenses")
     notices_path = target / "THIRD_PARTY_NOTICES.md"
     shutil.copy2(ROOT / "docs/THIRD_PARTY_NOTICES.md", notices_path)
     notices_text = notices_path.read_text(encoding="utf-8")
     notices_text = notices_text.replace(
         "[Japanese](ja/THIRD_PARTY_NOTICES.md)",
         "[Japanese](THIRD_PARTY_NOTICES.ja.md)",
+    )
+    notices_text = notices_text.replace("../LICENSE", "LICENSE").replace(
+        "../Packages/com.zabaglione.lookingglass.viewweave.bridge/", "",
     )
     write_text(notices_path, notices_text)
     notices_ja_source = ROOT / "docs/ja/THIRD_PARTY_NOTICES.md"
@@ -190,6 +204,9 @@ def build(kind: str, target: Path) -> None:
     notices_ja_text = notices_ja_text.replace(
         "[English](../THIRD_PARTY_NOTICES.md)",
         "[English](THIRD_PARTY_NOTICES.md)",
+    )
+    notices_ja_text = notices_ja_text.replace("../../LICENSE", "LICENSE").replace(
+        "../../Packages/com.zabaglione.lookingglass.viewweave.bridge/", "",
     )
     write_text(notices_ja_path, notices_ja_text)
     write_file_meta(
@@ -203,6 +220,10 @@ def build(kind: str, target: Path) -> None:
         "    https://github.com/zabaglione/ViewWeave.git?path=/Distribution/" + kind + "#main\n\n"
         "Use Unity 6000.6.4f1 with the matching Unity " + kind.upper() + " render pipeline. "
         "Install and start the official Looking Glass Bridge runtime and connect your display.\n\n"
+        "This is an experimental development version. Local imports and macOS Metal Editor output on Looking Glass Go "
+        "were checked. Windows UPM import, D3D11/D3D12 output and Player builds of the Quick Start Sample are unverified. "
+        "The current Windows DLL has focused native-test evidence only; older Windows fixtures do not validate this artifact's physical output. "
+        "Anonymous Git installation after public access is enabled is unverified.\n\n"
         "## Quick Start\n\n"
         "1. In Package Manager, select this package and import **" + kind.upper() + " Quick Start** from **Samples**.\n"
         "2. Open **QuickStart.unity**. The scene selects Metal or Windows D3D11/D3D12 automatically.\n"
@@ -214,6 +235,10 @@ def build(kind: str, target: Path) -> None:
         "macOS output targets Apple Silicon, macOS 26.0 or later, Metal and Looking Glass Go in Desktop Mode. "
         "Windows Bridge Worker output uses D3D11/D3D12. "
         "See [Compatibility](https://github.com/zabaglione/ViewWeave/blob/main/docs/compatibility.md) for tested scope and limitations.\n\n"
+        "ViewWeave's original code is Apache-2.0. [Native plugin notices](NOTICE.md) and "
+        "[Third-Party Notices](THIRD_PARTY_NOTICES.md) describe separate Unity PluginAPI and Bridge terms. "
+        "Full Unity license texts are included in ThirdPartyLicenses. The macOS shim is ad hoc signed; "
+        "Developer ID signing, notarization and end-user Gatekeeper acceptance are unverified.\n\n"
         "[User guide and illustrated setup](https://github.com/zabaglione/ViewWeave/blob/main/docs/user-guide.md) "
         "| [Technical guide](https://github.com/zabaglione/ViewWeave/blob/main/docs/technical-guide.md) "
         "| [日本語](https://github.com/zabaglione/ViewWeave/blob/main/docs/ja/user-guide.md)\n",

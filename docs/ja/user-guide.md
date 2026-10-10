@@ -6,7 +6,7 @@
 
 ## InstallしてSampleを開く
 
-Unity 6000.6.4f1のURPまたはHDRP projectを使います。このrepositoryはprivateのため、GitHubのアクセス権が必要です。Package Managerからpipelineに合うpackageを一つ追加してください。
+Unity 6000.6.4f1のURPまたはHDRPプロジェクトを使います。**Package Manager > + > Install package from git URL**から、パイプラインに合うpackageを一つ追加してください。
 
 - URP: `https://github.com/zabaglione/ViewWeave.git?path=/Distribution/urp#main`
 - HDRP: `https://github.com/zabaglione/ViewWeave.git?path=/Distribution/hdrp#main`

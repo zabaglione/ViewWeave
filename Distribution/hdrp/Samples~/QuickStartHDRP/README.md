@@ -10,7 +10,7 @@ This sample includes a configured ViewWeave Rig, colored primitives, and looping
 2. Open `QuickStart.unity` from the imported sample.
 3. Select **ViewWeave Bridge Rig** and start **Preview > Start Looking Glass Device Preview**. Without a display, choose **Start Local Edit Mode Preview**.
 
-Device output requires the official Looking Glass Bridge runtime and a connected display. Platform-specific requirements and tested scope are listed in [Compatibility](https://github.com/zabaglione/ViewWeave/blob/main/docs/compatibility.md). The Windows Quick Start scene has not been validated.
+Device output requires the official Looking Glass Bridge runtime and a connected display. Platform-specific requirements and tested scope are listed in [Compatibility](https://github.com/zabaglione/ViewWeave/blob/main/docs/compatibility.md). This Sample was checked through local UPM import in the macOS Metal Editor on Go. Windows UPM import, Windows D3D11/D3D12 output, and Player builds of this Sample are unverified.
 
 The scene's **Focus Target** is an Editor-only selection. The applied focus distance is stored in the scene. **Full** renders more viewpoints; **Quarter** can reduce GPU work but show larger changes as you move sideways. **Output Quality** changes resolution independently. Edit Mode Preview shows a static scene; press **Play** to run its Animator clips. To send the animation to a connected display, explicitly choose **Bridge > Start Output**. Output does not start automatically; the sample helper only selects the platform output component.
 

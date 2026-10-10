@@ -17,3 +17,7 @@ Import **URP Quick Start** or **HDRP Quick Start** from the matching distributio
 Edit Mode Preview is static. To show the animated sample during Play on a connected display, explicitly choose **Bridge > Start Output**. The sample helper selects the platform output component but does not start it.
 
 The optional **Windows URP Lit** and **Windows HDRP Lit** samples remain available for their existing Bridge demonstration workflow. For installation and everyday operation, use the repository [README](../../README.md) and [User Guide](../../docs/user-guide.md).
+
+## License scope
+
+Original ViewWeave code is Apache-2.0. The compiled native shims use external Unity PluginAPI declarations; [NOTICE.md](NOTICE.md) and the full texts in ThirdPartyLicenses distinguish those rights. The official Bridge runtime is installed separately under its own agreement. Quick Start Player builds and Windows UPM/device checks are unverified; [Compatibility](../../docs/compatibility.md#current-development-version-validation) separates current artifact evidence from older fixtures.

@@ -81,11 +81,18 @@ jobs:
         run: cmake --build Native/build-macos-metal-ci --config Release --parallel
       - name: Run macOS Metal native tests
         run: ctest --test-dir Native/build-macos-metal-ci -C Release --output-on-failure
+      - name: Stage macOS shim with license notices
+        run: |
+          mkdir -p Native/build-macos-metal-ci/artifact/ThirdPartyLicenses
+          cp Native/build-macos-metal-ci/liblookingglass_bridge_shim.dylib Native/build-macos-metal-ci/artifact/
+          cp LICENSE Native/build-macos-metal-ci/artifact/
+          cp Packages/com.zabaglione.lookingglass.viewweave.bridge/NOTICE.md Native/build-macos-metal-ci/artifact/
+          cp Packages/com.zabaglione.lookingglass.viewweave.bridge/ThirdPartyLicenses/*.txt Native/build-macos-metal-ci/artifact/ThirdPartyLicenses/
       - name: Preserve macOS shim artifact
         if: success()
         uses: actions/upload-artifact@v4
         with:
           name: native-macos-metal-shim
-          path: Native/build-macos-metal-ci/liblookingglass_bridge_shim.dylib
+          path: Native/build-macos-metal-ci/artifact/
           if-no-files-found: error
           retention-days: 7
