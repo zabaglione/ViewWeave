@@ -9,7 +9,13 @@
 | 表示プロファイル、固定幅の表示情報ABI、探索の優先順位 | `Runtime/Common` | `Native/common` |
 | macOS探索、Metal転送・表示、GPUリソースの終了処理 | `Runtime/Platforms/Metal`、`Editor/Platforms/Metal` | `Native/platform/macos` |
 | Windows探索、DX11/DX12 Worker、従来のDX11出力、再生・プレビュー・回復 | `Runtime/Platforms/Windows`、`Editor/Platforms/Windows` | `Native/platform/windows` |
-| Rig作成と使用するバックエンドの選択 | `Editor/Common` | CMakeでソースを選択 |
+| Rig作成、Inspectorと編集UI、出力制御の振り分け、表示設定の取得 | `Editor/Common` | CMakeでソースを選択 |
+
+ユーザー向け設定の入口は、すべてのOSで`ViewWeave Rig`にまとめます。カメラ、フォーカス、フレーミング、描画、Capture、描画パイプライン設定は共通UIに置きます。Quality、接続設定、開始・停止、状態表示も同じUIから操作し、接続されたバックエンドが実装と操作可否を提供します。別コンポーネントは転送処理、描画アダプター、独立した作業画面が必要なツールに使います。
+
+InspectorとRig Authoringウィンドウは共通の`ViewWeaveRigInspectorUI`を使用します。共通部分が編集操作を持ち、WindowsとMetalのpartialが出力固有の操作を担当します。`BridgeEditorDisplaySettings`が表示プロファイルの取得先を一本化し、現在の出力へ振り分けます。asmdefと既存GUIDは維持します。UIの振り分けは接続されたコンポーネントを基準にし、EditorのOSだけを理由に設定を隠しません。シーンをOS間で移動しても、保存済みのバックエンドは自動交換されません。
+
+MetalのQualityと接続設定は、出力を停止しGPU資源の回収が終わってから変更します。Windowsの実行中Quality変更は維持します。Metalでも実行中のフレーミング、視点の間引き、Auto Renderの停止・再開を操作できます。録画中は共通の所有権で設定を保護します。Metal出力の停止時には、そのRendererの録画を終了してからローカル設定を復元します。Edit Mode PreviewとQuilt PlaybackはWindows側の機能で、Metal UIでは未対応と明示します。
 
 `BridgeRuntimeLocator`は「明示パス → 環境変数 → 自動探索」の優先順位を共通化しています。EditorではホストOS、Playerでは対象OSで処理を選びます。DLLの検証とレジストリ探索はWindows側、dylibとアプリの探索はmacOS側にあります。
 

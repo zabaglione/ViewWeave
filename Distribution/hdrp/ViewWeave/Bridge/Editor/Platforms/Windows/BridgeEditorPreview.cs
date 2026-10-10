@@ -57,7 +57,7 @@ namespace ViewWeave.Editor
 
         static BridgeEditorPreview()
         {
-            QuiltDisplaySettingsResolver.RegisterProvider(ResolveDisplayProfile);
+            QuiltDisplaySettingsResolver.RegisterProvider(BridgeEditorDisplaySettings.ResolveDisplayProfile);
             _ = QuiltRenderer.EditorPreviewRenderCallbackTrackingReady;
             BridgeEditorPreviewRetention.ResetProofsAfterDomainReload();
             BridgeEditorPreviewRetention.RegisterEditorCallbacks(StopForLifecycle, DetachRetainedProducer);
@@ -1205,7 +1205,7 @@ namespace ViewWeave.Editor
             }
         }
 
-        static bool ResolveDisplayProfile(QuiltRenderer renderer, out QuiltEditorDisplayProfile profile)
+        internal static bool ResolveDisplayProfile(QuiltRenderer renderer, out QuiltEditorDisplayProfile profile)
         {
             profile = default;
             if (renderer == null) return false;

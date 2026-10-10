@@ -599,6 +599,7 @@ namespace ViewWeave.RigCameraCreationValidation
         {
             GameObject rigObject = new GameObject("Inspector Focus Modes Rig");
             UnityEditor.Editor editor = null;
+            InspectorTestHostWindow window = null;
             try
             {
                 ViewWeaveRig rig = rigObject.AddComponent<ViewWeaveRig>();
@@ -612,6 +613,9 @@ namespace ViewWeave.RigCameraCreationValidation
                 };
                 editor = UnityEditor.Editor.CreateEditor(rig, typeof(ViewWeaveRigInspector));
                 VisualElement root = editor.CreateInspectorGUI();
+                window = ScriptableObject.CreateInstance<InspectorTestHostWindow>();
+                window.Show();
+                window.rootVisualElement.Add(root);
                 Foldout cameraFoldout = root.Q<Foldout>("cameraAndFocus");
                 Toggle physicalToggle = root.Q<Toggle>("physicalFramingEnabled");
                 Button focusButton = root.Query<Button>().ToList().Find(button => button.text == "Set Focus From Target Center");
@@ -638,6 +642,7 @@ namespace ViewWeave.RigCameraCreationValidation
             }
             finally
             {
+                if (window != null) window.Close();
                 if (editor != null) Object.DestroyImmediate(editor);
                 Object.DestroyImmediate(rigObject);
             }

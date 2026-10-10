@@ -85,7 +85,33 @@ namespace ViewWeave
             { Fail("Metal presentation failed (code " + status.error + ")"); return; }
             if (rig == null || rig.Renderer == null || !rig.HasOutputBinding(this))
             { Fail("Metal output lost its ViewWeaveRig binding"); return; }
+            if (!string.IsNullOrEmpty(GetPhysicalOutputError())) { Fail(GetPhysicalOutputError()); return; }
             if (!string.IsNullOrEmpty(rig.Renderer.LastAutoRenderError)) Fail(rig.Renderer.LastAutoRenderError);
+        }
+
+        public bool CanChangeConfiguration(out string error)
+        {
+            error = string.Empty;
+            if (IsRunning || IsClosing || PendingRetirementCount != 0)
+            {
+                error = "Stop Metal output and wait for GPU retirement before changing quality or transport.";
+                return false;
+            }
+            ViewWeaveRig ownerRig = rig != null ? rig : GetComponent<ViewWeaveRig>();
+            return ownerRig == null || ownerRig.Renderer == null ||
+                ownerRig.Renderer.TryCheckMutation(QuiltRendererMutationKind.Quality, out error);
+        }
+
+        public bool TrySetQuality(QuiltQualityPreset value, out string error)
+        {
+            if (!Enum.IsDefined(typeof(QuiltQualityPreset), value))
+            {
+                error = "Output quality is invalid.";
+                return false;
+            }
+            if (!CanChangeConfiguration(out error)) return false;
+            quality = value;
+            return true;
         }
 
         [ContextMenu("Start Metal Output")]
@@ -111,6 +137,7 @@ namespace ViewWeave
                 return Fail("Unsupported Metal display ABI");
             if (rig == null) rig = GetComponent<ViewWeaveRig>();
             if (rig == null) return Fail("A ViewWeaveRig is required");
+            if (!Enum.IsDefined(typeof(QuiltQualityPreset), quality)) return Fail("Output quality is invalid.");
             if (!rig.ValidateRig(out string rigError)) return Fail("Invalid ViewWeaveRig: " + rigError);
             if (!BridgeRuntimeLocator.TryResolve(runtimePath, out string path, out string error)) return Fail(error);
             if (rig.Renderer.IsRendering || !QuiltRendererMutationPolicy.TryCheck(rig.Renderer,
@@ -120,13 +147,17 @@ namespace ViewWeave
             rig.AutoRender = false;
             try
             {
-                mutationOwner = QuiltRendererMutationPolicy.RegisterOwner(rig.Renderer, this,
-                    request => request.Kind == QuiltRendererMutationKind.Framing ? null : "Stop Metal output before changing the Rig configuration", out error);
+                mutationOwner = QuiltRendererMutationPolicy.RegisterOwner(rig.Renderer, this, GetMutationBlockReason, out error);
                 if (mutationOwner == null) return Fail(error);
                 session = Native.lkg_metal_display_open(path, applicationName, displayOrdinal, out NativeDisplay display);
                 if (session == 0) return Fail(Marshal.PtrToStringAnsi(Native.lkg_metal_display_error()) ?? "Metal window could not be opened");
-                Profile = new BridgeDisplayProfile(display.display);
+                Profile = new BridgeDisplayProfile(display.display, new BridgeNative.PhysicalDisplayInfoV1
+                {
+                    pixelWidth = display.display.width, pixelHeight = display.display.height,
+                    dpi = display.dpi, valid = 1
+                });
                 if (!Profile.IsValid) return Fail("Invalid Looking Glass display profile");
+                if (!string.IsNullOrEmpty(GetPhysicalOutputError())) return Fail(GetPhysicalOutputError());
                 QuiltQualityProfile profile = QuiltQualityProfile.FromScaled(Profile.QuiltWidth, Profile.QuiltHeight,
                     Profile.Columns, Profile.Rows, Profile.Aspect, Profile.Viewcone,
                     quality == QuiltQualityPreset.Preview ? 0.25f : quality == QuiltQualityPreset.Balanced ? 0.5f : 1f);
@@ -192,6 +223,9 @@ namespace ViewWeave
             if (closing != 0) closingSession = closing;
             try
             {
+                if (snapshotCaptured && rig != null && rig.Renderer != null)
+                    foreach (QuiltRecorder recorder in FindObjectsByType<QuiltRecorder>(FindObjectsInactive.Include))
+                        if (recorder.Renderer == rig.Renderer && recorder.IsRecording) recorder.CancelRecording();
                 if (rig != null && mutationOwner != null) rig.SetAutoRenderForBridgeOwner(false, this, out _);
                 if (closing != 0) Native.lkg_metal_display_close(closing);
             }
@@ -226,6 +260,33 @@ namespace ViewWeave
         internal static bool NativeFramePending(ulong id)
         {
             return id != 0 && Native.lkg_metal_display_status(id, out NativeStatus value) == 0 && value.pending != 0;
+        }
+
+        string GetPhysicalOutputError()
+        {
+            QuiltPhysicalFraming physical = rig == null || rig.Renderer == null ? null : rig.Renderer.physicalFraming;
+            if (physical == null || !physical.enabled) return string.Empty;
+            if (!rig.Renderer.TryGetEffectiveSettings(out _, out string error))
+                return "Physical framing became invalid: " + Sanitize(error);
+            return Profile.IsValid && !Profile.MatchesPhysicalAspect(physical.visibleApertureWidthMillimeters, physical.visibleApertureHeightMillimeters)
+                ? "Physical aperture aspect does not match the connected display profile." : string.Empty;
+        }
+
+        string GetMutationBlockReason(QuiltRendererMutationRequest request)
+        {
+            if (!IsRunning || !Profile.IsValid) return "Metal output is starting or stopping.";
+            if (request.Kind == QuiltRendererMutationKind.Framing)
+            {
+                if (request.HasFraming && request.Framing.PhysicalFramingEnabled &&
+                    !Profile.MatchesPhysicalAspect(request.Framing.ApertureWidthMillimeters, request.Framing.ApertureHeightMillimeters))
+                    return "Physical aperture aspect must match the connected display profile.";
+                return string.Empty;
+            }
+            if (request.Kind == QuiltRendererMutationKind.Recording || request.Kind == QuiltRendererMutationKind.SamplingMode)
+                return string.Empty;
+            if (request.Kind == QuiltRendererMutationKind.AutoRender && request.HasBooleanValue)
+                return string.Empty;
+            return "Stop Metal output before changing the Rig configuration.";
         }
 
         bool Fail(string error)

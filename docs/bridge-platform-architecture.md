@@ -9,7 +9,13 @@ The Bridge package separates shared data and orchestration from platform transpo
 | Shared profile, fixed-width metadata ABI, runtime-path precedence | `Runtime/Common` | `Native/common` |
 | macOS discovery, Metal producer/presenter and GPU retirement | `Runtime/Platforms/Metal`, `Editor/Platforms/Metal` | `Native/platform/macos` |
 | Windows discovery, D3D11/D3D12 worker, legacy D3D11, playback, preview and recovery | `Runtime/Platforms/Windows`, `Editor/Platforms/Windows` | `Native/platform/windows` |
-| Shared Rig creation and backend selection | `Editor/Common` | CMake selects native sources |
+| Shared Rig creation, Inspector and authoring frontend, output-control dispatch, display-settings resolver | `Editor/Common` | CMake selects native sources |
+
+`ViewWeaveRig` is the user-facing configuration entry point on every platform. Camera, focus, framing, rendering, capture, and pipeline settings stay in its common frontend. Quality, connection settings, output actions, and status are also exposed there, with the attached backend providing their implementation and availability. Additional components are used for transport, rendering adapters, or tools that need their own workflow; transport components do not become separate primary settings screens.
+
+The common Inspector and Rig Authoring window share `ViewWeaveRigInspectorUI`. Its common portion owns authoring controls, while the Windows and Metal partials own their output-specific controls. `BridgeEditorDisplaySettings` registers one shared display-profile provider and dispatches to the current output. This preserves the existing assembly boundaries and script GUIDs. Backend selection follows the attached components rather than hiding settings solely by Editor OS. A scene's stored backend is not automatically replaced when moving between operating systems.
+
+Metal currently changes quality and transport while stopped, with GPU retirement completed. Windows retains its live quality reconfiguration. Metal permits live framing, view sampling and Auto Render pause/resume; shared recording leases protect these settings during capture. Output shutdown cancels that renderer's active or paused recording before restoring the local profile. Edit Mode Preview and Quilt Playback remain Windows capabilities and are explicitly unavailable in the Metal frontend.
 
 `BridgeRuntimeLocator` shares explicit-path → environment-variable → automatic-discovery precedence. It dispatches by Editor host OS, or by target OS in a Player. DLL validation and registry discovery belong to Windows; dylib/application discovery belongs to macOS. Common code does not implement either transport.
 

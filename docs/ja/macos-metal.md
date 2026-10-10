@@ -2,9 +2,13 @@
 
 # macOS Metal / Looking Glass Go
 
-Unity **6000.6.4f1**、URP **17.6**、Apple Silicon Mac、Looking Glass Bridgeを使用します。同梱arm64プラグインは**macOS 26.0以降**が必要です。HDRPのmacOS実行は未検証です。GoをDesktop Modeで接続し、**1440×2560の拡張画面**として設定してBridgeを起動してください。
+Unity **6000.6.4f1**、URPまたはHDRP **17.6**、Apple Silicon Mac、Looking Glass Bridgeを使用します。同梱arm64プラグインは**macOS 26.0以降**が必要です。URP／HDRPのテンプレートシーンを使った短時間のEditor Playで、Go出力・録画・停止・再開を確認しています。HDRP Playerと長時間の運用は未検証です。GoをDesktop Modeで接続し、**1440×2560の拡張画面**として設定してBridgeを起動してください。
 
-SceneのCameraを選び、**GameObject > ViewWeave > Bridge Rig**を実行します。macOSでは`BridgeMetalQuiltOutput`が追加されます。Playで出力が開始し、MetalコンポーネントのInspectorにStart／Stopボタンがあります。runtime pathが空なら`/Applications`と`~/Applications`の最新Bridgeを探索します。dylibそのもの、配置ディレクトリ、Bridgeの`.app`、`LKG_BRIDGE_PATH`も指定できます。
+SceneのCameraを選び、**GameObject > ViewWeave > Bridge Rig**を実行します。macOSでは出力を担当する`BridgeMetalQuiltOutput`が追加されます。設定の入口は**ViewWeave Rig**コンポーネントです。**Rendering > Output Quality**で画質を選び、**Bridge**欄で自動開始、runtime path、application name、display ordinal、状態表示、Start／Stopを操作します。出力はPlayで開始します。Qualityや接続設定を変更する前にStop Outputで停止し、GPU資源の回収を待ってから変更・再開してください。runtime pathが空なら`/Applications`と`~/Applications`の最新Bridgeを探索します。dylibそのもの、配置ディレクトリ、Bridgeの`.app`、`LKG_BRIDGE_PATH`も指定できます。
+
+カメラ、Reference Camera、フォーカス、Orbit、物理フレーミング、Quilt Capture、Video Exportは共通のRig UIから操作します。Play中の接続後に**Use Connected Display Size**を使うと、物理フレーミングの有効・無効を変えずに、校正済みの画面寸法をコピーします。物理1:1では開口寸法の縦横比と機器の縦横比が一致している必要があります。Metal出力を止めると、そのRendererの通常録画・一時停止中の録画を終了し、元のローカル設定を復元します。MetalコンポーネントのInspectorは技術診断用です。
+
+Edit ModeのLocal／Device PreviewとQuilt Playbackは現在Windows用で、MetalのRig UIでは未対応と表示します。Play中に生成したQuiltはRigのPreview欄で確認できます。シーンには出力コンポーネントが保存されるため、macOSとWindowsの間で移動してもバックエンドは自動交換されません。
 
 最初の実装はGoの識別子（`LKG-E`）、回転のない画面、subpixel cell tableがない通常RGB校正、cell-pattern mode 0に限定します。未対応の機器・校正・解像度はエラーとして停止します。画質は開始前にPreview／Balanced／Nativeを選びます。Goの66視点を含め、Bridgeが返す全視点のgridを維持します。描画負荷が高いため、まずPreviewで確認してください。
 

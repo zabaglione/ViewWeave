@@ -225,6 +225,12 @@ namespace ViewWeave
             Finish(capturedFrames.Count == requestedFrameCount ? QuiltRecordingStatus.Complete : QuiltRecordingStatus.Cancelled, string.Empty);
         }
 
+        /// <summary>Cancel immediately, including a paused recording or pending audio frame, and release the renderer lease.</summary>
+        public void CancelRecording()
+        {
+            if (IsRecording) Finish(QuiltRecordingStatus.Cancelled, "Recording was cancelled.");
+        }
+
         public void PauseRecording()
         {
             if (Status != QuiltRecordingStatus.Recording) throw new InvalidOperationException("The recorder is not actively recording.");

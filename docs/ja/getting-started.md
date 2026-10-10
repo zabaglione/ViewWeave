@@ -78,10 +78,10 @@ flowchart LR
 
 ## Qualityを変更する
 
-`Rendering`の`Session Quality`は各viewの描画解像度を選びます。`Preview`はprofile解像度の1/4、`Balanced`は1/2、`Native`はprofile本来の解像度です。Qualityを変えてもprofileのview数と`View Render Mode`は変わりません。
+`Rendering`の`Output Quality`は各viewの描画解像度を選びます。`Preview`はprofile解像度の1/4、`Balanced`は1/2、`Native`はprofile本来の解像度です。Qualityを変えてもprofileのview数と`View Render Mode`は変わりません。
 
 1. Rigを選択してInspectorまたは`Window > ViewWeave > Rig Authoring`を開きます。
-2. `Rendering`の`Session Quality`を`Balanced`または`Native`へ変更します。Play中はSessionのquality変更経路でactive workerを再設定します。
+2. `Rendering`の`Output Quality`を`Balanced`または`Native`へ変更します。WindowsではPlay中もSessionのquality変更経路でworkerを再設定します。Metalでは先にBridge欄のStop Outputで停止し、Qualityを変更してからStart Outputで再開します。
 3. Bridgeへ送られる表示を確認します。
 
 接続機器から取得したprofileが7680x4320、8x6 viewsなら、1 viewあたりはPreviewが240x180、Balancedが480x360、Nativeが960x720です。この数値はそのprofileの例で、他の機器に共通する仕様値ではありません。48 viewsの場合、NativeはPreviewと比べて1 viewあたり縦横4倍、総pixel数16倍を描画するため、GPU負荷が増えます。
