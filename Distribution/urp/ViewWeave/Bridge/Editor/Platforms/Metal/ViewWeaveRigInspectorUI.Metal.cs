@@ -44,7 +44,7 @@ namespace ViewWeave.Editor
             foldout.Add(metalStatus);
             metalError = new HelpBox(string.Empty, HelpBoxMessageType.Error) { name = "outputError" };
             foldout.Add(metalError);
-            foldout.Add(new HelpBox("Metal display output starts in Play mode. Connected display calibration becomes available while output is running.", HelpBoxMessageType.Info));
+            foldout.Add(new HelpBox("Use Preview for Edit Mode display, or Start Output in Play mode. Connected calibration is available during device preview or output.", HelpBoxMessageType.Info));
         }
 
         void OnMetalQualityChanged(ChangeEvent<Enum> evt)
@@ -93,27 +93,33 @@ namespace ViewWeave.Editor
 
         void RefreshMetalPreview()
         {
-            localPreviewButton?.SetEnabled(false);
-            devicePreviewButton?.SetEnabled(false);
-            stopPreviewButton?.SetEnabled(false);
-            closePreviewButton?.SetEnabled(false);
-            bool hasTexture = metalOutput.IsRunning && metalOutput.QuiltTexture != null;
+            bool active = BridgeMetalEditorPreview.IsActive && BridgeMetalEditorPreview.Target == rig;
+            bool canStart = !EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isCompiling && !EditorApplication.isUpdating && !BridgeMetalEditorPreview.IsActive &&
+                !BridgeMetalEditorPreview.IsStopping && BridgeMetalEditorPreview.PendingResourceCount == 0;
+            localPreviewButton?.SetEnabled(canStart);
+            devicePreviewButton?.SetEnabled(canStart);
+            stopPreviewButton?.SetEnabled(active && !playModeTransitioning);
+            if (stopPreviewButton != null) stopPreviewButton.text = BridgeMetalEditorPreview.IsPaused ? "Resume Preview" : "Pause Preview";
+            closePreviewButton?.SetEnabled(active && !playModeTransitioning);
+            bool hasTexture = active ? BridgeMetalEditorPreview.Texture != null : metalOutput.IsRunning && metalOutput.QuiltTexture != null;
             previewModeField?.SetEnabled(hasTexture);
             selectedViewField?.SetEnabled(hasTexture && previewMode == PreviewViewMode.SelectedLogicalView);
             setFocusButton?.SetEnabled(CanAuthor());
             horizontalOrbitButton?.SetEnabled(CanAuthor());
             verticalOrbitButton?.SetEnabled(CanAuthor());
-            if (previewStatus != null) previewStatus.text = "Edit Mode preview is not yet implemented for Metal. The output quilt can be inspected here in Play mode.";
+            if (previewStatus != null) previewStatus.text = BridgeMetalEditorPreview.Status;
+            ShowPreviewError(BridgeMetalEditorPreview.LastError);
             previewContainer?.MarkDirtyRepaint();
         }
 
         void DrawMetalPreviewTexture()
         {
-            RenderTexture texture = metalOutput.QuiltTexture;
-            QuiltLayout layout = metalOutput.Layout;
-            if (!metalOutput.IsRunning || texture == null || layout.ViewCount < 1 || layout.QuiltWidth < 1 || layout.QuiltHeight < 1)
+            bool editPreview = BridgeMetalEditorPreview.IsActive && BridgeMetalEditorPreview.Target == rig;
+            RenderTexture texture = editPreview ? BridgeMetalEditorPreview.Texture : metalOutput.QuiltTexture;
+            QuiltLayout layout = editPreview ? BridgeMetalEditorPreview.Layout : metalOutput.Layout;
+            if (texture == null || layout.ViewCount < 1 || layout.QuiltWidth < 1 || layout.QuiltHeight < 1)
             {
-                EditorGUILayout.HelpBox("Start output in Play mode to inspect the rendered quilt.", MessageType.Info);
+                EditorGUILayout.HelpBox("Start Edit Mode preview or Play output to inspect the rendered quilt.", MessageType.Info);
                 return;
             }
             bool selected = previewMode == PreviewViewMode.SelectedLogicalView;

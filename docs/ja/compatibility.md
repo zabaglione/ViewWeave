@@ -47,7 +47,7 @@ VFX GraphはLinear color spaceが必須です。Unity Visual Effect Graph 17.6�
 | uGUI | WorldSpaceとScreen Space CameraのM3試験を確認 | 各視点の入力、配置、合成条件を検証 |
 | UI Toolkit | Unity 6.6 WorldSpace/targetTexture APIはinstalled XMLで確認済み。M3 targetTexture fixtureを確認 | RT route、ray map、DPI、EventSystemを検証 |
 | Overlay / camera stacking | Overlayは通常画面へ描いても自動Quilt captureされない。URP stackは拒否 | 各viewと同じdepthで合成する方式を検証 |
-| macOS Go Metal | 専用`BridgeMetalQuiltOutput`、Bridgeのmetadata、独自合成shader、専用Metalウィンドウ。回転なし・native解像度・GoのRGB校正に限定。 | 光学品質、HDRP、長時間動作、Intelを個別に検証する。 |
+| macOS Go Metal | 専用`BridgeMetalQuiltOutput`、Bridgeのmetadata、独自合成shader、専用Metalウィンドウ。回転なし・native解像度・GoのRGB校正に限定。共通Rig UIからEdit ModeのLocal／Device Preview、Play中のQuilt PNG／連番再生に対応。 | URP/HDRPテンプレートのGo Previewは向き・立体感・明るさを実機確認済み。長時間動作、Intel、全視点の光学測定、Windows runtime回帰は別途確認する。 |
 | iOS / Linux | iOSの本SDK初期release範囲外、Linux未実装 | 対象platform方針を確定 |
 | cloud Blocks連携 | 未対応 | 認証・terms確認後に別計画 |
 | GPU Resident Drawer | Editor 27/27回帰、URP通常thread Player 6ケースを確認。性能優位は未確定 | MeshRenderer、shader、culling、動的更新、透明、fallbackの受入試験 |

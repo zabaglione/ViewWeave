@@ -11,6 +11,7 @@ namespace ViewWeave.Editor
         {
             profile = default;
             if (renderer == null) return false;
+            if (BridgeMetalEditorPreview.ResolveDisplayProfile(renderer, out profile)) return true;
             var metal = renderer.OutputBehaviour as BridgeMetalQuiltOutput;
             if (metal != null)
             {

@@ -44,6 +44,10 @@ namespace ViewWeave
         MonoBehaviour originalOutput;
         bool originalAutoRender;
         IDisposable mutationOwner;
+        object playbackToken;
+        QuiltRendererOperationLease playbackLease;
+        bool playbackAutoRender;
+        internal event Action PlaybackStopping;
         BridgeMetalRetirementRecord resources;
 
         [StructLayout(LayoutKind.Sequential)]
@@ -78,7 +82,13 @@ namespace ViewWeave
         void OnDestroy() { StopOutput(); }
         void Update()
         {
-            if (pendingStart && Application.isPlaying) { pendingStart = false; StartOutput(); }
+            if (pendingStart && Application.isPlaying && !IsClosing && PendingRetirementCount == 0)
+            { pendingStart = false; StartOutput(); }
+            PumpStatus();
+        }
+
+        internal void PumpStatus()
+        {
             if (stopRequested) { stopRequested = false; StopOutput(); }
             if (session == 0) return;
             if (Native.lkg_metal_display_status(session, out status) != 0 || status.error != 0)
@@ -115,7 +125,19 @@ namespace ViewWeave
         }
 
         [ContextMenu("Start Metal Output")]
-        public bool StartOutput()
+        public bool StartOutput() => StartOutputCore(false);
+
+#if UNITY_EDITOR
+        internal bool StartEditorPreview()
+        {
+            if (UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode ||
+                (gameObject.hideFlags & HideFlags.HideAndDontSave) != HideFlags.HideAndDontSave)
+                return Fail("Edit Mode output requires a private Editor preview producer.");
+            return StartOutputCore(true);
+        }
+#endif
+
+        bool StartOutputCore(bool editorPreview)
         {
             if (IsRunning) return true;
             if (IsClosing)
@@ -129,7 +151,7 @@ namespace ViewWeave
                 LastError = "Another Metal output still has retained GPU resources; wait for retirement or restart Unity after a proof failure";
                 return false;
             }
-            if (!Application.isPlaying ||
+            if ((!Application.isPlaying && !editorPreview) ||
                 (Application.platform != RuntimePlatform.OSXEditor && Application.platform != RuntimePlatform.OSXPlayer) ||
                 SystemInfo.graphicsDeviceType != GraphicsDeviceType.Metal)
                 return Fail("Metal output requires macOS Play mode or macOS Player with Metal");
@@ -181,7 +203,7 @@ namespace ViewWeave
                 renderEvent = Native.lkg_metal_display_render_event();
                 if (renderEvent == IntPtr.Zero) return Fail("Metal render event is unavailable");
                 status = default;
-                if (!rig.SetAutoRenderForBridgeOwner(true, this, out error)) return Fail(error);
+                if (!rig.SetAutoRenderForBridgeOwner(!editorPreview, this, out error)) return Fail(error);
                 LastError = string.Empty;
                 return true;
             }
@@ -192,10 +214,45 @@ namespace ViewWeave
 
         public void Submit(RenderTexture quiltTexture, QuiltLayout layout)
         {
+            if (playbackToken == null) SubmitCore(quiltTexture, layout);
+        }
+
+        internal bool TryBeginPlayback(object token, out string error)
+        {
+            error = string.Empty;
+            if (!IsRunning || rig == null || !rig.HasOutputBinding(this) || playbackToken != null || token == null)
+            { error = "Playback requires the Rig's running Metal output without another playback owner."; return false; }
+            if (!QuiltRendererOperationLease.TryAcquire(rig.Renderer, QuiltRendererOperationKind.Playback, out playbackLease, out error)) return false;
+            playbackAutoRender = rig.AutoRender;
+            playbackToken = token;
+            if (!rig.SetAutoRenderForBridgeOwner(false, this, out error))
+            { EndPlayback(token, false); return false; }
+            return true;
+        }
+
+        internal bool IsPlaybackCurrent(object token) => token != null && ReferenceEquals(token, playbackToken) && IsRunning &&
+            rig != null && rig.HasOutputBinding(this);
+
+        internal bool TrySubmitPlayback(object token, RenderTexture texture, QuiltLayout layout) =>
+            IsPlaybackCurrent(token) && SubmitCore(texture, layout);
+
+        internal void EndPlayback(object token, bool restore)
+        {
+            if (!ReferenceEquals(token, playbackToken) || token == null) return;
+            playbackLease?.Dispose();
+            playbackLease = null;
+            playbackToken = null;
+            QuiltTexture = null;
+            if (restore && IsRunning && rig != null && rig.HasOutputBinding(this))
+                if (!rig.SetAutoRenderForBridgeOwner(playbackAutoRender, this, out string error)) LastError = Sanitize(error);
+        }
+
+        bool SubmitCore(RenderTexture quiltTexture, QuiltLayout layout)
+        {
             QuiltTexture = quiltTexture; Layout = layout;
-            if (session == 0 || quiltTexture == null) return;
+            if (session == 0 || quiltTexture == null) return false;
             if (layout.ViewCount != layout.Columns * layout.Rows || layout.Columns != Profile.Columns || layout.Rows != Profile.Rows)
-            { LastError = "Metal output requires the connected display's complete Quilt grid"; stopRequested = true; return; }
+            { LastError = "Metal output requires the connected display's complete Quilt grid"; stopRequested = true; return false; }
             interlace.SetVector("_Grid", new Vector4(layout.Columns, layout.Rows, layout.TileWidth, layout.TileHeight));
             interlace.SetVector("_QuiltSize", new Vector4(layout.QuiltWidth, layout.QuiltHeight,
                 layout.AspectRatio / Profile.Aspect, 0f));
@@ -206,12 +263,13 @@ namespace ViewWeave
                 resources.MarkRendered();
                 Graphics.Blit(quiltTexture, screenTexture, interlace);
                 int result = Native.lkg_metal_display_submit(session, screenTexture.GetNativeTexturePtr(), out IntPtr data);
-                if (result == 1) return; // A previous producer/consumer is still using the sole private slot.
-                if (result != 0) { LastError = "Metal frame was rejected (code " + result + ")"; stopRequested = true; return; }
+                if (result == 1) return false; // A previous producer/consumer is still using the sole private slot.
+                if (result != 0) { LastError = "Metal frame was rejected (code " + result + ")"; stopRequested = true; return false; }
                 command.Clear(); command.IssuePluginEventAndData(renderEvent, 0, data);
                 Graphics.ExecuteCommandBuffer(command);
+                return true;
             }
-            catch (Exception exception) { LastError = Sanitize(exception.Message); stopRequested = true; }
+            catch (Exception exception) { LastError = Sanitize(exception.Message); stopRequested = true; return false; }
             finally { RenderTexture.active = previous; }
         }
 
@@ -219,6 +277,13 @@ namespace ViewWeave
         public void StopOutput()
         {
             pendingStart = false; stopRequested = false;
+            if (playbackToken != null)
+            {
+                object token = playbackToken;
+                try { PlaybackStopping?.Invoke(); }
+                catch (Exception exception) { LastError = Sanitize(exception.Message); }
+                finally { EndPlayback(token, false); }
+            }
             ulong closing = session; session = 0;
             if (closing != 0) closingSession = closing;
             try
@@ -249,12 +314,18 @@ namespace ViewWeave
                     if (resources != null) { resources.Stop(); resources = null; }
                     else
                     {
-                        if (screenTexture != null) { screenTexture.Release(); Destroy(screenTexture); }
-                        if (interlace != null) Destroy(interlace);
+                        if (screenTexture != null) { screenTexture.Release(); DestroyResource(screenTexture); }
+                        if (interlace != null) DestroyResource(interlace);
                     }
                     screenTexture = null; interlace = null;
                 }
             }
+        }
+
+        static void DestroyResource(UnityEngine.Object value)
+        {
+            if (Application.isPlaying) Destroy(value);
+            else DestroyImmediate(value);
         }
 
         internal static bool NativeFramePending(ulong id)
@@ -282,7 +353,7 @@ namespace ViewWeave
                     return "Physical aperture aspect must match the connected display profile.";
                 return string.Empty;
             }
-            if (request.Kind == QuiltRendererMutationKind.Recording || request.Kind == QuiltRendererMutationKind.SamplingMode)
+            if (request.Kind == QuiltRendererMutationKind.Recording || request.Kind == QuiltRendererMutationKind.Playback || request.Kind == QuiltRendererMutationKind.SamplingMode)
                 return string.Empty;
             if (request.Kind == QuiltRendererMutationKind.AutoRender && request.HasBooleanValue)
                 return string.Empty;

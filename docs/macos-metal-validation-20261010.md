@@ -36,8 +36,31 @@ Once compilation finished, the same Editor completed two further Play/Stop cycle
 
 Evidence remains in ignored `.local/macos-validation/platform-split-editor-lifecycle.log`; `play-stop-recovery.log` isolates the subsequent verification. Avoid source changes during Play, then wait for imports and compilation before starting again. The optional Unity preference workaround is documented in the macOS usage pages.
 
-## Unverified boundaries
+## Unverified boundaries at the initial output checkpoint
 
 Windows native rebuild and D3D11/D3D12 runtime/device tests after this source separation have not been run on this Mac. The bundled Windows DLL and provenance remain the previous validated artifact. Existing Windows/Linux CI targets select the new source paths, but no new remote CI run is claimed here.
 
 HDRP on macOS, Intel/universal runtime, Balanced/Native performance and optical quality, prolonged soak, disconnect/reconnect scenarios, multiple devices, ordinary Player window-close and Editor-quit GPU proof, exhaustive 66-view inspection and colorimetry remain unverified. Player Escape and Editor Play/Stop are the verified shutdown paths.
+
+
+## Metal Edit Mode Preview and Quilt Playback follow-up
+
+This later checkpoint uses Unity 6000.6.4f1 and the supplied URP/HDRP 17.6 template projects. It adds managed Editor controllers and shared producer/playback utilities; native binaries, shaders, asmdef boundaries and existing script GUIDs are unchanged. The Playback window moved into `Editor/Common` with its original GUID.
+
+| Evidence | Result and scope |
+|---|---|
+| Rig tests on macOS Metal | 35/35 Edit Mode tests passed with no skips. Five new cases cover local GPU Preview Pause/Resume/Close and source-camera preservation, invalid layout cleanup, Authoring-window close, ambiguous Windows/Metal component dispatch, and rejection of Playback outside Play. |
+| Local and device previews | Both URP and HDRP rendered in Edit Mode. Device Preview used the connected Go profile; Pause/Resume and Close were exercised. Later single-submit samples recorded URP 1228 renders / 1227 presentations / one busy drop, and HDRP 20 renders / 19 presentations / zero drops; these are samples before final queue completion. |
+| Physical Go acceptance | The user separately confirmed natural orientation, depth and brightness for URP and HDRP Edit Mode device previews. This is scene-level acceptance, not exhaustive view/color/physical-scale measurement. |
+| Preview reload and Play handoff | Explicit script reload stopped URP paused and HDRP running device previews with common/native pending counts zero. URP device-preview-to-Play completed with regular output running, Preview inactive, and both pending counts zero after the template startup helper was corrected and imported. |
+| PNG and sequence Playback | HDRP single PNG and an eight-frame sequence exercised Pause/Resume, normal Stop, sequence completion and Auto Render restoration. URP single PNG and a four-frame sequence completed through Metal; the sequence reached its final frame, released its lease and resources, and restored live rendering. Latest HDRP PNG admission was also confirmed after snapshot/retry changes. |
+| Invalidation and output shutdown | Paused URP Playback ended synchronously before output profile restoration. A raw framing-setting change invalidated paused Playback without resuming Auto Render. URP and HDRP Play exit stopped Playback and reached common/native pending zero with no operation lease retained. |
+| GUI and repository checks | Shared Rig Preview controls and the Rig-target Playback window were visually inspected. Repository validation passed with zero errors and 47 pre-existing documentation warnings; Python validation tests passed 5/5; both generated distributions matched source. |
+
+The initial device-preview-to-Play attempt exposed a validation-helper race: its Start coroutine called output start before native retirement completed. The helper in each supplied project now waits for `PendingRetirementCount == 0` and `!IsClosing`; production automatic startup already waits for retirement. An explicit AssetDatabase refresh was needed before the external helper change was compiled. These project-specific helpers are outside the distributed SDK.
+
+Play exits with deferred compilation, and the HDRP exit after an explicit script-reload request, reproduced Unity's `DefaultScenario` assertion described above. Source/import completion was checked before normal Play tests; this work does not fix or suppress that Unity assertion. Historical errors and failed compilation attempts are preserved in local evidence. The new source code was checked after correction.
+
+An explicit script-reload request during active HDRP Playback did not demonstrate an immediate domain reload under the current Editor setting: the next probes still showed active Playback. Its subsequent Play exit completed safely. Active-Playback domain reload is therefore code-reviewed, but not counted as a successful live reload test. Preview domain reload is verified separately. GPU-proof failure injection, ordinary Editor quit, long-duration use and Windows D3D11/D3D12 execution of this revision remain unverified.
+
+Detailed JSON state samples, test XML/logs, review notes and generated PNG recordings are ignored under `.local/metal-preview-playback`; they are validation artifacts and are not distributed package content. Both supplied project scenes retain their pre-existing unsaved state; verification did not save or revert them.

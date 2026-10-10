@@ -8,7 +8,9 @@ SceneのCameraを選び、**GameObject > ViewWeave > Bridge Rig**を実行しま
 
 カメラ、Reference Camera、フォーカス、Orbit、物理フレーミング、Quilt Capture、Video Exportは共通のRig UIから操作します。Play中の接続後に**Use Connected Display Size**を使うと、物理フレーミングの有効・無効を変えずに、校正済みの画面寸法をコピーします。物理1:1では開口寸法の縦横比と機器の縦横比が一致している必要があります。Metal出力を止めると、そのRendererの通常録画・一時停止中の録画を終了し、元のローカル設定を復元します。MetalコンポーネントのInspectorは技術診断用です。
 
-Edit ModeのLocal／Device PreviewとQuilt Playbackは現在Windows用で、MetalのRig UIでは未対応と表示します。Play中に生成したQuiltはRigのPreview欄で確認できます。シーンには出力コンポーネントが保存されるため、macOSとWindowsの間で移動してもバックエンドは自動交換されません。
+Playしていない状態でViewWeave Rigの**Preview**を開き、**Start Local Edit Mode Preview**または**Start Looking Glass Device Preview**を選びます。LocalはRigのローカルQuilt設定、DeviceはGoの表示プロファイルと**Output Quality**を使います。**Pause Preview**は最後の画像を保持し、**Resume Preview**で再開します。終了は**Close Preview**です。Qualityや接続設定を変える前に終了し、GPU資源の回収を待ってください。専用の描画オブジェクトを使うため、元のRigやカメラの設定は保持します。Play開始、スクリプト再読み込み、Authoringウィンドウの終了・対象Rigの変更でもPreviewを終了します。
+
+保存したQuiltを再生するには、Play中にMetal出力を開始し、**Capture & Playback > Playback**を開きます。全視点を含むQuilt PNGまたは完了したPNG連番のフォルダを選んで検証し、Play／Pause／Resume／Stopで操作します。寸法、grid、縦横比、利用可能なカメラ情報は現在の出力設定と一致する必要があります。再生中は通常のQuilt描画を停止し、正常なStopまたは連番終了時に、同じ出力とRig設定が維持されていれば復帰します。出力停止、Play終了、スクリプト再読み込みでは再生を無効化し、GPU完了が確認できるまで資源を保持します。シーンには出力コンポーネントが保存されるため、macOSとWindowsの間で移動してもバックエンドは自動交換されません。
 
 最初の実装はGoの識別子（`LKG-E`）、回転のない画面、subpixel cell tableがない通常RGB校正、cell-pattern mode 0に限定します。未対応の機器・校正・解像度はエラーとして停止します。画質は開始前にPreview／Balanced／Nativeを選びます。Goの66視点を含め、Bridgeが返す全視点のgridを維持します。描画負荷が高いため、まずPreviewで確認してください。
 
@@ -24,7 +26,7 @@ Bridgeから機器情報と校正を取得した後、SDKを終了します。�
 
 Stopは受付を閉じてウィンドウを隠します。GPU処理の終了待ちはその後も続く場合があり、`IsClosing`で区別できます。前の処理が終了するまで新規開始を待ちます。保留中のeventとGPU callbackは自身のSession・textureを保持し、AppKit objectはmain threadで解放します。画面切断、位置、解像度の変更を検出したら停止します。画面構成を戻して再接続してください。
 
-Windowsの`ViewWeaveBridgeSession`、保存Quiltの再生、Edit Modeの実機previewはWindows用です。共通・Metal・Windowsの配置と責務は[プラットフォーム分離](bridge-platform-architecture.md)を参照してください。以前の有限実験`BridgeMetalExperimentalOutput`も別経路として残ります。実験開始後のprocessをこの出力と共用せず、Unityを再起動してください。
+Windowsの`ViewWeaveBridgeSession`とD3D WorkerはWindows固有です。MetalのPreview／Playbackは専用コントローラーを使い、Rig UI、入力検証、Editor用producerと資源管理を共通化しています。共通・Metal・Windowsの配置と責務は[プラットフォーム分離](bridge-platform-architecture.md)を参照してください。以前の有限実験`BridgeMetalExperimentalOutput`も別経路として残ります。実験開始後のprocessをこの出力と共用せず、Unityを再起動してください。
 
 ## Play停止時のEditorエラー
 

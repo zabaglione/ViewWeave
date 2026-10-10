@@ -51,6 +51,7 @@ namespace ViewWeave.Editor
         void RequestPreviewRefresh()
         {
             if (metalOutput == null) BridgeEditorPreview.RequestRefresh();
+            else BridgeMetalEditorPreview.RequestRefresh();
             previewContainer?.MarkDirtyRepaint();
         }
 
@@ -65,15 +66,13 @@ namespace ViewWeave.Editor
         Button BuildPlaybackButton()
         {
             if (metalOutput == null) return BuildWindowsPlaybackButton();
-            var button = new Button { text = "Playback", tooltip = "Quilt Playback is currently supported by the Windows Bridge Session backend." };
-            button.SetEnabled(false);
-            return button;
+            return new Button(() => QuiltPlaybackWindow.OpenForRig(rig)) { text = "Playback" };
         }
 
         void AddPlaybackHelp(Foldout foldout)
         {
             if (metalOutput != null)
-                foldout.Add(new HelpBox("Quilt Capture and Video Export are shared tools. Quilt Playback is not yet implemented for Metal output.", HelpBoxMessageType.Info));
+                foldout.Add(new HelpBox("Quilt Playback supports full-grid PNG images and completed PNG recordings through running Metal output in Play mode.", HelpBoxMessageType.Info));
             else if (session == null)
                 foldout.Add(new HelpBox("Quilt Playback requires the Rig's Bridge Session component and a validated quilt source.", HelpBoxMessageType.Info));
         }
@@ -81,16 +80,24 @@ namespace ViewWeave.Editor
         void StartPreview(bool outputToDevice)
         {
             if (metalOutput == null) StartPreviewWindows(outputToDevice);
+            else
+            {
+                BridgeMetalEditorPreview.Start(rig, outputToDevice, out string error);
+                ShowPreviewError(error);
+                RefreshPreview();
+            }
         }
 
         void StopPreview()
         {
             if (metalOutput == null) StopPreviewWindows();
+            else if (BridgeMetalEditorPreview.Target == rig) { BridgeMetalEditorPreview.TogglePause(); RefreshPreview(); }
         }
 
         void ClosePreview()
         {
             if (metalOutput == null) ClosePreviewWindows();
+            else if (BridgeMetalEditorPreview.Target == rig) { BridgeMetalEditorPreview.Stop(); RefreshPreview(); }
         }
 
         void RefreshPreview()

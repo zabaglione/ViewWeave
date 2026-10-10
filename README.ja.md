@@ -49,7 +49,7 @@ Hierarchyで`ViewWeave Bridge Rig`を選び、Inspectorの`QuiltRenderer > View 
 
 ## Quiltの保存と再生
 
-Play中に`Window > ViewWeave > Quilt Capture`を開き、完成QuiltのPNG、JSON sidecar、中央view PNGを保存できます。連番を作る場合は出力先とFPSを指定して記録を開始し、必要ならPause/Resumeを使って停止します。生成済みの完成Quilt PNGまたは記録済み連番は`Window > ViewWeave > Quilt Playback`から選び、再生・一時停止・再開できます。再生には、Play中の既存ViewWeave Bridge Rigが正常に映像を出力できる状態である必要があります。PlaybackはBridge sessionを作成しません。D3D11またはD3D12のWindows Editor Playで使います。
+Play中に`Window > ViewWeave > Quilt Capture`を開き、完成QuiltのPNG、JSON sidecar、中央view PNGを保存できます。連番を作る場合は出力先とFPSを指定して記録を開始し、必要ならPause/Resumeを使って停止します。生成済みの完成Quilt PNGまたは記録済み連番は`Window > ViewWeave > Quilt Playback`から選び、再生・一時停止・再開できます。再生には、Play中の既存ViewWeave Bridge Rigが正常に映像を出力できる状態である必要があります。PlaybackはBridge sessionを作成しません。Windows Editor PlayのD3D11／D3D12、またはmacOS Editor PlayのMetalで使います。macOSでもRigからEdit ModeのLocal／Device Previewを操作できます。[macOS Metal](docs/ja/macos-metal.md)を参照してください。
 
 音声を含める場合はQuilt Captureの`Start PNG Sequence + Audio`を明示的に選びます。対応するのはWindows Editor Play中の現在のMono音声設定です。SDKはUnityやOSの音声設定を自動変更せず、録音中は通常の音声出力がミュートされることがあります。音声はPNG連番と別のWAVファイルに保存され、MP4書き出しには含まれません。詳しい条件は[Quilt Capture](docs/ja/quilt-capture.md)と[Quilt recording audio](docs/ja/quilt-recording-audio.md)を参照してください。
 

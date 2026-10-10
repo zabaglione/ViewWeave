@@ -8,7 +8,9 @@ namespace ViewWeave.Editor
 {
     public sealed class QuiltPlaybackWindow : EditorWindow
     {
-        ViewWeaveBridgeSession session;
+        ViewWeaveRig rig;
+        ViewWeaveBridgeSession session => rig == null ? null : rig.GetComponent<ViewWeaveBridgeSession>();
+        BridgeMetalQuiltOutput metal => ResolveMetalOutput(rig);
         QuiltPlaybackSource source;
         ObjectField sessionField;
         TextField pathField;
@@ -21,6 +23,14 @@ namespace ViewWeave.Editor
         Button stopButton;
         string openRequestMessage;
 
+        public static BridgeMetalQuiltOutput ResolveMetalOutput(ViewWeaveRig targetRig)
+        {
+            if (targetRig == null) return null;
+            MonoBehaviour bound = targetRig.Renderer == null ? null : targetRig.Renderer.OutputBehaviour;
+            if (bound != null) return bound as BridgeMetalQuiltOutput;
+            return targetRig.GetComponent<ViewWeaveBridgeSession>() == null ? targetRig.GetComponent<BridgeMetalQuiltOutput>() : null;
+        }
+
         [MenuItem("Window/ViewWeave/Quilt Playback")]
         static void OpenWindow()
         {
@@ -31,21 +41,26 @@ namespace ViewWeave.Editor
 
         public static bool OpenForSession(ViewWeaveBridgeSession targetSession)
         {
-            if (targetSession == null) return false;
+            return targetSession != null && OpenForRig(targetSession.GetComponent<ViewWeaveRig>());
+        }
+
+        public static bool OpenForRig(ViewWeaveRig targetRig)
+        {
+            if (targetRig == null) return false;
             QuiltPlaybackWindow window = GetWindow<QuiltPlaybackWindow>();
             window.titleContent = new GUIContent("Quilt Playback");
             window.minSize = new Vector2(380f, 320f);
             BridgeQuiltPlaybackLease lease = BridgeQuiltPlaybackLease.Active;
-            if (lease != null && lease.IsBusy)
+            if (lease != null && lease.IsBusy || BridgeMetalQuiltPlayback.IsActive)
             {
-                window.openRequestMessage = "Playback is active. The existing Bridge Session target was retained.";
+                window.openRequestMessage = "Playback is active. The existing Rig target was retained.";
                 if (window.errorLabel != null) window.errorLabel.text = window.openRequestMessage;
                 window.Show();
                 return false;
             }
 
-            window.session = targetSession;
-            if (window.sessionField != null) window.sessionField.SetValueWithoutNotify(targetSession);
+            window.rig = targetRig;
+            if (window.sessionField != null) window.sessionField.SetValueWithoutNotify(targetRig);
             window.openRequestMessage = string.Empty;
             window.Show();
             return true;
@@ -59,16 +74,16 @@ namespace ViewWeave.Editor
             rootVisualElement.style.paddingTop = 8;
             rootVisualElement.style.paddingBottom = 8;
 
-            var heading = new Label("Play a validated quilt PNG or completed recording through an existing Ready Bridge session.");
+            var heading = new Label("Play a validated quilt PNG or completed PNG recording through the Rig's running output in Play mode.");
             heading.style.whiteSpace = WhiteSpace.Normal;
             rootVisualElement.Add(heading);
 
-            sessionField = new ObjectField("Bridge Session") { objectType = typeof(ViewWeaveBridgeSession), allowSceneObjects = true };
-            sessionField.value = session;
-            sessionField.RegisterValueChangedCallback(evt => session = evt.newValue as ViewWeaveBridgeSession);
+            sessionField = new ObjectField("ViewWeave Rig") { objectType = typeof(ViewWeaveRig), allowSceneObjects = true, name = "playbackTarget" };
+            sessionField.value = rig;
+            sessionField.RegisterValueChangedCallback(evt => rig = evt.newValue as ViewWeaveRig);
             rootVisualElement.Add(sessionField);
 
-            pathField = new TextField("Source Path");
+            pathField = new TextField("Source Path") { name = "playbackSourcePath" };
             rootVisualElement.Add(pathField);
             var browseRow = new VisualElement { style = { flexDirection = FlexDirection.Row } };
             var pngButton = new Button(() => BrowseFile()) { text = "Choose PNG or manifest" };
@@ -84,7 +99,7 @@ namespace ViewWeave.Editor
             rootVisualElement.Add(sourceLabel);
 
             var playbackRow = new VisualElement { style = { flexDirection = FlexDirection.Row } };
-            startButton = new Button(StartPlayback) { text = "Play" };
+            startButton = new Button(StartPlayback) { text = "Play", name = "startPlayback" };
             pauseButton = new Button(TogglePause) { text = "Pause" };
             stopButton = new Button(StopPlayback) { text = "Stop" };
             playbackRow.Add(startButton);
@@ -92,7 +107,7 @@ namespace ViewWeave.Editor
             playbackRow.Add(stopButton);
             rootVisualElement.Add(playbackRow);
 
-            statusLabel = new Label("Playback can start only in Windows Editor Play mode with an existing Ready Bridge session.");
+            statusLabel = new Label("Playback requires Editor Play mode and a running Metal output or Ready Windows Bridge session.");
             statusLabel.style.whiteSpace = WhiteSpace.Normal;
             rootVisualElement.Add(statusLabel);
             errorLabel = new Label(string.Empty);
@@ -100,8 +115,8 @@ namespace ViewWeave.Editor
             errorLabel.style.color = new Color(1f, 0.45f, 0.35f);
             rootVisualElement.Add(errorLabel);
 
-            if (session == null && Selection.activeGameObject != null) session = Selection.activeGameObject.GetComponent<ViewWeaveBridgeSession>();
-            if (sessionField != null) sessionField.value = session;
+            if (rig == null && Selection.activeGameObject != null) rig = Selection.activeGameObject.GetComponent<ViewWeaveRig>();
+            if (sessionField != null) sessionField.value = rig;
             if (!string.IsNullOrEmpty(openRequestMessage) && errorLabel != null) errorLabel.text = openRequestMessage;
             RefreshControls();
         }
@@ -113,6 +128,7 @@ namespace ViewWeave.Editor
             EditorApplication.update -= RefreshControls;
             BridgeQuiltPlaybackLease lease = BridgeQuiltPlaybackLease.Active;
             if (lease != null) lease.StopPlayback();
+            BridgeMetalQuiltPlayback.Stop();
         }
 
         void BrowseFile()
@@ -150,14 +166,17 @@ namespace ViewWeave.Editor
         void StartPlayback()
         {
             if (source == null) { errorLabel.text = "Validate a quilt source before playback."; return; }
-            if (!BridgeQuiltPlaybackLease.TryStart(session, source, out string error)) errorLabel.text = Sanitize(error);
-            else errorLabel.text = string.Empty;
+            bool started = metal != null
+                ? BridgeMetalQuiltPlayback.TryStart(metal, source, out string error)
+                : BridgeQuiltPlaybackLease.TryStart(session, source, out error);
+            errorLabel.text = started ? string.Empty : Sanitize(error);
             RefreshControls();
         }
 
         void TogglePause()
         {
             BridgeQuiltPlaybackLease lease = BridgeQuiltPlaybackLease.Active;
+            if (BridgeMetalQuiltPlayback.IsActive) { BridgeMetalQuiltPlayback.TogglePause(); RefreshControls(); return; }
             if (lease == null) return;
             if (lease.State == BridgeQuiltPlaybackLease.LeaseState.Playing) lease.PausePlayback();
             else if (lease.State == BridgeQuiltPlaybackLease.LeaseState.Paused) lease.ResumePlayback();
@@ -168,6 +187,7 @@ namespace ViewWeave.Editor
         {
             BridgeQuiltPlaybackLease lease = BridgeQuiltPlaybackLease.Active;
             if (lease != null) lease.StopPlayback();
+            BridgeMetalQuiltPlayback.Stop();
             RefreshControls();
         }
 
@@ -175,17 +195,25 @@ namespace ViewWeave.Editor
         {
             if (startButton == null) return;
             BridgeQuiltPlaybackLease lease = BridgeQuiltPlaybackLease.Active;
-            bool busy = lease != null && lease.IsBusy;
-            bool paused = busy && lease.State == BridgeQuiltPlaybackLease.LeaseState.Paused;
-            bool playing = busy && lease.State == BridgeQuiltPlaybackLease.LeaseState.Playing;
-            startButton.SetEnabled(lease == null && source != null && session != null && EditorApplication.isPlaying);
-            loadButton.SetEnabled(lease == null);
-            sessionField?.SetEnabled(lease == null);
-            pathField?.SetEnabled(lease == null);
+            bool metalActive = BridgeMetalQuiltPlayback.IsActive;
+            bool metalPending = BridgeMetalQuiltPlayback.PendingResourceCount != 0;
+            bool busy = lease != null && lease.IsBusy || metalActive;
+            bool paused = metalActive ? BridgeMetalQuiltPlayback.IsPaused : lease != null && lease.State == BridgeQuiltPlaybackLease.LeaseState.Paused;
+            bool playing = metalActive ? !BridgeMetalQuiltPlayback.IsPaused && !BridgeMetalQuiltPlayback.IsStopping : lease != null && lease.State == BridgeQuiltPlaybackLease.LeaseState.Playing;
+            startButton.SetEnabled(lease == null && !metalActive && !metalPending && source != null && rig != null && EditorApplication.isPlaying &&
+                (metal == null ? session != null : metal.IsRunning));
+            loadButton.SetEnabled(lease == null && !metalActive && !metalPending);
+            sessionField?.SetEnabled(lease == null && !metalActive && !metalPending);
+            pathField?.SetEnabled(lease == null && !metalActive && !metalPending);
             pauseButton.SetEnabled(playing || paused);
             pauseButton.text = paused ? "Resume" : "Pause";
             stopButton.SetEnabled(busy);
-            if (lease != null)
+            if (metal != null || metalActive)
+            {
+                statusLabel.text = BridgeMetalQuiltPlayback.Status;
+                if (metalActive || metalPending) errorLabel.text = BridgeMetalQuiltPlayback.LastError;
+            }
+            else if (lease != null)
             {
                 statusLabel.text = lease.StatusMessage;
                 errorLabel.text = string.IsNullOrEmpty(openRequestMessage) ? lease.ErrorMessage : openRequestMessage;

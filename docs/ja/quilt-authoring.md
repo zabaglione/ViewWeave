@@ -78,7 +78,7 @@ flowchart TB
     Policy -->|busyまたは構造field| Reject["値を変えずに拒否"]
 ```
 
-native DLLまたはexportが変わるBridge UPM更新では、previewと通常Sessionを停止し、Package Managerでpackageを更新してからUnity Editorを再起動してください。Editor processが読み込んだnative imageは保持されます。プロセス全体のSDK ownerと読み込み済みnative imageはEditor終了まで保持されます。 If the loaded DLL prevents replacement, exit and restart Unity before using Bridge again. native-image guardはimageが古い、重複している、または検証できない場合に呼び出しを拒否できますが、DLLをunload・reloadしません。Editorを終了した状態でpackageを更新する方法もありますが、Bridgeの再使用前にEditorの再起動が必要です。
+native DLLまたはexportが変わるBridge UPM更新では、previewと通常Sessionを停止し、Package Managerでpackageを更新してからUnity Editorを再起動してください。Editor processが読み込んだnative imageは保持されます。Windowsでは、プロセス全体のSDK ownerと読み込み済みnative imageをEditor終了まで保持します。 If the loaded DLL prevents replacement, exit and restart Unity before using Bridge again. native-image guardはimageが古い、重複している、または検証できない場合に呼び出しを拒否できますが、DLLをunload・reloadしません。Editorを終了した状態でpackageを更新する方法もありますが、Bridgeの再使用前にEditorの再起動が必要です。
 
 `Physical Display Framing` foldoutは既定で折りたたまれており、aperture寸法、units、geometry status、`Use Connected Display Size`があります。`Use Physical 1:1 Framing` switchはfoldoutの外、`Camera & Focus`に表示され、既定ではoffです。`Visible Aperture Width (mm)`、`Visible Aperture Height (mm)`、projectの`Unity Units per Meter`（既定値`1`）を設定してから、switchを明示的にonにします。寸法が未設定または無効なら使用できません。`Use Connected Display Size`はBridgeから有効なcalibrationを取得して物理寸法だけをcopyし、switchの状態は変更しません。有効にすると、実効view aspectは幅÷高さから、実効カメラ距離は縦FOVから算出され、zero-parallax面が設定した物理高さに1:1のscene scaleで収まります。source/base quality profileと保存済み`Focus Distance`は変更されません。有効中は保存済み距離のfieldが隠れ、入力が有効ならread-onlyの`Effective Focus Distance`が表示されます。算出したaspectと距離が実効Scene View gizmo、preview、runtime描画でbase値をoverrideします。FOV fieldは既存のFOV追従設定に従い、追従中のReference Cameraまたは保存済みQuilt FOVを編集します。FOVを変更すると算出距離も更新されます。physical focus操作は要求された距離に合うようFOVを解き、保存済みbase focus距離は変えません。下のstatusにはgeometry source、実効aspect、aperture寸法、対角寸法が表示されます。
 
@@ -104,21 +104,21 @@ flowchart TB
 
 `Rendering` foldoutは既定で開いており、`Quilt View Render Mode`、local preview用のLocal Quilt Profile、source Rigの設定を表示します。`Output Quality`は接続された出力の解像度を選び、既定値は`Balanced`です。Metalでは出力を停止してGPU資源の回収を待ってから変更します。WindowsのBridge Sessionでは実行中の変更もできます。Session未接続時のdevice previewも接続機器のprofileと`Balanced`を使います。local previewはRig profileを使います。previewまたはSessionがRigを所有している間、Local Quilt Profileと構造的なlayout設定は変更できません。変更する前にpreview/Sessionを停止してください。稼働中のWindows Sessionでは`Output Quality`を使い、既存のquality reconfiguration pathにより再接続せず変更できます。`Full`、`Half`、`Quarter`は次のframe境界で描画するlogical viewを切り替えますが、Quilt gridとlogical view数は変わりません。これらの操作はactive renderer-owner policyに従います。描画／completion通知、録画／再生lease、display metadata refresh、cleanup中は変更が拒否され、理由が表示される場合があります。
 
-`Preview`には明示開始する2つの操作があります。`Start Local Edit Mode Preview`はEditor内にQuiltを表示し、`Start Looking Glass Device Preview`はWindows D3D11/D3D12 Bridge Workerを通して接続機器へ送ります。device previewには公式Bridge runtimeが必要です。どちらも別のEditor-owned producerを使い、通常のSRP render callbackの外で描画します。Play Modeや対象Rigの通常Bridge Sessionは開始しません。先に通常Sessionを停止します。preview専用producerを使うため、preview操作で状態を保存sceneへ書き戻しません。`Pause Preview`は新規送信を止め、進行中の処理をdrainしてdevice windowを隠しますが、同じproducer、RenderTexture、Worker session、所有権lockを保持します。
+`Preview`には明示開始する2つの操作があります。`Start Local Edit Mode Preview`はEditor内にQuiltを表示し、`Start Looking Glass Device Preview`はWindows D3D11/D3D12 Bridge WorkerまたはmacOS Metal出力で接続機器へ送ります。device previewには公式Bridge runtimeが必要です。どちらも別のEditor-owned producerを使い、通常のSRP render callbackの外で描画します。Play Modeや対象Rigの通常Bridge Sessionは開始しません。先に通常Sessionを停止します。preview専用producerを使うため、preview操作で状態を保存sceneへ書き戻しません。`Pause Preview`は新しい描画・送信を止め、producer、texture、所有権lockを保持します。Windowsは進行中の処理を完了してdevice windowを隠し、Metalは最後の画像を表示したまま保持します。
 
 ```mermaid
 flowchart TB
-    Running["Preview running"] --> Pausing["Pause Preview: drain後にdevice windowを隠す"]
-    Pausing --> Paused["Paused: 同じproducer、RenderTexture、Workerを保持"]
+    Running["Preview running"] --> Pausing["Pause Preview: 描画を止めて資源を保持"]
+    Pausing --> Paused["Paused: 同じproducer、texture、出力を保持"]
     Paused --> Resuming["Resume Preview: 同じsessionを再表示"]
     Resuming --> Running
     Running --> Closing["Close Preview、Rig切替、window close、Play、reload、quit"]
     Paused --> Closing
-    Closing --> Closed["完全drainとproof後に所有権を解放"]
+    Closing --> Closed["Preview停止、GPU完了後に資源を再利用"]
 ```
-Local previewは最後の画像を保持します。`Resume Preview`は同じpreview sessionを再表示します。完全にdrain・解放するには`Close Preview`を使います。これにより構造設定のlockが解除され、preview ownerも解放されます。プロセス全体のSDK ownerと読み込み済みnative imageはEditor終了まで保持されます。Authoring windowのRig切替・preview対象windowのclose、Play移行、reload、Editor終了では一時停止ではなく完全終了を要求します。一時停止中も構造設定はlockされ、display refreshは保持中のWorker経由で続きます。
+LocalとMetalのdevice previewは最後の画像を保持します。`Resume Preview`は同じpreview sessionを再表示します。完全にdrain・解放するには`Close Preview`を使います。これにより構造設定のlockが解除され、preview ownerも解放されます。Windowsでは、プロセス全体のSDK ownerと読み込み済みnative imageをEditor終了まで保持します。Authoring windowのRig切替・preview対象windowのclose、Play移行、reload、Editor終了では一時停止ではなく完全終了を要求します。一時停止中も構造設定はlockされます。Windowsのdisplay refreshは保持中のWorker経由で続き、Metalの校正情報は現在のdevice previewから取得します。
 
-上の図は再利用可能な一時停止と完全終了を区別します。完全終了ではproducerとGPU/Workerの所有権proofを待ってからresourceを解放します。Native Releaseのpause protocolはdrain-before-hide、pause/resume acknowledgement、同一session resource保持、pause中からの完全終了を含むCTest 10/10に合格しました。これはfake Bridge runtimeとtest adapterによるNative worker契約の検証です。隔離URP/HDRP local previewのmanaged testはpause/resume、一時停止中のFOV変更、完全Closeを2/2で確認しました。2026-10-09、利用者はUnity 6000.6.4f1 / Windows D3D12 / package revision `6a297a8fddc685b51e0da3136ca6cdb5331e8c6f`の実URP `test.unity` sceneで一度のPause/Resumeを確認しました。native pause acknowledgement後もworker handleとgenerationは維持され、Resume後に表示が戻り、表示対象の移動とUndoが反映されました。送信・完了はResume後に進み、dropとerrorはありませんでした。これは一つのsceneと一度の操作です。反復動作やHDRP機器での挙動は未検証で、実寸scale、画像品質、性能も確認していません。
+上の図は再利用可能な一時停止と完全終了を区別します。完全終了ではproducerとGPU／出力の完了確認後に資源を解放します。Metalは終了時に専用producerを切り離して元のRigの設定lockを解除し、GPU回収完了まで次のPreview開始を待ちます。以下のWorkerの検証結果はWindowsでの記録です。Native Releaseのpause protocolはdrain-before-hide、pause/resume acknowledgement、同一session resource保持、pause中からの完全終了を含むCTest 10/10に合格しました。これはfake Bridge runtimeとtest adapterによるNative worker契約の検証です。隔離URP/HDRP local previewのmanaged testはpause/resume、一時停止中のFOV変更、完全Closeを2/2で確認しました。2026-10-09、利用者はUnity 6000.6.4f1 / Windows D3D12 / package revision `6a297a8fddc685b51e0da3136ca6cdb5331e8c6f`の実URP `test.unity` sceneで一度のPause/Resumeを確認しました。native pause acknowledgement後もworker handleとgenerationは維持され、Resume後に表示が戻り、表示対象の移動とUndoが反映されました。送信・完了はResume後に進み、dropとerrorはありませんでした。これは一つのsceneと一度の操作です。反復動作やHDRP機器での挙動は未検証で、実寸scale、画像品質、性能も確認していません。
 
 preview開始・pause・resume・close時は`Preview` sectionのstatusとerrorを確認してください。Local previewはUnity内に表示し、device previewはBridgeへ送信します。running状態や送信成功はsoftware側の進行を示すだけで、機器に画像が表示されたことや光学的な見え方を保証しません。機器出力を確認する場合はLooking Glass本体を直接確認してください。Native DLLまたはexportを変えるpackage更新では、`Close Preview`と通常Session停止で所有権を解放し、Package Managerで更新した後にUnityを再起動してください。native-image guardは古い・重複・確認できないloaded imageを拒否できますが、DLLをunload/reloadする機能はありません。
 
@@ -126,7 +126,7 @@ Editor previewの自動更新は0.2秒周期（5Hz）を目標とします。明
 
 `Advanced`では検証付き`Auto Render in Play Mode`操作と参照中のoutput/guard componentを表示し、HDRP guardの3つのfallback設定も必要に応じて編集できます。rendererやLegacy Directの詳細Inspectorは技術操作として残ります。
 
-`Capture & Playback`はこのRigの既存Capture、Playback、Video Export windowを開きます。録画、再生lease、export稼働中に対象を無断で置き換えません。
+`Capture & Playback`はこのRigの既存Capture、Playback、Video Export windowを開きます。録画、再生lease、export稼働中に対象を無断で置き換えません。Playbackの共通ウィンドウでRigを選び、Play中のWindowsまたはMetal出力に再生します。[Quilt Playback](../quilt-playback.md)を参照してください。
 
 Inspectorの`Show Near / Far`でクリップ面を表示／非表示にできます。クリップ距離が大きく、近くの範囲が見にくいときに切り替えてください。`Show Extreme Views`を有効にすると、左右端の視点のNear/Far面を表示します。これは設定した全視点範囲を示します。Half/Quarterの描画密度を選んだ場合も、ギズモは設定上の左右端を示します。
 
