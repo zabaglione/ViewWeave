@@ -11,6 +11,7 @@
 - [Bridgeのプラットフォーム分離](bridge-platform-architecture.md)では、共通処理、Windows、Metalの責務を示します。
 - [描画backend](graphics-backends.md)では、backendの選択とlifecycle gateを説明します。
 - [対応表](compatibility.md)を、現在の対応構成と既知の制限の参照先とします。
+- [現在のUnity機能・OS別対応状況（HTML）](unity-feature-platform-matrix.html)では、URP/HDRPとWindows/macOSの実装・検証・制約を一覧できます。
 - [macOS Metalガイド](macos-metal.md)では、Looking Glass Go専用経路と導入条件を説明します。
 - [Bridge package](../../Packages/com.zabaglione.lookingglass.viewweave.bridge/README.md)、[URP package](../../Packages/com.zabaglione.lookingglass.viewweave.urp/README.md)、[HDRP package](../../Packages/com.zabaglione.lookingglass.viewweave.hdrp/README.md)では、ソースパッケージと自己完結型の配布パッケージの関係を説明します。
 - [Bridge Editor package更新の安全性](../bridge-package-update-safety.md)では、managed/nativeの更新境界を記録しています。

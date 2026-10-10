@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="ViewWeaveの現在の対応状況。URP・HDRPとWindows・macOSの実装、検証、制限を比較します。">
+  <title>ViewWeave 現在の対応状況 — URP / HDRP × Windows / macOS</title>
+  <style>
+    :root { color-scheme: light dark; --bg: #f6f8fb; --surface: #fff; --text: #182438; --muted: #4d5b70; --line: #d9e1ec; --head: #eaf0f8; --accent: #225ca5; --ok-bg: #e3f2ec; --ok-text: #155b42; --partial-bg: #fff0d9; --partial-text: #784809; --unknown-bg: #eef1f5; --unknown-text: #46536a; --no-bg: #fbe7e9; --no-text: #963143; }
+    @media (prefers-color-scheme: dark) { :root { --bg: #101722; --surface: #192332; --text: #e4ebf5; --muted: #b3bfd0; --line: #36445a; --head: #253348; --accent: #9bc5ff; --ok-bg: #173b30; --ok-text: #9bdabc; --partial-bg: #44331b; --partial-text: #f1cd8a; --unknown-bg: #2a3546; --unknown-text: #c4cfdf; --no-bg: #462630; --no-text: #f5b0bc; } }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.75 -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif; }
+    main { max-width: 1500px; margin: auto; padding: 36px 28px 48px; }
+    h1 { margin: 0 0 12px; font-size: clamp(24px, 3vw, 36px); line-height: 1.4; }
+    h2 { margin: 38px 0 12px; font-size: 22px; line-height: 1.5; }
+    h3 { font-size: 17px; margin: 24px 0 8px; }
+    p { margin: 8px 0 14px; }
+    a { color: var(--accent); text-underline-offset: 3px; }
+    code { font-size: .93em; overflow-wrap: anywhere; }
+    .meta { color: var(--muted); font-size: 14px; }
+    .notice { padding: 16px 20px; border-left: 4px solid var(--accent); background: var(--surface); }
+    .legend { display: flex; flex-wrap: wrap; gap: 12px 20px; padding: 0; list-style: none; }
+    .legend li { display: flex; gap: 8px; align-items: baseline; }
+    .status { display: inline-block; padding: 2px 9px; border-radius: 5px; font-size: 13px; font-weight: 600; white-space: nowrap; }
+    .ok { background: var(--ok-bg); color: var(--ok-text); }
+    .partial, .past { background: var(--partial-bg); color: var(--partial-text); }
+    .unknown, .implemented { background: var(--unknown-bg); color: var(--unknown-text); }
+    .no { background: var(--no-bg); color: var(--no-text); }
+    .table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
+    table { width: 100%; min-width: 1040px; border-collapse: collapse; table-layout: fixed; font-size: 14px; }
+    caption { padding: 14px 16px; text-align: left; font-weight: 600; background: var(--head); }
+    th, td { padding: 12px 13px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
+    thead th { background: var(--head); font-weight: 600; }
+    tbody th { font-weight: 600; }
+    .feature-col { width: 20%; }
+    .platform-col { width: 13%; }
+    .note-col { width: 28%; }
+    .group th { background: var(--head); padding: 8px 13px; }
+    tbody tr:last-child > * { border-bottom: 0; }
+    .cell-note { display: block; margin-top: 5px; color: var(--muted); font-size: 13px; }
+    .footnote { color: var(--muted); font-size: 14px; }
+    li { margin: 6px 0; }
+    footer { margin-top: 36px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; }
+    @media (max-width: 600px) { main { padding: 22px 14px 32px; } body { font-size: 14px; } .notice { padding: 12px 14px; } .legend { display: block; } .legend li { margin: 9px 0; } }
+    @media print { :root { color-scheme: light; --bg: #fff; --surface: #fff; --text: #182438; --muted: #4d5b70; --line: #d9e1ec; --head: #eaf0f8; --accent: #225ca5; --ok-bg: #e3f2ec; --ok-text: #155b42; --partial-bg: #fff0d9; --partial-text: #784809; --unknown-bg: #eef1f5; --unknown-text: #46536a; --no-bg: #fbe7e9; --no-text: #963143; } @page { size: A3 landscape; margin: 12mm; } main { max-width: none; padding: 0; } .table-wrap { overflow: visible; } table { min-width: 0; font-size: 11px; } th, td { padding: 7px; } .status, .cell-note { font-size: 10px; } tr { break-inside: avoid; } thead { display: table-header-group; } h2, h3 { break-after: avoid; } a { text-decoration: none; } }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <p class="meta">ViewWeave 技術資料 · 継続更新する対応表</p>
+    <h1>現在の対応状況</h1>
+    <p>URP / HDRP × Windows / macOSで、Quiltの複数視点描画とLooking Glass出力に関係するUnity機能を比較します。</p>
+    <p class="meta">最終照合: <time datetime="2026-10-11">2026年10月11日</time>（日本時間） · 基準: Unity 6000.6.4f1 / URP・HDRP 17.6.0<br>照合したソース: <code>62d0e0cb380bf663e4b33d2ad2095b09e4e872f9</code> · 開発版。正式リリースの対応保証ではありません。</p>
+    <p><a href="technical-guide.md">技術者向けガイド</a> · <a href="compatibility.md">対応条件の詳細</a> · <a href="user-guide.md">導入・操作</a></p>
+  </header>
+
+  <div class="notice">
+    <strong>基本描画は両パイプラインに実装されています。現行の視点別履歴処理はmacOS Metalで限定検証済み、Windowsでは未検証です。</strong>
+    <p>Windowsの過去のEditor・Player・機器出力実績は、現在のURP TAA経路、HDRP履歴・共有露出経路の検証を証明しません。同梱DLLと同一SHAのURP実機記録はありますが、旧managed経路の限定観測です。macOSの機器出力はApple SiliconとLooking Glass Goの専用経路です。<a href="#source-current">[1]</a> <a href="#source-windows">[2]</a> <a href="#source-lifecycle">[12]</a></p>
+  </div>
+
+  <h2>判定の読み方</h2>
+  <ul class="legend">
+    <li><span class="status ok">限定確認</span><span>記載した環境・試験条件で確認済み</span></li>
+    <li><span class="status implemented">実装あり</span><span>現行コードにあり、この組み合わせの実行は未検証</span></li>
+    <li><span class="status past">過去実績</span><span>旧revision・旧経路での限定実績</span></li>
+    <li><span class="status partial">設定保持</span><span>設定保持を確認。効果の画素正確性は未検証</span></li>
+    <li><span class="status unknown">未検証</span><span>当該条件の対応を確認できる証拠なし</span></li>
+    <li><span class="status no">非対応</span><span>SDKが拒否、または明記した標準機能がない</span></li>
+  </ul>
+  <p class="footnote">「限定確認」は任意のシーン、全効果、全視点の画質を保証しません。表の「実装あり」は対応予定とは異なり、実装と検証の差を示します。Windowsの基本機能は旧機能表に限定実績がありますが、現行既定経路で再検証されていないため、以下では「実装あり」とします。</p>
+
+  <h2>環境と出力経路</h2>
+  <div class="table-wrap" role="region" aria-label="環境と出力経路の対応表" tabindex="0">
+  <table>
+    <caption>実装済み経路と、現在使える検証証拠</caption>
+    <colgroup><col class="feature-col"><col class="platform-col"><col class="platform-col"><col class="platform-col"><col class="platform-col"><col class="note-col"></colgroup>
+    <thead><tr><th scope="col">機能・環境</th><th scope="col">Windows<br>URP</th><th scope="col">Windows<br>HDRP</th><th scope="col">macOS<br>URP</th><th scope="col">macOS<br>HDRP</th><th scope="col">条件と境界</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">描画APIと機器出力</th><td>D3D11 / D3D12<br>Bridge Worker</td><td>D3D11 / D3D12<br>Bridge Worker</td><td>Metal<br>Go専用出力</td><td>Metal<br>Go専用出力</td><td>Windows Legacy DirectはD3D11のみ。macOSの通常Bridge Sessionは非対応。Intel Mac、他のLooking Glassモデルは未検証。<a href="#source-current">[1]</a> <a href="#source-metal">[3]</a></td></tr>
+      <tr><th scope="row">Edit Mode<br>ローカル／機器Preview</th><td><span class="status past">過去実績</span></td><td><span class="status past">過去実績</span></td><td><span class="status ok">限定確認</span></td><td><span class="status ok">限定確認</span></td><td>明示的にPreviewを開始。Goの向き・奥行き、HDRP明るさに利用者確認あり。新URP TAAのEdit Mode確認はローカルPreviewで、TAAの実機光学確認は未実施。<a href="#source-urp">[4]</a> <a href="#source-quick">[6]</a></td></tr>
+      <tr><th scope="row">Editor Play<br>Looking Glass出力</th><td><span class="status past">過去実績</span></td><td><span class="status past">過去実績</span></td><td><span class="status ok">限定確認</span><span class="cell-note">Go / imported Sample</span></td><td><span class="status ok">限定確認</span><span class="cell-note">Go / authoring scene</span></td><td>現行Windows履歴経路は未検証。GoでURP imported Sample、HDRP authoring sceneの短時間Playを観測。HDRP imported SampleのPlay、新URP TAAの実機光学品質、全HDRP効果の実機品質は未検証。<a href="#source-windows">[2]</a> <a href="#source-quick">[6]</a></td></tr>
+      <tr><th scope="row">描画専用Standalone Player<br>Development / Release</th><td><span class="status implemented">実装あり</span><span class="cell-note">現行経路未検証</span></td><td><span class="status implemented">実装あり</span><span class="cell-note">現行経路未検証</span></td><td><span class="status ok">限定確認</span></td><td><span class="status ok">限定確認</span></td><td>macOSは4視点の小規模fixtureで両構成のビルド・実行・終了code 0。URPはTAA画素・履歴、HDRPは履歴・共有露出を確認。機器転送を含まない。<a href="#source-urp">[4]</a> <a href="#source-hdrp">[5]</a></td></tr>
+      <tr><th scope="row">機器出力Standalone Player</th><td><span class="status past">過去実績</span></td><td><span class="status past">過去実績</span></td><td><span class="status past">過去実績</span><span class="cell-note">Go診断Player</span></td><td><span class="status unknown">未検証</span></td><td>新しい履歴経路を含むBridge／機器出力Playerは全列で未検証。以前のURP Go PlayerはEscapeによる自然終了を確認。Quick Start Playerの確認ではない。<a href="#source-current">[1]</a> <a href="#source-metal">[3]</a></td></tr>
+      <tr><th scope="row">停止・再開・終了</th><td><span class="status past">過去実績</span></td><td><span class="status past">過去実績</span></td><td><span class="status ok">限定確認</span></td><td><span class="status ok">限定確認</span></td><td>macOSの履歴解放・小規模Player終了を確認。通常のEditor終了、機器Playerのウィンドウ閉じ、長時間運用は未検証。Windowsの終了fixture成功と、原因不明の過去access violationは両方を保持。<a href="#source-current">[1]</a> <a href="#source-metal">[3]</a></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h2>Unityの描画機能</h2>
+  <div class="table-wrap" role="region" aria-label="Unity描画機能の対応表" tabindex="0">
+  <table>
+    <caption>現在の既定モード: IsolatedViewHistories（視点別履歴）</caption>
+    <colgroup><col class="feature-col"><col class="platform-col"><col class="platform-col"><col class="platform-col"><col class="platform-col"><col class="note-col"></colgroup>
+    <thead><tr><th scope="col">Unity機能</th><th scope="col">Windows<br>URP</th><th scope="col">Windows<br>HDRP</th><th scope="col">macOS<br>URP</th><th scope="col">macOS<br>HDRP</th><th scope="col">確認した範囲・制約</th></tr></thead>
+    <tbody>
+      <tr class="group"><th colspan="6" scope="colgroup">基本描画・形状・ライティング</th></tr>
+      <tr><th scope="row">MeshRenderer / Lit<br>不透明・単純半透明</th><td><span class="status implemented">実装あり</span></td><td><span class="status implemented">実装あり</span></td><td><span class="status ok">限定確認</span></td><td><span class="status ok">限定確認</span></td><td>基本Litと単純なalpha blend fixture。複雑な透明、sorting、soft depthは一般対応未確認。<a href="#source-features">[7]</a> <a href="#source-urp">[4]</a></td></tr>
+      <tr><th scope="row">Shader Graph Lit</th><td><span class="status implemented">実装あり</span></td><td><span class="status implemented">実装あり</span></td><td><span class="status ok">限定確認</span></td><td><span class="status ok">限定確認</span></td><td>個別Lit graphの描画差。任意graph、全keyword、Unlit graphを含む網羅検証ではない。<a href="#source-features">[7]</a></td></tr>
+      <tr><th scope="row">SkinnedMeshRenderer</th><td><span class="status implemented">実装あり</span></td><td><span class="status implemented">実装あり</span></td><td><span class="status ok">限定確認</span></td><td><span class="status ok">限定確認</span></td><td>1-boneの固定pose。複雑なskinningやAnimator state同期は未検証。<a href="#source-features">[7]</a></td></tr>
+      <tr><th scope="row">Animator / アニメーション同期</th><td><span class="status unknown">未検証</span></td><td><span class="status unknown">未検証</span></td><td><span class="status unknown">未検証</span></td><td><span class="status unknown">未検証</span></td><td>固定pose、移動・parallaxの観測を任意のanimation stateの同期保証に広げない。<a href="#source-features">[7]</a></td></tr>
+      <tr><th scope="row">LODGroup</th><td><span class="status implemented">実装あり</span></td><td><span class="status implemented">実装あり</span></td><td><span class="status ok">限定確認</span></td><td><span class="status ok">限定確認</span></td><td>ForceLOD fixture。距離・各視点による通常のLOD選択は未検証。<a href="#source-features">[7]</a></td></tr>
+      <tr><th scope="row">Terrain</th><td><span class="status implemented">実装あり</span></td><td><span class="status implemented">実装あり</span></td><td><span class="status ok">限定確認</span></td><td><span class="status ok">限定確認</span></td><td>visibility fixture。detail、tree、全Terrain機能は未検証。<a href="#source-features">[7]</a></td></tr>
+      <tr><th scope="row">Directional Light / Shadow</th><td><span class="status implemented">実装あり</span></td><td><span class="status implemented">実装あり</span></td><td><span class="status ok">限定確認</span></td><td><span class="status ok">限定確認</span></td><td>固定light intensityとshadow mode。全light種別、cascade、contact shadowの組み合わせは未検証。<a href="#source-features">[7]</a></td></tr>
+      <tr><th scope="row">Reflection Probe</th><td><span class="status implemented">実装あり</span></td><td><span class="status implemented">実装あり</span></td><td><span class="status ok">限定確認</span></td><td><span class="status ok">限定確認</span></td><td>個別probe fixture。realtime更新、視点別反射履歴は未検証。<a href="#source-features">[7]</a></td></tr>
+      <tr><th scope="row">Planar Reflection</th><td><span class="status no">標準機能なし</span></td><td><span class="status unknown">未検証</span></td><td><span class="status no">標準機能なし</span></td><td><span class="status unknown">未検証</span></td><td>Reflection ProbeのpassをPlanar Reflection対応と扱わない。URPの独自実装は別途検証が必要。<a href="#source-unity">[10]</a></td></tr>
+      <tr class="group"><th colspan="6" scope="colgroup">パーティクル・線・デカール</th></tr>
+      <tr><th scope="row">ParticleSystem（Shuriken）</th><td><span class="status implemented">実装あり</span></td><td><span class="status implemented">実装あり</span></td><td><span class="status ok">限定確認</span></td><td><span class="status ok">限定確認</span></td><td>URP: Lit / Unlit / live 3件。HDRP: mesh paused / live 2件。全sorting、soft particles、cullingは未検証。<a href="#source-features">[7]</a> <a href="#source-urp">[4]</a></td></tr>
+      <tr><th scope="row">VFX Graph</th><td><span class="status partial">実験経路</span><span class="cell-note">過去のDX12試験で未通過あり</span></td><td><span class="status unknown">対応未確立</span><span class="cell-note">専用runtime driverなし</span></td><td><span class="status implemented">実装あり</span><span class="cell-note">driver実行は未検証</span></td><td><span class="status unknown">対応未確立</span><span class="cell-note">専用runtime driverなし</span></td><td>URPのdriverはLinear必須。DX12 cold suite 6/7、別診断7/7は恒久fixの証明ではない。HDRPの通常Camera canary成功はQuilt runtime対応を意味しない。<a href="#source-vfx">[8]</a> <a href="#source-windows">[2]</a> <a href="#source-vfx-unity">[11]</a></td></tr>
+      <tr><th scope="row">LineRenderer / TrailRenderer</th><td><span class="status implemented">実装あり</span></td><td><span class="status implemented">実装あり</span></td><td><span class="status ok">限定確認</span></td><td><span class="status ok">限定確認</span></td><td>個別fixtureの描画差。camera依存の幅、履歴、深度・描画順の一般対応は未検証。<a href="#source-features">[7]</a></td></tr>
+      <tr><th scope="row">BillboardRenderer</th><td><span class="status unknown">未検証</span></td><td><span class="status no">標準非対応</span></td><td><span class="status unknown">未検証</span></td><td><span class="status no">標準非対応</span></td><td>HDRPはUnity標準のBillboard Renderer component非対応。URPのQuilt表示も未検証。<a href="#source-unity">[10]</a></td></tr>
+      <tr><th scope="row">Decal / Decal Projector</th><td><span class="status unknown">未検証</span></td><td><span class="status unknown">未検証</span></td><td><span class="status unknown">未検証</span></td><td><span class="status unknown">未検証</span></td><td>投影・深度・透明物・視点ごとの差を含む検証が必要。<a href="#source-features">[7]</a></td></tr>
+      <tr class="group"><th colspan="6" scope="colgroup">Volume・アンチエイリアス・時間履歴</th></tr>
+      <tr><th scope="row">Bloom / Color Adjustments / Tonemapping</th><td><span class="status implemented">実装あり</span></td><td><span class="status implemented">実装あり</span></td><td><span class="status ok">限定確認</span></td><td><span class="status ok">限定確認</span></td><td>効果切替で各viewの描画差を確認。全Volume stack、色管理、tile seamの検証ではない。<a href="#source-features">[7]</a></td></tr>
+      <tr><th scope="row">TAA / 視点別履歴</th><td><span class="status implemented">実装あり</span><span class="cell-note">Windows未検証</span></td><td><span class="status implemented">実装あり</span><span class="cell-note">Windows未検証</span></td><td><span class="status ok">限定確認</span><span class="cell-note">履歴進行・画素差</span></td><td><span class="status partial">履歴・設定確認</span><span class="cell-note">TAA画素正確性は未検証</span></td><td>URPはpublic Camera.Render()、HDRPはStandardRequest。URPはPost Processing ON、single-sample target、Universal Renderer、stackなし、dynamic resolutionなしが必要。Goでの新URP TAA光学確認は未実施。<a href="#source-urp">[4]</a> <a href="#source-hdrp">[5]</a></td></tr>
+      <tr><th scope="row">MSAA</th><td><span class="status past">過去実績</span><span class="cell-note">現行経路未検証</span></td><td><span class="status unknown">未検証</span></td><td><span class="status ok">限定確認</span><span class="cell-note">4x Go実機確認あり</span></td><td><span class="status unknown">未検証</span></td><td>Metal lifecycle 4/4。Gardenの66 view / Balancedで4x target→1x resolveを確認し、利用者がギザギザ減少を確認。TAAとの併用、全倍率・全GPU・性能は保証しない。<a href="#source-urp">[4]</a></td></tr>
+      <tr><th scope="row">FXAA / SMAA / Depth of Field</th><td><span class="status past">過去実績</span></td><td><span class="status past">過去実績</span></td><td><span class="status unknown">未検証</span></td><td><span class="status unknown">未検証</span></td><td>既存機能表には限定確認の記載あり。最新Metal 58件のcase一覧にはこの効果ごとの画素試験を含まない。現行モードの確認済み機能に広げない。<a href="#source-features">[7]</a> <a href="#source-urp">[4]</a></td></tr>
+      <tr><th scope="row">自動露出 / Quilt共有露出</th><td><span class="status no">標準自動露出なし</span></td><td><span class="status implemented">実装あり</span></td><td><span class="status no">標準自動露出なし</span></td><td><span class="status ok">限定確認</span></td><td>HDRPは中央viewをGPU測光して全viewに共通Fixed EVを適用。Fixed exposureのcompensationとHistogram応答を確認。独立したviewごとの自動露出ではない。<a href="#source-hdrp">[5]</a> <a href="#source-unity">[10]</a></td></tr>
+      <tr><th scope="row">Motion Blur</th><td><span class="status no">非対応</span></td><td><span class="status implemented">実装あり</span><span class="cell-note">効果は未検証</span></td><td><span class="status no">非対応</span></td><td><span class="status partial">設定保持</span></td><td>URPはPost Processing有効時のactive Motion Blurを拒否。HDRP既定は設定保持、SharedCameraCompatibilityでは無効化。<a href="#source-features">[7]</a> <a href="#source-hdrp">[5]</a></td></tr>
+      <tr><th scope="row">SSAO</th><td><span class="status unknown">未検証</span></td><td><span class="status unknown">未検証</span></td><td><span class="status unknown">未検証</span></td><td><span class="status unknown">未検証</span></td><td>Unity側の機能有無と、Quilt全viewの効果確認を分ける。<a href="#source-features">[7]</a></td></tr>
+      <tr><th scope="row">SSR / SSGI</th><td><span class="status no">標準機能なし</span></td><td><span class="status implemented">実装あり</span><span class="cell-note">効果は未検証</span></td><td><span class="status no">標準機能なし</span></td><td><span class="status partial">設定保持</span></td><td>HDRP既定ではscene設定を保持。SharedCameraCompatibilityでは無効化。URPでの独自Renderer Feature実装は別途検証が必要。<a href="#source-hdrp">[5]</a> <a href="#source-unity">[10]</a></td></tr>
+      <tr><th scope="row">Fog（通常の霧）</th><td><span class="status unknown">未検証</span></td><td><span class="status implemented">実装あり</span><span class="cell-note">効果は未検証</span></td><td><span class="status unknown">未検証</span></td><td><span class="status unknown">効果は未検証</span></td><td>HDRPのGo plant sceneに明るさ・光の利用者確認はあるが、各Fog効果の画素正確性を証明しない。<a href="#source-hdrp">[5]</a></td></tr>
+      <tr><th scope="row">Volumetric Fog / Clouds</th><td><span class="status no">標準機能なし</span></td><td><span class="status implemented">実装あり</span><span class="cell-note">効果は未検証</span></td><td><span class="status no">標準機能なし</span></td><td><span class="status partial">設定保持</span></td><td>HDRP既定はscene設定を保持。SharedCameraCompatibilityはcloudを無効化し、volumetric fog filteringをGaussianへ変更。<a href="#source-hdrp">[5]</a> <a href="#source-unity">[10]</a></td></tr>
+      <tr><th scope="row">履歴リソースの予算・Camera上限</th><td><span class="status implemented">実装あり</span></td><td><span class="status implemented">実装あり</span></td><td><span class="status ok">限定確認</span></td><td><span class="status ok">限定確認</span></td><td>既定4096 MB / 256 Cameras。予算超過で停止・解放。未観測bufferやdriver overheadを含まないため、完全なVRAM上限ではない。<a href="#source-urp">[4]</a> <a href="#source-hdrp">[5]</a></td></tr>
+      <tr class="group"><th colspan="6" scope="colgroup">UI・Camera・拡張・性能</th></tr>
+      <tr><th scope="row">uGUI World Space / Screen Space Camera</th><td><span class="status implemented">実装あり</span></td><td><span class="status implemented">実装あり</span></td><td><span class="status ok">限定確認</span></td><td><span class="status ok">限定確認</span></td><td>個別Canvas描画。入力、複雑なCanvas、viewport、深度競合は未検証。<a href="#source-features">[7]</a></td></tr>
+      <tr><th scope="row">uGUI Screen Space Overlay</th><td><span class="status no">自動取得対象外</span></td><td><span class="status no">自動取得対象外</span></td><td><span class="status no">自動取得対象外</span></td><td><span class="status no">自動取得対象外</span></td><td>通常画面のOverlayを自動でQuiltへ取り込まない。viewごとの合成方式は未検証。<a href="#source-features">[7]</a></td></tr>
+      <tr><th scope="row">UI Toolkit targetTexture</th><td><span class="status implemented">実装あり</span></td><td><span class="status implemented">実装あり</span></td><td><span class="status ok">限定確認</span></td><td><span class="status ok">限定確認</span></td><td>Unity 6.6のtexture表示fixture。ray map、DPI、EventSystem、入力は未検証。<a href="#source-features">[7]</a></td></tr>
+      <tr><th scope="row">URP Camera Stack</th><td><span class="status no">非対応</span></td><td>対象外</td><td><span class="status no">非対応</span></td><td>対象外</td><td>URPはBase cameraのみ。Overlay stackがある場合はguardが拒否。<a href="#source-features">[7]</a></td></tr>
+      <tr><th scope="row">Renderer Feature / Custom Pass / Render Graph拡張</th><td><span class="status past">過去実績</span></td><td><span class="status past">過去実績</span></td><td><span class="status unknown">一般拡張は未検証</span></td><td><span class="status unknown">一般拡張は未検証</span></td><td>従来の8-view marker pass実績あり。MetalでTAA測定用Renderer FeatureとHDRP測光用Custom Passは使用しているが、任意passの順序・寿命・camera filteringを保証しない。<a href="#source-features">[7]</a> <a href="#source-urp">[4]</a> <a href="#source-hdrp">[5]</a></td></tr>
+      <tr><th scope="row">Custom Post Processing</th><td><span class="status unknown">未検証</span></td><td><span class="status unknown">未検証</span></td><td><span class="status unknown">未検証</span></td><td><span class="status unknown">未検証</span></td><td>view間の履歴共有、更新順序、独自Volume parameterの資源所有は一般検証なし。<a href="#source-features">[7]</a> <a href="#source-urp">[4]</a></td></tr>
+      <tr><th scope="row">GPU Resident Drawer（GRD）</th><td><span class="status past">過去実績</span><span class="cell-note">URP性能計測あり</span></td><td><span class="status unknown">性能未検証</span></td><td><span class="status unknown">未検証</span></td><td><span class="status unknown">未検証</span></td><td>性能実測は旧URP normal multithreaded PlayerのMeshRendererのみ。他Renderer、HDRP性能、現行履歴経路へ結果を広げない。<a href="#source-features">[7]</a></td></tr>
+      <tr><th scope="row">SRP Batcher / GPU Instancing</th><td><span class="status unknown">未検証</span></td><td><span class="status unknown">未検証</span></td><td><span class="status unknown">未検証</span></td><td><span class="status unknown">未検証</span></td><td>複数viewでのbatchingと性能の一般検証なし。<a href="#source-features">[7]</a></td></tr>
+      <tr><th scope="row">XR single-pass / multipass</th><td><span class="status unknown">未検証</span></td><td><span class="status unknown">未検証</span></td><td><span class="status unknown">未検証</span></td><td><span class="status unknown">未検証</span></td><td>XR stereo viewとQuilt gridは別モデル。<a href="#source-features">[7]</a></td></tr>
+      <tr><th scope="row">Ray Tracing / Path Tracing</th><td><span class="status no">標準機能なし</span></td><td><span class="status unknown">未検証</span></td><td><span class="status no">標準機能なし</span></td><td><span class="status unknown">対応未確立</span></td><td>HDRPのQuilt履歴・複数requestは未検証。Metal上でUnity側の各方式が利用できるという主張でもない。<a href="#source-features">[7]</a> <a href="#source-unity">[10]</a></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h2>保存・再生・録画</h2>
+  <div class="table-wrap" role="region" aria-label="保存・再生・録画の対応表" tabindex="0">
+  <table>
+    <caption>描画以外のSDK機能と検証範囲</caption>
+    <colgroup><col class="feature-col"><col class="platform-col"><col class="platform-col"><col class="platform-col"><col class="platform-col"><col class="note-col"></colgroup>
+    <thead><tr><th scope="col">機能</th><th scope="col">Windows<br>URP</th><th scope="col">Windows<br>HDRP</th><th scope="col">macOS<br>URP</th><th scope="col">macOS<br>HDRP</th><th scope="col">条件と境界</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">Quilt PNG / JSON / 中央view PNG保存</th><td><span class="status past">過去実績</span></td><td><span class="status past">過去実績</span></td><td><span class="status implemented">実装あり</span></td><td><span class="status implemented">実装あり</span></td><td>Windowsはfake-output capture test。Metalの中央view画像はTAA/MSAA/露出の観測に使用したが、SDK保存workflow全体の試験ではない。<a href="#source-features">[7]</a> <a href="#source-urp">[4]</a></td></tr>
+      <tr><th scope="row">PNG連番の無音録画</th><td><span class="status past">過去実績</span></td><td><span class="status past">過去実績</span></td><td><span class="status implemented">実装あり</span><span class="cell-note">検証記録不足</span></td><td><span class="status implemented">実装あり</span><span class="cell-note">検証記録不足</span></td><td>WindowsはPause/Resume等の限定fixture。macOSガイドに確認済みとの記載はあるが、日付付き記録に具体的な録画試験結果がなく、確認済みに分類しない。<a href="#source-windows">[2]</a> <a href="#source-metal">[3]</a></td></tr>
+      <tr><th scope="row">静止Quilt / PNG連番の再生</th><td><span class="status past">過去実績</span></td><td><span class="status past">過去実績</span></td><td><span class="status ok">限定確認</span></td><td><span class="status ok">限定確認</span></td><td>MetalのPNG／連番再生fixtureあり。pre-rendered画像の再生なので、新しいlive TAA／HDRP履歴経路の証明ではない。Windowsの旧Bridge playbackはbody gate成功、当該runの終了gate失敗も保持。<a href="#source-windows">[2]</a> <a href="#source-metal">[3]</a></td></tr>
+      <tr><th scope="row">無音MP4 export</th><td><span class="status past">過去実績</span><span class="cell-note">録画→MP4 E2E</span></td><td><span class="status implemented">実装あり</span></td><td><span class="status implemented">実装あり</span></td><td><span class="status implemented">実装あり</span></td><td>URP DX12の小規模録画3枚→H.264で1/1。Native/公式Bridgeなし。HDRP/macOSの実録画E2Eと手動GUI操作は未検証。<a href="#source-features">[7]</a></td></tr>
+      <tr><th scope="row">AudioRenderer / Mono WAV録音</th><td><span class="status past">過去実績</span></td><td><span class="status past">過去実績</span></td><td><span class="status no">非対応</span></td><td><span class="status no">非対応</span></td><td>Windows Editor Play、Mono、明示opt-inのみ。現行ValidateEnvironmentがWindowsEditor以外を拒否。StereoとStandalone Playerは非対応。Bridge音声配送、frameごとのsample単位同期は未検証。<a href="#source-audio">[9]</a> <a href="#source-windows">[2]</a></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h2>対応範囲を判断する際の要点</h2>
+  <ul>
+    <li><strong>色空間:</strong> HDRPとURP VFXはLinear必須。URP Gammaの過去targeted test成功は、現行Windows／Metal機器出力の一般対応やGamma VFX対応を意味しません。<a href="#source-vfx-unity">[11]</a></li>
+    <li><strong>既定と互換モード:</strong> 両pipelineの既定は視点別履歴。明示選択のSharedCameraCompatibilityはTAAを停止し、HDRPではMotion Blur／SSR／SSGI／cloud等も変更します。表のHDRP「設定保持」は既定モードの結果です。</li>
+    <li><strong>品質と描画数:</strong> Full / Half / Quarterを実装。間引いたtileは最近傍viewを複製し、補間しません。静的HDRPの旧48-view画素一致とMetalの履歴pool pruningは、一般シーンの光学品質・性能の証明ではありません。</li>
+    <li><strong>検証件数:</strong> 最新Metal GraphicsCompatibilityは58/58、skip 0。URP MSAAは4/4、URP Edit Mode履歴は1/1、Rig Editorは36/36。58件にVFX全条件、全SRP拡張、全Volume効果が含まれるわけではありません。<a href="#source-urp">[4]</a></li>
+    <li><strong>現行DLL:</strong> 同梱Windows DLLはnative focused試験6件に成功。本体とURP/HDRP DistributionのSHA-256・サイズは、旧URP実機観測のF1B artifactと一致します（214,016 bytes）。2026-10-10のD3D12 Editor公式Bridge出力、Pause/Resume、StopからEdit Previewへの限定観測記録があります。現行履歴経路、HDRPの詳細、機器出力Player、広範な反復試験は未検証です。既存Compatibility／provenanceには実機「未検証」の記載が残るため、この表では同一バイナリの限定観測記録として区別します。<a href="#source-lifecycle">[12]</a> <a href="#source-provenance">[13]</a></li>
+    <li><strong>対象外:</strong> 物理演算、AI Navigation、ネットワーク等、Quilt描画・転送と直接関係しないUnity機能はこの表の評価対象に含めません。Vulkan出力、全Looking Glassモデル、hotplug、複数機器、一般性能・全視点光学品質も未確立です。</li>
+  </ul>
+
+  <h2>根拠と更新方法</h2>
+  <p>現行コード、既存の検証文書、ローカルの最終Metal XML／Player JSONを照合して作成しました。この文書作成時にはUnity試験を再実行していません。古い記録と新しい実装が異なる場合は、日付付きの新しい記録を優先し、古い結果を現行対応に読み替えません。</p>
+  <ol>
+    <li id="source-current"><a href="../compatibility.md">Compatibility — 現行構成・current packageと過去fixtureの境界</a></li>
+    <li id="source-windows"><a href="../windows-validation.md">Windows validation — 新履歴経路の未検証範囲・過去の試験実績</a></li>
+    <li id="source-metal"><a href="../macos-metal-validation-20261010.md">macOS Metal検証記録（2026-10-10）</a> / <a href="macos-metal.md">macOS Metal導入条件</a></li>
+    <li id="source-urp"><a href="../urp-view-history-validation-20261011.md">URP視点別履歴・TAA・Go MSAA検証（2026-10-11）</a></li>
+    <li id="source-hdrp"><a href="../hdrp-view-history-validation-20261010.md">HDRP視点別履歴・共有露出・Go照明検証（2026-10-10）</a></li>
+    <li id="source-quick"><a href="../quick-start-validation-20261010.md">URP/HDRP Quick Start検証（2026-10-10）</a></li>
+    <li id="source-features"><a href="unity-feature-coverage.md">Unity feature coverage — 個別機能とfixtureの制約</a></li>
+    <li id="source-vfx"><a href="vfx-graph.md">VFX Graph — driver条件と未通過結果</a></li>
+    <li id="source-audio"><a href="quilt-recording-audio.md">音声録音 — Windows Editor Play / Monoの条件</a> / <a href="../../Packages/com.zabaglione.lookingglass.viewweave.core/Runtime/QuiltRecordingAudioCapture.cs">現行ValidateEnvironmentの明示的な環境拒否</a></li>
+    <li id="source-unity"><a href="https://docs.unity3d.com/6000.6/Documentation/Manual/render-pipelines-feature-comparison.html">Unity 6.6公式Render Pipeline機能比較</a>（標準機能の有無。ViewWeave対応の証明ではない）</li>
+    <li id="source-vfx-unity"><a href="https://docs.unity3d.com/Packages/com.unity.visualeffectgraph@17.6/manual/System-Requirements.html">Unity Visual Effect Graph 17.6公式要件</a></li>
+    <li id="source-lifecycle"><a href="../bridge-output-lifecycle.md">Bridge output lifecycle — F1B同一DLLの限定実機観測記録</a></li>
+    <li id="source-provenance"><a href="../../Packages/com.zabaglione.lookingglass.viewweave.bridge/Plugins/native-provenance.json">同梱native artifactの来歴・SHA-256・サイズ</a>（検証状況の記載と実機観測記録に食い違いあり）</li>
+  </ol>
+  <footer>
+    <p>このHTMLは現在の対応状況の管理文書です。機能追加や検証結果の変更時は、最終照合日・ソースrevision・該当セル・条件・根拠リンクをまとめて更新してください。未検証を確認済みに変更する際は、対象OS／描画API／pipeline／Editor・Player／機器出力の別を明記した証拠を残します。</p>
+  </footer>
+</main>
+</body>
+</html>
