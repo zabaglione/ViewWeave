@@ -23,6 +23,7 @@
 
 - Windows: [Windows検証](../windows-validation.md)、[終了処理の検証](../shutdown-validation-20261008.md)、[Native終了trace](../native-shutdown-trace.md)、[残作業の検証記録](../benchmarks/remaining-work-validation-20261007.md)。
 - macOS: [Metal検証記録](../macos-metal-validation-20261010.md)。
+- URP: [視点別履歴とTAAの検証記録（英語）](../urp-view-history-validation-20261011.md)。同期view描画経路とMetal PlayMode／Edit Mode／Playerの証跡、残るWindows／Bridge機器／実機光学の確認を記録します。
 - HDRP: [視点別履歴と共有露出の検証記録（英語）](../hdrp-view-history-validation-20261010.md)。光源の修正、リソース観測、再読み込み時の解放、Metalの試験結果、未検証の環境・効果を記載しています。
 - Sampleと文書: [Quick Start検証記録（英語）](../quick-start-validation-20261010.md)。UPM Import、OS共通シーン、Goでの確認、Editor試験の範囲を記録しています。
 - 描画と性能: [性能測定](performance.md)、[DX12 HDRP調査](../dx12-performance-investigation.md)、[URPサンプルの性能](../urp-sample-performance.md)、[HDRP VFXの再開後の記録](../resumed-hdrp-vfx-performance.md)、[GPU Resident Drawerの検証状況](gpu-resident-drawer.md)、[URP VolumeStack再利用の実験](../urp-volume-stack-reuse.md)。

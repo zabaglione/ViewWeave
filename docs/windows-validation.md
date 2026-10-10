@@ -6,7 +6,7 @@ Current shutdown status is summarized in [Shutdown validation](shutdown-validati
 
 This document records the current Windows validation boundary. The 123-test D3D11 PlayMode run used an older package snapshot and predates the current VFX color-space guard and Editor Play / HDRP template adaptations; keep its results separate from current D3D12 integration evidence.
 
-The HDRP default changed to isolated per-view histories. The current implementation has been exercised in the Metal Editor/Player scope below, but no Windows D3D11, D3D12, or Windows Player run has validated this new history path. Older Windows D3D11 measurements in this document belong to prior package snapshots/shared-camera behavior and are not evidence for the current default.
+The HDRP and URP defaults changed to isolated per-view histories. The current implementations have been exercised in bounded Metal Editor/Player fixtures, but no Windows D3D11, D3D12, or Windows Player run has validated these new history paths. Older Windows measurements in this document belong to prior package snapshots/shared-camera behavior and are not evidence for the current defaults. URP Quilt TAA now uses public `Camera.Render()` rather than `StandardRequest`; its Windows execution is a new validation gate. See the [URP history validation](urp-view-history-validation-20261011.md).
 
 ## HDRP isolated-view history validation (2026-10-10)
 

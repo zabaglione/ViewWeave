@@ -55,11 +55,11 @@ GRD の性能実測は URP normal multithreaded Player の範囲だけです。H
 | HDRP Bloom | 限定実測 | HDRP Linear条件のDirectional light、明示Volume fixture。adapterの一時overrideでquilt中も通常Bloomを維持。複雑なstackは未検証。 |
 | URP Bloom | 限定実測 | 個別Bloom fixtureで視点ごとの差を確認。一般のVolume継承、他の効果、tile seamは未検証。 |
 | HDRP view history / Quilt exposure | 実装済み、Metal Editor／Playerで限定検証 | 既定の`IsolatedViewHistories`は描画する論理viewごとにpersistent Cameraを作り、Reference CameraのHDRP設定をコピーします。`FollowScene`は中央viewをGPU測光し、compensation込みの露出をFixed exposureとして共有します。SceneのFixed exposureは`fixedExposure - compensation`を使い、中立な初回meter sampleは破棄します。warmup中は出力しません。`ManualFixed`は明示選択です。2026-10-10 Unity 6000.6.4f1 Metal batchのGraphicsCompatibilityは52/52 PASS、skip 0。4視点のmacOS描画専用Development／Release Playerでも履歴・露出・解放・予算制限を確認。Windows D3D11/D3D12/Player、macOSのBridge／機器出力Player、effect別の画素正確性は未検証。[検証記録](../hdrp-view-history-validation-20261010.md)を参照。 |
-| HDRP history resource limit | 限定的な実測を伴う実装 | History Resource Budget既定4096 MB、Maximum History Cameras既定256。設定は**Rig > Rendering**にあります。budgetはgraphics-driver growth実測と新規/拡大RenderTexture descriptor推定の大きい方を使い、Releaseのdriver-growth counterは0です。camera数上限はEditorと全Player buildで適用します。未観測bufferやdriver overheadを含まず、完全なVRAM上限ではありません。 |
+| URP/HDRP view-history resource limit | 限定的な実測を伴う実装 | History Resource Budgetは4096 MB、Maximum History Camerasは256が既定値です。設定は**Rig > Rendering**内です。観測したgraphics-driver growthと新規・拡大RenderTextureのstorage推定の大きい方がbudgetを超えると出力を停止し、camera数も別途制限します。共有allocationを含みますが、未観測bufferやdriver overheadを含まないため、完全なVRAM上限ではありません。 |
 | Color Adjustments / Tonemapping / Exposure | 限定実測 | 個別Tone/Color fixtureで描画差を確認。HDRPはLinear必須。既定の`FollowScene`は中央viewのGPU測光による共通Fixed EVを使います。一般の色管理とeffect別画素は未検証。 |
-| Motion Blur | HDRP isolated-history既定で設定を維持 | 既定modeはscene設定を維持します。明示選択の`SharedCameraCompatibility`だけがMotion Blurを無効化します。画素正確性は未検証。URP構成は別途。 |
+| Motion Blur | HDRP isolated-history既定で設定を維持 | HDRP既定modeはscene設定を維持します。HDRPの明示選択`SharedCameraCompatibility`だけがMotion Blurを無効化します。URPではPost Processing有効時にVolumeのMotion Blurがactiveなら、Quiltでの動作が未検証のため拒否します。 |
 | FXAA / SMAA / MSAA | FXAA/SMAAは限定確認。URP MSAA 1/1で4x view RT、1x resolve、resize/disable lifecycle、中心色一致を確認。追加のLinear境界試験10/10で、このRTX GPUの2x/4x/8x対応倍率、pipeline 1x、allowMSAA無効、Deferred fallback、中心色一致と対応MSAAのedge差分を確認。Gamma側targeted MSAA 7件も確認したが専用MSAA Playerは未実施。低MSAA能力GPU、HDRP MSAA、性能は未検証 | MSAAの一般素材、Unity/Player、画質、性能を検証。 |
-| TAA / temporal history | HDRPのview別historyを実装、画素確認は限定 | HDRP既定のisolated modeは描画する論理viewごとにpersistent historyを持ち、TAAを有効のまま使用。URP TAAは引き続きview描画中に停止して終了時に復元。明示選択のHDRP互換modeはTAAを停止します。 |
+| TAA / temporal history | URP/HDRPのview別historyを実装、Metal PlayModeで限定検証 | URP既定のisolated modeは描画論理viewごとに無効化Cameraとpersistent historyを持ち、TAA history書き込みのため同期public `Camera.Render()` executorを使います。Post Processing、single-sample target、Universal Renderer、Camera Stackなし、dynamic resolutionなしが必要です。2026-10-11のMetal Editor PlayMode `GraphicsCompatibility`は58/58 PASS、skip 0で、URP adapterの8 testを含みます。4視点のhistory蓄積、別targetと画素比較、frame-version安定性、view削除、resize/restart、budget cleanup、scripted Volume設定保持を確認しました。Metal上のbounded Edit Mode／描画専用Player runは日付付き記録に記載します。Windows／実機光学のTAA試験は未実施です。HDRP isolated modeはTAAを有効に保ち、明示選択のHDRP `SharedCameraCompatibility`は停止します。 |
 | SSAO / SSGI / SSR | HDRPは既定でscene設定を維持 | 明示選択の`SharedCameraCompatibility`だけがSSRとSSGIを無効化します。現在のbatchはeffect別画素正確性を証明しません。URP/他構成は未検証。 |
 | Fog / Volumetric Fog / Clouds | HDRPは既定でscene設定を維持 | 明示選択の`SharedCameraCompatibility`だけがcloudsを無効化し、volumetric fog filteringをGaussianへ変更します。既定のisolated modeはscene設定を使い、画素正確性は未検証。 |
 | Depth of Field / Auto Exposure | Depth of Fieldは限定確認。HDRP shared exposureを実装 | HDRP既定`FollowScene`は中央viewのGPU測光を全viewで共有します。SceneのFixed exposureはcompensationを含めて扱い、`ManualFixed`は明示選択です。URP Auto Exposureは未検証。 |
@@ -85,8 +85,8 @@ GRD の性能実測は URP normal multithreaded Player の範囲だけです。H
 | uGUI Screen Space Camera | 限定実測 | 統合 fixture で合格。cameraごとのviewport、入力は未検証。 |
 | uGUI Screen Space Overlay | 制約あり | 通常画面のOverlayは自動Quilt capture対象ではない。各viewと同じdepthで合成する方式は未検証。 |
 | UI Toolkit target texture | 限定実測 | Unity 6.6 targetTexture fixture で合格。ray map、DPI、EventSystem、入力は未検証。 |
-| Camera.Render | 非対応 | SRP経路では使用しない。Coreは `useRenderRequests=false` を拒否する。 |
-| SDK RenderRequest | 限定実測 | SRPでは Standard RenderRequest を必須とし、pipeline adapter/guardで検証する。描画viewごとのrender requestは残り、HDRP isolated modeは論理viewごとにpersistent Cameraを使う。 |
+| Camera.Render | URP isolated-history executorで使用 | TAA historyを書き込むため、無効化したview別Cameraにpublic APIを同期実行します。他のSRP経路はStandard RenderRequestです。SRPで`useRenderRequests=false`は引き続き拒否します。 |
+| SDK RenderRequest | 限定実測 | Standard RenderRequestは通常のSRP経路とHDRPで使用します。URP isolated-historyは同期`Camera.Render()` executorを使います。描画対象viewごとの個別drawは残ります。 |
 | URP camera stack | 非対応 | Base cameraのみ。Overlay camera stackはGuardが拒否。 |
 
 ## SRP拡張、XR、特殊経路
@@ -102,7 +102,7 @@ GRD の性能実測は URP normal multithreaded Player の範囲だけです。H
 
 ## SRP と GRD の注意点
 
-CoreはSRPで標準RenderRequestを使い、`useRenderRequests=false`はSRP adapter経路で拒否します。URPはBase camera、Volume、Renderer Feature、camera stateをviewごとに検証し、URP TAAは引き続き一時停止します。HDRPはLinear必須で、既定ではpersistent Camera historyをviewごとに作り、Reference Camera設定をコピーして`FollowScene`露出を共有します。HDRPのscene effectは既定modeで有効のままです。明示選択の`SharedCameraCompatibility`のみ旧effect適応を行い、Motion Blur/SSR/SSGI/cloudを無効化、TAAを停止、volumetric fogをGaussianにし、non-Fixed exposureをManual EV（既定12）へ変換します。HDRP user controlsはすべて**Rig > Rendering**内です。
+CoreはSRPで通常Standard RenderRequestを使い、`useRenderRequests=false`は拒否します。URP既定の`IsolatedViewHistories`はview別TAA historyを書き込むため同期public `Camera.Render()` executorを使います。Reference Cameraの対応するpublic rendering設定と作成時のTAA設定値をコピーし、毎frameのhistory resetはしません。TAAにはPost Processing、single-sample target、Universal Renderer、Camera Stackなし、dynamic resolutionなしが必要です。Post Processing有効時にactiveなURP Volume Motion Blurは拒否します。URP `SharedCameraCompatibility`ではshared-camera guardがTAAを停止・復元します。HDRPはLinear必須で、既定ではpersistent Camera historyをviewごとに作り、Reference Camera設定をコピーして`FollowScene`露出を共有します。HDRPのscene effectは既定modeで有効のままです。明示選択のHDRP `SharedCameraCompatibility`のみ旧effect適応を行い、Motion Blur/SSR/SSGI/cloudを無効化、TAAを停止、volumetric fogをGaussianにし、non-Fixed exposureをManual EV（既定12）へ変換します。両pipelineのhistory設定は**Rig > Rendering**内です。
 
 GRDの機能有無はpipelineの公式対応と別に検証します。現在の性能証跡はURP normal multithreaded PlayerのMeshRendererに限定され、HDRPやVFX、ParticleSystem、SkinnedMeshRenderer、Terrain、DecalのGRD性能を意味しません。
 

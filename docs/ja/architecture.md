@@ -4,17 +4,17 @@
 
 > 対象読者: Unity／描画基盤の技術者。このページは本文記載の技術的な設計・実装・手順を扱います。利用者向けの導入・運用手順は[ユーザーガイド](user-guide.md)、技術文書一覧は[技術者向けガイド](technical-guide.md)を参照してください。
 
-ViewWeaveは公式SDKとは独立して開発している非公式のUnity SDKです。Core、URP adapter、HDRP adapter、Bridge outputを分離しています。正式な対象はUnity 6000.6.4f1で検証しているURP/HDRPです。Built-inはサポート対象外で、CoreはStandard RenderRequest経路を要求します。
+ViewWeaveは公式SDKとは独立して開発している非公式のUnity SDKです。Core、URP adapter、HDRP adapter、Bridge outputを分離しています。正式な対象はUnity 6000.6.4f1で検証しているURP/HDRPです。Built-inはサポート対象外です。SRPでは通常Standard RenderRequestを使い、URP isolated-history renderingではview別TAA履歴を書き込むため、同期adapter executorを使います。
 
 ## 現在のデータ経路
 
-次図は通常のWindows URP/HDRP Bridge Worker経路を示します。adapterで描画状態を整え、CoreがStandardRequestとGPU上のtile転送を行います。Metal実験とファイル再生は別の経路です。
+次図は通常のWindows URP/HDRP Bridge Worker経路を示します。adapterで描画状態とviewごとの描画経路を準備し、Coreが完成画像をGPU上のtileへ転送します。Metal実験とファイル再生は別の経路です。
 
 ```mermaid
 flowchart TB
     Camera["利用者Camera"] --> Core["Coreがviewを制御"]
     Core --> Adapter["URP/HDRP adapterが描画状態を準備"]
-    Adapter --> Request["CoreがviewごとのStandardRequestを実行"]
+    Adapter --> Request["描画対象viewごとの同期描画\nURP isolated: Camera.Render\nHDRP: StandardRequest"]
     Request --> Copy["CoreがGPU上のtileへCopyTexture"]
     Copy --> Quilt["完成Quilt texture"]
     Quilt --> Output["IQuiltOutput"]
@@ -23,13 +23,15 @@ flowchart TB
     Bridge --> Display["Looking Glass"]
 ```
 
-adapterはQuilt完成前のview描画を担当し、`IQuiltOutput`は完成したQuiltを出力経路へ渡します。Bridge WorkerはGPU共有経路で公式Bridge runtimeへ送ります。Core描画はview数分のrender requestを行います。
+adapterはQuilt完成前のview描画を担当し、`IQuiltOutput`は完成したQuiltを出力経路へ渡します。Bridge WorkerはGPU共有経路で公式Bridge runtimeへ送ります。Coreは描画対象の各論理viewを同期描画してから画像をQuiltへ転送します。
 
-Coreは各論理viewの平行移動とオフ軸frustumを計算し、描画対象viewごとにrender requestを発行して、結果を`Graphics.CopyTexture`でGPU上のQuilt tileへ転送します。HDRP既定の`IsolatedViewHistories`は、描画する論理viewごとにCameraと`HDAdditionalCameraData`を持ち、Reference CameraのHDRP設定をコピーして、各view cameraで`hasPersistentHistory = true`にします。これでHDRP historyを分離しますが、view描画回数、culling、影、post processingは減りません。Quilt画像はGPU上に保ちます。HDRPの露出測光では、別途float値1個だけを非同期でCPUへ読み戻します。
+Coreは各論理viewの平行移動とオフ軸frustumを計算し、render sessionからcameraを取得します。完了画像は`Graphics.CopyTexture`でGPU上のQuilt tileへ転送します。HDRP既定の`IsolatedViewHistories`は、描画する論理viewごとにCameraと`HDAdditionalCameraData`を持ち、Reference CameraのHDRP設定をコピーして、各view cameraで`hasPersistentHistory = true`にします。これでHDRP historyを分離しますが、view描画回数、culling、影、post processingは減りません。Quilt画像はGPU上に保ちます。HDRPの露出測光では、別途float値1個だけを非同期でCPUへ読み戻します。
 
 `IQuiltOutput`は公開Quilt RenderTextureと`QuiltLayout`を出力経路へ渡す境界です。QuiltはBridge入力仕様上必須であり、Quilt単独を低速原因とは判断できません。Coreはnative library、socket、Bridge protocolを直接扱わず、Bridgeやテスト用出力を交換できる構成を維持します。
 
-URP/HDRPでは専用Guardと`RenderPipeline.StandardRequest`を使います。URPは`VolumeStack`を再利用し、Quilt view描画中だけTAAを無効化して終了時に復元します。HDRPは既定で`IsolatedViewHistories`を使い、描画する論理viewごとにpersistent Camera historyを持ちます。`SharedCameraCompatibility`は旧方式を使う明示選択の互換modeで、temporal effectを調整します。Game simulation、Physics、Animationはviewごとに繰り返しませんが、利用者のrender callback副作用は別途確認が必要です。
+URP/HDRPでは専用Guardとrender sessionを使います。既定のURP `IsolatedViewHistories`では、描画する論理viewごとに無効化したCamera、`UniversalAdditionalCameraData`、persistent URP historyを分離します。Reference Cameraの対応するpublic rendering設定をコピーします（followを無効にした場合はRig Source Cameraを使います）。Standard RenderRequestではURP TAAのhistory書き込みが抑制されるため、この経路は同期`IQuiltViewRenderExecutor`からpublic `Camera.Render()`を呼びます。viewごとのTAA設定値だけをコピーし、settings struct全体の代入や毎frameのhistory resetは行いません。URP TAAにはPost Processing、single-sample target、Universal Renderer、Camera Stackなし、dynamic resolutionなしが必要です。Post Processing有効時にURP VolumeでactiveなMotion Blurは、Quiltでの動作が未検証のため拒否します。URP `SharedCameraCompatibility`では従来のshared-camera guardが描画中だけTAAを停止し、終了時に復元します。HDRPは引き続きStandard RenderRequestを使い、既定の`IsolatedViewHistories`で描画論理viewごとにpersistent Camera historyを持ちます。Game simulation、Physics、Animationはviewごとに繰り返しませんが、利用者のrender callback副作用は別途確認が必要です。
+
+Coreはrender session開始前にtargetのsample数を決めます。任意の`IQuiltMsaaSettingsProvider`へSourceとReference Cameraを渡し、URPが実際に使うRendererのMSAA対応を参照します。Sourceの`allowMSAA`は維持します。従来の`IQuiltMsaaProvider`だけを実装したproviderの動作は変わりません。Deferred出力はTAA利用時もsingle-sampleです。
 
 ## 出力とBridge
 
@@ -43,7 +45,7 @@ Bridge経路ではUnity render threadからのcopy、Bridge workerの描画、WM
 
 ## 確認済み範囲と未検証範囲
 
-以前のWindows/D3D11 fixtureでURP/HDRPの基本Lit、Bloom、透明Lit、uGUI、粒子、UI Toolkitを確認しましたが、現行HDRP isolated-history pathの検証ではありません。HDRPはLinear color space必須です。既定の`FollowScene` exposureは中央viewをGPU測光し、compensationを含むEVをquilt全viewにFixed exposureとして共有し、override側のcompensationを0にします。SceneがFixedなら`fixedExposure - compensation`を使います。初期の中立meter sampleは捨て、history準備中はQuiltを出力しません。`ManualFixed`は明示選択です。既定のisolated history modeではTAA、SSR、SSGI、volumetric fog/cloud、Motion Blurをscene設定のまま使います。個々のeffectの画素正確性は未検証です。旧設定への適応は`SharedCameraCompatibility`を選んだ場合だけです。HDRP設定UIはすべて**Rig > Rendering**内にあります。History Resource Budgetは既定4096 MB、Maximum History Camerasは256です。budgetはgraphics-driver growth実測と新規/拡大RenderTexture descriptor推定の大きい方を使い、camera数はEditor/全Player buildで個別制限します。Releaseではdriver counterが0で、未観測bufferやdriver overheadは含まないため、完全なVRAM上限ではありません。詳細は[HDRP view-history validation](../hdrp-view-history-validation-20261010.md)を参照してください。通常macOS Sessionは未対応です。別系統のLooking Glass Go Metal previewはURP/HDRP templateの限定条件で確認し、向き・奥行き・明るさの利用者確認を得ましたが、全視点の光学品質、色測定、長時間動作、一般性能は未検証です。[日付付きmacOS検証](../macos-metal-validation-20261010.md)を参照してください。従来の有限`BridgeMetalExperimentalOutput`実験は現在のGo経路とは別です。
+以前のWindows/D3D11 fixtureでURP/HDRPの基本Lit、Bloom、透明Lit、uGUI、粒子、UI Toolkitを確認しましたが、すべてのmaterial/render pathの検証ではありません。2026-10-11のUnity 6000.6.4f1 Metal PlayMode `GraphicsCompatibility`は58/58 PASS、skip 0で、そのうちURP adapterの8 testは4視点のhistory蓄積、view別targetと画素比較、frame-version安定性、view削除、resize/restart、budget cleanup、scripted Volume設定の保持を確認しました。別途、Metal上のbounded Edit Mode testと描画専用Development／Release PlayerでもTAAを確認しました。これらはWindows、Bridge機器出力、実機光学を対象にしません。[URP view-history validation](../urp-view-history-validation-20261011.md)を参照してください。HDRPはLinear color space必須です。既定の`FollowScene` exposureは中央viewをGPU測光し、compensationを含むEVをquilt全viewにFixed exposureとして共有し、override側のcompensationを0にします。SceneがFixedなら`fixedExposure - compensation`を使います。初期の中立meter sampleは捨て、history準備中はQuiltを出力しません。`ManualFixed`は明示選択です。既定のisolated history modeではTAA、SSR、SSGI、volumetric fog/cloud、Motion Blurをscene設定のまま使います。個々のeffectの画素正確性は未検証です。旧設定への適応は`SharedCameraCompatibility`を選んだ場合だけです。UIは**Rig > Rendering**内にあります。History Resource Budgetは既定4096 MB、Maximum History Camerasは256です。budgetは観測したgraphics-driver growthと新規・拡大RenderTexture推定の大きい方を使い、camera数も個別制限します。共有allocationを含みますが、未観測bufferやdriver overheadは含まないため、完全なVRAM上限ではありません。詳細は[HDRP view-history validation](../hdrp-view-history-validation-20261010.md)を参照してください。通常macOS Sessionは未対応です。別系統のLooking Glass Go Metal previewはURP/HDRP templateの限定条件で確認し、向き・奥行き・明るさの利用者確認を得ましたが、全視点の光学品質、色測定、長時間動作、一般性能は未検証です。[日付付きmacOS検証](../macos-metal-validation-20261010.md)を参照してください。従来の有限`BridgeMetalExperimentalOutput`実験は現在のGo経路とは別です。
 
 次の項目は対応範囲を決めるための検証対象です。
 
@@ -52,7 +54,8 @@ Bridge経路ではUnity render threadからのcopy、Bridge workerの描画、WM
 | Animator、SkinnedMeshRenderer、Terrain、LOD、影 | Geometry fixtureを個別確認。Animatorを含む一般素材への対応は未確定 |
 | Shader Graph、Renderer Feature、Decal、Reflection Probe、Light Probe | Shader GraphとRenderer Featureは限定fixture。Decal、Reflection Probe、Light Probeの一般利用は未検証 |
 | HDRP SSR、SSGI、volumetric fog/cloud、Motion Blur、TAA | 既定のisolated history modeではscene設定を維持。明示選択の`SharedCameraCompatibility`だけがSSR/SSGI/cloud/Motion Blurを無効化し、TAAを停止、volumetric fogをGaussian filteringへ変更。個別effectの画素正確性は未検証 |
-| FXAA、SMAA、MSAA、色調補正、temporal history、Auto Exposure | FXAA/SMAAと一部色調補正は限定fixture。URP MSAA 1/1の個別条件を確認し、URP TAAはview描画中に停止。HDRPは描画する論理viewごとにpersistent historyを作成。HDRP Windows history pathと個別effectのvisual correctnessは未検証 |
+| URP TAA / temporal history | 既定の`IsolatedViewHistories`は描画論理viewごとの独立したpersistent historyと同期`Camera.Render()`を使います。Post Processing、single-sample target、Universal Renderer、Camera Stackなし、dynamic resolutionなしが必要です。Post Processing有効時にactiveなVolume Motion Blurは拒否します。Metal Editor PlayModeの`GraphicsCompatibility`は58/58 PASS、skip 0（URP adapterは8 test）。Metal上のbounded Edit Mode／描画専用Player runも日付付き記録に示しています。Windowsと実機光学の検証は未実施です。[日付付き記録](../urp-view-history-validation-20261011.md)を参照してください。 |
+| FXAA、SMAA、MSAA、色調補正、temporal history、Auto Exposure | FXAA/SMAAと一部色調補正は限定fixture。URP MSAAはMetalのライフサイクル4件とSource／ReferenceのRenderer組合せを確認。HDRPは描画する論理viewごとにpersistent historyを作成。HDRP exposureはsceneに従います。個別effectのvisual correctnessは未検証 |
 | RenderTextureを使うUI、入力ray map、VideoTexture | uGUIとUI Toolkitの個別fixtureを確認。入力ray mapとVideoTextureは未検証 |
 | LineRenderer、TrailRenderer、VFX Graph、複雑な透明ソート | Line/Trailは個別fixtureで限定確認。URP Simple Burstは停止6条件と通常再生4条件をPlayerで確認。HDRP、一般VFX、複雑なsortは未確定 |
 | 複数機器、hotplug、RGBD、quilt layer | 未実装または未検証 |

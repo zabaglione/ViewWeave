@@ -19,6 +19,12 @@ namespace ViewWeave
         IDisposable BeginView(Camera camera, int logicalView);
     }
 
+    /// <summary>Optional synchronous pipeline draw path. Must finish rendering before returning.</summary>
+    public interface IQuiltViewRenderExecutor
+    {
+        void RenderView(Camera camera, RenderTexture destination);
+    }
+
     public interface IQuiltRenderResourceOwner
     {
         void ReleaseQuiltRenderResources();

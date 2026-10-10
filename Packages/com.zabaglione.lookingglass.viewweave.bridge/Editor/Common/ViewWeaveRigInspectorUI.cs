@@ -342,29 +342,35 @@ namespace ViewWeave.Editor
                 foldout.Add(new HelpBox("Local rendering uses this profile. Connected display output uses its calibrated geometry and the Output Quality setting.", HelpBoxMessageType.Info));
             }
             BuildOutputQuality(foldout);
-            BuildHdrpRenderingSettings(foldout);
+            BuildPipelineRenderingSettings(foldout);
         }
 
-        void BuildHdrpRenderingSettings(Foldout foldout)
+        void BuildPipelineRenderingSettings(Foldout foldout)
         {
             SerializedProperty mode = guardObject?.FindProperty("renderingMode");
             if (mode == null || guardObject.FindProperty("historyMemoryBudgetMB") == null) return;
-            foldout.Add(new Label("HDRP Rendering"));
-            AddHdrpProperty(foldout, "renderingMode", "View History Mode");
-            AddHdrpProperty(foldout, "followReferenceRenderingSettings", "Follow Reference Rendering Settings");
-            AddHdrpProperty(foldout, "historyMemoryBudgetMB", "History Resource Budget (MB)");
-            AddHdrpProperty(foldout, "maximumHistoryCameras", "Maximum History Cameras");
-            AddHdrpProperty(foldout, "exposureMode", "Quilt Exposure");
-            AddHdrpProperty(foldout, "fallbackFixedExposureEV", "Manual Fixed EV");
+            bool hdrp = guardObject.FindProperty("exposureMode") != null;
+            foldout.Add(new Label(hdrp ? "HDRP Rendering" : "URP Rendering"));
+            AddPipelineProperty(foldout, "renderingMode", "View History Mode");
+            AddPipelineProperty(foldout, "followReferenceRenderingSettings", "Follow Reference Rendering Settings");
+            AddPipelineProperty(foldout, "historyMemoryBudgetMB", "History Resource Budget (MB)");
+            AddPipelineProperty(foldout, "maximumHistoryCameras", "Maximum History Cameras");
+            if (!hdrp)
+            {
+                foldout.Add(new HelpBox("Isolated View Histories keeps one Camera per rendered logical view. TAA follows the Reference Camera's Anti-aliasing setting and requires Post Processing, a single-sample target, a Universal Renderer, and no Camera Stack or dynamic resolution. Shared Camera Compatibility temporarily disables TAA. Stop preview/output before changing these settings.", HelpBoxMessageType.Info));
+                return;
+            }
+            AddPipelineProperty(foldout, "exposureMode", "Quilt Exposure");
+            AddPipelineProperty(foldout, "fallbackFixedExposureEV", "Manual Fixed EV");
             foldout.Add(new HelpBox("Isolated View Histories retains the scene's HDRP effects with one Camera per rendered logical view. Follow Scene meters the central view and shares its exposure across the Quilt; the first frames wait for metering. Manual Fixed EV explicitly overrides scene exposure. Higher EV makes the image darker. Stop preview/output before changing these settings.", HelpBoxMessageType.Info));
             var compatibility = new Foldout { text = "Shared Camera Compatibility Settings", value = false };
-            AddHdrpProperty(compatibility, "adaptUnsupportedEffects", "Adapt Temporal Effects");
-            AddHdrpProperty(compatibility, "fallbackFixedExposure", "Use Manual EV for Non-Fixed Exposure");
+            AddPipelineProperty(compatibility, "adaptUnsupportedEffects", "Adapt Temporal Effects");
+            AddPipelineProperty(compatibility, "fallbackFixedExposure", "Use Manual EV for Non-Fixed Exposure");
             compatibility.Add(new HelpBox("Used only in Shared Camera Compatibility mode: Motion Blur, SSR, SSGI and volumetric clouds are suppressed; TAA is disabled; volumetric fog uses Gaussian filtering. Non-Fixed exposure uses Manual Fixed EV when enabled. This mode changes the appearance of the scene.", HelpBoxMessageType.Warning));
             foldout.Add(compatibility);
         }
 
-        void AddHdrpProperty(VisualElement parent, string propertyName, string label)
+        void AddPipelineProperty(VisualElement parent, string propertyName, string label)
         {
             PropertyField field = AddBoundProperty(parent, guardObject, propertyName, label);
             if (field == null) return;

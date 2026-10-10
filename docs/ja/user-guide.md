@@ -33,7 +33,11 @@ Rigの**Bridge**欄では、通常のPlay Mode出力を**Start Output**／**Stop
 
 HDRPでは、**Rendering > HDRP Rendering**の**Isolated View Histories**と**Quilt Exposure > Follow Scene**が既定です。描画する視点ごとに履歴を保持し、中央視点で測った露出をQuilt全体で共有します。シーンのHDRP効果設定を保ち、起動直後は有効な測光結果が届くまで待機します。露出を自分で指定する場合だけ**Manual Fixed**を選んでください。
 
-履歴の保持には追加のGPUリソースが必要です。**History Resource Budget (MB)**の既定は4096で、観測した割当増分が上限を超えると出力を停止します。まずOutput Qualityを下げるかHalf／Quarterを試してください。Release Playerではテクスチャの推定量を使うため、厳密なVRAM上限ではありません。**Maximum History Cameras**ではCamera数も制限します。**Shared Camera Compatibility**は時間履歴を使う効果を抑制して見え方を変える明示的な選択肢です。各効果とプラットフォームの未検証範囲は[対応表](compatibility.md)を参照してください。
+URPでTAAを使うには、Reference Cameraの**Post Processing**を有効にし、**Anti-aliasing > Temporal Anti-aliasing (TAA)**を選びます。Rigの**Rendering > URP Rendering**は、既定の**View History Mode > Isolated View Histories**と**Follow Reference Rendering Settings**を使ってください。各視点で履歴を保持し、Reference Cameraの描画設定を反映します。構図、クリップ範囲、表示対象はRigで設定します。
+
+TAAにはUniversal Rendererを使い、MSAA、Camera Stack、Dynamic Resolutionを無効にしてください。Post Processing有効時のVolumeのMotion Blurは、Quiltでの見え方を未検証のため出力を停止します。利用時はMotion Blurを無効にしてください。**Shared Camera Compatibility**は従来の互換用モードで、Quilt描画中はTAAを無効にします。
+
+視点別の履歴には追加のGPUメモリが必要です。URP/HDRPとも**History Resource Budget (MB)**は4096、**Maximum History Cameras**は256が既定値で、設定は**Rig > Rendering**にあります。観測したGPUメモリの増加量、または新規・拡大した描画テクスチャの容量推定が予算を超えると出力を停止します。共有資源も含めますが、一部のバッファやドライバの使用量は計測できないため、VRAM使用量の厳密な上限ではありません。予算を増やす前にOutput Qualityを下げるかHalf／Quarterを試してください。互換モードでは効果やシーンの見え方が変わることがあります。詳細と未検証範囲は[対応表](compatibility.md)を参照してください。
 
 ## EditorまたはdisplayでPreviewする
 

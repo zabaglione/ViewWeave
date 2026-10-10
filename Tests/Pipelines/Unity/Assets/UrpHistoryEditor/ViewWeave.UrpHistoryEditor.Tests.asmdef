@@ -1,0 +1,25 @@
+{
+  "name": "ViewWeave.UrpHistoryEditor.Tests",
+  "rootNamespace": "ViewWeave.UrpHistoryEditor",
+  "references": [
+    "ViewWeave.Core",
+    "ViewWeave.URP",
+    "Unity.RenderPipelines.Universal.Runtime",
+    "Unity.RenderPipelines.Core.Runtime",
+    "UnityEngine.TestRunner",
+    "UnityEditor.TestRunner",
+    "ViewWeave.Bridge",
+    "ViewWeave.Bridge.Editor"
+  ],
+  "overrideReferences": true,
+  "precompiledReferences": [
+    "nunit.framework.dll"
+  ],
+  "defineConstraints": [
+    "UNITY_INCLUDE_TESTS"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "autoReferenced": false
+}

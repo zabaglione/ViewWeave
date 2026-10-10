@@ -18,6 +18,323 @@ namespace ViewWeave.GraphicsCompatibility
         const int TargetHeight = 128;
 
         [UnityTest]
+        public IEnumerator QuiltTaaHasIndependentAccumulatingHistoriesAndChangedPixels()
+        {
+            RequireMetalEditor();
+            Fixture fixture = null;
+            Texture2D temporal = null, control = null;
+            try
+            {
+                fixture = new Fixture(); fixture.Setup();
+                yield return null; yield return null;
+                fixture.SetupQuilt();
+                int[] firstVersions = new int[4];
+                TaaHistory[] histories = new TaaHistory[4];
+                RenderTexture[] textures = new RenderTexture[4];
+                Camera[] cameras = new Camera[4];
+                for (int frame = 0; frame < 16; frame++)
+                {
+                    yield return null; fixture.Quilt.RenderQuilt();
+                    Assert.AreEqual(4, fixture.Guard.HistoryCameraCount);
+                    for (int view = 0; view < 4; view++)
+                    {
+                        Camera camera = fixture.Guard.GetHistoryCamera(view);
+                        Assert.IsFalse(camera.enabled, "Owned views must never participate in automatic scene rendering");
+                        var data = camera.GetComponent<UniversalAdditionalCameraData>();
+                        var history = data.history.GetHistoryForRead<TaaHistory>();
+                        Assert.IsNotNull(history, "A newly created disabled view did not initialize TAA");
+                        Assert.IsNotNull(history.GetAccumulationTexture()?.rt);
+                        Assert.AreEqual(1, history.GetAccumulationTexture().rt.antiAliasing);
+                        if (frame == 0)
+                        {
+                            cameras[view] = camera; histories[view] = history;
+                            textures[view] = history.GetAccumulationTexture().rt;
+                            firstVersions[view] = history.GetAccumulationVersion();
+                        }
+                        else
+                        {
+                            Assert.AreSame(cameras[view], camera);
+                            Assert.AreSame(histories[view], history);
+                            Assert.Greater(history.GetAccumulationVersion(), firstVersions[view], "View history did not accumulate across real frames");
+                        }
+                        for (int other = 0; other < view; other++)
+                        {
+                            Assert.AreNotSame(histories[other], history, "Logical views shared a TAA history object");
+                            Assert.AreNotSame(textures[other], history.GetAccumulationTexture().rt, "Logical views shared a TAA accumulation texture");
+                        }
+                    }
+                }
+                fixture.AssertQuiltTemporalJitter();
+                int version = histories[0].GetAccumulationVersion();
+                fixture.Quilt.RenderQuilt();
+                Assert.AreEqual(version, histories[0].GetAccumulationVersion(), "Same-frame redraw must not advance history version");
+                temporal = fixture.CaptureQuilt(); AssertLitContent(temporal, "Quilt TAA");
+                fixture.SettingsData.antialiasing = AntialiasingMode.None;
+                fixture.ResetObservations();
+                for (int frame = 0; frame < 4; frame++) { yield return null; fixture.Quilt.RenderQuilt(); }
+                fixture.AssertQuiltStableProjection();
+                control = fixture.CaptureQuilt(); AssertLitContent(control, "Quilt TAA-off");
+                AssertImagesDiffer(temporal, control);
+                Assert.AreEqual(AntialiasingMode.None, fixture.SettingsData.antialiasing);
+            }
+            finally
+            {
+                if (temporal != null) Object.DestroyImmediate(temporal);
+                if (control != null) Object.DestroyImmediate(control);
+                fixture?.Dispose();
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator QuiltHistoryPoolPrunesResizesRestartsAndRejectsInvalidTaa()
+        {
+            RequireMetalEditor(); Fixture fixture = null;
+            try
+            {
+                fixture = new Fixture(); fixture.Setup(); yield return null; yield return null;
+                fixture.SetupQuilt(); fixture.Quilt.RenderQuilt();
+                Camera left = fixture.Guard.GetHistoryCamera(0), right = fixture.Guard.GetHistoryCamera(3);
+                fixture.Quilt.viewRenderMode = QuiltViewRenderMode.Quarter;
+                yield return null; fixture.Quilt.RenderQuilt();
+                Assert.AreEqual(2, fixture.Guard.HistoryCameraCount);
+                Assert.AreSame(left, fixture.Guard.GetHistoryCamera(0)); Assert.AreSame(right, fixture.Guard.GetHistoryCamera(3));
+                Assert.IsNull(fixture.Guard.GetHistoryCamera(1)); Assert.IsNull(fixture.Guard.GetHistoryCamera(2));
+                fixture.Quilt.settings.quiltWidth += 64;
+                yield return null; fixture.Quilt.RenderQuilt();
+                Assert.AreNotSame(left, fixture.Guard.GetHistoryCamera(0));
+                fixture.Quilt.ReleasePipelineRenderResources();
+                Assert.AreEqual(0, fixture.Guard.HistoryCameraCount);
+                yield return null;
+                Assert.IsTrue(left == null, "Pruned/old cameras were not destroyed after a frame");
+                fixture.Quilt.RenderQuilt(); Assert.AreEqual(2, fixture.Guard.HistoryCameraCount);
+                fixture.Guard.maximumHistoryCameras = 1;
+                Assert.Throws<System.InvalidOperationException>(() => fixture.Quilt.RenderQuilt());
+                Assert.AreEqual(0, fixture.Guard.HistoryCameraCount);
+                fixture.Guard.maximumHistoryCameras = 256;
+                fixture.SettingsData.renderPostProcessing = false;
+                Assert.Throws<System.NotSupportedException>(() => fixture.Quilt.RenderQuilt());
+                Assert.IsFalse(fixture.SettingsData.renderPostProcessing, "The SDK silently rewrote authored settings");
+                fixture.SettingsData.renderPostProcessing = true;
+                fixture.Quilt.sourceCamera.allowDynamicResolution = true;
+                Assert.Throws<System.NotSupportedException>(() => fixture.Quilt.RenderQuilt());
+                fixture.Quilt.sourceCamera.allowDynamicResolution = false;
+                fixture.StopObservations();
+                fixture.Guard.renderingMode = UrpQuiltRenderingMode.SharedCameraCompatibility;
+                fixture.Quilt.RenderQuilt(); Assert.AreEqual(0, fixture.Guard.HistoryCameraCount);
+                Assert.AreEqual(AntialiasingMode.TemporalAntiAliasing, fixture.SettingsData.antialiasing);
+                fixture.Guard.renderingMode = UrpQuiltRenderingMode.IsolatedViewHistories;
+                fixture.Guard.historyMemoryBudgetMB = 1;
+                fixture.Quilt.settings.quiltWidth = 1536; fixture.Quilt.settings.quiltHeight = 1024;
+                yield return null;
+                Assert.Throws<System.InsufficientMemoryException>(() => fixture.Quilt.RenderQuilt());
+                Assert.AreEqual(0, fixture.Guard.HistoryCameraCount, "Budget failure did not retire owned resources");
+            }
+            finally { fixture?.Dispose(); }
+        }
+
+        [UnityTest]
+        public IEnumerator QuiltCopiesScriptedVolumesWithoutSharingOrRewritingReferenceState()
+        {
+            RequireMetalEditor(); Fixture fixture = null; VolumeStack authored = null;
+            try
+            {
+                fixture = new Fixture(); fixture.Setup(); yield return null; yield return null;
+                fixture.SetupQuilt();
+                var reference = fixture.Quilt.referenceCamera;
+                reference.SetVolumeFrameworkUpdateMode(VolumeFrameworkUpdateMode.ViaScripting);
+                authored = VolumeManager.instance.CreateStack(); fixture.SettingsData.volumeStack = authored;
+                authored.GetComponent<ColorAdjustments>().postExposure.Override(1.5f);
+                var originalCurve = new TextureCurve(new[] { new Keyframe(.2f, .1f), new Keyframe(.6f, .8f) }, .5f, true, new Vector2(0f, 1f));
+                var curves = authored.GetComponent<ColorCurves>(); curves.hueVsHue.value = originalCurve; curves.hueVsHue.overrideState = true;
+                Texture2D originalCurveTexture = originalCurve.GetTexture();
+                var privateStacks = new VolumeStack[4];
+                var privateCurves = new TextureCurve[4];
+                fixture.Quilt.RenderQuilt();
+                for (int view = 0; view < 4; view++)
+                {
+                    var camera = fixture.Guard.GetHistoryCamera(view); var data = camera.GetComponent<UniversalAdditionalCameraData>();
+                    Assert.AreEqual(VolumeFrameworkUpdateMode.ViaScripting, camera.GetVolumeFrameworkUpdateMode());
+                    Assert.AreNotSame(authored, data.volumeStack); privateStacks[view] = data.volumeStack;
+                    var copiedCurve = data.volumeStack.GetComponent<ColorCurves>().hueVsHue.value;
+                    privateCurves[view] = copiedCurve;
+                    Assert.AreNotSame(originalCurve, copiedCurve); Assert.AreNotSame(originalCurveTexture, copiedCurve.GetTexture());
+                    foreach (float sample in new[] { 0f, .1f, .25f, .5f, .75f, .9f, 1f })
+                        Assert.AreEqual(originalCurve.Evaluate(sample), copiedCurve.Evaluate(sample), .00001f, "Looped curve evaluation changed in the private copy");
+                    Assert.AreEqual(1.5f, data.volumeStack.GetComponent<ColorAdjustments>().postExposure.value);
+                }
+                for (int frame = 0; frame < 3; frame++)
+                {
+                    yield return null; fixture.Quilt.RenderQuilt();
+                    for (int view = 0; view < 4; view++)
+                        Assert.AreSame(privateCurves[view], privateStacks[view].GetComponent<ColorCurves>().hueVsHue.value,
+                            "Unchanged curve copies were replaced instead of reused");
+                }
+                authored.GetComponent<ColorAdjustments>().postExposure.Override(2.5f);
+                originalCurve.MoveKey(0, new Keyframe(.2f, .4f)); originalCurve.GetTexture();
+                yield return null; fixture.Quilt.RenderQuilt();
+                Assert.AreEqual(2.5f, fixture.Guard.GetHistoryCamera(0).GetComponent<UniversalAdditionalCameraData>().volumeStack.GetComponent<ColorAdjustments>().postExposure.value);
+                var changedCurve = fixture.Guard.GetHistoryCamera(0).GetComponent<UniversalAdditionalCameraData>().volumeStack.GetComponent<ColorCurves>().hueVsHue.value;
+                Assert.AreEqual(originalCurve.Evaluate(.2f), changedCurve.Evaluate(.2f), .00001f);
+                fixture.Quilt.ReleasePipelineRenderResources(); yield return null;
+                foreach (var stack in privateStacks) Assert.IsFalse(stack.isValid, "Private stack was cached instead of destroyed");
+                Assert.IsTrue(originalCurveTexture != null, "Stop destroyed the Reference Camera curve texture");
+                Assert.AreSame(originalCurveTexture, originalCurve.GetTexture());
+                Assert.IsTrue(authored.isValid); Assert.AreSame(authored, fixture.SettingsData.volumeStack);
+                VolumeManager.instance.DestroyStack(authored); fixture.SettingsData.volumeStack = null; authored = null;
+                reference.SetVolumeFrameworkUpdateMode(VolumeFrameworkUpdateMode.EveryFrame);
+                fixture.Quilt.RenderQuilt();
+                Assert.AreEqual(VolumeFrameworkUpdateMode.EveryFrame, fixture.Guard.GetHistoryCamera(0).GetVolumeFrameworkUpdateMode());
+                Assert.AreEqual(0, fixture.Quilt.referenceCamera.GetComponents<AudioListener>().Length);
+                Assert.AreEqual(0, fixture.Guard.GetHistoryCamera(0).GetComponents<AudioListener>().Length);
+            }
+            finally
+            {
+                if (authored != null && authored.isValid)
+                {
+                    VolumeManager.instance.DestroyStack(authored);
+                    if (fixture?.SettingsData != null) fixture.SettingsData.volumeStack = null;
+                }
+                fixture?.Dispose();
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator QuiltMsaaFollowsEffectiveRendererAndSourcePermission()
+        {
+            RequireMetalEditor();
+            foreach (bool sourceDeferred in new[] { true, false })
+            {
+                Fixture fixture = null;
+                try
+                {
+                    fixture = new Fixture(); fixture.Setup(); fixture.ConfigureRendererPair(sourceDeferred);
+                    yield return null; yield return null;
+                    fixture.SetupQuilt(); fixture.Quilt.sourceCamera.allowMSAA = true;
+                    fixture.CameraData.antialiasing = fixture.SettingsData.antialiasing = AntialiasingMode.None;
+                    fixture.SettingsData.SetRenderer(1);
+                    var descriptor = new RenderTextureDescriptor(TargetWidth, TargetHeight, RenderTextureFormat.ARGB32, 24) { msaaSamples = 4 };
+                    int supported = SystemInfo.GetRenderTextureSupportedMSAASampleCount(descriptor);
+                    int forwardSamples = supported == 2 || supported == 4 || supported == 8 ? supported : 1;
+                    fixture.Quilt.RenderQuilt();
+                    Assert.AreEqual(sourceDeferred ? forwardSamples : 1, fixture.Quilt.ViewAntiAliasingSamples);
+                    Assert.AreSame(fixture.SettingsData.scriptableRenderer,
+                        fixture.Guard.GetHistoryCamera(0).GetComponent<UniversalAdditionalCameraData>().scriptableRenderer);
+                    fixture.Guard.followReferenceRenderingSettings = false; fixture.Quilt.RenderQuilt();
+                    Assert.AreEqual(sourceDeferred ? 1 : forwardSamples, fixture.Quilt.ViewAntiAliasingSamples);
+                    fixture.Guard.followReferenceRenderingSettings = true; fixture.Quilt.sourceCamera.allowMSAA = false;
+                    fixture.Quilt.RenderQuilt(); Assert.AreEqual(1, fixture.Quilt.ViewAntiAliasingSamples);
+                    Assert.AreEqual(0, fixture.Quilt.ResolveAntiAliasingSamples);
+                    fixture.Quilt.sourceCamera.allowMSAA = true;
+                    if (!sourceDeferred)
+                    {
+                        fixture.SettingsData.antialiasing = AntialiasingMode.TemporalAntiAliasing;
+                        yield return null; fixture.Quilt.RenderQuilt();
+                        Assert.AreEqual(1, fixture.Quilt.ViewAntiAliasingSamples);
+                        Assert.IsNotNull(fixture.Guard.GetHistoryCamera(0).GetComponent<UniversalAdditionalCameraData>()
+                            .history.GetHistoryForRead<TaaHistory>()?.GetAccumulationTexture()?.rt,
+                            "Deferred TAA was rejected despite the actual target using one sample");
+                    }
+                    else
+                    {
+                        fixture.SettingsData.antialiasing = AntialiasingMode.TemporalAntiAliasing;
+                        Assert.Throws<System.NotSupportedException>(() => fixture.Quilt.RenderQuilt(),
+                            "Forward TAA accepted a multisampled target");
+                        Assert.AreEqual(0, fixture.Guard.HistoryCameraCount);
+                        Assert.AreEqual(AntialiasingMode.TemporalAntiAliasing, fixture.SettingsData.antialiasing);
+                    }
+                    fixture.Guard.renderingMode = UrpQuiltRenderingMode.SharedCameraCompatibility;
+                    Assert.AreEqual(sourceDeferred ? 1 : forwardSamples,
+                        fixture.Guard.GetMsaaSampleCount(fixture.Quilt.sourceCamera, fixture.Quilt.referenceCamera));
+                }
+                finally { fixture?.Dispose(); }
+                // The fixture's isolated scene unload is asynchronous in Play Mode.
+                if (fixture?.PendingSceneUnload != null) yield return fixture.PendingSceneUnload;
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator ScriptedPipelineSettingReleasesPrivateStacksAcrossRestarts()
+        {
+            RequireMetalEditor(); Fixture fixture = null; VolumeStack authored = null;
+            try
+            {
+                fixture = new Fixture(); fixture.Setup(); yield return null; yield return null;
+                fixture.SetupQuilt(); fixture.SetPipelineVolumeMode(VolumeFrameworkUpdateMode.ViaScripting);
+                // Asset validation can rebuild URP and its VolumeManager on the next frame.
+                yield return null; yield return null;
+                fixture.Quilt.RenderQuilt(); fixture.Quilt.ReleasePipelineRenderResources();
+                Assert.AreEqual(VolumeFrameworkUpdateMode.UsePipelineSettings, fixture.Quilt.referenceCamera.GetVolumeFrameworkUpdateMode());
+                authored = VolumeManager.instance.CreateStack(); fixture.SettingsData.volumeStack = authored;
+                for (int cycle = 0; cycle < 3; cycle++)
+                {
+                    yield return null;
+                    Assert.IsTrue(authored.isValid, "Reference stack was invalidated before quilt rendering");
+                    fixture.Quilt.RenderQuilt();
+                    var stacks = new VolumeStack[4];
+                    for (int view = 0; view < 4; view++)
+                    {
+                        stacks[view] = fixture.Guard.GetHistoryCamera(view).GetComponent<UniversalAdditionalCameraData>().volumeStack;
+                        Assert.IsNotNull(stacks[view]); Assert.IsTrue(stacks[view].isValid); Assert.AreNotSame(authored, stacks[view]);
+                    }
+                    fixture.Quilt.ReleasePipelineRenderResources();
+                    foreach (var stack in stacks) Assert.IsFalse(stack.isValid, "Private stack survived stop in URP's cache");
+                    Assert.IsTrue(authored.isValid);
+                }
+            }
+            finally
+            {
+                if (authored != null && authored.isValid)
+                {
+                    VolumeManager.instance.DestroyStack(authored);
+                    if (fixture?.SettingsData != null) fixture.SettingsData.volumeStack = null;
+                }
+                fixture?.Dispose();
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator DisabledCameraRenderAdvancesTemporalHistoryOnMetal()
+        {
+            RequireMetalEditor();
+            Fixture fixture = null;
+            Texture2D temporal = null, control = null;
+            try
+            {
+                fixture = new Fixture();
+                fixture.Setup();
+                yield return null; yield return null;
+                fixture.DisableNormalRendering();
+                fixture.ResetObservations();
+                int firstVersion = -1, lastVersion = -1;
+                for (int frame = 0; frame < 16; frame++)
+                {
+                    yield return null;
+                    fixture.RenderManual();
+                    var history = fixture.CameraData.history.GetHistoryForRead<TaaHistory>();
+                    Assert.IsNotNull(history, "Manual Camera.Render did not create a TAA history");
+                    lastVersion = history.GetAccumulationVersion();
+                    if (firstVersion < 0) firstVersion = lastVersion;
+                }
+                Assert.Greater(lastVersion, firstVersion, "Manual Camera.Render did not advance TAA accumulation");
+                fixture.AssertObservedTemporalJitter();
+                temporal = fixture.Capture();
+                AssertLitContent(temporal, "Manual TAA Camera");
+                fixture.CameraData.antialiasing = AntialiasingMode.None;
+                fixture.ResetObservations();
+                for (int frame = 0; frame < 4; frame++) { yield return null; fixture.RenderManual(); }
+                fixture.AssertObservedStableProjection();
+                control = fixture.Capture();
+                AssertImagesDiffer(temporal, control);
+            }
+            finally
+            {
+                if (temporal != null) Object.DestroyImmediate(temporal);
+                if (control != null) Object.DestroyImmediate(control);
+                fixture?.Dispose();
+            }
+        }
+
+        [UnityTest]
         public IEnumerator TemporalAntiAliasingUsesProjectionJitterAndChangesMetalPixels()
         {
             RequireMetalEditor();
@@ -147,6 +464,76 @@ namespace ViewWeave.GraphicsCompatibility
 
             public UniversalAdditionalCameraData CameraData { get; private set; }
             public UrpQuiltCamera Guard { get; private set; }
+            public QuiltRenderer Quilt { get; private set; }
+            public UniversalAdditionalCameraData SettingsData { get; private set; }
+            public AsyncOperation PendingSceneUnload => sceneScope?.UnloadOperation;
+            public void ConfigureRendererPair(bool sourceDeferred)
+            {
+                rendererData.renderingMode = sourceDeferred ? RenderingMode.Deferred : RenderingMode.Forward;
+                rendererData.SetDirty();
+                var referenceRenderer = ScriptableObject.CreateInstance<UniversalRendererData>();
+                referenceRenderer.renderingMode = sourceDeferred ? RenderingMode.Forward : RenderingMode.Deferred;
+                referenceRenderer.postProcessData = rendererData.postProcessData; owned.Add(referenceRenderer);
+                var serialized = new SerializedObject(pipeline);
+                var renderers = serialized.FindProperty("m_RendererDataList"); Assert.IsNotNull(renderers);
+                renderers.arraySize = 2; renderers.GetArrayElementAtIndex(1).objectReferenceValue = referenceRenderer;
+                serialized.ApplyModifiedPropertiesWithoutUndo(); pipeline.msaaSampleCount = 4;
+            }
+            public void SetPipelineVolumeMode(VolumeFrameworkUpdateMode mode)
+            {
+                // Configure this fixture-owned asset through the public Editor serialization API.
+                var serialized = new SerializedObject(pipeline);
+                var property = serialized.FindProperty("m_VolumeFrameworkUpdateMode");
+                Assert.IsNotNull(property); property.enumValueIndex = (int)mode; serialized.ApplyModifiedPropertiesWithoutUndo();
+            }
+            public void StopObservations() { observer.TargetCamera = null; observer.ObserveChildrenOf = null; }
+            public void SetupQuilt()
+            {
+                camera.enabled = false; camera.targetTexture = null;
+                var referenceObject = new GameObject("ReferenceTaaCamera");
+                referenceObject.transform.SetParent(root.transform, false);
+                var reference = referenceObject.AddComponent<Camera>(); reference.CopyFrom(camera); reference.enabled = false;
+                SettingsData = referenceObject.AddComponent<UniversalAdditionalCameraData>();
+                SettingsData.renderPostProcessing = true; SettingsData.antialiasing = AntialiasingMode.TemporalAntiAliasing;
+                SettingsData.volumeLayerMask = CameraData.volumeLayerMask;
+                SettingsData.taaSettings.baseBlendFactor = 0.05f;
+                Quilt = camera.gameObject.AddComponent<QuiltRenderer>(); Quilt.sourceCamera = camera;
+                Quilt.referenceCamera = reference; Quilt.GuardBehaviour = Guard;
+                Quilt.settings.quiltWidth = TargetWidth * 2; Quilt.settings.quiltHeight = TargetHeight * 2;
+                Quilt.settings.columns = 2; Quilt.settings.rows = 2; Quilt.settings.views = 4;
+                Quilt.settings.viewAspect = TargetWidth / (float)TargetHeight;
+                Quilt.settings.fieldOfView = camera.fieldOfView; Quilt.settings.cameraDistance = 3f; Quilt.settings.viewCone = 25f;
+                observer.ObserveChildrenOf = camera.transform;
+                ResetObservations();
+            }
+            public Texture2D CaptureQuilt() => CaptureTexture(Quilt.QuiltTexture);
+            public void AssertQuiltTemporalJitter() => AssertQuiltProjections(true);
+            public void AssertQuiltStableProjection() => AssertQuiltProjections(false);
+            void AssertQuiltProjections(bool temporal)
+            {
+                for (int view = 0; view < 4; view++)
+                {
+                    Camera id = Guard.GetHistoryCamera(view);
+                    var samples = new List<ProjectionObservation>();
+                    foreach (var observation in observer.Observations) if (observation.CameraId == id) samples.Add(observation);
+                    Assert.GreaterOrEqual(samples.Count, temporal ? 8 : 2);
+                    bool changed = false;
+                    foreach (var sample in samples)
+                    {
+                        Assert.AreEqual(temporal ? AntialiasingMode.TemporalAntiAliasing : AntialiasingMode.None, sample.Mode);
+                        if (MaxMatrixDifference(samples[0].Projection, sample.Projection) > 1e-6f) changed = true;
+                    }
+                    Assert.AreEqual(temporal, changed, "Unexpected temporal projection behavior in logical view " + view);
+                }
+            }
+
+            public void DisableNormalRendering() { camera.enabled = false; }
+            public void RenderManual()
+            {
+                Assert.IsFalse(camera.enabled);
+                Assert.IsFalse(camera.isProcessingRenderRequest);
+                camera.Render();
+            }
 
             public void Setup()
             {
@@ -295,15 +682,16 @@ namespace ViewWeave.GraphicsCompatibility
                     "The camera was not observed rendering across enough distinct Unity frames.");
             }
 
-            public Texture2D Capture()
+            public Texture2D Capture() => CaptureTexture(target);
+            static Texture2D CaptureTexture(RenderTexture target)
             {
                 RenderTexture previous = RenderTexture.active;
                 Texture2D image = null;
                 try
                 {
                     RenderTexture.active = target;
-                    image = new Texture2D(TargetWidth, TargetHeight, TextureFormat.RGBA32, false);
-                    image.ReadPixels(new Rect(0, 0, TargetWidth, TargetHeight), 0, 0);
+                    image = new Texture2D(target.width, target.height, TextureFormat.RGBA32, false);
+                    image.ReadPixels(new Rect(0, 0, target.width, target.height), 0, 0);
                     image.Apply();
                     return image;
                 }
@@ -320,8 +708,8 @@ namespace ViewWeave.GraphicsCompatibility
 
             public void Dispose()
             {
-                if (camera != null)
-                    camera.enabled = false;
+                if (camera != null) camera.enabled = false;
+                Quilt?.ReleasePipelineRenderResources();
                 GraphicsSettings.defaultRenderPipeline = previousDefaultPipeline;
                 QualitySettings.renderPipeline = previousQualityPipeline;
                 sceneScope?.Dispose();
@@ -355,13 +743,14 @@ namespace ViewWeave.GraphicsCompatibility
 
             sealed class ProjectionObservation
             {
+                public readonly Camera CameraId;
                 public readonly int Frame;
                 public readonly AntialiasingMode Mode;
                 public readonly Matrix4x4 Projection;
 
-                public ProjectionObservation(int frame, AntialiasingMode mode, Matrix4x4 projection)
+                public ProjectionObservation(Camera cameraId, int frame, AntialiasingMode mode, Matrix4x4 projection)
                 {
-                    Frame = frame;
+                    CameraId = cameraId; Frame = frame;
                     Mode = mode;
                     Projection = projection;
                 }
@@ -373,6 +762,8 @@ namespace ViewWeave.GraphicsCompatibility
                 ProjectionObserverPass pass;
 
                 public Camera TargetCamera { get; set; }
+                public Transform ObserveChildrenOf { get; set; }
+                bool Matches(Camera camera) => camera == TargetCamera || (ObserveChildrenOf != null && camera.transform.IsChildOf(ObserveChildrenOf));
                 public IReadOnlyList<ProjectionObservation> Observations => observations;
 
                 public override void Create()
@@ -385,7 +776,7 @@ namespace ViewWeave.GraphicsCompatibility
 
                 public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
                 {
-                    if (pass != null && TargetCamera != null && renderingData.cameraData.camera == TargetCamera)
+                    if (pass != null && Matches(renderingData.cameraData.camera))
                         renderer.EnqueuePass(pass);
                 }
 
@@ -406,10 +797,12 @@ namespace ViewWeave.GraphicsCompatibility
                     public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
                     {
                         UniversalCameraData cameraData = frameData.Get<UniversalCameraData>();
-                        if (cameraData.camera != owner.TargetCamera)
+                        if (!owner.Matches(cameraData.camera))
                             return;
+                        Assert.IsFalse(cameraData.camera.isProcessingRenderRequest,
+                            "This TAA control must run through ordinary Camera.Render, not a render request");
                         owner.observations.Add(new ProjectionObservation(
-                            Time.frameCount, cameraData.antialiasing, cameraData.GetProjectionMatrix()));
+                            cameraData.camera, Time.frameCount, cameraData.antialiasing, cameraData.GetProjectionMatrix()));
                     }
                 }
             }

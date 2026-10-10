@@ -14,6 +14,7 @@ namespace ViewWeave.GraphicsCompatibility
         readonly GameObject root;
         readonly List<Behaviour> disabledBehaviours = new List<Behaviour>();
         readonly Light previousSun;
+        public AsyncOperation UnloadOperation { get; private set; }
 
         GraphicsFixtureScope(GameObject fixtureRoot)
         {
@@ -106,7 +107,7 @@ namespace ViewWeave.GraphicsCompatibility
                 SceneManager.SetActiveScene(previousScene);
             RenderSettings.sun = previousSun;
             if (isolatedScene.IsValid() && isolatedScene.isLoaded)
-                SceneManager.UnloadSceneAsync(isolatedScene);
+                UnloadOperation = SceneManager.UnloadSceneAsync(isolatedScene);
         }
     }
 }

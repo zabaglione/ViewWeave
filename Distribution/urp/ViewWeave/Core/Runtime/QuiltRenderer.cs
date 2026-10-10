@@ -449,12 +449,10 @@ namespace ViewWeave
                 ClearQuilt();
                 state = new CameraState(sourceCamera);
                 stateCaptured = true;
-                if (srp)
-                {
-                    var initializationRequest = new RenderPipeline.StandardRequest { destination = viewTexture };
-                    if (!RenderPipeline.SupportsRenderRequest(sourceCamera, initializationRequest))
-                        throw new NotSupportedException("active render pipeline does not support standard camera requests");
-                }
+                // This public query also prepares a newly selected SRP before adapter Volume validation.
+                // An executor may use a different public draw path even without StandardRequest support.
+                bool supportsStandardRequest = !srp || RenderPipeline.SupportsRenderRequest(sourceCamera,
+                    new RenderPipeline.StandardRequest { destination = viewTexture });
                 long totalStart = Stopwatch.GetTimestamp();
                 sourceCamera.enabled = false;
                 Matrix4x4 centerProjection = QuiltMath.OffAxisProjection(effectiveSettings.fieldOfView, effectiveSettings.viewAspect, state.nearClip, state.farClip, 0f, effectiveSettings.cameraDistance);
@@ -463,6 +461,9 @@ namespace ViewWeave
                     layout, effectiveSettings, renderedViewIndices, centerProjection));
                 LastRenderStatus = renderSession == null ? string.Empty : renderSession.Status;
                 if (renderSession != null && !renderSession.IsReady) return;
+                IQuiltViewRenderExecutor executor = renderSession as IQuiltViewRenderExecutor;
+                if (srp && executor == null && !supportsStandardRequest)
+                    throw new NotSupportedException("active render pipeline does not support standard camera requests");
                 Canvas[] cameraCanvases = renderSession == null ? null : UnityEngine.Object.FindObjectsByType<Canvas>();
                 if (renderSession == null)
                 {
@@ -492,7 +493,8 @@ namespace ViewWeave
                         if (viewCamera != sourceCamera)
                             canvasScope = new CanvasCameraScope(cameraCanvases, sourceCamera, referenceCamera, viewCamera);
                         viewGuard = renderSession != null ? renderSession.BeginView(viewCamera, viewIndex) : srp ? RenderGuard.Begin(viewCamera) : null;
-                        RenderOneView(viewCamera);
+                        if (executor != null) executor.RenderView(viewCamera, viewTexture);
+                        else RenderOneView(viewCamera);
                         LastRenderedViewCount++;
                     }
                     finally
@@ -778,7 +780,8 @@ namespace ViewWeave
             if (camera == null || !camera.allowMSAA) return 1;
             IQuiltMsaaProvider provider = RenderGuard as IQuiltMsaaProvider;
             if (provider == null) return 1;
-            int requested = provider.GetMsaaSampleCount(camera);
+            int requested = provider is IQuiltMsaaSettingsProvider settingsProvider
+                ? settingsProvider.GetMsaaSampleCount(camera, referenceCamera) : provider.GetMsaaSampleCount(camera);
             if (requested <= 1) return 1;
             RenderTextureDescriptor probe = new RenderTextureDescriptor(layout.TileWidth, layout.TileHeight, RenderTextureFormat.ARGB32, 24)
             {

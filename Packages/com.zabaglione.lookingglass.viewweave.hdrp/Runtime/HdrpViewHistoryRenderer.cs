@@ -1,10 +1,8 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Profiling;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.HighDefinition;
-using UnityEngine.Experimental.Rendering;
 
 namespace ViewWeave.HDRP
 {
@@ -23,7 +21,7 @@ namespace ViewWeave.HDRP
         readonly Dictionary<int, View> views = new Dictionary<int, View>();
         readonly HashSet<int> requestedViews = new HashSet<int>();
         readonly List<int> removedViews = new List<int>();
-        readonly Dictionary<RenderTexture, long> textureBaseline = new Dictionary<RenderTexture, long>();
+        readonly QuiltHistoryResourceBudget resourceBudget = new QuiltHistoryResourceBudget();
         readonly Camera source;
         HdrpSharedExposureMeter meter;
         VolumeStack baseline;
@@ -33,12 +31,11 @@ namespace ViewWeave.HDRP
         VolumeProfile profile;
         Exposure exposureOverride;
         int tileWidth, tileHeight, viewCount;
-        long graphicsBaseline;
         bool active, disposed, budgetExceeded;
         int observedQuilts;
         public int CameraCount => views.Count;
-        public long GraphicsMemoryGrowthBytes { get; private set; }
-        public long TextureMemoryGrowthBytes { get; private set; }
+        public long GraphicsMemoryGrowthBytes => resourceBudget.GraphicsGrowthBytes;
+        public long TextureMemoryGrowthBytes => resourceBudget.TextureGrowthBytes;
         public float SharedExposureEV { get; private set; }
         public bool ExposureReady { get; private set; }
         public string Status { get; private set; } = string.Empty;
@@ -61,8 +58,7 @@ namespace ViewWeave.HDRP
                 ReleaseResources();
                 pipeline = GraphicsSettings.currentRenderPipeline;
                 tileWidth = context.Layout.TileWidth; tileHeight = context.Layout.TileHeight; viewCount = context.Layout.ViewCount;
-                graphicsBaseline = Profiler.GetAllocatedMemoryForGraphicsDriver();
-                CaptureTextureBaseline();
+                resourceBudget.CaptureBaseline();
             }
             Camera settingsCamera = followReferenceSettings && context.ReferenceCamera != null ? context.ReferenceCamera : source;
             var settingsData = settingsCamera.GetComponent<HDAdditionalCameraData>();
@@ -158,68 +154,10 @@ namespace ViewWeave.HDRP
 
         internal Camera GetCamera(int logicalView) => views.TryGetValue(logicalView, out View view) ? view.camera : null;
 
-        void CaptureTextureBaseline()
-        {
-            textureBaseline.Clear();
-            foreach (RenderTexture texture in Resources.FindObjectsOfTypeAll<RenderTexture>())
-                if (texture != null && texture.IsCreated()) textureBaseline[texture] = EstimateTextureBytes(texture);
-        }
-
-        // Public descriptors remain available in Release Players, where the graphics-driver counter returns zero.
-        // Include new/grown textures conservatively; never subtract an unrelated texture that was freed.
-        // This is a texture allocation estimate, not a measurement of complete per-camera GPU memory.
-        static long EstimateTextureBytes(RenderTexture texture)
-        {
-            RenderTextureDescriptor descriptor = texture.descriptor;
-            long color = EstimateFormatBytes(descriptor.graphicsFormat, descriptor.width, descriptor.height, texture.mipmapCount);
-            long depth = EstimateFormatBytes(descriptor.depthStencilFormat, descriptor.width, descriptor.height, 1);
-            int slices = Math.Max(1, descriptor.volumeDepth);
-            if (descriptor.dimension == TextureDimension.Cube || descriptor.dimension == TextureDimension.CubeArray) slices *= 6;
-            int samples = Math.Max(1, descriptor.msaaSamples);
-            // A non-bindMS multisampled target may also own a resolved color surface.
-            long bytes = slices * (color * (samples > 1 && !descriptor.bindMS ? samples + 1 : samples) + depth * samples);
-            return ((bytes + 65535L) / 65536L) * 65536L;
-        }
-
-        static long EstimateFormatBytes(GraphicsFormat format, int width, int height, int mipCount)
-        {
-            if (format == GraphicsFormat.None) return 0;
-            long blockWidth = Math.Max(1L, GraphicsFormatUtility.GetBlockWidth(format));
-            long blockHeight = Math.Max(1L, GraphicsFormatUtility.GetBlockHeight(format));
-            long blockBytes = GraphicsFormatUtility.GetBlockSize(format);
-            long bytes = 0;
-            for (int mip = 0; mip < Math.Max(1, mipCount); ++mip)
-            {
-                bytes += ((width + blockWidth - 1) / blockWidth) * ((height + blockHeight - 1) / blockHeight) * blockBytes;
-                width = Math.Max(1, width / 2); height = Math.Max(1, height / 2);
-            }
-            return bytes;
-        }
-
         void CheckMemoryBudget(long budget, bool observeTextures)
         {
-            long measured = Profiler.GetAllocatedMemoryForGraphicsDriver();
-            if (measured > 0 && graphicsBaseline > 0)
-                GraphicsMemoryGrowthBytes = Math.Max(GraphicsMemoryGrowthBytes, Math.Max(0, measured - graphicsBaseline));
-            if (observeTextures)
-            {
-                long growth = 0;
-                foreach (RenderTexture texture in Resources.FindObjectsOfTypeAll<RenderTexture>())
-                {
-                    if (texture == null || !texture.IsCreated()) continue;
-                    textureBaseline.TryGetValue(texture, out long originalBytes);
-                    growth += Math.Max(0, EstimateTextureBytes(texture) - originalBytes);
-                }
-                TextureMemoryGrowthBytes = Math.Max(TextureMemoryGrowthBytes, growth);
-            }
-            if (Math.Max(GraphicsMemoryGrowthBytes, TextureMemoryGrowthBytes) > budget)
-            {
-                budgetExceeded = true;
-                throw new InsufficientMemoryException("HDRP History Resource Budget exceeded: observed graphics growth " +
-                    (GraphicsMemoryGrowthBytes / (1024L * 1024L)) + " MB; estimated texture growth " +
-                    (TextureMemoryGrowthBytes / (1024L * 1024L)) + " MB; budget " + (budget / (1024L * 1024L)) +
-                    " MB. Reduce Output Quality or rendered view count, or increase the budget.");
-            }
+            try { resourceBudget.Observe(budget, observeTextures, "HDRP"); }
+            catch (InsufficientMemoryException) { budgetExceeded = true; throw; }
         }
 
         public void Dispose()
@@ -244,8 +182,7 @@ namespace ViewWeave.HDRP
                 DestroyObject(profile);
             }
             profile = null; exposureOverride = null;
-            ExposureReady = false; GraphicsMemoryGrowthBytes = 0; TextureMemoryGrowthBytes = 0;
-            textureBaseline.Clear(); observedQuilts = 0;
+            ExposureReady = false; resourceBudget.Reset(); observedQuilts = 0;
             pipeline = null; tileWidth = tileHeight = viewCount = 0;
         }
 

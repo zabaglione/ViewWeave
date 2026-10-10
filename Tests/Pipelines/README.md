@@ -25,7 +25,7 @@ The main PlayMode test classes are:
 | `VfxGraphicsCompatibilityTests` | URP/HDRP VFX compatibility matrix |
 | `HdrpVfxPrimingValidationTests` | Diagnostics for HDRP same-camera priming |
 | `HdrpTransientVolumePreparationTests` | HDRP isolated histories, shared GPU exposure, resource limits, and lifecycle |
-| `UrpTaaPlatformTests` | Ordinary URP Camera TAA on Metal, and the existing Quilt TAA guard; this does not enable Quilt TAA |
+| `UrpTaaPlatformTests` | URP Quilt TAA on Metal, including four-view history accumulation, separate per-view targets, and view-history lifecycle cases |
 
 To run the same PlayMode suite from the CLI, use this command from the repository root:
 
@@ -48,6 +48,7 @@ Only validations that build a Player use an Editor method to create a temporary 
 | `ViewWeave.PlayerValidation.Editor.PlayerValidationBuilder.Build` | `Assets/PlayerValidationGenerated/PlayerValidation.unity` | URP GRD Player validation without Bridge |
 | `ViewWeave.VfxPlayerValidation.Editor.VfxPlayerValidationBuilder.Build` | `Assets/VfxPlayerValidationGenerated/VfxPlayerValidation.unity` | VFX Player validation |
 | `ViewWeave.MacHdrpHistoryValidation.Editor.MacHdrpHistoryValidationBuilder.Build` | `Assets/SamplePlayerValidationGenerated/MacHdrpHistory/Validation.unity` | macOS Metal HDRP histories/exposure without Bridge |
+| `ViewWeave.MacUrpHistoryValidation.Editor.MacUrpHistoryValidationBuilder.Build` | `Assets/SamplePlayerValidationGenerated/MacUrpHistory/Validation.unity` | macOS Metal URP TAA histories without Bridge |
 
 Bridge demo view-index validation uses `ViewWeave.BridgeWorkerValidation.Editor.BridgeWorkerViewIndexDebugVerification.Run`. It checks that all 48 tile indices are unique and covered without a Bridge connection, then saves the result under `.local`. For hardware validation, do not assume view 0 or 47 corresponds to the left or right edge; record the indices actually seen from each side.
 
@@ -59,7 +60,7 @@ unity run "$PWD/Tests/Pipelines/Unity" --editor-version 6000.6.4f1 -- -executeMe
 
 This method temporarily creates `Assets/SamplePlayerValidationGenerated/SamplePlayerValidation.unity`, sets Direct3D11, Linear, and Run In Background, and builds the Player. The built Player requires the Bridge runtime to start.
 
-## macOS Metal History and Exposure Validation
+## macOS Metal History, Exposure, and URP TAA Validation
 
 From the repository root, run the focused PlayMode regression with a real Metal device:
 
@@ -75,7 +76,28 @@ mkdir -p "$PWD/.local/hdrp-lighting"
 "$PWD/.local/hdrp-lighting/player-development/ViewWeaveHdrpValidation.app/Contents/MacOS/PipelineSmoke" -batchmode -force-metal -screen-width 320 -screen-height 240 -validationReport "$PWD/.local/hdrp-lighting/player-development.json" -logFile "$PWD/.local/hdrp-lighting/player-development.log"
 ```
 
-The fixture checks independent/stable Cameras, retained HDRP TAA settings, Fixed exposure compensation, Automatic Histogram light response, non-magenta red Quilt pixels, owned-resource retirement, and a rejected 1 MB warmup budget. Read the JSON and process exit code together. It uses elapsed-time bounds for GPU completion and a Cube covering most of the metering view: a mostly black histogram cannot substantiate a large EV-change expectation. This does not validate Bridge output, physical optics, HDRP TAA pixel correctness, or Windows. See the [dated record](../../docs/hdrp-view-history-validation-20261010.md) for results and retained warnings.
+The 2026-10-11 Metal PlayMode `GraphicsCompatibility` run passed 58/58 with zero skips, including eight URP adapter tests. Those tests cover four-view history accumulation, separate per-view RenderTextures and pixel comparisons, stable frame-version checks, view pruning, resize/restart, budget cleanup, and scripted Volume preservation. It is Editor PlayMode evidence. Separate bounded Metal Edit Mode and rendering-only Development/Release Player runs are covered below; neither covers Windows or physical-device optical TAA. See the [URP dated record](../../docs/urp-view-history-validation-20261011.md).
+
+### URP Edit Mode and Player checks
+
+The Editor-only Edit Mode fixture requires a Metal host and exercises disabled view cameras, TAA accumulation, pause/resume, and the public local-preview service. Run it from the repository root:
+
+```bash
+mkdir -p "$PWD/.local/urp-history"
+unity test "$PWD/Tests/Pipelines/Unity" --editor-version 6000.6.4f1 --mode EditMode --filter ViewWeave.UrpHistoryEditor.UrpHistoryEditModeTests.DisabledViewsAccumulateOutsidePlayModeAndRestartAfterPause --report-format junit --output "$PWD/.local/urp-history/editmode.xml" --timeout 1200 -- -force-metal
+```
+
+Build the rendering-only macOS Player in an isolated batch Editor. The builder selects Metal, creates a temporary scene, and restores the Editor's graphics and scene settings afterward. Start with Development:
+
+```bash
+mkdir -p "$PWD/.local/urp-history/player-development"
+unity build "$PWD/Tests/Pipelines/Unity" --editor-version 6000.6.4f1 --target StandaloneOSX --execute-method ViewWeave.MacUrpHistoryValidation.Editor.MacUrpHistoryValidationBuilder.Build --output-path "$PWD/.local/urp-history/player-development/ViewWeaveUrpValidation.app" --allow-dirty-build --timeout 1200 --args '-force-metal -validationConfiguration Development'
+"$PWD/.local/urp-history/player-development/ViewWeaveUrpValidation.app/Contents/MacOS/PipelineSmoke" -force-metal -screen-width 640 -screen-height 480 -validationReport "$PWD/.local/urp-history/player-development.json" -logFile "$PWD/.local/urp-history/player-development.log"
+```
+
+Repeat the Player commands after replacing every `player-development` path with `player-release` and changing the builder option to `-validationConfiguration Release`. Read the Player exit code, JSON report, and log together; the report also writes PNGs used for TAA-on/off and moving-geometry comparisons. These rendering-only fixtures do not test Bridge output or physical-device optics. See the [URP dated record](../../docs/urp-view-history-validation-20261011.md) for run conditions and results.
+
+The HDRP fixture checks independent/stable Cameras, retained HDRP TAA settings, Fixed exposure compensation, Automatic Histogram light response, non-magenta red Quilt pixels, owned-resource retirement, and a rejected 1 MB warmup budget. Read the JSON and process exit code together. It uses elapsed-time bounds for GPU completion and a Cube covering most of the metering view: a mostly black histogram cannot substantiate a large EV-change expectation. This does not validate Bridge output, physical optics, HDRP TAA pixel correctness, or Windows. See the [dated record](../../docs/hdrp-view-history-validation-20261010.md) for results and retained warnings.
 
 ## GPU Resident Drawer Validation
 

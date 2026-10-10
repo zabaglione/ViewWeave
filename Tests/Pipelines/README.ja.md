@@ -25,7 +25,7 @@ Build Settingsには固定sceneを登録していません。PlayModeテスト�
 | `VfxGraphicsCompatibilityTests` | URP/HDRP VFX compatibility matrix |
 | `HdrpVfxPrimingValidationTests` | HDRP same-camera primingの診断 |
 | `HdrpTransientVolumePreparationTests` | HDRPの視点別履歴、共通GPU露出、リソース制限、停止時の解放 |
-| `UrpTaaPlatformTests` | Metal上の通常URP CameraのTAAと、現行QuiltのTAA停止・復元。Quilt TAAを有効にする試験ではありません |
+| `UrpTaaPlatformTests` | Metal上のURP Quilt TAA。4視点のhistory蓄積、view別target、view historyのlifecycleなどを確認 |
 
 CLIで同じPlayMode suiteを実行する場合は、repository rootから次を使います。
 
@@ -48,6 +48,7 @@ Playerを作るvalidationだけは、Editor methodが一時的なsceneを作成�
 | `ViewWeave.PlayerValidation.Editor.PlayerValidationBuilder.Build` | `Assets/PlayerValidationGenerated/PlayerValidation.unity` | BridgeなしのURP GRD Player検証 |
 | `ViewWeave.VfxPlayerValidation.Editor.VfxPlayerValidationBuilder.Build` | `Assets/VfxPlayerValidationGenerated/VfxPlayerValidation.unity` | VFX Player validation |
 | `ViewWeave.MacHdrpHistoryValidation.Editor.MacHdrpHistoryValidationBuilder.Build` | `Assets/SamplePlayerValidationGenerated/MacHdrpHistory/Validation.unity` | Bridgeを使わないmacOS MetalのHDRP履歴・露出試験 |
+| `ViewWeave.MacUrpHistoryValidation.Editor.MacUrpHistoryValidationBuilder.Build` | `Assets/SamplePlayerValidationGenerated/MacUrpHistory/Validation.unity` | Bridgeを使わないmacOS MetalのURP TAA履歴試験 |
 
 Bridge demoの視点番号検証は`ViewWeave.BridgeWorkerValidation.Editor.BridgeWorkerViewIndexDebugVerification.Run`です。Bridge接続なしで48 tileの番号一意性とcoverageを確認し、結果を`.local`へ保存します。実機確認ではview 0/47を左右と仮定せず、左右から実際に見えた番号を記録します。
 
@@ -59,7 +60,7 @@ unity run "$PWD/Tests/Pipelines/Unity" --editor-version 6000.6.4f1 -- -executeMe
 
 このmethodは`Assets/SamplePlayerValidationGenerated/SamplePlayerValidation.unity`を一時作成し、Direct3D11、Linear、Run In Backgroundを設定してPlayerをBuildします。Build後のPlayer起動にはBridge runtimeが必要です。
 
-## macOS Metalの履歴・露出試験
+## macOS Metalの履歴・露出・URP TAA試験
 
 実際のMetal GPUを使い、repository rootから対象を絞ったPlayMode試験を実行します。
 
@@ -75,7 +76,28 @@ mkdir -p "$PWD/.local/hdrp-lighting"
 "$PWD/.local/hdrp-lighting/player-development/ViewWeaveHdrpValidation.app/Contents/MacOS/PipelineSmoke" -batchmode -force-metal -screen-width 320 -screen-height 240 -validationReport "$PWD/.local/hdrp-lighting/player-development.json" -logFile "$PWD/.local/hdrp-lighting/player-development.log"
 ```
 
-Cameraの視点別分離・維持、HDRP TAA設定の保持、Fixed exposureのcompensation、自動露出の光量追従、赤いQuilt画素とmagenta画素の不在、所有リソースの解放、1 MBのwarmup予算超過を確認します。JSONと終了codeを両方確認してください。GPU完了待ちは実時間で制限し、Cubeが測光画面の大部分を占めるようにしています。黒背景が大半のHistogramから大きなEV変化を期待することはできません。Bridge出力、実機光学、HDRP TAA画素正確性、Windowsの検証ではありません。結果と残る警告は[日付付き記録](../../docs/hdrp-view-history-validation-20261010.md)を参照してください。
+2026-10-11のMetal PlayMode `GraphicsCompatibility` runは58/58 PASS、skip 0でした。URP adapterの8 testを含み、4視点のhistory蓄積、view別RenderTextureと画素比較、frame versionの安定性、view削除、resize/restart、budget cleanup、scripted Volume設定の保持を確認しました。Editor PlayModeの証跡です。Metal上のbounded Edit Modeと描画専用Development／Release Playerのrunも以下に記載します。Windowsと実機光学TAAは対象外です。[URPの日付付き記録](../../docs/urp-view-history-validation-20261011.md)を参照してください。
+
+### URP Edit ModeとPlayerの試験
+
+Editor専用Edit Mode fixtureはMetal hostが必要です。無効化Camera、TAA history蓄積、Pause/Resume、public local-preview serviceを確認します。repository rootで実行してください。
+
+```bash
+mkdir -p "$PWD/.local/urp-history"
+unity test "$PWD/Tests/Pipelines/Unity" --editor-version 6000.6.4f1 --mode EditMode --filter ViewWeave.UrpHistoryEditor.UrpHistoryEditModeTests.DisabledViewsAccumulateOutsidePlayModeAndRestartAfterPause --report-format junit --output "$PWD/.local/urp-history/editmode.xml" --timeout 1200 -- -force-metal
+```
+
+macOS描画専用Playerは隔離したbatch Editorでbuildします。builderはMetalを選び、一時sceneを作ってEditorのgraphics／scene設定を復元します。まずDevelopmentを実行します。
+
+```bash
+mkdir -p "$PWD/.local/urp-history/player-development"
+unity build "$PWD/Tests/Pipelines/Unity" --editor-version 6000.6.4f1 --target StandaloneOSX --execute-method ViewWeave.MacUrpHistoryValidation.Editor.MacUrpHistoryValidationBuilder.Build --output-path "$PWD/.local/urp-history/player-development/ViewWeaveUrpValidation.app" --allow-dirty-build --timeout 1200 --args '-force-metal -validationConfiguration Development'
+"$PWD/.local/urp-history/player-development/ViewWeaveUrpValidation.app/Contents/MacOS/PipelineSmoke" -force-metal -screen-width 640 -screen-height 480 -validationReport "$PWD/.local/urp-history/player-development.json" -logFile "$PWD/.local/urp-history/player-development.log"
+```
+
+Releaseを試す場合は、両command内の`player-development`を`player-release`に置き換え、builderの設定を`-validationConfiguration Release`にします。Playerの終了code、JSON report、logを合わせて確認してください。reportと一緒にTAA on/offおよび移動geometryの比較に使うPNGも保存します。描画専用fixtureはBridge出力や実機光学を検証しません。条件と結果は[URPの日付付き記録](../../docs/urp-view-history-validation-20261011.md)を参照してください。
+
+HDRP fixtureではCameraの視点別分離・維持、HDRP TAA設定の保持、Fixed exposureのcompensation、自動露出の光量追従、赤いQuilt画素とmagenta画素の不在、所有リソースの解放、1 MBのwarmup予算超過を確認します。JSONと終了codeを両方確認してください。GPU完了待ちは実時間で制限し、Cubeが測光画面の大部分を占めるようにしています。黒背景が大半のHistogramから大きなEV変化を期待することはできません。Bridge出力、実機光学、HDRP TAA画素正確性、Windowsの検証ではありません。結果と残る警告は[HDRPの日付付き記録](../../docs/hdrp-view-history-validation-20261010.md)を参照してください。
 
 ## GPU Resident Drawer validation
 
