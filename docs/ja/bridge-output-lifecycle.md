@@ -102,7 +102,7 @@ flowchart TD
 
 ## Candidateと導入済みbuild
 
-2026-10-09、両sample projectをpackage commit `eb527e1ec126ec99d35e9990d8dce0119b855b4d`、Native DLL SHA-256 `A6A062343710AF2362DAF7B923A9BB98BDD5D381D896C68AE3190CA55655FBC7`でcold verificationしました。同日後刻、両sampleをpackage commit `5234b834381afd91a896714ad6d8f9dcbd9f6f95`、Native DLL SHA-256 `655FDB898CF7B9F9733A1880828B740B62FB74E0C3ECDF9D825C07794F6388CD`（208,896 bytes、51 exports）でcold verificationしました。これは各日付時点のidentityであり、その後のpackage更新後も同一という意味ではありません。現在のNative artifactはSHA-256 `F1B06893404D75582FF600BA733AE3C531ED0C0A7EA40E29CE56DD7A91B0A000`（214,016 bytes、51 exports）で、Windows fake/WARP CTestのfocused 6件に成功しました。このartifactのofficial sample cold-load、hardware検証、Unity Engine testは未実施です。Native testはfake/WARP resourceを使用し、official Looking Glass Bridge SDKをloadしません。
+2026-10-09、両sample projectをpackage commit `eb527e1ec126ec99d35e9990d8dce0119b855b4d`、Native DLL SHA-256 `A6A062343710AF2362DAF7B923A9BB98BDD5D381D896C68AE3190CA55655FBC7`でcold verificationしました。同日後刻、両sampleをpackage commit `5234b834381afd91a896714ad6d8f9dcbd9f6f95`、Native DLL SHA-256 `655FDB898CF7B9F9733A1880828B740B62FB74E0C3ECDF9D825C07794F6388CD`（208,896 bytes、51 exports）でcold verificationしました。これは各日付時点のidentityであり、その後のpackage更新後も同一という意味ではありません。現在のNative artifactはSHA-256 `F1B06893404D75582FF600BA733AE3C531ED0C0A7EA40E29CE56DD7A91B0A000`（214,016 bytes、51 exports）で、Windows fake/WARP CTestのfocused 6件に成功しました。2026-10-10、両official sampleをpackage commit `c09fdcce30e77d95f3aa451c3642b00522edc255`へ更新し、このDLLをcold verificationしました。URP cacheは`496c1dc45e56`、HDRP cacheは`e04b2f9bb328`です。各fresh owned Editorでcompile/loadを確認し、moduleは期待した1件、native pending countは0でした。保護した`Assets`と`ProjectSettings`はchanged/missing/addedが各0です。F1Bの限定的なURP実機観察を以下に記録します。反復hardware matrixとUnity Test Runnerは未実施です。Native testはfake/WARP resourceを使用し、official Looking Glass Bridge SDKをloadしません。
 
 ## URP実機での限定観察
 
@@ -115,6 +115,12 @@ flowchart TD
 | active Play → Edit Preview | 最初は黒。後に映像と新たな移動/Undoが見えたと利用者が報告 | managed verification前にpreview ownerが消え、workerはIdle/error停止 | live復帰は検証できず、逆handoffは未解決 |
 
 655F artifactは2026-10-09のURP実機で限定的に試し、そのrunでは逆handoffが未解決でした。手動のStart/Pause/CloseおよびPlay cycleでも断続的な黒画面が報告されました。これらは655Fの日付付き観察であり、後述するprivate static-present candidateの結果とは別です。output counterやGPU completion値はdisplay scanoutを証明しません。HDRP実機handoff、device hot-plug、物理寸法、光学画質、runtime性能は未検証です。別の日付のA6A試験でproducer readback後に映像が出た事象は、655F candidateや黒画面の原因の証拠ではありません。
+
+## F1B production URPでの限定観察
+
+2026-10-10、公式F1B package commit `c09fdcce30e77d95f3aa451c3642b00522edc255`を、一つの通常URP Editor session（Unity 6000.6.4f1、D3D12、`Assets/test.unity`）で試しました。利用者は通常Play直後の映像と新たな移動/Undoを確認し、StopからEdit Device Previewへの遷移でも映像と移動/Undoを確認しました。またPause中は映像が残り、scene objectの移動に追従せず、Resume後に移動とUndoが反映されることを確認しました。このproduction sessionでの各遷移は1回ずつで、反復信頼性matrixではありません。
+
+Pause前後のsnapshotは同じrenderer、quilt texture、output identityを保持し、連続したPaused読取でrevisionとcompleted counterは変化しませんでした。Resume後も同じidentityを保ち、新しいcompleted frameが再開しました。Editorのloaded-module検査でF1Bの一致module/hashを1件確認しました。Native traceではSDK session/window 1を確認しました。image readbackやcaptureは行っていません。これは限定的なURP利用者観察であり、HDRP、Player、他graphics API、光学品質、性能、広い反復性を証明しません。後述のprivate 00CE比較とは別build・別試験です。
 
 ## Private static-present candidateによるURP比較
 
