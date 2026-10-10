@@ -1,0 +1,382 @@
+{
+  "schemaVersion": 1,
+  "dateJst": "2026-10-11",
+  "sourceBaseline": "abf33b357637b43d5aa135c3f086910b8dff53b5",
+  "changes": "validation fixture and documentation only; no product output/native changes",
+  "environment": {
+    "unity": "6000.6.4f1",
+    "urp": "17.6.0",
+    "hdrp": "17.6.0",
+    "macOS": "26.6.2",
+    "gpu": "Apple M3 Max",
+    "architecture": "arm64",
+    "graphicsApi": "Metal",
+    "colorSpace": "Linear",
+    "bridge": "2.6.3",
+    "deviceTested": "Looking Glass Go",
+    "deviceSelection": "Bridge calibration V2; no model/serial allowlist",
+    "panel": [
+      1440,
+      2560
+    ],
+    "quilt": [
+      1023,
+      1020
+    ],
+    "grid": [
+      11,
+      6
+    ],
+    "views": 66,
+    "urpFixture": "Unlit cube/sphere, 4x MSAA configured",
+    "hdrpFixture": "Unlit cube/sphere, FollowScene, Fixed Exposure Volume EV0"
+  },
+  "validationSources": {
+    "Tests/Pipelines/Unity/Assets/QuiltCaptureValidation/QuiltCapturePipelineTests.cs": "2a805de6b7cfa98f034ae22189eb1cad7c61eaddd40346a6bcbf30e04fe2869b",
+    "Tests/Pipelines/Unity/Assets/MetalCurrentValidation/Editor/MetalCurrentEditorValidation.cs": "f9b324472581d448850f7c298fa0ace8ffee472493737b8793366b5c710b5b3a",
+    "Tests/Pipelines/Unity/Assets/MetalCurrentValidation/Editor/MetalCurrentValidationBuilder.cs": "e9395a33d0307172ccd510662c64d807206cb0d1050df8f1bacdf9d53c3d6870",
+    "Tests/Pipelines/Unity/Assets/MetalCurrentValidation/MetalCurrentValidationRunner.cs": "94bd3458662a82d1631b0c2991213af065d8e7e18549c24ec00a6c4b1d49a77e"
+  },
+  "tests": [
+    {
+      "raw": {
+        "path": ".local/metal-current-validation-20261011/editor-local.xml",
+        "sha256": "4bbf07ef823e8a78cdd702fc20d7b52ce1905d8eacdf7b882dd8d98f3c946282"
+      },
+      "total": 6,
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0,
+      "startUtc": "2026-10-10 17:28:31Z",
+      "endUtc": "2026-10-10 17:28:44Z",
+      "cases": [
+        {
+          "name": "ViewWeave.RigCameraCreationValidation.MetalEditorPreviewTests.ClosingAuthoringWindowStopsItsMetalPreview",
+          "result": "Passed"
+        },
+        {
+          "name": "ViewWeave.RigCameraCreationValidation.MetalEditorPreviewTests.ClosingRigWhileInspectorExistsDoesNotRefreshDestroyedTargets",
+          "result": "Passed"
+        },
+        {
+          "name": "ViewWeave.RigCameraCreationValidation.MetalEditorPreviewTests.InvalidSourceLayoutStopsPreviewWithoutLeakingOwnership",
+          "result": "Passed"
+        },
+        {
+          "name": "ViewWeave.RigCameraCreationValidation.MetalEditorPreviewTests.LocalPreviewPauseClosePreservesSourceAndReleasesOwnership",
+          "result": "Passed"
+        },
+        {
+          "name": "ViewWeave.RigCameraCreationValidation.MetalEditorPreviewTests.PlaybackRequiresPlayAndDoesNotAcquireOwnershipInEditMode",
+          "result": "Passed"
+        },
+        {
+          "name": "ViewWeave.RigCameraCreationValidation.MetalEditorPreviewTests.PlaybackUsesBoundOutputWhenBothPlatformComponentsExist",
+          "result": "Passed"
+        }
+      ]
+    },
+    {
+      "raw": {
+        "path": ".local/metal-current-validation-20261011/capture-recording.xml",
+        "sha256": "f5458f6713af3640e23cbc49cda1267753154f08276250fbe5466643996c10fd"
+      },
+      "total": 2,
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "startUtc": "2026-10-10 17:35:31Z",
+      "endUtc": "2026-10-10 17:35:43Z",
+      "cases": [
+        {
+          "name": "ViewWeave.QuiltCaptureValidation.QuiltCapturePipelineTests.HdrpCaptureAndThreeFrameRecording",
+          "result": "Passed"
+        },
+        {
+          "name": "ViewWeave.QuiltCaptureValidation.QuiltCapturePipelineTests.UrpCaptureAndThreeFrameRecording",
+          "result": "Passed"
+        }
+      ]
+    },
+    {
+      "raw": {
+        "path": ".local/metal-current-validation-20261011/msaa.xml",
+        "sha256": "351db691b2ccdb4555d6f53197af261f7cd10a933bcdc7103d84caca8bcde345"
+      },
+      "total": 4,
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0,
+      "startUtc": "2026-10-10 17:36:09Z",
+      "endUtc": "2026-10-10 17:36:22Z",
+      "cases": [
+        {
+          "name": "ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests.UrpDeferredRendererFallsBackToSingleSample",
+          "result": "Passed"
+        },
+        {
+          "name": "ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests.UrpMsaaPreservesColorSpaceAcrossSamplesResizeAndCleanup",
+          "result": "Passed"
+        },
+        {
+          "name": "ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests.UrpMsaaRecreatesResolveOnResizeAndDisable",
+          "result": "Passed"
+        },
+        {
+          "name": "ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests.UrpMsaaRequestedSamplesFollowDeviceSupport",
+          "result": "Passed"
+        }
+      ]
+    }
+  ],
+  "editors": [
+    {
+      "raw": {
+        "path": ".local/metal-current-validation-20261011/urp-editor-final/editor.json",
+        "sha256": "c8f674e6a9bede5845c612210f8c9f0ef259056eb69c02e07854625f2513845c"
+      },
+      "passed": true,
+      "pipeline": "URP",
+      "error": "",
+      "localFrames": 9,
+      "deviceFrames": 45,
+      "sequenceObservedMask": 7,
+      "pendingResources": 0,
+      "pendingRetirement": 0,
+      "runtime": {
+        "passed": true,
+        "development": true,
+        "editor": true,
+        "unityVersion": "6000.6.4f1",
+        "graphicsApi": "Metal",
+        "pipeline": "URP",
+        "error": "",
+        "capture": ".local/metal-current-validation-20261011/urp-editor-final/current.png",
+        "sequence": ".local/metal-current-validation-20261011/urp-editor-final/ViewWeave_20261011_024655_806_7750513b008d4d4ebc8de8482fb16aaa",
+        "firstCompleted": 60,
+        "restartedCompleted": 30,
+        "recordedFrames": 3,
+        "distinctColors": 15,
+        "width": 1023,
+        "height": 1020,
+        "views": 66,
+        "pendingRetirement": 0
+      },
+      "capturePixels": {
+        "path": ".local/metal-current-validation-20261011/urp-editor-final/current.png",
+        "sha256": "ae293b00aada68185630fe211c6e71064ba76e0845b84231692ce9780f42e95b",
+        "redPixels": 152354,
+        "greenPixels": 96813,
+        "magentaPixels": 0,
+        "thresholds": "red: r>2g,r>2b,r>24; green: g>2r,g>2b,g>24; magenta: r>180,b>180,g<80"
+      },
+      "guiConsoleErrors": 0,
+      "guiConsoleWarnings": 0,
+      "editorNaturalExitCode": 0
+    },
+    {
+      "raw": {
+        "path": ".local/metal-current-validation-20261011/hdrp-editor-final/editor.json",
+        "sha256": "e4df1b631dd1779a9dab81bf9ba3305f27aef8ce8329218e2e12d58aa4f9e0ae"
+      },
+      "passed": true,
+      "pipeline": "HDRP",
+      "error": "",
+      "localFrames": 9,
+      "deviceFrames": 45,
+      "sequenceObservedMask": 7,
+      "pendingResources": 0,
+      "pendingRetirement": 0,
+      "runtime": {
+        "passed": true,
+        "development": true,
+        "editor": true,
+        "unityVersion": "6000.6.4f1",
+        "graphicsApi": "Metal",
+        "pipeline": "HDRP",
+        "error": "",
+        "capture": ".local/metal-current-validation-20261011/hdrp-editor-final/current.png",
+        "sequence": ".local/metal-current-validation-20261011/hdrp-editor-final/ViewWeave_20261011_024542_820_73a3f160b5484132bfe89a6bcd9ce4c1",
+        "firstCompleted": 60,
+        "restartedCompleted": 30,
+        "recordedFrames": 3,
+        "distinctColors": 1636,
+        "width": 1023,
+        "height": 1020,
+        "views": 66,
+        "pendingRetirement": 0
+      },
+      "capturePixels": {
+        "path": ".local/metal-current-validation-20261011/hdrp-editor-final/current.png",
+        "sha256": "e126dad7380d5820df199ac3271de4c7b381ded8470261c7906ad1fd85111200",
+        "redPixels": 167982,
+        "greenPixels": 106817,
+        "magentaPixels": 0,
+        "thresholds": "red: r>2g,r>2b,r>24; green: g>2r,g>2b,g>24; magenta: r>180,b>180,g<80"
+      },
+      "guiConsoleErrors": 0,
+      "guiConsoleWarnings": 0,
+      "editorNaturalExitCode": 0
+    }
+  ],
+  "players": [
+    {
+      "raw": {
+        "path": ".local/metal-current-validation-20261011/urp-development/runtime.json",
+        "sha256": "c2c10a497029e1af70a0a44bbb9bab77385cd8d00ef014582dcb8efcef5fe6cd"
+      },
+      "passed": true,
+      "development": true,
+      "editor": false,
+      "unityVersion": "6000.6.4f1",
+      "graphicsApi": "Metal",
+      "pipeline": "URP",
+      "error": "",
+      "capture": ".local/metal-current-validation-20261011/urp-development/current.png",
+      "sequence": ".local/metal-current-validation-20261011/urp-development/ViewWeave_20261011_024908_643_24e80354d76d49f1b057d7c29ba0979c",
+      "firstCompleted": 60,
+      "restartedCompleted": 31,
+      "recordedFrames": 3,
+      "distinctColors": 15,
+      "width": 1023,
+      "height": 1020,
+      "views": 66,
+      "pendingRetirement": 0,
+      "buildSucceeded": true,
+      "naturalExitCode": 0,
+      "executableSha256": "cb64286a898a7ba97e0540dcc5571a47eba29c3d4b4904176335940623a008d4",
+      "capturePixels": {
+        "path": ".local/metal-current-validation-20261011/urp-development/current.png",
+        "sha256": "ae293b00aada68185630fe211c6e71064ba76e0845b84231692ce9780f42e95b",
+        "redPixels": 152354,
+        "greenPixels": 96813,
+        "magentaPixels": 0,
+        "thresholds": "red: r>2g,r>2b,r>24; green: g>2r,g>2b,g>24; magenta: r>180,b>180,g<80"
+      }
+    },
+    {
+      "raw": {
+        "path": ".local/metal-current-validation-20261011/urp-release/runtime.json",
+        "sha256": "c52efa9be03a99f2e8b5247d8001d5e6afb17f866674304deecbd4b682de2437"
+      },
+      "passed": true,
+      "development": false,
+      "editor": false,
+      "unityVersion": "6000.6.4f1",
+      "graphicsApi": "Metal",
+      "pipeline": "URP",
+      "error": "",
+      "capture": ".local/metal-current-validation-20261011/urp-release/current.png",
+      "sequence": ".local/metal-current-validation-20261011/urp-release/ViewWeave_20261011_025027_673_10b9ffaf00854d7e9e88c9a09438d89b",
+      "firstCompleted": 60,
+      "restartedCompleted": 30,
+      "recordedFrames": 3,
+      "distinctColors": 15,
+      "width": 1023,
+      "height": 1020,
+      "views": 66,
+      "pendingRetirement": 0,
+      "buildSucceeded": true,
+      "naturalExitCode": 0,
+      "executableSha256": "c850026d33310c04f960a1f53226e7cd604bbe9fed70387b4d8f6ab28fe34a70",
+      "capturePixels": {
+        "path": ".local/metal-current-validation-20261011/urp-release/current.png",
+        "sha256": "ae293b00aada68185630fe211c6e71064ba76e0845b84231692ce9780f42e95b",
+        "redPixels": 152354,
+        "greenPixels": 96813,
+        "magentaPixels": 0,
+        "thresholds": "red: r>2g,r>2b,r>24; green: g>2r,g>2b,g>24; magenta: r>180,b>180,g<80"
+      }
+    },
+    {
+      "raw": {
+        "path": ".local/metal-current-validation-20261011/hdrp-development/runtime.json",
+        "sha256": "d948b7b15573219a276a5cff2492bddfc3af8e5afcda84bfa5668f7a092a92cc"
+      },
+      "passed": true,
+      "development": true,
+      "editor": false,
+      "unityVersion": "6000.6.4f1",
+      "graphicsApi": "Metal",
+      "pipeline": "HDRP",
+      "error": "",
+      "capture": ".local/metal-current-validation-20261011/hdrp-development/current.png",
+      "sequence": ".local/metal-current-validation-20261011/hdrp-development/ViewWeave_20261011_025346_492_2197a32571b6411db4878628be9284bf",
+      "firstCompleted": 60,
+      "restartedCompleted": 30,
+      "recordedFrames": 3,
+      "distinctColors": 1612,
+      "width": 1023,
+      "height": 1020,
+      "views": 66,
+      "pendingRetirement": 0,
+      "buildSucceeded": true,
+      "naturalExitCode": 0,
+      "executableSha256": "05ca8faa47901c1966e9fb22b859f6add649566e9bd52dfb0d023b1129e1145d",
+      "capturePixels": {
+        "path": ".local/metal-current-validation-20261011/hdrp-development/current.png",
+        "sha256": "07ec1e19d7d26ac5f01915cfae55df95068fb681f240eef7780a859541dba44b",
+        "redPixels": 167918,
+        "greenPixels": 107167,
+        "magentaPixels": 0,
+        "thresholds": "red: r>2g,r>2b,r>24; green: g>2r,g>2b,g>24; magenta: r>180,b>180,g<80"
+      }
+    },
+    {
+      "raw": {
+        "path": ".local/metal-current-validation-20261011/hdrp-release/runtime.json",
+        "sha256": "e647f6b49acda7d24e16081bc4ff4bcc322c82cd0e44055cb93c726a94bc2f47"
+      },
+      "passed": true,
+      "development": false,
+      "editor": false,
+      "unityVersion": "6000.6.4f1",
+      "graphicsApi": "Metal",
+      "pipeline": "HDRP",
+      "error": "",
+      "capture": ".local/metal-current-validation-20261011/hdrp-release/current.png",
+      "sequence": ".local/metal-current-validation-20261011/hdrp-release/ViewWeave_20261011_025541_070_2fbd9dffbc1c434cb099ac0cf2fc759e",
+      "firstCompleted": 60,
+      "restartedCompleted": 30,
+      "recordedFrames": 3,
+      "distinctColors": 1612,
+      "width": 1023,
+      "height": 1020,
+      "views": 66,
+      "pendingRetirement": 0,
+      "buildSucceeded": true,
+      "naturalExitCode": 0,
+      "executableSha256": "28d388972cd67c3b5748c2c711b104b003baed983b9af7c57e49991c888ab50b",
+      "capturePixels": {
+        "path": ".local/metal-current-validation-20261011/hdrp-release/current.png",
+        "sha256": "07ec1e19d7d26ac5f01915cfae55df95068fb681f240eef7780a859541dba44b",
+        "redPixels": 167918,
+        "greenPixels": 107167,
+        "magentaPixels": 0,
+        "thresholds": "red: r>2g,r>2b,r>24; green: g>2r,g>2b,g>24; magenta: r>180,b>180,g<80"
+      }
+    }
+  ],
+  "nativeArtifact": {
+    "sha256": "150e3a01ca3acae31e5f25d6d7f60d2dbc21d926078d0cc068c0e5ef4d23cb1b",
+    "bytes": 132624,
+    "matchedPaths": [
+      "Packages/com.zabaglione.lookingglass.viewweave.bridge/Plugins/macOS/lookingglass_bridge_shim.dylib",
+      "Distribution/urp/ViewWeave/Bridge/Plugins/macOS/lookingglass_bridge_shim.dylib",
+      "Distribution/hdrp/ViewWeave/Bridge/Plugins/macOS/lookingglass_bridge_shim.dylib",
+      ".local/metal-current-validation-20261011/UrpDevelopment.app/Contents/PlugIns/ARM64/lookingglass_bridge_shim.dylib",
+      ".local/metal-current-validation-20261011/UrpRelease.app/Contents/PlugIns/ARM64/lookingglass_bridge_shim.dylib",
+      ".local/metal-current-validation-20261011/HdrpDevelopment.app/Contents/PlugIns/ARM64/lookingglass_bridge_shim.dylib",
+      ".local/metal-current-validation-20261011/HdrpRelease.app/Contents/PlugIns/ARM64/lookingglass_bridge_shim.dylib"
+    ]
+  },
+  "unverified": [
+    "other device models",
+    "physical optical alignment/orientation/depth",
+    "nonzero cell mode or cell arrays",
+    "arbitrary scenes/effects",
+    "long duration",
+    "Player window-close/forced exit",
+    "Intel"
+  ]
+}

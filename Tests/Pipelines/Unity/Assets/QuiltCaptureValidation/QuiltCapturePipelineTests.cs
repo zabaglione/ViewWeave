@@ -843,8 +843,17 @@ namespace ViewWeave.QuiltCaptureValidation
                     callbackObservedRestoredCamera = !rendered.IsRendering && rendered.sourceCamera.transform.position == fixture.CameraPosition && rendered.sourceCamera.enabled == false;
                 };
                 fixture.Renderer.QuiltRendered += listener;
-                fixture.Renderer.RenderQuilt();
-                fixture.Renderer.QuiltRendered -= listener;
+                try
+                {
+                    // FollowScene exposure may need asynchronous metering before the first quilt.
+                    double deadline = Time.realtimeSinceStartupAsDouble + 15d;
+                    while (notifications == 0 && Time.realtimeSinceStartupAsDouble < deadline)
+                    {
+                        fixture.Renderer.RenderQuilt();
+                        if (notifications == 0) yield return null;
+                    }
+                }
+                finally { fixture.Renderer.QuiltRendered -= listener; }
                 Assert.AreEqual(1, notifications, "manual render should emit one completion");
                 Assert.IsTrue(callbackObservedRestoredCamera, "completion runs after camera restoration");
                 Assert.IsTrue(fixture.Renderer.IsLatestQuiltCurrent);
