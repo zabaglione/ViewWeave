@@ -181,7 +181,7 @@ def build(kind: str, target: Path) -> None:
             prefix + "ThirdPartyLicenses/Unity-Companion-License.txt",
             prefix + "ThirdPartyLicenses/Unity-NativeRenderingPlugin-MIT.txt",
         ]
-        path.write_text(json.dumps(data, indent=2, sort_keys=relative.startswith("macOS/")) + "\n", encoding="utf-8")
+        path.write_text(json.dumps(data, indent=2, sort_keys=relative.startswith("macOS/")) + "\n", encoding="utf-8", newline="\n")
 
     # Keep original-code and external PluginAPI notices at the package root.
     shutil.copy2(ROOT / "LICENSE", target / "LICENSE")

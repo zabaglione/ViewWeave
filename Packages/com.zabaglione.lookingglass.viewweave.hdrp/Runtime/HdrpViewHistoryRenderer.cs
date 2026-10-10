@@ -18,6 +18,12 @@ namespace ViewWeave.HDRP
             internal HDAdditionalCameraData data;
         }
 
+        sealed class CustomPassTarget
+        {
+            internal CustomPassVolume volume;
+            internal Camera authoredCamera;
+        }
+
         readonly Dictionary<int, View> views = new Dictionary<int, View>();
         readonly HashSet<int> requestedViews = new HashSet<int>();
         readonly List<int> removedViews = new List<int>();
@@ -90,6 +96,8 @@ namespace ViewWeave.HDRP
                 if (ExposureReady) SharedExposureEV = measuredEV;
                 Status = meterStatus;
             }
+            List<CustomPassTarget> customPassTargets = CaptureCustomPassTargets(source,
+                followReferenceSettings ? context.ReferenceCamera : null);
             SynchronizeViews(context, settingsData);
             if (ExposureReady) Status = "HDRP isolated histories: " + CameraCount + " cameras; shared exposure EV " +
                 SharedExposureEV.ToString("F2", System.Globalization.CultureInfo.InvariantCulture) + "; graphics growth " +
@@ -97,7 +105,20 @@ namespace ViewWeave.HDRP
                 (TextureMemoryGrowthBytes / (1024f * 1024f)).ToString("F1", System.Globalization.CultureInfo.InvariantCulture) + " MB";
             if (ExposureReady) EnsureExposureVolume();
             active = true;
-            return new Session(this, ExposureReady, Status, (long)memoryBudgetMB * 1024 * 1024);
+            return new Session(this, ExposureReady, Status, (long)memoryBudgetMB * 1024 * 1024, customPassTargets);
+        }
+
+        static List<CustomPassTarget> CaptureCustomPassTargets(Camera sourceCamera, Camera referenceCamera)
+        {
+            var targets = new List<CustomPassTarget>();
+            foreach (CustomPassVolume volume in UnityEngine.Object.FindObjectsByType<CustomPassVolume>(FindObjectsInactive.Include))
+            {
+                if (volume == null || !volume.isActiveAndEnabled) continue;
+                Camera target = volume.targetCamera;
+                if (target == null || (target != sourceCamera && target != referenceCamera)) continue;
+                targets.Add(new CustomPassTarget { volume = volume, authoredCamera = target });
+            }
+            return targets;
         }
 
         void SynchronizeViews(QuiltRenderContext context, HDAdditionalCameraData settingsData)
@@ -204,13 +225,15 @@ namespace ViewWeave.HDRP
         {
             readonly HdrpViewHistoryRenderer owner;
             readonly long budget;
+            readonly List<CustomPassTarget> customPassTargets;
             bool disposed;
             int completedViews;
             ViewScope currentScope;
             public bool IsReady { get; }
             public string Status { get; }
-            internal Session(HdrpViewHistoryRenderer owner, bool ready, string status, long budget)
-            { this.owner = owner; IsReady = ready; Status = status; this.budget = budget; }
+            internal Session(HdrpViewHistoryRenderer owner, bool ready, string status, long budget,
+                List<CustomPassTarget> customPassTargets)
+            { this.owner = owner; IsReady = ready; Status = status; this.budget = budget; this.customPassTargets = customPassTargets; }
             public Camera GetViewCamera(int logicalView)
             {
                 if (disposed || !IsReady) throw new InvalidOperationException("HDRP render session is not ready");
@@ -223,7 +246,7 @@ namespace ViewWeave.HDRP
                 if (disposed || !IsReady || currentScope != null || camera != GetViewCamera(logicalView))
                     throw new InvalidOperationException("HDRP view scope is unavailable or does not match its logical view");
                 owner.CheckMemoryBudget(budget, false);
-                currentScope = new ViewScope(this, camera.GetComponent<HDAdditionalCameraData>());
+                currentScope = new ViewScope(this, camera.GetComponent<HDAdditionalCameraData>(), customPassTargets, camera);
                 return currentScope;
             }
             public void Dispose()
@@ -243,24 +266,94 @@ namespace ViewWeave.HDRP
                 readonly Session session;
                 readonly HDAdditionalCameraData data;
                 readonly LayerMask originalMask;
+                readonly List<CustomPassTarget> customPassTargets;
+                int retargetedCount;
+                bool maskChanged;
+                bool volumeEnabled;
                 bool disposed;
-                internal ViewScope(Session session, HDAdditionalCameraData data)
+                internal ViewScope(Session session, HDAdditionalCameraData data,
+                    List<CustomPassTarget> customPassTargets, Camera viewCamera)
                 {
-                    this.session = session; this.data = data; originalMask = data.volumeLayerMask;
-                    data.volumeLayerMask = originalMask.value | (1 << session.owner.volumeObject.layer);
-                    session.owner.volume.enabled = true;
+                    this.session = session; this.data = data; this.customPassTargets = customPassTargets;
+                    originalMask = data != null ? data.volumeLayerMask : default;
+                    try
+                    {
+                        for (int i = 0; i < customPassTargets.Count; i++)
+                        {
+                            retargetedCount = i + 1;
+                            CustomPassVolume targetVolume = customPassTargets[i].volume;
+                            if (targetVolume != null) targetVolume.targetCamera = viewCamera;
+                        }
+                        if (data != null)
+                        {
+                            data.volumeLayerMask = originalMask.value | (1 << session.owner.volumeObject.layer);
+                            maskChanged = true;
+                        }
+                        if (session.owner.volume != null)
+                        {
+                            session.owner.volume.enabled = true;
+                            volumeEnabled = true;
+                        }
+                    }
+                    catch (Exception setupError)
+                    {
+                        List<Exception> cleanupErrors = null;
+                        try { RestoreCustomPassTargets(); }
+                        catch (Exception error) { if (cleanupErrors == null) cleanupErrors = new List<Exception>(); cleanupErrors.Add(error); }
+                        try { if (session.owner.volume != null && volumeEnabled) session.owner.volume.enabled = false; }
+                        catch (Exception error) { if (cleanupErrors == null) cleanupErrors = new List<Exception>(); cleanupErrors.Add(error); }
+                        try { if (data != null && maskChanged) data.volumeLayerMask = originalMask; }
+                        catch (Exception error) { if (cleanupErrors == null) cleanupErrors = new List<Exception>(); cleanupErrors.Add(error); }
+                        if (cleanupErrors != null)
+                        {
+                            cleanupErrors.Insert(0, setupError);
+                            throw new AggregateException("HDRP view scope setup and rollback both failed", cleanupErrors);
+                        }
+                        throw;
+                    }
                 }
+
+                void RestoreCustomPassTargets()
+                {
+                    Exception firstError = null;
+                    for (int i = retargetedCount - 1; i >= 0; --i)
+                    {
+                        CustomPassTarget target = customPassTargets[i];
+                        if (target.volume == null) continue;
+                        try { target.volume.targetCamera = target.authoredCamera; }
+                        catch (Exception error) { if (firstError == null) firstError = error; }
+                    }
+                    retargetedCount = 0;
+                    if (firstError != null) throw firstError;
+                }
+
                 public void Dispose()
                 {
                     if (disposed) return;
                     disposed = true;
-                    if (session.owner.volume != null) session.owner.volume.enabled = false;
-                    if (data != null) data.volumeLayerMask = originalMask;
+                    Exception firstError = null;
+                    try { RestoreCustomPassTargets(); }
+                    catch (Exception error) { firstError = error; }
+                    try
+                    {
+                        if (session.owner.volume != null && volumeEnabled) session.owner.volume.enabled = false;
+                    }
+                    catch (Exception error) { if (firstError == null) firstError = error; }
+                    try
+                    {
+                        if (data != null && maskChanged) data.volumeLayerMask = originalMask;
+                    }
+                    catch (Exception error) { if (firstError == null) firstError = error; }
                     session.currentScope = null;
                     // Check every initial view allocation; once warm, scan at the final rendered view only.
-                    session.completedViews++;
-                    bool lastView = session.completedViews == session.owner.requestedViews.Count;
-                    session.owner.CheckMemoryBudget(session.budget, session.owner.observedQuilts < 3 || lastView);
+                    try
+                    {
+                        session.completedViews++;
+                        bool lastView = session.completedViews == session.owner.requestedViews.Count;
+                        session.owner.CheckMemoryBudget(session.budget, session.owner.observedQuilts < 3 || lastView);
+                    }
+                    catch (Exception error) { if (firstError == null) firstError = error; }
+                    if (firstError != null) throw firstError;
                 }
             }
         }

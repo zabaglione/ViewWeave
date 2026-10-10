@@ -321,6 +321,98 @@ namespace ViewWeave.BridgeSessionValidation
             Assert.AreEqual(48, nativeProfile.Views);
         }
 
+        [TestCase(7u, 1920u, 1080u, 4000, 4000, 1000, 999, 2000, 1998, 5, 9, 35f, 120f)]
+        [TestCase(42u, 1440u, 2560u, 4092, 4092, 1023, 1020, 2046, 2046, 11, 6, 54f, 300f)]
+        [TestCase(301u, 5120u, 2880u, 8192, 8192, 2048, 2046, 4096, 4098, 8, 6, 50f, 190f)]
+        public void GenericConnectedDisplayProfilesPreserveDeviceMetadata(uint displayIndex, uint width, uint height,
+            int quiltWidth, int quiltHeight, int previewWidth, int previewHeight, int balancedWidth, int balancedHeight,
+            int columns, int rows, float viewcone, float dpi)
+        {
+            float aspect = width / (float)height;
+            var native = new BridgeNative.DisplayInfo
+            {
+                index = displayIndex,
+                width = width,
+                height = height,
+                aspect = aspect,
+                viewcone = viewcone,
+                quiltWidth = quiltWidth,
+                quiltHeight = quiltHeight,
+                quiltColumns = columns,
+                quiltRows = rows
+            };
+            var physical = new BridgeWorkerNative.PhysicalDisplayInfoV1
+            {
+                structSize = (uint)System.Runtime.InteropServices.Marshal.SizeOf(typeof(BridgeWorkerNative.PhysicalDisplayInfoV1)),
+                version = 1,
+                pixelWidth = width,
+                pixelHeight = height,
+                dpi = dpi,
+                valid = 1
+            };
+            var profile = new BridgeDisplayProfile(native, physical);
+
+            Assert.IsTrue(profile.IsValid, "Synthetic metadata should form a valid profile; it is not a real model claim.");
+            Assert.IsTrue(profile.HasPhysicalCalibration, "DPI-derived physical dimensions should be retained.");
+            Assert.AreEqual(displayIndex, profile.DisplayIndex);
+            Assert.AreEqual(width, profile.Width);
+            Assert.AreEqual(height, profile.Height);
+            Assert.AreEqual(aspect, profile.Aspect, 0.0001f);
+            Assert.AreEqual(viewcone, profile.Viewcone, 0.0001f);
+            Assert.AreEqual(quiltWidth, profile.QuiltWidth);
+            Assert.AreEqual(quiltHeight, profile.QuiltHeight);
+            Assert.AreEqual(columns, profile.Columns);
+            Assert.AreEqual(rows, profile.Rows);
+            Assert.AreEqual(dpi, profile.CalibrationDpi, 0.001f);
+            Assert.AreEqual(width * 25.4f / dpi, profile.PhysicalWidthMillimeters, 0.01f);
+            Assert.AreEqual(height * 25.4f / dpi, profile.PhysicalHeightMillimeters, 0.01f);
+
+            foreach (QuiltQualityPreset preset in new[] { QuiltQualityPreset.Preview, QuiltQualityPreset.Balanced, QuiltQualityPreset.Native })
+            {
+                QuiltQualityProfile quality = ViewWeaveBridgeSession.CreateQualityProfile(profile, preset);
+                Assert.AreEqual(columns, quality.Columns, preset + " columns");
+                Assert.AreEqual(rows, quality.Rows, preset + " rows");
+                Assert.AreEqual(columns * rows, quality.Views, preset + " all quilt views");
+                Assert.AreEqual(aspect, quality.Aspect, 0.0001f, preset + " device aspect");
+                Assert.AreEqual(viewcone, quality.ViewCone, 0.0001f, preset + " device viewcone");
+                if (preset == QuiltQualityPreset.Preview)
+                {
+                    Assert.AreEqual(previewWidth, quality.QuiltWidth, "Preview quilt width");
+                    Assert.AreEqual(previewHeight, quality.QuiltHeight, "Preview quilt height");
+                }
+                else if (preset == QuiltQualityPreset.Balanced)
+                {
+                    Assert.AreEqual(balancedWidth, quality.QuiltWidth, "Balanced quilt width");
+                    Assert.AreEqual(balancedHeight, quality.QuiltHeight, "Balanced quilt height");
+                }
+                else
+                {
+                    Assert.AreEqual(quiltWidth, quality.QuiltWidth, "Native quilt width");
+                    Assert.AreEqual(quiltHeight, quality.QuiltHeight, "Native quilt height");
+                }
+
+                var settings = new QuiltSettings();
+                Assert.AreEqual(4096, settings.quiltWidth, "baseline quilt width");
+                Assert.AreEqual(4096, settings.quiltHeight, "baseline quilt height");
+                Assert.AreEqual(8, settings.columns, "baseline columns");
+                Assert.AreEqual(6, settings.rows, "baseline rows");
+                Assert.AreEqual(48, settings.views, "baseline views");
+                Assert.AreEqual(1f, settings.viewAspect, "baseline aspect");
+                Assert.AreEqual(40f, settings.viewCone, "baseline viewcone");
+
+                quality.ApplyTo(settings);
+                Assert.AreEqual(quality.QuiltWidth, settings.quiltWidth, preset + " applied quilt width");
+                Assert.AreEqual(quality.QuiltHeight, settings.quiltHeight, preset + " applied quilt height");
+                Assert.AreEqual(columns, settings.columns, preset + " applied columns");
+                Assert.AreEqual(rows, settings.rows, preset + " applied rows");
+                Assert.AreEqual(columns * rows, settings.views, preset + " applied views");
+                Assert.AreEqual(aspect, settings.viewAspect, 0.0001f, preset + " applied aspect");
+                Assert.AreEqual(viewcone, settings.viewCone, 0.0001f, preset + " applied viewcone");
+                Assert.AreEqual(width * 25.4f / dpi, profile.PhysicalWidthMillimeters, 0.01f, preset + " retained physical width");
+                Assert.AreEqual(height * 25.4f / dpi, profile.PhysicalHeightMillimeters, 0.01f, preset + " retained physical height");
+            }
+        }
+
         [Test]
         public void ActiveDisplayRefreshRequiresTheSameSelectedProfile()
         {

@@ -26,6 +26,7 @@ using namespace lkg::metadata;
 #include "IUnityGraphicsD3D12.h"
 #include "bridge_d3d12_internal.h"
 #include "bridge_worker_transport.h"
+#include "stdio_load_guard.h"
 using Library = HMODULE;
 extern "C" int32_t lkg_bridge_sdk_shutdown_faulted(void);
 
@@ -85,6 +86,8 @@ static Library g_library{};
 static std::wstring g_library_path;
 static std::mutex g_mutex;
 static std::string g_last_error;
+static bool g_stdio_guard_failed = false;
+static std::string g_stdio_guard_error;
 static bool g_initialized = false;
 static std::mutex g_sdk_ownership_mutex;
 static HANDLE g_sdk_ownership_handle = nullptr;
@@ -881,6 +884,11 @@ LKG_EXPORT int32_t lkg_bridge_load(const char* path) {
     tracef("load_begin thread_id=%lu", trace_thread_id());
     std::lock_guard<std::mutex> lock(g_mutex);
     if (!g_sessions.empty()) return -5;
+    if (g_stdio_guard_failed) {
+        g_last_error = g_stdio_guard_error;
+        trace(g_last_error.c_str());
+        return -3;
+    }
     std::wstring canonicalPath;
     if (!canonical_library_path(path, &canonicalPath)) {
         g_last_error = "bridge_load UTF8 path conversion failed path=" + ascii_path(path);
@@ -903,20 +911,55 @@ LKG_EXPORT int32_t lkg_bridge_load(const char* path) {
         g_last_error.clear();
         return 0;
     }
+    HMODULE preexistingModule = nullptr;
+    if (GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, canonicalPath.c_str(), &preexistingModule)) {
+        g_last_error = "bridge_load refusing pre-resident vendor module path=" + ascii_path(path);
+        trace(g_last_error.c_str());
+        return -3;
+    }
+    const DWORD moduleLookupError = GetLastError();
+    if (moduleLookupError != ERROR_MOD_NOT_FOUND && moduleLookupError != ERROR_DLL_NOT_FOUND) {
+        g_last_error = "bridge_load could not verify vendor module residency win32_error=" +
+            std::to_string(static_cast<unsigned long>(moduleLookupError)) + " path=" + ascii_path(path);
+        trace(g_last_error.c_str());
+        return -3;
+    }
     wchar_t wide[32768]{};
     if (!MultiByteToWideChar(CP_UTF8, 0, path, -1, wide, 32768)) {
         g_last_error = "bridge_load UTF8 path conversion failed path=" + ascii_path(path);
         trace(g_last_error.c_str());
         return -2;
     }
-    g_library = LoadLibraryExW(canonicalPath.c_str(), nullptr, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
-    if (!g_library) {
-        const DWORD win32_error = GetLastError();
-        g_last_error = "bridge_load LoadLibraryExW failed win32_error=" + std::to_string(static_cast<unsigned long>(win32_error)) + " path=" + ascii_path(path);
+    // SetStdHandle is process-global, so other threads can observe the short
+    // detach window; this is intentionally limited to the first vendor load.
+    const lkg::windows_stdio::LoadResult loadResult =
+        lkg::windows_stdio::loadWithDetachedStandardHandles(canonicalPath.c_str());
+    if (loadResult.module) {
+        g_library = loadResult.module;
+        g_library_path = canonicalPath;
+    }
+    if (!loadResult.restored) {
+        g_stdio_guard_failed = true;
+        g_stdio_guard_error = "bridge_load standard handle restoration failed prepare_error=" +
+            std::to_string(static_cast<unsigned long>(loadResult.preparationError)) +
+            " load_error=" + std::to_string(static_cast<unsigned long>(loadResult.loadError)) +
+            " restore_error=" + std::to_string(static_cast<unsigned long>(loadResult.restorationError)) +
+            " path=" + ascii_path(path);
+        g_last_error = g_stdio_guard_error;
         trace(g_last_error.c_str());
         return -3;
     }
-    g_library_path = canonicalPath;
+    if (loadResult.preparationError || !loadResult.loaded) {
+        const DWORD load_error = loadResult.preparationError ? loadResult.preparationError : loadResult.loadError;
+        g_last_error = "bridge_load guarded LoadLibraryExW failed prepare_error=" +
+            std::to_string(static_cast<unsigned long>(loadResult.preparationError)) +
+            " load_error=" + std::to_string(static_cast<unsigned long>(loadResult.loadError)) +
+            " restore_error=" + std::to_string(static_cast<unsigned long>(loadResult.restorationError)) +
+            " win32_error=" + std::to_string(static_cast<unsigned long>(load_error)) +
+            " path=" + ascii_path(path);
+        trace(g_last_error.c_str());
+        return -3;
+    }
     if (!bind_symbols()) {
         clear_symbols();
         FreeLibrary(g_library);

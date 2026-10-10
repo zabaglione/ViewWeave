@@ -24,7 +24,10 @@ endif()
 if (NOT LKG_TRANSPORT_TESTS_ONLY)
   if (WIN32)
     add_library(lookingglass_bridge_shim SHARED
-      platform/windows/bridge_shim_windows.cpp ${LKG_TRANSPORT_SOURCE} ${LKG_COMMON_SOURCES})
+      platform/windows/bridge_shim_windows.cpp
+      platform/windows/stdio_load_guard.cpp
+      ${LKG_TRANSPORT_SOURCE}
+      ${LKG_COMMON_SOURCES})
   elseif(APPLE)
     add_library(lookingglass_bridge_shim SHARED
       platform/macos/bridge_shim_macos.cpp
@@ -182,6 +185,28 @@ if (BUILD_TESTING)
 endif()
 
 if (WIN32 AND BUILD_TESTING)
+  if (NOT LKG_TRANSPORT_TESTS_ONLY)
+    add_library(lkg_fake_static_stdio_rebind SHARED tests/fake_static_stdio_rebind.cpp)
+    target_compile_features(lkg_fake_static_stdio_rebind PRIVATE cxx_std_17)
+    target_compile_definitions(lkg_fake_static_stdio_rebind PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
+    if (MSVC)
+      set_property(TARGET lkg_fake_static_stdio_rebind PROPERTY
+        MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    endif()
+    add_executable(lookingglass_stdio_load_guard_test
+      platform/windows/stdio_load_guard.cpp
+      tests/stdio_load_guard_test.cpp)
+    target_compile_features(lookingglass_stdio_load_guard_test PRIVATE cxx_std_17)
+    target_compile_definitions(lookingglass_stdio_load_guard_test PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
+    target_include_directories(lookingglass_stdio_load_guard_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+    add_dependencies(lookingglass_stdio_load_guard_test lookingglass_bridge_shim lkg_fake_static_stdio_rebind)
+    add_test(NAME lookingglass_stdio_load_guard_test
+      COMMAND lookingglass_stdio_load_guard_test
+        "$<TARGET_FILE:lkg_fake_static_stdio_rebind>"
+        "$<TARGET_FILE:lookingglass_bridge_shim>")
+    set_tests_properties(lookingglass_stdio_load_guard_test PROPERTIES TIMEOUT 15 RUN_SERIAL TRUE)
+  endif()
+
   if (LKG_D3D12_SHARED_PROBE)
     add_executable(lookingglass_d3d12_d3d11_shared_probe tests/d3d12_d3d11_shared_probe.cpp)
     target_compile_features(lookingglass_d3d12_d3d11_shared_probe PRIVATE cxx_std_17)
@@ -221,7 +246,9 @@ if (WIN32 AND BUILD_TESTING)
     COMMAND lookingglass_worker_transport_test --preview-lease-only)
   set_tests_properties(lookingglass_worker_preview_lease_test PROPERTIES TIMEOUT 30)
   add_executable(lookingglass_bridge_static_present_test
-    tests/bridge_static_present_test.cpp common/bridge_metadata.cpp)
+    tests/bridge_static_present_test.cpp
+    common/bridge_metadata.cpp
+    platform/windows/stdio_load_guard.cpp)
   target_compile_features(lookingglass_bridge_static_present_test PRIVATE cxx_std_17)
   target_include_directories(lookingglass_bridge_static_present_test PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}"
