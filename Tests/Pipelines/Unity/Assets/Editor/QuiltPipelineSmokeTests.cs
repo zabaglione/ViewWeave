@@ -28,7 +28,6 @@ public static class QuiltPipelineSmokeEntryPoints
         light.intensity = 10f;
         light.transform.rotation = Quaternion.Euler(35f, -25f, 0f);
         var hdLight = lightObject.AddComponent<HDAdditionalLightData>();
-        hdLight.intensity = 10f;
         var cameraObject = new GameObject("SmokeCamera");
         var camera = cameraObject.AddComponent<Camera>();
         camera.transform.position = new Vector3(0f, 0f, -4f);
@@ -81,7 +80,7 @@ public static class QuiltPipelineSmokeEntryPoints
         quilt.settings.views = 8;
         quilt.settings.viewAspect = 4f / 3f;
         quilt.settings.cameraDistance = 4f;
-        Debug.Log("HDRP setup lit=" + sUseHdrpLit + " light=" + light.intensity + " hdLight=" + lightObject.GetComponent<HDAdditionalLightData>().intensity + " fixedExposure=" + exposure.fixedExposure.value);
+        Debug.Log("HDRP setup lit=" + sUseHdrpLit + " light=" + light.intensity + " hdLightPresent=" + (hdLight != null) + " fixedExposure=" + exposure.fixedExposure.value);
         try
         {
             quilt.RenderQuilt();
@@ -93,11 +92,9 @@ public static class QuiltPipelineSmokeEntryPoints
             AssertTileColorRegions(quilt.QuiltTexture, quilt.settings.GetLayout());
             var litPixels = CapturePixels(quilt.QuiltTexture);
             light.intensity = 0f;
-            hdLight.intensity = 0f;
             quilt.RenderQuilt();
             if (!PixelsDiffer(litPixels, CapturePixels(quilt.QuiltTexture))) throw new InvalidOperationException("HDRP directional light on/off produced no pixel change");
             light.intensity = 10f;
-            hdLight.intensity = 10f;
             quilt.RenderQuilt();
             var bloomPixels = CapturePixels(quilt.QuiltTexture);
             bloom.intensity.value = 0.1f;

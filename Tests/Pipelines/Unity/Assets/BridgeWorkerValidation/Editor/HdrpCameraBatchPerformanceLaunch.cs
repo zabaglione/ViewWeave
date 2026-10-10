@@ -188,14 +188,14 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
                 Directory.Exists(evidenceDirectory) && Directory.EnumerateFiles(evidenceDirectory, "hdrp-camera-batch-*.png").Any())
                 throw new InvalidOperationException("prototype runtime evidence already exists in this directory");
 
-            BridgeWorkerValidationRunner runner = UnityEngine.Object.FindFirstObjectByType<BridgeWorkerValidationRunner>(FindObjectsInactive.Include);
+            BridgeWorkerValidationRunner runner = UnityEngine.Object.FindAnyObjectByType<BridgeWorkerValidationRunner>(FindObjectsInactive.Include);
             if (runner == null) throw new InvalidOperationException("the generated validation runner is missing");
             SerializedObject runnerData = new SerializedObject(runner);
             RenderPipelineAsset hdrpOff = ReadReference<RenderPipelineAsset>(runnerData, "grdOffPipeline");
             if (hdrpOff == null || hdrpOff.GetType().FullName != "UnityEngine.Rendering.HighDefinition.HDRenderPipelineAsset")
                 throw new InvalidOperationException("the generated HDRP off pipeline asset is missing");
 
-            HdrpCameraBatchPerformancePrototype prototype = UnityEngine.Object.FindFirstObjectByType<HdrpCameraBatchPerformancePrototype>(FindObjectsInactive.Include);
+            HdrpCameraBatchPerformancePrototype prototype = UnityEngine.Object.FindAnyObjectByType<HdrpCameraBatchPerformancePrototype>(FindObjectsInactive.Include);
             if (prototype == null) throw new InvalidOperationException("the generated prototype component is missing");
 
             Directory.CreateDirectory(evidenceDirectory);
@@ -462,9 +462,9 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
 
         static void TryStopWorker()
         {
-            ViewWeaveRig rig = UnityEngine.Object.FindFirstObjectByType<ViewWeaveRig>(FindObjectsInactive.Include);
+            ViewWeaveRig rig = UnityEngine.Object.FindAnyObjectByType<ViewWeaveRig>(FindObjectsInactive.Include);
             if (rig != null) rig.AutoRender = false;
-            ViewWeaveBridgeSession session = UnityEngine.Object.FindFirstObjectByType<ViewWeaveBridgeSession>(FindObjectsInactive.Include);
+            ViewWeaveBridgeSession session = UnityEngine.Object.FindAnyObjectByType<ViewWeaveBridgeSession>(FindObjectsInactive.Include);
             if (session != null && session.State != ViewWeaveBridgeSession.SessionState.Idle)
                 session.StopSession();
         }
@@ -472,8 +472,8 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
         static bool IsFullyDrained(out int shutdownPending, out uint nativePending, out string error)
         {
             if (!BridgeWorkerValidationDiagnostics.TryReadPendingCounts(out shutdownPending, out nativePending, out error)) return false;
-            ViewWeaveBridgeSession session = UnityEngine.Object.FindFirstObjectByType<ViewWeaveBridgeSession>(FindObjectsInactive.Include);
-            BridgeWorkerQuiltOutput output = UnityEngine.Object.FindFirstObjectByType<BridgeWorkerQuiltOutput>(FindObjectsInactive.Include);
+            ViewWeaveBridgeSession session = UnityEngine.Object.FindAnyObjectByType<ViewWeaveBridgeSession>(FindObjectsInactive.Include);
+            BridgeWorkerQuiltOutput output = UnityEngine.Object.FindAnyObjectByType<BridgeWorkerQuiltOutput>(FindObjectsInactive.Include);
             bool sessionStopped = session != null && session.State == ViewWeaveBridgeSession.SessionState.Idle;
             bool outputStopped = output != null && output.State == BridgeWorkerQuiltOutput.WorkerState.Closed;
             return shutdownPending == 0 && nativePending == 0 && sessionStopped && outputStopped;

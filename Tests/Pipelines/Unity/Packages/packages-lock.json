@@ -167,7 +167,8 @@
       "depth": 0,
       "source": "local",
       "dependencies": {
-        "com.zabaglione.lookingglass.viewweave.core": "0.1.0"
+        "com.zabaglione.lookingglass.viewweave.core": "0.1.0",
+        "com.unity.modules.animation": "1.0.0"
       }
     },
     "com.zabaglione.lookingglass.viewweave.core": {

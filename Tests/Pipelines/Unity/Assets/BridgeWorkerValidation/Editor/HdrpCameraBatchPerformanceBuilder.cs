@@ -25,7 +25,7 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
             try
             {
                 Scene scene = EditorSceneManager.OpenScene(SourceScene, OpenSceneMode.Single);
-                BridgeWorkerValidationRunner runner = UnityEngine.Object.FindFirstObjectByType<BridgeWorkerValidationRunner>(FindObjectsInactive.Include);
+                BridgeWorkerValidationRunner runner = UnityEngine.Object.FindAnyObjectByType<BridgeWorkerValidationRunner>(FindObjectsInactive.Include);
                 if (runner == null) throw new InvalidOperationException("HDRP validation runner is missing from the generated fixture");
 
                 SerializedObject runnerData = new SerializedObject(runner);
@@ -60,9 +60,20 @@ namespace ViewWeave.BridgeWorkerValidation.Editor
                 quality.enumValueIndex = (int)QuiltQualityPreset.Balanced;
                 sessionData.ApplyModifiedPropertiesWithoutUndo();
 
-                Camera mainCamera = UnityEngine.Object.FindFirstObjectByType<Camera>(FindObjectsInactive.Include);
-                if (mainCamera == null || mainCamera == source)
+                Camera[] cameras = UnityEngine.Object.FindObjectsByType<Camera>(FindObjectsInactive.Include);
+                Camera mainCamera = null;
+                for (int i = 0; i < cameras.Length; i++)
+                {
+                    Camera candidate = cameras[i];
+                    if (candidate == source) continue;
+                    if (mainCamera != null)
+                        throw new InvalidOperationException("HDRP fixture contains multiple cameras in addition to the source camera");
+                    mainCamera = candidate;
+                }
+                if (mainCamera == null)
                     mainCamera = CreateMainCamera(source);
+                else if (mainCamera.tag != "MainCamera")
+                    throw new InvalidOperationException("HDRP fixture contains an additional camera that is not tagged MainCamera");
                 SetReference(prototypeData, "mainCamera", mainCamera);
                 prototypeData.ApplyModifiedPropertiesWithoutUndo();
 

@@ -1143,7 +1143,7 @@ namespace ViewWeave
             {
                 transferSrgb = source.sRGB;
                 GraphicsFormat transferFormat = source.sRGB ? GraphicsFormat.R8G8B8A8_SRGB : GraphicsFormat.R8G8B8A8_UNorm;
-                if (!SystemInfo.IsFormatSupported(transferFormat, FormatUsage.Render))
+                if (!SystemInfo.IsFormatSupported(transferFormat, GraphicsFormatUsage.Render))
                 {
                     LastError = "Bridge worker RGBA8 render format is unsupported";
                     Dispose();

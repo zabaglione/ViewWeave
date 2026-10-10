@@ -644,7 +644,7 @@ namespace ViewWeave.BridgeWorkerValidation
                 error = "active render pipeline is unavailable";
             if (!string.IsNullOrEmpty(error)) return false;
 
-            Volume[] volumes = FindObjectsByType<Volume>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            Volume[] volumes = FindObjectsByType<Volume>(FindObjectsInactive.Include);
             for (int i = 0; i < volumes.Length; ++i)
                 if (volumes[i] != null && !volumes[i].isGlobal)
                 {
@@ -682,7 +682,7 @@ namespace ViewWeave.BridgeWorkerValidation
                 return false;
             }
 
-            GameObject[] objects = FindObjectsByType<GameObject>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            GameObject[] objects = FindObjectsByType<GameObject>(FindObjectsInactive.Include);
             for (int i = 0; i < objects.Length; ++i)
             {
                 if (objects[i] == null) continue;

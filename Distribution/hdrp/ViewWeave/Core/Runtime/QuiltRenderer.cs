@@ -53,6 +53,7 @@ namespace ViewWeave
         public bool IsLatestQuiltCurrent => IsSnapshotCurrent();
         public event Action<QuiltRenderer> QuiltRendered;
         public string LastAutoRenderError { get; private set; }
+        public string LastRenderStatus { get; private set; } = string.Empty;
         public long LastCpuSubmissionTicks { get; private set; }
         public long LastViewCpuTicks { get; private set; }
         public int ViewAntiAliasingSamples => viewTexture == null ? 0 : viewTexture.antiAliasing;
@@ -332,6 +333,7 @@ namespace ViewWeave
         QuiltViewRenderMode cachedSamplingMode;
         bool hasSamplingCache;
         bool notifyingRenderComplete;
+        bool releasePipelineResourcesAfterRender;
         long quiltRevision;
         bool hasCompletedQuilt;
         QuiltRenderSnapshot latestSnapshot;
@@ -360,8 +362,14 @@ namespace ViewWeave
             foreach (char valueChar in value) if (valueChar >= 0x20 && valueChar <= 0x7e) chars.Add(valueChar);
             return new string(chars.ToArray());
         }
-        void OnDisable() { QuiltAutoRenderScheduler.Unregister(this); ReleaseOrRetainTextures(); }
-        void OnDestroy() { QuiltAutoRenderScheduler.Unregister(this); ReleaseOrRetainTextures(); }
+        void OnDisable() { QuiltAutoRenderScheduler.Unregister(this); ReleasePipelineRenderResources(); ReleaseOrRetainTextures(); }
+        void OnDestroy() { QuiltAutoRenderScheduler.Unregister(this); ReleasePipelineRenderResources(); ReleaseOrRetainTextures(); }
+
+        public void ReleasePipelineRenderResources()
+        {
+            if (IsRendering) { releasePipelineResourcesAfterRender = true; return; }
+            (RenderGuard as IQuiltRenderResourceOwner)?.ReleaseQuiltRenderResources();
+        }
 
         public void RenderQuilt()
         {
@@ -376,6 +384,7 @@ namespace ViewWeave
             {
                 autoRenderFailed = true;
                 autoRender = false;
+                ReleasePipelineRenderResources();
                 LastAutoRenderError = SanitizeAutoRenderError(error);
                 UnityEngine.Debug.LogError("Looking Glass quilt auto render stopped: " + LastAutoRenderError);
             }
@@ -431,6 +440,7 @@ namespace ViewWeave
             bool renderSucceeded = false;
             QuiltLayout layout = default;
             IDisposable quiltPreparation = null;
+            IQuiltRenderSession renderSession = null;
             try
             {
                 layout = effectiveSettings.GetLayout();
@@ -447,9 +457,18 @@ namespace ViewWeave
                 }
                 long totalStart = Stopwatch.GetTimestamp();
                 sourceCamera.enabled = false;
-                IQuiltRenderPreparation preparation = RenderGuard as IQuiltRenderPreparation;
-                if (preparation != null) quiltPreparation = preparation.PrepareQuilt(sourceCamera);
                 Matrix4x4 centerProjection = QuiltMath.OffAxisProjection(effectiveSettings.fieldOfView, effectiveSettings.viewAspect, state.nearClip, state.farClip, 0f, effectiveSettings.cameraDistance);
+                var sessionProvider = RenderGuard as IQuiltRenderSessionProvider;
+                renderSession = sessionProvider?.BeginQuiltRender(new QuiltRenderContext(sourceCamera, referenceCamera,
+                    layout, effectiveSettings, renderedViewIndices, centerProjection));
+                LastRenderStatus = renderSession == null ? string.Empty : renderSession.Status;
+                if (renderSession != null && !renderSession.IsReady) return;
+                Canvas[] cameraCanvases = renderSession == null ? null : UnityEngine.Object.FindObjectsByType<Canvas>();
+                if (renderSession == null)
+                {
+                    IQuiltRenderPreparation preparation = RenderGuard as IQuiltRenderPreparation;
+                    if (preparation != null) quiltPreparation = preparation.PrepareQuilt(sourceCamera);
+                }
                 float maximumViewOffset = QuiltMath.ViewOffset(layout.ViewCount - 1, layout.ViewCount, effectiveSettings.viewCone, effectiveSettings.cameraDistance);
                 for (int renderSlot = 0; renderSlot < renderedViewIndices.Length; ++renderSlot)
                 {
@@ -457,19 +476,34 @@ namespace ViewWeave
                     int viewIndex = renderedViewIndices[renderSlot];
                     float normalizedView = layout.ViewCount <= 1 ? 0f : viewIndex / (float)(layout.ViewCount - 1) * 2f - 1f;
                     float offset = maximumViewOffset * normalizedView;
-                    sourceCamera.transform.position = state.position + state.rotation * Vector3.right * offset;
-                    sourceCamera.transform.rotation = QuiltMath.ParallelViewRotation(state.rotation);
-                    sourceCamera.projectionMatrix = QuiltMath.ProjectionWithViewOffset(centerProjection, offset, effectiveSettings.cameraDistance);
-                    sourceCamera.targetTexture = viewTexture;
-                    sourceCamera.aspect = effectiveSettings.viewAspect;
-                    sourceCamera.rect = new Rect(0f, 0f, 1f, 1f);
-                    IDisposable viewGuard = srp ? RenderGuard.Begin(sourceCamera) : null;
+                    Camera viewCamera = renderSession == null ? sourceCamera : renderSession.GetViewCamera(viewIndex);
+                    if (viewCamera == null || viewCamera.enabled) throw new InvalidOperationException("a disabled quilt view camera is required");
+                    CameraState viewState = new CameraState(viewCamera);
+                    IDisposable viewGuard = null;
+                    IDisposable canvasScope = null;
                     try
                     {
-                        RenderOneView();
+                        viewCamera.transform.position = state.position + state.rotation * Vector3.right * offset;
+                        viewCamera.transform.rotation = QuiltMath.ParallelViewRotation(state.rotation);
+                        viewCamera.projectionMatrix = QuiltMath.ProjectionWithViewOffset(centerProjection, offset, effectiveSettings.cameraDistance);
+                        viewCamera.targetTexture = viewTexture;
+                        viewCamera.aspect = effectiveSettings.viewAspect;
+                        viewCamera.rect = new Rect(0f, 0f, 1f, 1f);
+                        if (viewCamera != sourceCamera)
+                            canvasScope = new CanvasCameraScope(cameraCanvases, sourceCamera, referenceCamera, viewCamera);
+                        viewGuard = renderSession != null ? renderSession.BeginView(viewCamera, viewIndex) : srp ? RenderGuard.Begin(viewCamera) : null;
+                        RenderOneView(viewCamera);
                         LastRenderedViewCount++;
                     }
-                    finally { if (viewGuard != null) viewGuard.Dispose(); }
+                    finally
+                    {
+                        try { viewGuard?.Dispose(); }
+                        finally
+                        {
+                            try { canvasScope?.Dispose(); }
+                            finally { viewState.Restore(viewCamera); }
+                        }
+                    }
                     RenderTexture renderedView = ResolveViewTexture();
                     if (renderedViewIndices.Length == layout.ViewCount)
                     {
@@ -490,13 +524,19 @@ namespace ViewWeave
             {
                 try
                 {
-                    if (quiltPreparation != null) quiltPreparation.Dispose();
+                    try { renderSession?.Dispose(); }
+                    finally { quiltPreparation?.Dispose(); }
                 }
                 finally
                 {
                     if (stateCaptured) state.Restore(sourceCamera);
                     RenderTexture.active = previousActive;
                     IsRendering = false;
+                    if (releasePipelineResourcesAfterRender)
+                    {
+                        releasePipelineResourcesAfterRender = false;
+                        ReleasePipelineRenderResources();
+                    }
                 }
             }
             if (renderSucceeded)
@@ -594,15 +634,15 @@ namespace ViewWeave
             finally { notifyingRenderComplete = false; }
         }
 
-        void RenderOneView()
+        void RenderOneView(Camera camera)
         {
             if (useRenderRequests && GraphicsSettings.currentRenderPipeline != null)
             {
                 var request = new RenderPipeline.StandardRequest { destination = viewTexture };
-                if (!RenderPipeline.SupportsRenderRequest(sourceCamera, request)) throw new NotSupportedException("active render pipeline does not support standard camera requests");
-                RenderPipeline.SubmitRenderRequest(sourceCamera, request);
+                if (!RenderPipeline.SupportsRenderRequest(camera, request)) throw new NotSupportedException("active render pipeline does not support standard camera requests");
+                RenderPipeline.SubmitRenderRequest(camera, request);
             }
-            else sourceCamera.Render();
+            else camera.Render();
         }
 
         void EnsureViewSampling(int viewCount, QuiltViewRenderMode renderMode)
@@ -825,6 +865,40 @@ namespace ViewWeave
         {
             if (Application.isPlaying) Destroy(texture);
             else DestroyImmediate(texture);
+        }
+
+        // Screen Space - Camera canvases explicitly target a Camera. Keep that association for each
+        // isolated view and restore it before normal scene rendering or the next callback can observe it.
+        sealed class CanvasCameraScope : IDisposable
+        {
+            readonly System.Collections.Generic.List<(Canvas canvas, Camera camera)> originals =
+                new System.Collections.Generic.List<(Canvas, Camera)>();
+            bool disposed;
+            public CanvasCameraScope(Canvas[] canvases, Camera source, Camera reference, Camera view)
+            {
+                if (canvases == null) return;
+                try
+                {
+                    foreach (Canvas canvas in canvases)
+                    {
+                        if (canvas == null || !canvas.isActiveAndEnabled || canvas.renderMode != RenderMode.ScreenSpaceCamera) continue;
+                        Camera assigned = canvas.worldCamera;
+                        if (assigned != source && (reference == null || assigned != reference)) continue;
+                        originals.Add((canvas, assigned));
+                        canvas.worldCamera = view;
+                    }
+                    if (originals.Count != 0) Canvas.ForceUpdateCanvases();
+                }
+                catch { Dispose(); throw; }
+            }
+            public void Dispose()
+            {
+                if (disposed) return;
+                disposed = true;
+                foreach (var original in originals)
+                    if (original.canvas != null) original.canvas.worldCamera = original.camera;
+                if (originals.Count != 0) Canvas.ForceUpdateCanvases();
+            }
         }
 
         readonly struct CameraState

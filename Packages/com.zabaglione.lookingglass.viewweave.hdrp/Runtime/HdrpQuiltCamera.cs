@@ -7,8 +7,17 @@ namespace ViewWeave.HDRP
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Camera))]
-    public sealed class HdrpQuiltCamera : MonoBehaviour, IQuiltRenderGuard, IQuiltRenderPreparation
+    public sealed class HdrpQuiltCamera : MonoBehaviour, IQuiltRenderGuard, IQuiltRenderPreparation, IQuiltRenderSessionProvider, IQuiltRenderResourceOwner
     {
+        [Tooltip("Isolated histories retain HDRP effects on one persistent Camera per rendered logical view. Compatibility mode uses a shared Camera and suppresses temporal effects.")]
+        public HdrpQuiltRenderingMode renderingMode = HdrpQuiltRenderingMode.IsolatedViewHistories;
+        [Tooltip("Copy HDRP rendering settings from the Reference Camera before each Quilt. Camera framing, clipping and culling continue to use the Rig settings.")]
+        public bool followReferenceRenderingSettings = true;
+        public HdrpQuiltExposureMode exposureMode = HdrpQuiltExposureMode.FollowScene;
+        [Tooltip("Stops output when observed graphics growth or the estimate of new/grown RenderTextures exceeds this budget. Includes shared HDRP resources. Texture estimates remain available in Release Players, but exclude unobservable buffers/driver overhead; this is not a strict VRAM cap.")]
+        [Min(1)] public int historyMemoryBudgetMB = 4096;
+        [Tooltip("Maximum number of persistent logical-view Cameras, enforced in Editor and all Player builds. Exceeding this limit stops output.")]
+        [Min(1)] public int maximumHistoryCameras = 256;
         [Tooltip("Temporarily disables unsupported HDRP effects for quilt rendering.")]
         public bool adaptUnsupportedEffects = true;
         [Tooltip("Use a fixed exposure when the effective HDRP stack is not already fixed.")]
@@ -20,9 +29,30 @@ namespace ViewWeave.HDRP
         HdrpQuiltIntegration.Preparation activePreparation;
         HdrpQuiltIntegration.Preparation cachedPreparation;
         Camera cachedCamera;
+        HdrpViewHistoryRenderer historyRenderer;
         bool scopeActive;
         public int ValidationStackCreationCount { get; private set; }
         Camera Camera => cachedCamera != null ? cachedCamera : (cachedCamera = GetComponent<Camera>());
+        public int HistoryCameraCount => historyRenderer == null ? 0 : historyRenderer.CameraCount;
+        public long HistoryGraphicsMemoryGrowthBytes => historyRenderer == null ? 0 : historyRenderer.GraphicsMemoryGrowthBytes;
+        public long HistoryTextureMemoryEstimateBytes => historyRenderer == null ? 0 : historyRenderer.TextureMemoryGrowthBytes;
+        public float SharedExposureEV => historyRenderer == null ? fallbackFixedExposureEV : historyRenderer.SharedExposureEV;
+        public bool SharedExposureReady => historyRenderer != null && historyRenderer.ExposureReady;
+        public string HistoryStatus => historyRenderer == null ? string.Empty : historyRenderer.Status;
+        public Camera GetHistoryCamera(int logicalView) => historyRenderer?.GetCamera(logicalView);
+
+        public IQuiltRenderSession BeginQuiltRender(QuiltRenderContext context)
+        {
+            if (!isActiveAndEnabled) throw new InvalidOperationException("HDRP quilt camera must be active and enabled");
+            if (scopeActive || activePreparation != null) throw new InvalidOperationException("HDRP quilt preparation is already active");
+            if (renderingMode == HdrpQuiltRenderingMode.SharedCameraCompatibility)
+            { DestroyHistoryRenderer(); return null; }
+            if (renderingMode != HdrpQuiltRenderingMode.IsolatedViewHistories) throw new ArgumentOutOfRangeException(nameof(renderingMode));
+            DestroyCachedPreparation();
+            if (historyRenderer == null) historyRenderer = new HdrpViewHistoryRenderer(Camera);
+            return historyRenderer.Begin(context, followReferenceRenderingSettings, exposureMode, fallbackFixedExposureEV, historyMemoryBudgetMB, maximumHistoryCameras);
+        }
+        public void ReleaseQuiltRenderResources() => DestroyHistoryRenderer();
 
         public void ValidateForQuilt() => HdrpQuiltIntegration.Validate(Camera);
 
@@ -114,8 +144,9 @@ namespace ViewWeave.HDRP
             }
         }
 
-        void OnDisable() { scopeActive = false; activePreparation?.Dispose(); activePreparation = null; DestroyCachedPreparation(); DestroyValidationStack(); }
-        void OnDestroy() { scopeActive = false; activePreparation?.Dispose(); activePreparation = null; DestroyCachedPreparation(); DestroyValidationStack(); cachedCamera = null; }
+        void OnDisable() { scopeActive = false; activePreparation?.Dispose(); activePreparation = null; DestroyHistoryRenderer(); DestroyCachedPreparation(); DestroyValidationStack(); }
+        void OnDestroy() { scopeActive = false; activePreparation?.Dispose(); activePreparation = null; DestroyHistoryRenderer(); DestroyCachedPreparation(); DestroyValidationStack(); cachedCamera = null; }
+        void DestroyHistoryRenderer() { historyRenderer?.Dispose(); historyRenderer = null; }
         void DestroyCachedPreparation()
         {
             if (cachedPreparation == null) return;

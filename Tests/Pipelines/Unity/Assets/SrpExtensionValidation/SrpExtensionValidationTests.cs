@@ -171,13 +171,13 @@ namespace ViewWeave.SrpExtensionValidation
 
             void SnapshotExternalObjects()
             {
-                foreach (Camera camera in UnityEngine.Object.FindObjectsByType<Camera>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+                foreach (Camera camera in UnityEngine.Object.FindObjectsByType<Camera>(FindObjectsInactive.Include))
                 {
                     ExternalBehaviours.Add(camera);
                     ExternalBehaviourStates.Add(camera.enabled);
                     camera.enabled = false;
                 }
-                foreach (Light light in UnityEngine.Object.FindObjectsByType<Light>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+                foreach (Light light in UnityEngine.Object.FindObjectsByType<Light>(FindObjectsInactive.Include))
                 {
                     ExternalBehaviours.Add(light);
                     ExternalBehaviourStates.Add(light.enabled);

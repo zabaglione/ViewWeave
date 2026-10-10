@@ -128,6 +128,7 @@ namespace ViewWeave
 
         internal void MarkStopRequested()
         {
+            if (renderer != null) renderer.ReleasePipelineRenderResources();
             stopRequested = true;
         }
 

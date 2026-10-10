@@ -31,6 +31,10 @@ Rigの**Bridge**欄では、通常のPlay Mode出力を**Start Output**／**Stop
 
 **Output Quality**は視点数とは別に、各viewの描画解像度を調整します。Preview、Balanced、Nativeの順に、接続display profileに対する解像度が大きくなります。Local PreviewはRigのlocal Quilt profileを使います。描画が重い場合は低い設定から試し、対象displayで見え方を確認してください。確認済みの範囲は[対応表](compatibility.md)、日付付き測定は[Performance](performance.md)を参照してください。
 
+HDRPでは、**Rendering > HDRP Rendering**の**Isolated View Histories**と**Quilt Exposure > Follow Scene**が既定です。描画する視点ごとに履歴を保持し、中央視点で測った露出をQuilt全体で共有します。シーンのHDRP効果設定を保ち、起動直後は有効な測光結果が届くまで待機します。露出を自分で指定する場合だけ**Manual Fixed**を選んでください。
+
+履歴の保持には追加のGPUリソースが必要です。**History Resource Budget (MB)**の既定は4096で、観測した割当増分が上限を超えると出力を停止します。まずOutput Qualityを下げるかHalf／Quarterを試してください。Release Playerではテクスチャの推定量を使うため、厳密なVRAM上限ではありません。**Maximum History Cameras**ではCamera数も制限します。**Shared Camera Compatibility**は時間履歴を使う効果を抑制して見え方を変える明示的な選択肢です。各効果とプラットフォームの未検証範囲は[対応表](compatibility.md)を参照してください。
+
 ## EditorまたはdisplayでPreviewする
 
 **Preview**から**Start Local Edit Mode Preview**を選ぶとEditor内でQuiltを確認でき、**Start Looking Glass Device Preview**を選ぶと接続displayへ出力します。どちらも明示的に開始します。Local Previewにはdisplayは不要です。Device Previewには対応経路と事前条件が必要です。Preview中はPause/Resumeで停止・再開し、終わったら**Advanced > Close Preview**を使います。Previewの状態自体は保存sceneへ書き込まれません。

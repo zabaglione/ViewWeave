@@ -30,6 +30,7 @@ namespace ViewWeave
                 }
                 autoRender = value;
                 EnsureRenderer().autoRender = value;
+                if (!value) Renderer.ReleasePipelineRenderResources();
             }
         }
 
@@ -45,6 +46,7 @@ namespace ViewWeave
             if (value && !ValidateRig(out error)) return false;
             autoRender = value;
             EnsureRenderer().autoRender = value;
+            if (!value) Renderer.ReleasePipelineRenderResources();
             return true;
         }
 
@@ -244,6 +246,7 @@ namespace ViewWeave
         {
             autoRender = false;
             if (Renderer != null) Renderer.autoRender = false;
+            if (Renderer != null) Renderer.ReleasePipelineRenderResources();
             Debug.LogError("ViewWeaveRig configuration failed: " + SanitizeLog(message));
         }
 

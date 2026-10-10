@@ -46,7 +46,7 @@ namespace ViewWeave
         static void RegisterExistingRenderers()
         {
             if (!Application.isPlaying) return;
-            QuiltRenderer[] renderers = UnityEngine.Object.FindObjectsByType<QuiltRenderer>(FindObjectsSortMode.None);
+            QuiltRenderer[] renderers = UnityEngine.Object.FindObjectsByType<QuiltRenderer>();
             for (int i = 0; i < renderers.Length; ++i)
                 if (renderers[i].isActiveAndEnabled) Register(renderers[i]);
         }

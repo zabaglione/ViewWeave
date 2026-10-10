@@ -54,13 +54,15 @@ GRD の性能実測は URP normal multithreaded Player の範囲だけです。H
 | --- | --- | --- |
 | HDRP Bloom | 限定実測 | HDRP Linear条件のDirectional light、明示Volume fixture。adapterの一時overrideでquilt中も通常Bloomを維持。複雑なstackは未検証。 |
 | URP Bloom | 限定実測 | 個別Bloom fixtureで視点ごとの差を確認。一般のVolume継承、他の効果、tile seamは未検証。 |
-| Color Adjustments / Tonemapping / Exposure | 限定実測 | 個別Tone/Color fixtureで描画差を確認。HDRPはLinear必須。quilt中のAuto Exposureは全view共通Fixed EV 12に変換し、元stackがFixedなら元EVを保つ。一般の色管理は未検証。 |
-| Motion Blur | HDRPはquilt中に一時抑制 | HDRP adapter既定の一時Volume overrideでquilt中だけ無効化。通常renderと元Volume設定は維持。URPの構成は別途。 |
+| HDRP view history / Quilt exposure | 実装済み、Metal Editor／Playerで限定検証 | 既定の`IsolatedViewHistories`は描画する論理viewごとにpersistent Cameraを作り、Reference CameraのHDRP設定をコピーします。`FollowScene`は中央viewをGPU測光し、compensation込みの露出をFixed exposureとして共有します。SceneのFixed exposureは`fixedExposure - compensation`を使い、中立な初回meter sampleは破棄します。warmup中は出力しません。`ManualFixed`は明示選択です。2026-10-10 Unity 6000.6.4f1 Metal batchのGraphicsCompatibilityは52/52 PASS、skip 0。4視点のmacOS描画専用Development／Release Playerでも履歴・露出・解放・予算制限を確認。Windows D3D11/D3D12/Player、macOSのBridge／機器出力Player、effect別の画素正確性は未検証。[検証記録](../hdrp-view-history-validation-20261010.md)を参照。 |
+| HDRP history resource limit | 限定的な実測を伴う実装 | History Resource Budget既定4096 MB、Maximum History Cameras既定256。設定は**Rig > Rendering**にあります。budgetはgraphics-driver growth実測と新規/拡大RenderTexture descriptor推定の大きい方を使い、Releaseのdriver-growth counterは0です。camera数上限はEditorと全Player buildで適用します。未観測bufferやdriver overheadを含まず、完全なVRAM上限ではありません。 |
+| Color Adjustments / Tonemapping / Exposure | 限定実測 | 個別Tone/Color fixtureで描画差を確認。HDRPはLinear必須。既定の`FollowScene`は中央viewのGPU測光による共通Fixed EVを使います。一般の色管理とeffect別画素は未検証。 |
+| Motion Blur | HDRP isolated-history既定で設定を維持 | 既定modeはscene設定を維持します。明示選択の`SharedCameraCompatibility`だけがMotion Blurを無効化します。画素正確性は未検証。URP構成は別途。 |
 | FXAA / SMAA / MSAA | FXAA/SMAAは限定確認。URP MSAA 1/1で4x view RT、1x resolve、resize/disable lifecycle、中心色一致を確認。追加のLinear境界試験10/10で、このRTX GPUの2x/4x/8x対応倍率、pipeline 1x、allowMSAA無効、Deferred fallback、中心色一致と対応MSAAのedge差分を確認。Gamma側targeted MSAA 7件も確認したが専用MSAA Playerは未実施。低MSAA能力GPU、HDRP MSAA、性能は未検証 | MSAAの一般素材、Unity/Player、画質、性能を検証。 |
-| TAA / temporal history | 非対応 | view render 中は TAA を無効化して終了時に復元。独立した per-view temporal history は提供しない。 |
-| SSAO / SSGI / SSR | HDRP SSGI/SSRはquilt中に一時抑制 | HDRP adapter既定のoverrideでquilt view中だけ無効化し、scope終了時に戻す。URP/他構成は未検証。 |
-| Fog / Volumetric Fog / Clouds | HDRP volumetric effectsはquilt中に一時抑制 | HDRP volumetric fog/cloudはquilt view中だけ無効化。通常のFogとSkyは維持する。 |
-| Depth of Field / Auto Exposure | Depth of Fieldは限定確認。HDRP Auto Exposureはquilt共通Fixed EVへ一時変換 | HDRPはEV 12を既定にし、元stackがFixedならそのEVを使う。URP Auto Exposureは未検証。 |
+| TAA / temporal history | HDRPのview別historyを実装、画素確認は限定 | HDRP既定のisolated modeは描画する論理viewごとにpersistent historyを持ち、TAAを有効のまま使用。URP TAAは引き続きview描画中に停止して終了時に復元。明示選択のHDRP互換modeはTAAを停止します。 |
+| SSAO / SSGI / SSR | HDRPは既定でscene設定を維持 | 明示選択の`SharedCameraCompatibility`だけがSSRとSSGIを無効化します。現在のbatchはeffect別画素正確性を証明しません。URP/他構成は未検証。 |
+| Fog / Volumetric Fog / Clouds | HDRPは既定でscene設定を維持 | 明示選択の`SharedCameraCompatibility`だけがcloudsを無効化し、volumetric fog filteringをGaussianへ変更します。既定のisolated modeはscene設定を使い、画素正確性は未検証。 |
+| Depth of Field / Auto Exposure | Depth of Fieldは限定確認。HDRP shared exposureを実装 | HDRP既定`FollowScene`は中央viewのGPU測光を全viewで共有します。SceneのFixed exposureはcompensationを含めて扱い、`ManualFixed`は明示選択です。URP Auto Exposureは未検証。 |
 
 今回の変更でcamera authoring、Quilt playback、Mono AudioRenderer recordingを追加しました。Camera authoringのDX12 targeted test/static reviewはPASSですが、Scene GUI interactive dragは未実測です。Playback safetyの12 scenariosは個別PASS、Core CPU boundary testもPASS。隔離DX12 official Bridge fixtureで事前生成7680x4320/8x6 PNGの静止保持/Pause/Resumeと3枚・1fps連番を送り、3 submit/0 skipped、Ready generation維持、lease解放、pending 0のplayback body gateを確認しました。一方Editor終了時にUnity.dll offset 0x44383dfのアクセス違反（exit code -1073741819）があり、自然終了gateは未合格です。これは48 camera live render/実機表示ではありません。限定Editor reload probeではserialized playback recovery recordと4x4 RenderTexture referenceの維持、post-reload fence/readback、test-only handoffを確認しましたが、production shutdown ordering/natural exitは未証明です。Audio fake suite 6/6とactual audio/legacy silent 8 casesはfocused rerun後に全件個別PASS（合計14 cases）。Mono URP/HDRP録画、Pause/Resume、stop/disable、AudioSource/scheduled clip保全を確認しました。Native Bridge audio deliveryとsample-accurate frame alignmentは未実測です。検証実行時の基準revisionは4230c4cです。最終integration revisionは未確定です。
 
@@ -84,7 +86,7 @@ GRD の性能実測は URP normal multithreaded Player の範囲だけです。H
 | uGUI Screen Space Overlay | 制約あり | 通常画面のOverlayは自動Quilt capture対象ではない。各viewと同じdepthで合成する方式は未検証。 |
 | UI Toolkit target texture | 限定実測 | Unity 6.6 targetTexture fixture で合格。ray map、DPI、EventSystem、入力は未検証。 |
 | Camera.Render | 非対応 | SRP経路では使用しない。Coreは `useRenderRequests=false` を拒否する。 |
-| SDK RenderRequest | 限定実測 | SRPでは Standard RenderRequest を必須とし、pipeline adapter/guardで検証する。1 CameraでN回要求するコストは残る。 |
+| SDK RenderRequest | 限定実測 | SRPでは Standard RenderRequest を必須とし、pipeline adapter/guardで検証する。描画viewごとのrender requestは残り、HDRP isolated modeは論理viewごとにpersistent Cameraを使う。 |
 | URP camera stack | 非対応 | Base cameraのみ。Overlay camera stackはGuardが拒否。 |
 
 ## SRP拡張、XR、特殊経路
@@ -100,7 +102,7 @@ GRD の性能実測は URP normal multithreaded Player の範囲だけです。H
 
 ## SRP と GRD の注意点
 
-CoreはSRPで標準 RenderRequest を使います。`useRenderRequests=false` はSRP adapter経路で拒否されます。URPはBase camera、Volume、Renderer Feature、camera stateをviewごとに検証します。HDRPはLinear必須です。adapterはquilt scope中に一時Volume overrideを使い、Motion Blur、SSR、SSGI、volumetric fog/cloudを抑えてAuto Exposureを全view共通Fixed EVにします。scope外のMainCameraとVolume設定は保たれます。
+CoreはSRPで標準RenderRequestを使い、`useRenderRequests=false`はSRP adapter経路で拒否します。URPはBase camera、Volume、Renderer Feature、camera stateをviewごとに検証し、URP TAAは引き続き一時停止します。HDRPはLinear必須で、既定ではpersistent Camera historyをviewごとに作り、Reference Camera設定をコピーして`FollowScene`露出を共有します。HDRPのscene effectは既定modeで有効のままです。明示選択の`SharedCameraCompatibility`のみ旧effect適応を行い、Motion Blur/SSR/SSGI/cloudを無効化、TAAを停止、volumetric fogをGaussianにし、non-Fixed exposureをManual EV（既定12）へ変換します。HDRP user controlsはすべて**Rig > Rendering**内です。
 
 GRDの機能有無はpipelineの公式対応と別に検証します。現在の性能証跡はURP normal multithreaded PlayerのMeshRendererに限定され、HDRPやVFX、ParticleSystem、SkinnedMeshRenderer、Terrain、DecalのGRD性能を意味しません。
 

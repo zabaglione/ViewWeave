@@ -342,6 +342,34 @@ namespace ViewWeave.Editor
                 foldout.Add(new HelpBox("Local rendering uses this profile. Connected display output uses its calibrated geometry and the Output Quality setting.", HelpBoxMessageType.Info));
             }
             BuildOutputQuality(foldout);
+            BuildHdrpRenderingSettings(foldout);
+        }
+
+        void BuildHdrpRenderingSettings(Foldout foldout)
+        {
+            SerializedProperty mode = guardObject?.FindProperty("renderingMode");
+            if (mode == null || guardObject.FindProperty("historyMemoryBudgetMB") == null) return;
+            foldout.Add(new Label("HDRP Rendering"));
+            AddHdrpProperty(foldout, "renderingMode", "View History Mode");
+            AddHdrpProperty(foldout, "followReferenceRenderingSettings", "Follow Reference Rendering Settings");
+            AddHdrpProperty(foldout, "historyMemoryBudgetMB", "History Resource Budget (MB)");
+            AddHdrpProperty(foldout, "maximumHistoryCameras", "Maximum History Cameras");
+            AddHdrpProperty(foldout, "exposureMode", "Quilt Exposure");
+            AddHdrpProperty(foldout, "fallbackFixedExposureEV", "Manual Fixed EV");
+            foldout.Add(new HelpBox("Isolated View Histories retains the scene's HDRP effects with one Camera per rendered logical view. Follow Scene meters the central view and shares its exposure across the Quilt; the first frames wait for metering. Manual Fixed EV explicitly overrides scene exposure. Higher EV makes the image darker. Stop preview/output before changing these settings.", HelpBoxMessageType.Info));
+            var compatibility = new Foldout { text = "Shared Camera Compatibility Settings", value = false };
+            AddHdrpProperty(compatibility, "adaptUnsupportedEffects", "Adapt Temporal Effects");
+            AddHdrpProperty(compatibility, "fallbackFixedExposure", "Use Manual EV for Non-Fixed Exposure");
+            compatibility.Add(new HelpBox("Used only in Shared Camera Compatibility mode: Motion Blur, SSR, SSGI and volumetric clouds are suppressed; TAA is disabled; volumetric fog uses Gaussian filtering. Non-Fixed exposure uses Manual Fixed EV when enabled. This mode changes the appearance of the scene.", HelpBoxMessageType.Warning));
+            foldout.Add(compatibility);
+        }
+
+        void AddHdrpProperty(VisualElement parent, string propertyName, string label)
+        {
+            PropertyField field = AddBoundProperty(parent, guardObject, propertyName, label);
+            if (field == null) return;
+            field.name = propertyName;
+            structuralMutationFields.Add(field);
         }
 
         void BuildPreviewSection()
@@ -432,21 +460,6 @@ namespace ViewWeave.Editor
             structuralMutationFields.Add(AddBoundProperty(foldout, rendererObject, "useRenderRequests", "Use Render Requests"));
             structuralMutationFields.Add(AddBoundProperty(foldout, rigObject, "outputBehaviour", "Output Component"));
             structuralMutationFields.Add(AddBoundProperty(foldout, rigObject, "guardBehaviour", "Render Guard Component"));
-            if (guardObject != null)
-            {
-                bool hasHdrpSettings = guardObject.FindProperty("adaptUnsupportedEffects") != null ||
-                    guardObject.FindProperty("fallbackFixedExposure") != null || guardObject.FindProperty("fallbackFixedExposureEV") != null;
-                if (hasHdrpSettings)
-                {
-                    foldout.Add(new Label("HDRP Guard Settings"));
-                    PropertyField adaptEffects = AddBoundProperty(foldout, guardObject, "adaptUnsupportedEffects", "Adapt Unsupported Effects");
-                    PropertyField fixedExposure = AddBoundProperty(foldout, guardObject, "fallbackFixedExposure", "Fallback to Fixed Exposure");
-                    PropertyField fixedExposureEV = AddBoundProperty(foldout, guardObject, "fallbackFixedExposureEV", "Fallback Fixed Exposure EV");
-                    if (adaptEffects != null) adaptEffects.name = "adaptUnsupportedEffects";
-                    if (fixedExposure != null) fixedExposure.name = "fallbackFixedExposure";
-                    if (fixedExposureEV != null) fixedExposureEV.name = "fallbackFixedExposureEV";
-                }
-            }
             foldout.Add(new HelpBox("ViewWeaveRig is the authoring entry point. QuiltRenderer, BridgeWorkerQuiltOutput, Bridge Session, and pipeline adapters remain available here as technical components for compatibility and diagnostics.", HelpBoxMessageType.Info));
         }
 

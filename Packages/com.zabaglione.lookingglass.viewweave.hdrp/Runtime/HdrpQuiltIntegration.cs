@@ -133,7 +133,7 @@ namespace ViewWeave.HDRP
             }
 
             bool[] occupied = new bool[32];
-            foreach (Volume volume in UnityEngine.Object.FindObjectsByType<Volume>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            foreach (Volume volume in UnityEngine.Object.FindObjectsByType<Volume>(FindObjectsInactive.Include))
                 if (volume != null && volume.gameObject != null && volume.gameObject != ownedVolumeObject) occupied[volume.gameObject.layer] = true;
             if (!occupied[30]) return 30;
             for (int layer = 0; layer < 32; ++layer)
@@ -159,8 +159,8 @@ namespace ViewWeave.HDRP
             globalIllumination.enable.overrideState = true;
 
             var fog = profile.Add<Fog>(false);
-            fog.enableVolumetricFog.value = false;
-            fog.enableVolumetricFog.overrideState = true;
+            fog.denoisingMode.value = FogDenoisingMode.Gaussian;
+            fog.denoisingMode.overrideState = true;
 
             var clouds = profile.Add<VolumetricClouds>(false);
             clouds.enable.value = false;
@@ -185,7 +185,9 @@ namespace ViewWeave.HDRP
             var clouds = stack.GetComponent<VolumetricClouds>();
             if (clouds != null && clouds.active && clouds.enable.value) throw new NotSupportedException("HDRP volumetric clouds are temporal and are not supported for quilt views");
             var fog = stack.GetComponent<Fog>();
-            if (fog != null && fog.active && fog.enabled.value && fog.enableVolumetricFog.value) throw new NotSupportedException("HDRP volumetric fog is temporal and is not supported for quilt views");
+            if (fog != null && fog.active && fog.enabled.value && fog.enableVolumetricFog.value &&
+                (fog.denoisingMode.value == FogDenoisingMode.Reprojection || fog.denoisingMode.value == FogDenoisingMode.Both))
+                throw new NotSupportedException("HDRP volumetric fog reprojection requires isolated quilt view histories; use Gaussian or None filtering for a shared camera");
             var exposure = stack.GetComponent<Exposure>();
             if (exposure != null && exposure.IsActive() && exposure.mode.value != ExposureMode.Fixed) throw new NotSupportedException("HDRP exposure must use Fixed mode for quilt views");
         }

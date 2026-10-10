@@ -169,8 +169,11 @@ namespace ViewWeave.Editor
                 nextRender = EditorApplication.timeSinceStartup + 0.2d;
                 QuiltEditorProducer.Sync(target, producer, device);
                 resources.MarkRendered();
+                long revision = producer.Renderer.QuiltRevision;
                 producer.Renderer.RenderEditorPreviewAtBoundary(resources);
-                ++RenderedFrames;
+                if (producer.Renderer.QuiltRevision != revision) ++RenderedFrames;
+                Status = (device ? "Looking Glass preview running" : "Local preview running") +
+                    (string.IsNullOrEmpty(producer.Renderer.LastRenderStatus) ? string.Empty : "; " + producer.Renderer.LastRenderStatus);
                 EditorApplication.QueuePlayerLoopUpdate();
                 SceneView.RepaintAll();
             }

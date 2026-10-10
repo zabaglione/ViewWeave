@@ -22,6 +22,7 @@ These are dated or condition-specific records, not general support guarantees. U
 
 - Windows: [Windows validation](windows-validation.md), [shutdown validation](shutdown-validation-20261008.md), [native shutdown trace](native-shutdown-trace.md), and [remaining-work validation record](benchmarks/remaining-work-validation-20261007.md).
 - macOS: [Metal validation record](macos-metal-validation-20261010.md).
+- HDRP: [view histories and shared exposure](hdrp-view-history-validation-20261010.md) records the lighting fix, resource observations, reload cleanup, Metal tests, and unverified platforms/effects.
 - Samples and documentation: [Quick Start validation](quick-start-validation-20261010.md) records UPM import, shared scenes, Go checks, and the Editor test scope.
 - Rendering and performance: [performance measurements](performance.md), [DX12 HDRP investigation](dx12-performance-investigation.md), [URP sample performance](urp-sample-performance.md), [resumed HDRP VFX capture](resumed-hdrp-vfx-performance.md), [GPU Resident Drawer status](gpu-resident-drawer.md), and the [URP VolumeStack reuse experiment](urp-volume-stack-reuse.md).
 - [Remaining work and acceptance plan](remaining-work-plan.md) tracks open gates as of the date stated in that record.

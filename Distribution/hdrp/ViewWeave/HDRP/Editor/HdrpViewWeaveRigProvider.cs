@@ -20,8 +20,7 @@ namespace ViewWeave.HDRP.Editor
                 HDAdditionalCameraData framingData = framingCamera != null ? framingCamera.GetComponent<HDAdditionalCameraData>() : null;
                 if (framingData != null)
                 {
-                    targetData.clearColorMode = framingData.clearColorMode;
-                    targetData.backgroundColorHDR = framingData.backgroundColorHDR;
+                    framingData.CopyTo(targetData);
                 }
                 return target.GetComponent<HdrpQuiltCamera>() ?? target.AddComponent<HdrpQuiltCamera>();
             }

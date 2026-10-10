@@ -50,6 +50,9 @@ namespace ViewWeave.Editor
         public void RequestStopAndTakeOwnership(QuiltRenderer value)
         {
             stopped = true;
+            // Hidden Edit Mode producers do not receive normal MonoBehaviour disable/destroy
+            // callbacks reliably. Explicitly end the pipeline session before retiring the host.
+            if (value != null) value.ReleasePipelineRenderResources();
             if (value != null && !value.IsRendering)
             {
                 value.autoRender = false;

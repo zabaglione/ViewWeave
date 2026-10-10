@@ -937,7 +937,14 @@ namespace ViewWeave.Editor
             try
             {
                 EditorApplication.QueuePlayerLoopUpdate();
+                long previousRevision = producerRenderer.QuiltRevision;
                 producerRenderer.RenderEditorPreviewAtBoundary(retentionRecord);
+                if (producerRenderer.QuiltRevision == previousRevision)
+                {
+                    status = producerRenderer.LastRenderStatus;
+                    nextRenderTime = EditorApplication.timeSinceStartup + RenderIntervalSeconds;
+                    return;
+                }
                 layout = producerRenderer.QuiltTexture == null ? producerRenderer.settings.GetLayout() : producerRenderer.LatestSnapshot.Layout;
                 if (outputToDevice && !producerOutput.TrySubmitEditorPreview(OwnerToken, producerRenderer.QuiltTexture, layout))
                 {
@@ -952,6 +959,7 @@ namespace ViewWeave.Editor
                 lastMsaaSamples = producerRenderer.ViewAntiAliasingSamples;
                 nextRenderTime = EditorApplication.timeSinceStartup + RenderIntervalSeconds;
                 status = outputToDevice ? "Looking Glass preview running" : "Local preview running";
+                if (!string.IsNullOrEmpty(producerRenderer.LastRenderStatus)) status += "; " + producerRenderer.LastRenderStatus;
                 lastError = string.Empty;
                 SceneView.RepaintAll();
             }

@@ -31,6 +31,10 @@ Under **Rendering**, **Quilt View Render Mode** controls how many viewpoints are
 
 **Output Quality** controls per-view render resolution separately from view count. The available Preview, Balanced, and Native choices use progressively larger fractions of the connected display profile's resolution. A local preview uses the Rig's local Quilt profile. Start at a lower setting if rendering is too slow, then check the image on the target display. See [Compatibility](compatibility.md) for tested boundaries and [Performance](performance.md) for dated measurements.
 
+In HDRP, **Rendering > HDRP Rendering** defaults to **Isolated View Histories** and **Quilt Exposure > Follow Scene**. Each rendered viewpoint retains its own history, while exposure is measured at the central viewpoint and shared across the Quilt. This keeps the scene's HDRP effect settings; the first frames wait for a valid exposure sample. Choose **Manual Fixed** only when you want an explicit exposure override.
+
+Independent histories use additional GPU resources. **History Resource Budget (MB)** defaults to 4096 and stops output if observed allocation growth exceeds the budget; lower Output Quality or use Half/Quarter before increasing it. It uses a texture estimate in Release Players and is not a strict VRAM cap. **Maximum History Cameras** is an additional count limit. **Shared Camera Compatibility** changes the appearance by suppressing temporal effects; select it explicitly only when those compromises are acceptable. See [Compatibility](compatibility.md) for effects and platforms still awaiting validation.
+
 ## Preview on the Editor or display
 
 In **Preview**, choose **Start Local Edit Mode Preview** to inspect the Quilt in the Editor or **Start Looking Glass Device Preview** to send it to a connected display. These are explicit actions. A local preview does not require a display; device preview requires a supported output path and its prerequisites. Use Pause/Resume to hold or continue an active preview, and Close Preview when finished. Preview does not change the saved scene's preview state.

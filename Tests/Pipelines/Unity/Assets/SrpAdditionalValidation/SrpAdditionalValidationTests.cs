@@ -343,11 +343,11 @@ namespace ViewWeave.SrpAdditionalValidation
 
             void SnapshotExternalObjects()
             {
-                foreach (Camera item in UnityEngine.Object.FindObjectsByType<Camera>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+                foreach (Camera item in UnityEngine.Object.FindObjectsByType<Camera>(FindObjectsInactive.Include))
                 {
                     external.Add(item); externalStates.Add(item.enabled); item.enabled = false;
                 }
-                foreach (Light item in UnityEngine.Object.FindObjectsByType<Light>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+                foreach (Light item in UnityEngine.Object.FindObjectsByType<Light>(FindObjectsInactive.Include))
                 {
                     external.Add(item); externalStates.Add(item.enabled); item.enabled = false;
                 }

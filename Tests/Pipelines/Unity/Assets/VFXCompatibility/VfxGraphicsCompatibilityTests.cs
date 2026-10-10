@@ -512,14 +512,14 @@ namespace ViewWeave.VFXCompatibility
 
             void SaveAndDisableSceneRenderers()
             {
-                Light[] lights = UnityEngine.Object.FindObjectsOfType<Light>(true);
+                Light[] lights = UnityEngine.Object.FindObjectsByType<Light>(FindObjectsInactive.Include);
                 foreach (Light item in lights)
                 {
                     if (item == null) continue;
                     savedLights.Add(new LightState { component = item, enabled = item.enabled });
                     item.enabled = false;
                 }
-                Camera[] cameras = UnityEngine.Object.FindObjectsOfType<Camera>(true);
+                Camera[] cameras = UnityEngine.Object.FindObjectsByType<Camera>(FindObjectsInactive.Include);
                 foreach (Camera item in cameras)
                 {
                     if (item == null) continue;

@@ -37,14 +37,14 @@ namespace ViewWeave.VfxDriverValidation
             testPipeline = UniversalRenderPipelineAsset.Create(testRenderer);
             GraphicsSettings.defaultRenderPipeline = testPipeline;
             QualitySettings.renderPipeline = testPipeline;
-            savedCameras = Object.FindObjectsByType<Camera>(FindObjectsSortMode.None);
+            savedCameras = Object.FindObjectsByType<Camera>();
             savedCameraEnabled = new bool[savedCameras.Length];
             for (int i = 0; i < savedCameras.Length; ++i)
             {
                 savedCameraEnabled[i] = savedCameras[i].enabled;
                 savedCameras[i].enabled = false;
             }
-            savedLights = Object.FindObjectsByType<Light>(FindObjectsSortMode.None);
+            savedLights = Object.FindObjectsByType<Light>();
             savedLightEnabled = new bool[savedLights.Length];
             for (int i = 0; i < savedLights.Length; ++i)
             {
