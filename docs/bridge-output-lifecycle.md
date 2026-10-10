@@ -120,7 +120,11 @@ The 655F artifact had limited URP hardware exercise, and reverse handoff remaine
 
 On 2026-10-10, the official F1B package commit `c09fdcce30e77d95f3aa451c3642b00522edc255` was exercised in one normal URP Editor session (Unity 6000.6.4f1, D3D12, `Assets/test.unity`). The user confirmed immediate visible output and fresh movement/Undo during ordinary Play, then during Stop-to-Edit Device Preview. They also confirmed that Pause retained the image and ignored scene-object movement, and Resume applied the moved position and Undo. Each transition was observed once in this production session; this is not a repeated reliability matrix.
 
-The observed pause snapshots retained the same renderer, quilt texture, and output identities; the completed counters and revision were stable across consecutive paused reads. Resume retained those identities and resumed fresh completed frames. The Editor loaded-module inspection confirmed one matching F1B module and hash. Native trace identified SDK session/window 1. No image readback or capture was performed. These are bounded user-observed URP results; they do not establish HDRP, Player, other graphics APIs, optical quality, performance, or broad repeatability. The separate private 00CE comparison below remains a different build and test run.
+The observed pause snapshots retained the same renderer, quilt texture, and output identities; the completed counters and revision were stable across consecutive paused reads. Resume retained those identities and resumed fresh completed frames. The Editor loaded-module inspection confirmed one matching F1B module and hash. Native trace identified SDK session/window 1. No image readback or capture was performed. These are bounded user-observed URP results; they do not establish detailed HDRP modes or handoffs, Player, other graphics APIs, optical quality, performance, or broad repeatability. The separate private 00CE comparison below remains a different build and test run.
+
+## F1B production HDRP confirmation
+
+On 2026-10-10, after updating the official HDRP sample to package commit `c09fdcce30e77d95f3aa451c3642b00522edc255`, the user confirmed that HDRP worked. The specific mode, transition, graphics API, repeat count, and trace evidence were not provided, so this general confirmation does not establish particular HDRP lifecycle paths or repeatability. The detailed HDRP mode and handoff behavior remains unverified.
 
 ## Private static-present URP comparison
 

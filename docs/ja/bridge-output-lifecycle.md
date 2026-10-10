@@ -120,7 +120,11 @@ flowchart TD
 
 2026-10-10、公式F1B package commit `c09fdcce30e77d95f3aa451c3642b00522edc255`を、一つの通常URP Editor session（Unity 6000.6.4f1、D3D12、`Assets/test.unity`）で試しました。利用者は通常Play直後の映像と新たな移動/Undoを確認し、StopからEdit Device Previewへの遷移でも映像と移動/Undoを確認しました。またPause中は映像が残り、scene objectの移動に追従せず、Resume後に移動とUndoが反映されることを確認しました。このproduction sessionでの各遷移は1回ずつで、反復信頼性matrixではありません。
 
-Pause前後のsnapshotは同じrenderer、quilt texture、output identityを保持し、連続したPaused読取でrevisionとcompleted counterは変化しませんでした。Resume後も同じidentityを保ち、新しいcompleted frameが再開しました。Editorのloaded-module検査でF1Bの一致module/hashを1件確認しました。Native traceではSDK session/window 1を確認しました。image readbackやcaptureは行っていません。これは限定的なURP利用者観察であり、HDRP、Player、他graphics API、光学品質、性能、広い反復性を証明しません。後述のprivate 00CE比較とは別build・別試験です。
+Pause前後のsnapshotは同じrenderer、quilt texture、output identityを保持し、連続したPaused読取でrevisionとcompleted counterは変化しませんでした。Resume後も同じidentityを保ち、新しいcompleted frameが再開しました。Editorのloaded-module検査でF1Bの一致module/hashを1件確認しました。Native traceではSDK session/window 1を確認しました。image readbackやcaptureは行っていません。これは限定的なURP利用者観察であり、HDRPの個別modeやhandoff、Player、他graphics API、光学品質、性能、広い反復性を証明しません。後述のprivate 00CE比較とは別build・別試験です。
+
+## F1B production HDRPの利用者確認
+
+2026-10-10、公式HDRP sampleをpackage commit `c09fdcce30e77d95f3aa451c3642b00522edc255`へ更新した後、利用者からHDRPが動作したとの確認がありました。具体的なmode、遷移、graphics API、反復回数、trace evidenceは提供されていません。この一般的な確認は特定のHDRP lifecycle経路や反復性を示しません。HDRPの個別modeやhandoff動作は未検証です。
 
 ## Private static-present candidateによるURP比較
 
