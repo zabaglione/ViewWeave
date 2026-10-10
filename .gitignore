@@ -60,5 +60,10 @@ Tests/Pipelines/Unity/Assets/BridgeWorkerValidationGenerated/
 Tests/Pipelines/Unity/Assets/BridgeWorkerValidationGenerated.meta
 Tests/Pipelines/Unity/Assets/SamplePlayerValidationGenerated/
 Tests/Pipelines/Unity/Assets/SamplePlayerValidationGenerated.meta
+Tests/Metal/Unity/Assets/ViewWeaveMetalValidation/
+Tests/Metal/Unity/Assets/ViewWeaveMetalValidation.meta
 Tests/Pipelines/Unity/Assets/Samples/ViewWeaveBridge/WindowsUrpLit/
 Tests/Pipelines/Unity/Assets/Samples/ViewWeaveBridge/WindowsHdrpLit/
+
+Tests/Metal/Unity/Assets/Resources/PerformanceTestRunInfo.json*
+Tests/Metal/Unity/Assets/Resources/PerformanceTestRunSettings.json*

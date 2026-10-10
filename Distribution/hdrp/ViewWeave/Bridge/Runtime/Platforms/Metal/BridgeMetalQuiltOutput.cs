@@ -1,0 +1,245 @@
+using System;
+using System.Runtime.InteropServices;
+using UnityEngine;
+using UnityEngine.Experimental.Rendering;
+using UnityEngine.Rendering;
+
+namespace ViewWeave
+{
+    /// <summary>Looking Glass Go output with a Unity Metal producer and an owned Metal presentation window.</summary>
+    [DisallowMultipleComponent]
+    public sealed class BridgeMetalQuiltOutput : MonoBehaviour, IQuiltOutput
+    {
+        public ViewWeaveRig rig;
+        public bool startOnEnable;
+        public string runtimePath;
+        public string applicationName = "ViewWeave";
+        public uint displayOrdinal;
+        public QuiltQualityPreset quality = QuiltQualityPreset.Balanced;
+        public RenderTexture QuiltTexture { get; private set; }
+        public QuiltLayout Layout { get; private set; }
+        public BridgeDisplayProfile Profile { get; private set; }
+        string lastError = string.Empty;
+        public string LastError
+        {
+            get => string.IsNullOrEmpty(lastError) ? BridgeMetalRetirementRecord.Failure(closingSession) : lastError;
+            private set => lastError = value;
+        }
+        public bool IsRunning => session != 0;
+        public bool IsClosing => closingSession != 0 && (Native.lkg_metal_display_status(closingSession, out _) == 0 ||
+            BridgeMetalRetirementRecord.IsRetiring(closingSession));
+        public uint SubmittedFrames => status.submitted;
+        public uint CompletedFrames => status.completed;
+        public uint DroppedFrames => status.dropped;
+        public static int PendingRetirementCount => BridgeMetalRetirementRecord.PendingCount;
+        ulong session;
+        ulong closingSession;
+        NativeStatus status;
+        Material interlace;
+        RenderTexture screenTexture;
+        CommandBuffer command;
+        IntPtr renderEvent;
+        bool pendingStart, snapshotCaptured, stopRequested;
+        QuiltQualityProfile originalProfile;
+        MonoBehaviour originalOutput;
+        bool originalAutoRender;
+        IDisposable mutationOwner;
+        BridgeMetalRetirementRecord resources;
+
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct NativeDisplay
+        {
+            internal BridgeNative.DisplayInfo display;
+            internal float center, pitch, slope, dpi, flipX;
+            internal int invertedViews;
+        }
+        [StructLayout(LayoutKind.Sequential)]
+        struct NativeStatus { internal uint submitted, completed, dropped, error, pending, closing; }
+        static class Native
+        {
+            const string Library = "lookingglass_bridge_shim";
+            [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+            internal static extern ulong lkg_metal_display_open([MarshalAs(UnmanagedType.LPUTF8Str)] string path,
+                [MarshalAs(UnmanagedType.LPUTF8Str)] string name, uint ordinal, out NativeDisplay info);
+            [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+            internal static extern int lkg_metal_display_submit(ulong session, IntPtr texture, out IntPtr data);
+            [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+            internal static extern int lkg_metal_display_status(ulong session, out NativeStatus status);
+            [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+            internal static extern void lkg_metal_display_close(ulong session);
+            [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+            internal static extern IntPtr lkg_metal_display_error();
+            [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+            internal static extern IntPtr lkg_metal_display_render_event();
+        }
+
+        void OnEnable() { pendingStart = startOnEnable; }
+        void OnDisable() { StopOutput(); }
+        void OnDestroy() { StopOutput(); }
+        void Update()
+        {
+            if (pendingStart && Application.isPlaying) { pendingStart = false; StartOutput(); }
+            if (stopRequested) { stopRequested = false; StopOutput(); }
+            if (session == 0) return;
+            if (Native.lkg_metal_display_status(session, out status) != 0 || status.error != 0)
+            { Fail("Metal presentation failed (code " + status.error + ")"); return; }
+            if (rig == null || rig.Renderer == null || !rig.HasOutputBinding(this))
+            { Fail("Metal output lost its ViewWeaveRig binding"); return; }
+            if (!string.IsNullOrEmpty(rig.Renderer.LastAutoRenderError)) Fail(rig.Renderer.LastAutoRenderError);
+        }
+
+        [ContextMenu("Start Metal Output")]
+        public bool StartOutput()
+        {
+            if (IsRunning) return true;
+            if (IsClosing)
+            {
+                string failure = BridgeMetalRetirementRecord.Failure(closingSession);
+                LastError = string.IsNullOrEmpty(failure) ? "The previous Metal frame is still retiring" : failure;
+                return false;
+            }
+            if (PendingRetirementCount != 0)
+            {
+                LastError = "Another Metal output still has retained GPU resources; wait for retirement or restart Unity after a proof failure";
+                return false;
+            }
+            if (!Application.isPlaying ||
+                (Application.platform != RuntimePlatform.OSXEditor && Application.platform != RuntimePlatform.OSXPlayer) ||
+                SystemInfo.graphicsDeviceType != GraphicsDeviceType.Metal)
+                return Fail("Metal output requires macOS Play mode or macOS Player with Metal");
+            if (Marshal.SizeOf<NativeDisplay>() != 60 || IntPtr.Size != 8)
+                return Fail("Unsupported Metal display ABI");
+            if (rig == null) rig = GetComponent<ViewWeaveRig>();
+            if (rig == null) return Fail("A ViewWeaveRig is required");
+            if (!rig.ValidateRig(out string rigError)) return Fail("Invalid ViewWeaveRig: " + rigError);
+            if (!BridgeRuntimeLocator.TryResolve(runtimePath, out string path, out string error)) return Fail(error);
+            if (rig.Renderer.IsRendering || !QuiltRendererMutationPolicy.TryCheck(rig.Renderer,
+                QuiltRendererMutationKind.Transport, out error)) return Fail("The Rig is already in use: " + error);
+            originalProfile = rig.Profile; originalOutput = rig.Renderer.OutputBehaviour;
+            originalAutoRender = rig.AutoRender; snapshotCaptured = true;
+            rig.AutoRender = false;
+            try
+            {
+                mutationOwner = QuiltRendererMutationPolicy.RegisterOwner(rig.Renderer, this,
+                    request => request.Kind == QuiltRendererMutationKind.Framing ? null : "Stop Metal output before changing the Rig configuration", out error);
+                if (mutationOwner == null) return Fail(error);
+                session = Native.lkg_metal_display_open(path, applicationName, displayOrdinal, out NativeDisplay display);
+                if (session == 0) return Fail(Marshal.PtrToStringAnsi(Native.lkg_metal_display_error()) ?? "Metal window could not be opened");
+                Profile = new BridgeDisplayProfile(display.display);
+                if (!Profile.IsValid) return Fail("Invalid Looking Glass display profile");
+                QuiltQualityProfile profile = QuiltQualityProfile.FromScaled(Profile.QuiltWidth, Profile.QuiltHeight,
+                    Profile.Columns, Profile.Rows, Profile.Aspect, Profile.Viewcone,
+                    quality == QuiltQualityPreset.Preview ? 0.25f : quality == QuiltQualityPreset.Balanced ? 0.5f : 1f);
+                if (!rig.ApplyProfileForBridgeOwner(profile, this, out error) || !rig.SetOutputForBridgeOwner(this, this, out error)) return Fail(error);
+                Shader shader = Resources.Load<Shader>("ViewWeaveMetalInterlace");
+                if (shader == null || !shader.isSupported) return Fail("Metal interlace shader is unavailable");
+                interlace = new Material(shader) { hideFlags = HideFlags.HideAndDontSave };
+                float calibratedPitch = display.pitch * Profile.Width / display.dpi * Mathf.Cos(Mathf.Atan(1f / display.slope));
+                interlace.SetVector("_Calibration", new Vector4(calibratedPitch, Profile.Height / (Profile.Width * display.slope),
+                    display.center, display.invertedViews));
+                interlace.SetVector("_Screen", new Vector4(Profile.Width, Profile.Height, 1f / (3f * Profile.Width), 0f));
+                screenTexture = new RenderTexture((int)Profile.Width, (int)Profile.Height, 0)
+                {
+                    graphicsFormat = GraphicsFormat.R8G8B8A8_UNorm,
+                    useMipMap = false, antiAliasing = 1, filterMode = FilterMode.Point,
+                    name = "ViewWeave Metal Display", hideFlags = HideFlags.HideAndDontSave
+                };
+                if (!screenTexture.Create()) return Fail("Metal display texture could not be created");
+                resources = BridgeMetalRetirementRecord.Create(session, screenTexture, interlace);
+                command = new CommandBuffer { name = "ViewWeave Metal Present" };
+                renderEvent = Native.lkg_metal_display_render_event();
+                if (renderEvent == IntPtr.Zero) return Fail("Metal render event is unavailable");
+                status = default;
+                if (!rig.SetAutoRenderForBridgeOwner(true, this, out error)) return Fail(error);
+                LastError = string.Empty;
+                return true;
+            }
+            catch (DllNotFoundException) { return Fail("Native macOS Bridge shim is missing; build the macOS plugin first"); }
+            catch (EntryPointNotFoundException) { return Fail("Native macOS Bridge shim does not contain the Metal display API"); }
+            catch (Exception exception) { return Fail(exception.Message); }
+        }
+
+        public void Submit(RenderTexture quiltTexture, QuiltLayout layout)
+        {
+            QuiltTexture = quiltTexture; Layout = layout;
+            if (session == 0 || quiltTexture == null) return;
+            if (layout.ViewCount != layout.Columns * layout.Rows || layout.Columns != Profile.Columns || layout.Rows != Profile.Rows)
+            { LastError = "Metal output requires the connected display's complete Quilt grid"; stopRequested = true; return; }
+            interlace.SetVector("_Grid", new Vector4(layout.Columns, layout.Rows, layout.TileWidth, layout.TileHeight));
+            interlace.SetVector("_QuiltSize", new Vector4(layout.QuiltWidth, layout.QuiltHeight,
+                layout.AspectRatio / Profile.Aspect, 0f));
+            // The native private copy is ordered after this draw on Unity's command buffer.
+            RenderTexture previous = RenderTexture.active;
+            try
+            {
+                resources.MarkRendered();
+                Graphics.Blit(quiltTexture, screenTexture, interlace);
+                int result = Native.lkg_metal_display_submit(session, screenTexture.GetNativeTexturePtr(), out IntPtr data);
+                if (result == 1) return; // A previous producer/consumer is still using the sole private slot.
+                if (result != 0) { LastError = "Metal frame was rejected (code " + result + ")"; stopRequested = true; return; }
+                command.Clear(); command.IssuePluginEventAndData(renderEvent, 0, data);
+                Graphics.ExecuteCommandBuffer(command);
+            }
+            catch (Exception exception) { LastError = Sanitize(exception.Message); stopRequested = true; }
+            finally { RenderTexture.active = previous; }
+        }
+
+        [ContextMenu("Stop Metal Output")]
+        public void StopOutput()
+        {
+            pendingStart = false; stopRequested = false;
+            ulong closing = session; session = 0;
+            if (closing != 0) closingSession = closing;
+            try
+            {
+                if (rig != null && mutationOwner != null) rig.SetAutoRenderForBridgeOwner(false, this, out _);
+                if (closing != 0) Native.lkg_metal_display_close(closing);
+            }
+            catch (Exception exception) { LastError = Sanitize(exception.Message); }
+            finally
+            {
+                try
+                {
+                    mutationOwner?.Dispose();
+                    if (snapshotCaptured && rig != null)
+                    {
+                        rig.AutoRender = false; rig.SetOutput(originalOutput); rig.ApplyProfile(originalProfile);
+                        rig.AutoRender = originalAutoRender;
+                    }
+                }
+                catch (Exception exception) { LastError = Sanitize(exception.Message); }
+                finally
+                {
+                    snapshotCaptured = false; mutationOwner = null;
+                    command?.Release(); command = null;
+                    if (resources != null) { resources.Stop(); resources = null; }
+                    else
+                    {
+                        if (screenTexture != null) { screenTexture.Release(); Destroy(screenTexture); }
+                        if (interlace != null) Destroy(interlace);
+                    }
+                    screenTexture = null; interlace = null;
+                }
+            }
+        }
+
+        internal static bool NativeFramePending(ulong id)
+        {
+            return id != 0 && Native.lkg_metal_display_status(id, out NativeStatus value) == 0 && value.pending != 0;
+        }
+
+        bool Fail(string error)
+        {
+            LastError = Sanitize(error);
+            StopOutput();
+            return false;
+        }
+        static string Sanitize(string value)
+        {
+            if (string.IsNullOrEmpty(value)) return "Unknown Metal output error";
+            var text = new System.Text.StringBuilder();
+            foreach (char character in value) if (character >= 32 && character < 127) text.Append(character);
+            return text.ToString();
+        }
+    }
+}

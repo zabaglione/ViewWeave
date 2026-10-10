@@ -4,15 +4,15 @@
 
 Looking Glass向けの非公式Unity SDKです。URPまたはHDRPの通常のシーンを複数視点で描画し、Windows上のLooking Glass Bridge runtimeへ送ります。
 
-Looking Glassに表示するときは、利用者自身のUnity projectをEditor PlayするかPlayerとして起動します。UnityがQuiltを描画し、インストール済みで起動中の公式Looking Glass Bridge runtimeが機器へ届けます。SDK内のTests/Bridge Unityプロジェクトやデモアプリを別途起動する必要はありません。
+Looking Glassに表示するときは、利用者自身のUnity projectをEditor PlayするかPlayerとして起動します。UnityがQuiltを描画します。Windowsでは起動中の公式Looking Glass Bridge runtimeが機器への表示を行います。macOSではBridgeから機器情報と校正を取得し、ViewWeaveのMetal出力が補正と表示を行います。SDK内のTests/Bridge Unityプロジェクトやデモアプリを別途起動する必要はありません。
 
-通常runtime Sessionの対応環境はUnity 6000.6.4f1、Windows、URPまたはHDRPです。Bridge WorkerはEditor PlayとWindows PlayerからD3D11またはD3D12で出力し、Legacy DirectはD3D11のみです。Rigの制作向けに、ViewWeaveRigから明示的に開始するEdit Mode previewもあります。これはPlay ModeやRigの通常Bridge Sessionを開始しません。現在のNative artifact/source implementationはWindows fake/WARP CTest 12/12件に成功し、生成済みdistribution packageに含まれています。runtime Editor/Player構成、`Bridge.Editor`、focused playback-safety test sourceがcompile済みですが、Unity Test Runnerは未実行です。2026-10-09のURP実機確認では、Close/Start一回とEditからPlayへのhandoff一回で映像と新たな移動/Undoを確認しました。PlayからEditへの逆handoffは未解決で、黒画面も断続的に報告されています。[Bridge output lifecycle](docs/ja/bridge-output-lifecycle.md)にpackage/DLL identity、限定的な結果、Native traceと表示確認の限界を記載しています。実寸scale、画像品質、性能は未検証です。通常のmacOS Sessionは対象外です。Bridge runtimeとLooking Glass機器を別途用意してください。
+通常runtime Sessionの対応環境はUnity 6000.6.4f1、Windows、URPまたはHDRPです。Bridge WorkerはEditor PlayとWindows PlayerからD3D11またはD3D12で出力し、Legacy DirectはD3D11のみです。Rigの制作向けに、ViewWeaveRigから明示的に開始するEdit Mode previewもあります。これはPlay ModeやRigの通常Bridge Sessionを開始しません。同梱Windows DLLの従来ソースsnapshotはWindows fake/WARP CTest 12/12件に成功しています。今回のプラットフォーム分離後のWindowsソースは再ビルド・実機再検証していません。runtime Editor/Player構成、`Bridge.Editor`、focused playback-safety test sourceがcompile済みですが、Unity Test Runnerは未実行です。2026-10-09のURP実機確認では、Close/Start一回とEditからPlayへのhandoff一回で映像と新たな移動/Undoを確認しました。PlayからEditへの逆handoffは未解決で、黒画面も断続的に報告されています。[Bridge output lifecycle](docs/ja/bridge-output-lifecycle.md)にpackage/DLL identity、限定的な結果、Native traceと表示確認の限界を記載しています。実寸scale、画像品質、性能は未検証です。macOSのGoには別のMetal出力コンポーネントを追加しています。Bridge runtimeとLooking Glass機器を別途用意してください。
 
-macOS Metalは明示opt-inのbounded実験です。通常SessionはMetalを受け付けず、macOS native shimはUPMに含まれません。限定的な手順と未検証範囲は[Graphics backends](docs/ja/graphics-backends.md)を参照してください。
+macOS／MetalのLooking Glass Go出力は`BridgeMetalQuiltOutput`を使用します。6000.6.4f1での操作、ネイティブプラグインのビルド、対象機器と検証範囲は[macOS Metalガイド](docs/ja/macos-metal.md)を参照してください。
 
 このprivate repositoryからPackage Managerで取得するにはGitHubのアクセス権が必要です。独自コードのライセンスは[Apache-2.0](LICENSE)です。機能別の手順、設計、検証履歴は[ドキュメント目次](docs/ja/index.md)から参照できます。
 
-次図は標準Windows Sessionの概要です。macOS Metal実験、保存したQuiltの再生、別WAVの作成は独立した手順を参照してください。
+次図は標準Windows Sessionの概要です。macOS Go Metal出力、保存したQuiltの再生、別WAVの作成は独立した手順を参照してください。
 
 ```mermaid
 flowchart LR

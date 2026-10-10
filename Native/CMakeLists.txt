@@ -14,28 +14,33 @@ endif()
 option(LKG_TRANSPORT_TESTS_ONLY "Build only the stubbed worker transport test" OFF)
 option(LKG_D3D12_SHARED_PROBE "Build the independent D3D12 to D3D11 shared resource probe" OFF)
 
+set(LKG_COMMON_SOURCES common/bridge_worker_common.cpp common/bridge_metadata.cpp)
 if (WIN32)
-  set_source_files_properties(bridge_worker_transport.cpp PROPERTIES
-    OBJECT_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/platform/windows/bridge_worker_transport_windows.inc")
+  set(LKG_TRANSPORT_SOURCE platform/windows/bridge_worker_transport_windows.cpp)
+else()
+  set(LKG_TRANSPORT_SOURCE platform/unsupported/bridge_worker_transport_unsupported.cpp)
 endif()
 
 if (NOT LKG_TRANSPORT_TESTS_ONLY)
   if (WIN32)
-    add_library(lookingglass_bridge_shim SHARED bridge_shim.cpp bridge_worker_transport.cpp bridge_worker_common.cpp)
+    add_library(lookingglass_bridge_shim SHARED
+      platform/windows/bridge_shim_windows.cpp ${LKG_TRANSPORT_SOURCE} ${LKG_COMMON_SOURCES})
   elseif(APPLE)
     add_library(lookingglass_bridge_shim SHARED
-      bridge_shim.cpp
-      bridge_worker_transport.cpp
-      bridge_worker_common.cpp
+      platform/macos/bridge_shim_macos.cpp
+      platform/unsupported/bridge_d3d_stubs.cpp
+      ${LKG_TRANSPORT_SOURCE}
+      ${LKG_COMMON_SOURCES}
       platform/macos/bridge_metal_api_contract.cpp
       platform/macos/bridge_metal_api.mm
       platform/macos/metal_submission_lifetime.cpp
-      platform/macos/unity_metal_producer.mm)
+      platform/macos/unity_metal_producer.mm
+      platform/macos/metal_display.mm)
   else()
     add_library(lookingglass_bridge_shim SHARED
       platform/unsupported/bridge_shim_unsupported.cpp
-      bridge_worker_transport.cpp
-      bridge_worker_common.cpp)
+      ${LKG_TRANSPORT_SOURCE}
+      ${LKG_COMMON_SOURCES})
     target_include_directories(lookingglass_bridge_shim PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
   endif()
   target_compile_features(lookingglass_bridge_shim PRIVATE cxx_std_17)
@@ -83,18 +88,22 @@ if (NOT LKG_TRANSPORT_TESTS_ONLY)
       endif()
     endforeach()
     target_include_directories(lookingglass_bridge_shim PRIVATE "${UNITY_PLUGIN_API_DIR}")
-    set_source_files_properties(bridge_shim.cpp PROPERTIES COMPILE_FLAGS "-fobjc-exceptions")
     set_source_files_properties(
       platform/macos/bridge_metal_api.mm
       platform/macos/unity_metal_producer.mm
+      platform/macos/metal_display.mm
       PROPERTIES COMPILE_FLAGS "-fno-objc-arc")
     find_library(METAL_FRAMEWORK Metal REQUIRED)
     find_library(FOUNDATION_FRAMEWORK Foundation REQUIRED)
     find_library(IOSURFACE_FRAMEWORK IOSurface REQUIRED)
+    find_library(COCOA_FRAMEWORK Cocoa REQUIRED)
+    find_library(QUARTZCORE_FRAMEWORK QuartzCore REQUIRED)
     target_link_libraries(lookingglass_bridge_shim PRIVATE
       ${CMAKE_DL_LIBS}
       ${METAL_FRAMEWORK}
       ${FOUNDATION_FRAMEWORK}
+      ${COCOA_FRAMEWORK}
+      ${QUARTZCORE_FRAMEWORK}
       ${IOSURFACE_FRAMEWORK})
   endif()
 endif()
@@ -117,11 +126,16 @@ endif()
 
 if (BUILD_TESTING)
   add_executable(lookingglass_worker_common_test
-    bridge_worker_common.cpp
+    common/bridge_worker_common.cpp
     tests/portable_common_test.cpp)
   target_compile_features(lookingglass_worker_common_test PRIVATE cxx_std_17)
   target_include_directories(lookingglass_worker_common_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
   add_test(NAME lookingglass_worker_common_test COMMAND lookingglass_worker_common_test)
+  add_executable(lookingglass_metadata_test
+    common/bridge_metadata.cpp tests/metadata_test.cpp)
+  target_compile_features(lookingglass_metadata_test PRIVATE cxx_std_17)
+  target_include_directories(lookingglass_metadata_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+  add_test(NAME lookingglass_metadata_test COMMAND lookingglass_metadata_test)
 
   if (NOT WIN32 AND NOT APPLE AND NOT LKG_TRANSPORT_TESTS_ONLY)
     add_executable(lookingglass_unsupported_shim_abi_test tests/unsupported_shim_abi_test.cpp)
@@ -162,8 +176,8 @@ if (WIN32 AND BUILD_TESTING)
   endif()
 
   add_executable(lookingglass_worker_transport_test
-    bridge_worker_transport.cpp
-    bridge_worker_common.cpp
+    ${LKG_TRANSPORT_SOURCE}
+    common/bridge_worker_common.cpp
     tests/worker_transport_test.cpp)
   target_compile_features(lookingglass_worker_transport_test PRIVATE cxx_std_17)
   target_include_directories(lookingglass_worker_transport_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
@@ -190,7 +204,8 @@ if (WIN32 AND BUILD_TESTING)
   add_test(NAME lookingglass_worker_preview_lease_test
     COMMAND lookingglass_worker_transport_test --preview-lease-only)
   set_tests_properties(lookingglass_worker_preview_lease_test PROPERTIES TIMEOUT 30)
-  add_executable(lookingglass_bridge_static_present_test tests/bridge_static_present_test.cpp)
+  add_executable(lookingglass_bridge_static_present_test
+    tests/bridge_static_present_test.cpp common/bridge_metadata.cpp)
   target_compile_features(lookingglass_bridge_static_present_test PRIVATE cxx_std_17)
   target_include_directories(lookingglass_bridge_static_present_test PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}"

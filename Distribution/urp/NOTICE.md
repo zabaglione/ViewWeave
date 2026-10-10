@@ -1,3 +1,3 @@
 ViewWeave distribution notice
 
-This package is generated from the ViewWeave repository. The bundled native bridge artifact and its source hashes are documented in ViewWeave/Bridge/Plugins/native-provenance.json.
+This package is generated from the ViewWeave repository. The bundled native bridge Windows artifact and its source hashes are documented in ViewWeave/Bridge/Plugins/native-provenance.json; the macOS artifact is documented in ViewWeave/Bridge/Plugins/macOS/native-provenance.json.

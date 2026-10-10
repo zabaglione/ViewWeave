@@ -12,10 +12,11 @@ ViewWeaveのgraphics backendは、Unityが生成したQuiltをnative transport�
 | Bridge Worker | Windows D3D11 | worker所有D3D11 / official Bridge | Windows Editor PlayとPlayerの通常経路 |
 | Bridge Worker on D3D12 | Windows D3D12 resource | 同じGPU上のD3D11 worker / official Bridge | GPU共有で渡す。画像CPU readbackなし |
 | Edit Mode Rig preview | Windows Editor D3D11/D3D12 | LocalはEditor UI、deviceはBridge Worker / official Bridge | 明示開始するEditor専用経路。現在のNative artifact/source implementationはWindows fake/WARP CTestのfocused 6件に成功しました。両official sampleは2026-10-10にpackage commit `c09fdcce30e77d95f3aa451c3642b00522edc255`でcold verification済みです。限定的なURP実機確認を記録しています。広範なhardware検証は未実施です。PlayからEditへの黒画面・遅延出力は日付付き655F artifactで未解決 |
-| Metal experiment | Unity Metal texture | official Bridge Metal API via IOSurface | native実験のみ。通常Sessionでは未対応、macOS native artifact未配布 |
+| macOS Go Metal | Unity Metal | ViewWeaveのMetalウィンドウ | 専用の`BridgeMetalQuiltOutput`。[macOS Metal](macos-metal.md)に制約と検証状況を記載 |
+| Metal experiment | Unity Metal texture | official Bridge Metal API via IOSurface | 従来の有限実験。通常Sessionでは未対応 |
 | Vulkan | なし | なし | 実装・対応なし |
 
-次図はサポート対象の通常Sessionと、独立したMetal実験を区別します。Metal枝は通常Sessionへ接続せず、Windowsのshutdown gateにも入りません。
+次図はWindowsの通常SessionとmacOSの専用出力を示します。macOSの出力は`BridgeMetalQuiltOutput`から開始し、Windowsのshutdown gateには入りません。
 
 ```mermaid
 flowchart TD
@@ -24,11 +25,11 @@ flowchart TD
     Windows --> Legacy["D3D11 Legacy Direct経路"]
     Worker --> Bridge["公式Bridge runtime"]
     Legacy --> Bridge
-    Metal["macOS Metal component"] --> Gate["明示opt-in / 最大3 Quilt"]
-    Gate --> Contract["consumerのrelease契約は未確認"]
+    Metal["macOS Go Metal出力"] --> Interlace["Unity合成 / 専用GPUコピー"]
+    Interlace --> Window["ViewWeave Metalウィンドウ / 表示完了通知"]
 ```
 
-通常Session表示はWindowsのBridge WorkerまたはD3D11 Legacy Directを使います。Edit Mode Rig previewは独立したEditor経路で、明示開始します。Local modeはpreview QuiltをEditor内へ表示し、device modeはWindows EditorのBridge Worker経路を使います。いずれもPlay Modeや対象Rigの通常Sessionを開始しません。2026-10-09、package `5234b834381afd91a896714ad6d8f9dcbd9f6f95`、Native DLL SHA-256 `655FDB898CF7B9F9733A1880828B740B62FB74E0C3ECDF9D825C07794F6388CD`のURP実機確認では、Close/Start一回とEditからPlayへの遷移一回で映像と新たな移動/Undoを確認しました。逆のPlayからEditでは最初黒くなり、後に映像と新たな移動/Undoが見えたとの報告がありましたが、確認前にguardされたownerが消えていました。これは日付付き655F artifactの結果です。F1B artifactは2026-10-10に両official sampleでcold verificationされました。別の一回ずつの通常URP Editor確認では、PlayとStopからEdit Device Previewで利用者が映像と移動/Undoを確認し、Pause中は最後の映像がscene移動に追従せず、Resume後に移動とUndoが反映されることを確認しました。これは反復hardware matrixではありません。さらに別のprivate static-present candidateでは2026-10-10のURP実機で限定的に試し、4回のPlayと試したEdit Preview遷移で映像と移動/Undo、2回のPauseで最後の映像が残ることを利用者が確認しました。persistent endpointの登録済みSDK primaryを、Pause/返却後にboundedなowner-thread static redrawで使用しました。各結果のartifactと制約は[Bridge output lifecycle](bridge-output-lifecycle.md)を参照してください。利用者から更新済みHDRP sampleが動作したとの確認がありますが、modeや遷移の詳細は不明です。HDRPの個別lifecycle、Player、光学品質、性能、広い反復性は未検証です。Metal枝は手動artifactと実験専用componentを要し、連続運用やUPM配布を示しません。
+通常Session表示はWindowsのBridge WorkerまたはD3D11 Legacy Directを使います。Edit Mode Rig previewは独立したEditor経路で、明示開始します。Local modeはpreview QuiltをEditor内へ表示し、device modeはWindows EditorのBridge Worker経路を使います。いずれもPlay Modeや対象Rigの通常Sessionを開始しません。2026-10-09、package `5234b834381afd91a896714ad6d8f9dcbd9f6f95`、Native DLL SHA-256 `655FDB898CF7B9F9733A1880828B740B62FB74E0C3ECDF9D825C07794F6388CD`のURP実機確認では、Close/Start一回とEditからPlayへの遷移一回で映像と新たな移動/Undoを確認しました。逆のPlayからEditでは最初黒くなり、後に映像と新たな移動/Undoが見えたとの報告がありましたが、確認前にguardされたownerが消えていました。これは日付付き655F artifactの結果です。F1B artifactは2026-10-10に両official sampleでcold verificationされました。別の一回ずつの通常URP Editor確認では、PlayとStopからEdit Device Previewで利用者が映像と移動/Undoを確認し、Pause中は最後の映像がscene移動に追従せず、Resume後に移動とUndoが反映されることを確認しました。これは反復hardware matrixではありません。さらに別のprivate static-present candidateでは2026-10-10のURP実機で限定的に試し、4回のPlayと試したEdit Preview遷移で映像と移動/Undo、2回のPauseで最後の映像が残ることを利用者が確認しました。persistent endpointの登録済みSDK primaryを、Pause/返却後にboundedなowner-thread static redrawで使用しました。各結果のartifactと制約は[Bridge output lifecycle](bridge-output-lifecycle.md)を参照してください。利用者から更新済みHDRP sampleが動作したとの確認がありますが、modeや遷移の詳細は不明です。HDRPの個別lifecycle、Player、光学品質、性能、広い反復性は未検証です。macOS Goの専用出力は[macOS Metal](macos-metal.md)を参照してください。従来の最大3枚の有限実験とは別の経路です。
 
 Windowsではprocess ownerが一つのBridge SDK endpointと登録済みoutput resourceをmode間で保持します。PlayとEdit Mode device previewはgeneration付きの排他的leaseを交互に取得します。lease返却では新規submitを止め、source workをdrainします。Nativeが旧mode textureを参照しなくなったことを通知した後、managed側がCore/transferとproducerのGPU完了を待ち、Unity textureを破棄してACKを送ります。NativeはACK受信後にだけ次generationを許可します。persistent preview endpointではPause中やlease owner間も登録済みprimaryと最後のimageを表示します。source workのdrain後、Nativeはcached primaryを最大5Hzで再描画できます。このstatic-redraw経路では追加のsource texture copyやSDK texture-copy API callを行わず、SDK visibilityも変更しません。これはplugin側の呼び出しを説明するもので、vendor内部の実装については断定しません。最終process shutdown時だけSDK resourceを解放します。現在のNative artifact/source implementationではtyped queue-full `Busy`を追加しています。以前のmode単位Start/Stop fixtureは現在のlease経路すべてを検証していません。adapter/deviceが既存endpointと非互換な場合は、二つ目のSDK endpointを暗黙に作らずUnity Editorの再起動を要求します。
 
@@ -54,9 +55,11 @@ Final shutdown hookはWindows Editor/Playerだけに適用し、asset import wor
 
 Native DLLまたはexportが変わるUPM packageを更新する前に`Close Preview`を使い、通常Sessionも停止して所有権を解放してください。Package Managerでpackageを更新した後、managed assemblyとnative shimを同じversionで読み込むためUnityを再起動します。process単位のSDK ownerと読み込み済みnative imageはEditor終了まで保持されます。DLLが使用中でpackageを置き換えられない場合はUnityを終了・再起動してからBridgeを使います。shutdown traceの使い方とnative test境界は[Native shutdown trace](../native-shutdown-trace.md)を参照してください。
 
-MetalのAPI wrapper、Unity Metal producer、submission lifetime管理は別のnative module群に隔離されています。この実験を通常のSession policyや既存Bridge outputの対応表へ含めません。Metal sourceの存在だけでは利用可能なruntimeや配布物を意味しません。
+従来のSDK texture実験のAPI wrapper、Unity Metal producer、submission lifetime管理は別のnative module群に隔離されています。この有限実験はWindowsの通常Sessionとは別経路です。現在のGo出力は上図の専用ウィンドウを使用します。共通・Metal・Windowsの配置と責務は[プラットフォーム分離](bridge-platform-architecture.md)を参照してください。
 
-## Metal実験とresource lifetimeの境界
+## 従来の有限Metal実験とresource lifetimeの境界
+
+以下は従来のSDK texture実験とその過去のCI結果です。現在のGo向け専用Metalウィンドウの構成・導入・検証状況は[macOS Metal](macos-metal.md)を参照してください。
 
 公式Looking Glass Bridge 2.6.3 ARM64 packageのheader/export調査で、`initialize_bridge`、`instance_window_metal`、`create_metal_texture_with_iosurface`、`draw_interop_quilt_texture_metal`のMetal entry pointsを確認しました。wrapperはこれらのABIへtexture descriptor相当のObjective-C object pointerとIOSurface-backed textureを渡します。Unity側は`IUnityGraphicsMetalV2`を使い、Unity command bufferのcompletion handlerでproducer側のcopy完了を観測します。
 
@@ -78,7 +81,7 @@ CI artifact `native-macos-metal-shim` (artifact 11519112992)は`liblookingglass_
 
 限定試験の手順は次のとおりです。
 
-1. Metal実験用componentをscene objectへ追加し、`rig`に既存の`ViewWeaveRig`を割り当てます。`runtimePath`にはBridge 2.6.3の`/Applications/Looking Glass Bridge 2.6.3.app/Contents/MacOS/libbridge_inproc.dylib`を指定します。native shimは別途手動で入手する必要があり、UPMには含まれません。
+1. Metal実験用componentをscene objectへ追加し、`rig`に既存の`ViewWeaveRig`を割り当てます。`runtimePath`にはBridge 2.6.3の`/Applications/Looking Glass Bridge 2.6.3.app/Contents/MacOS/libbridge_inproc.dylib`を指定します。native shimは現在のpackageに含まれますが、この有限実験は連続表示の導入手順ではありません。
 2. macOS EditorのPlay中にcomponentのContext Menuから`Begin Finite Metal Experiment From Rig Profile`を実行します。providerがruntimeを初期化し`RuntimeAvailable`になるまで待ちます。
 3. `RuntimeAvailable`になった後、`Start Finite Metal Quilt Rendering`を一度実行します。producer submissionは最大3枚で自動停止し、3枚を超えて継続描画しません。
 4. `Close Finite Metal Experiment`を実行してmanaged rigのoutput/profile/Auto Render設定を戻します。同じprocessで実験を再開する用途には使わないでください。

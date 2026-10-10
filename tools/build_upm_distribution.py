@@ -165,7 +165,8 @@ def build(kind: str, target: Path) -> None:
         target / "NOTICE.md",
         "ViewWeave distribution notice\n\n"
         "This package is generated from the ViewWeave repository. The bundled native bridge "
-        "artifact and its source hashes are documented in ViewWeave/Bridge/Plugins/native-provenance.json.\n",
+        "Windows artifact and its source hashes are documented in ViewWeave/Bridge/Plugins/native-provenance.json; "
+        "the macOS artifact is documented in ViewWeave/Bridge/Plugins/macOS/native-provenance.json.\n",
     )
     notices_path = target / "THIRD_PARTY_NOTICES.md"
     shutil.copy2(ROOT / "docs/THIRD_PARTY_NOTICES.md", notices_path)
@@ -195,7 +196,10 @@ def build(kind: str, target: Path) -> None:
         "Use Unity 6000.6.4f1 with the matching Unity " + kind.upper() + " render pipeline. "
         "Start with an ordinary Cube or Box, right-click the Main Camera in the Hierarchy, "
         "and choose ViewWeave > Bridge Rig to create a child rig; "
-        "no sample import or object script is required. Regular Bridge Worker Sessions support "
+        "no sample import or object script is required. On Apple Silicon macOS 26.0 or later, the menu creates "
+        "Metal output for Looking Glass Go in Desktop Mode; URP has been verified on the device. "
+        "See the [macOS Metal guide](https://github.com/zabaglione/ViewWeave/blob/main/docs/macos-metal.md). "
+        "Regular Bridge Worker Sessions support "
         "Windows D3D11 and D3D12 Editor Play and Player. D3D12 shares GPU resources with a "
         "D3D11 worker on the same adapter and does not read image pixels back to the CPU. For "
         "Edit Mode authoring, open the ViewWeaveRig Inspector or Window > ViewWeave > Rig "
