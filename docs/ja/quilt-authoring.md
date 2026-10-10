@@ -2,7 +2,7 @@
 
 # Quiltのカメラ範囲とフォーカスを調整する
 
-Rigを使う場合は、統合された`ViewWeaveRig` Inspectorまたは対象を固定するAuthoring windowから操作します。`ViewWeaveRig`を選択または固定し、`Window > ViewWeave > Rig Authoring`を開きます。`Focus Target`を指定または現在の選択を使い、focus設定を明示するには`Set Focus From Target Center`を実行します。physical framingがoffなら`Focus Distance`を更新し、onなら保存済みbase focus distanceを保ってFOVを解きます。framingには`Camera & Focus`、previewには`Preview`を使います。Unityの選択を変更してもwindowのRigは維持されます。
+Rigを使う場合は、統合された`ViewWeaveRig` Inspectorまたは対象を固定するAuthoring windowから操作します。`ViewWeaveRig`を選択または固定し、`Window > ViewWeave > Rig Authoring`を開きます。`Focus Target`を直接指定するかfieldへdragし、focus設定を明示するには`Set Focus From Target Center`を実行します。physical framingがoffなら`Focus Distance`を更新し、onなら保存済みbase focus distanceを保ってFOVを解きます。framingには`Camera & Focus`、previewには`Preview`を使います。Unityの選択を変更してもwindowのRigは維持されます。
 
 Sceneビューの紫の面はゼロ視差面、青緑はNear Clip、橙色はFar Clipです。単体`QuiltRenderer`を編集する場合はGameObjectを選択し、技術用Inspectorの`Camera Framing`で`Focus Distance`、FOV、`Near Clip`、`Far Clip`を調整します。紫の面中央のハンドルをカメラの前後へドラッグして`Focus Distance`を調整することもできます。
 
@@ -19,7 +19,7 @@ Rigでは統合された`ViewWeaveRig` Inspector、または`Window > ViewWeave 
 ```mermaid
 flowchart TB
     Rig["ViewWeaveRigを選択または固定"] --> Window["Window > ViewWeave > Rig Authoringを開く"]
-    Window --> Target["Focus Targetを指定またはUse Selection"]
+    Window --> Target["Focus Targetを指定またはdrag"]
     Target --> Focus["Set Focus From Target Center"]
     Focus --> Preview{"previewを明示的に選択"}
     Preview -->|Local| Local["Start Local Edit Mode Preview"]
@@ -29,7 +29,7 @@ flowchart TB
     Inspect --> Stop["Pause PreviewまたはClose Preview"]
 ```
 
-`Camera & Focus`には`Focus Target`、`Use Selection`、`Set Focus From Target Center`、水平・垂直Orbit操作があります。objectをfieldへdragして指定できます。`Set Focus From Target Center`は要求するfocusを設定する明示操作です。physical framingがoffなら保存済み`Focus Distance`を更新し、onなら保存済みbase focus distanceを変更せずFOVを解きます。対象を選ぶだけではRig設定を変更しません。FocusとCamera操作では、ロード済みMain Stageまたは同一Prefab Stage内のobjectを対象にします。persistent assetとisolated Preview Sceneは拒否します。同じMain Stageのロード済みadditive sceneは許可します。`Scene View Controls`には`Show Near / Far`、`Show Extreme Views`、`Show 3D Focus Cursor`があり、技術用`QuiltRenderer` Inspectorと同じEditor設定を共有します。`Frame Focus Plane Center in Scene View`はzero-parallax面の中心をScene Viewに表示します。
+`Camera & Focus`には`Focus Target`、`Set Focus From Target Center`、水平・垂直Orbit操作があります。objectをfieldへ直接指定するかdragして設定できます。`Set Focus From Target Center`は要求するfocusを設定する明示操作です。physical framingがoffなら保存済み`Focus Distance`を更新し、onなら保存済みbase focus distanceを変更せずFOVを解きます。Focus Targetを指定するだけではRig設定を変更しません。FocusとCamera操作では、ロード済みMain Stageまたは同一Prefab Stage内のobjectを対象にします。persistent assetとisolated Preview Sceneは拒否します。同じMain Stageのロード済みadditive sceneは許可します。`Scene View Controls`には`Show Near / Far`、`Show Extreme Views`、`Show 3D Focus Cursor`があり、技術用`QuiltRenderer` Inspectorと同じEditor設定を共有します。`Frame Focus Plane Center in Scene View`はzero-parallax面の中心をScene Viewに表示します。
 
 Bridge outputを接続している場合、機器変更後に`Refresh Connected Displays`を使い、display profileとphysical calibrationのsnapshotを更新します。これは明示的なrefreshです。snapshotは最後に成功した要求の結果を示し、vendorの自動hotplugは通知しません。Sessionまたはdevice previewのworkerがReadyなら同じworkerが処理し、Edit ModeでidleならWindows SDKはpersistent owner host上のmetadata contextから照会されます。metadata contextを閉じるとcontextごとのmetadata資源は解放されますが、SDK所有権は維持されます。SDKとowner hostはEditorまたはPlayer processの終了処理まで維持されます。要求を処理できるReady workerがなく、別contextまたはcleanupが進行中の場合、refreshは一時的に利用できないことがあります。statusに`Closing metadata worker`や`Waiting for Bridge metadata worker release`が表示される場合があり、cleanup timeout時は`Metadata cleanup timed out; waiting for native release proof`を表示します。button横のstatusとerrorを確認してください。Unity Editorはnative pluginをプロセスへ読み込むため、Bridge packageのnative DLLを更新した場合やmetadata refresh exportを追加した場合はEditorの再起動が必要です。[Unity native plug-in Inspector](https://docs.unity3d.com/6000.0/Documentation/Manual/plug-in-inspector.html)を参照してください。
 

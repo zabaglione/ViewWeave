@@ -538,7 +538,7 @@ namespace ViewWeave.RigCameraCreationValidation
         }
 
         [Test]
-        public void UseSelectionFocusActionUpdatesRendererAndUndoRestoresPriorFocus()
+        public void AssignedFocusTargetActionUpdatesRendererAndUndoRestoresPriorFocus()
         {
             GameObject rigObject = new GameObject("Inspector Focus Rig");
             GameObject focusObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -549,11 +549,12 @@ namespace ViewWeave.RigCameraCreationValidation
                 QuiltRenderer renderer = rigObject.GetComponent<QuiltRenderer>();
                 renderer.settings.cameraDistance = 2f;
                 focusObject.transform.position = new Vector3(0f, 0f, 7f);
-                Selection.activeGameObject = focusObject;
                 editor = UnityEditor.Editor.CreateEditor(rig, typeof(ViewWeaveRigInspector));
                 VisualElement root = editor.CreateInspectorGUI();
+                ObjectField focusField = root.Q<ObjectField>("focusTarget");
+                Assert.That(focusField, Is.Not.Null);
+                focusField.value = focusObject;
                 object view = GetField<object>(editor, "view");
-                Invoke(view, "UseSelection");
 
                 Assert.That(GetField<Object>(editor, "focusTarget"), Is.SameAs(focusObject));
                 Assert.That(renderer.settings.cameraDistance, Is.EqualTo(2f), "choosing a target must not edit focus until the explicit action runs");

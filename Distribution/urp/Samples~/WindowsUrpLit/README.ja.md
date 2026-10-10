@@ -15,7 +15,7 @@ Inspectorの`Generate Lit Scene`は確認用のCube、sphere、lightを生成し
 
 ## Edit Mode preview
 
-Play Modeへ移行せずに表示するには、Bridge Rigを選び、sample generator componentのメニューから`Generate Lit Scene`を実行します。`Window > ViewWeave > Rig Authoring`を開き、windowの`Rig` fieldへBridge Rigを指定してから、生成したobjectを`Focus Target`に設定します（objectを選択して`Use Selection`でも設定できます）。必要に応じて`Set Focus From Target Center`を押します。Editor内でQuiltを見る場合は`Start Local Edit Mode Preview`、接続機器へ送る場合は`Start Looking Glass Device Preview`を明示的に開始し、終了時に`Stop Preview`を押します。このEditor previewは通常Bridge Sessionとは別です。通常SessionのBridge出力には引き続きEditor PlayまたはPlayerが必要です。device previewには対応するWindows D3D11/D3D12 GPUと公式Looking Glass Bridge runtimeが必要です。GPU ownership proofを含む手順と対応条件は[Quilt制作ガイド](https://github.com/zabaglione/ViewWeave/blob/main/docs/ja/quilt-authoring.md)を参照してください。
+Play Modeへ移行せずに表示するには、Bridge Rigを選び、sample generator componentのメニューから`Generate Lit Scene`を実行します。`Window > ViewWeave > Rig Authoring`を開き、windowの`Rig` fieldへBridge Rigを指定してから、生成したobjectを`Focus Target`に直接指定するかfieldへdragします。必要に応じて`Set Focus From Target Center`を押します。Editor内でQuiltを見る場合は`Start Local Edit Mode Preview`、接続機器へ送る場合は`Start Looking Glass Device Preview`を明示的に開始し、終了時に`Stop Preview`を押します。このEditor previewは通常Bridge Sessionとは別です。通常SessionのBridge出力には引き続きEditor PlayまたはPlayerが必要です。device previewには対応するWindows D3D11/D3D12 GPUと公式Looking Glass Bridge runtimeが必要です。GPU ownership proofを含む手順と対応条件は[Quilt制作ガイド](https://github.com/zabaglione/ViewWeave/blob/main/docs/ja/quilt-authoring.md)を参照してください。
 
 ## Material resourceについて
 

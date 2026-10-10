@@ -271,8 +271,6 @@ namespace ViewWeave.Editor
             foldout.Add(focusTargetField);
 
             var targetButtons = new VisualElement { style = { flexDirection = FlexDirection.Column } };
-            var selectionButton = new Button(UseSelection) { name = "useSelection", text = "Use Selection" };
-            targetButtons.Add(selectionButton);
             setFocusButton = new Button(SetFocusFromTarget) { text = "Set Focus From Target Center" };
             targetButtons.Add(setFocusButton);
             foldout.Add(targetButtons);
@@ -643,14 +641,6 @@ namespace ViewWeave.Editor
             if (onChanged != null) field.TrackPropertyValue(property, _ => onChanged());
             parent.Add(field);
             return field;
-        }
-
-        void UseSelection()
-        {
-            setFocusTarget?.Invoke(ResolveSelectionTarget());
-            if (focusTargetField != null && focusTargetProvider != null)
-                focusTargetField.SetValueWithoutNotify(focusTargetProvider());
-            BridgeEditorPreview.RequestRefresh();
         }
 
         void RebuildFieldOfView()
