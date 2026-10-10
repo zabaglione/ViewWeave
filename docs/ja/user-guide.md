@@ -43,7 +43,7 @@ TAAにはUniversal Rendererを使い、MSAA、Camera Stack、Dynamic Resolution�
 
 **Preview**から**Start Local Edit Mode Preview**を選ぶとEditor内でQuiltを確認でき、**Start Looking Glass Device Preview**を選ぶと接続displayへ出力します。どちらも明示的に開始します。Local Previewにはdisplayは不要です。Device Previewには対応経路と事前条件が必要です。Preview中はPause/Resumeで停止・再開し、終わったら**Advanced > Close Preview**を使います。Previewの状態自体は保存sceneへ書き込まれません。
 
-macOSのLooking Glass Goを使う場合は[macOS Metalガイド](macos-metal.md)で導入条件と制約を確認してください。他platformの組み合わせは[対応表](compatibility.md)を参照してください。
+macOSの校正値ベースMetal出力は[macOS Metalガイド](macos-metal.md)で導入条件と制約を確認してください。他platformの組み合わせは[対応表](compatibility.md)を参照してください。
 
 ## Quiltを保存、録画、再生する
 

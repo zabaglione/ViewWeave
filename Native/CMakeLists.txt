@@ -35,6 +35,7 @@ if (NOT LKG_TRANSPORT_TESTS_ONLY)
       platform/macos/bridge_metal_api.mm
       platform/macos/metal_submission_lifetime.cpp
       platform/macos/unity_metal_producer.mm
+      platform/macos/metal_calibration.cpp
       platform/macos/metal_display.mm)
   else()
     add_library(lookingglass_bridge_shim SHARED
@@ -137,6 +138,12 @@ if (BUILD_TESTING)
   target_include_directories(lookingglass_metadata_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
   add_test(NAME lookingglass_metadata_test COMMAND lookingglass_metadata_test)
 
+  add_executable(lookingglass_metal_calibration_test
+    platform/macos/metal_calibration.cpp tests/metal_calibration_test.cpp)
+  target_compile_features(lookingglass_metal_calibration_test PRIVATE cxx_std_17)
+  target_include_directories(lookingglass_metal_calibration_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+  add_test(NAME lookingglass_metal_calibration_test COMMAND lookingglass_metal_calibration_test)
+
   if (NOT WIN32 AND NOT APPLE AND NOT LKG_TRANSPORT_TESTS_ONLY)
     add_executable(lookingglass_unsupported_shim_abi_test tests/unsupported_shim_abi_test.cpp)
     target_compile_features(lookingglass_unsupported_shim_abi_test PRIVATE cxx_std_17)
@@ -147,6 +154,15 @@ if (BUILD_TESTING)
   endif()
 
   if (APPLE)
+    if (NOT LKG_TRANSPORT_TESTS_ONLY)
+      add_library(lkg_fake_metal_metadata SHARED tests/fake_metal_metadata.cpp)
+      add_executable(lookingglass_metal_display_metadata_test tests/metal_display_metadata_test.cpp)
+      target_compile_features(lookingglass_metal_display_metadata_test PRIVATE cxx_std_17)
+      target_include_directories(lookingglass_metal_display_metadata_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+      target_link_libraries(lookingglass_metal_display_metadata_test PRIVATE ${CMAKE_DL_LIBS})
+      add_test(NAME lookingglass_metal_display_metadata_test COMMAND lookingglass_metal_display_metadata_test
+        "$<TARGET_FILE:lookingglass_bridge_shim>" "$<TARGET_FILE:lkg_fake_metal_metadata>")
+    endif()
     add_executable(lookingglass_metal_api_contract_test
       platform/macos/bridge_metal_api_contract.cpp
       platform/macos/metal_submission_lifetime.cpp

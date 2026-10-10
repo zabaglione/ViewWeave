@@ -1,7 +1,11 @@
-// Original RGB lenticular sampling implementation. Calibration conversion is documented in docs/macos-metal.md.
+// Original RGB/BGR lenticular sampling implementation. Conversion is documented in docs/macos-metal.md.
 Shader "Hidden/ViewWeave/MetalInterlace"
 {
-    Properties { _MainTex ("Quilt", 2D) = "black" {} }
+    Properties
+    {
+        _MainTex ("Quilt", 2D) = "black" {}
+        _ChannelOrder ("Subpixel order and image flip", Vector) = (0,1,2,0)
+    }
     SubShader
     {
         Cull Off ZWrite Off ZTest Always
@@ -15,18 +19,20 @@ Shader "Hidden/ViewWeave/MetalInterlace"
             sampler2D _MainTex;
             float4 _Calibration; // pitch, vertical tilt, center, inverted views
             float4 _Screen;      // physical width, height, RGB subpixel step
+            float4 _ChannelOrder; // R/G/B subpixel indices, horizontal image flip
             float4 _Grid;        // columns, rows, tile width, tile height
             float4 _QuiltSize;   // width, height, aspect correction
 
             float4 Interlace(v2f_img input) : SV_Target
             {
                 float2 pixelUv = input.uv;
+                if (_ChannelOrder.w > 0.5) pixelUv.x = 1.0 - pixelUv.x;
                 float2 withinView = (pixelUv - 0.5) * float2(_QuiltSize.z, 1.0) + 0.5;
                 if (any(withinView < 0.0) || any(withinView > 1.0)) return float4(0,0,0,1);
                 float4 result = float4(0,0,0,1);
                 [unroll] for (int component = 0; component < 3; ++component)
                 {
-                    float phase = frac((pixelUv.x + component * _Screen.z + pixelUv.y * _Calibration.y)
+                    float phase = frac((pixelUv.x + _ChannelOrder[component] * _Screen.z + pixelUv.y * _Calibration.y)
                         * _Calibration.x - _Calibration.z);
                     float viewFraction = _Calibration.w > 0.5 ? 1.0 - phase : phase;
                     float view = min(floor(viewFraction * _Grid.x * _Grid.y), _Grid.x * _Grid.y - 1.0);

@@ -18,9 +18,16 @@ public static class MetalNativeSessionValidation
         internal int inverted;
     }
     [StructLayout(LayoutKind.Sequential)]
+    struct ProfileV2
+    {
+        internal uint structSize, apiVersion;
+        internal Display calibration;
+        internal int redIndex, blueIndex;
+    }
+    [StructLayout(LayoutKind.Sequential)]
     struct Status { internal uint submitted, completed, dropped, error, pending, closing; }
     const string Library = "lookingglass_bridge_shim";
-    [DllImport(Library)] static extern ulong lkg_metal_display_open(string path, string name, uint ordinal, out Display info);
+    [DllImport(Library)] static extern ulong lkg_metal_display_open_v2(string path, string name, uint ordinal, ref ProfileV2 info);
     [DllImport(Library)] static extern int lkg_metal_display_submit(ulong id, IntPtr texture, out IntPtr data);
     [DllImport(Library)] static extern int lkg_metal_display_status(ulong id, out Status status);
     [DllImport(Library)] static extern void lkg_metal_display_close(ulong id);
@@ -31,7 +38,10 @@ public static class MetalNativeSessionValidation
     public static void Run()
     {
         if (!BridgeRuntimeLocator.TryResolve(null, out string path, out string error)) throw new Exception(error);
-        if (Marshal.SizeOf<Display>() != 60 || Marshal.SizeOf<Status>() != 24) throw new Exception("Invalid Metal ABI");
+        if (Marshal.SizeOf<Display>() != 60 || Marshal.SizeOf<ProfileV2>() != 76 || Marshal.SizeOf<Status>() != 24 ||
+            Marshal.OffsetOf<ProfileV2>(nameof(ProfileV2.calibration)).ToInt32() != 8 ||
+            Marshal.OffsetOf<ProfileV2>(nameof(ProfileV2.redIndex)).ToInt32() != 68 ||
+            Marshal.OffsetOf<ProfileV2>(nameof(ProfileV2.blueIndex)).ToInt32() != 72) throw new Exception("Invalid Metal ABI");
         ulong id = 0;
         RenderTexture source = null;
         var commands = new CommandBuffer();
@@ -40,8 +50,10 @@ public static class MetalNativeSessionValidation
             IntPtr stale = IntPtr.Zero;
             for (int cycle = 0; cycle < 3; ++cycle)
             {
-                id = lkg_metal_display_open(path, "ViewWeave Metal cancellation validation", 0, out Display info);
+                var profile = new ProfileV2 { structSize = 76, apiVersion = 2 };
+                id = lkg_metal_display_open_v2(path, "ViewWeave Metal cancellation validation", 0, ref profile);
                 if (id == 0) throw new Exception(Marshal.PtrToStringAnsi(lkg_metal_display_error()));
+                Display info = profile.calibration;
                 if (source == null)
                 {
                     source = new RenderTexture((int)info.width,(int)info.height,0) { graphicsFormat = GraphicsFormat.R8G8B8A8_UNorm };

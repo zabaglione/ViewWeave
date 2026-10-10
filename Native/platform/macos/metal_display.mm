@@ -2,6 +2,7 @@
 #import <Metal/Metal.h>
 #import <QuartzCore/CAMetalLayer.h>
 #include "metal_display.h"
+#include "metal_calibration.h"
 #include "metal_provider_api.h"
 #include "IUnityGraphics.h"
 #include "IUnityGraphicsMetal.h"
@@ -97,7 +98,8 @@ void UNITY_INTERFACE_API DisplayDeviceEvent(UnityGfxDeviceEventType event) {
 }
 template<class T> T Symbol(void* module, const char* name) { return reinterpret_cast<T>(dlsym(module, name)); }
 bool ReadProfile(const char* path, const char* name, uint32_t ordinal,
-    LkgMetalDisplayInfo* result, long* x, long* y) {
+    LkgMetalDisplayInfoV2* profile, long* x, long* y) {
+    auto* result = &profile->calibration;
     if (metadataFault) { lastError = "Bridge metadata shutdown is unproven; restart Unity before opening another session"; return false; }
     if (lkg_bridge_is_initialized() != 0) { lastError = "Another Bridge metadata owner is active"; return false; }
     lkg::metal::ProviderStatusV1 provider{};
@@ -113,10 +115,11 @@ bool ReadProfile(const char* path, const char* name, uint32_t ordinal,
     auto dimensions = Symbol<bool(*)(unsigned long, unsigned long*, unsigned long*)>(module, "get_dimensions_for_display");
     auto quilt = Symbol<bool(*)(unsigned long, float*, int*, int*, int*, int*)>(module, "get_default_quilt_settings_for_display");
     auto position = Symbol<bool(*)(unsigned long, long*, long*)>(module, "get_window_position_for_display");
-    auto serial = Symbol<bool(*)(unsigned long, int*, wchar_t*)>(module, "get_device_serial_for_display");
+    auto redIndex = Symbol<bool(*)(unsigned long, int*)>(module, "get_ri_for_display");
+    auto blueIndex = Symbol<bool(*)(unsigned long, int*)>(module, "get_bi_for_display");
     auto calibration = Symbol<bool(*)(unsigned long, float*, float*, float*, int*, int*, float*, float*, int*,
         float*, float*, int*, int*, void*)>(module, "get_calibration_for_display");
-    if (!init || !stop || !displays || !dimensions || !quilt || !position || !calibration || !serial) {
+    if (!init || !stop || !displays || !dimensions || !quilt || !position || !calibration || !redIndex || !blueIndex) {
         lastError = "Required Bridge metadata symbols are missing"; dlclose(module); return false;
     }
     bool ok = false;
@@ -130,27 +133,23 @@ bool ReadProfile(const char* path, const char* name, uint32_t ordinal,
                 unsigned long index = indices[ordinal], width = 0, height = 0;
                 int cw = 0, ch = 0, mode = 0, cells = 0;
                 float fringe = 0;
-                int serialLength = 0;
-                bool isGo = serial(index, &serialLength, nullptr) && serialLength >= 5 && serialLength < 256;
-                std::vector<wchar_t> deviceSerial(isGo ? serialLength + 1 : 1);
-                if (isGo) isGo = serial(index, &serialLength, deviceSerial.data()) &&
-                    deviceSerial[0] == L'L' && deviceSerial[1] == L'K' && deviceSerial[2] == L'G' &&
-                    deviceSerial[3] == L'-' && deviceSerial[4] == L'E';
                 result->display.index = static_cast<uint32_t>(index);
                 ok = dimensions(index, &width, &height) && position(index, x, y) &&
                     quilt(index, &result->display.aspect, &result->display.quilt_width, &result->display.quilt_height,
                         &result->display.quilt_columns, &result->display.quilt_rows) &&
                     calibration(index, &result->center, &result->pitch, &result->slope, &cw, &ch, &result->dpi,
-                        &result->flipX, &result->invertedViews, &result->display.viewcone, &fringe, &mode, &cells, nullptr);
+                        &result->flipX, &result->invertedViews, &result->display.viewcone, &fringe, &mode, &cells, nullptr) &&
+                    redIndex(index, &profile->redIndex) && blueIndex(index, &profile->blueIndex);
+                if (!ok) lastError = "Bridge display metadata or calibration query failed";
+                if (ok && (width != static_cast<unsigned long>(cw) || height != static_cast<unsigned long>(ch))) {
+                    ok = false; lastError = "Invalid calibration: Bridge display and calibration dimensions differ";
+                }
+                if (ok && (width > UINT32_MAX || height > UINT32_MAX || index > UINT32_MAX)) {
+                    ok = false; lastError = "Invalid calibration: display dimensions or index exceed the native ABI";
+                }
                 result->display.width = static_cast<uint32_t>(width); result->display.height = static_cast<uint32_t>(height);
-                // Initial support is the unrotated, conventional RGB calibration used by Go.
-                ok = ok && width == static_cast<unsigned long>(cw) && height == static_cast<unsigned long>(ch) &&
-                    isGo && width > 0 && height > 0 && width <= 16384 && height <= 16384 && cells == 0 && mode == 0 &&
-                    std::isfinite(result->center) && std::isfinite(result->pitch) && result->pitch > 0 &&
-                    std::isfinite(result->slope) && std::abs(result->slope) > 0.00001f &&
-                    std::isfinite(result->dpi) && result->dpi > 0 && result->flipX == 0 &&
-                    (result->invertedViews == 0 || result->invertedViews == 1);
-                if (!ok) lastError = "Unsupported or invalid calibration (requires unrotated RGB cells)";
+                if (ok) if (const char* error = lkg::metal::ValidateCalibration(*result, mode, cells, fringe,
+                    profile->redIndex, profile->blueIndex)) { ok = false; lastError = error; }
             }
         }
         if (!ok && lastError.empty()) lastError = "Looking Glass display was not found; check Bridge and Desktop Mode";
@@ -231,18 +230,28 @@ void UNITY_INTERFACE_API Render(int, void* data) {
 }
 }
 
-extern "C" uint64_t lkg_metal_display_open(const char* path, const char* name, uint32_t ordinal, LkgMetalDisplayInfo* info) {
-    if (!pthread_main_np() || path == nullptr || path[0] != '/' || name == nullptr || info == nullptr) return 0;
+static uint64_t OpenDisplay(const char* path, const char* name, uint32_t ordinal,
+    LkgMetalDisplayInfoV2* profile, bool legacy) {
     std::lock_guard<std::mutex> lock(sessionMutex);
     lastError.clear();
+    if (!pthread_main_np() || path == nullptr || path[0] != '/' || name == nullptr) {
+        lastError = "Metal display open requires the main thread, an absolute runtime path and application name"; return 0;
+    }
+    if (!lkg::metal::IsDisplayInfoV2HeaderValid(profile)) {
+        lastError = "Metal display ABI mismatch; update the managed package and native plugin together, then restart Unity"; return 0;
+    }
     if (activeSession && activeSession->closing.load() && !activeSession->busy.load()) {
         activeSession.reset(); activeId = 0;
     }
     if (activeSession) { lastError = "A Metal display session is already active"; return 0; }
     @autoreleasepool {
         long x = 0, y = 0;
-        *info = {};
-        if (!ReadProfile(path, name, ordinal, info, &x, &y)) return 0;
+        profile->calibration = {}; profile->redIndex = profile->blueIndex = 0;
+        if (!ReadProfile(path, name, ordinal, profile, &x, &y)) return 0;
+        auto* info = &profile->calibration;
+        if (legacy && (info->flipX != 0 || profile->redIndex != 0 || profile->blueIndex != 2)) {
+            lastError = "This calibration requires Metal display API v2; update the managed package and restart Unity"; return 0;
+        }
         NSScreen* selected = nil;
         for (NSScreen* screen in NSScreen.screens) {
             CGDirectDisplayID display = [screen.deviceDescription[@"NSScreenNumber"] unsignedIntValue];
@@ -292,6 +301,16 @@ extern "C" uint64_t lkg_metal_display_open(const char* path, const char* name, u
         activeSession = s; activeId = nextId++;
         return activeId;
     }
+}
+extern "C" uint64_t lkg_metal_display_open_v2(const char* path, const char* name, uint32_t ordinal,
+    LkgMetalDisplayInfoV2* info) { return OpenDisplay(path, name, ordinal, info, false); }
+extern "C" uint64_t lkg_metal_display_open(const char* path, const char* name, uint32_t ordinal,
+    LkgMetalDisplayInfo* info) {
+    if (!info) return 0;
+    LkgMetalDisplayInfoV2 profile{}; profile.structSize = sizeof(profile); profile.apiVersion = 2;
+    uint64_t id = OpenDisplay(path, name, ordinal, &profile, true);
+    if (id) *info = profile.calibration;
+    return id;
 }
 extern "C" int32_t lkg_metal_display_submit(uint64_t sessionId, void* texture, void** data) {
     if (texture == nullptr || data == nullptr) return -1;

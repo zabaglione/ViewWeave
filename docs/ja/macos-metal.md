@@ -1,30 +1,30 @@
 [English](../macos-metal.md)
 
-# macOS Metal / Looking Glass Go
+# macOS Metal出力
 
 [ユーザーガイド](user-guide.md) · [技術者向けガイド](technical-guide.md)
 
 ## 利用条件と操作
 
-Unity **6000.6.4f1**、URPまたはHDRP **17.6**、Apple Silicon Mac、Looking Glass Bridgeを使用します。同梱arm64プラグインは**macOS 26.0以降**が必要です。これはLooking Glass Go専用のMetal出力経路です。GoをDesktop Modeで接続し、**1440×2560の拡張画面**として設定してBridgeを起動してください。確認範囲は[対応表](compatibility.md)と日付付きの[Metal検証記録](../macos-metal-validation-20261010.md)を参照してください。HDRP Playerと長時間の運用は未検証です。
+Unity **6000.6.4f1**、URPまたはHDRP **17.6**、Apple Silicon Mac、Looking Glass Bridgeを使用します。同梱arm64プラグインは**macOS 26.0以降**が必要です。ViewWeaveはBridgeの校正値に基づくMetal出力経路を使います。displayを回転なし・native解像度の拡張画面に設定してBridgeを起動してください。機種識別子は対応判定のallowlistに使いませんが、すべての機器の対応を意味するものではありません。[対応表](compatibility.md)、過去の[Go実機検証記録](../macos-metal-validation-20261010.md)、[校正一般化の検証記録](../macos-metal-generalization-validation-20261011.md)を参照してください。HDRP Playerと長時間の運用は未検証です。
 
 SceneのCameraを選び、**GameObject > ViewWeave > Bridge Rig**を実行します。macOSでは出力を担当する`BridgeMetalQuiltOutput`が追加されます。設定の入口は**ViewWeave Rig**コンポーネントです。**Rendering > Output Quality**で画質を選び、**Bridge**欄で自動開始、runtime path、application name、display ordinal、状態表示、Start／Stopを操作します。出力はPlayで開始します。Qualityや接続設定を変更する前にStop Outputで停止し、GPU資源の回収を待ってから変更・再開してください。runtime pathが空なら`/Applications`と`~/Applications`の最新Bridgeを探索します。dylibそのもの、配置ディレクトリ、Bridgeの`.app`、`LKG_BRIDGE_PATH`も指定できます。
 
 カメラ、Reference Camera、フォーカス、Orbit、物理フレーミング、Quilt Capture、Video Exportは共通のRig UIから操作します。Play中の接続後に**Use Connected Display Size**を使うと、物理フレーミングの有効・無効を変えずに、校正済みの画面寸法をコピーします。物理1:1では開口寸法の縦横比と機器の縦横比が一致している必要があります。Metal出力を止めると、そのRendererの通常録画・一時停止中の録画を終了し、元のローカル設定を復元します。MetalコンポーネントのInspectorは技術診断用です。
 
-Playしていない状態でViewWeave Rigの**Preview**を開き、**Start Local Edit Mode Preview**または**Start Looking Glass Device Preview**を選びます。LocalはRigのローカルQuilt設定、DeviceはGoの表示プロファイルと**Output Quality**を使います。**Pause Preview**は最後の画像を保持し、**Resume Preview**で再開します。終了は**Close Preview**です。Qualityや接続設定を変える前に終了し、GPU資源の回収を待ってください。専用の描画オブジェクトを使うため、元のRigやカメラの設定は保持します。Play開始、スクリプト再読み込み、Authoringウィンドウの終了・対象Rigの変更でもPreviewを終了します。
+Playしていない状態でViewWeave Rigの**Preview**を開き、**Start Local Edit Mode Preview**または**Start Looking Glass Device Preview**を選びます。LocalはRigのローカルQuilt設定、DeviceはBridgeから取得・検証したdisplay profileと**Output Quality**を使います。**Pause Preview**は最後の画像を保持し、**Resume Preview**で再開します。終了は**Close Preview**です。Qualityや接続設定を変える前に終了し、GPU資源の回収を待ってください。専用の描画オブジェクトを使うため、元のRigやカメラの設定は保持します。Play開始、スクリプト再読み込み、Authoringウィンドウの終了・対象Rigの変更でもPreviewを終了します。
 
 保存したQuiltを再生するには、Play中にMetal出力を開始し、**Capture & Playback > Playback**を開きます。全視点を含むQuilt PNGまたは完了したPNG連番のフォルダを選んで検証し、Play／Pause／Resume／Stopで操作します。寸法、grid、縦横比、利用可能なカメラ情報は現在の出力設定と一致する必要があります。再生中は通常のQuilt描画を停止し、正常なStopまたは連番終了時に、同じ出力とRig設定が維持されていれば復帰します。出力停止、Play終了、スクリプト再読み込みでは再生を無効化し、GPU完了が確認できるまで資源を保持します。シーンには出力コンポーネントが保存されるため、macOSとWindowsの間で移動してもバックエンドは自動交換されません。
 
-最初の実装はGoの識別子（`LKG-E`）、回転のない画面、subpixel cell tableがない通常RGB校正、cell-pattern mode 0に限定します。未対応の機器・校正・解像度はエラーとして停止します。画質は開始前にPreview／Balanced／Nativeを選びます。Goの66視点を含め、Bridgeが返す全視点のgridを維持します。描画負荷が高いため、まずPreviewで確認してください。
+対応判定はGoのserialや機種識別子ではなく、Bridgeから取得するmetadataと校正値に基づきます。Bridgeからdisplay寸法、Quilt寸法とgrid、aspect、viewcone、DPI、raw `center`／`pitch`／`slope`校正値を取得し、`get_ri_for_display`と`get_bi_for_display`でRGB/BGRのchannel indexを判定します。通常RGB/BGR、`mode=0`、`cells=0`を受け付け、`flipX`と`invertedViews`はそれぞれ0または1に限ります。公開仕様が確定していないcell tableとnonzero cell-pattern modeは明示的なerrorで拒否します。`fringe`は有限値であることだけを検査し、光学補正には使いません。displayは回転なし・native解像度・拡張画面が必要です。画質は開始前にPreview／Balanced／Nativeを選びます。Bridgeが返すQuilt全gridを維持します。view数が多い場合は描画負荷が高いため、まずPreviewで確認してください。
 
 ## 実装と検証の補足
 
-URP／HDRPのテンプレートsceneを使った短時間のEditor Playでは、Go出力、録画、停止、再開を確認しました。これは条件を限定した観測であり、一般的なruntime保証ではありません。
+2026-10-10の記録には、旧Go専用経路でURP／HDRP template sceneを短時間Editor Playした機器出力とStop／Restartの観測があります。静止画保存や無音録画の具体的な試験結果は記録されていません。過去の限定確認であり、現在の校正値ベースbinaryを検証したものではありません。現行版では機種非依存の合成校正検査、Gamma/LinearのGPU計算比較、Go URPの短時間Play／Stopを2回確認しました。一般化したbinaryの実機光学確認とnon-Go機器の出力は未検証です。実装と検証範囲は[校正一般化の検証記録](../macos-metal-generalization-validation-20261011.md)に分けて記載します。
 
 ## プラグインのビルド
 
-`python3 tools/build_macos_plugin.py --headers /absolute/path/to/public/UnityPluginAPI/headers`を実行します。`--headers`を省略すると、公式NativeRenderingPluginの固定commitの公開ヘッダーを無視対象のbuildディレクトリへ取得します。自作shimをビルドし、native CTestを実行して、dylib・Unity importer・由来情報をBridgeパッケージへ配置します。macOSの古いコード署名情報を避けるためdylibは原子的に置換します。更新後はUnityを再起動して新しいネイティブ版を読み込んでください。`--universal`はIntel sliceもビルドしますが、Intelでの実行確認を意味しません。公式Bridgeのライブラリやヘッダーは同梱しません。ソースパッケージの変更後は`python3 tools/build_upm_distribution.py`で配布パッケージを再生成します。
+`python3 tools/build_macos_plugin.py --headers /absolute/path/to/public/UnityPluginAPI/headers`を実行します。`--headers`を省略すると、公式NativeRenderingPluginの固定commitの公開ヘッダーを無視対象のbuildディレクトリへ取得します。自作shimをビルドし、native CTestを実行して、dylib・Unity importer・由来情報をBridgeパッケージへ配置します。新しい`open_v2` entry pointは`structSize=76`、`apiVersion=2`の76-byte structureを使い、古い60-byte entry pointも互換用に維持します。macOSの古いコード署名情報を避けるためdylibは原子的に置換します。更新後はUnityを再起動して新しいネイティブ版を読み込んでください。`--universal`はIntel sliceもビルドしますが、Intelでの実行確認を意味しません。公式Bridgeのライブラリやヘッダーは同梱しません。ソースパッケージの変更後は`python3 tools/build_upm_distribution.py`で配布パッケージを再生成します。
 
 検証プロジェクトは`Tests/Metal/Unity`です。`MacOSMetalValidationBuilder.Build`で`.local/macos-validation/ViewWeaveMetal.app`を作成し、`Prepare`でEditor用Sceneを作成します。サンプルの図形が回転し、フレーム数を記録します。Rで停止／再開、Escapeで停止して終了します。生成Scene、Player、詳細ログは検証用ファイルです。
 
@@ -44,10 +44,10 @@ Windowsの`ViewWeaveBridgeSession`とD3D WorkerはWindows固有です。Metalの
 
 ## 補正式と出典
 
-補正shaderは独自実装です。RGB subpixelごとのレンズ位相からQuiltの視点を選択します。校正値の単位変換はApache-2.0の[公式WebXR Config](https://github.com/Looking-Glass/looking-glass-webxr/blob/b44ed27fea197f28fbe4cb669bc350d141a9f8b1/src/LookingGlassConfig.ts)にある数学式を参照しました。HoloPlay shaderのコードは移植・同梱していません。
+補正shaderは独自実装です。RGB subpixelごとのレンズ位相からQuiltの視点を選択します。`flipX=1`では画像を水平反転し、tilt／subpixel方向の符号も反転します。RGB/BGRのchannel indexに応じて位相を選びます。`fringe`は有限値の検査だけに使い、補正には使いません。校正値の単位変換はApache-2.0の[公式WebXR Config](https://github.com/Looking-Glass/looking-glass-webxr/blob/b44ed27fea197f28fbe4cb669bc350d141a9f8b1/src/LookingGlassConfig.ts)にある数学式を参照しました。HoloPlay shaderのコードは移植・同梱していません。
 
 `shaderPitch = rawPitch × screenWidth / dpi × cos(atan(1 / rawSlope))`
 
 `tilt = screenHeight / (screenWidth × rawSlope)`、`RGB step = 1 / (3 × screenWidth)`です。
 
-[Bridgeの公開API](https://lfdocs.lookingglassfactory.com/software/looking-glass-bridge-sdk/native-function-reference)とインストール済みruntimeの公開宣言から機器情報を取得します。producerのcommand bufferは[Unityの公開Metal interface](https://github.com/Unity-Technologies/NativeRenderingPlugin/blob/522254181faf188efa8b50c3e3bf6fce720b26e4/PluginSource/source/Unity/IUnityGraphicsMetal.h)を使用します。ビルド・GPU計算・画面capture・実機の立体表示は、それぞれ別の検証です。現時点の結果は[検証記録](../macos-metal-validation-20261010.md)を参照してください。
+[Bridgeの公開API](https://lfdocs.lookingglassfactory.com/software/looking-glass-bridge-sdk/native-function-reference)とインストール済みruntimeの公開宣言から機器情報を取得します。producerのcommand bufferは[Unityの公開Metal interface](https://github.com/Unity-Technologies/NativeRenderingPlugin/blob/522254181faf188efa8b50c3e3bf6fce720b26e4/PluginSource/source/Unity/IUnityGraphicsMetal.h)を使用します。ビルド・GPU計算・画面capture・実機の立体表示は、それぞれ別の検証です。過去の実機確認は[旧検証記録](../macos-metal-validation-20261010.md)、校正一般化の記録は[新しい検証記録](../macos-metal-generalization-validation-20261011.md)を参照してください。

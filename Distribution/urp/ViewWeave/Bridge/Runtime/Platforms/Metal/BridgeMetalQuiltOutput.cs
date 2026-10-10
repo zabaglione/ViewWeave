@@ -6,7 +6,7 @@ using UnityEngine.Rendering;
 
 namespace ViewWeave
 {
-    /// <summary>Looking Glass Go output with a Unity Metal producer and an owned Metal presentation window.</summary>
+    /// <summary>Calibration-driven Looking Glass output with a Unity Metal producer and an owned presentation window.</summary>
     [DisallowMultipleComponent]
     public sealed class BridgeMetalQuiltOutput : MonoBehaviour, IQuiltOutput
     {
@@ -58,13 +58,20 @@ namespace ViewWeave
             internal int invertedViews;
         }
         [StructLayout(LayoutKind.Sequential)]
+        internal struct NativeDisplayV2
+        {
+            internal uint structSize, apiVersion;
+            internal NativeDisplay calibration;
+            internal int redIndex, blueIndex;
+        }
+        [StructLayout(LayoutKind.Sequential)]
         struct NativeStatus { internal uint submitted, completed, dropped, error, pending, closing; }
         static class Native
         {
             const string Library = "lookingglass_bridge_shim";
             [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ulong lkg_metal_display_open([MarshalAs(UnmanagedType.LPUTF8Str)] string path,
-                [MarshalAs(UnmanagedType.LPUTF8Str)] string name, uint ordinal, out NativeDisplay info);
+            internal static extern ulong lkg_metal_display_open_v2([MarshalAs(UnmanagedType.LPUTF8Str)] string path,
+                [MarshalAs(UnmanagedType.LPUTF8Str)] string name, uint ordinal, ref NativeDisplayV2 info);
             [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
             internal static extern int lkg_metal_display_submit(ulong session, IntPtr texture, out IntPtr data);
             [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
@@ -155,7 +162,10 @@ namespace ViewWeave
                 (Application.platform != RuntimePlatform.OSXEditor && Application.platform != RuntimePlatform.OSXPlayer) ||
                 SystemInfo.graphicsDeviceType != GraphicsDeviceType.Metal)
                 return Fail("Metal output requires macOS Play mode or macOS Player with Metal");
-            if (Marshal.SizeOf<NativeDisplay>() != 60 || IntPtr.Size != 8)
+            if (Marshal.SizeOf<NativeDisplay>() != 60 || Marshal.SizeOf<NativeDisplayV2>() != 76 || IntPtr.Size != 8 ||
+                Marshal.OffsetOf<NativeDisplayV2>(nameof(NativeDisplayV2.calibration)).ToInt32() != 8 ||
+                Marshal.OffsetOf<NativeDisplayV2>(nameof(NativeDisplayV2.redIndex)).ToInt32() != 68 ||
+                Marshal.OffsetOf<NativeDisplayV2>(nameof(NativeDisplayV2.blueIndex)).ToInt32() != 72)
                 return Fail("Unsupported Metal display ABI");
             if (rig == null) rig = GetComponent<ViewWeaveRig>();
             if (rig == null) return Fail("A ViewWeaveRig is required");
@@ -171,8 +181,10 @@ namespace ViewWeave
             {
                 mutationOwner = QuiltRendererMutationPolicy.RegisterOwner(rig.Renderer, this, GetMutationBlockReason, out error);
                 if (mutationOwner == null) return Fail(error);
-                session = Native.lkg_metal_display_open(path, applicationName, displayOrdinal, out NativeDisplay display);
+                var nativeInfo = new NativeDisplayV2 { structSize = 76, apiVersion = 2 };
+                session = Native.lkg_metal_display_open_v2(path, applicationName, displayOrdinal, ref nativeInfo);
                 if (session == 0) return Fail(Marshal.PtrToStringAnsi(Native.lkg_metal_display_error()) ?? "Metal window could not be opened");
+                NativeDisplay display = nativeInfo.calibration;
                 Profile = new BridgeDisplayProfile(display.display, new BridgeNative.PhysicalDisplayInfoV1
                 {
                     pixelWidth = display.display.width, pixelHeight = display.display.height,
@@ -188,9 +200,11 @@ namespace ViewWeave
                 if (shader == null || !shader.isSupported) return Fail("Metal interlace shader is unavailable");
                 interlace = new Material(shader) { hideFlags = HideFlags.HideAndDontSave };
                 float calibratedPitch = display.pitch * Profile.Width / display.dpi * Mathf.Cos(Mathf.Atan(1f / display.slope));
-                interlace.SetVector("_Calibration", new Vector4(calibratedPitch, Profile.Height / (Profile.Width * display.slope),
+                float direction = display.flipX == 1f ? -1f : 1f;
+                interlace.SetVector("_Calibration", new Vector4(calibratedPitch, direction * Profile.Height / (Profile.Width * display.slope),
                     display.center, display.invertedViews));
-                interlace.SetVector("_Screen", new Vector4(Profile.Width, Profile.Height, 1f / (3f * Profile.Width), 0f));
+                interlace.SetVector("_Screen", new Vector4(Profile.Width, Profile.Height, direction / (3f * Profile.Width), 0f));
+                interlace.SetVector("_ChannelOrder", new Vector4(nativeInfo.redIndex, 1f, nativeInfo.blueIndex, display.flipX));
                 screenTexture = new RenderTexture((int)Profile.Width, (int)Profile.Height, 0)
                 {
                     graphicsFormat = GraphicsFormat.R8G8B8A8_UNorm,
@@ -208,7 +222,7 @@ namespace ViewWeave
                 return true;
             }
             catch (DllNotFoundException) { return Fail("Native macOS Bridge shim is missing; build the macOS plugin first"); }
-            catch (EntryPointNotFoundException) { return Fail("Native macOS Bridge shim does not contain the Metal display API"); }
+            catch (EntryPointNotFoundException) { return Fail("Native macOS Bridge shim does not contain Metal display API v2; update the plugin and restart Unity"); }
             catch (Exception exception) { return Fail(exception.Message); }
         }
 

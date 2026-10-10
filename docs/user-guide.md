@@ -43,7 +43,7 @@ Independent histories use additional GPU resources. In URP and HDRP, **History R
 
 In **Preview**, choose **Start Local Edit Mode Preview** to inspect the Quilt in the Editor or **Start Looking Glass Device Preview** to send it to a connected display. These are explicit actions. A local preview does not require a display; device preview requires a supported output path and its prerequisites. Use Pause/Resume to hold or continue an active preview, and Close Preview when finished. Preview does not change the saved scene's preview state.
 
-For macOS Looking Glass Go setup and its current boundaries, follow the [macOS Metal guide](macos-metal.md). For other platform combinations, see [Compatibility](compatibility.md).
+For macOS calibration-driven Metal output setup and its current boundaries, follow the [macOS Metal guide](macos-metal.md). For other platform combinations, see [Compatibility](compatibility.md).
 
 ## Save, record, and play back
 
