@@ -85,6 +85,11 @@ struct Session {
     bool snapshotAttempted{};
     bool cleanupFailed{};
     bool visible{true};
+    bool retainedDrawGeometryValid{};
+    uint32_t retainedColumns{};
+    uint32_t retainedRows{};
+    float retainedAspect{};
+    float retainedZoom{};
 };
 
 #if defined(_WIN32)
@@ -786,6 +791,7 @@ static void trace_desc(const char* label, const D3D11_TEXTURE2D_DESC& desc) {
 }
 
 static bool release_bridge_texture(uint64_t sessionId, Session& session, bool shutdownTrace) {
+    session.retainedDrawGeometryValid = false;
     if (session.registered && session.bridgeTexture) {
         if (!g_unregister_texture) {
             session.cleanupFailed = true;
@@ -842,6 +848,7 @@ static bool release_bridge_texture(uint64_t sessionId, Session& session, bool sh
     }
     session.bridgeTexture = nullptr;
     session.registered = false;
+    session.retainedDrawGeometryValid = false;
     return true;
 }
 
@@ -1325,6 +1332,53 @@ LKG_EXPORT int32_t lkg_bridge_ack_session_close_v1(uint64_t id) {
 #endif
 }
 
+#if defined(_WIN32)
+// Internal worker-only entrypoint; this does not extend the exported ABI.
+// Return 0 after redisplay, 1 before a successful draw has established geometry,
+// and a negative value when the retained SDK primary cannot be presented safely.
+int32_t lkg_bridge_redraw_retained_session(uint64_t id, uint64_t endpointId, uint64_t generation) {
+    if (!g_worker_scope || sdk_admission_is_closed() || direct_call_rejected() ||
+        !has_sdk_ownership() || !g_initialized) return -1;
+    std::lock_guard<std::mutex> lock(g_mutex);
+    const auto it = g_sessions.find(id);
+    if (it == g_sessions.end()) return -1;
+
+    Session& session = it->second;
+    if (session.closing || session.cleanupFailed || !session.visible || !session.registered ||
+        !session.window || !session.bridgeTexture || !g_draw_texture) {
+        trace_sessionf(id,
+            "static_present_rejected endpoint=%llu generation=%llu window=%lu texture=%p registered=%d visible=%d closing=%d cleanup_failed=%d draw_symbol=%d",
+            static_cast<unsigned long long>(endpointId), static_cast<unsigned long long>(generation),
+            session.window, session.bridgeTexture, session.registered ? 1 : 0, session.visible ? 1 : 0,
+            session.closing ? 1 : 0, session.cleanupFailed ? 1 : 0, g_draw_texture ? 1 : 0);
+        return -1;
+    }
+    if (!session.retainedDrawGeometryValid) {
+        trace_sessionf(id, "static_present_skipped endpoint=%llu generation=%llu reason=no-successful-draw",
+                       static_cast<unsigned long long>(endpointId), static_cast<unsigned long long>(generation));
+        return 1;
+    }
+
+    trace_sessionf(id,
+        "static_present_begin endpoint=%llu generation=%llu window=%lu primary=%p columns=%u rows=%u aspect=%.6f zoom=%.6f",
+        static_cast<unsigned long long>(endpointId), static_cast<unsigned long long>(generation),
+        session.window, session.bridgeTexture, session.retainedColumns, session.retainedRows,
+        session.retainedAspect, session.retainedZoom);
+    bool ok = false;
+    try {
+        ok = g_draw_texture(session.window, session.bridgeTexture, session.retainedColumns,
+                            session.retainedRows, session.retainedAspect, session.retainedZoom);
+    } catch (...) {
+        ok = false;
+    }
+    trace_sessionf(id,
+        "static_present_end endpoint=%llu generation=%llu result=%d window=%lu primary=%p",
+        static_cast<unsigned long long>(endpointId), static_cast<unsigned long long>(generation),
+        ok ? 1 : 0, session.window, session.bridgeTexture);
+    return ok ? 0 : -2;
+}
+#endif
+
 LKG_EXPORT int32_t lkg_bridge_smoke_draw(uint64_t id, void* texture, uint32_t columns, uint32_t rows, float aspect, float zoom) {
     if (!has_sdk_ownership() || !g_initialized) return -7;
     trace_sessionf(id, "draw_enter source_texture=%p columns=%u rows=%u aspect=%.6f zoom=%.6f",
@@ -1373,6 +1427,7 @@ LKG_EXPORT int32_t lkg_bridge_smoke_draw(uint64_t id, void* texture, uint32_t co
     }
     trace_sessionf(id, "copy_texture_begin window=%lu source_texture=%p bridge_texture=%p",
                    session.window, texture, session.bridgeTexture);
+    session.retainedDrawGeometryValid = false;
     const bool copied = g_copy_texture(session.window, reinterpret_cast<IUnknown*>(texture), session.bridgeTexture);
     trace_sessionf(id, "copy_texture_end result=%d window=%lu source_texture=%p bridge_texture=%p",
                    copied ? 1 : 0, session.window, texture, session.bridgeTexture);
@@ -1418,6 +1473,12 @@ LKG_EXPORT int32_t lkg_bridge_smoke_draw(uint64_t id, void* texture, uint32_t co
                    session.window, session.bridgeTexture);
     tracef("draw_end result=%d", ok ? 1 : 0); trace("draw_exit");
     if (!ok) { g_last_error = "Bridge quilt draw failed"; return -3; }
+    session.retainedColumns = columns;
+    session.retainedRows = rows;
+    session.retainedAspect = aspect;
+    session.retainedZoom = zoom;
+    session.retainedDrawGeometryValid = columns != 0 && rows != 0 &&
+        std::isfinite(aspect) && std::isfinite(zoom);
     if (frameNumber) session.drawFrameCount = frameNumber;
     if (frameSequenceEnabled) {
         const bool captureFrame = frameNumber == 1 || frameNumber == 3 || frameNumber == 5;

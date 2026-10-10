@@ -2,13 +2,13 @@
 
 # Bridge出力のライフサイクル
 
-Edit Modeの実機previewとPlay出力は、process単位のLooking Glass Bridge endpointを共有します。各modeはquilt送信のため、generation単位で排他的なleaseを取得します。modeを閉じるとleaseを返しますが、通常はprocess単位のSDK session、登録済みprimary texture、非表示のBridge endpointを破棄しません。
+Edit Modeの実機previewとPlay出力は、process単位のLooking Glass Bridge endpointを共有します。各modeはquilt送信のため、generation単位で排他的なleaseを取得します。modeを閉じるとleaseを返しますが、通常はprocess単位のSDK session、登録済みprimary texture、endpointを破棄しません。persistent preview endpointではPauseやlease返却後も最後のSDK primary imageを表示したままにし、producer処理がdrainした後にNative owner threadがcached geometryを使って最大5Hzで同じprimaryを再描画できます。このstatic redraw経路は追加のsource texture copyやSDK texture-copy API callを行わず、texture登録やSDK visibilityも変更しません。これはplugin側の呼び出しを説明するもので、vendor内部の実装については断定しません。
 
-このページでは現在のNative artifact/source implementation、sample project、実機で確認できた動作を区別します。現在のsourceには明示的なBusy admission結果が実装され、生成済みdistribution packageに含まれています。PlayからEditへ戻す際の黒画面・遅延表示は未解決です。
+このページでは公開済みNative artifact、private static-present比較candidate、実機で確認できた動作を区別します。現在のsourceには明示的なBusy admission結果が実装され、生成済みdistribution packageに含まれています。private URP比較candidateではPause/owner間のstatic redrawを試しました。結果は後述の日付付き観察に限られ、広範なlifecycleの信頼性や一般的な修正を証明しません。
 
 ## Process ownershipとmode lease
 
-Process ownerはNative Bridge session、worker thread/window、SDK登録済みprimary texture、固定profileのSDK inputをmode間で保持します。lease ownerがいないときendpointは非表示でparkします。Edit PreviewまたはPlayのleaseは、そのgenerationのUnity producer、camera状態、可変サイズのquilt/transfer resource、GPU処理を所有します。同時にendpointを所有できるmodeは一つです。
+Process ownerはNative Bridge session、worker thread/window、SDK登録済みprimary texture、固定profileのSDK inputをmode間で保持します。persistent preview leaseがPauseまたは返却された後もendpointは最後に成功したprimary imageを表示します。producer処理のdrain後、owner threadはcached primaryを最大5Hzで再描画できます。Edit PreviewまたはPlayのleaseは、そのgenerationのUnity producer、camera状態、可変サイズのquilt/transfer resource、GPU処理を所有します。同時にendpointを所有できるmodeは一つです。
 
 ```mermaid
 flowchart LR
@@ -19,12 +19,14 @@ flowchart LR
         end
         Stable[Fixed-profile SDK input]
         Primary[SDK-registered primary texture]
-        Endpoint[Native Bridge session, worker, and hidden window]
+        Endpoint[Native Bridge session, worker, and retained-visible window]
+        Static[Cached primary redraw while paused or returned, max 5 Hz]
     end
     Mode --> Producer
     Producer -->|GPU copy or per-tile scale| Stable
     Stable --> Primary
     Endpoint --> Primary
+    Static --> Primary
     Primary --> Bridge[Looking Glass Bridge runtime]
     Bridge --> Display[Looking Glass display]
 ```
@@ -37,10 +39,10 @@ Inspectorの`Close Preview`は初期状態で閉じた`Advanced` section内に�
 
 | 操作 | Mode producerとUnity texture | Lease | Process Bridge endpoint |
 | --- | --- | --- | --- |
-| Pause Preview | submit drain後も保持 | 同じgenerationを保持 | 非表示でpark |
-| Resume Preview | 再利用 | 同じgenerationを再開 | 同じendpointで表示 |
-| Close Preview | Native source使用終了とmanaged/Core GPU proof後に破棄 | return proof、resource破棄、その後ACK | 非表示でpark。返却/ACK後に次leaseを許可 |
-| Edit/Play handoff | 次modeが所有する前に旧producerとtextureを破棄 | 旧generationのhandoff後に新しい排他的generation | owner間は同じendpointをpark |
+| Pause Preview | submit drain後も保持 | 同じgenerationを保持 | 最後のimageを表示。cached primaryを最大5Hzで再描画可能 |
+| Resume Preview | 再利用 | 同じgenerationを再開 | static redrawを止め、live producer submitを再開 |
+| Close Preview | Native source使用終了とmanaged/Core GPU proof後に破棄 | return proof、resource破棄、その後ACK | 最後のimageを表示したままpark。返却/ACK後に次leaseを許可 |
+| Edit/Play handoff | 次modeが所有する前に旧producerとtextureを破棄 | 旧generationのhandoff後に新しい排他的generation | 同じendpointと最後のimageを維持し、新producerが更新 |
 | Process shutdown | 必要なUnity GPU proof後に破棄 | admissionを閉じる。証明済み最終teardownが通常handoff ACKの代わりになる | 最終cleanup時にSDK endpoint、登録texture、workerを解放 |
 
 通常の返却順序は固定です。まずNativeが旧source textureの参照終了を`ReturnedProven`として通知します。managed側は次にCore/transferとproducer GPU完了を待ち、旧mode textureとownershipを破棄してからgeneration ACKを送ります。NativeはACK受信後にだけ次leaseを許可します。Native status queryは履歴metadataであり、managed ACKでも現在のoutput ownerや表示frameの証明でもありません。producer/GPU完了counterもBridge scanoutを証明しません。
@@ -53,20 +55,21 @@ sequenceDiagram
     participant Endpoint as Process Bridge endpoint
     participant Next as Next mode
     Old->>Worker: Gate submissions and request return for generation N
-    Worker->>Endpoint: Drain source work and hide endpoint
+    Worker->>Endpoint: Drain source work; retain primary visible
     Endpoint-->>Worker: Native source-use proof
     Worker-->>Old: ReturnedProven for generation N
+    Endpoint->>Endpoint: Redraw cached primary while parked, at most 5 Hz
     Old->>Unity: Wait for Core/transfer and producer GPU proofs
     Unity-->>Old: GPU work complete
     Old->>Unity: Retire mode textures and ownership
     Old->>Worker: ACK generation N after Unity retirement
     Worker-->>Next: Permit next generation acquisition
     Next->>Endpoint: Acquire exclusive generation N+1
-    Endpoint-->>Next: Grant same parked endpoint
+    Endpoint-->>Next: Grant same visible endpoint
     Next->>Worker: Submit with new mode resources
 ```
 
-Unity reloadと通常Stopはこの経路でactive mode leaseを返しますが、process SDK sessionはuninitializeしません。Process shutdownではadmissionを閉じます。一致するNative module/registry teardownと必要なUnity GPU proofを確認した後だけ最終cleanupします。最終teardown自体を証明できた場合、通常handoff ACKは不要です。
+Unity reloadと通常Stopはこの経路でactive mode leaseを返しますが、process SDK sessionはuninitializeせず、retained primary imageも隠しません。static redrawはpersistent endpointがPause中またはlease返却後だけ動き、次leaseが再開/取得されると停止します。Process shutdownではadmissionを閉じます。一致するNative module/registry teardownと必要なUnity GPU proofを確認した後だけ最終cleanupします。process終了がSDK endpointとretained imageを解放する境界です。最終teardown自体を証明できた場合、通常handoff ACKは不要です。
 
 ## Native admissionの結果
 
@@ -99,7 +102,7 @@ flowchart TD
 
 ## Candidateと導入済みbuild
 
-2026-10-09、両sample projectをpackage commit `eb527e1ec126ec99d35e9990d8dce0119b855b4d`、Native DLL SHA-256 `A6A062343710AF2362DAF7B923A9BB98BDD5D381D896C68AE3190CA55655FBC7`でcold verificationしました。同日後刻、両sampleをpackage commit `5234b834381afd91a896714ad6d8f9dcbd9f6f95`、Native DLL SHA-256 `655FDB898CF7B9F9733A1880828B740B62FB74E0C3ECDF9D825C07794F6388CD`（208,896 bytes、51 exports）でcold verificationしました。これは各日付時点のidentityであり、その後のpackage更新後も同一という意味ではありません。現行Native artifact/sourceはWindows fake/WARP CTest 12/12件とsource reviewに成功しました。managed runtimeのEditor/Player構成、`Bridge.Editor`、focused playback-safety test sourceもcompile済みです。Unity Test Runnerは未実行です。Native testはfake/WARP resourceを使用し、official Looking Glass Bridge SDKをloadしません。
+2026-10-09、両sample projectをpackage commit `eb527e1ec126ec99d35e9990d8dce0119b855b4d`、Native DLL SHA-256 `A6A062343710AF2362DAF7B923A9BB98BDD5D381D896C68AE3190CA55655FBC7`でcold verificationしました。同日後刻、両sampleをpackage commit `5234b834381afd91a896714ad6d8f9dcbd9f6f95`、Native DLL SHA-256 `655FDB898CF7B9F9733A1880828B740B62FB74E0C3ECDF9D825C07794F6388CD`（208,896 bytes、51 exports）でcold verificationしました。これは各日付時点のidentityであり、その後のpackage更新後も同一という意味ではありません。現在のNative artifactはSHA-256 `F1B06893404D75582FF600BA733AE3C531ED0C0A7EA40E29CE56DD7A91B0A000`（214,016 bytes、51 exports）で、Windows fake/WARP CTestのfocused 6件に成功しました。このartifactのofficial sample cold-load、hardware検証、Unity Engine testは未実施です。Native testはfake/WARP resourceを使用し、official Looking Glass Bridge SDKをloadしません。
 
 ## URP実機での限定観察
 
@@ -111,7 +114,15 @@ flowchart TD
 | active Edit Preview → Play | 利用者がPlayで映像と新たな移動/Undoを確認 | 同じendpointで新generationがReady | 同日候補でURPの1 handoffを確認 |
 | active Play → Edit Preview | 最初は黒。後に映像と新たな移動/Undoが見えたと利用者が報告 | managed verification前にpreview ownerが消え、workerはIdle/error停止 | live復帰は検証できず、逆handoffは未解決 |
 
-655F artifactはURP実機で限定的に試しましたが、逆handoffは未解決です。手動のStart/Pause/CloseおよびPlay cycleでも断続的な黒画面が報告されています。関連するdiagnostic変更では最初のstop reasonを保持し、二次Core callbackを抑制します。InspectorのAdvanced sectionは初期状態で閉じています。これらのdiagnostic/UI変更は黒画面の修正を証明しません。output counterやGPU completion値はdisplay scanoutを証明しません。HDRP実機handoff、device hot-plug、物理寸法、光学画質、runtime性能は未検証です。別の日付のA6A試験でproducer readback後に映像が出た事象は、655F candidateや黒画面の原因の証拠ではありません。
+655F artifactは2026-10-09のURP実機で限定的に試し、そのrunでは逆handoffが未解決でした。手動のStart/Pause/CloseおよびPlay cycleでも断続的な黒画面が報告されました。これらは655Fの日付付き観察であり、後述するprivate static-present candidateの結果とは別です。output counterやGPU completion値はdisplay scanoutを証明しません。HDRP実機handoff、device hot-plug、物理寸法、光学画質、runtime性能は未検証です。別の日付のA6A試験でproducer readback後に映像が出た事象は、655F candidateや黒画面の原因の証拠ではありません。
+
+## Private static-present candidateによるURP比較
+
+2026-10-10、private Windows x64 candidate（DLL SHA-256 `00CEFDA953D695202F195E43F32D2C8EB260E18356F147643E441CCEE50208C2`、241,152 bytes）を、package commit `d913f9912ad2c983fcdbbdc7ed319b97d5d07354`にpinされたURP sampleへ導入しました。これは公開package releaseではなくcandidate DLLの比較です。Native focused testは6/6件passしました。Engine testは未実行、HDRP/Player検証も未実施です。
+
+利用者は4回の通常Play、最初のEdit Device Preview、Resume、Close/Start、Pause中のPreviewからPlay、Play StopからEdit Previewで、映像と新たなmove/Undoを確認しました。2回のPauseでは最後の映像が残ることを確認し、最初のPauseではscene targetを動かしても表示が追従しないことも確認しました。2回目のPauseではsceneを変更していません。通常Stop後およびPause中、producer処理のdrain後に同じ登録済みSDK primaryへ約200ms間隔（最大5Hz）でstatic-present callが行われました。同じprocess endpoint、SDK session/window、primaryを使用し、SDK create/registerの追加はありません。比較中にimage readbackやcaptureは行っていません。
+
+これは単一URP project、Unity version、D3D12構成での限定的な利用者観察です。HDRP、Player、他graphics API、光学画質、一般的な信頼性を証明しません。candidateのtestやcounterもscanoutを証明しません。上記のphysicalな記述は利用者の直接確認に限ります。公開済み655F artifactの過去の逆handoff結果は別の日付の履歴です。
 
 ## Native traceと表示確認の限界
 

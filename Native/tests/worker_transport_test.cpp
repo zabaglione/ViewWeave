@@ -65,6 +65,22 @@ static std::atomic<uint64_t> g_fakeSessionCounter{0};
 static std::atomic<uint64_t> g_lastCreatedSession{0};
 static std::atomic<uint64_t> g_lastDrawSession{0};
 static std::atomic<uintptr_t> g_lastDrawTextureIdentity{0};
+static std::atomic<uint32_t> g_lastDrawColumns{0};
+static std::atomic<uint32_t> g_lastDrawRows{0};
+static std::atomic<float> g_lastDrawAspect{0.0f};
+static std::atomic<float> g_lastDrawZoom{0.0f};
+static std::atomic<uint32_t> g_staticPresentAttempts{0};
+static std::atomic<uint32_t> g_staticPresentDraws{0};
+static std::atomic<uint64_t> g_staticPresentSession{0};
+static std::atomic<uint64_t> g_staticPresentEndpoint{0};
+static std::atomic<uint64_t> g_staticPresentGeneration{0};
+static std::atomic<uintptr_t> g_staticPresentPrimary{0};
+static std::atomic<uint32_t> g_staticPresentColumns{0};
+static std::atomic<uint32_t> g_staticPresentRows{0};
+static std::atomic<float> g_staticPresentAspect{0.0f};
+static std::atomic<float> g_staticPresentZoom{0.0f};
+static std::atomic<unsigned long> g_staticPresentThread{0};
+static std::atomic<bool> g_staticPresentFailure{false};
 static std::atomic<uint32_t> g_sessionDestroyCount{0};
 static std::atomic<uint32_t> g_visibilityCalls{0};
 static std::atomic<uint32_t> g_visibilityHideCalls{0};
@@ -144,6 +160,15 @@ static bool WaitPreviewPausePhase(void* handle, uint32_t phase, uint32_t timeout
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     } while (GetTickCount64() < deadline);
     return PreviewPausePhase(handle) == phase;
+}
+
+static bool WaitStaticPresentAttempts(uint32_t target, uint32_t timeoutMs = 2000) {
+    const ULONGLONG deadline = GetTickCount64() + timeoutMs;
+    while (GetTickCount64() < deadline) {
+        if (g_staticPresentAttempts.load(std::memory_order_acquire) >= target) return true;
+        Sleep(1);
+    }
+    return g_staticPresentAttempts.load(std::memory_order_acquire) >= target;
 }
 
 static bool WaitPreviewLeaseState(void* handle, const LkgWorkerPreviewLeaseIdentityV1& identity,
@@ -679,6 +704,23 @@ static void ResetVisibilityTestState() {
     g_visibilitySession.store(0, std::memory_order_release);
     g_visibilityFailureFor.store(-1, std::memory_order_release);
     g_lastDrawSession.store(0, std::memory_order_release);
+    g_lastDrawTextureIdentity.store(0, std::memory_order_release);
+    g_lastDrawColumns.store(0, std::memory_order_release);
+    g_lastDrawRows.store(0, std::memory_order_release);
+    g_lastDrawAspect.store(0.0f, std::memory_order_release);
+    g_lastDrawZoom.store(0.0f, std::memory_order_release);
+    g_staticPresentAttempts.store(0, std::memory_order_release);
+    g_staticPresentDraws.store(0, std::memory_order_release);
+    g_staticPresentSession.store(0, std::memory_order_release);
+    g_staticPresentEndpoint.store(0, std::memory_order_release);
+    g_staticPresentGeneration.store(0, std::memory_order_release);
+    g_staticPresentPrimary.store(0, std::memory_order_release);
+    g_staticPresentColumns.store(0, std::memory_order_release);
+    g_staticPresentRows.store(0, std::memory_order_release);
+    g_staticPresentAspect.store(0.0f, std::memory_order_release);
+    g_staticPresentZoom.store(0.0f, std::memory_order_release);
+    g_staticPresentThread.store(0, std::memory_order_release);
+    g_staticPresentFailure.store(false, std::memory_order_release);
     g_sessionDestroyCount.store(0, std::memory_order_release);
 }
 
@@ -833,6 +875,21 @@ static void TestPreviewLeaseReusesSessionAndStableSdkInput() {
         firstGeneration == firstIdentity.leaseGeneration && firstSession != 0 && firstStableInput != 0,
         "first lease owns a session and profile-sized stable SDK input");
 
+    const uint32_t attemptsBeforeFirstDraw = g_staticPresentAttempts.load(std::memory_order_acquire);
+    Check(lkg_worker_set_preview_paused(firstHandle, 1) == 0 &&
+        WaitPreviewPausePhase(firstHandle, LKG_WORKER_PREVIEW_PAUSED),
+        "first lease can drain into pause before its first successful draw");
+    Check(WaitStaticPresentAttempts(attemptsBeforeFirstDraw + 1) &&
+        g_staticPresentDraws.load(std::memory_order_acquire) == 0,
+        "static present skips SDK draw until an ordinary draw establishes reusable geometry");
+    Check(lkg_worker_set_preview_paused(firstHandle, 0) == 0 &&
+        WaitPreviewPausePhase(firstHandle, LKG_WORKER_PREVIEW_RUNNING),
+        "first lease resumes after geometry-free pause");
+    const uint32_t attemptsAfterGeometryFreeResume = g_staticPresentAttempts.load(std::memory_order_acquire);
+    Sleep(250);
+    Check(g_staticPresentAttempts.load(std::memory_order_acquire) == attemptsAfterGeometryFreeResume,
+        "static present stops immediately after resume");
+
     void* busyHandle = reinterpret_cast<void*>(static_cast<uintptr_t>(1));
     LkgWorkerPreviewLeaseIdentityV1 busyIdentity{ 0xFFFFFFFFu, 9, 77, 88 };
     Check(acquire(&busyHandle, &busyIdentity) == LKG_WORKER_PREVIEW_LEASE_RESULT_BUSY && busyHandle == nullptr &&
@@ -851,7 +908,7 @@ static void TestPreviewLeaseReusesSessionAndStableSdkInput() {
 
     auto callback = reinterpret_cast<void (*)(int, void*)>(lkg_worker_render_event_func());
     auto firstTexture = MakeTexture(DXGI_FORMAT_R8G8B8A8_UNORM, 16, 16);
-    void* draw = lkg_worker_make_draw_data(firstHandle, firstTexture.Get(), 4, 4, 1.0f, 1.0f);
+    void* draw = lkg_worker_make_draw_data(firstHandle, firstTexture.Get(), 4, 4, 0.75f, 1.25f);
     Check(draw != nullptr, "first lease accepts a profile-grid render");
     void* consumedFirstLeaseDrawCallback = draw;
     callback(0, draw);
@@ -859,11 +916,113 @@ static void TestPreviewLeaseReusesSessionAndStableSdkInput() {
     Check(g_lastDrawSession.load(std::memory_order_acquire) == firstSession &&
         g_lastDrawTextureIdentity.load(std::memory_order_acquire) == firstStableInput,
         "Bridge receives the persistent stable input rather than a transfer slot");
+
+    LkgWorkerStatus beforeStaticPause{};
+    Check(lkg_worker_poll(firstHandle, &beforeStaticPause) == 0,
+        "poll generation counters before static pause");
+    const uint32_t drawCountBeforeStaticPause = g_drawCount.load(std::memory_order_acquire);
+    const uint32_t staticCallsBeforePause = g_staticPresentAttempts.load(std::memory_order_acquire);
+    const uint32_t staticDrawsBeforePause = g_staticPresentDraws.load(std::memory_order_acquire);
+    const uint32_t visibilityCallsBeforeLogicalPause = g_visibilityCalls.load(std::memory_order_acquire);
+    const uint32_t hideCallsBeforeLogicalPause = g_visibilityHideCalls.load(std::memory_order_acquire);
+    const uint32_t showCallsBeforeLogicalPause = g_visibilityShowCalls.load(std::memory_order_acquire);
+    Check(lkg_worker_set_preview_paused(firstHandle, 1) == 0 &&
+        WaitPreviewPausePhase(firstHandle, LKG_WORKER_PREVIEW_PAUSED),
+        "persistent lease reaches logical pause after its producer work drains");
+    Check(WaitStaticPresentAttempts(staticCallsBeforePause + 1) &&
+        g_staticPresentDraws.load(std::memory_order_acquire) >= staticDrawsBeforePause + 1,
+        "drained pause re-presents the cached primary frame");
+    Check(g_staticPresentSession.load(std::memory_order_acquire) == firstSession &&
+        g_staticPresentPrimary.load(std::memory_order_acquire) == firstStableInput &&
+        g_staticPresentColumns.load(std::memory_order_acquire) == 4 &&
+        g_staticPresentRows.load(std::memory_order_acquire) == 4 &&
+        g_staticPresentAspect.load(std::memory_order_acquire) == 0.75f &&
+        g_staticPresentZoom.load(std::memory_order_acquire) == 1.25f &&
+        g_staticPresentThread.load(std::memory_order_acquire) == firstWorkerThread &&
+        g_staticPresentEndpoint.load(std::memory_order_acquire) == firstEndpoint &&
+        g_staticPresentGeneration.load(std::memory_order_acquire) == firstGeneration,
+        "static present uses the same SDK owner, endpoint, generation, primary, and last successful geometry");
+    const uint32_t staticDrawsDuringPause = g_staticPresentDraws.load(std::memory_order_acquire);
+    Sleep(250);
+    const uint32_t staticDrawsAfterThrottleWindow = g_staticPresentDraws.load(std::memory_order_acquire);
+    if (staticDrawsAfterThrottleWindow <= staticDrawsDuringPause ||
+        staticDrawsAfterThrottleWindow > staticDrawsDuringPause + 2) {
+        std::fprintf(stderr, "static present throttle counts before=%u after=%u attempts=%u phase=%u\n",
+            staticDrawsDuringPause, staticDrawsAfterThrottleWindow,
+            g_staticPresentAttempts.load(std::memory_order_acquire), PreviewPausePhase(firstHandle));
+    }
+    Check(staticDrawsAfterThrottleWindow > staticDrawsDuringPause &&
+        staticDrawsAfterThrottleWindow <= staticDrawsDuringPause + 2,
+        "paused static present is throttled to at most five calls per second");
+    LkgWorkerStatus afterStaticPause{};
+    Check(lkg_worker_poll(firstHandle, &afterStaticPause) == 0 &&
+        afterStaticPause.submitted == beforeStaticPause.submitted &&
+        afterStaticPause.completed == beforeStaticPause.completed &&
+        afterStaticPause.dropped == beforeStaticPause.dropped &&
+        g_drawCount.load(std::memory_order_acquire) == drawCountBeforeStaticPause,
+        "static present does not alter producer completion or transport counters");
+    Check(g_visibilityCalls.load(std::memory_order_acquire) == visibilityCallsBeforeLogicalPause &&
+        g_visibilityHideCalls.load(std::memory_order_acquire) == hideCallsBeforeLogicalPause &&
+        g_visibilityShowCalls.load(std::memory_order_acquire) == showCallsBeforeLogicalPause &&
+        g_visibilityState.load(std::memory_order_acquire) == 1,
+        "persistent logical pause leaves SDK visibility unchanged without a visibility call");
+    Check(lkg_worker_make_draw_data(firstHandle, firstTexture.Get(), 4, 4, 1.0f, 1.0f) == nullptr,
+        "persistent logical pause stops new render submissions");
+    uint64_t pausedEndpoint = 0;
+    uint64_t pausedGeneration = 0;
+    uint64_t pausedSession = 0;
+    uintptr_t pausedStableInput = 0;
+    Check(lkg_worker_test_get_preview_lease_resources(firstHandle, &pausedEndpoint, &pausedGeneration,
+        &pausedSession, &pausedStableInput) == 0 && pausedEndpoint == firstEndpoint &&
+        pausedGeneration == firstGeneration && pausedSession == firstSession &&
+        pausedStableInput == firstStableInput,
+        "logical pause retains the same endpoint, session, and stable SDK input pointer identity");
+    const uint32_t visibilityCallsBeforeResume = g_visibilityCalls.load(std::memory_order_acquire);
+    Check(lkg_worker_set_preview_paused(firstHandle, 0) == 0 &&
+        WaitPreviewPausePhase(firstHandle, LKG_WORKER_PREVIEW_RUNNING),
+        "persistent lease resumes logically without replacing its endpoint");
+    const uint32_t staticCallsAfterResume = g_staticPresentAttempts.load(std::memory_order_acquire);
+    Sleep(250);
+    Check(g_staticPresentAttempts.load(std::memory_order_acquire) == staticCallsAfterResume,
+        "static present stops after resume rather than replaying stale frames");
+    Check(g_visibilityCalls.load(std::memory_order_acquire) == visibilityCallsBeforeResume + 1 &&
+        g_visibilityState.load(std::memory_order_acquire) == 1 &&
+        g_visibilityHideCalls.load(std::memory_order_acquire) == hideCallsBeforeLogicalPause &&
+        g_visibilityShowCalls.load(std::memory_order_acquire) == showCallsBeforeLogicalPause,
+        "resume uses the cached visible state without an SDK visibility transition");
+    draw = lkg_worker_make_draw_data(firstHandle, firstTexture.Get(), 4, 4, 1.0f, 1.0f);
+    Check(draw != nullptr, "resumed persistent lease accepts a new draw");
+    callback(0, draw);
+    Check(WaitCompleted(firstHandle, 2, 5000) &&
+        g_lastDrawSession.load(std::memory_order_acquire) == firstSession &&
+        g_lastDrawTextureIdentity.load(std::memory_order_acquire) == firstStableInput,
+        "resumed persistent lease draws through the retained session and SDK input");
+
+    const uint32_t presentCallsBeforeFailure = g_staticPresentAttempts.load(std::memory_order_acquire);
+    g_staticPresentFailure.store(true, std::memory_order_release);
+    Check(lkg_worker_set_preview_paused(firstHandle, 1) == 0 &&
+        WaitPreviewPausePhase(firstHandle, LKG_WORKER_PREVIEW_PAUSED) &&
+        WaitStaticPresentAttempts(presentCallsBeforeFailure + 1),
+        "static-present failure probe reaches one drained pause attempt");
+    const uint32_t attemptsAfterStaticFailure = g_staticPresentAttempts.load(std::memory_order_acquire);
+    Sleep(450);
+    LkgWorkerStatus afterStaticFailure{};
+    Check(g_staticPresentAttempts.load(std::memory_order_acquire) == attemptsAfterStaticFailure &&
+        PreviewPausePhase(firstHandle) == LKG_WORKER_PREVIEW_PAUSED &&
+        lkg_worker_poll(firstHandle, &afterStaticFailure) == 0 && afterStaticFailure.state == LKG_WORKER_READY,
+        "one static-present failure suppresses retries without faulting pause or worker state");
+    g_staticPresentFailure.store(false, std::memory_order_release);
+    Check(lkg_worker_set_preview_paused(firstHandle, 0) == 0 &&
+        WaitPreviewPausePhase(firstHandle, LKG_WORKER_PREVIEW_RUNNING),
+        "lease resumes after a suppressed static-present failure");
+
     Check(lkg_worker_make_draw_data(firstHandle, firstTexture.Get(), 4, 3, 1.0f, 1.0f) == nullptr,
         "incompatible source grid is rejected without remapping");
 
     LkgWorkerStatus beforeReturn{};
     Check(lkg_worker_poll(firstHandle, &beforeReturn) == 0, "poll first lease before return");
+    const uint32_t staticCallsBeforeReturn = g_staticPresentAttempts.load(std::memory_order_acquire);
+    const uint32_t visibilityCallsBeforeLeaseReturn = g_visibilityCalls.load(std::memory_order_acquire);
     void* delayedDraw = lkg_worker_make_draw_data(firstHandle, firstTexture.Get(), 4, 4, 1.0f, 1.0f);
     Check(delayedDraw != nullptr, "unsubmitted draw token created before lease return");
 
@@ -884,9 +1043,16 @@ static void TestPreviewLeaseReusesSessionAndStableSdkInput() {
         "late draw callback is dropped and cannot submit after return begins");
     Check(lkg_worker_pending_count() == 1, "returning lease is counted as outstanding ownership");
     Check(lkg_worker_ack_preview_lease_return_v1(firstHandle, &firstIdentity) == LKG_WORKER_PREVIEW_LEASE_RESULT_BUSY,
-        "return cannot be acknowledged before native hide and drain proof");
+        "return cannot be acknowledged before native drain and producer return proof");
     Check(WaitPreviewLeaseState(firstHandle, firstIdentity, LKG_WORKER_PREVIEW_LEASE_RETURNED_PROVEN),
-        "lease return is proven after hide and producer drain");
+        "lease return is proven after producer drain without changing persistent visibility");
+    Check(WaitStaticPresentAttempts(staticCallsBeforeReturn + 1),
+        "returned-proven parked endpoint immediately re-presents its retained primary");
+    Check(g_visibilityHideCalls.load(std::memory_order_acquire) == hideCallsBeforeLogicalPause &&
+        g_visibilityShowCalls.load(std::memory_order_acquire) == showCallsBeforeLogicalPause &&
+        g_visibilityCalls.load(std::memory_order_acquire) == visibilityCallsBeforeLeaseReturn &&
+        g_visibilityState.load(std::memory_order_acquire) == 1 && g_sessionDestroyCount.load() == 0,
+        "persistent lease return retains visible SDK session and primary resources");
     LkgWorkerPreviewLeaseStatusV1 firstReturned{};
     Check(lkg_worker_get_preview_lease_status_v1(firstHandle, &firstIdentity, &firstReturned) == 0 &&
         firstReturned.lastResult == 0 && firstReturned.workerStatus.state == LKG_WORKER_CLOSED &&
@@ -1190,6 +1356,7 @@ static void TestPreviewLeaseReusesSessionAndStableSdkInput() {
     Check(lkg_worker_close(finalMetadata) == 0 && WaitForMetadataClose(finalMetadata),
         "final shutdown metadata proxy is closed before endpoint teardown");
 
+    const uint32_t staticCallsBeforeFinalShutdown = g_staticPresentAttempts.load(std::memory_order_acquire);
     Check(lkg_worker_request_final_shutdown() == 0, "explicit final shutdown closes active lease and endpoint");
     LkgWorkerFinalShutdownStatusV1 finalStatus{};
     finalStatus.structSize = sizeof(finalStatus);
@@ -1206,6 +1373,9 @@ static void TestPreviewLeaseReusesSessionAndStableSdkInput() {
     Check(lkg_worker_pending_count() == 0 && g_hostInitializeCount.load() == 1 &&
         g_hostUninitializeCount.load() == 1 && g_sessionDestroyCount.load() == 1,
         "final shutdown uninitializes once and closes the single persistent session once");
+    Sleep(250);
+    Check(g_staticPresentAttempts.load(std::memory_order_acquire) == staticCallsBeforeFinalShutdown,
+        "final shutdown stops retained static presents");
 }
 
 static void TestTransferResetResize() {
@@ -1560,9 +1730,10 @@ int32_t lkg_bridge_set_session_visible(uint64_t session, uint32_t visible) {
     g_visibilityDrawCount.store(g_drawCount.load(std::memory_order_acquire), std::memory_order_release);
     int32_t expectedFailure = static_cast<int32_t>(visible);
     if (g_visibilityFailureFor.compare_exchange_strong(expectedFailure, -1, std::memory_order_acq_rel)) return -5;
+    const uint32_t previousVisibility = g_visibilityState.exchange(visible, std::memory_order_acq_rel);
+    if (previousVisibility == visible) return 0;
     if (visible) g_visibilityShowCalls.fetch_add(1, std::memory_order_acq_rel);
     else g_visibilityHideCalls.fetch_add(1, std::memory_order_acq_rel);
-    g_visibilityState.store(visible, std::memory_order_release);
     return 0;
 }
 void* lkg_bridge_render_event_func(void) {
@@ -1572,15 +1743,37 @@ void* lkg_bridge_render_event_func(void) {
 }
 void* lkg_bridge_make_draw_data(uint64_t, void*, uint32_t, uint32_t, float, float) { return nullptr; }
 void* lkg_bridge_make_close_data(uint64_t session) { return new uint64_t(session); }
-int32_t lkg_bridge_smoke_draw(uint64_t session, void* texture, uint32_t, uint32_t, float, float) {
+int32_t lkg_bridge_smoke_draw(uint64_t session, void* texture, uint32_t columns, uint32_t rows, float aspect, float zoom) {
     if (g_drawThrow.load()) throw std::runtime_error("stub draw exception");
     if (g_drawFailure.load()) return -202;
     VerifyWorkerTexture(texture);
     g_lastDrawSession.store(session, std::memory_order_release);
     g_lastDrawTextureIdentity.store(reinterpret_cast<uintptr_t>(texture), std::memory_order_release);
+    g_lastDrawColumns.store(columns, std::memory_order_release);
+    g_lastDrawRows.store(rows, std::memory_order_release);
+    g_lastDrawAspect.store(aspect, std::memory_order_release);
+    g_lastDrawZoom.store(zoom, std::memory_order_release);
     g_drawEntered.store(true, std::memory_order_release);
     while (g_holdDraw.load(std::memory_order_acquire)) Sleep(1);
     ++g_drawCount;
+    return 0;
+}
+
+int32_t lkg_bridge_redraw_retained_session(uint64_t session, uint64_t endpointId, uint64_t generation) {
+    g_staticPresentAttempts.fetch_add(1, std::memory_order_acq_rel);
+    g_staticPresentSession.store(session, std::memory_order_release);
+    g_staticPresentEndpoint.store(endpointId, std::memory_order_release);
+    g_staticPresentGeneration.store(generation, std::memory_order_release);
+    g_staticPresentPrimary.store(g_lastDrawTextureIdentity.load(std::memory_order_acquire), std::memory_order_release);
+    g_staticPresentColumns.store(g_lastDrawColumns.load(std::memory_order_acquire), std::memory_order_release);
+    g_staticPresentRows.store(g_lastDrawRows.load(std::memory_order_acquire), std::memory_order_release);
+    g_staticPresentAspect.store(g_lastDrawAspect.load(std::memory_order_acquire), std::memory_order_release);
+    g_staticPresentZoom.store(g_lastDrawZoom.load(std::memory_order_acquire), std::memory_order_release);
+    g_staticPresentThread.store(GetCurrentThreadId(), std::memory_order_release);
+    if (g_drawCount.load(std::memory_order_acquire) == 0 || session != g_lastDrawSession.load(std::memory_order_acquire))
+        return 1;
+    if (g_staticPresentFailure.exchange(false, std::memory_order_acq_rel)) return -2;
+    g_staticPresentDraws.fetch_add(1, std::memory_order_acq_rel);
     return 0;
 }
 

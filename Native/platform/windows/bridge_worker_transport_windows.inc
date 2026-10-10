@@ -34,6 +34,7 @@ void lkg_bridge_worker_release_claim();
 void lkg_bridge_worker_enter();
 void lkg_bridge_worker_leave();
 int32_t lkg_bridge_set_session_visible(uint64_t session, uint32_t visible);
+int32_t lkg_bridge_redraw_retained_session(uint64_t session, uint64_t endpointId, uint64_t generation);
 extern "C" int32_t lkg_bridge_sdk_shutdown_faulted(void);
 extern "C" int32_t lkg_bridge_sdk_shutdown_incomplete(void);
 extern "C" int32_t lkg_bridge_close_sdk_admission(void);
@@ -73,6 +74,9 @@ struct WorkerContext {
     LkgWorkerStatus status{};
     uint32_t previewPausePhase = LKG_WORKER_PREVIEW_RUNNING;
     bool previewPauseDesired = false;
+    uint64_t retainedPresentLastTick = 0;
+    uint64_t retainedPresentGeneration = 0;
+    bool retainedPresentSuppressed = false;
     LkgWorkerPhysicalDisplayInfoV1 physicalDisplay{ static_cast<uint32_t>(sizeof(LkgWorkerPhysicalDisplayInfoV1)), 1, 0, 0, 0.0f, 0 };
     std::atomic<bool> closeRequested{false};
     std::atomic<bool> finished{false};
@@ -516,6 +520,94 @@ static void TraceWorker(const char* stage) {
                  stage ? stage : "unknown",
                  static_cast<unsigned long long>(GetTickCount64()));
     std::fclose(file);
+}
+
+static void TracePersistentVisibilityRetained(uint64_t endpointId, uint64_t generation,
+    uint64_t sessionId, const char* operation) {
+    const char* path = std::getenv("LKG_NATIVE_TRACE");
+    if (!path || !*path) return;
+    FILE* file = nullptr;
+    if (fopen_s(&file, path, "a") != 0 || !file) return;
+    std::fprintf(file,
+                 "worker pid=%lu tid=%lu stage=persistent-visibility-retained operation=%s endpoint_id=%llu lease_generation=%llu session_id=%llu sdk_visibility_changed=0 sdk_hide_called=0 logical_transition=1 tick_ms=%llu\n",
+                 static_cast<unsigned long>(GetCurrentProcessId()),
+                 static_cast<unsigned long>(GetCurrentThreadId()),
+                 operation ? operation : "unknown",
+                 static_cast<unsigned long long>(endpointId),
+                 static_cast<unsigned long long>(generation),
+                 static_cast<unsigned long long>(sessionId),
+                 static_cast<unsigned long long>(GetTickCount64()));
+    std::fclose(file);
+}
+
+static bool RetainedPresentDrainedLocked(const WorkerContext& context) {
+    if (context.slotsInitializing || context.pendingTokens != 0 || context.jobCount != 0 || context.inFlightJob)
+        return false;
+    for (const WorkerContext::Slot& slot : context.slots) {
+        if (slot.inUse || slot.consumerCopyPending || slot.quarantined || slot.unknownSubmission) return false;
+    }
+    return true;
+}
+
+static void TryRetainedStaticPresent(WorkerContext& context, uint64_t sessionId) {
+    uint64_t endpointId = 0;
+    uint64_t generation = 0;
+    const uint64_t now = GetTickCount64();
+    {
+        std::lock_guard<std::mutex> lock(context.mutex);
+        const bool pausedLease = context.previewLeaseEndpoint && context.leaseActive &&
+            context.previewPausePhase == LKG_WORKER_PREVIEW_PAUSED && context.previewPauseDesired;
+        const bool returnedLease = context.previewLeaseEndpoint && context.leaseReturnProven &&
+            !context.leaseActive && !context.leaseAcquirePending;
+        if (!context.previewLeaseEndpoint || finalShutdownAdmissionClosed.load(std::memory_order_acquire) ||
+            context.closeRequested.load(std::memory_order_acquire) ||
+            context.leaseFinalCloseRequested.load(std::memory_order_acquire) ||
+            context.leaseAcquirePending || (!pausedLease && !returnedLease) ||
+            !RetainedPresentDrainedLocked(context)) return;
+        endpointId = context.leaseEndpointId;
+        generation = context.leaseGeneration;
+        if (!endpointId || !generation) return;
+        if (context.retainedPresentGeneration != generation) {
+            context.retainedPresentGeneration = generation;
+            context.retainedPresentLastTick = 0;
+            context.retainedPresentSuppressed = false;
+        }
+        if (context.retainedPresentSuppressed) return;
+        if (context.retainedPresentLastTick && now - context.retainedPresentLastTick < 200) return;
+        context.retainedPresentLastTick = now;
+    }
+
+    int32_t result = -1;
+    try { result = lkg_bridge_redraw_retained_session(sessionId, endpointId, generation); }
+    catch (...) { result = -1; }
+    if (result >= 0) return;
+
+    bool reportFailure = false;
+    {
+        std::lock_guard<std::mutex> lock(context.mutex);
+        if (context.leaseEndpointId == endpointId && context.leaseGeneration == generation &&
+            !context.retainedPresentSuppressed) {
+            context.retainedPresentSuppressed = true;
+            reportFailure = true;
+        }
+    }
+    if (reportFailure) {
+        const char* path = std::getenv("LKG_NATIVE_TRACE");
+        if (path && *path) {
+            FILE* file = nullptr;
+            if (fopen_s(&file, path, "a") == 0 && file) {
+                std::fprintf(file,
+                    "worker pid=%lu tid=%lu stage=static-present-suppressed endpoint_id=%llu lease_generation=%llu session_id=%llu result=%d tick_ms=%llu\n",
+                    static_cast<unsigned long>(GetCurrentProcessId()),
+                    static_cast<unsigned long>(GetCurrentThreadId()),
+                    static_cast<unsigned long long>(endpointId),
+                    static_cast<unsigned long long>(generation),
+                    static_cast<unsigned long long>(sessionId), result,
+                    static_cast<unsigned long long>(GetTickCount64()));
+                std::fclose(file);
+            }
+        }
+    }
 }
 
 static bool NativeTraceEnabled() {
@@ -1708,7 +1800,11 @@ static void RunWorker(WorkerContext* context, WorkerHost* host) {
             }
             if (!closing && visibilityRequest == UINT32_MAX) {
                 if (context->previewPausePhase == LKG_WORKER_PREVIEW_PAUSED) {
-                    if (context->previewPauseDesired) continue;
+                    if (context->previewPauseDesired) {
+                        lock.unlock();
+                        TryRetainedStaticPresent(*context, session);
+                        continue;
+                    }
                     context->previewPausePhase = LKG_WORKER_PREVIEW_RESUMING;
                     visibilityRequest = 1;
                 } else if (context->previewPausePhase == LKG_WORKER_PREVIEW_RESUMING) {
@@ -1726,12 +1822,29 @@ static void RunWorker(WorkerContext* context, WorkerHost* host) {
                 }
             }
             if (visibilityRequest != UINT32_MAX) {
+                const bool retainPersistentVisibility = context->previewLeaseEndpoint && visibilityRequest == 0;
+                const uint64_t visibilityEndpointId = context->leaseEndpointId;
+                const uint64_t visibilityGeneration = context->leaseGeneration;
+                const uint64_t visibilitySessionId = session;
+                const char* retainedOperation = returnLeaseNow ? "lease-return" : "pause";
                 lock.unlock();
                 int32_t visibleResult = -1;
-                try { visibleResult = lkg_bridge_set_session_visible(session, visibilityRequest); }
-                catch (...) { visibleResult = -1; }
                 bool visibilityFailed = false;
-                {
+                if (retainPersistentVisibility) {
+                    TracePersistentVisibilityRetained(visibilityEndpointId, visibilityGeneration,
+                        visibilitySessionId, retainedOperation);
+                    std::lock_guard<std::mutex> stateLock(context->mutex);
+                    context->previewPausePhase = context->previewPauseDesired &&
+                        !context->closeRequested.load(std::memory_order_acquire)
+                        ? LKG_WORKER_PREVIEW_PAUSED : LKG_WORKER_PREVIEW_RESUMING;
+                    if (!returnLeaseNow) {
+                        context->retainedPresentLastTick = 0;
+                        context->retainedPresentSuppressed = false;
+                    }
+                    context->condition.notify_all();
+                } else {
+                    try { visibleResult = lkg_bridge_set_session_visible(session, visibilityRequest); }
+                    catch (...) { visibleResult = -1; }
                     std::lock_guard<std::mutex> stateLock(context->mutex);
                     if (visibleResult != 0) {
                         context->previewPausePhase = LKG_WORKER_PREVIEW_FAULTED;
@@ -1744,6 +1857,10 @@ static void RunWorker(WorkerContext* context, WorkerHost* host) {
                         context->previewPausePhase = context->previewPauseDesired &&
                             !context->closeRequested.load(std::memory_order_acquire)
                             ? LKG_WORKER_PREVIEW_PAUSING : LKG_WORKER_PREVIEW_RUNNING;
+                        if (visibilityRequest != 0 && context->previewLeaseEndpoint) {
+                            context->retainedPresentLastTick = 0;
+                            context->retainedPresentSuppressed = false;
+                        }
                     }
                     context->condition.notify_all();
                 }
@@ -1802,6 +1919,7 @@ static void RunWorker(WorkerContext* context, WorkerHost* host) {
                         }
                     }
                     TraceWorker("lease-return-proven");
+                    TryRetainedStaticPresent(*context, session);
 
                     IUnknown* nextProducer = nullptr;
                     bool finalClose = false;
@@ -1809,7 +1927,7 @@ static void RunWorker(WorkerContext* context, WorkerHost* host) {
                         uint64_t parkedRefreshGeneration = 0;
                         {
                             std::unique_lock<std::mutex> stateLock(context->mutex);
-                            context->condition.wait(stateLock, [&] {
+                            context->condition.wait_for(stateLock, std::chrono::milliseconds(10), [&] {
                                 return context->displayRefreshPending || context->leaseAcquirePending ||
                                     context->leaseFinalCloseRequested.load(std::memory_order_acquire) ||
                                     context->closeRequested.load(std::memory_order_acquire);
@@ -1826,6 +1944,8 @@ static void RunWorker(WorkerContext* context, WorkerHost* host) {
                                 break;
                             }
                         }
+                        if (!finalClose && parkedRefreshGeneration == 0 && !nextProducer)
+                            TryRetainedStaticPresent(*context, session);
                         if (finalClose) break;
                         if (parkedRefreshGeneration != 0) {
                             RefreshDisplaySnapshot(*context, parkedRefreshGeneration);
@@ -1858,9 +1978,15 @@ static void RunWorker(WorkerContext* context, WorkerHost* host) {
                     }
                     TraceWorker("lease-resumed");
                 }
+                if (!returnLeaseNow && retainPersistentVisibility)
+                    TryRetainedStaticPresent(*context, session);
                 continue;
             }
-            if (!closing && context->previewPausePhase == LKG_WORKER_PREVIEW_PAUSED) continue;
+            if (!closing && context->previewPausePhase == LKG_WORKER_PREVIEW_PAUSED) {
+                lock.unlock();
+                TryRetainedStaticPresent(*context, session);
+                continue;
+            }
             if (!PopJob(*context, job)) continue;
             context->inFlightJob = true;
             context->inFlightSlot = job.slot;

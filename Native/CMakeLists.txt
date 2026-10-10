@@ -14,6 +14,11 @@ endif()
 option(LKG_TRANSPORT_TESTS_ONLY "Build only the stubbed worker transport test" OFF)
 option(LKG_D3D12_SHARED_PROBE "Build the independent D3D12 to D3D11 shared resource probe" OFF)
 
+if (WIN32)
+  set_source_files_properties(bridge_worker_transport.cpp PROPERTIES
+    OBJECT_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/platform/windows/bridge_worker_transport_windows.inc")
+endif()
+
 if (NOT LKG_TRANSPORT_TESTS_ONLY)
   if (WIN32)
     add_library(lookingglass_bridge_shim SHARED bridge_shim.cpp bridge_worker_transport.cpp bridge_worker_common.cpp)
@@ -185,6 +190,15 @@ if (WIN32 AND BUILD_TESTING)
   add_test(NAME lookingglass_worker_preview_lease_test
     COMMAND lookingglass_worker_transport_test --preview-lease-only)
   set_tests_properties(lookingglass_worker_preview_lease_test PROPERTIES TIMEOUT 30)
+  add_executable(lookingglass_bridge_static_present_test tests/bridge_static_present_test.cpp)
+  target_compile_features(lookingglass_bridge_static_present_test PRIVATE cxx_std_17)
+  target_include_directories(lookingglass_bridge_static_present_test PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}"
+    "${UNITY_PLUGIN_API_DIR}")
+  target_compile_definitions(lookingglass_bridge_static_present_test PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
+  target_link_libraries(lookingglass_bridge_static_present_test PRIVATE d3d11 dxgi user32)
+  add_test(NAME lookingglass_bridge_static_present_test COMMAND lookingglass_bridge_static_present_test)
+  set_tests_properties(lookingglass_bridge_static_present_test PROPERTIES TIMEOUT 10)
   lkg_add_stable_sdk_input_test(lookingglass_stable_sdk_input_d3d11_test)
 
   if (NOT LKG_TRANSPORT_TESTS_ONLY)
