@@ -72,6 +72,137 @@ namespace ViewWeave.Editor
             return TrySetEffectiveFocusDistance(renderer, distance);
         }
 
+        public static bool TryCalculateFitToBounds(Vector3 cameraPosition, Quaternion cameraRotation, Bounds worldBounds,
+            float aspect, float nearClip, float farClip, out float verticalFieldOfView, out float focusDistance, out string reason)
+        {
+            verticalFieldOfView = 0f;
+            focusDistance = 0f;
+            reason = "The target bounds cannot be fitted to this camera.";
+            float rotationMagnitude = cameraRotation.x * cameraRotation.x + cameraRotation.y * cameraRotation.y +
+                                      cameraRotation.z * cameraRotation.z + cameraRotation.w * cameraRotation.w;
+            if (!IsFinite(cameraPosition) || !IsFinite(cameraRotation) || !IsFinite(rotationMagnitude) || rotationMagnitude < 0.000001f ||
+                !IsFinite(worldBounds.center) || !IsFinite(worldBounds.extents) || worldBounds.extents.x < 0f || worldBounds.extents.y < 0f || worldBounds.extents.z < 0f ||
+                !IsFinite(aspect) || aspect <= 0f || !IsFinite(nearClip) || !IsFinite(farClip) || nearClip <= 0f || farClip <= nearClip)
+            {
+                reason = "Camera framing, target bounds, aspect, or clip planes are invalid.";
+                return false;
+            }
+
+            Quaternion inverseRotation = Quaternion.Inverse(cameraRotation);
+            Vector3 extents = worldBounds.extents;
+            float maxTangent = 0f;
+            for (int corner = 0; corner < 8; ++corner)
+            {
+                Vector3 worldCorner = worldBounds.center + new Vector3(
+                    (corner & 1) == 0 ? -extents.x : extents.x,
+                    (corner & 2) == 0 ? -extents.y : extents.y,
+                    (corner & 4) == 0 ? -extents.z : extents.z);
+                Vector3 localCorner = inverseRotation * (worldCorner - cameraPosition);
+                if (!IsFinite(localCorner) || localCorner.z <= nearClip || localCorner.z >= farClip)
+                {
+                    reason = "Every target bounds corner must be in front of and between the source Camera clip planes.";
+                    return false;
+                }
+
+                float tangent = Mathf.Max(Mathf.Abs(localCorner.y) / localCorner.z,
+                    Mathf.Abs(localCorner.x) / (localCorner.z * aspect));
+                if (!IsFinite(tangent))
+                {
+                    reason = "The target bounds produce an invalid field of view.";
+                    return false;
+                }
+                maxTangent = Mathf.Max(maxTangent, tangent);
+            }
+
+            focusDistance = Vector3.Dot(worldBounds.center - cameraPosition, cameraRotation * Vector3.forward);
+            verticalFieldOfView = 2f * Mathf.Atan(1.1f * maxTangent) * Mathf.Rad2Deg;
+            if (!IsFinite(focusDistance) || focusDistance <= MinimumFocusDistance || !IsFinite(verticalFieldOfView) ||
+                verticalFieldOfView <= 0f || verticalFieldOfView >= 179f)
+            {
+                verticalFieldOfView = 0f;
+                focusDistance = 0f;
+                reason = "The target bounds do not produce a valid focus distance and field of view.";
+                return false;
+            }
+
+            reason = string.Empty;
+            return true;
+        }
+
+        public static bool TryFitViewToTarget(QuiltRenderer renderer, UnityEngine.Object target,
+            out float verticalFieldOfView, out float focusDistance, out string reason)
+        {
+            verticalFieldOfView = 0f;
+            focusDistance = 0f;
+            if (renderer == null || renderer.physicalFraming != null && renderer.physicalFraming.enabled)
+            {
+                reason = "Turn off Use Physical 1:1 Framing before fitting the view to a target.";
+                return false;
+            }
+            if (!TryGetSceneObjectBounds(renderer, target, out Bounds bounds, out bool hasBounds, out reason)) return false;
+            if (!hasBounds)
+            {
+                reason = "The target needs an enabled Renderer or Collider in its hierarchy to fit the view.";
+                return false;
+            }
+            if (!TryGetEditableFramingCamera(renderer, out Camera framingCamera))
+            {
+                reason = "The effective framing Camera is unavailable or invalid.";
+                return false;
+            }
+            if (framingCamera.orthographic || renderer.sourceCamera.orthographic)
+            {
+                reason = "Fit View To Target requires a perspective Camera.";
+                return false;
+            }
+            if (!QuiltDisplaySettingsResolver.TryResolve(renderer, out QuiltSettings effectiveSettings, out _, out string displayError))
+            {
+                reason = "The effective display settings are invalid: " + displayError;
+                return false;
+            }
+            return TryCalculateFitToBounds(framingCamera.transform.position, framingCamera.transform.rotation, bounds,
+                effectiveSettings.viewAspect, renderer.sourceCamera.nearClipPlane, renderer.sourceCamera.farClipPlane,
+                out verticalFieldOfView, out focusDistance, out reason);
+        }
+
+        public static bool TryApplyFitViewToTarget(QuiltRenderer renderer, UnityEngine.Object target,
+            out float previousFieldOfView, out float verticalFieldOfView, out float focusDistance, out string reason)
+        {
+            previousFieldOfView = 0f;
+            verticalFieldOfView = 0f;
+            focusDistance = 0f;
+            if (!TryFitViewToTarget(renderer, target, out verticalFieldOfView, out focusDistance, out reason)) return false;
+            if (!renderer.TryGetFraming(out QuiltCameraFraming current))
+            {
+                reason = "The current camera framing is unavailable.";
+                return false;
+            }
+            previousFieldOfView = current.VerticalFieldOfView;
+            QuiltCameraFraming candidate = new QuiltCameraFraming(verticalFieldOfView, focusDistance, false,
+                current.ApertureWidthMillimeters, current.ApertureHeightMillimeters, current.UnitsPerMeter);
+            if (!renderer.TryCheckMutation(new QuiltRendererMutationRequest(candidate), out reason) ||
+                !renderer.TryValidateFraming(candidate, out reason)) return false;
+
+            Camera reference = renderer.referenceCamera != null && renderer.followReferenceFieldOfView ? renderer.referenceCamera : null;
+            const string undoName = "Fit ViewWeave Camera To Target";
+            Undo.IncrementCurrentGroup();
+            int undoGroup = Undo.GetCurrentGroup();
+            Undo.SetCurrentGroupName(undoName);
+            Undo.RecordObject(renderer, undoName);
+            if (reference != null) Undo.RecordObject(reference, undoName);
+            if (!renderer.TrySetFraming(candidate, out reason)) return false;
+            Undo.CollapseUndoOperations(undoGroup);
+            EditorUtility.SetDirty(renderer);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(renderer);
+            if (reference != null)
+            {
+                EditorUtility.SetDirty(reference);
+                PrefabUtility.RecordPrefabInstancePropertyModifications(reference);
+            }
+            reason = string.Empty;
+            return true;
+        }
+
         public static bool TrySetEffectiveFocusDistance(QuiltRenderer renderer, float distance)
         {
             if (renderer == null || !IsFinite(distance) || distance <= MinimumFocusDistance ||
@@ -140,6 +271,24 @@ namespace ViewWeave.Editor
         public static bool TryGetSceneObjectCenter(QuiltRenderer renderer, UnityEngine.Object target, out Vector3 center, out string reason)
         {
             center = Vector3.zero;
+            if (!TryGetSceneObjectBounds(renderer, target, out Bounds bounds, out bool hasBounds, out reason)) return false;
+            GameObject selected = target as GameObject;
+            if (selected == null && target is Component component) selected = component.gameObject;
+            center = hasBounds ? bounds.center : selected.transform.position;
+            if (!IsFinite(center))
+            {
+                reason = "The selected object center is invalid.";
+                return false;
+            }
+            reason = string.Empty;
+            return true;
+        }
+
+        public static bool TryGetSceneObjectBounds(QuiltRenderer renderer, UnityEngine.Object target,
+            out Bounds bounds, out bool hasBounds, out string reason)
+        {
+            bounds = default;
+            hasBounds = false;
             reason = "Select one scene object before setting the focus distance.";
             GameObject selected = target as GameObject;
             if (selected == null && target is Component component) selected = component.gameObject;
@@ -179,8 +328,6 @@ namespace ViewWeave.Editor
             }
 
             Renderer[] renderers = selected.GetComponentsInChildren<Renderer>();
-            bool hasBounds = false;
-            Bounds bounds = default;
             for (int i = 0; i < renderers.Length; ++i)
             {
                 if (renderers[i] == null || !renderers[i].enabled) continue;
@@ -197,10 +344,9 @@ namespace ViewWeave.Editor
                     else bounds.Encapsulate(colliders[i].bounds);
                 }
             }
-            center = hasBounds ? bounds.center : selected.transform.position;
-            if (!IsFinite(center))
+            if (hasBounds && (!IsFinite(bounds.center) || !IsFinite(bounds.extents)))
             {
-                reason = "The selected object center is invalid.";
+                reason = "The selected object bounds are invalid.";
                 return false;
             }
             reason = string.Empty;

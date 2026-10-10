@@ -73,6 +73,9 @@ namespace ViewWeave.Editor
         Button stopPreviewButton;
         Button closePreviewButton;
         Button setFocusButton;
+        Button fitViewButton;
+        HelpBox focusModeHelp;
+        HelpBox fitViewHelp;
         Button horizontalOrbitButton;
         Button verticalOrbitButton;
         Toggle autoRenderToggle;
@@ -188,6 +191,7 @@ namespace ViewWeave.Editor
         void BuildCameraSection()
         {
             Foldout foldout = AddFoldout("Camera & Focus", true);
+            foldout.name = "cameraAndFocus";
             referenceCameraField = new ObjectField("Reference Camera")
             {
                 name = "referenceCamera",
@@ -218,17 +222,20 @@ namespace ViewWeave.Editor
             physicalFocusError = new HelpBox(string.Empty, HelpBoxMessageType.Error) { name = "physicalFocusError" };
             physicalFocusError.style.whiteSpace = WhiteSpace.Normal;
             focusDistanceContainer.Add(physicalFocusError);
-            var physicalFoldout = new Foldout { text = "Physical Display Framing", value = false };
-            physicalFoldout.style.marginTop = 4;
-            physicalFoldout.style.marginBottom = 4;
-            foldout.Add(physicalFoldout);
             physicalFramingEnabledToggle = new Toggle("Use Physical 1:1 Framing")
             {
                 name = "physicalFramingEnabled",
                 value = renderer != null && renderer.physicalFraming != null && renderer.physicalFraming.enabled
             };
             physicalFramingEnabledToggle.RegisterValueChangedCallback(evt => SetPhysicalFramingEnabled(evt.newValue));
-            physicalFoldout.Add(physicalFramingEnabledToggle);
+            foldout.Add(physicalFramingEnabledToggle);
+            var physicalToggleHelp = new HelpBox("Use the display's physical size for 1:1 zero-parallax framing. Use Connected Display Size below to read calibration from Bridge and enable this setting.", HelpBoxMessageType.Info);
+            physicalToggleHelp.style.whiteSpace = WhiteSpace.Normal;
+            foldout.Add(physicalToggleHelp);
+            var physicalFoldout = new Foldout { text = "Physical Display Framing", value = false };
+            physicalFoldout.style.marginTop = 4;
+            physicalFoldout.style.marginBottom = 4;
+            foldout.Add(physicalFoldout);
             apertureWidthInput = new FloatField("Visible Aperture Width (mm)") { name = "apertureWidthMillimeters" };
             apertureHeightInput = new FloatField("Visible Aperture Height (mm)") { name = "apertureHeightMillimeters" };
             unitsPerMeterInput = new FloatField("Unity Units per Meter") { name = "unitsPerMeter" };
@@ -273,6 +280,17 @@ namespace ViewWeave.Editor
             var targetButtons = new VisualElement { style = { flexDirection = FlexDirection.Column } };
             setFocusButton = new Button(SetFocusFromTarget) { text = "Set Focus From Target Center" };
             targetButtons.Add(setFocusButton);
+            focusModeHelp = new HelpBox(string.Empty, HelpBoxMessageType.Info) { name = "focusModeHelp" };
+            focusModeHelp.style.whiteSpace = WhiteSpace.Normal;
+            targetButtons.Add(focusModeHelp);
+            fitViewButton = new Button(FitViewToTarget) { name = "fitViewToTarget", text = "Fit View To Target" };
+            targetButtons.Add(fitViewButton);
+            fitViewHelp = new HelpBox("Fits the target bounds inside the current view with 10% margin while keeping the camera pose and target scale unchanged. Turn off Use Physical 1:1 Framing first.", HelpBoxMessageType.Info)
+            {
+                name = "fitViewHelp"
+            };
+            fitViewHelp.style.whiteSpace = WhiteSpace.Normal;
+            targetButtons.Add(fitViewHelp);
             foldout.Add(targetButtons);
 
             horizontalOrbitField = new FloatField("Horizontal Orbit (degrees)") { value = 0f };
@@ -1003,12 +1021,27 @@ namespace ViewWeave.Editor
 
             bool canFrame = renderer.TryCheckMutation(QuiltRendererMutationKind.Framing, out string framingReason);
             bool referenceEditable = renderer.referenceCamera == null || TryValidateReferenceCamera(renderer.referenceCamera, out _);
+            bool physicalEnabled = renderer.physicalFraming != null && renderer.physicalFraming.enabled;
             focusDistanceInput?.SetEnabled(canFrame && referenceEditable && (renderer.physicalFraming == null || !renderer.physicalFraming.enabled));
             fieldOfViewInput?.SetEnabled(canFrame && referenceEditable);
             apertureWidthInput?.SetEnabled(canFrame);
             apertureHeightInput?.SetEnabled(canFrame);
             unitsPerMeterInput?.SetEnabled(canFrame);
             physicalFramingEnabledToggle?.SetEnabled(canFrame);
+            if (setFocusButton != null)
+            {
+                setFocusButton.text = physicalEnabled ? "Set Physical Focus From Target Center" : "Set Focus From Target Center";
+                setFocusButton.SetEnabled(CanAuthor() && canFrame && referenceEditable);
+            }
+            if (focusModeHelp != null)
+                focusModeHelp.text = physicalEnabled
+                    ? "Physical 1:1 framing keeps aperture size and units unchanged; this action adjusts vertical FOV to place the target center on the zero-parallax plane."
+                    : "Sets Focus Distance to the target center's forward distance and keeps the current vertical FOV.";
+            fitViewButton?.SetEnabled(CanAuthor() && canFrame && referenceEditable && !physicalEnabled);
+            if (fitViewHelp != null)
+                fitViewHelp.text = physicalEnabled
+                    ? "Turn off Use Physical 1:1 Framing above to enable Fit View To Target."
+                    : "Fits the target bounds inside the current view with 10% margin while keeping the camera pose and target scale unchanged.";
             followReferenceFieldOfViewField?.SetEnabled(referenceEditable && renderer.TryCheckMutation(QuiltRendererMutationKind.Structural, out _));
             viewRenderModeField?.SetEnabled(renderer.TryCheckMutation(QuiltRendererMutationKind.SamplingMode, out _));
             if (!canFrame && !string.IsNullOrEmpty(framingReason)) SetPhysicalStatus(framingReason);
@@ -1115,6 +1148,9 @@ namespace ViewWeave.Editor
         void SetFocusFromTarget()
         {
             if (!CanAuthor()) return;
+            bool physical = renderer.physicalFraming != null && renderer.physicalFraming.enabled;
+            float previousFieldOfView = renderer.TryGetFraming(out QuiltCameraFraming before) ? before.VerticalFieldOfView : 0f;
+            float previousFocusDistance = GetCurrentEffectiveFocusDistance();
             if (!QuiltRendererAuthoringOperations.TryGetSceneObjectCenter(renderer, focusTargetProvider == null ? null : focusTargetProvider(), out Vector3 center, out string reason))
             {
                 SetActionStatus(reason);
@@ -1125,9 +1161,38 @@ namespace ViewWeave.Editor
                 SetActionStatus("The target center is behind the effective camera or the camera framing references are invalid.");
                 return;
             }
-            SetActionStatus("Focus Distance set to " + distance.ToString("0.###") + " Unity units.");
+            if (physical && renderer.TryGetFraming(out QuiltCameraFraming after))
+                SetActionStatus("Physical focus set: vertical FOV " + previousFieldOfView.ToString("0.###") + "° -> " + after.VerticalFieldOfView.ToString("0.###") +
+                    "°; effective focus " + previousFocusDistance.ToString("0.###") + " -> " + distance.ToString("0.###") + " Unity units.");
+            else
+                SetActionStatus("Focus Distance set to " + distance.ToString("0.###") + " Unity units; vertical FOV is unchanged.");
             BridgeEditorPreview.RequestRefresh();
+            Refresh();
             SceneView.RepaintAll();
+        }
+
+        void FitViewToTarget()
+        {
+            if (!CanAuthor()) return;
+            if (!QuiltRendererAuthoringOperations.TryApplyFitViewToTarget(renderer,
+                    focusTargetProvider == null ? null : focusTargetProvider(), out float previousFov,
+                    out float fieldOfView, out float focusDistance, out string reason))
+            {
+                SetActionStatus("Fit View To Target was not applied: " + reason);
+                return;
+            }
+            SetActionStatus("View fitted: vertical FOV " + previousFov.ToString("0.###") + "° -> " + fieldOfView.ToString("0.###") +
+                "°; focus distance " + focusDistance.ToString("0.###") + " Unity units.");
+            BridgeEditorPreview.RequestRefresh();
+            Refresh();
+            SceneView.RepaintAll();
+        }
+
+        float GetCurrentEffectiveFocusDistance()
+        {
+            return renderer != null && renderer.TryGetEffectiveSettings(out QuiltSettings effective, out _)
+                ? effective.cameraDistance
+                : 0f;
         }
 
         void ApplyOrbit(bool horizontal)

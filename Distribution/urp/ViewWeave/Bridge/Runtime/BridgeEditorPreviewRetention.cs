@@ -249,17 +249,14 @@ namespace ViewWeave
 
             try
             {
+                if (!attempt.flushAttempted && BridgeWorkerEditorGpuFlush.SynchronousWaitActive)
+                    BridgeWorkerEditorGpuFlush.SubmitIfNeeded(ref attempt.flushAttempted);
                 if (waitForProof)
                 {
                     if (!attempt.flushAttempted)
                     {
-                        if (BridgeWorkerEditorGpuFlush.SynchronousWaitActive)
-                            BridgeWorkerEditorGpuFlush.SubmitIfNeeded(ref attempt.flushAttempted);
-                        else
-                        {
-                            attempt.flushAttempted = true;
-                            GL.Flush();
-                        }
+                        attempt.flushAttempted = true;
+                        GL.Flush();
                     }
                     for (int i = 0; i < attempt.readbacks.Length; i++)
                     {

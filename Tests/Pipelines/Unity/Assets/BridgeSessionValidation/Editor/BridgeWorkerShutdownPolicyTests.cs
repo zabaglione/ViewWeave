@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using NUnit.Framework;
@@ -364,6 +365,7 @@ namespace ViewWeave.BridgeSessionValidation
                     "The transfer texture remains until the Editor Core resource owner confirms retirement.");
                 Assert.AreSame(transfer, recovery.TransferTexture);
 
+                Assert.IsTrue(recovery.NotifyEditorPreviewOwnerReturnProven());
                 owner.ReleaseCoreResourcesAfterProof();
                 Assert.IsTrue(owner.CoreResourcesReleased);
                 Assert.IsTrue(recovery.RetirePreviewLeaseTransferTextureAfterProof());
@@ -1031,6 +1033,154 @@ namespace ViewWeave.BridgeSessionValidation
             Assert.AreEqual(1, pumpCount);
             Assert.AreEqual(1, messages.Count);
             Assert.IsTrue(messages[0].Contains("resources remain retained"));
+        }
+
+        [UnityTest]
+        public IEnumerator TimedOutShutdownRecoversAfterNativeAndPreviewGpuProofComplete()
+        {
+            Assert.AreEqual(0, BridgeEditorPreviewRetention.PendingCount,
+                "This test must not pump or mutate another Editor preview's retention state.");
+            Assert.AreEqual(0, BridgeWorkerReaper.PendingCount,
+                "This test must not pump or mutate another worker's recovery state.");
+            Assert.IsFalse(BridgeWorkerReaper.HasUnprovenResources);
+            Assert.IsEmpty(Resources.FindObjectsOfTypeAll<BridgeWorkerRecoveryRecord>(),
+                "This test must not override native status while another worker recovery record exists.");
+            Assert.IsEmpty(Resources.FindObjectsOfTypeAll<BridgeWorkerQuiltOutput>(),
+                "This test requires an isolated worker output state.");
+            Assert.IsFalse(BridgeWorkerQuiltOutput.HasNativeHandle);
+            Assert.AreEqual(0, BridgeWorkerQuiltOutput.ShutdownPendingCount);
+            Assert.IsFalse(BridgeDisplayDiscovery.IsBusy,
+                "This test must not pump display discovery while it is active.");
+
+            const BindingFlags StaticPrivate = BindingFlags.Static | BindingFlags.NonPublic;
+            FieldInfo requestAttemptedField = typeof(BridgeWorkerShutdownCoordinator).GetField("requestAttempted", StaticPrivate);
+            FieldInfo finalStatusCompleteField = typeof(BridgeWorkerShutdownCoordinator).GetField("finalStatusComplete", StaticPrivate);
+            FieldInfo finalizationReadyField = typeof(BridgeWorkerShutdownCoordinator).GetField("finalizationReady", StaticPrivate);
+            FieldInfo timedOutField = typeof(BridgeWorkerShutdownCoordinator).GetField("timedOut", StaticPrivate);
+            FieldInfo warningWrittenField = typeof(BridgeWorkerShutdownCoordinator).GetField("warningWritten", StaticPrivate);
+            FieldInfo deadlineField = typeof(BridgeWorkerShutdownCoordinator).GetField("deadline", StaticPrivate);
+            FieldInfo recoveryPendingField = typeof(BridgeWorkerLifecycle).GetField("recoveryPending", StaticPrivate);
+            FieldInfo lifecycleFinalPendingField = typeof(BridgeWorkerLifecycle).GetField("finalShutdownPending", StaticPrivate);
+            FieldInfo finalShutdownRequestedField = typeof(BridgeWorkerFinalShutdownRecord)
+                .GetField("finalShutdownRequested", BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(requestAttemptedField);
+            Assert.IsNotNull(finalStatusCompleteField);
+            Assert.IsNotNull(finalizationReadyField);
+            Assert.IsNotNull(timedOutField);
+            Assert.IsNotNull(warningWrittenField);
+            Assert.IsNotNull(deadlineField);
+            Assert.IsNotNull(recoveryPendingField);
+            Assert.IsNotNull(lifecycleFinalPendingField);
+            Assert.IsNotNull(finalShutdownRequestedField);
+
+            object[] priorCoordinatorState =
+            {
+                requestAttemptedField.GetValue(null), finalStatusCompleteField.GetValue(null), finalizationReadyField.GetValue(null),
+                timedOutField.GetValue(null), warningWrittenField.GetValue(null), deadlineField.GetValue(null),
+                BridgeWorkerShutdownCoordinator.nativeStatusCompleteOverrideForTests
+            };
+            bool priorRecoveryPending = (bool)recoveryPendingField.GetValue(null);
+            bool priorLifecycleFinalPending = (bool)lifecycleFinalPendingField.GetValue(null);
+            BridgeWorkerFinalShutdownRecord[] existingShutdownRecords = Resources.FindObjectsOfTypeAll<BridgeWorkerFinalShutdownRecord>();
+            var existingRecordStates = new bool[existingShutdownRecords.Length];
+            for (int i = 0; i < existingShutdownRecords.Length; i++)
+                existingRecordStates[i] = (bool)finalShutdownRequestedField.GetValue(existingShutdownRecords[i]);
+
+            GameObject producer = null;
+            BridgeEditorPreviewRetentionRecord retention = null;
+            RenderTexture texture = null;
+            int nativePolls = 0;
+            int flushesBefore = BridgeWorkerEditorGpuFlush.FlushAttempts;
+            bool synchronousWaitStarted = false;
+            try
+            {
+                producer = new GameObject("Shutdown recovery preview producer");
+                QuiltRenderer renderer = producer.AddComponent<QuiltRenderer>();
+                retention = BridgeEditorPreviewRetentionRecord.Create(producer, renderer);
+                texture = new RenderTexture(8, 8, 0);
+                retention.MarkStopRequested();
+                Assert.IsTrue(retention.SetTextures(new[] { texture }));
+
+                requestAttemptedField.SetValue(null, true);
+                finalStatusCompleteField.SetValue(null, false);
+                finalizationReadyField.SetValue(null, false);
+                timedOutField.SetValue(null, true);
+                warningWrittenField.SetValue(null, true);
+                deadlineField.SetValue(null, Time.realtimeSinceStartupAsDouble - 1.0);
+                BridgeWorkerShutdownCoordinator.nativeStatusCompleteOverrideForTests = () => ++nativePolls >= 3;
+
+                BridgeWorkerEditorGpuFlush.BeginSynchronousWait();
+                synchronousWaitStarted = true;
+                BridgeWorkerShutdownCoordinator.PumpOnce();
+
+                Assert.GreaterOrEqual(nativePolls, 1, "Timed-out quit must keep polling native completion.");
+                Assert.IsTrue(BridgeEditorPreviewRetention.HasPending, "An uncreated retained texture must continue to block finalization.");
+                Assert.IsFalse(retention.GpuProofComplete);
+                Assert.IsFalse(BridgeWorkerShutdownCoordinator.FinalizationReady);
+
+                Assert.IsTrue(texture.Create());
+                for (int frame = 0; frame < 300 && !BridgeWorkerShutdownCoordinator.FinalizationReady; frame++)
+                {
+                    BridgeWorkerShutdownCoordinator.PumpOnce();
+                    if (!BridgeWorkerShutdownCoordinator.FinalizationReady) yield return null;
+                }
+
+                Assert.GreaterOrEqual(nativePolls, 3, "Late native completion should be observed after the deadline.");
+                Assert.AreEqual(flushesBefore + 1, BridgeWorkerEditorGpuFlush.FlushAttempts,
+                    "The synchronous quit wait must submit pending preview GPU work exactly once while polling asynchronously.");
+                Assert.IsTrue(BridgeWorkerShutdownCoordinator.FinalizationReady,
+                    "Shutdown should recover after both native shutdown and retained preview GPU proof complete.");
+                Assert.IsFalse(BridgeEditorPreviewRetention.HasPending);
+                Assert.IsTrue(texture == null || !texture.IsCreated(),
+                    "The retained texture should only be released after successful GPU proof.");
+            }
+            finally
+            {
+                BridgeWorkerShutdownCoordinator.nativeStatusCompleteOverrideForTests = (System.Func<bool>)priorCoordinatorState[6];
+                requestAttemptedField.SetValue(null, priorCoordinatorState[0]);
+                finalStatusCompleteField.SetValue(null, priorCoordinatorState[1]);
+                finalizationReadyField.SetValue(null, priorCoordinatorState[2]);
+                timedOutField.SetValue(null, priorCoordinatorState[3]);
+                warningWrittenField.SetValue(null, priorCoordinatorState[4]);
+                deadlineField.SetValue(null, priorCoordinatorState[5]);
+                recoveryPendingField.SetValue(null, priorRecoveryPending);
+                lifecycleFinalPendingField.SetValue(null, priorLifecycleFinalPending);
+
+                BridgeWorkerFinalShutdownRecord[] currentShutdownRecords = Resources.FindObjectsOfTypeAll<BridgeWorkerFinalShutdownRecord>();
+                foreach (BridgeWorkerFinalShutdownRecord record in currentShutdownRecords)
+                {
+                    int priorIndex = System.Array.IndexOf(existingShutdownRecords, record);
+                    if (priorIndex < 0) Object.DestroyImmediate(record);
+                    else finalShutdownRequestedField.SetValue(record, existingRecordStates[priorIndex]);
+                }
+
+                try
+                {
+                    if (retention != null)
+                    {
+                        if (texture == null || !texture.IsCreated())
+                        {
+                            BridgeEditorPreviewRetention.InvalidateProof(retention);
+                            if (texture != null) Object.DestroyImmediate(texture);
+                            Object.DestroyImmediate(retention);
+                        }
+                        else
+                        {
+                            if (!BridgeWorkerEditorGpuFlush.SynchronousWaitActive)
+                                BridgeWorkerEditorGpuFlush.BeginSynchronousWait();
+                            BridgeEditorPreviewRetention.Pump(true);
+                            if (retention != null)
+                                Debug.LogError("Test cleanup retained its own preview texture because GPU completion could not be proven.");
+                        }
+                    }
+                }
+                finally
+                {
+                    if (synchronousWaitStarted || BridgeWorkerEditorGpuFlush.SynchronousWaitActive)
+                        BridgeWorkerEditorGpuFlush.EndSynchronousWait();
+                    if (retention == null && producer != null) Object.DestroyImmediate(producer);
+                }
+            }
         }
 
         [Test]

@@ -32,7 +32,12 @@ flowchart TB
    - HDRP: `https://github.com/zabaglione/ViewWeave.git?path=/Distribution/hdrp#main`
 5. 配布packageにCore、Bridge、選択したpipelineが含まれるため、別のViewWeave packageは追加しません。Samplesは任意です。Package ManagerのSamplesからImportするまでAssetsへ入りません。
 
-同じprojectにURP版とHDRP版を同時に追加しないでください。Git URLの`#main`を更新する際にPackage Manager cacheが残る場合は、Removeしてから同じURLを再Addするか、特定commit hashをrefに指定します。
+同じprojectにURP版とHDRP版を同時に追加しないでください。`#main`は開発中の最新commitを追従する指定です。再現性を優先するprojectではfull commit hashまたは正式release tagをrefに指定してください。これらのrefは、別のrefをインストールするまで固定されます。
+
+commitやtagを固定したprojectを別revisionへ移す場合は、`Install package from git URL`から新しいrefを含むURLを再度追加します。`#main`の場合はPackage Managerの`Update`を使うか、同じGit URLを再追加して最新commitを要求します。通常のEditor再起動やrepositoryへのpushだけではpackage lockは更新されません。開発中はGit commitが変わっても表示上のpackage versionが`0.1.0`のままの場合があります。そのため表示versionだけでなく、`Packages/manifest.json`のGit ref、`Packages/packages-lock.json`のcommit hash、更新対象の機能を確認してください。これらが新revisionを示しているのにUnityの動作が変わらない場合はEditorを再起動します。package cacheの削除はcache不整合が疑われる場合の復旧手段とし、最初の更新方法にはしないでください。
+
+詳しくはUnityの[Git依存関係とrevision指定](https://docs.unity3d.com/6000.6/Documentation/Manual/upm-git.html#revision)、[Git依存関係のlock](https://docs.unity3d.com/6000.6/Documentation/Manual/upm-git.html#git-locks)、[package manifestのversion field](https://docs.unity3d.com/6000.6/Documentation/Manual/upm-manifestPkg.html#version)を参照してください。
+
 Package Managerが更新を完了したら、Unity Editorを正常終了して起動し直してください。更新したmanaged assemblyとnative pluginを読み込むために必要です。起動後は、使用するGraphics APIを選びます。
 
 ## 既存のCubeやBoxを表示する
@@ -41,7 +46,7 @@ Package Managerが更新を完了したら、Unity Editorを正常終了して�
 2. WindowsへLooking Glass Bridge runtimeをインストールし、Looking Glassを接続します。
 3. 通常のCubeやBoxをシーンに置き、標準のURP/HDRP materialとlightを使います。CubeへViewWeave componentを追加する必要はありません。
 4. 使用中Camera、またはCameraを祖先に持つGameObjectをHierarchyで右クリックし、`ViewWeave > Bridge Rig`を選びます。Rigは右クリックしたGameObjectの子として作成されます。右クリック対象かその祖先にあるCameraが優先され、対象がない場合は選択中GameObjectとその祖先、最後に`Camera.main`が使われます。`MainCamera`タグは必須ではありません。解決したCameraはRigの`Reference Camera`にも設定され、元Cameraは有効なまま、専用Rig CameraがQuiltを描画します。詳しくは[既存CameraからRigを作る](#既存cameraからrigを作る)を参照してください。
-5. RendererのあるCubeやBoxをCameraの前方に置きます。メニューでMain Cameraを右クリックした場合、zero-parallax距離は既定の10 Unity unitsから始まります。被写体に合わせてRigの`Camera & Focus`から`Focus Distance`を調整する方法は[Quiltカメラの調整](quilt-authoring.md)を参照してください。
+5. RendererのあるCubeやBoxをCameraの前方に置きます。メニューでMain Cameraを右クリックした場合、zero-parallax距離は既定の10 Unity unitsから始まります。Rigの`Camera & Focus`でFocus Targetを設定し、`Set Focus From Target Center`でzero-parallax距離を合わせるか、`Fit View To Target`でtarget boundsに合わせて画角と距離を調整します。physical framingの動作やactive previewの更新は[Quiltカメラの調整](quilt-authoring.md)を参照してください。
 6. Rigのあるsceneを保存し、Unity EditorのPlayを押します。Unity Editorがsceneを描画し、Bridge runtime接続後にBridge profileに応じたQuiltがLooking Glassへ送られます。EditorのGame viewは通常のMainCamera表示のままです。
 
 被写体Rendererを選択した状態でRigを作るときは、選択中Rendererのbounds centerが解決したframing Cameraの前方かつnear/far clipの間にある場合、そのforward距離を`Camera Distance`に設定します。Rendererがない、disabled、範囲外、背面なら10 unitsです。framing Cameraが見つからない場合はRigの既定位置と3 unitsを使います。Cameraのnear/farとculling maskはRig作成時に初期値としてコピーします。poseと既定で有効なFOV追従は前段の説明どおり、実行中も参照Cameraから同期されます。

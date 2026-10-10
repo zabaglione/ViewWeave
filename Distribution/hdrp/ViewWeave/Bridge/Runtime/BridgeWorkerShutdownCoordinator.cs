@@ -15,6 +15,10 @@ namespace ViewWeave
         static bool playerQuitReissued;
         static double deadline;
 
+#if UNITY_EDITOR
+        internal static Func<bool> nativeStatusCompleteOverrideForTests;
+#endif
+
         internal static bool FinalizationReady => finalizationReady;
 
         internal static bool WaitForFinalization()
@@ -260,7 +264,6 @@ namespace ViewWeave
 #endif
             BridgeWorkerReaper.PumpNow();
             if (Application.platform == RuntimePlatform.WindowsEditor) BridgeEditorPreviewRetention.Pump(false);
-            if (timedOut) return;
             if (!finalStatusComplete) PumpNativeStatus();
             if (finalStatusComplete)
             {
@@ -304,6 +307,17 @@ namespace ViewWeave
         {
             try
             {
+#if UNITY_EDITOR
+                if (nativeStatusCompleteOverrideForTests != null)
+                {
+                    if (nativeStatusCompleteOverrideForTests())
+                    {
+                        finalStatusComplete = true;
+                        warningWritten = false;
+                    }
+                    return;
+                }
+#endif
                 if (!TryReadNativeStatus(out BridgeWorkerNative.FinalShutdownStatusV1 status)) return;
                 if (BridgeWorkerShutdownPolicy.IsNativeComplete(status))
                 {

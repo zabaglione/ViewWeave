@@ -22,6 +22,10 @@ namespace ViewWeave.RigCameraCreationValidation
         Object previousSelection;
         int initialUndoGroup;
 
+        sealed class InspectorTestHostWindow : EditorWindow
+        {
+        }
+
         [SetUp]
         public void SetUp()
         {
@@ -542,17 +546,24 @@ namespace ViewWeave.RigCameraCreationValidation
         {
             GameObject rigObject = new GameObject("Inspector Focus Rig");
             GameObject focusObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            Object priorActiveSelection = Selection.activeObject;
             UnityEditor.Editor editor = null;
+            InspectorTestHostWindow host = null;
+            VisualElement root = null;
             try
             {
                 ViewWeaveRig rig = rigObject.AddComponent<ViewWeaveRig>();
                 QuiltRenderer renderer = rigObject.GetComponent<QuiltRenderer>();
                 renderer.settings.cameraDistance = 2f;
                 focusObject.transform.position = new Vector3(0f, 0f, 7f);
+                Selection.activeObject = null;
                 editor = UnityEditor.Editor.CreateEditor(rig, typeof(ViewWeaveRigInspector));
-                VisualElement root = editor.CreateInspectorGUI();
+                root = editor.CreateInspectorGUI();
                 ObjectField focusField = root.Q<ObjectField>("focusTarget");
                 Assert.That(focusField, Is.Not.Null);
+                host = EditorWindow.CreateWindow<InspectorTestHostWindow>();
+                host.Show();
+                host.rootVisualElement.Add(root);
                 focusField.value = focusObject;
                 object view = GetField<object>(editor, "view");
 
@@ -569,9 +580,64 @@ namespace ViewWeave.RigCameraCreationValidation
             }
             finally
             {
+                if (host != null)
+                {
+                    if (root != null) host.rootVisualElement.Remove(root);
+                    host.Close();
+                }
                 if (editor != null) Object.DestroyImmediate(editor);
                 Object.DestroyImmediate(rigObject);
                 Object.DestroyImmediate(focusObject);
+                Selection.activeObject = priorActiveSelection;
+            }
+        }
+
+        [Test]
+        public void FocusAndFitControlsExplainAndEnforcePhysicalFramingModes()
+        {
+            GameObject rigObject = new GameObject("Inspector Focus Modes Rig");
+            UnityEditor.Editor editor = null;
+            try
+            {
+                ViewWeaveRig rig = rigObject.AddComponent<ViewWeaveRig>();
+                QuiltRenderer renderer = rigObject.GetComponent<QuiltRenderer>();
+                renderer.physicalFraming = new QuiltPhysicalFraming
+                {
+                    enabled = false,
+                    visibleApertureWidthMillimeters = 344.65018f,
+                    visibleApertureHeightMillimeters = 193.86572f,
+                    unitsPerMeter = 1f
+                };
+                editor = UnityEditor.Editor.CreateEditor(rig, typeof(ViewWeaveRigInspector));
+                VisualElement root = editor.CreateInspectorGUI();
+                Foldout cameraFoldout = root.Q<Foldout>("cameraAndFocus");
+                Toggle physicalToggle = root.Q<Toggle>("physicalFramingEnabled");
+                Button focusButton = root.Query<Button>().ToList().Find(button => button.text == "Set Focus From Target Center");
+                Button fitButton = root.Q<Button>("fitViewToTarget");
+                HelpBox focusHelp = root.Q<HelpBox>("focusModeHelp");
+                HelpBox fitHelp = root.Q<HelpBox>("fitViewHelp");
+
+                Assert.That(cameraFoldout, Is.Not.Null);
+                Assert.That(physicalToggle, Is.Not.Null);
+                Assert.That(physicalToggle.GetFirstAncestorOfType<Foldout>(), Is.SameAs(cameraFoldout),
+                    "physical framing switch is visible directly in Camera & Focus, outside the dimensions foldout");
+                Assert.That(focusButton, Is.Not.Null);
+                Assert.That(fitButton, Is.Not.Null);
+                Assert.That(fitButton.enabledSelf, Is.True, "fit is enabled while physical framing is off");
+                Assert.That(focusHelp.text, Does.Contain("keeps the current vertical FOV"));
+                Assert.That(root.Query<Button>().ToList().Exists(button => button.text == "Use Selection"), Is.False);
+
+                physicalToggle.value = true;
+                Assert.That(renderer.physicalFraming.enabled, Is.True);
+                Assert.That(root.Query<Button>().ToList().Exists(button => button.text == "Set Physical Focus From Target Center"), Is.True);
+                Assert.That(fitButton.enabledSelf, Is.False, "fit is disabled while physical framing is on");
+                Assert.That(fitHelp.text, Does.Contain("Turn off Use Physical 1:1 Framing"));
+                Assert.That(focusHelp.text, Does.Contain("adjusts vertical FOV"));
+            }
+            finally
+            {
+                if (editor != null) Object.DestroyImmediate(editor);
+                Object.DestroyImmediate(rigObject);
             }
         }
 
