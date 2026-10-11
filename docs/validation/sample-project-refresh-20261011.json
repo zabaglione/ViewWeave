@@ -1,0 +1,356 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-11",
+  "sourceRevision": "e9232d31afdbb80f2577c12955d9d060dba44441",
+  "productionWorkingTreePatch": false,
+  "scope": "macOS Metal Unity Editor Quick Start import and scene checks; no quilt or device output",
+  "unityVersion": "6000.6.4f1",
+  "renderPipelineVersion": "17.6.0",
+  "gpu": "Apple M3 Max",
+  "upmDistributionCheck": "passed both URP and HDRP",
+  "projects": {
+    "URP": {
+      "name": "URP_60000604",
+      "package": {
+        "package": "com.zabaglione.lookingglass.viewweave.urp",
+        "version": "0.1.0",
+        "source": "Local",
+        "resolvedPath": "Distribution/urp",
+        "sample": "URP Quick Start",
+        "importedPath": "Assets/Samples/ViewWeave for Looking Glass - URP (Unofficial)/0.1.0/URP Quick Start"
+      },
+      "referenceRepair": {
+        "imported": "Assets/Samples/ViewWeave for Looking Glass - URP (Unofficial)/0.1.0/URP Quick Start",
+        "remappedGuids": 9,
+        "fixedReferences": 7,
+        "materialPaths": [
+          "Assets/Samples/ViewWeave for Looking Glass - URP (Unofficial)/0.1.0/URP Quick Start/Materials/Red.mat",
+          "Assets/Samples/ViewWeave for Looking Glass - URP (Unofficial)/0.1.0/URP Quick Start/Materials/Blue.mat",
+          "Assets/Samples/ViewWeave for Looking Glass - URP (Unofficial)/0.1.0/URP Quick Start/Materials/Yellow.mat"
+        ],
+        "controllerPaths": [
+          "Assets/Samples/ViewWeave for Looking Glass - URP (Unofficial)/0.1.0/URP Quick Start/Animations/CubeRotation.controller",
+          "Assets/Samples/ViewWeave for Looking Glass - URP (Unofficial)/0.1.0/URP Quick Start/Animations/SphereBounce.controller"
+        ],
+        "clipPaths": [
+          "Assets/Samples/ViewWeave for Looking Glass - URP (Unofficial)/0.1.0/URP Quick Start/Animations/CubeRotation.anim",
+          "Assets/Samples/ViewWeave for Looking Glass - URP (Unofficial)/0.1.0/URP Quick Start/Animations/SphereBounce.anim"
+        ]
+      },
+      "checks": {
+        "edit": {
+          "utc": "2026-10-11T07:57:38.491696Z",
+          "unity": "6000.6.4f1",
+          "graphicsApi": "Metal",
+          "pipeline": "UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset",
+          "scene": "Assets/Samples/ViewWeave for Looking Glass - URP (Unofficial)/0.1.0/URP Quick Start/QuickStart.unity",
+          "sceneDirty": false,
+          "playing": false,
+          "rigValid": true,
+          "validationError": null,
+          "missingScripts": 0,
+          "unsupportedMaterials": 0,
+          "materialCount": 3,
+          "activeAudioListeners": 1,
+          "metalEnabled": true,
+          "workerEnabled": false,
+          "sessionEnabled": false,
+          "outputType": "ViewWeave.BridgeMetalQuiltOutput",
+          "subpixelModeProperty": true,
+          "autoStart": false,
+          "autoRender": false,
+          "pendingRetirement": 0
+        },
+        "play": {
+          "utc": "2026-10-11T07:57:45.457579Z",
+          "unity": "6000.6.4f1",
+          "graphicsApi": "Metal",
+          "pipeline": "UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset",
+          "scene": "Assets/Samples/ViewWeave for Looking Glass - URP (Unofficial)/0.1.0/URP Quick Start/QuickStart.unity",
+          "sceneDirty": false,
+          "playing": true,
+          "rigValid": true,
+          "validationError": null,
+          "missingScripts": 0,
+          "unsupportedMaterials": 0,
+          "materialCount": 3,
+          "activeAudioListeners": 1,
+          "metalEnabled": true,
+          "workerEnabled": false,
+          "sessionEnabled": false,
+          "outputType": "ViewWeave.BridgeMetalQuiltOutput",
+          "subpixelModeProperty": true,
+          "autoStart": false,
+          "autoRender": false,
+          "pendingRetirement": 0
+        },
+        "stop": {
+          "utc": "2026-10-11T07:58:26.79988Z",
+          "unity": "6000.6.4f1",
+          "graphicsApi": "Metal",
+          "pipeline": "UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset",
+          "scene": "Assets/Samples/ViewWeave for Looking Glass - URP (Unofficial)/0.1.0/URP Quick Start/QuickStart.unity",
+          "sceneDirty": false,
+          "playing": false,
+          "rigValid": true,
+          "validationError": null,
+          "missingScripts": 0,
+          "unsupportedMaterials": 0,
+          "materialCount": 3,
+          "activeAudioListeners": 1,
+          "metalEnabled": true,
+          "workerEnabled": false,
+          "sessionEnabled": false,
+          "outputType": "ViewWeave.BridgeMetalQuiltOutput",
+          "subpixelModeProperty": true,
+          "autoStart": false,
+          "autoRender": false,
+          "pendingRetirement": 0
+        }
+      },
+      "console": {
+        "entries": [],
+        "cursor": 0,
+        "session": "ed1724bb812247399980b13f52196793",
+        "returned": 0,
+        "dropped": false,
+        "reset": false,
+        "counts": {
+          "error": 0,
+          "warn": 0,
+          "log": 0
+        },
+        "groundTruth": {
+          "sampledUtc": "2026-10-11T07:58:29.880064Z",
+          "ageMs": 161,
+          "compilationFailed": false,
+          "compiling": false,
+          "consoleErrors": 0,
+          "consoleWarnings": 0,
+          "consoleLogs": 0,
+          "seeded": true
+        }
+      },
+      "preexistingFilesChanged": [
+        "Assets/Editor/ViewWeaveValidation/ViewWeaveTemplatePackageInstaller.cs"
+      ],
+      "preexistingAssetSnapshotScope": "Assets, Packages, ProjectSettings after initial URP open and before sample imports",
+      "importedFileHashes": {
+        "Assets/Samples/ViewWeave for Looking Glass - URP (Unofficial)/0.1.0/URP Quick Start/QuickStartPlatformOutput.cs": "9a3451a94be6ffba9ef0a39f6355f66e388d6d095077acbdfc295a7ab3c697da",
+        "Assets/Samples/ViewWeave for Looking Glass - URP (Unofficial)/0.1.0/URP Quick Start/README.ja.md.meta": "1045140153d8f2098f84e87d22cc96923aea582b46b757f363769f2ce2c89056",
+        "Assets/Samples/ViewWeave for Looking Glass - URP (Unofficial)/0.1.0/URP Quick Start/Materials.meta": "5a4c929fcdc3a38ad6f24da9f2139cb1110777bd3c8706909a0a4549240bacf1",
+        "Assets/Samples/ViewWeave for Looking Glass - URP (Unofficial)/0.1.0/URP Quick Start/README.md": "46a6ed9801314973100c1110288907948b1b4e9a57c74a069be7c18574d8e545",
+        "Assets/Samples/ViewWeave for Looking Glass - URP (Unofficial)/0.1.0/URP Quick Start/README.ja.md": "7c10e0c3390bfe179da99206da585e6416b09fb663d17491e308f4d940cf58b1",
+        "Assets/Samples/ViewWeave for Looking Glass - URP (Unofficial)/0.1.0/URP Quick Start/QuickStart.unity.meta": "eefd11dff2fe57dbf27ce1b5e4429eee83686bb75e9291a30b02d8b9fc5b7b8c",
+        "Assets/Samples/ViewWeave for Looking Glass - URP (Unofficial)/0.1.0/URP Quick Start/Animations.meta": "8842a45d5f4ec55a37841b0d07c9c4c15788bdd2ef0cb207943750a9fd0f8667",
+        "Assets/Samples/ViewWeave for Looking Glass - URP (Unofficial)/0.1.0/URP Quick Start/QuickStartPlatformOutput.cs.meta": "f293554730b4a5b827caea63bc086345e3b19311622541553c83ef43ee99fcc1",
+        "Assets/Samples/ViewWeave for Looking Glass - URP (Unofficial)/0.1.0/URP Quick Start/README.md.meta": "15a1da26211af7c074789925dc3d240aa528556c36b2bc7c613156572649d5f1",
+        "Assets/Samples/ViewWeave for Looking Glass - URP (Unofficial)/0.1.0/URP Quick Start/QuickStart.unity": "d7d23c069a6f87efd65e3b4845abeafe6768ddfe7554dc50f30795dfcf199a77",
+        "Assets/Samples/ViewWeave for Looking Glass - URP (Unofficial)/0.1.0/URP Quick Start/Materials/Yellow.mat": "6d87aabba136b72017b2a9aecff7607eace425dbb1cf205aba78a013f33cf5fb",
+        "Assets/Samples/ViewWeave for Looking Glass - URP (Unofficial)/0.1.0/URP Quick Start/Materials/Blue.mat": "f9e5e83cf1265324b42d60acd3b4700c13e12b6a6c55cfd064e6d5b082e1f850",
+        "Assets/Samples/ViewWeave for Looking Glass - URP (Unofficial)/0.1.0/URP Quick Start/Materials/Red.mat.meta": "7c7ae45fa4aa6d90c218210e2215bce2d43b1c5d5ef31f63cd92cd7978d03997",
+        "Assets/Samples/ViewWeave for Looking Glass - URP (Unofficial)/0.1.0/URP Quick Start/Materials/Blue.mat.meta": "f975c1e86ea697ff6aa73d1d8f40fc55efc5f55873203f12de9393afae26c5e7",
+        "Assets/Samples/ViewWeave for Looking Glass - URP (Unofficial)/0.1.0/URP Quick Start/Materials/Red.mat": "3c1e5bc4df6ccc72174abb310830b1f7f694cea91d7724fec3cb78c6b433555a",
+        "Assets/Samples/ViewWeave for Looking Glass - URP (Unofficial)/0.1.0/URP Quick Start/Materials/Yellow.mat.meta": "18e6f10537d4c456494bab41546e2b550930e9cd076d155e87e27001dfd0a115",
+        "Assets/Samples/ViewWeave for Looking Glass - URP (Unofficial)/0.1.0/URP Quick Start/Animations/SphereBounce.anim": "a669bddfa79f5672781b57d3be2cfb853de9d0830b1954a32fac00c1959cece9",
+        "Assets/Samples/ViewWeave for Looking Glass - URP (Unofficial)/0.1.0/URP Quick Start/Animations/SphereBounce.anim.meta": "3beb0652719d567743f80b6ea00b72ee92faba59c1916875e79b8e6dcd61467f",
+        "Assets/Samples/ViewWeave for Looking Glass - URP (Unofficial)/0.1.0/URP Quick Start/Animations/SphereBounce.controller.meta": "76778ac62c7deb0c9a87f5e85ea1fe4b9371ee9bb7514546eb43dbef4fb85c45",
+        "Assets/Samples/ViewWeave for Looking Glass - URP (Unofficial)/0.1.0/URP Quick Start/Animations/CubeRotation.controller": "17aa55882f4f7ece621292580b607d4debd4c0e46319c77790db086250005403",
+        "Assets/Samples/ViewWeave for Looking Glass - URP (Unofficial)/0.1.0/URP Quick Start/Animations/SphereBounce.controller": "0043f91bb8a268299c36259cb9b1b37a4c88f53e7c758e212d250a80af11462f",
+        "Assets/Samples/ViewWeave for Looking Glass - URP (Unofficial)/0.1.0/URP Quick Start/Animations/CubeRotation.anim.meta": "7c92eb06874c5f81d05967f69fd82507a7d1e02dd6ea390d2b8521266d52ee51",
+        "Assets/Samples/ViewWeave for Looking Glass - URP (Unofficial)/0.1.0/URP Quick Start/Animations/CubeRotation.controller.meta": "35655b795c07506049438f224c46104ad471845ec65c8fb8dedd9fa95f92177e",
+        "Assets/Samples/ViewWeave for Looking Glass - URP (Unofficial)/0.1.0/URP Quick Start/Animations/CubeRotation.anim": "92e7785486cd00c351d73c13ed18d7fe58ca683c8afdbc3f6342c01ad0b66adb"
+      },
+      "rawResponseHashes": {
+        "urp-import": "fd009b777ec4154107b7dded6ba3e8b74f6bef8d7cdfbdbc2a9671e2e9239cc4",
+        "urp-remap": "816810151c23b6ff67d56a8fd6c5e579bcec756e2801d7ae255f20789416a729",
+        "urp-edit": "9882d3f174101b2a8fa0dbb1bd28b985020b0543f1aa8144dc915f08396a1ab9",
+        "urp-play": "92e6b6e924d61d39e56dac5f05db9f6bc477809a4d1964b1c3dc87008757589a",
+        "urp-stop": "440291fbe28d75853730eba176e7fc01f17f822f20d554246b294921940d2a8e",
+        "urp-console": "3ab24bf461ef7f14aa793642ad5b4ed0bd50acbecd98af79672ce4f033104842"
+      }
+    },
+    "HDRP": {
+      "name": "HDRP_60000604",
+      "package": {
+        "package": "com.zabaglione.lookingglass.viewweave.hdrp",
+        "version": "0.1.0",
+        "source": "Local",
+        "resolvedPath": "Distribution/hdrp",
+        "sample": "HDRP Quick Start",
+        "importedPath": "Assets/Samples/ViewWeave for Looking Glass - HDRP (Unofficial)/0.1.0/HDRP Quick Start"
+      },
+      "referenceRepair": {
+        "imported": "Assets/Samples/ViewWeave for Looking Glass - HDRP (Unofficial)/0.1.0/HDRP Quick Start",
+        "remappedGuids": 10,
+        "fixedReferences": 8,
+        "materialPaths": [
+          "Assets/Samples/ViewWeave for Looking Glass - HDRP (Unofficial)/0.1.0/HDRP Quick Start/Materials/Red.mat",
+          "Assets/Samples/ViewWeave for Looking Glass - HDRP (Unofficial)/0.1.0/HDRP Quick Start/Materials/Blue.mat",
+          "Assets/Samples/ViewWeave for Looking Glass - HDRP (Unofficial)/0.1.0/HDRP Quick Start/Materials/Yellow.mat"
+        ],
+        "controllerPaths": [
+          "Assets/Samples/ViewWeave for Looking Glass - HDRP (Unofficial)/0.1.0/HDRP Quick Start/Animations/CubeRotation.controller",
+          "Assets/Samples/ViewWeave for Looking Glass - HDRP (Unofficial)/0.1.0/HDRP Quick Start/Animations/SphereBounce.controller"
+        ],
+        "clipPaths": [
+          "Assets/Samples/ViewWeave for Looking Glass - HDRP (Unofficial)/0.1.0/HDRP Quick Start/Animations/CubeRotation.anim",
+          "Assets/Samples/ViewWeave for Looking Glass - HDRP (Unofficial)/0.1.0/HDRP Quick Start/Animations/SphereBounce.anim"
+        ]
+      },
+      "checks": {
+        "edit": {
+          "utc": "2026-10-11T07:54:14.244079Z",
+          "unity": "6000.6.4f1",
+          "graphicsApi": "Metal",
+          "pipeline": "UnityEngine.Rendering.HighDefinition.HDRenderPipelineAsset",
+          "scene": "Assets/Samples/ViewWeave for Looking Glass - HDRP (Unofficial)/0.1.0/HDRP Quick Start/QuickStart.unity",
+          "sceneDirty": false,
+          "playing": false,
+          "rigValid": true,
+          "validationError": null,
+          "missingScripts": 0,
+          "unsupportedMaterials": 0,
+          "materialCount": 3,
+          "activeAudioListeners": 1,
+          "metalEnabled": true,
+          "workerEnabled": false,
+          "sessionEnabled": false,
+          "outputType": "ViewWeave.BridgeMetalQuiltOutput",
+          "subpixelModeProperty": true,
+          "autoStart": false,
+          "autoRender": false,
+          "pendingRetirement": 0
+        },
+        "play": {
+          "utc": "2026-10-11T07:54:20.655918Z",
+          "unity": "6000.6.4f1",
+          "graphicsApi": "Metal",
+          "pipeline": "UnityEngine.Rendering.HighDefinition.HDRenderPipelineAsset",
+          "scene": "Assets/Samples/ViewWeave for Looking Glass - HDRP (Unofficial)/0.1.0/HDRP Quick Start/QuickStart.unity",
+          "sceneDirty": false,
+          "playing": true,
+          "rigValid": true,
+          "validationError": null,
+          "missingScripts": 0,
+          "unsupportedMaterials": 0,
+          "materialCount": 3,
+          "activeAudioListeners": 1,
+          "metalEnabled": true,
+          "workerEnabled": false,
+          "sessionEnabled": false,
+          "outputType": "ViewWeave.BridgeMetalQuiltOutput",
+          "subpixelModeProperty": true,
+          "autoStart": false,
+          "autoRender": false,
+          "pendingRetirement": 0
+        },
+        "stop": {
+          "utc": "2026-10-11T07:55:04.509704Z",
+          "unity": "6000.6.4f1",
+          "graphicsApi": "Metal",
+          "pipeline": "UnityEngine.Rendering.HighDefinition.HDRenderPipelineAsset",
+          "scene": "Assets/Samples/ViewWeave for Looking Glass - HDRP (Unofficial)/0.1.0/HDRP Quick Start/QuickStart.unity",
+          "sceneDirty": false,
+          "playing": false,
+          "rigValid": true,
+          "validationError": null,
+          "missingScripts": 0,
+          "unsupportedMaterials": 0,
+          "materialCount": 3,
+          "activeAudioListeners": 1,
+          "metalEnabled": true,
+          "workerEnabled": false,
+          "sessionEnabled": false,
+          "outputType": "ViewWeave.BridgeMetalQuiltOutput",
+          "subpixelModeProperty": true,
+          "autoStart": false,
+          "autoRender": false,
+          "pendingRetirement": 0
+        }
+      },
+      "console": {
+        "entries": [],
+        "cursor": 17,
+        "session": "74b1478c8e1841bfb6449de9152186ca",
+        "returned": 0,
+        "dropped": false,
+        "reset": false,
+        "counts": {
+          "error": 0,
+          "warn": 17,
+          "log": 0
+        },
+        "groundTruth": {
+          "sampledUtc": "2026-10-11T07:55:07.54158Z",
+          "ageMs": 258,
+          "compilationFailed": false,
+          "compiling": false,
+          "consoleErrors": 0,
+          "consoleWarnings": 0,
+          "consoleLogs": 0,
+          "seeded": true
+        }
+      },
+      "preexistingFilesChanged": [
+        "Assets/Editor/ViewWeaveValidation/ViewWeaveTemplatePackageInstaller.cs"
+      ],
+      "preexistingAssetSnapshotScope": "Assets, Packages, ProjectSettings after initial URP open and before sample imports",
+      "importedFileHashes": {
+        "Assets/Samples/ViewWeave for Looking Glass - HDRP (Unofficial)/0.1.0/HDRP Quick Start/QuickStartPlatformOutput.cs": "79de663fdcdce7ccb177e8d024a9c8f33fd6d28973915ccfeaffebe2000db20b",
+        "Assets/Samples/ViewWeave for Looking Glass - HDRP (Unofficial)/0.1.0/HDRP Quick Start/README.ja.md.meta": "072870614a334da134b01117d6a51db50109f418f54e6eb114cfb92a481fb50f",
+        "Assets/Samples/ViewWeave for Looking Glass - HDRP (Unofficial)/0.1.0/HDRP Quick Start/BlackSkyVolume.asset": "498fe5b8efa1d432fd1a6101773b1dba46aed02e47498e18e5fd8af00ce85705",
+        "Assets/Samples/ViewWeave for Looking Glass - HDRP (Unofficial)/0.1.0/HDRP Quick Start/BlackSkyVolume.asset.meta": "88a064f3c3630951826923328133cc8e94bb1e4e539f121443e15db56ed4cd77",
+        "Assets/Samples/ViewWeave for Looking Glass - HDRP (Unofficial)/0.1.0/HDRP Quick Start/Materials.meta": "ed07d99c8e2d2af4afd3c70bf8a419a53b6903a023a10afd3668fc73d7fd8ebb",
+        "Assets/Samples/ViewWeave for Looking Glass - HDRP (Unofficial)/0.1.0/HDRP Quick Start/README.md": "65d4366ae622f92fc6ba8f43de2373160435d03e930f2a0aec170ea6da2e66c7",
+        "Assets/Samples/ViewWeave for Looking Glass - HDRP (Unofficial)/0.1.0/HDRP Quick Start/README.ja.md": "d5a201a8c38e245f0dbb33f3362c62ff564717879060f3d555122cd23652b772",
+        "Assets/Samples/ViewWeave for Looking Glass - HDRP (Unofficial)/0.1.0/HDRP Quick Start/QuickStart.unity.meta": "24480c0f534f43b99f9385ea2a4a47e07bba488e3eb40592fa3615451a1937a4",
+        "Assets/Samples/ViewWeave for Looking Glass - HDRP (Unofficial)/0.1.0/HDRP Quick Start/Animations.meta": "27da8af717024d2505d4340aa2fb8861fa57fddd53b7364244a2e9ed0fa02b7a",
+        "Assets/Samples/ViewWeave for Looking Glass - HDRP (Unofficial)/0.1.0/HDRP Quick Start/QuickStartPlatformOutput.cs.meta": "d8d15e1a1624df37954643867a84b723cb776dc805d21f6b4e1f34e25fb6cd8d",
+        "Assets/Samples/ViewWeave for Looking Glass - HDRP (Unofficial)/0.1.0/HDRP Quick Start/README.md.meta": "17c7a513d01be5c4bce8d3e00ac005fedb1df6e4c866381987469000d3b73383",
+        "Assets/Samples/ViewWeave for Looking Glass - HDRP (Unofficial)/0.1.0/HDRP Quick Start/QuickStart.unity": "865af5c4fe1c9c446d84c255939127c3484e2e2e7d02fa720aa6915da34eec6f",
+        "Assets/Samples/ViewWeave for Looking Glass - HDRP (Unofficial)/0.1.0/HDRP Quick Start/Materials/Yellow.mat": "c6e104a729302daf2d7d477d14fe752971891e224af5d60e6037c591fa423c8c",
+        "Assets/Samples/ViewWeave for Looking Glass - HDRP (Unofficial)/0.1.0/HDRP Quick Start/Materials/Blue.mat": "7bfc208642136ab7b9f25ee523aa18822c40be817d52a09a401ed48fff2cecc8",
+        "Assets/Samples/ViewWeave for Looking Glass - HDRP (Unofficial)/0.1.0/HDRP Quick Start/Materials/Red.mat.meta": "da9684f6215586549684ec208dcd67647cad4316cda3e641f5438daafef91d59",
+        "Assets/Samples/ViewWeave for Looking Glass - HDRP (Unofficial)/0.1.0/HDRP Quick Start/Materials/Blue.mat.meta": "fae47e14c51eecc7537593a71ba2f193642e7f57c9d8848ea297d5aa359fb3ef",
+        "Assets/Samples/ViewWeave for Looking Glass - HDRP (Unofficial)/0.1.0/HDRP Quick Start/Materials/Red.mat": "f6d4822e3e2918ac43d6e2b5a8989c66e7db67932613b21bb45a8f01906bcc89",
+        "Assets/Samples/ViewWeave for Looking Glass - HDRP (Unofficial)/0.1.0/HDRP Quick Start/Materials/Yellow.mat.meta": "608e73a278429eccd956364f54a8d49c88bad4fe06bb104ce6bb2031fad3025f",
+        "Assets/Samples/ViewWeave for Looking Glass - HDRP (Unofficial)/0.1.0/HDRP Quick Start/Animations/SphereBounce.anim": "a669bddfa79f5672781b57d3be2cfb853de9d0830b1954a32fac00c1959cece9",
+        "Assets/Samples/ViewWeave for Looking Glass - HDRP (Unofficial)/0.1.0/HDRP Quick Start/Animations/SphereBounce.anim.meta": "92a35a674e512b8001f69e76b09dfd3ecee30f27664343d8c8512cfbe7fe9d7b",
+        "Assets/Samples/ViewWeave for Looking Glass - HDRP (Unofficial)/0.1.0/HDRP Quick Start/Animations/SphereBounce.controller.meta": "a02a514c03d8eff4ae9717d887a8edbb5a942dd48e9c61ee6b8cc42b91fb68c4",
+        "Assets/Samples/ViewWeave for Looking Glass - HDRP (Unofficial)/0.1.0/HDRP Quick Start/Animations/CubeRotation.controller": "79732a2c914bbd0481adebafd4d5b1b74046875ad02bb1ba0041213c7db3a7c1",
+        "Assets/Samples/ViewWeave for Looking Glass - HDRP (Unofficial)/0.1.0/HDRP Quick Start/Animations/SphereBounce.controller": "7ca68ce0569ec6457d7aaccb5b7ab60e06d6c050bc38ac53ef77c9de633e76d1",
+        "Assets/Samples/ViewWeave for Looking Glass - HDRP (Unofficial)/0.1.0/HDRP Quick Start/Animations/CubeRotation.anim.meta": "f078e2200ed259497353e3ad3f63c99bfbd5c16b6847b1555a87070fecc6ec05",
+        "Assets/Samples/ViewWeave for Looking Glass - HDRP (Unofficial)/0.1.0/HDRP Quick Start/Animations/CubeRotation.controller.meta": "181ebacfe9116927210de81ef8a38e32cddbc57b86ffecaa43e2f5814a2b2913",
+        "Assets/Samples/ViewWeave for Looking Glass - HDRP (Unofficial)/0.1.0/HDRP Quick Start/Animations/CubeRotation.anim": "92e7785486cd00c351d73c13ed18d7fe58ca683c8afdbc3f6342c01ad0b66adb"
+      },
+      "rawResponseHashes": {
+        "hdrp-import": "2acc8ce6a86293c9db4692e15d6778c2b5cbf1236f033f8fdbebce349417a74e",
+        "hdrp-remap": "baacc83a03f766be652bf7deaed2dcdf7a67e17d6bf9e902f5b9e8780108af5f",
+        "hdrp-edit": "54d39a24dc02f99636888c665084a67ca86c614bbdcc43dfeabbed4bec6f8769",
+        "hdrp-play": "78a72e7e2fd82e2c5f6bc20d9bdd636242fe8ca59b237ae082c834cdb4fde812",
+        "hdrp-stop": "a1a70136ea95cce85b948e8c0d97ee71c89396d1be6b345ad144a073efe09b3e",
+        "hdrp-console": "7414f6e10b8ea5153c2d6eb87826b7f4f48727beba51c02de35c70b81c63a423"
+      }
+    }
+  },
+  "rawArtifacts": ".local/sample-project-refresh-20261011",
+  "notRun": [
+    "Windows Editor",
+    "Standalone Player",
+    "Quilt rendering",
+    "Bridge device output",
+    "subpixel GPU tests",
+    "physical panel evaluation"
+  ],
+  "observations": [
+    "Initial SDK import emitted CS0414 and CS0618 warnings; final Console ground truth is recorded separately from session warning counters.",
+    "One HDRP launch and one URP relaunch ended before Pipeline readiness; after confirming process absence, relaunches became ready. No new Unity crash report was found. Cause not isolated.",
+    "Pipeline quit command failed in Edit Mode with its DontDestroyOnLoad scheduler diagnostic; UnityEditor.EditorApplication.Exit was used for normal final shutdown.",
+    "Both final Game Views, Hierarchies, and Rig Inspectors were visually observed. No pink objects or Missing Script fields were visible. Screenshots were observed through native GUI; no screenshot files are included."
+  ],
+  "nativeShimHashes": {
+    "urp": "f2539810f3a63cc3998f0a9ef7b3b96a50cf29031ea986e67ca753787c5cca0f",
+    "hdrp": "f2539810f3a63cc3998f0a9ef7b3b96a50cf29031ea986e67ca753787c5cca0f"
+  }
+}
