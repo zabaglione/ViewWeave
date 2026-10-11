@@ -1,0 +1,1064 @@
+{
+  "formatVersion": 1,
+  "date": "2026-10-11",
+  "fixRevision": "4fe83a26a4a49f4a4418d3c9fd242375fc8bbbe9",
+  "codeChanged": "Native/stable_sdk_input_d3d11.cmake",
+  "cause": "Manual presenter FXC lookup omitted Windows Kits registry/SDK discovery; transport-only config invokes this target before stable input can seed the cache.",
+  "change": "Both shader target helpers call the shared lkg_find_fxc resolver.",
+  "sourceFiles": [
+    {
+      "path": "Native/stable_sdk_input_d3d11.cmake",
+      "sha256": "fa48f3acab5b8731aaa1424fa36734aefe99d08bce319f3eed8a76ec55f85ab1",
+      "bytes": 6724
+    },
+    {
+      "path": "Native/CMakeLists.txt",
+      "sha256": "47602688fd4e46baed3fbb069fa7653145122ec4b568452d4683115c7d1115cb",
+      "bytes": 23823
+    },
+    {
+      "path": ".github/workflows/validate.yml",
+      "sha256": "54e3ecee5f4279b866f7d167703e25aa03ef707fcbb0706172aebd01554f976d",
+      "bytes": 4729
+    }
+  ],
+  "initialRuns": [
+    {
+      "runId": 38118840186,
+      "url": "https://github.com/zabaglione/ViewWeave/actions/runs/38118840186",
+      "headSha": "99cdeea7120e36e89fe6341f61ae3e1979f25e7b",
+      "conclusion": "failure",
+      "rawMetadata": {
+        "path": ".local/ci-fxc-20261011/38118840186-jobs.json",
+        "sha256": "b0ce8b07cd0f4f47825f22e7496a1a6bee25c4fb690792f7dc0089efad74096f",
+        "bytes": 8880
+      },
+      "jobs": [
+        {
+          "jobId": 114409190939,
+          "name": "native-windows-fake-regressions",
+          "url": "https://github.com/zabaglione/ViewWeave/actions/runs/38118840186/job/114409190939",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAt": "2026-10-11T06:40:48Z",
+          "completedAt": "2026-10-11T06:42:39Z",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Configure native fake-runtime regressions",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Build native fake-runtime regressions",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run native fake-runtime regressions",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "jobId": 114409191025,
+          "name": "native-transport",
+          "url": "https://github.com/zabaglione/ViewWeave/actions/runs/38118840186/job/114409191025",
+          "status": "completed",
+          "conclusion": "failure",
+          "startedAt": "2026-10-11T06:40:46Z",
+          "completedAt": "2026-10-11T06:41:14Z",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Configure transport tests",
+              "status": "completed",
+              "conclusion": "failure"
+            },
+            {
+              "name": "Build configured transport targets",
+              "status": "completed",
+              "conclusion": "skipped"
+            },
+            {
+              "name": "Run transport tests",
+              "status": "completed",
+              "conclusion": "skipped"
+            },
+            {
+              "name": "Post Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "jobId": 114409191032,
+          "name": "static",
+          "url": "https://github.com/zabaglione/ViewWeave/actions/runs/38118840186/job/114409191032",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAt": "2026-10-11T06:40:46Z",
+          "completedAt": "2026-10-11T06:40:55Z",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/setup-python@v5",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify generated UPM distributions",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Test repository validator",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run repository validator",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/setup-python@v5",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "jobId": 114409191042,
+          "name": "native-portable",
+          "url": "https://github.com/zabaglione/ViewWeave/actions/runs/38118840186/job/114409191042",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAt": "2026-10-11T06:40:45Z",
+          "completedAt": "2026-10-11T06:40:54Z",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Configure portable native tests",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Build portable native targets",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run portable native tests",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "jobId": 114409191044,
+          "name": "native-macos-metal",
+          "url": "https://github.com/zabaglione/ViewWeave/actions/runs/38118840186/job/114409191044",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAt": "2026-10-11T06:40:52Z",
+          "completedAt": "2026-10-11T06:41:12Z",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Configure macOS Metal native tests",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Build macOS Metal native targets",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run macOS Metal native tests",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Stage macOS shim with license notices",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Preserve macOS shim artifact",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "runId": 38115101844,
+      "url": "https://github.com/zabaglione/ViewWeave/actions/runs/38115101844",
+      "headSha": "be3cbb7f6967c3090d5e446b01a8e9a3ff3b4920",
+      "conclusion": "failure",
+      "rawMetadata": {
+        "path": ".local/ci-fxc-20261011/38115101844-jobs.json",
+        "sha256": "87e050cd617e69a2b1e8ea2e18acb028bd7be1b86ee515bf32778a1f8486497c",
+        "bytes": 8880
+      },
+      "jobs": [
+        {
+          "jobId": 114398319380,
+          "name": "native-portable",
+          "url": "https://github.com/zabaglione/ViewWeave/actions/runs/38115101844/job/114398319380",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAt": "2026-10-11T05:32:18Z",
+          "completedAt": "2026-10-11T05:32:31Z",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Configure portable native tests",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Build portable native targets",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run portable native tests",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "jobId": 114398319494,
+          "name": "static",
+          "url": "https://github.com/zabaglione/ViewWeave/actions/runs/38115101844/job/114398319494",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAt": "2026-10-11T05:32:18Z",
+          "completedAt": "2026-10-11T05:32:27Z",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/setup-python@v5",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify generated UPM distributions",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Test repository validator",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run repository validator",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/setup-python@v5",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "jobId": 114398319496,
+          "name": "native-macos-metal",
+          "url": "https://github.com/zabaglione/ViewWeave/actions/runs/38115101844/job/114398319496",
+          "status": "completed",
+          "conclusion": "failure",
+          "startedAt": "2026-10-11T05:32:23Z",
+          "completedAt": "2026-10-11T05:32:43Z",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Configure macOS Metal native tests",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Build macOS Metal native targets",
+              "status": "completed",
+              "conclusion": "failure"
+            },
+            {
+              "name": "Run macOS Metal native tests",
+              "status": "completed",
+              "conclusion": "skipped"
+            },
+            {
+              "name": "Stage macOS shim with license notices",
+              "status": "completed",
+              "conclusion": "skipped"
+            },
+            {
+              "name": "Preserve macOS shim artifact",
+              "status": "completed",
+              "conclusion": "skipped"
+            },
+            {
+              "name": "Post Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "jobId": 114398319530,
+          "name": "native-transport",
+          "url": "https://github.com/zabaglione/ViewWeave/actions/runs/38115101844/job/114398319530",
+          "status": "completed",
+          "conclusion": "failure",
+          "startedAt": "2026-10-11T05:32:18Z",
+          "completedAt": "2026-10-11T05:32:49Z",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Configure transport tests",
+              "status": "completed",
+              "conclusion": "failure"
+            },
+            {
+              "name": "Build configured transport targets",
+              "status": "completed",
+              "conclusion": "skipped"
+            },
+            {
+              "name": "Run transport tests",
+              "status": "completed",
+              "conclusion": "skipped"
+            },
+            {
+              "name": "Post Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "jobId": 114398319539,
+          "name": "native-windows-fake-regressions",
+          "url": "https://github.com/zabaglione/ViewWeave/actions/runs/38115101844/job/114398319539",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAt": "2026-10-11T05:32:18Z",
+          "completedAt": "2026-10-11T05:33:53Z",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Configure native fake-runtime regressions",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Build native fake-runtime regressions",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run native fake-runtime regressions",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "failedRawLogs": [
+    {
+      "path": ".local/ci-transport-38118840186.log",
+      "sha256": "4fb684fb0c5f3c0f4def40be8e4375541fe91527d9e859e20afe8d3fb0ef3400",
+      "bytes": 19899
+    },
+    {
+      "path": ".local/ci-transport-38115101844.log",
+      "sha256": "ab8c06f312b336ebc8d589c5c01a37d8449e7161d048a9647bb2ed5535963cec",
+      "bytes": 19899
+    },
+    {
+      "path": ".local/ci-fxc-20261011/macos-be3cbb7.log",
+      "sha256": "22a7b459b2a4eec282a91c1c7167661112ee086b8af33449cea9353ec4db8c91",
+      "bytes": 27811
+    }
+  ],
+  "successfulRun": {
+    "runId": 38119458293,
+    "url": "https://github.com/zabaglione/ViewWeave/actions/runs/38119458293",
+    "headSha": "4fe83a26a4a49f4a4418d3c9fd242375fc8bbbe9",
+    "conclusion": "success",
+    "rawMetadata": {
+      "path": ".local/ci-fxc-20261011/38119458293-jobs.json",
+      "sha256": "c67fcf3be8f4fc5562b068b0d5b7430969e624f0164d24db1f9877fb17974cfe",
+      "bytes": 8880
+    },
+    "jobs": [
+      {
+        "jobId": 114410990509,
+        "name": "static",
+        "url": "https://github.com/zabaglione/ViewWeave/actions/runs/38119458293/job/114410990509",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-10-11T06:52:11Z",
+        "completedAt": "2026-10-11T06:52:19Z",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@v4",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/setup-python@v5",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify generated UPM distributions",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Test repository validator",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run repository validator",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/setup-python@v5",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@v4",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "rawLog": {
+          "path": ".local/ci-fxc-20261011/static-4fe83a2.log",
+          "sha256": "59e11d8608d2ebbe33086f57ae0db0b7e09dfe17aef6d66d3898f5045b2a9e8c",
+          "bytes": 14738
+        },
+        "runnerLabel": "ubuntu-latest",
+        "pythonUnitTests": 5,
+        "repositoryValidation": "PASS",
+        "upmDistributionCheck": "PASS"
+      },
+      {
+        "jobId": 114410990561,
+        "name": "native-portable",
+        "url": "https://github.com/zabaglione/ViewWeave/actions/runs/38119458293/job/114410990561",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-10-11T06:52:12Z",
+        "completedAt": "2026-10-11T06:52:21Z",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@v4",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Configure portable native tests",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Build portable native targets",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run portable native tests",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@v4",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "rawLog": {
+          "path": ".local/ci-fxc-20261011/native-portable-4fe83a2.log",
+          "sha256": "0afae45a26492368062693de6ee4e230bcafdbf3d5fc915661d5a86998fffdcd",
+          "bytes": 15830
+        },
+        "runnerLabel": "ubuntu-latest",
+        "ctest": {
+          "passed": 5,
+          "failed": 0,
+          "ctestReportedSkipped": 0,
+          "executables": [
+            "lookingglass_worker_common_test",
+            "lookingglass_metadata_test",
+            "lookingglass_subpixel_calibration_test",
+            "lookingglass_metal_calibration_test",
+            "lookingglass_unsupported_shim_abi_test"
+          ],
+          "scope": "CTest executable-level results; no Unity or connected Bridge device."
+        }
+      },
+      {
+        "jobId": 114410990586,
+        "name": "native-windows-fake-regressions",
+        "url": "https://github.com/zabaglione/ViewWeave/actions/runs/38119458293/job/114410990586",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-10-11T06:52:11Z",
+        "completedAt": "2026-10-11T06:53:58Z",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@v4",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@v4",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Configure native fake-runtime regressions",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Build native fake-runtime regressions",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run native fake-runtime regressions",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@v4",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@v4",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "rawLog": {
+          "path": ".local/ci-fxc-20261011/native-windows-fake-regressions-4fe83a2.log",
+          "sha256": "985208caf15979a856746033fe10c88665135a82beb490276744daea0af46197",
+          "bytes": 47324
+        },
+        "runnerLabel": "windows-2022",
+        "ctest": {
+          "passed": 19,
+          "failed": 0,
+          "ctestReportedSkipped": 0,
+          "executables": [
+            "lookingglass_worker_common_test",
+            "lookingglass_metadata_test",
+            "lookingglass_subpixel_calibration_test",
+            "lookingglass_metal_calibration_test",
+            "lookingglass_bridge_subpixel_metadata_test",
+            "lookingglass_manual_subpixel_presenter_test",
+            "lookingglass_stdio_load_guard_test",
+            "lookingglass_worker_transport_test",
+            "lookingglass_worker_cleanup_exception_test",
+            "lookingglass_worker_host_initialize_failure_test",
+            "lookingglass_worker_host_uninitialize_failure_test",
+            "lookingglass_persistent_d3d11_device_test",
+            "lookingglass_worker_preview_pause_test",
+            "lookingglass_worker_preview_lease_test",
+            "lookingglass_bridge_static_present_test",
+            "lookingglass_stable_sdk_input_d3d11_test",
+            "lookingglass_bridge_loader_lifecycle_test",
+            "lookingglass_bridge_shutdown_contract_test",
+            "lookingglass_bridge_shutdown_exception_contract_test"
+          ],
+          "scope": "CTest executable-level results; no Unity or connected Bridge device."
+        }
+      },
+      {
+        "jobId": 114410990602,
+        "name": "native-transport",
+        "url": "https://github.com/zabaglione/ViewWeave/actions/runs/38119458293/job/114410990602",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-10-11T06:52:13Z",
+        "completedAt": "2026-10-11T06:53:29Z",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@v4",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@v4",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Configure transport tests",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Build configured transport targets",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run transport tests",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@v4",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@v4",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "rawLog": {
+          "path": ".local/ci-fxc-20261011/native-transport-4fe83a2.log",
+          "sha256": "e1c230f5b30ef5a279b6ee8ff599b1e0f095929a7cebd0a51310bbacd05becfd",
+          "bytes": 32401
+        },
+        "runnerLabel": "windows-2022",
+        "ctest": {
+          "passed": 15,
+          "failed": 0,
+          "ctestReportedSkipped": 0,
+          "executables": [
+            "lookingglass_worker_common_test",
+            "lookingglass_metadata_test",
+            "lookingglass_subpixel_calibration_test",
+            "lookingglass_metal_calibration_test",
+            "lookingglass_bridge_subpixel_metadata_test",
+            "lookingglass_manual_subpixel_presenter_test",
+            "lookingglass_worker_transport_test",
+            "lookingglass_worker_cleanup_exception_test",
+            "lookingglass_worker_host_initialize_failure_test",
+            "lookingglass_worker_host_uninitialize_failure_test",
+            "lookingglass_persistent_d3d11_device_test",
+            "lookingglass_worker_preview_pause_test",
+            "lookingglass_worker_preview_lease_test",
+            "lookingglass_bridge_static_present_test",
+            "lookingglass_stable_sdk_input_d3d11_test"
+          ],
+          "scope": "CTest executable-level results; no Unity or connected Bridge device."
+        }
+      },
+      {
+        "jobId": 114410990610,
+        "name": "native-macos-metal",
+        "url": "https://github.com/zabaglione/ViewWeave/actions/runs/38119458293/job/114410990610",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-10-11T06:52:17Z",
+        "completedAt": "2026-10-11T06:52:36Z",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@v4",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@v4",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Configure macOS Metal native tests",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Build macOS Metal native targets",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run macOS Metal native tests",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Stage macOS shim with license notices",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Preserve macOS shim artifact",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@v4",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@v4",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "rawLog": {
+          "path": ".local/ci-fxc-20261011/native-macos-metal-4fe83a2.log",
+          "sha256": "74132ba53190dbe6900192a8fbcf347579f3987fb48e7bd11a81bb17ad7d7dbe",
+          "bytes": 32002
+        },
+        "runnerLabel": "macos-14",
+        "ctest": {
+          "passed": 8,
+          "failed": 0,
+          "ctestReportedSkipped": 0,
+          "executables": [
+            "lookingglass_worker_common_test",
+            "lookingglass_metadata_test",
+            "lookingglass_subpixel_calibration_test",
+            "lookingglass_metal_calibration_test",
+            "lookingglass_metal_display_metadata_test",
+            "lookingglass_metal_bridge_cells_test",
+            "lookingglass_metal_api_contract_test",
+            "lookingglass_metal_submission_lifetime_test"
+          ],
+          "scope": "CTest executable-level results; no Unity or connected Bridge device."
+        }
+      }
+    ]
+  },
+  "workflowJobsPassed": 5,
+  "runtimeAndShaderSourcesChanged": false,
+  "packagedNativeArtifactsChanged": false,
+  "packagedArtifactIdentities": [
+    {
+      "path": "Packages/com.zabaglione.lookingglass.viewweave.bridge/Plugins/x86_64/lookingglass_bridge_shim.dll",
+      "sha256": "c864a363ac441c77497d4302ff25cb48fa2d6ea194b6fb8a73bae49dc522fee2",
+      "bytes": 302080
+    },
+    {
+      "path": "Packages/com.zabaglione.lookingglass.viewweave.bridge/Plugins/macOS/lookingglass_bridge_shim.dylib",
+      "sha256": "f2539810f3a63cc3998f0a9ef7b3b96a50cf29031ea986e67ca753787c5cca0f",
+      "bytes": 157712
+    }
+  ],
+  "localChecks": {
+    "repositoryValidatorUnitTests": 5,
+    "repositoryValidation": "PASS",
+    "distributionCheck": "PASS",
+    "diffWhitespace": "PASS"
+  },
+  "limits": [
+    "GitHub-hosted native build and executable tests only; not Unity Editor/Player, URP/HDRP or connected-device validation.",
+    "Windows native suites overlap; 19 plus 15 does not represent 34 unique scenarios.",
+    "No CI-built binary identity is asserted to match a packaged native artifact.",
+    "CI macOS artifact has not replaced the packaged arm64 shim.",
+    "Actions emit Node.js 20 deprecation annotations but this run completed successfully."
+  ],
+  "rawLogsCommitted": false
+}
