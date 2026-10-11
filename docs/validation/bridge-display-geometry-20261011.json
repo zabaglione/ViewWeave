@@ -1,0 +1,589 @@
+{
+  "schemaVersion": 1,
+  "dateJst": "2026-10-11",
+  "sourceBaseline": "e777b34763b25e1673e5dc0188c812cda69cbcc0",
+  "changes": "Shared Bridge metadata publication and Editor geometry persistence; both transport success hooks; Editor-only Rig identity; measured working tree before commit. The Show Retained Geometry menu was added after the URP run without changing its check logic.",
+  "environment": {
+    "unity": "6000.6.4f1",
+    "urp": "17.6.0",
+    "hdrp": "17.6.0",
+    "graphicsApi": "Metal",
+    "gpu": "Apple M3 Max",
+    "macOS": "26.6.2",
+    "bridge": "2.6.3",
+    "device": "Looking Glass Go"
+  },
+  "productSources": {
+    "Packages/com.zabaglione.lookingglass.viewweave.bridge/Editor/Common/BridgeDisplayGeometryStore.cs": "0a5d9718aa17d1a75e991dc26a6ba3af459e3ebae41e339a7f443f54957599c9",
+    "Packages/com.zabaglione.lookingglass.viewweave.bridge/Editor/Common/BridgeEditorDisplaySettings.cs": "02eacfb319341bb40a30866cfc9b782fc1c2828c810a5f3116a0b4a2cb554664",
+    "Packages/com.zabaglione.lookingglass.viewweave.bridge/Editor/Common/QuiltEditorProducer.cs": "16f15a6348946064a78b1fd3eda49795746821504fa80c9326622ebf2c6a2bdf",
+    "Packages/com.zabaglione.lookingglass.viewweave.bridge/Editor/Platforms/Metal/BridgeMetalEditorPreview.cs": "0646a568d396da39de19cfb959381c282a75def1c85f0694e61fa3b0cfe9c80b",
+    "Packages/com.zabaglione.lookingglass.viewweave.bridge/Editor/Platforms/Metal/ViewWeaveRigInspectorUI.Metal.cs": "59fe83aadceb5e6ab52c74f5dd6c51a6fcc46706e493bcaf9c976c46d77fc694",
+    "Packages/com.zabaglione.lookingglass.viewweave.bridge/Editor/Platforms/Windows/BridgeEditorPreview.cs": "47deaed172a8a0b91326fc6658e69690d6645ebdbf785038e2eefa80837f232c",
+    "Packages/com.zabaglione.lookingglass.viewweave.bridge/Runtime/Common/BridgeDisplayMetadata.cs": "0fbcaca29cad6a9fdd165bbef0e1b7f621b14bad0f763ffcd255cb04694254be",
+    "Packages/com.zabaglione.lookingglass.viewweave.bridge/Runtime/Platforms/Metal/BridgeMetalQuiltOutput.cs": "0460fdbb95435660a607cf8fb8592cb130783e2734d13a4e6ecd16e36d2885d8",
+    "Packages/com.zabaglione.lookingglass.viewweave.bridge/Runtime/Platforms/Windows/BridgeWorkerQuiltOutput.cs": "3e6732b6fb1491eef914bdb18371a58ca9df626a91ea8ffa0095f287cce02044",
+    "Packages/com.zabaglione.lookingglass.viewweave.bridge/Runtime/Platforms/Windows/ViewWeaveBridgeSession.cs": "e0fab38f484b6e6481cd055a485426c9c15eb1f018e56a6399003b42fe1cb8cb",
+    "Packages/com.zabaglione.lookingglass.viewweave.core/Editor/QuiltDisplaySettingsResolver.cs": "9ccca1f59e64c391f7d08b120a6539740988d29e1e1e9a6f67d9d20c1f7e28b4",
+    "Packages/com.zabaglione.lookingglass.viewweave.core/Runtime/ViewWeaveRig.cs": "30288dd01487fe3965db9fe5459ed9ef050bb4d64cb9c400306b4fa49bd7b3de"
+  },
+  "fixtureSources": {
+    "Tests/Pipelines/Unity/Assets/BridgeSessionValidation/Editor/BridgeDisplayGeometryTests.cs": "4f8a488a5aa4bc213e1ddfbccf978f9ab20ec86b09d15b622085d9c92d8a0124",
+    "Tests/Pipelines/Unity/Assets/BridgeSessionValidation/Editor/BridgeEditorPreviewGpuTests.cs": "a99909d240c2005cc8723ba0d365603dc79f4dbc6fee6216e1a29f195a6ccd7b",
+    "Tests/Pipelines/Unity/Assets/MetalCurrentValidation/BridgeGeometryAwakeProbe.cs": "e583befe0e89c0f3488a49c5820d3d476fd3c0e89cf6e884c96b7408fa1aabde",
+    "Tests/Pipelines/Unity/Assets/MetalCurrentValidation/Editor/BridgeDisplayGeometryValidation.cs": "2332de37cc1625cc3219905d22cafc6d8f8330e88aa8326f7741d7b33b739d4b"
+  },
+  "nativeArtifact": {
+    "path": "Packages/com.zabaglione.lookingglass.viewweave.bridge/Plugins/macOS/lookingglass_bridge_shim.dylib",
+    "sha256": "5df5b50af994539b97372c4776b24245e2aa6054411f16f6ed9fcec6d1057cc2"
+  },
+  "nativeChanged": false,
+  "commonEditMode": {
+    "scope": "Synthetic metadata for both Windows and Metal components, executed on macOS; not Windows OS/native proof",
+    "total": 15,
+    "passed": 15,
+    "failed": 0,
+    "skipped": 0,
+    "raw": {
+      "path": ".local/bridge-display-geometry-20261011/common-tests-unified.xml",
+      "sha256": "f0d35676c348445cd12e4a64c450f52c7bcb50c9ed6d8792f1acb5e0527c838f"
+    },
+    "cases": [
+      "AnotherRendererCannotBorrowAnAttachedOutputsGeometry",
+      "BothOutputsRetainBridgeGeometryWithNoActiveConnection(True,0.5625f)",
+      "BothOutputsRetainBridgeGeometryWithNoActiveConnection(True,1.777778f)",
+      "BothOutputsRetainBridgeGeometryWithNoActiveConnection(False,0.5625f)",
+      "BothOutputsRetainBridgeGeometryWithNoActiveConnection(False,1.777778f)",
+      "ChangedSelectionOrOutputDoesNotReusePreviousDisplay(True)",
+      "ChangedSelectionOrOutputDoesNotReusePreviousDisplay(False)",
+      "LocalPreviewSettingsUseTheSameRetainedGeometry(True)",
+      "LocalPreviewSettingsUseTheSameRetainedGeometry(False)",
+      "NewBridgeResultUpdatesGeometryWhileInvalidResultDoesNotEraseIt(True)",
+      "NewBridgeResultUpdatesGeometryWhileInvalidResultDoesNotEraseIt(False)",
+      "OlderWindowsSnapshotCannotOverrideNewerRecognizedGeometry",
+      "RetainedPhysicalCalibrationDoesNotEnableConnectedCalibrationActions",
+      "SoleTransportRetainsGeometryAfterItsTemporaryBindingIsRestored(True)",
+      "SoleTransportRetainsGeometryAfterItsTemporaryBindingIsRestored(False)"
+    ]
+  },
+  "goLifecycle": [
+    {
+      "passed": true,
+      "cloneRejected": true,
+      "temporaryIdentityCleared": true,
+      "awakeRecognitionRetained": true,
+      "reloadsDisabled": false,
+      "error": "",
+      "pipeline": "URP",
+      "unityVersion": "6000.6.4f1",
+      "graphicsApi": "Metal",
+      "bridgeAspect": 0.5625,
+      "domainReloads": 2,
+      "pendingResources": 0,
+      "pendingRetirement": 0,
+      "checks": [
+        {
+          "stage": "device-active",
+          "source": "DevicePreview",
+          "aspect": 0.5625,
+          "focusRatio": 0.5625,
+          "nearRatio": 0.5625,
+          "farRatio": 0.5625,
+          "isConnected": true
+        },
+        {
+          "stage": "device-paused",
+          "source": "DevicePreview",
+          "aspect": 0.5625,
+          "focusRatio": 0.5625,
+          "nearRatio": 0.5625,
+          "farRatio": 0.5625,
+          "isConnected": true
+        },
+        {
+          "stage": "device-resumed",
+          "source": "DevicePreview",
+          "aspect": 0.5625,
+          "focusRatio": 0.5625,
+          "nearRatio": 0.5625,
+          "farRatio": 0.5625,
+          "isConnected": true
+        },
+        {
+          "stage": "device-stopped",
+          "source": "LastRecognizedDisplay",
+          "aspect": 0.5625,
+          "focusRatio": 0.5625,
+          "nearRatio": 0.5625,
+          "farRatio": 0.5625,
+          "isConnected": false
+        },
+        {
+          "stage": "local-preview",
+          "source": "LastRecognizedDisplay",
+          "aspect": 0.5625,
+          "focusRatio": 0.5625,
+          "nearRatio": 0.5625,
+          "farRatio": 0.5625,
+          "isConnected": false
+        },
+        {
+          "stage": "local-stopped",
+          "source": "LastRecognizedDisplay",
+          "aspect": 0.5625,
+          "focusRatio": 0.5625,
+          "nearRatio": 0.5625,
+          "farRatio": 0.5625,
+          "isConnected": false
+        },
+        {
+          "stage": "domain-reloaded",
+          "source": "LastRecognizedDisplay",
+          "aspect": 0.5625,
+          "focusRatio": 0.5625,
+          "nearRatio": 0.5625,
+          "farRatio": 0.5625,
+          "isConnected": false
+        },
+        {
+          "stage": "awake-recognition-after-stop",
+          "source": "LastRecognizedDisplay",
+          "aspect": 0.5625,
+          "focusRatio": 0.5625,
+          "nearRatio": 0.5625,
+          "farRatio": 0.5625,
+          "isConnected": false
+        },
+        {
+          "stage": "first-recognition-in-play",
+          "source": "BridgeSession",
+          "aspect": 0.5625,
+          "focusRatio": 0.5625,
+          "nearRatio": 0.5625,
+          "farRatio": 0.5625,
+          "isConnected": true
+        },
+        {
+          "stage": "play-output-stopped",
+          "source": "LastRecognizedDisplay",
+          "aspect": 0.5625,
+          "focusRatio": 0.5625,
+          "nearRatio": 0.5625,
+          "farRatio": 0.5625,
+          "isConnected": false
+        },
+        {
+          "stage": "after-play-exit",
+          "source": "LastRecognizedDisplay",
+          "aspect": 0.5625,
+          "focusRatio": 0.5625,
+          "nearRatio": 0.5625,
+          "farRatio": 0.5625,
+          "isConnected": false
+        },
+        {
+          "stage": "play-only-after-exit",
+          "source": "LastRecognizedDisplay",
+          "aspect": 0.5625,
+          "focusRatio": 0.5625,
+          "nearRatio": 0.5625,
+          "farRatio": 0.5625,
+          "isConnected": false
+        },
+        {
+          "stage": "editor-reopened",
+          "source": "LastRecognizedDisplay",
+          "aspect": 0.5625,
+          "focusRatio": 0.5625,
+          "nearRatio": 0.5625,
+          "farRatio": 0.5625,
+          "isConnected": false
+        },
+        {
+          "stage": "play-only-editor-reopened",
+          "source": "LastRecognizedDisplay",
+          "aspect": 0.5625,
+          "focusRatio": 0.5625,
+          "nearRatio": 0.5625,
+          "farRatio": 0.5625,
+          "isConnected": false
+        }
+      ],
+      "initialRaw": {
+        "path": ".local/bridge-display-geometry-20261011/urp-complete/geometry.json",
+        "sha256": "8c0157d49ff8a6a346d7af07ec483c801954d7571a097d88fea524401da1c8ab"
+      },
+      "reopenedRaw": {
+        "path": ".local/bridge-display-geometry-20261011/urp-complete/reopened.json",
+        "sha256": "772fa155e3e52c3723e7ff8f9239e5da9d596ddad9412d4c0f81fc994943a1b9"
+      },
+      "editorRestartVerified": true
+    },
+    {
+      "passed": true,
+      "cloneRejected": true,
+      "temporaryIdentityCleared": true,
+      "awakeRecognitionRetained": true,
+      "reloadsDisabled": false,
+      "error": "",
+      "pipeline": "HDRP",
+      "unityVersion": "6000.6.4f1",
+      "graphicsApi": "Metal",
+      "bridgeAspect": 0.5625,
+      "domainReloads": 2,
+      "pendingResources": 0,
+      "pendingRetirement": 0,
+      "checks": [
+        {
+          "stage": "device-active",
+          "source": "DevicePreview",
+          "aspect": 0.5625,
+          "focusRatio": 0.5625,
+          "nearRatio": 0.5625,
+          "farRatio": 0.5625,
+          "isConnected": true
+        },
+        {
+          "stage": "device-paused",
+          "source": "DevicePreview",
+          "aspect": 0.5625,
+          "focusRatio": 0.5625,
+          "nearRatio": 0.5625,
+          "farRatio": 0.5625,
+          "isConnected": true
+        },
+        {
+          "stage": "device-resumed",
+          "source": "DevicePreview",
+          "aspect": 0.5625,
+          "focusRatio": 0.5625,
+          "nearRatio": 0.5625,
+          "farRatio": 0.5625,
+          "isConnected": true
+        },
+        {
+          "stage": "device-stopped",
+          "source": "LastRecognizedDisplay",
+          "aspect": 0.5625,
+          "focusRatio": 0.5625,
+          "nearRatio": 0.5625,
+          "farRatio": 0.5625,
+          "isConnected": false
+        },
+        {
+          "stage": "local-preview",
+          "source": "LastRecognizedDisplay",
+          "aspect": 0.5625,
+          "focusRatio": 0.5625,
+          "nearRatio": 0.5625,
+          "farRatio": 0.5625,
+          "isConnected": false
+        },
+        {
+          "stage": "local-stopped",
+          "source": "LastRecognizedDisplay",
+          "aspect": 0.5625,
+          "focusRatio": 0.5625,
+          "nearRatio": 0.5625,
+          "farRatio": 0.5625,
+          "isConnected": false
+        },
+        {
+          "stage": "domain-reloaded",
+          "source": "LastRecognizedDisplay",
+          "aspect": 0.5625,
+          "focusRatio": 0.5625,
+          "nearRatio": 0.5625,
+          "farRatio": 0.5625,
+          "isConnected": false
+        },
+        {
+          "stage": "awake-recognition-after-stop",
+          "source": "LastRecognizedDisplay",
+          "aspect": 0.5625,
+          "focusRatio": 0.5625,
+          "nearRatio": 0.5625,
+          "farRatio": 0.5625,
+          "isConnected": false
+        },
+        {
+          "stage": "first-recognition-in-play",
+          "source": "BridgeSession",
+          "aspect": 0.5625,
+          "focusRatio": 0.5625,
+          "nearRatio": 0.5625,
+          "farRatio": 0.5625,
+          "isConnected": true
+        },
+        {
+          "stage": "play-output-stopped",
+          "source": "LastRecognizedDisplay",
+          "aspect": 0.5625,
+          "focusRatio": 0.5625,
+          "nearRatio": 0.5625,
+          "farRatio": 0.5625,
+          "isConnected": false
+        },
+        {
+          "stage": "after-play-exit",
+          "source": "LastRecognizedDisplay",
+          "aspect": 0.5625,
+          "focusRatio": 0.5625,
+          "nearRatio": 0.5625,
+          "farRatio": 0.5625,
+          "isConnected": false
+        },
+        {
+          "stage": "play-only-after-exit",
+          "source": "LastRecognizedDisplay",
+          "aspect": 0.5625,
+          "focusRatio": 0.5625,
+          "nearRatio": 0.5625,
+          "farRatio": 0.5625,
+          "isConnected": false
+        },
+        {
+          "stage": "editor-reopened",
+          "source": "LastRecognizedDisplay",
+          "aspect": 0.5625,
+          "focusRatio": 0.5625,
+          "nearRatio": 0.5625,
+          "farRatio": 0.5625,
+          "isConnected": false
+        },
+        {
+          "stage": "play-only-editor-reopened",
+          "source": "LastRecognizedDisplay",
+          "aspect": 0.5625,
+          "focusRatio": 0.5625,
+          "nearRatio": 0.5625,
+          "farRatio": 0.5625,
+          "isConnected": false
+        }
+      ],
+      "initialRaw": {
+        "path": ".local/bridge-display-geometry-20261011/hdrp-complete/geometry.json",
+        "sha256": "9c9e3041f1a17509ae88e7993915ab02f8ecac43eaf4dc67b37e19ef44bb2bad"
+      },
+      "reopenedRaw": {
+        "path": ".local/bridge-display-geometry-20261011/hdrp-complete/reopened.json",
+        "sha256": "b0e0101bb13f105835638979f37ea18f69805d01ee0031ce9e89a374805cb5cd"
+      },
+      "editorRestartVerified": true
+    },
+    {
+      "passed": true,
+      "cloneRejected": true,
+      "temporaryIdentityCleared": true,
+      "awakeRecognitionRetained": true,
+      "reloadsDisabled": true,
+      "error": "",
+      "pipeline": "URP",
+      "unityVersion": "6000.6.4f1",
+      "graphicsApi": "Metal",
+      "bridgeAspect": 0.5625,
+      "domainReloads": 1,
+      "pendingResources": 0,
+      "pendingRetirement": 0,
+      "checks": [
+        {
+          "stage": "device-active",
+          "source": "DevicePreview",
+          "aspect": 0.5625,
+          "focusRatio": 0.5625,
+          "nearRatio": 0.5625,
+          "farRatio": 0.5625,
+          "isConnected": true
+        },
+        {
+          "stage": "device-paused",
+          "source": "DevicePreview",
+          "aspect": 0.5625,
+          "focusRatio": 0.5625,
+          "nearRatio": 0.5625,
+          "farRatio": 0.5625,
+          "isConnected": true
+        },
+        {
+          "stage": "device-resumed",
+          "source": "DevicePreview",
+          "aspect": 0.5625,
+          "focusRatio": 0.5625,
+          "nearRatio": 0.5625,
+          "farRatio": 0.5625,
+          "isConnected": true
+        },
+        {
+          "stage": "device-stopped",
+          "source": "LastRecognizedDisplay",
+          "aspect": 0.5625,
+          "focusRatio": 0.5625,
+          "nearRatio": 0.5625,
+          "farRatio": 0.5625,
+          "isConnected": false
+        },
+        {
+          "stage": "local-preview",
+          "source": "LastRecognizedDisplay",
+          "aspect": 0.5625,
+          "focusRatio": 0.5625,
+          "nearRatio": 0.5625,
+          "farRatio": 0.5625,
+          "isConnected": false
+        },
+        {
+          "stage": "local-stopped",
+          "source": "LastRecognizedDisplay",
+          "aspect": 0.5625,
+          "focusRatio": 0.5625,
+          "nearRatio": 0.5625,
+          "farRatio": 0.5625,
+          "isConnected": false
+        },
+        {
+          "stage": "domain-reloaded",
+          "source": "LastRecognizedDisplay",
+          "aspect": 0.5625,
+          "focusRatio": 0.5625,
+          "nearRatio": 0.5625,
+          "farRatio": 0.5625,
+          "isConnected": false
+        },
+        {
+          "stage": "awake-recognition-after-stop",
+          "source": "LastRecognizedDisplay",
+          "aspect": 0.5625,
+          "focusRatio": 0.5625,
+          "nearRatio": 0.5625,
+          "farRatio": 0.5625,
+          "isConnected": false
+        },
+        {
+          "stage": "first-recognition-in-play",
+          "source": "BridgeSession",
+          "aspect": 0.5625,
+          "focusRatio": 0.5625,
+          "nearRatio": 0.5625,
+          "farRatio": 0.5625,
+          "isConnected": true
+        },
+        {
+          "stage": "play-output-stopped",
+          "source": "LastRecognizedDisplay",
+          "aspect": 0.5625,
+          "focusRatio": 0.5625,
+          "nearRatio": 0.5625,
+          "farRatio": 0.5625,
+          "isConnected": false
+        },
+        {
+          "stage": "after-play-exit",
+          "source": "LastRecognizedDisplay",
+          "aspect": 0.5625,
+          "focusRatio": 0.5625,
+          "nearRatio": 0.5625,
+          "farRatio": 0.5625,
+          "isConnected": false
+        },
+        {
+          "stage": "play-only-after-exit",
+          "source": "LastRecognizedDisplay",
+          "aspect": 0.5625,
+          "focusRatio": 0.5625,
+          "nearRatio": 0.5625,
+          "farRatio": 0.5625,
+          "isConnected": false
+        },
+        {
+          "stage": "editor-reopened",
+          "source": "LastRecognizedDisplay",
+          "aspect": 0.5625,
+          "focusRatio": 0.5625,
+          "nearRatio": 0.5625,
+          "farRatio": 0.5625,
+          "isConnected": false
+        },
+        {
+          "stage": "play-only-editor-reopened",
+          "source": "LastRecognizedDisplay",
+          "aspect": 0.5625,
+          "focusRatio": 0.5625,
+          "nearRatio": 0.5625,
+          "farRatio": 0.5625,
+          "isConnected": false
+        }
+      ],
+      "initialRaw": {
+        "path": ".local/bridge-display-geometry-20261011/urp-no-reload/geometry.json",
+        "sha256": "26751f5a7ad8afe8131dee178d3f4542bc4888c12444d68a25fb83996d046ea0"
+      },
+      "reopenedRaw": {
+        "path": ".local/bridge-display-geometry-20261011/urp-no-reload/reopened.json",
+        "sha256": "31d8b6d08eb6ae0a4806a1c54b4f1b2828b33d2555ce87f3d37998a4aac7ab8d"
+      },
+      "editorRestartVerified": true
+    }
+  ],
+  "gui": [
+    {
+      "pipeline": "URP",
+      "purpleFocusFrame": "portrait 9:16 after Stop",
+      "hierarchyInspector": "Rig, URP camera and Renderer visible; no Missing Script or Reference observed",
+      "gameView": "red cube and green sphere; no pink observed",
+      "consoleErrors": 0,
+      "consoleWarnings": 2,
+      "warnings": "Existing FindObjectsByType overload marked obsolete in the geometry fixture after adding the read-only display menu"
+    },
+    {
+      "pipeline": "HDRP",
+      "purpleFocusFrame": "portrait 9:16 after Stop",
+      "hierarchyInspector": "Rig, HDRP camera and Renderer visible; no Missing Script or Reference observed",
+      "gameView": "red cube and green sphere; no pink observed",
+      "consoleErrors": 0,
+      "consoleWarnings": 0
+    }
+  ],
+  "initialFailures": [
+    {
+      "scope": "compile",
+      "verdict": "0 tests; obsolete GetInstanceID API replaced by EntityId",
+      "raw": {
+        "path": ".local/bridge-display-geometry-20261011/initial-compile.log",
+        "sha256": "07cb63efe6e901f24a27c777a04f1fdc1c4e005fe841298f99b78dde1e013fcd"
+      }
+    },
+    {
+      "scope": "snapshot fixture",
+      "verdict": "14/15; JSON cache injection changed from EditorJsonUtility to JsonUtility",
+      "raw": {
+        "path": ".local/bridge-display-geometry-20261011/common-tests-snapshot-fixture-initial.xml",
+        "sha256": "ee8a43cedafd58ac31f0359a1ee75e07cd226b2c230e919cb8ea4d648280e5c7"
+      }
+    },
+    {
+      "scope": "Awake recognition",
+      "verdict": "Early notification lost during scene loading; deferred and revalidated after Play binding",
+      "raw": {
+        "path": ".local/bridge-display-geometry-20261011/urp-final/geometry.json",
+        "sha256": "8fcbe9c795c268075a17b977f98451eb524a6262273b6367a01874050b06af99"
+      }
+    },
+    {
+      "scope": "Play presentation wait",
+      "verdict": "Awake retention passed; phase 10 timed out waiting for six presented frames; final fixture explicitly enables background Play updates",
+      "raw": {
+        "path": ".local/bridge-display-geometry-20261011/urp-verified/geometry.json",
+        "sha256": "51b111c4b5d9089f70ffc01dc9d4ab35a733fba9431bac2b049d683f4c940c46"
+      }
+    }
+  ],
+  "notVerified": [
+    "Windows OS or native Worker rerun after this change",
+    "16 Spatial Landscape physical device",
+    "physical panel optical quality",
+    "hotplug or automatic model change detection",
+    "multiple devices",
+    "long-running sessions",
+    "new Player builds for this Editor geometry change"
+  ]
+}

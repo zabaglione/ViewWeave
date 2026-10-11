@@ -551,6 +551,7 @@ namespace ViewWeave.Editor
                 producerRenderer.settings.columns = sourceRig.Renderer.settings.columns;
                 producerRenderer.settings.rows = sourceRig.Renderer.settings.rows;
                 producerRenderer.settings.views = sourceRig.Renderer.settings.views;
+                BridgeDisplayGeometryStore.ApplyToLocalPreview(sourceRig.Renderer, producerRenderer.settings);
             }
             CopyLivePreviewControls(sourceRig.Renderer, sourceRig.Renderer.GuardBehaviour,
                 producerRenderer, producerRig == null ? null : producerRig.Renderer.GuardBehaviour,
@@ -581,6 +582,7 @@ namespace ViewWeave.Editor
                 producerRenderer.settings.rows = producerRig.Profile.Rows;
                 producerRenderer.settings.views = producerRig.Profile.Views;
             }
+            else BridgeDisplayGeometryStore.ApplyToLocalPreview(sourceRig.Renderer, producerRenderer.settings);
             CopySourceCamera(sourceRig);
         }
 
@@ -836,6 +838,10 @@ namespace ViewWeave.Editor
                 layout = producerRenderer.settings.GetLayout();
                 status = "Looking Glass preview running";
                 lastError = string.Empty;
+                BridgeDisplayMetadata.Publish(target, sourceOutput,
+                    sourceSession == null ? configuredOutputRuntimePathAtStart : configuredRuntimePathAtStart,
+                    sourceSession == null ? configuredOutputApplicationNameAtStart : configuredApplicationNameAtStart,
+                    displayOrdinalAtStart, displayProfile);
                 QuiltDisplaySettingsResolver.NotifyChanged();
                 return true;
             }

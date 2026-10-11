@@ -1,0 +1,29 @@
+# Bridge機器情報の共通保持とGizmo形状（2026-10-11）
+
+Bridge APIが返した縦横比・視野角・物理寸法を、Windows／macOS共通のEditor処理でRigごとに保持します。macOSでは停止後にローカルaspectへ戻る経路がありました。今回の共通処理は、機器名やOS別の寸法表を使わず、正常に取得・検証した`BridgeDisplayProfile`をfocus／near／far GizmoとLocal Previewへ反映します。
+
+基準commitは`e777b34763b25e1673e5dc0188c812cda69cbcc0`です。測定時は共通Editor store、両transportの正常取得通知、CoreのEditor用Rig識別子、検証fixtureが未commitでした。[構造化結果と対象ソースのSHA-256](validation/bridge-display-geometry-20261011.json)をこの記録と同じcommitに管理します。
+
+## Bridge情報の流れ
+
+WindowsのWorker／Session／device Preview／明示refreshとmacOSのMetal出力／device Previewが、正常取得の後に共通通知へ渡します。Metalの取得元はBridge native APIの`get_displays`、`get_dimensions_for_display`、`get_default_quilt_settings_for_display`、`get_calibration_for_display`です。Windowsも既存Bridge SDKの取得結果を共通profileへ渡します。今回、Nativeの取得処理・サブピクセルshader・補正数学は変更していません。
+
+共通storeは取得値を再検証し、Rig・Renderer・出力コンポーネントとruntime path／application name／display ordinalを照合します。同じ選択の取得失敗は最後の正常値を消しません。機器選択や出力を変えた場合は変更前の値を適用しません。出力未設定でも、同じRigにtransportが1つだけならその取得元を使います。複数なら明示選択が必要で、OSで優先順位を付けません。
+
+保存済みsceneの履歴は無視対象`UserSettings/ViewWeaveDisplayGeometry.asset`へ保存し、Editor再起動後も解決します。未保存sceneの履歴はEditorセッション内だけです。Prefab asset／Prefab Stage／preview sceneは対象外です。履歴は描画形状の情報で、現在接続中という状態や機器出力の校正としては使いません。Windowsの旧snapshotだけでは共通Gizmoの情報源になりません。停止後は両OSとも「最後の正常取得値」として扱います。物理寸法コピーの接続済み判定は、稼働中のSessionまたはdevice Previewから取得します。
+
+Playに入る前のRig識別子と、Play開始時の実体EntityIdを照合します。後から生成したcloneへ元Rigの履歴を流用しません。Awake中の正常取得はscene読込完了まで一時保留し、その後対象・設定を再検証します。Play終了時は一時識別子を消します。GlobalObjectIdの取得はEdit Modeに限定します。
+
+## 検証条件と結果
+
+Unity 6000.6.4f1、URP／HDRP 17.6.0、Apple M3 Max、macOS 26.6.2、Metal、Bridge 2.6.3、Looking Glass Goを使用します。共通Edit Mode試験は15/15 PASS、skip 0です。両output componentに縦長／横長の合成metadataを渡し、focus／near／farの比率、更新・失敗時保持、選択変更、未設定output、古いWindows snapshot、別Rigへの非流用、Local Preview、接続状態の区別を確認しました。これはMac上の共通ロジック試験で、Windows OS／native Workerの実行ではありません。
+
+最終Go runはURP／HDRPの通常Playと、URPのDomain Reload・Scene Reload無効（options 3）の計3/3でPASSしました。各12段階に加え、別Editor processで両Rigの再解決2件を確認し、各14件のaspect・focus／near／far比率がBridge取得値0.5625（9:16）と一致しました。Awakeで最初に取得して即停止したRig、Play出力、停止、Play終了、script reload、Local Previewを含みます。全runで後発cloneへの非流用、一時識別子クリア、pending資源0を確認しました。URP／HDRPのGUIで停止後の紫枠、Game View、Hierarchy／Inspector、error 0を確認しました。URPは追加した確認menuの再compile時にfixtureの既存API廃止予定警告2件があり、HDRPはwarning 0でした。Gizmo／Local Previewは機器出力から取得したaspectを使います。パネル上の立体感や光学alignmentを人間が判定した証拠ではありません。Windows実機、16 Spatial Landscape、hotplug、複数機器、長時間運用、新しいPlayer buildの検証は今回含めません。
+
+## 初回失敗と保存範囲
+
+初回はUnity 6000.6で廃止されたGetInstanceIDの使用によりcompile failure・試験0件でした。EntityIdへ直して再実行しました。Windows snapshot試験の初回は14/15で、テスト用JSON注入にEditorJsonUtilityを使ったためcacheを復元できませんでした。JsonUtilityの注入と復元guardを使った再試験だけを成功に数えます。
+
+Awakeの初回実機試験では読込中sceneが未loadedのため通知を保持できませんでした。一時保留後の再検証を追加しました。その後のURP runはAwake保持を通過しましたが、Play描画の6フレーム待ちでtimeoutしました。検証fixtureにbackground描画を明示した最終3/3のrunで再検証しました。これらの失敗や初期runを最終成功へ合算しません。
+
+共有用は本report、構造化結果、製品ソースとfixtureをcommitします。詳細ログ、XML、Go raw結果、Editor個人設定は`.local/bridge-display-geometry-20261011/`および`UserSettings`へ保持し、commitしません。Bridgeの生response、機器serial、session token、Unity認証引数は共有結果に含めません。

@@ -316,6 +316,9 @@ namespace ViewWeave
                     DisplayRefreshStatus = snapshot == null ? "Connected display refresh returned no snapshot." :
                         "Connected displays refreshed: " + snapshot.Displays.Count.ToString(CultureInfo.InvariantCulture) + " found.";
                 }
+                if (snapshot != null && snapshot.TryGetDisplay(configuredDisplayOrdinal, out BridgeDisplayProfile recognized))
+                    BridgeDisplayMetadata.Publish(GetComponent<ViewWeaveRig>(), this, configuredRuntimePath,
+                        configuredApplicationName, configuredDisplayOrdinal, recognized);
                 try { ConnectedDisplaySnapshotChanged?.Invoke(snapshot); }
                 catch { }
                 try { ConnectedDisplayRefreshCompleted?.Invoke(requestToken, snapshot, string.Empty); }

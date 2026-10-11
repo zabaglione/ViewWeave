@@ -12,6 +12,27 @@ namespace ViewWeave
         [SerializeField] bool autoRender;
         [SerializeField] MonoBehaviour outputBehaviour;
         [SerializeField] MonoBehaviour guardBehaviour;
+#if UNITY_EDITOR
+        [SerializeField, HideInInspector] string editorDisplayIdentity;
+        [SerializeField, HideInInspector] MonoBehaviour editorDisplayIdentityOutput;
+        [SerializeField, HideInInspector] QuiltRenderer editorDisplayIdentityRenderer;
+
+        // Edit Mode identifiers travel with the original scene objects through Play reloads.
+        public void CaptureEditorDisplayIdentity(string identity, MonoBehaviour source)
+        {
+            if (Application.isPlaying) throw new InvalidOperationException("Display identity must be captured in Edit Mode.");
+            editorDisplayIdentity = identity;
+            editorDisplayIdentityOutput = source;
+            editorDisplayIdentityRenderer = GetComponent<QuiltRenderer>();
+        }
+
+        public bool TryGetEditorDisplayIdentity(MonoBehaviour source, QuiltRenderer requestedRenderer, out string identity)
+        {
+            identity = editorDisplayIdentity;
+            return !string.IsNullOrEmpty(identity) && source != null && source == editorDisplayIdentityOutput &&
+                requestedRenderer != null && requestedRenderer == editorDisplayIdentityRenderer;
+        }
+#endif
 
         public QuiltRenderer Renderer { get; private set; }
         public QuiltQualityProfile Profile => profile.ToProfile();

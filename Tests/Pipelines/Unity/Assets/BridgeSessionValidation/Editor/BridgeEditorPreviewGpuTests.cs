@@ -1573,8 +1573,8 @@ namespace ViewWeave.BridgeEditorPreviewValidation
 
                 Assert.IsTrue(QuiltDisplaySettingsResolver.TryResolve(fixture.Rig.Renderer, out QuiltSettings beforeSettings,
                     out QuiltEditorDisplayProfile beforeDisplay, out string beforeError), beforeError);
-                Assert.AreEqual(QuiltDisplaySettingsSource.ConnectedDisplaySnapshot, beforeDisplay.source,
-                    "The Edit Mode gizmo should resolve the just-refreshed connected display profile before Play.");
+                Assert.AreEqual(QuiltDisplaySettingsSource.LastRecognizedDisplay, beforeDisplay.source,
+                    "The Edit Mode gizmo should resolve the common last-recognized Bridge profile before Play.");
                 Assert.AreEqual(QuiltViewRenderMode.Half, fixture.Rig.Renderer.viewRenderMode);
                 Assert.IsFalse(fixture.Rig.Renderer.physicalFraming.enabled);
                 ViewWeaveBridgeSession sourceSessionReference = session;
@@ -1685,7 +1685,7 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                 bool resolvedAfterStop = QuiltDisplaySettingsResolver.TryResolve(editRig.Renderer, out _,
                     out QuiltEditorDisplayProfile afterDisplay, out string afterError);
                 bool connectedProfileRetained = resolvedAfterStop &&
-                    afterDisplay.source == QuiltDisplaySettingsSource.ConnectedDisplaySnapshot &&
+                    afterDisplay.source == QuiltDisplaySettingsSource.LastRecognizedDisplay && !afterDisplay.isConnected &&
                     Mathf.Abs(beforeDisplay.aspect - afterDisplay.aspect) <= 0.0001f;
                 Debug.Log("EDITOR_PREVIEW_REFRESH_PROFILE beforeAspect=" + beforeDisplay.aspect.ToString("R", System.Globalization.CultureInfo.InvariantCulture) +
                     ", beforeSource=" + beforeDisplay.source + ", afterResolved=" + resolvedAfterStop +
@@ -1735,7 +1735,8 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                 Assert.AreEqual(0, BridgeEditorPreviewRetention.PendingCount);
                 Assert.IsFalse(BridgeDisplayDiscovery.IsBusy);
                 Assert.IsTrue(refreshedProfileResolved, ToAscii(refreshedError));
-                Assert.AreEqual(QuiltDisplaySettingsSource.ConnectedDisplaySnapshot, refreshedDisplay.source);
+                Assert.AreEqual(QuiltDisplaySettingsSource.LastRecognizedDisplay, refreshedDisplay.source);
+                Assert.IsFalse(refreshedDisplay.isConnected, "Retained metadata must not claim an active output connection.");
                 Assert.AreEqual(secondDisplay.Aspect, refreshedDisplay.aspect, 0.0001f);
                 Assert.IsTrue(resolvedAfterStop, "The Scene View display profile should resolve after toolbar Stop. " + ToAscii(afterError));
                 Assert.IsTrue(connectedProfileRetained,

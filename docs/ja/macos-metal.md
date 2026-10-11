@@ -12,7 +12,7 @@ SceneのCameraを選び、**GameObject > ViewWeave > Bridge Rig**を実行しま
 
 カメラ、Reference Camera、フォーカス、Orbit、物理フレーミング、Quilt Capture、Video Exportは共通のRig UIから操作します。Play中の接続後に**Use Connected Display Size**を使うと、物理フレーミングの有効・無効を変えずに、校正済みの画面寸法をコピーします。物理1:1では開口寸法の縦横比と機器の縦横比が一致している必要があります。Metal出力を止めると、そのRendererの通常録画・一時停止中の録画を終了し、元のローカル設定を復元します。MetalコンポーネントのInspectorは技術診断用です。
 
-Playしていない状態でViewWeave Rigの**Preview**を開き、**Start Local Edit Mode Preview**または**Start Looking Glass Device Preview**を選びます。LocalはRigのローカルQuilt設定、DeviceはBridgeから取得・検証したdisplay profileと**Output Quality**を使います。**Pause Preview**は最後の画像を保持し、**Resume Preview**で再開します。終了は**Close Preview**です。Qualityや接続設定を変える前に終了し、GPU資源の回収を待ってください。専用の描画オブジェクトを使うため、元のRigやカメラの設定は保持します。Play開始、スクリプト再読み込み、Authoringウィンドウの終了・対象Rigの変更でもPreviewを終了します。
+Playしていない状態でViewWeave Rigの**Preview**を開き、**Start Local Edit Mode Preview**または**Start Looking Glass Device Preview**を選びます。LocalはRigのローカルQuilt解像度・gridと取得済みの機器形状、DeviceはBridgeから取得・検証したdisplay profileと**Output Quality**を使います。**Pause Preview**は最後の画像を保持し、**Resume Preview**で再開します。終了は**Close Preview**です。Qualityや接続設定を変える前に終了し、GPU資源の回収を待ってください。専用の描画オブジェクトを使うため、元のRigやカメラの設定は保持します。Play開始、スクリプト再読み込み、Authoringウィンドウの終了・対象Rigの変更でもPreviewを終了します。
 
 保存したQuiltを再生するには、Play中にMetal出力を開始し、**Capture & Playback > Playback**を開きます。全視点を含むQuilt PNGまたは完了したPNG連番のフォルダを選んで検証し、Play／Pause／Resume／Stopで操作します。寸法、grid、縦横比、利用可能なカメラ情報は現在の出力設定と一致する必要があります。再生中は通常のQuilt描画を停止し、正常なStopまたは連番終了時に、同じ出力とRig設定が維持されていれば復帰します。出力停止、Play終了、スクリプト再読み込みでは再生を無効化し、GPU完了が確認できるまで資源を保持します。シーンには出力コンポーネントが保存されるため、macOSとWindowsの間で移動してもバックエンドは自動交換されません。
 

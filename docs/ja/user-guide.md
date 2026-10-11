@@ -19,6 +19,8 @@ packageの**Samples**から**URP Quick Start**または**HDRP Quick Start**をIm
 
 ViewWeave Rigを選び、Inspectorを使うか`Window > ViewWeave > Rig Authoring`を開きます。このwindowはUnityの選択を変更しても対象Rigを保持します。**Camera & Focus**からReference Camera、構図、focusを調整します。
 
+Bridge APIで機器情報を正常に取得すると、その縦横比と視野角を紫のfocus枠・描画範囲とLocal Previewへ反映します。Windows／macOS共通で、Previewや出力の停止、Play終了、スクリプト再読み込み後も最後の取得結果を使います。保存済みsceneではEditor再起動後も保持します。履歴はプロジェクトの`UserSettings`へ保存され、Git管理には含まれません。未保存のsceneでは現在のEditorセッション内だけ保持します。Rigの出力コンポーネント、runtime path、application name、機器番号を変えた場合は、変更後の機器情報を再取得してください。機器出力の開始時にはBridgeから最新の情報を取得します。
+
 **Focus Target**は一時的なEditor選択欄です。scene objectを設定し、**Set Focus From Target Center**をクリックすると、その中心をzero-parallax distanceとして反映します。選択したtarget自体はsceneに保存されませんが、適用したfocus distanceはsceneに保存されます。詳しくは[Quiltカメラの調整](quilt-authoring.md)を参照してください。
 
 Edit Mode PreviewではSampleのsceneは静止しています。**Play**するとAnimatorが動き、Cubeが回転しSphereが上下します。接続displayへアニメーションを出すときはRigの**Bridge > Start Output**を明示的に選びます。出力は自動で開始しません。Sample helperはplatformに対応するoutput componentを選びますが、開始操作は行いません。scene内容の変更や停止中に限られる操作を行う前にPlayを止めてください。
@@ -29,7 +31,7 @@ Rigの**Bridge**欄では、通常のPlay Mode出力を**Start Output**／**Stop
 
 **Rendering**の**Quilt View Render Mode**は描画する視点数を決めます。**Full**は全視点を描画し、**Half**と**Quarter**は視点数を減らしてGPU負荷を下げられます。その分、横へ動いたときの画像変化が段階的になることがあります。描画負荷より視点の連続性を優先する場合はFullを選びます。実際の性能はsceneとGPUにより異なります。
 
-**Output Quality**は視点数とは別に、各viewの描画解像度を調整します。Preview、Balanced、Nativeの順に、接続display profileに対する解像度が大きくなります。Local PreviewはRigのlocal Quilt profileを使います。描画が重い場合は低い設定から試し、対象displayで見え方を確認してください。確認済みの範囲は[対応表](compatibility.md)、日付付き測定は[Performance](performance.md)を参照してください。
+**Output Quality**は視点数とは別に、各viewの描画解像度を調整します。Preview、Balanced、Nativeの順に、接続display profileに対する解像度が大きくなります。Local Previewの解像度とgridはRigのlocal Quilt profileを使い、機器情報を取得済みの場合は縦横比と視野角をその結果に合わせます。描画が重い場合は低い設定から試し、対象displayで見え方を確認してください。確認済みの範囲は[対応表](compatibility.md)、日付付き測定は[Performance](performance.md)を参照してください。
 
 HDRPでは、**Rendering > HDRP Rendering**の**Isolated View Histories**と**Quilt Exposure > Follow Scene**が既定です。描画する視点ごとに履歴を保持し、中央視点で測った露出をQuilt全体で共有します。シーンのHDRP効果設定を保ち、起動直後は有効な測光結果が届くまで待機します。露出を自分で指定する場合だけ**Manual Fixed**を選んでください。
 

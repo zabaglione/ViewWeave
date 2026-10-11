@@ -160,6 +160,7 @@ namespace ViewWeave
                     if (!ApplyReadyProfile()) return;
                     profileApplied = true;
                     State = SessionState.Rendering;
+                    BridgeDisplayMetadata.Publish(rig, output, runtimePath, applicationName, displayOrdinal, output.Profile);
                 }
                 else if (!string.IsNullOrEmpty(output.LastError))
                 {
@@ -225,6 +226,7 @@ namespace ViewWeave
                 {
                     if (!ApplyReadyProfile()) return;
                     profileApplied = true;
+                    BridgeDisplayMetadata.Publish(rig, output, runtimePath, applicationName, displayOrdinal, output.Profile);
                 }
                 State = SessionState.Rendering;
                 PollCompletionWatchdog();

@@ -52,6 +52,7 @@ namespace ViewWeave.Editor
             output.useRenderRequests = input.useRenderRequests;
             output.settings = input.settings.Clone();
             if (deviceProfile) producer.Profile.ApplyTo(output.settings);
+            else BridgeDisplayGeometryStore.ApplyToLocalPreview(input, output.settings);
             output.physicalFraming = input.physicalFraming == null ? new QuiltPhysicalFraming() : input.physicalFraming.Clone();
             output.viewRenderMode = input.viewRenderMode;
             output.autoRender = false;
