@@ -43,6 +43,7 @@ namespace ViewWeave
         string profileRuntimePathAtStart;
         string profileApplicationNameAtStart;
         uint profileDisplayOrdinalAtStart;
+        BridgeSubpixelMode subpixelModeAtStart;
         bool completionWatchdogArmed;
         uint watchdogSubmissions;
         uint watchdogCompleted;
@@ -268,7 +269,7 @@ namespace ViewWeave
                 SetError("Bridge session is already active");
                 return false;
             }
-            if (!BridgeSubpixelPolicy.ValidateBridgeManagedOutput(subpixelMode, out string subpixelError))
+            if (!BridgeSubpixelPolicy.Validate(subpixelMode, out string subpixelError))
                 return Fail(subpixelError);
             if (BridgeDisplayDiscovery.IsBusy)
             {
@@ -331,6 +332,7 @@ namespace ViewWeave
             profileRuntimePathAtStart = runtimePath ?? string.Empty;
             profileApplicationNameAtStart = applicationName ?? string.Empty;
             profileDisplayOrdinalAtStart = displayOrdinal;
+            subpixelModeAtStart = subpixelMode;
             output.initializeOnEnable = false;
             if (!output.TryBegin())
             {
@@ -603,7 +605,7 @@ namespace ViewWeave
         {
             if (rig == null || rig.Renderer == null || output == null) return true;
             QuiltRenderer renderer = rig.Renderer;
-            return subpixelMode != BridgeSubpixelMode.Automatic ||
+            return subpixelMode != subpixelModeAtStart ||
                    renderer.sourceCamera != sourceCameraAtStart || renderer.referenceCamera != referenceCameraAtStart ||
                    renderer.GuardBehaviour != guardAtStart || renderer.OutputBehaviour != outputBehaviourAtStart ||
                    renderer.useRenderRequests != useRenderRequestsAtStart ||

@@ -90,6 +90,42 @@ namespace ViewWeave
             }
 #if UNITY_EDITOR
             if (!BridgeNativeImageGuard.TryInspectEditorProcess(out error)) return FailRequest(error, onFailure);
+            BridgeNativeModuleIdentity identity = default;
+            if (Application.platform == RuntimePlatform.WindowsEditor)
+            {
+                IntPtr renderEventFunction;
+                try
+                {
+                    renderEventFunction = BridgeWorkerNative.lkg_worker_render_event_func();
+                }
+                catch (DllNotFoundException)
+                {
+                    error = "Bridge worker native library is missing.";
+                    return FailRequest(error, onFailure);
+                }
+                catch (EntryPointNotFoundException)
+                {
+                    error = "Bridge worker render event ABI is missing. Update the package and restart the Unity Editor.";
+                    return FailRequest(error, onFailure);
+                }
+                catch (Exception exception)
+                {
+                    error = "Bridge worker native image load failed (" + exception.GetType().Name + ").";
+                    return FailRequest(error, onFailure);
+                }
+
+                if (renderEventFunction == IntPtr.Zero)
+                {
+                    error = "Bridge worker render event function is unavailable.";
+                    return FailRequest(error, onFailure);
+                }
+                if (!BridgeNativeImageGuard.TryCaptureCurrentIdentity(out identity, out error))
+                    return FailRequest(error, onFailure);
+                if (!BridgeNativeImageGuard.TryValidateRenderEventFunctionAddress(renderEventFunction, identity, out error))
+                    return FailRequest(error, onFailure);
+            }
+#else
+            BridgeNativeModuleIdentity identity = default;
 #endif
             IntPtr metadataHandle;
             try
@@ -117,25 +153,6 @@ namespace ViewWeave
                 return FailRequest(error, onFailure);
             }
 
-            BridgeNativeModuleIdentity identity = default;
-#if UNITY_EDITOR
-            if (!BridgeNativeImageGuard.TryCaptureCurrentIdentity(out identity, out error))
-            {
-                recoveryRecord = BridgeDisplayMetadataRecoveryRecord.Create(metadataHandle, identity);
-                recoveryRecord.MarkCancelled();
-                handle = metadataHandle;
-                moduleIdentity = identity;
-                requestKind = RequestKind.IdleMetadataOwner;
-                recoveryPending = true;
-                requestOwner = null;
-                failureCallback = null;
-                successCallback = null;
-                TryRequestClose();
-                lastError = Sanitize(error);
-                status = "Recovery required";
-                return false;
-            }
-#endif
             recoveryRecord = BridgeDisplayMetadataRecoveryRecord.Create(metadataHandle, identity);
             handle = metadataHandle;
             moduleIdentity = identity;

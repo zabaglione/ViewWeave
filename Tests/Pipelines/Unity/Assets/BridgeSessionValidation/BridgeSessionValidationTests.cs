@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.IO;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.TestTools;
 using ViewWeave;
@@ -13,22 +14,121 @@ namespace ViewWeave.BridgeSessionValidation
     public sealed class BridgeSessionValidationTests
     {
         [Test]
-        public void ManualSubpixelModeIsSavedButCannotStartBridgeManagedOutput()
+        [TestCase(BridgeSubpixelMode.Automatic)]
+        [TestCase(BridgeSubpixelMode.ClassicRgb)]
+        [TestCase(BridgeSubpixelMode.CalibratedCells)]
+        public void WindowsWorkerAcceptsEveryValidSubpixelMode(BridgeSubpixelMode mode)
         {
             GameObject host = CreateHost(false);
             try
             {
                 ViewWeaveBridgeSession session = host.GetComponent<ViewWeaveBridgeSession>();
-                Assert.That(session.TrySetSubpixelMode(BridgeSubpixelMode.ClassicRgb, out string error), Is.True, error);
-                Assert.That(session.SubpixelMode, Is.EqualTo(BridgeSubpixelMode.ClassicRgb));
-                Assert.That(session.StartSession(), Is.False);
-                Assert.That(session.LastError, Does.Contain("Automatic"));
-                Assert.That(session.SubpixelMode, Is.EqualTo(BridgeSubpixelMode.ClassicRgb));
+                Assert.That(session.SubpixelMode, Is.EqualTo(BridgeSubpixelMode.Automatic), "Missing/initial mode values must remain Automatic.");
+                Assert.That(session.TrySetSubpixelMode(mode, out string error), Is.True, error);
+                Assert.That(IsAscii(error), Is.True);
+                Assert.That(session.SubpixelMode, Is.EqualTo(mode));
+                Assert.That(BridgeSubpixelPolicy.Validate(mode, out error), Is.True, error);
+                Assert.That(session.State, Is.EqualTo(ViewWeaveBridgeSession.SessionState.Idle));
+                Assert.That(session.SubpixelMode, Is.EqualTo(mode));
                 Assert.That(host.GetComponent<BridgeWorkerQuiltOutput>().State, Is.EqualTo(BridgeWorkerQuiltOutput.WorkerState.Closed));
                 Assert.That(session.TrySetSubpixelMode((BridgeSubpixelMode)999, out error), Is.False);
-                Assert.That(session.SubpixelMode, Is.EqualTo(BridgeSubpixelMode.ClassicRgb));
+                Assert.That(IsAscii(error), Is.True);
+                Assert.That(BridgeSubpixelPolicy.Validate((BridgeSubpixelMode)999, out error), Is.False);
+                Assert.That(IsAscii(error), Is.True);
+                Assert.That(session.SubpixelMode, Is.EqualTo(mode));
+                Assert.That(host.GetComponent<BridgeWorkerQuiltOutput>().State, Is.EqualTo(BridgeWorkerQuiltOutput.WorkerState.Closed));
             }
             finally { Object.DestroyImmediate(host); }
+        }
+
+        [Test]
+        public void WindowsSubpixelOptionsAndStatusAbiHaveStableLayout()
+        {
+            Assert.That(BridgeWorkerNative.HasStableSubpixelAbiLayout(), Is.True);
+            Assert.That(Marshal.SizeOf(typeof(BridgeWorkerNative.WorkerOutputOptionsV1)), Is.EqualTo(16));
+            Assert.That(Marshal.OffsetOf(typeof(BridgeWorkerNative.WorkerOutputOptionsV1), "subpixelMode").ToInt32(), Is.EqualTo(8));
+            Assert.That(Marshal.OffsetOf(typeof(BridgeWorkerNative.WorkerOutputOptionsV1), "linearColorSpace").ToInt32(), Is.EqualTo(12));
+            Assert.That(Marshal.SizeOf(typeof(BridgeWorkerNative.WorkerDrawOptionsV1)), Is.EqualTo(16));
+            Assert.That(Marshal.OffsetOf(typeof(BridgeWorkerNative.WorkerDrawOptionsV1), "sourceEncoding").ToInt32(), Is.EqualTo(8));
+            Assert.That(Marshal.OffsetOf(typeof(BridgeWorkerNative.WorkerDrawOptionsV1), "reserved0").ToInt32(), Is.EqualTo(12));
+            Assert.That(Marshal.SizeOf(typeof(BridgeWorkerNative.SubpixelStatusV1)), Is.EqualTo(48));
+            Assert.That(Marshal.OffsetOf(typeof(BridgeWorkerNative.SubpixelStatusV1), "effectiveMode").ToInt32(), Is.EqualTo(16));
+            Assert.That(Marshal.OffsetOf(typeof(BridgeWorkerNative.SubpixelStatusV1), "presentAccepted").ToInt32(), Is.EqualTo(44));
+            Assert.That(BridgeWorkerNative.WorkerOutputOptionsVersion, Is.EqualTo(1u));
+            Assert.That(BridgeWorkerNative.SubpixelStatusVersion, Is.EqualTo(1u));
+            Assert.That(BridgeWorkerNative.WorkerDrawOptionsVersion, Is.EqualTo(1u));
+            Assert.That(BridgeWorkerNative.WorkerSourceEncodingUnorm, Is.EqualTo(0u));
+            Assert.That(BridgeWorkerNative.WorkerSourceEncodingSrgb, Is.EqualTo(1u));
+            Assert.That(BridgeWorkerNative.SubpixelBackendNativeD3D11, Is.EqualTo(1u));
+            Assert.That(BridgeWorkerNative.InvalidSubpixelMode, Is.EqualTo(uint.MaxValue));
+        }
+
+        [Test]
+        public void LoadedNativePendingAbiFailureDoesNotReportCleanShutdown()
+        {
+            Assert.That(BridgeWorkerQuiltOutput.GetNativePendingCount(0, false, () => 3), Is.EqualTo(3));
+            Assert.That(BridgeWorkerQuiltOutput.GetNativePendingCount(2, true, () => 1), Is.EqualTo(2));
+            Assert.That(BridgeWorkerQuiltOutput.GetNativePendingCount(0, false, () => throw new DllNotFoundException()), Is.EqualTo(0),
+                "A library that was never loaded has no native work to report.");
+            Assert.That(BridgeWorkerQuiltOutput.GetNativePendingCount(0, true, () => throw new DllNotFoundException()), Is.EqualTo(1),
+                "A known-loaded Native library without managed pending handles cannot be reported clean.");
+            Assert.That(BridgeWorkerQuiltOutput.GetNativePendingCount(0, true, () => throw new EntryPointNotFoundException()), Is.EqualTo(1),
+                "A loaded library missing the required pending-count ABI must remain unproven, not clean.");
+            Assert.That(BridgeWorkerQuiltOutput.GetNativePendingCount(4, true, () => throw new EntryPointNotFoundException()), Is.EqualTo(4));
+        }
+
+        [Test]
+        public void SharedQuiltInputPolicyAcceptsNonDefaultCompleteGrid()
+        {
+            var texture = new RenderTexture(15, 10, 0);
+            try
+            {
+                var layout = new QuiltLayout(15, 10, 2, 3, 6, 1.25f);
+                Assert.That(BridgeQuiltInputPolicy.TryValidate(texture, layout, out string error), Is.True, error);
+                Assert.That(IsAscii(error), Is.True);
+            }
+            finally { Object.DestroyImmediate(texture); }
+        }
+
+        [Test]
+        public void SharedQuiltInputPolicyRejectsTextureLayoutDimensionMismatch()
+        {
+            var texture = new RenderTexture(16, 10, 0);
+            try
+            {
+                var layout = new QuiltLayout(15, 10, 2, 3, 6);
+                Assert.That(BridgeQuiltInputPolicy.TryValidate(texture, layout, out string error), Is.False);
+                Assert.That(IsAscii(error), Is.True);
+            }
+            finally { Object.DestroyImmediate(texture); }
+        }
+
+        [Test]
+        public void SharedQuiltInputPolicyRejectsPaddedTextureDimensions()
+        {
+            var texture = new RenderTexture(16, 10, 0);
+            try
+            {
+                var paddedLayout = new QuiltLayout(16, 10, 2, 3, 6);
+                Assert.That(BridgeQuiltInputPolicy.TryValidate(texture, paddedLayout, out string error), Is.False);
+                Assert.That(IsAscii(error), Is.True);
+            }
+            finally { Object.DestroyImmediate(texture); }
+        }
+
+        [Test]
+        public void SharedQuiltInputPolicyRejectsPartialAndDefaultLayouts()
+        {
+            var texture = new RenderTexture(15, 10, 0);
+            try
+            {
+                var partialLayout = new QuiltLayout(15, 10, 2, 3, 5);
+                Assert.That(BridgeQuiltInputPolicy.TryValidate(texture, partialLayout, out string partialError), Is.False);
+                Assert.That(IsAscii(partialError), Is.True);
+                Assert.That(BridgeQuiltInputPolicy.TryValidate(texture, default, out string defaultError), Is.False);
+                Assert.That(IsAscii(defaultError), Is.True);
+            }
+            finally { Object.DestroyImmediate(texture); }
         }
 
         [Test]

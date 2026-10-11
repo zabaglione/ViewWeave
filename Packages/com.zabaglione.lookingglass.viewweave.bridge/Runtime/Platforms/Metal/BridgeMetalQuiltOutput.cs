@@ -96,8 +96,8 @@ namespace ViewWeave
         {
             const string Library = "lookingglass_bridge_shim";
             [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ulong lkg_metal_display_open_v3([MarshalAs(UnmanagedType.LPUTF8Str)] string path,
-                [MarshalAs(UnmanagedType.LPUTF8Str)] string name, uint ordinal, ref NativeDisplayV3 info);
+            internal static extern ulong lkg_metal_display_open_v4([MarshalAs(UnmanagedType.LPUTF8Str)] string path,
+                [MarshalAs(UnmanagedType.LPUTF8Str)] string name, uint ordinal, uint requestedMode, ref NativeDisplayV3 info);
             [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
             internal static extern int lkg_metal_display_submit(ulong session, IntPtr texture, out IntPtr data);
             [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
@@ -221,7 +221,8 @@ namespace ViewWeave
                 if (mutationOwner == null) return Fail(error);
                 var nativeInfo = new NativeDisplayV3 { structSize = 180, apiVersion = 3 };
                 activeSubpixelMode = subpixelMode;
-                session = Native.lkg_metal_display_open_v3(path, applicationName, displayOrdinal, ref nativeInfo);
+                session = Native.lkg_metal_display_open_v4(path, applicationName, displayOrdinal,
+                    (uint)subpixelMode, ref nativeInfo);
                 if (session == 0) return Fail(Marshal.PtrToStringAnsi(Native.lkg_metal_display_error()) ?? "Metal window could not be opened");
                 if (!BridgeSubpixelPolicy.TryResolveCellUsage(subpixelMode, nativeInfo.cellCount > 0,
                     out bool useCells, out subpixelError)) return Fail(subpixelError);
@@ -278,7 +279,7 @@ namespace ViewWeave
                 return true;
             }
             catch (DllNotFoundException) { return Fail("Native macOS Bridge shim is missing; build the macOS plugin first"); }
-            catch (EntryPointNotFoundException) { return Fail("Native macOS Bridge shim does not contain Metal display API v3; update the plugin and restart Unity"); }
+            catch (EntryPointNotFoundException) { return Fail("Native macOS Bridge shim does not contain Metal display API v4; update the plugin and restart Unity"); }
             catch (Exception exception) { return Fail(exception.Message); }
         }
 
@@ -321,11 +322,16 @@ namespace ViewWeave
         {
             QuiltTexture = quiltTexture; Layout = layout;
             if (session == 0 || quiltTexture == null) return false;
-            if (layout.ViewCount != layout.Columns * layout.Rows || layout.Columns != Profile.Columns || layout.Rows != Profile.Rows)
-            { LastError = "Metal output requires the connected display's complete Quilt grid"; stopRequested = true; return false; }
+            if (!BridgeQuiltInputPolicy.TryValidate(quiltTexture, layout, out string inputError))
+            { LastError = inputError; stopRequested = true; return false; }
             interlace.SetVector("_Grid", new Vector4(layout.Columns, layout.Rows, layout.TileWidth, layout.TileHeight));
             interlace.SetVector("_QuiltSize", new Vector4(layout.QuiltWidth, layout.QuiltHeight,
-                layout.AspectRatio / Profile.Aspect, 0f));
+                layout.AspectRatio / Profile.Aspect, 1f));
+            bool linearOutput = QualitySettings.activeColorSpace == ColorSpace.Linear;
+            bool sourceIsSrgb = GraphicsFormatUtility.IsSRGBFormat(quiltTexture.graphicsFormat);
+            // Metal texture reads from an sRGB format are already transfer-decoded.
+            interlace.SetVector("_SourceOptions", new Vector4(linearOutput ? 1f : 0f,
+                sourceIsSrgb ? 1f : 0f, sourceIsSrgb ? 1f : 0f, 0f));
             // The native private copy is ordered after this draw on Unity's command buffer.
             RenderTexture previous = RenderTexture.active;
             try

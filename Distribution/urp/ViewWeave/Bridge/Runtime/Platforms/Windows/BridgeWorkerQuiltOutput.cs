@@ -39,6 +39,23 @@ namespace ViewWeave
         public RenderTexture QuiltTexture { get; private set; }
         public QuiltLayout Layout { get; private set; }
         public BridgeDisplayProfile Profile { get; private set; }
+        public BridgeSubpixelMode RequestedSubpixelMode { get; private set; } = BridgeSubpixelMode.Automatic;
+        public bool SubpixelStatusValid => subpixelStatus.valid == 1 &&
+            subpixelStatus.structSize == 48 && subpixelStatus.version == BridgeWorkerNative.SubpixelStatusVersion;
+        public BridgeSubpixelMode EffectiveSubpixelMode => SubpixelStatusValid &&
+            subpixelStatus.effectiveMode <= (uint)BridgeSubpixelMode.CalibratedCells
+                ? (BridgeSubpixelMode)subpixelStatus.effectiveMode
+                : unchecked((BridgeSubpixelMode)BridgeWorkerNative.InvalidSubpixelMode);
+        public uint SubpixelCellPatternMode => SubpixelStatusValid ? subpixelStatus.cellPatternMode : BridgeWorkerNative.InvalidSubpixelMode;
+        public uint SubpixelCellCount => SubpixelStatusValid ? subpixelStatus.cellCount : 0;
+        public uint SubpixelNativeWidth => SubpixelStatusValid ? subpixelStatus.nativeWidth : 0;
+        public uint SubpixelNativeHeight => SubpixelStatusValid ? subpixelStatus.nativeHeight : 0;
+        public BridgeSubpixelBackend SubpixelBackend => SubpixelStatusValid &&
+            subpixelStatus.backend == (uint)BridgeSubpixelBackend.NativeD3D11
+                ? (BridgeSubpixelBackend)subpixelStatus.backend
+                : unchecked((BridgeSubpixelBackend)BridgeWorkerNative.InvalidSubpixelMode);
+        public uint SubpixelRenderCompleted => SubpixelStatusValid ? subpixelStatus.renderCompleted : 0;
+        public uint SubpixelPresentAccepted => SubpixelStatusValid ? subpixelStatus.presentAccepted : 0;
         /// <summary>Returns the last successfully published snapshot only while this output's runtime, application, and display ordinal still match it and reconnection is not required.</summary>
         public BridgeDisplaySnapshot CurrentConfigurationDisplaySnapshot
         {
@@ -129,15 +146,23 @@ namespace ViewWeave
             get
             {
                 int managed = Math.Max(BridgeWorkerReaper.PendingCount, PendingLeaseAcquisitionCount());
+                bool nativeKnown = HasNativeHandle;
                 if (Application.isEditor)
                 {
                     if (!BridgeNativeImageGuard.TryValidateGlobalCalls(out bool loaded, out _, out _)) return Math.Max(1, managed);
                     if (!loaded) return managed;
+                    nativeKnown = true;
                 }
-                try { return Math.Max(managed, checked((int)BridgeWorkerNative.lkg_worker_pending_count())); }
-                catch (DllNotFoundException) { return managed; }
-                catch (EntryPointNotFoundException) { return managed; }
+                if (!nativeKnown) return managed;
+                return GetNativePendingCount(managed, nativeKnown,
+                    () => checked((int)BridgeWorkerNative.lkg_worker_pending_count()));
             }
+        }
+        internal static int GetNativePendingCount(int managedPending, bool nativeKnown, Func<int> query)
+        {
+            try { return Math.Max(managedPending, query()); }
+            catch (DllNotFoundException) { return nativeKnown ? Math.Max(1, managedPending) : managedPending; }
+            catch (EntryPointNotFoundException) { return Math.Max(1, managedPending); }
         }
         static int PendingLeaseAcquisitionCount()
         {
@@ -199,6 +224,8 @@ namespace ViewWeave
         BridgeWorkerNative.Status status;
         BridgeWorkerNative.PhysicalDisplayInfoV1 physicalDisplay;
         bool physicalDisplayRead;
+        BridgeWorkerNative.WorkerOutputOptionsV1 outputOptions;
+        BridgeWorkerNative.SubpixelStatusV1 subpixelStatus;
         object playbackToken;
 #if UNITY_EDITOR
         object editorPreviewOwner;
@@ -457,18 +484,21 @@ namespace ViewWeave
 
         public bool TryBegin()
         {
-            return TryBeginCore(BridgeGraphicsBackendRoute.Worker);
+            ViewWeaveBridgeSession session = GetComponent<ViewWeaveBridgeSession>();
+            BridgeSubpixelMode mode = session == null ? BridgeSubpixelMode.Automatic : session.SubpixelMode;
+            return TryBeginCore(BridgeGraphicsBackendRoute.Worker, mode);
         }
 
 #if UNITY_EDITOR
-        internal bool TryBeginEditorPreview(object owner, BridgeEditorPreviewRetentionRecord retentionRecord, out string error)
+        internal bool TryBeginEditorPreview(object owner, BridgeEditorPreviewRetentionRecord retentionRecord,
+            BridgeSubpixelMode subpixelMode, out string error)
         {
             error = string.Empty;
             if (owner == null || retentionRecord == null) { error = "An Editor preview owner and retention record are required."; return false; }
             if (editorPreviewOwner != null || playbackToken != null) { error = "Bridge output is already owned."; return false; }
             editorPreviewRetentionRecord = retentionRecord;
             editorPreviewSubmissionsPaused = false;
-            if (!TryBeginCore(BridgeGraphicsBackendRoute.EditorPreview))
+            if (!TryBeginCore(BridgeGraphicsBackendRoute.EditorPreview, subpixelMode))
             {
                 error = LastError;
                 if (editorPreviewRetentionRecord.WorkerRecoveryRecord == null)
@@ -605,9 +635,13 @@ namespace ViewWeave
         internal enum EditorPreviewPausePhase : uint { Running = 0, Pausing = 1, Paused = 2, Resuming = 3, Faulted = 4 }
 #endif
 
-        bool TryBeginCore(BridgeGraphicsBackendRoute route)
+        bool TryBeginCore(BridgeGraphicsBackendRoute route, BridgeSubpixelMode subpixelMode)
         {
             if (!isActiveAndEnabled) return Fail("Bridge worker must be active before begin");
+            if (!BridgeSubpixelPolicy.Validate(subpixelMode, out string subpixelError))
+                return Fail(subpixelError);
+            if (!BridgeWorkerNative.HasStableSubpixelAbiLayout())
+                return Fail("Bridge worker subpixel output ABI layout is unsupported by this managed package.");
             if (BridgeDisplayDiscovery.IsBusy)
             {
                 LastError = "Bridge display metadata is still refreshing or cleaning up. Wait before starting a worker.";
@@ -650,6 +684,19 @@ namespace ViewWeave
             transferAntiAliasingDiagnostic = 0;
             transferDimensionName = string.Empty;
             nativeModuleIdentity = default;
+            RequestedSubpixelMode = subpixelMode;
+            subpixelStatus = new BridgeWorkerNative.SubpixelStatusV1
+            {
+                effectiveMode = BridgeWorkerNative.InvalidSubpixelMode,
+                cellPatternMode = BridgeWorkerNative.InvalidSubpixelMode
+            };
+            outputOptions = new BridgeWorkerNative.WorkerOutputOptionsV1
+            {
+                structSize = (uint)Marshal.SizeOf(typeof(BridgeWorkerNative.WorkerOutputOptionsV1)),
+                version = BridgeWorkerNative.WorkerOutputOptionsVersion,
+                subpixelMode = (uint)subpixelMode,
+                linearColorSpace = QualitySettings.activeColorSpace == ColorSpace.Linear ? 1u : 0u
+            };
             previewLease = false;
             previewLeaseAcquirePending = false;
             previewLeaseReturnRequested = false;
@@ -695,7 +742,8 @@ namespace ViewWeave
 #if UNITY_EDITOR
                 if (!BridgeNativeImageGuard.TryValidateOwnerIdentity(nativeModuleIdentity, out imageGuardError)) return Fail(imageGuardError);
 #endif
-                handle = BridgeWorkerNative.lkg_worker_begin(runtimePath, applicationName, displayOrdinal, IntPtr.Zero);
+                handle = BridgeWorkerNative.lkg_worker_begin_with_output_v1(runtimePath, applicationName,
+                    displayOrdinal, IntPtr.Zero, ref outputOptions);
             }
             catch (DllNotFoundException) { return Fail("Bridge worker native library is missing"); }
             catch (EntryPointNotFoundException) { return Fail("Bridge worker ABI entry point is missing"); }
@@ -740,21 +788,18 @@ namespace ViewWeave
             }
 #endif
             IntPtr acquiredHandle;
-            BridgeWorkerNative.PreviewLeaseIdentityV1 acquiredIdentity;
+            BridgeWorkerNative.PreviewLeaseIdentityV1 acquiredIdentity = default;
             int result;
             try
             {
                 if (Marshal.SizeOf(typeof(BridgeWorkerNative.PreviewLeaseIdentityV1)) != 24 ||
                     Marshal.SizeOf(typeof(BridgeWorkerNative.PreviewLeaseStatusV1)) != 352)
                     return Fail("Bridge preview lease ABI layout does not match the supported version.");
-                result = BridgeWorkerNative.lkg_worker_acquire_preview_lease_v1(runtimePath, applicationName,
-                    displayOrdinal, IntPtr.Zero, out acquiredHandle, out acquiredIdentity);
+                result = BridgeWorkerNative.lkg_worker_acquire_preview_lease_with_output_v1(runtimePath, applicationName,
+                    displayOrdinal, IntPtr.Zero, ref outputOptions, out acquiredHandle, ref acquiredIdentity);
             }
             catch (DllNotFoundException) { return Fail("Bridge worker native library is missing."); }
-            catch (EntryPointNotFoundException)
-            {
-                return Fail("The loaded Bridge native library does not support persistent preview leases. Update the package and restart the Unity Editor.");
-            }
+            catch (EntryPointNotFoundException) { return Fail("Bridge worker ABI entry point is missing"); }
             catch (Exception error) { return Fail(Sanitize(error.Message)); }
 
             if (result == BridgeWorkerNative.PreviewLeaseResultBusy)
@@ -846,6 +891,7 @@ namespace ViewWeave
                 if (state == WorkerState.Ready)
                 {
                     if (!IsValidStatus(status)) { Fail("Bridge worker returned invalid display geometry"); return; }
+                    if (!TryRefreshSubpixelStatus()) return;
                     var info = new BridgeNative.DisplayInfo
                     {
                         index = status.displayIndex, width = status.width, height = status.height,
@@ -855,14 +901,9 @@ namespace ViewWeave
                     if (!physicalDisplayRead)
                     {
                         physicalDisplayRead = true;
-                        try
-                        {
-                            BridgeWorkerNative.PhysicalDisplayInfoV1 calibration = physicalDisplay;
-                            if (BridgeWorkerNative.lkg_worker_get_physical_display_v1(handle, ref calibration) == 0)
-                                physicalDisplay = calibration;
-                        }
-                        catch (DllNotFoundException) { }
-                        catch (EntryPointNotFoundException) { }
+                        BridgeWorkerNative.PhysicalDisplayInfoV1 calibration = physicalDisplay;
+                        if (BridgeWorkerNative.lkg_worker_get_physical_display_v1(handle, ref calibration) == 0)
+                            physicalDisplay = calibration;
                     }
                     Profile = new BridgeDisplayProfile(info, physicalDisplay);
                 }
@@ -872,6 +913,40 @@ namespace ViewWeave
             catch (DllNotFoundException) { Fail("Bridge worker native library is missing"); }
             catch (EntryPointNotFoundException) { Fail("Bridge worker ABI entry point is missing"); }
             catch (Exception error) { Fail(Sanitize(error.Message)); }
+        }
+
+        bool TryRefreshSubpixelStatus()
+        {
+            BridgeWorkerNative.SubpixelStatusV1 next = new BridgeWorkerNative.SubpixelStatusV1
+            {
+                structSize = (uint)Marshal.SizeOf(typeof(BridgeWorkerNative.SubpixelStatusV1)),
+                version = BridgeWorkerNative.SubpixelStatusVersion,
+                effectiveMode = BridgeWorkerNative.InvalidSubpixelMode,
+                cellPatternMode = BridgeWorkerNative.InvalidSubpixelMode
+            };
+            int result;
+            try
+            {
+                result = BridgeWorkerNative.lkg_worker_get_subpixel_status_v1(handle, ref next);
+            }
+            catch (EntryPointNotFoundException)
+            {
+                return Fail("The loaded Bridge native library does not report subpixel output status. Update the package and restart the Unity Editor.");
+            }
+            catch (DllNotFoundException) { return Fail("Bridge worker native library is missing."); }
+            catch (Exception error) { return Fail(Sanitize(error.Message)); }
+
+            if (result != 0 || next.structSize != 48 || next.version != BridgeWorkerNative.SubpixelStatusVersion ||
+                next.valid != 1 || next.requestedMode > (uint)BridgeSubpixelMode.CalibratedCells ||
+                next.effectiveMode > (uint)BridgeSubpixelMode.CalibratedCells ||
+                next.requestedMode != (uint)RequestedSubpixelMode || next.effectiveMode != next.requestedMode ||
+                next.backend != BridgeWorkerNative.SubpixelBackendNativeD3D11)
+                return Fail("Bridge worker returned invalid or mismatched subpixel output status.");
+            if (RequestedSubpixelMode == BridgeSubpixelMode.CalibratedCells && next.cellCount == 0)
+                return Fail("Bridge worker did not provide a calibrated subpixel cell table for the selected display.");
+
+            subpixelStatus = next;
+            return true;
         }
 
         public void Submit(RenderTexture quiltTexture, QuiltLayout layout)
@@ -947,9 +1022,9 @@ namespace ViewWeave
                 return false;
             }
 #endif
-            if (quiltTexture == null || layout.Columns <= 0 || layout.Rows <= 0 || layout.ViewCount != layout.Columns * layout.Rows)
+            if (!BridgeQuiltInputPolicy.TryValidate(quiltTexture, layout, out string inputError))
             {
-                LastError = "Bridge worker requires a complete quilt grid";
+                LastError = inputError;
                 return false;
             }
             SubmissionAttempts++;
@@ -958,12 +1033,23 @@ namespace ViewWeave
             try { Graphics.Blit(quiltTexture, transferTexture, new Vector2(1f, -1f), new Vector2(0f, 1f)); }
             finally { RenderTexture.active = previous; }
             IntPtr drawData;
+            BridgeWorkerNative.WorkerDrawOptionsV1 drawOptions = new BridgeWorkerNative.WorkerDrawOptionsV1
+            {
+                structSize = (uint)Marshal.SizeOf(typeof(BridgeWorkerNative.WorkerDrawOptionsV1)),
+                version = BridgeWorkerNative.WorkerDrawOptionsVersion,
+                sourceEncoding = transferSrgb
+                    ? BridgeWorkerNative.WorkerSourceEncodingSrgb
+                    : BridgeWorkerNative.WorkerSourceEncodingUnorm,
+                reserved0 = 0
+            };
             try
             {
                 if (previewLease)
                 {
-                    int result = BridgeWorkerNative.lkg_worker_try_make_preview_draw_data_v1(handle, ref previewLeaseIdentity,
-                        transferNativePtr, (uint)layout.Columns, (uint)layout.Rows, layout.AspectRatio, zoom, out drawData);
+                    int result;
+                    result = BridgeWorkerNative.lkg_worker_try_make_preview_draw_data_with_options_v1(handle,
+                        ref previewLeaseIdentity, transferNativePtr, (uint)layout.Columns, (uint)layout.Rows,
+                        layout.AspectRatio, zoom, ref drawOptions, out drawData);
                     if (result == 1)
                     {
                         LastSubmissionOutcome = BridgeWorkerSubmissionOutcome.RetryableBusy;
@@ -975,8 +1061,9 @@ namespace ViewWeave
                 }
                 else
                 {
-                    drawData = BridgeWorkerNative.lkg_worker_make_draw_data(handle, transferNativePtr,
-                        (uint)layout.Columns, (uint)layout.Rows, layout.AspectRatio, zoom);
+                    drawData = BridgeWorkerNative.lkg_worker_make_draw_data_with_options_v1(handle,
+                        transferNativePtr, (uint)layout.Columns, (uint)layout.Rows,
+                        layout.AspectRatio, zoom, ref drawOptions);
                 }
             }
             catch (Exception error) { LastError = Sanitize(error.Message); return false; }

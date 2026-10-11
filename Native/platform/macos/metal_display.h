@@ -25,6 +25,8 @@ struct LkgMetalDisplayStatus {
 extern "C" {
 LKG_EXPORT uint64_t lkg_metal_display_open_v3(const char* path, const char* applicationName,
     uint32_t ordinal, LkgMetalDisplayInfoV3* info);
+LKG_EXPORT uint64_t lkg_metal_display_open_v4(const char* path, const char* applicationName,
+    uint32_t ordinal, uint32_t requestedMode, LkgMetalDisplayInfoV3* info);
 LKG_EXPORT int32_t lkg_metal_display_submit(uint64_t session, void* texture, void** eventData);
 LKG_EXPORT int32_t lkg_metal_display_status(uint64_t session, LkgMetalDisplayStatus* status);
 LKG_EXPORT void lkg_metal_display_close(uint64_t session);

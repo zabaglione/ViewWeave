@@ -324,10 +324,42 @@ namespace ViewWeave.RigCameraCreationValidation
                 var session = rigObject.GetComponent<ViewWeaveBridgeSession>();
                 Assert.That(session.CanChangeSubpixelMode(out string reason), Is.True, reason);
                 Assert.That(subpixelMode.value, Is.EqualTo(BridgeSubpixelMode.Automatic));
+
+                Undo.IncrementCurrentGroup();
+                Undo.SetCurrentGroupName("Change ViewWeave Subpixel Processing");
+                subpixelMode.value = BridgeSubpixelMode.ClassicRgb;
+                Undo.FlushUndoRecordObjects();
+                Assert.That(session.SubpixelMode, Is.EqualTo(BridgeSubpixelMode.ClassicRgb));
+                Assert.That(new SerializedObject(session).FindProperty("subpixelMode").intValue,
+                    Is.EqualTo((int)BridgeSubpixelMode.ClassicRgb));
+
+                Undo.PerformUndo();
+                subpixelMode = root.Q<EnumField>("subpixelMode");
+                Assert.That(subpixelMode, Is.Not.Null, "Undo should rebuild the current subpixel field");
+                Assert.That(session.SubpixelMode, Is.EqualTo(BridgeSubpixelMode.Automatic));
+                Assert.That(subpixelMode.value, Is.EqualTo(BridgeSubpixelMode.Automatic));
+
+                Undo.PerformRedo();
+                subpixelMode = root.Q<EnumField>("subpixelMode");
+                Assert.That(subpixelMode, Is.Not.Null, "Redo should rebuild the current subpixel field");
+                Assert.That(session.SubpixelMode, Is.EqualTo(BridgeSubpixelMode.ClassicRgb));
+                Assert.That(subpixelMode.value, Is.EqualTo(BridgeSubpixelMode.ClassicRgb));
+
                 subpixelMode.value = BridgeSubpixelMode.CalibratedCells;
                 Assert.That(session.SubpixelMode, Is.EqualTo(BridgeSubpixelMode.CalibratedCells));
                 Assert.That(new SerializedObject(session).FindProperty("subpixelMode").intValue,
                     Is.EqualTo((int)BridgeSubpixelMode.CalibratedCells));
+                object inspectorView = GetField<object>(editor, "view");
+                Invoke(inspectorView, "Rebuild");
+                subpixelMode = root.Q<EnumField>("subpixelMode");
+                Assert.That(subpixelMode, Is.Not.Null, "Rebuild should recreate the subpixel field");
+                Assert.That(subpixelMode.value, Is.EqualTo(BridgeSubpixelMode.CalibratedCells));
+                Assert.That(session.SubpixelMode, Is.EqualTo(BridgeSubpixelMode.CalibratedCells));
+
+                subpixelMode.value = BridgeSubpixelMode.Automatic;
+                Assert.That(session.SubpixelMode, Is.EqualTo(BridgeSubpixelMode.Automatic));
+                Assert.That(new SerializedObject(session).FindProperty("subpixelMode").intValue,
+                    Is.EqualTo((int)BridgeSubpixelMode.Automatic));
                 EnumField renderMode = root.Q<EnumField>("viewRenderMode");
                 Assert.That(renderMode, Is.Not.Null);
                 Assert.That(renderMode.value, Is.EqualTo(QuiltViewRenderMode.Full));
@@ -344,6 +376,22 @@ namespace ViewWeave.RigCameraCreationValidation
                 if (window != null) window.Close();
                 if (editor != null) Object.DestroyImmediate(editor);
                 Object.DestroyImmediate(rigObject);
+            }
+        }
+
+        [Test]
+        public void WindowsSessionMissingSerializedModeDefaultsToAutomatic()
+        {
+            GameObject host = new GameObject("Legacy Windows Session Serialization");
+            try
+            {
+                ViewWeaveBridgeSession session = host.AddComponent<ViewWeaveBridgeSession>();
+                EditorJsonUtility.FromJsonOverwrite("{\"applicationName\":\"LegacySession\"}", session);
+                Assert.That(session.SubpixelMode, Is.EqualTo(BridgeSubpixelMode.Automatic));
+            }
+            finally
+            {
+                Object.DestroyImmediate(host);
             }
         }
 

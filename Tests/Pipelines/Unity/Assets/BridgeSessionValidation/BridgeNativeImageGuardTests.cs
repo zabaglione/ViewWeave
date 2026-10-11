@@ -58,6 +58,23 @@ namespace ViewWeave.BridgeSessionValidation
         }
 
         [Test]
+        public void RenderEventAddressMustBelongToTheCapturedPackageImage()
+        {
+            var identity = new BridgeNativeModuleIdentity(ShimName, new IntPtr(0x1000),
+                @"E:\Packages\bridge\Plugins\x86_64\lookingglass_bridge_shim.dll");
+
+            Assert.IsTrue(BridgeNativeImageGuard.TryValidateResolvedAddressBase(
+                new IntPtr(0x1120), new IntPtr(0x1000), identity, out string validError), validError);
+            Assert.IsFalse(BridgeNativeImageGuard.TryValidateResolvedAddressBase(
+                IntPtr.Zero, new IntPtr(0x1000), identity, out string zeroAddressError));
+            StringAssert.Contains("address or resolved image base is null", zeroAddressError);
+            Assert.IsFalse(BridgeNativeImageGuard.TryValidateResolvedAddressBase(
+                new IntPtr(0x2120), new IntPtr(0x2000), identity, out string foreignImageError));
+            StringAssert.Contains("different native image", foreignImageError);
+            Assert.IsTrue(IsAscii(validError + zeroAddressError + foreignImageError));
+        }
+
+        [Test]
         public void ExpectedShimResolverAcceptsDirectBridgePackageLayout()
         {
             const string root = @"E:\Packages\com.zabaglione.lookingglass.viewweave.bridge";
@@ -145,6 +162,101 @@ namespace ViewWeave.BridgeSessionValidation
             Assert.AreEqual(1, api.ClosedSnapshots);
             Assert.AreEqual(1, modules.Count);
             Assert.AreEqual(@"E:\Packages\bridge\lookingglass_bridge_shim.dll", modules[0].FullPath);
+        }
+
+        [TestCase("create", "create the module snapshot", 0)]
+        [TestCase("first", "read the first module entry", 5)]
+        [TestCase("next", "read the next module entry", 5)]
+        [TestCase("close", "close the module snapshot", 5)]
+        public void ToolhelpEnumeratorReportsFiveBadLengthAttempts(string stage, string expectedOperation, int expectedClosed)
+        {
+            var api = new FakeToolhelpApi
+            {
+                Entries = stage == "next"
+                    ? new[] { Entry(ShimName, 0x1000, 10) }
+                    : Array.Empty<BridgeToolhelpModuleEntry>(),
+                Paths = new Dictionary<IntPtr, string> { [new IntPtr(10)] = @"E:\Packages\bridge\lookingglass_bridge_shim.dll" }
+            };
+            switch (stage)
+            {
+                case "create":
+                    api.CreateErrors = new Queue<int>(new[] { 24, 24, 24, 24, 24 });
+                    break;
+                case "first":
+                    api.FirstError = 24;
+                    break;
+                case "next":
+                    api.NextError = 24;
+                    break;
+                case "close":
+                    api.CloseError = 24;
+                    break;
+                default:
+                    Assert.Fail("Unexpected Toolhelp failure stage.");
+                    break;
+            }
+
+            Assert.IsFalse(BridgeNativeModuleEnumerator.TryEnumerate(api, out List<BridgeNativeModuleIdentity> modules, out string error));
+            Assert.IsNull(modules, "A failed or incomplete snapshot must never be published.");
+            Assert.AreEqual(BridgeNativeModuleEnumerator.MaximumSnapshotAttempts, api.SnapshotAttempts);
+            Assert.AreEqual(expectedClosed, api.ClosedSnapshots);
+            StringAssert.Contains("after 5 attempt(s)", error);
+            StringAssert.Contains(expectedOperation, error);
+            StringAssert.Contains("Win32 error 24", error);
+            Assert.IsTrue(IsAscii(error));
+        }
+
+        [Test]
+        public void ToolhelpEnumeratorRetainsArbitraryModulePathErrorAcrossRetries()
+        {
+            var api = new FakeToolhelpApi
+            {
+                Entries = new[] { Entry(ShimName, 0x1000, 10) },
+                PathError = 1234
+            };
+
+            Assert.IsFalse(BridgeNativeModuleEnumerator.TryEnumerate(api, out List<BridgeNativeModuleIdentity> modules, out string error));
+            Assert.IsNull(modules);
+            Assert.AreEqual(BridgeNativeModuleEnumerator.MaximumSnapshotAttempts, api.SnapshotAttempts);
+            Assert.AreEqual(BridgeNativeModuleEnumerator.MaximumSnapshotAttempts, api.ClosedSnapshots);
+            StringAssert.Contains("after 5 attempt(s)", error);
+            StringAssert.Contains("resolve the loaded Bridge shim path", error);
+            StringAssert.Contains("Win32 error 1234", error);
+            Assert.IsTrue(IsAscii(error));
+        }
+
+        [Test]
+        public void ToolhelpEnumeratorRetainsExceptionTypeAcrossRetries()
+        {
+            var api = new FakeToolhelpApi { ThrowOnModuleFirst = true };
+
+            Assert.IsFalse(BridgeNativeModuleEnumerator.TryEnumerate(api, out List<BridgeNativeModuleIdentity> modules, out string error));
+            Assert.IsNull(modules);
+            Assert.AreEqual(BridgeNativeModuleEnumerator.MaximumSnapshotAttempts, api.SnapshotAttempts);
+            Assert.AreEqual(BridgeNativeModuleEnumerator.MaximumSnapshotAttempts, api.ClosedSnapshots);
+            StringAssert.Contains("after 5 attempt(s)", error);
+            StringAssert.Contains("InvalidOperationException", error);
+            Assert.IsTrue(IsAscii(error));
+        }
+
+        [Test]
+        public void ToolhelpEnumeratorDoesNotPublishCandidateWhenCloseFails()
+        {
+            var api = new FakeToolhelpApi
+            {
+                Entries = new[] { Entry(ShimName, 0x1000, 10), Entry("other.dll", 0x2000, 20) },
+                Paths = new Dictionary<IntPtr, string> { [new IntPtr(10)] = @"E:\Packages\bridge\lookingglass_bridge_shim.dll" },
+                CloseError = 6
+            };
+
+            Assert.IsFalse(BridgeNativeModuleEnumerator.TryEnumerate(api, out List<BridgeNativeModuleIdentity> modules, out string error));
+            Assert.IsNull(modules, "A candidate must remain private unless enumeration and CloseSnapshot both succeed.");
+            Assert.AreEqual(1, api.SnapshotAttempts);
+            Assert.AreEqual(1, api.ClosedSnapshots);
+            StringAssert.Contains("after 1 attempt(s)", error);
+            StringAssert.Contains("Unable to close the module snapshot (Win32 error 6)", error);
+            StringAssert.DoesNotContain("read the next module entry", error);
+            Assert.IsTrue(IsAscii(error));
         }
 
         [Test]
@@ -408,6 +520,9 @@ namespace ViewWeave.BridgeSessionValidation
             public Dictionary<IntPtr, string> Paths = new Dictionary<IntPtr, string>();
             public int FirstError;
             public int NextError;
+            public int PathError;
+            public int CloseError;
+            public bool ThrowOnModuleFirst;
             public int SnapshotAttempts;
             public int ClosedSnapshots;
             int currentIndex;
@@ -423,6 +538,7 @@ namespace ViewWeave.BridgeSessionValidation
 
             public bool ModuleFirst(IntPtr snapshot, out BridgeToolhelpModuleEntry entry, out int errorCode)
             {
+                if (ThrowOnModuleFirst) throw new InvalidOperationException("synthetic module enumeration failure");
                 if (FirstError != 0)
                 {
                     errorCode = FirstError;
@@ -462,15 +578,15 @@ namespace ViewWeave.BridgeSessionValidation
 
             public bool TryGetModulePath(IntPtr moduleHandle, out string path, out int errorCode)
             {
-                errorCode = 0;
+                errorCode = Paths.ContainsKey(moduleHandle) ? 0 : PathError;
                 return Paths.TryGetValue(moduleHandle, out path);
             }
 
             public bool CloseSnapshot(IntPtr snapshot, out int errorCode)
             {
                 ClosedSnapshots++;
-                errorCode = 0;
-                return true;
+                errorCode = CloseError;
+                return CloseError == 0;
             }
         }
     }

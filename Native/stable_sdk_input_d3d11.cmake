@@ -96,3 +96,53 @@ function(lkg_add_stable_sdk_input_test TARGET_NAME)
   add_test(NAME ${TARGET_NAME} COMMAND ${TARGET_NAME})
   set_tests_properties(${TARGET_NAME} PROPERTIES TIMEOUT 60)
 endfunction()
+
+function(lkg_add_manual_subpixel_presenter_shaders TARGET_NAME)
+  if (NOT WIN32)
+    message(FATAL_ERROR "The manual D3D11 presenter is available only on Windows")
+  endif()
+
+  if (NOT LKG_FXC_EXECUTABLE)
+    set(_lkg_fxc_hints)
+    if (CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION AND DEFINED ENV{WindowsSdkDir})
+      list(APPEND _lkg_fxc_hints
+        "$ENV{WindowsSdkDir}/bin/${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION}/x64"
+        "$ENV{WindowsSdkDir}/bin/${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION}/x86")
+    endif()
+    if (DEFINED ENV{WindowsSdkDir} AND DEFINED ENV{WindowsSDKVersion})
+      list(APPEND _lkg_fxc_hints
+        "$ENV{WindowsSdkDir}/bin/$ENV{WindowsSDKVersion}/x64"
+        "$ENV{WindowsSdkDir}/bin/$ENV{WindowsSDKVersion}/x86")
+    endif()
+    find_program(LKG_FXC_EXECUTABLE NAMES fxc.exe fxc HINTS ${_lkg_fxc_hints})
+  endif()
+  if (NOT LKG_FXC_EXECUTABLE)
+    message(FATAL_ERROR "FXC was not found for the manual subpixel presenter")
+  endif()
+
+  set(shader_source "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/platform/windows/manual_subpixel_presenter.hlsl")
+  set(shared_shader "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/../Packages/com.zabaglione.lookingglass.viewweave.bridge/Runtime/Common/Resources/ViewWeaveSubpixelSampling.hlsl")
+  if (NOT EXISTS "${shared_shader}")
+    message(FATAL_ERROR "Shared subpixel shader source was not found: ${shared_shader}")
+  endif()
+  set(shader_output_dir "${CMAKE_CURRENT_BINARY_DIR}/${TARGET_NAME}_manual_subpixel_shaders")
+  set(vertex_header "${shader_output_dir}/manual_subpixel_presenter_vertex_shader.h")
+  set(pixel_header "${shader_output_dir}/manual_subpixel_presenter_pixel_shader.h")
+  add_custom_command(
+    OUTPUT "${vertex_header}"
+    COMMAND "${CMAKE_COMMAND}" -E make_directory "${shader_output_dir}"
+    COMMAND "${LKG_FXC_EXECUTABLE}" /nologo /T vs_4_0 /E ManualSubpixelVS
+      /Fh "${vertex_header}" /Vn g_manual_subpixel_presenter_vertex_shader "${shader_source}"
+    DEPENDS "${shader_source}" "${shared_shader}"
+    VERBATIM)
+  add_custom_command(
+    OUTPUT "${pixel_header}"
+    COMMAND "${CMAKE_COMMAND}" -E make_directory "${shader_output_dir}"
+    COMMAND "${LKG_FXC_EXECUTABLE}" /nologo /T ps_4_0 /E ManualSubpixelPS
+      /Fh "${pixel_header}" /Vn g_manual_subpixel_presenter_pixel_shader "${shader_source}"
+    DEPENDS "${shader_source}" "${shared_shader}"
+    VERBATIM)
+  target_sources(${TARGET_NAME} PRIVATE "${vertex_header}" "${pixel_header}" "${shader_source}" "${shared_shader}")
+  set_source_files_properties("${shader_source}" "${shared_shader}" PROPERTIES HEADER_FILE_ONLY TRUE)
+  target_include_directories(${TARGET_NAME} PRIVATE "${shader_output_dir}")
+endfunction()

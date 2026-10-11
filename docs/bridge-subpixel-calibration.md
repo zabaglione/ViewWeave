@@ -4,11 +4,23 @@
 
 Unity機能ごとの現在の対応状況は[Unity機能×環境表](ja/unity-feature-platform-matrix.html)を参照してください。
 
+## 現在の共通出力契約
+
+`BridgeSubpixelMode`は出力方法の選択で、`Automatic=0`を既定値とします。`ClassicRgb=1`と`CalibratedCells=2`は明示選択時だけ使います。これは下記のBridge `CellPatternMode`（hardware calibration pattern）の0〜4とは別のenumです。Automaticは有効な校正cell tableがあればcell補正を使い、tableがなければBridgeの`ri`／`bi` channel indexによる標準RGB/BGR出力を使います。Classic RGBは均等なRGBを強制し、cell取得を必要としません。Calibrated Cellsは実在・検証済みのcell tableを必須とし、取得できなければ開始を失敗させます。機種名のallowlistは使いません。
+
+Windows WorkerはAutomaticを含む全modeをViewWeaveのNative D3D11 interlacerで処理します。D3D12 Unity producerも同じGPU上のD3D11 workerへquiltsを渡します。別経路のLegacy DirectはSDK-managed出力のままです。active preview／Session中はmode変更を拒否します。Windows Native Release CTest 19/19、D3D11 WARP shader oracle 25 casesと校正boundary 6件、Managed/UIの16/16 EditMode、9/9 PlayMode、module enumerator 25/25、guard/discovery 46/46、実機Editorの全12 mode×pipeline×API条件がPASSしました。各実機fixtureはmode status、Native D3D11 backend、render/present counter進行、Preview-to-Play lifecycleとcleanupを確認します。これは検証時の未commit作業treeと指定RTX 3090 Ti機器条件に限られ、光学品質やWindows Playerを証明しません。詳細は[Windows subpixel validation](windows-subpixel-validation-20261011.md)に記録します。
+
+sampling/color実装はNative WARP pixel oracle 25 casesと6校正境界で確認しました。macOSのshader samplingは元の入力`uv`にtexel-center offsetを加えて`tex2Dlod`でsampleし、native最終presentではUVを変更しません。Windowsは既存producer transferのY反転後にNative側でsource寸法のquiltをraw-copyし、physical outputへの最終bilinear scaleを1回だけ行います。共通shaderはLinear／Gamma contentと、source textureの実際のUNORM／sRGB encodingを明示的に扱います。Windows Editor device fixtureでも3 modeすべてのrender/present counter進行を確認しましたが、人手光学評価、全viewの画質、Mac新source/shaderの実行は未確認です。aspect値はmacOS SDK display profileと同じ定義へ揃えます。
+
+共通入力gateは実texture寸法と`QuiltLayout`寸法の一致、正の完全grid、grid各軸4096以下、paddingなしの割り切れる寸法、実gridから導くtile寸法一致、有限かつ正のview aspectを要求します。部分view countや空layoutを受け付けません。9件のManaged contract PlayMode suiteで非既定15x10 / 3x2 / 6-view layoutの受理、寸法不一致・padding・partial count・default layoutの拒否を確認しました。これによりMetal runtimeやMac shaderの実行を主張するものではありません。
+
+macOS sourceも共通Native校正validatorとshaderへ移行中で、新しいmode引数には`open_v4`を必須とします。このWindows環境にあるmacOS shimは旧v3 buildで、新source／shaderはmacOS上でbuildまたは実行されていません。以前のmacOS測定はその時点のコードとbinaryに対する歴史的結果です。新共通shaderや校正実装の検証結果には流用しません。
+
 Metal経路はBridgeの表示機器識別子を許可リストにせず、校正値から出力profileを作ります。機種名と`CellPatternMode`の対応表は公開資料から確認できていません。したがって、個々のBridge値を検証して出力する実装は、全機種の光学対応を意味しません。
 
 ## 校正データとmode
 
-Bridgeの校正には`CellPatternMode`とRGB各サブピクセルのraw X/Y pixel offsetを持つ`subpixelCells`があります。現在のMetal APIは`open_v3`のみを使い、180-byteの`LkgMetalDisplayInfoV3`で受け取ります。各cellは24 bytesでRGBの6値を保持し、最大4個を含めます。
+Bridgeの校正には`CellPatternMode`とRGB各サブピクセルのraw X/Y pixel offsetを持つ`subpixelCells`があります。旧macOS検証binaryは`open_v3`と180-byteの`LkgMetalDisplayInfoV3`を使いました。現在の未検証sourceは新しいmode引数を持つ`open_v4`を必須とします。各cellは24 bytesでRGBの6値を保持し、最大4個を含めます。
 
 以下のmode別cell index規則は、公式Looking Glass Unity Plugin 3.2.8の数学式を照合してViewWeave側で独自に実装したものです。`x`,`y`はnative display pixel座標で、表のセル数はtableの最小必要数を示します。
 
@@ -20,7 +32,7 @@ Bridgeの校正には`CellPatternMode`とRGB各サブピクセルのraw X/Y pixe
 | 3 | 4 | `(y + 2 * (x % 2)) % 4` |
 | 4 | 2 | `y % 2` |
 
-tableは最大4 cellです。mode 0は1 cell以上、mode 1／2／4は2 cell以上、mode 3は4 cell以上を要求します。下限未満または4を超えるtableは拒否します。JSONのmode keyは`CellPatternMode`と`cellPatternMode`を受け付け、cellがあるのにmodeが欠落している場合は拒否します。tableのない従来profileはmode 0に限ります。
+tableは最大4 cellです。Bridge `CellPatternMode` 0は1 cell以上、1／2／4は2 cell以上、3は4 cell以上を要求します。下限未満または4を超えるtableは拒否します。JSONのmode keyは`CellPatternMode`と`cellPatternMode`を受け付け、cellがあるのにmodeが欠落している場合は拒否します。cell tableがないprofileではBridge pattern mode 0だけが許可されます。このpattern modeは`BridgeSubpixelMode.Automatic`／`ClassicRgb`／`CalibratedCells`とは異なります。
 
 cell tableのないmode 0は通常のRGB/BGR channel indexに基づく出力で、`flipX`と`invertedViews`をそれぞれ0または1にできます。`flipX=1`では画像X、tilt、RGB方向を反転します。cell tableのあるprofileは`invertedViews=1`が必要です。その`flipX=1`はtiltの符号だけを反転し、表示UVやRGB offset Xの並べ替えはしません。未知のmode、cell数の下限未満または4超過、欠落・非数のoffset、共通校正値との不一致は拒否します。displayは回転なし、native解像度、拡張画面で使います。
 
@@ -35,10 +47,10 @@ SDKの`get_calibration_for_display`はcell数とcell pointerを受け取りま�
 - [Looking-Glass/looking-glass-webxr `LookingGlassConfig.ts`（固定SHA `b44ed27fea197f28fbe4cb669bc350d141a9f8b1`）](https://github.com/Looking-Glass/looking-glass-webxr/blob/b44ed27fea197f28fbe4cb669bc350d141a9f8b1/src/LookingGlassConfig.ts#L25-L50)はBridgeの`CellPatternMode`とshaderの`cfg.subpixelMode`を別値として扱います。同repoはApache-2.0ですが、参照先の`holoplay-core@0.0.11`は独自ライセンスなので、そのshaderコードは移植していません。
 - [LookingGlassCoreSDK `HoloPlayShadersOpen.h`（固定SHA `5f786480e8906396a06a442a18e9091ef9e0aa74`）](https://github.com/Looking-Glass/LookingGlassCoreSDK/blob/5f786480e8906396a06a442a18e9091ef9e0aa74/HoloPlayCore/include/HoloPlayShadersOpen.h#L11-L57)はMIT表示の公開宣言ですが、shader本体は動的ライブラリから取得します。同版の[別shader header](https://github.com/Looking-Glass/LookingGlassCoreSDK/blob/5f786480e8906396a06a442a18e9091ef9e0aa74/HoloPlayCore/include/HoloPlayShaders.h#L9-L23)は非公開と明記し、repoの[LICENSE.txt](https://github.com/Looking-Glass/LookingGlassCoreSDK/blob/5f786480e8906396a06a442a18e9091ef9e0aa74/LICENSE.txt)はHoloPlay Core独自ライセンスです。
 
-## 確認範囲
+## 旧macOS実装の確認範囲（歴史的結果）
 
-現在の一般化経路はNative CTest 7/7とv3接続・取消の3 cycleを通過しました。Built-inのLinear／Gamma GPU比較は各28 cases、各64,512 samplesで通過し、最大誤差はそれぞれ0.001956／0.001961（許容値0.006）です。URP／HDRPのLinear GPU比較も各28 casesで通過しました。現行URP EditorではPreview／Play、PNG保存、無音録画・再生、Stop／Restartを確認しました。これらは機種一般の光学確認ではなく、16-inch Spatial Landscapeの実機出力も未検証です。確定した範囲と境界は[Metal subpixel calibration validation record](macos-metal-subpixel-validation-20261011.md)を参照してください。
+旧一般化経路はNative CTest 7/7とv3接続・取消の3 cycleを通過しました。Built-inのLinear／Gamma GPU比較は各28 cases、各64,512 samplesで通過し、最大誤差はそれぞれ0.001956／0.001961（許容値0.006）です。URP／HDRPのLinear GPU比較も各28 casesで通過しました。旧URP EditorではPreview／Play、PNG保存、無音録画・再生、Stop／Restartを確認しました。これらは旧コード／binaryに対する歴史的結果であり、新しいshared shader、`open_v4`、共通校正経路の検証ではありません。機種一般の光学確認ではなく、16-inch Spatial Landscapeの実機出力も未検証です。旧記録の正確な範囲は[Metal subpixel calibration validation record](macos-metal-subpixel-validation-20261011.md)を参照してください。
 
 ## Inspector設定の共通契約
 
-`BridgeSubpixelMode`はAutomatic／ClassicRgb／CalibratedCellsを定義します。MetalではBridge校正の自動選択、セル表を使わない診断、セル表必須の選択として適用します。Windowsでは同じ設定をserialized fieldに保持し、現在のBridge管理出力はAutomatic以外を開始前に拒否します。Rig InspectorとEdit Mode device previewに設定を伝え、稼働中の変更を拒否します。将来のWindows手動補正がこの契約を使えるよう、enum／判定policyはRuntime/Commonに置きます。
+`BridgeSubpixelMode`の3値はRig InspectorとSession／output設定で共有され、mode未指定のserialized objectはAutomaticになります。Windows Workerは3値をNative D3D11 interlacerへ渡す実装済みで、Unity Editorの指定device fixtureでは12条件を限定確認しました。Legacy Directは独立したSDK-managed pathです。macOS sourceも同じmode意味へ移行中ですが、現macOS binaryは新しい`open_v4`契約に対応していません。共通UIは稼働中のmode変更を拒否します。macOS新sourceは未build・未実行です。

@@ -48,6 +48,7 @@ namespace ViewWeave.BridgeEditorPreviewValidation
         const string DevicePlayTransitionRendererDataName = "ViewWeave_DevicePreviewPlayTransition_RendererData";
         const string DevicePlayTransitionStatePrefix = "ViewWeave.EditorPreview.DevicePlayTransition.";
         const string DevicePlayTransitionExitingEditModeObservedKey = DevicePlayTransitionStatePrefix + "exitingEditModeObserved";
+        const string DevicePlayTransitionRequestedSubpixelModeKey = DevicePlayTransitionStatePrefix + "requestedSubpixelMode";
         const string DevicePlayTransitionAssetFolderPrefix = "Assets/__ViewWeaveDevicePlayTransition_";
 
         [UnityTest]
@@ -1927,6 +1928,47 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                 fixture.Rig.SetOutput(sourceOutput);
                 session = fixture.Rig.gameObject.AddComponent<ViewWeaveBridgeSession>();
                 session.startOnEnable = false;
+                BridgeSubpixelMode requestedSubpixelMode = ReadDeviceSubpixelMode();
+                SessionState.SetInt(DevicePlayTransitionRequestedSubpixelModeKey, (int)requestedSubpixelMode);
+                double nativeAdmissionStartedAt = EditorApplication.timeSinceStartup;
+                double nativeAdmissionDeadline = nativeAdmissionStartedAt + 30.0;
+                double nextNativeAdmissionLog = nativeAdmissionStartedAt + 5.0;
+                bool nativeCallsAllowed = false;
+                bool nativeModuleLoaded = false;
+                string nativeAdmissionError = string.Empty;
+                int nativePending = BridgeWorkerQuiltOutput.ShutdownPendingCount;
+                while (EditorApplication.timeSinceStartup < nativeAdmissionDeadline)
+                {
+                    if (!BridgeNativeImageGuard.IsValidationPending)
+                    {
+                        nativeCallsAllowed = BridgeNativeImageGuard.TryValidateGlobalCalls(
+                            out nativeModuleLoaded, out _, out nativeAdmissionError);
+                        nativePending = BridgeWorkerQuiltOutput.ShutdownPendingCount;
+                        if (nativeCallsAllowed && nativePending == 0) break;
+                        if (!nativeCallsAllowed &&
+                            !string.IsNullOrEmpty(nativeAdmissionError) &&
+                            nativeAdmissionError.IndexOf("pending on the Editor update loop", StringComparison.Ordinal) < 0)
+                            break;
+                    }
+
+                    if (EditorApplication.timeSinceStartup >= nextNativeAdmissionLog)
+                    {
+                        Debug.Log("EDITOR_PREVIEW_SUBPIXEL_ADMISSION_WAIT elapsed=" +
+                            (EditorApplication.timeSinceStartup - nativeAdmissionStartedAt).ToString("F1", System.Globalization.CultureInfo.InvariantCulture) +
+                            ", validationPending=" + BridgeNativeImageGuard.IsValidationPending +
+                            ", callsAllowed=" + nativeCallsAllowed + ", moduleLoaded=" + nativeModuleLoaded +
+                            ", nativePending=" + nativePending + ", error=" + ToAscii(nativeAdmissionError));
+                        nextNativeAdmissionLog += 5.0;
+                    }
+                    yield return null;
+                }
+                Assert.IsTrue(nativeCallsAllowed && nativePending == 0,
+                    "Bridge native image validation and shutdown admission must be ready before setting the fixture mode. " +
+                    "callsAllowed=" + nativeCallsAllowed + ", validationPending=" + BridgeNativeImageGuard.IsValidationPending +
+                    ", moduleLoaded=" + nativeModuleLoaded + ", nativePending=" + nativePending +
+                    ", error=" + ToAscii(nativeAdmissionError));
+                Assert.IsTrue(session.TrySetSubpixelMode(requestedSubpixelMode, out string subpixelModeError), subpixelModeError);
+                Debug.Log("EDITOR_PREVIEW_DEVICE requestedSubpixelMode=" + requestedSubpixelMode);
                 if (!fixture.Rig.ConfigureComponents())
                     throw new AssertionException("The DevicePreview-to-Play source Rig could not configure its Bridge output.");
                 fixture.Rig.gameObject.SetActive(true);
@@ -1995,8 +2037,13 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                 yield return WaitForDeviceWorker("before-play");
                 BridgeWorkerQuiltOutput previewOutput = PreviewApi.ProducerOutput;
                 Assert.IsNotNull(previewOutput);
+                AssertSubpixelOutputStatus(previewOutput, requestedSubpixelMode, "editor-preview");
                 Assert.Greater(previewOutput.Submissions, 0);
                 Assert.Greater(previewOutput.Completed, 0);
+                uint previewCompletedBefore = previewOutput.SubpixelRenderCompleted;
+                uint previewPresentedBefore = previewOutput.SubpixelPresentAccepted;
+                AssertActiveSubpixelModeChangeRejected(session, requestedSubpixelMode, "editor-preview");
+                yield return WaitForSubpixelCounters(previewOutput, previewCompletedBefore, previewPresentedBefore, "editor-preview");
                 StopDevicePreview("before-play");
                 yield return WaitForDeviceStop("before-play");
                 Assert.IsTrue(PreviewApi.IsActive && PreviewApi.IsPaused,
@@ -2011,6 +2058,10 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                 EditorApplication.playModeStateChanged -= CaptureDeviceTransitionExitingEditMode;
                 crossedPlayMode = true;
                 Assert.IsTrue(Application.isPlaying, "Unity must enter Play mode for the device transition check.");
+                int restoredSubpixelModeValue = SessionState.GetInt(DevicePlayTransitionRequestedSubpixelModeKey, -1);
+                Assert.IsTrue(Enum.IsDefined(typeof(BridgeSubpixelMode), restoredSubpixelModeValue),
+                    "The requested subpixel mode must survive the Play Mode transition.");
+                requestedSubpixelMode = (BridgeSubpixelMode)restoredSubpixelModeValue;
                 RenderPipelineAsset playPipeline = GraphicsSettings.currentRenderPipeline;
                 Assert.IsNotNull(playPipeline, "The fixture render pipeline asset must remain selected after entering Play Mode.");
                 string expectedPlayPipelinePath = SessionState.GetString(DevicePlayTransitionStatePrefix + "fixturePipelinePath", string.Empty);
@@ -2058,8 +2109,16 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                     "The runtime Bridge Session did not reach Rendering after the Editor preview stopped.");
                 Assert.IsTrue(sourceOutput.Ready, "The runtime Bridge worker must be Ready.");
                 Assert.Greater(sourceOutput.Completed, 0, "The runtime Bridge worker must complete a submission.");
+                AssertSubpixelOutputStatus(sourceOutput, requestedSubpixelMode, "runtime-session");
+                uint runtimeCompletedBefore = sourceOutput.SubpixelRenderCompleted;
+                uint runtimePresentedBefore = sourceOutput.SubpixelPresentAccepted;
+                AssertActiveSubpixelModeChangeRejected(session, requestedSubpixelMode, "runtime-session");
+                yield return WaitForSubpixelCounters(sourceOutput, runtimeCompletedBefore, runtimePresentedBefore, "runtime-session");
                 Debug.Log("EDITOR_PREVIEW_DEVICE_PLAY runtimeState=" + session.State + ", submissions=" + sourceOutput.Submissions +
-                    ", completed=" + sourceOutput.Completed);
+                    ", completed=" + sourceOutput.Completed + ", requestedSubpixelMode=" + sourceOutput.RequestedSubpixelMode +
+                    ", effectiveSubpixelMode=" + sourceOutput.EffectiveSubpixelMode + ", subpixelBackend=" + sourceOutput.SubpixelBackend +
+                    ", subpixelRenderCompleted=" + sourceOutput.SubpixelRenderCompleted +
+                    ", subpixelPresentAccepted=" + sourceOutput.SubpixelPresentAccepted);
 
                 session.StopSession();
                 double stopDeadline = EditorApplication.timeSinceStartup + 30.0;
@@ -2190,6 +2249,7 @@ namespace ViewWeave.BridgeEditorPreviewValidation
             DeleteOwnedDeviceTransitionAssetFolder();
             SessionState.SetString(DevicePlayTransitionStatePrefix + "fixturePipelinePath", string.Empty);
             SessionState.SetString(DevicePlayTransitionStatePrefix + "fixturePipelineType", string.Empty);
+            SessionState.EraseInt(DevicePlayTransitionRequestedSubpixelModeKey);
             SessionState.SetBool(DevicePlayTransitionStatePrefix + "cleanupDone", true);
             Debug.Log("EDITOR_PREVIEW_DEVICE_PLAY fixtureCleanup=true");
         }
@@ -2405,6 +2465,78 @@ namespace ViewWeave.BridgeEditorPreviewValidation
             }
             Assert.Fail("Looking Glass Worker did not report Ready and completed submission during " + label +
                 " preview. elapsedSeconds=" + (EditorApplication.timeSinceStartup - startedAt).ToString("F1", System.Globalization.CultureInfo.InvariantCulture));
+        }
+
+        static BridgeSubpixelMode ReadDeviceSubpixelMode()
+        {
+            string value = Environment.GetEnvironmentVariable("VIEWWEAVE_EDITOR_PREVIEW_SUBPIXEL_MODE");
+            if (string.IsNullOrWhiteSpace(value)) return BridgeSubpixelMode.Automatic;
+            if (!Enum.TryParse(value, true, out BridgeSubpixelMode mode))
+                throw new AssertionException("VIEWWEAVE_EDITOR_PREVIEW_SUBPIXEL_MODE must be Automatic, ClassicRgb, or CalibratedCells.");
+            if (!BridgeSubpixelPolicy.Validate(mode, out string error))
+                throw new AssertionException("VIEWWEAVE_EDITOR_PREVIEW_SUBPIXEL_MODE must be Automatic, ClassicRgb, or CalibratedCells. " + error);
+            return mode;
+        }
+
+        static void AssertSubpixelOutputStatus(BridgeWorkerQuiltOutput output, BridgeSubpixelMode requested, string phase)
+        {
+            Assert.IsNotNull(output);
+            Assert.IsTrue(output.SubpixelStatusValid, phase + " worker did not publish a valid native subpixel status.");
+            Assert.AreEqual(requested, output.RequestedSubpixelMode, phase + " requested mode changed after worker start.");
+            Assert.AreEqual(requested, output.EffectiveSubpixelMode, phase + " effective mode differs from the requested mode.");
+            Assert.AreEqual(BridgeSubpixelBackend.NativeD3D11,
+                output.SubpixelBackend, phase + " selected an unexpected output backend.");
+            Assert.Greater(output.SubpixelNativeWidth, 0u, phase + " native output width is missing.");
+            Assert.Greater(output.SubpixelNativeHeight, 0u, phase + " native output height is missing.");
+            if (requested == BridgeSubpixelMode.CalibratedCells)
+                Assert.Greater(output.SubpixelCellCount, 0u, phase + " calibrated cell mode requires a real cell table.");
+            Debug.Log("EDITOR_SUBPIXEL_STATUS phase=" + phase + ", valid=true, requested=" + output.RequestedSubpixelMode +
+                ", effective=" + output.EffectiveSubpixelMode + ", backend=" + output.SubpixelBackend +
+                ", patternMode=" + output.SubpixelCellPatternMode + ", cellCount=" + output.SubpixelCellCount +
+                ", nativeWidth=" + output.SubpixelNativeWidth + ", nativeHeight=" + output.SubpixelNativeHeight +
+                ", renderCompleted=" + output.SubpixelRenderCompleted + ", presentAccepted=" + output.SubpixelPresentAccepted);
+        }
+
+        static void AssertActiveSubpixelModeChangeRejected(ViewWeaveBridgeSession session,
+            BridgeSubpixelMode activeMode, string phase)
+        {
+            Assert.IsNotNull(session);
+            BridgeSubpixelMode attemptedMode = activeMode == BridgeSubpixelMode.Automatic
+                ? BridgeSubpixelMode.ClassicRgb
+                : BridgeSubpixelMode.Automatic;
+            bool changed = session.TrySetSubpixelMode(attemptedMode, out string error);
+            Assert.IsFalse(changed, phase + " must reject subpixel mode changes while output is active.");
+            Assert.AreEqual(activeMode, session.SubpixelMode,
+                phase + " must retain the mode selected when the output was started.");
+            Assert.IsNotEmpty(error, phase + " must explain why the active mode cannot change.");
+            Assert.AreEqual(error, ToAscii(error), phase + " rejection diagnostics must contain ASCII only.");
+            Debug.Log("EDITOR_SUBPIXEL_MUTATION phase=" + phase + ", active=" + activeMode +
+                ", attempted=" + attemptedMode + ", rejected=true, retained=" + session.SubpixelMode +
+                ", reason=" + error);
+        }
+
+        static IEnumerator WaitForSubpixelCounters(BridgeWorkerQuiltOutput output,
+            uint completedBefore, uint acceptedBefore, string phase)
+        {
+            double deadline = EditorApplication.timeSinceStartup + 15.0;
+            while (EditorApplication.timeSinceStartup < deadline)
+            {
+                if (output == null || output.State == BridgeWorkerQuiltOutput.WorkerState.Fault)
+                    Assert.Fail(phase + " subpixel worker faulted while waiting for native output progress: " +
+                        (output == null ? "output missing" : output.LastError));
+                if (output.SubpixelStatusValid && output.SubpixelRenderCompleted > completedBefore &&
+                    output.SubpixelPresentAccepted > acceptedBefore)
+                {
+                    Debug.Log("EDITOR_SUBPIXEL_PROGRESS phase=" + phase + ", completedBefore=" + completedBefore +
+                        ", completedAfter=" + output.SubpixelRenderCompleted + ", presentBefore=" + acceptedBefore +
+                        ", presentAfter=" + output.SubpixelPresentAccepted);
+                    yield break;
+                }
+                yield return null;
+            }
+            Assert.Fail(phase + " native render/present counters did not both advance. completedBefore=" + completedBefore +
+                ", completedAfter=" + (output == null ? 0u : output.SubpixelRenderCompleted) +
+                ", presentBefore=" + acceptedBefore + ", presentAfter=" + (output == null ? 0u : output.SubpixelPresentAccepted));
         }
 
         static IEnumerator WaitForDevicePreviewContent(string label, bool expectMagenta, uint minimumCompletedFrames = 5)

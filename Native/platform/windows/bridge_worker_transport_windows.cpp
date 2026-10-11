@@ -8,7 +8,12 @@
 #include <dxgi1_6.h>
 #include <wrl/client.h>
 #include "bridge_d3d12_internal.h"
-#include "stable_sdk_input_d3d11.h"
+#include "bridge_subpixel_metadata.h"
+#include "manual_subpixel_presenter.h"
+#include "../../common/subpixel_calibration.h"
+#if defined(LKG_WORKER_TRANSPORT_TESTING)
+#include "../../tests/worker_transport_test_hooks.h"
+#endif
 #include <atomic>
 #include <cctype>
 #include <chrono>
@@ -25,6 +30,7 @@
 #include <thread>
 #include <unordered_set>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 using Microsoft::WRL::ComPtr;
@@ -33,8 +39,6 @@ bool lkg_bridge_worker_claim();
 void lkg_bridge_worker_release_claim();
 void lkg_bridge_worker_enter();
 void lkg_bridge_worker_leave();
-int32_t lkg_bridge_set_session_visible(uint64_t session, uint32_t visible);
-int32_t lkg_bridge_redraw_retained_session(uint64_t session, uint64_t endpointId, uint64_t generation);
 extern "C" int32_t lkg_bridge_sdk_shutdown_faulted(void);
 extern "C" int32_t lkg_bridge_sdk_shutdown_incomplete(void);
 extern "C" int32_t lkg_bridge_close_sdk_admission(void);
@@ -49,6 +53,17 @@ struct WorkerContext {
     uint32_t displayOrdinal = 0;
     bool metadataOnly = false;
     bool previewLeaseEndpoint = false;
+    LkgWorkerOutputOptionsV1 outputOptions{ sizeof(LkgWorkerOutputOptionsV1), 1, LKG_WORKER_SUBPIXEL_AUTOMATIC, 0 };
+    LkgWorkerSubpixelStatusV1 subpixelStatus{ sizeof(LkgWorkerSubpixelStatusV1), 1, 0,
+        LKG_WORKER_SUBPIXEL_AUTOMATIC, UINT32_MAX, UINT32_MAX, 0, 0, 0, UINT32_MAX, 0, 0 };
+    LkgWorkerSubpixelCalibrationV1 subpixelCalibration{ sizeof(LkgWorkerSubpixelCalibrationV1), 1 };
+    LkgWorkerSubpixelCellV1 subpixelCells[4]{};
+    std::unique_ptr<lkg::subpixel::ManualSubpixelPresenter> manualPresenter;
+    ComPtr<ID3D11Texture2D> canonicalQuilt;
+    uint32_t canonicalWidth = 0;
+    uint32_t canonicalHeight = 0;
+    uint32_t canonicalColumns = 0;
+    uint32_t canonicalRows = 0;
     std::atomic<bool> leaseReturnRequested{false};
     std::atomic<bool> leaseFinalCloseRequested{false};
     bool leaseReturnProven = false;
@@ -62,7 +77,6 @@ struct WorkerContext {
     LkgBridgeDisplayInfo fixedDisplayProfile{};
     LUID producerAdapterLuid{};
     bool producerAdapterKnown = false;
-    lkg::stable_input::StableSdkInput* stableSdkInput = nullptr;
     uint64_t displaySnapshotGeneration = 0;
     uint64_t displayRequestedGeneration = 0;
     bool displayRefreshPending = false;
@@ -74,9 +88,6 @@ struct WorkerContext {
     LkgWorkerStatus status{};
     uint32_t previewPausePhase = LKG_WORKER_PREVIEW_RUNNING;
     bool previewPauseDesired = false;
-    uint64_t retainedPresentLastTick = 0;
-    uint64_t retainedPresentGeneration = 0;
-    bool retainedPresentSuppressed = false;
     LkgWorkerPhysicalDisplayInfoV1 physicalDisplay{ static_cast<uint32_t>(sizeof(LkgWorkerPhysicalDisplayInfoV1)), 1, 0, 0, 0.0f, 0 };
     std::atomic<bool> closeRequested{false};
     std::atomic<bool> finished{false};
@@ -84,6 +95,43 @@ struct WorkerContext {
     bool sdkHostFatalFailure = false;
     std::condition_variable condition;
     struct Slot {
+        Slot() = default;
+        Slot(const Slot&) = delete;
+        Slot& operator=(const Slot&) = delete;
+        Slot(Slot&& other) noexcept { *this = std::move(other); }
+        Slot& operator=(Slot&& other) noexcept {
+            if (this == &other) return *this;
+            producerTexture = std::move(other.producerTexture);
+            producerMutex = std::move(other.producerMutex);
+            workerTexture = std::move(other.workerTexture);
+            workerMutex = std::move(other.workerMutex);
+            sharedHandle = std::exchange(other.sharedHandle, nullptr);
+            sharedTexture12 = std::move(other.sharedTexture12);
+            sourceTexture12 = std::move(other.sourceTexture12);
+            allocator12 = std::move(other.allocator12);
+            commandList12 = std::move(other.commandList12);
+            producerFence12 = std::move(other.producerFence12);
+            producerDevice12 = std::move(other.producerDevice12);
+            producerFenceValue12 = std::exchange(other.producerFenceValue12, 0);
+            consumerQuery11 = std::move(other.consumerQuery11);
+            sourceCopyRetirementQuery11 = std::move(other.sourceCopyRetirementQuery11);
+            d3d12Slot = std::exchange(other.d3d12Slot, false);
+            consumerCopyPending = std::exchange(other.consumerCopyPending, false);
+            consumerTimedOut = std::exchange(other.consumerTimedOut, false);
+            quarantined.store(other.quarantined.exchange(false, std::memory_order_acq_rel), std::memory_order_release);
+            sourceRetirementUnproven.store(other.sourceRetirementUnproven.exchange(false, std::memory_order_acq_rel), std::memory_order_release);
+            sourceCopyCompleted.store(other.sourceCopyCompleted.exchange(false, std::memory_order_acq_rel), std::memory_order_release);
+            sourceCopyQueryIssued.store(other.sourceCopyQueryIssued.exchange(false, std::memory_order_acq_rel), std::memory_order_release);
+            sourceMutexHeld.store(other.sourceMutexHeld.exchange(false, std::memory_order_acq_rel), std::memory_order_release);
+            unknownSubmission = std::exchange(other.unknownSubmission, false);
+            consumerCopyStartedTick = std::exchange(other.consumerCopyStartedTick, 0);
+            generation = std::exchange(other.generation, 0);
+            submittedAtTick = std::exchange(other.submittedAtTick, 0);
+            timedOut = std::exchange(other.timedOut, false);
+            inUse = std::exchange(other.inUse, false);
+            return *this;
+        }
+
         ComPtr<ID3D11Texture2D> producerTexture;
         ComPtr<IDXGIKeyedMutex> producerMutex;
         ComPtr<ID3D11Texture2D> workerTexture;
@@ -97,10 +145,15 @@ struct WorkerContext {
         ComPtr<ID3D12Device> producerDevice12;
         UINT64 producerFenceValue12 = 0;
         ComPtr<ID3D11Query> consumerQuery11;
+        ComPtr<ID3D11Query> sourceCopyRetirementQuery11;
         bool d3d12Slot = false;
         bool consumerCopyPending = false;
         bool consumerTimedOut = false;
-        bool quarantined = false;
+        std::atomic<bool> quarantined{ false };
+        std::atomic<bool> sourceRetirementUnproven{ false };
+        std::atomic<bool> sourceCopyCompleted{ false };
+        std::atomic<bool> sourceCopyQueryIssued{ false };
+        std::atomic<bool> sourceMutexHeld{ false };
         bool unknownSubmission = false;
         uint64_t consumerCopyStartedTick = 0;
         uint64_t generation = 0;
@@ -114,6 +167,8 @@ struct WorkerContext {
         uint32_t rows = 0;
         float aspect = 0.0f;
         float zoom = 0.0f;
+        uint32_t sourceEncoding = LKG_WORKER_SOURCE_ENCODING_UNORM;
+        bool sourceWasTypeless = false;
     };
     Job jobs[3]{};
     uint32_t jobHead = 0;
@@ -125,6 +180,7 @@ struct WorkerContext {
     uint32_t textureHeight = 0;
     DXGI_FORMAT textureFormat = DXGI_FORMAT_UNKNOWN;
     uint64_t deviceGeneration = 0;
+    uint64_t nextSlotGeneration = 1;
     bool producerD3D12 = false;
     std::atomic<uint64_t> d3d12FenceTimeoutMs{ 10000 };
     bool slotsInitializing = false;
@@ -139,10 +195,30 @@ struct WorkerContext {
 #if defined(LKG_WORKER_TRANSPORT_TESTING)
     DWORD testThreadId = 0;
     HWND testWindow = nullptr;
+    bool testPresenterVisible = true;
+    std::atomic<bool> testFailWindowPoll{false};
+    bool testReadbackRequested = false;
+    bool testReadbackComplete = false;
+    uint32_t testReadbackWaiters = 0;
+    int32_t testReadbackResult = -1;
+    uint32_t testReadbackWidth = 0;
+    uint32_t testReadbackHeight = 0;
+    std::vector<uint8_t> testReadbackPixels;
+    std::string testReadbackError;
     std::atomic<uint32_t> testMessageCount{0};
     std::atomic<uintptr_t> testWorkerDeviceIdentity{0};
 #endif
 };
+
+static bool D3D12OwnershipRetired(const WorkerContext::Slot& slot) {
+    return !slot.unknownSubmission && slot.producerFenceValue12 == 0 && !slot.sourceTexture12 &&
+        !slot.producerFence12 && !slot.producerDevice12 && !slot.consumerCopyPending &&
+        !slot.sourceRetirementUnproven && !slot.sourceMutexHeld;
+}
+
+static bool SlotGpuOwnershipRetired(const WorkerContext::Slot& slot) {
+    return !slot.inUse && !slot.quarantined && D3D12OwnershipRetired(slot);
+}
 
 struct WorkerHost {
     std::mutex mutex;
@@ -226,7 +302,9 @@ struct WorkerDrawData {
     uint32_t rows = 0;
     float aspect = 0.0f;
     float zoom = 0.0f;
+    uint32_t sourceEncoding = LKG_WORKER_SOURCE_ENCODING_UNORM;
     uint64_t leaseGeneration = 0;
+    bool sourceWasTypeless = false;
     ~WorkerDrawData() { if (texture) texture->Release(); }
 };
 
@@ -235,6 +313,14 @@ static std::unordered_map<uint64_t, std::unique_ptr<WorkerDrawData>> tokenRegist
 static std::atomic<uint64_t> nextTokenId{1};
 static std::atomic<uint32_t> testD3D12ConsumerPendingPolls{0};
 static std::atomic<bool> testD3D12FenceRemoved{false};
+#if defined(LKG_WORKER_TRANSPORT_TESTING)
+static std::atomic<uint32_t> testSourceCopyPendingPolls{0};
+static std::atomic<uint32_t> testSourceCopyQueryFailures{0};
+static std::atomic<bool> testHoldSourceCopyQuery{false};
+static std::atomic<uint32_t> testPresenterEarlyResult{0};
+static std::atomic<bool> testThrowAfterSourceCopy{false};
+static std::atomic<bool> testThrowAfterWorkerDequeue{false};
+#endif
 
 static bool ValidPreviewLeaseIdentity(const LkgWorkerPreviewLeaseIdentityV1* identity) {
     return identity && identity->structSize == sizeof(LkgWorkerPreviewLeaseIdentityV1) && identity->version == 1 &&
@@ -522,6 +608,71 @@ static void TraceWorker(const char* stage) {
     std::fclose(file);
 }
 
+static HRESULT PollSourceCopyQuery(ID3D11DeviceContext* workerContext, ID3D11Query* query, BOOL* complete) {
+    if (!workerContext || !query || !complete) return E_POINTER;
+    *complete = FALSE;
+#if defined(LKG_WORKER_TRANSPORT_TESTING)
+    if (testHoldSourceCopyQuery.load(std::memory_order_acquire)) return S_FALSE;
+    uint32_t delayedPolls = testSourceCopyPendingPolls.load(std::memory_order_acquire);
+    while (delayedPolls != 0 && !testSourceCopyPendingPolls.compare_exchange_weak(
+        delayedPolls, delayedPolls - 1, std::memory_order_acq_rel)) {}
+    if (delayedPolls != 0) return S_FALSE;
+    uint32_t failures = testSourceCopyQueryFailures.load(std::memory_order_acquire);
+    while (failures != 0 && !testSourceCopyQueryFailures.compare_exchange_weak(
+        failures, failures - 1, std::memory_order_acq_rel)) {}
+    if (failures != 0) return E_FAIL;
+#endif
+    return workerContext->GetData(query, complete, sizeof(*complete), D3D11_ASYNC_GETDATA_DONOTFLUSH);
+}
+
+static bool PollAndRecordSourceRetirement(WorkerContext& context, WorkerContext::Slot& slot,
+    ID3D11DeviceContext* workerContext, bool releaseKeyedMutex) {
+    if (slot.sourceRetirementUnproven) {
+        if (!workerContext || !slot.sourceCopyRetirementQuery11) return false;
+        BOOL complete = FALSE;
+        const HRESULT queryResult = PollSourceCopyQuery(workerContext, slot.sourceCopyRetirementQuery11.Get(), &complete);
+        if (queryResult != S_OK || !complete) return false;
+        slot.sourceRetirementUnproven = false;
+        slot.sourceCopyCompleted = true;
+    }
+    if (releaseKeyedMutex && slot.sourceMutexHeld) {
+        if (!slot.workerMutex || FAILED(slot.workerMutex->ReleaseSync(0))) {
+            slot.quarantined = true;
+            return false;
+        }
+        slot.sourceMutexHeld = false;
+    }
+    {
+        std::lock_guard<std::mutex> lock(context.mutex);
+        context.condition.notify_all();
+    }
+    return true;
+}
+
+static bool DrainSourceRetirement(WorkerContext& context, ID3D11DeviceContext* workerContext,
+    uint64_t timeoutMs) {
+    const ULONGLONG deadline = GetTickCount64() + timeoutMs;
+    bool allProven = true;
+    for (;;) {
+        bool pending = false;
+        for (WorkerContext::Slot& slot : context.slots) {
+        if (!slot.sourceRetirementUnproven && !slot.sourceMutexHeld) continue;
+        pending = true;
+            if (PollAndRecordSourceRetirement(context, slot, workerContext, true)) continue;
+            if (GetTickCount64() >= deadline) {
+                allProven = false;
+                continue;
+            }
+            Sleep(1);
+        }
+        if (!pending || GetTickCount64() >= deadline) break;
+    }
+    for (const WorkerContext::Slot& slot : context.slots) {
+        if (slot.sourceRetirementUnproven || slot.sourceMutexHeld) allProven = false;
+    }
+    return allProven;
+}
+
 static void TracePersistentVisibilityRetained(uint64_t endpointId, uint64_t generation,
     uint64_t sessionId, const char* operation) {
     const char* path = std::getenv("LKG_NATIVE_TRACE");
@@ -538,76 +689,6 @@ static void TracePersistentVisibilityRetained(uint64_t endpointId, uint64_t gene
                  static_cast<unsigned long long>(sessionId),
                  static_cast<unsigned long long>(GetTickCount64()));
     std::fclose(file);
-}
-
-static bool RetainedPresentDrainedLocked(const WorkerContext& context) {
-    if (context.slotsInitializing || context.pendingTokens != 0 || context.jobCount != 0 || context.inFlightJob)
-        return false;
-    for (const WorkerContext::Slot& slot : context.slots) {
-        if (slot.inUse || slot.consumerCopyPending || slot.quarantined || slot.unknownSubmission) return false;
-    }
-    return true;
-}
-
-static void TryRetainedStaticPresent(WorkerContext& context, uint64_t sessionId) {
-    uint64_t endpointId = 0;
-    uint64_t generation = 0;
-    const uint64_t now = GetTickCount64();
-    {
-        std::lock_guard<std::mutex> lock(context.mutex);
-        const bool pausedLease = context.previewLeaseEndpoint && context.leaseActive &&
-            context.previewPausePhase == LKG_WORKER_PREVIEW_PAUSED && context.previewPauseDesired;
-        const bool returnedLease = context.previewLeaseEndpoint && context.leaseReturnProven &&
-            !context.leaseActive && !context.leaseAcquirePending;
-        if (!context.previewLeaseEndpoint || finalShutdownAdmissionClosed.load(std::memory_order_acquire) ||
-            context.closeRequested.load(std::memory_order_acquire) ||
-            context.leaseFinalCloseRequested.load(std::memory_order_acquire) ||
-            context.leaseAcquirePending || (!pausedLease && !returnedLease) ||
-            !RetainedPresentDrainedLocked(context)) return;
-        endpointId = context.leaseEndpointId;
-        generation = context.leaseGeneration;
-        if (!endpointId || !generation) return;
-        if (context.retainedPresentGeneration != generation) {
-            context.retainedPresentGeneration = generation;
-            context.retainedPresentLastTick = 0;
-            context.retainedPresentSuppressed = false;
-        }
-        if (context.retainedPresentSuppressed) return;
-        if (context.retainedPresentLastTick && now - context.retainedPresentLastTick < 200) return;
-        context.retainedPresentLastTick = now;
-    }
-
-    int32_t result = -1;
-    try { result = lkg_bridge_redraw_retained_session(sessionId, endpointId, generation); }
-    catch (...) { result = -1; }
-    if (result >= 0) return;
-
-    bool reportFailure = false;
-    {
-        std::lock_guard<std::mutex> lock(context.mutex);
-        if (context.leaseEndpointId == endpointId && context.leaseGeneration == generation &&
-            !context.retainedPresentSuppressed) {
-            context.retainedPresentSuppressed = true;
-            reportFailure = true;
-        }
-    }
-    if (reportFailure) {
-        const char* path = std::getenv("LKG_NATIVE_TRACE");
-        if (path && *path) {
-            FILE* file = nullptr;
-            if (fopen_s(&file, path, "a") == 0 && file) {
-                std::fprintf(file,
-                    "worker pid=%lu tid=%lu stage=static-present-suppressed endpoint_id=%llu lease_generation=%llu session_id=%llu result=%d tick_ms=%llu\n",
-                    static_cast<unsigned long>(GetCurrentProcessId()),
-                    static_cast<unsigned long>(GetCurrentThreadId()),
-                    static_cast<unsigned long long>(endpointId),
-                    static_cast<unsigned long long>(generation),
-                    static_cast<unsigned long long>(sessionId), result,
-                    static_cast<unsigned long long>(GetTickCount64()));
-                std::fclose(file);
-            }
-        }
-    }
 }
 
 static bool NativeTraceEnabled() {
@@ -645,7 +726,11 @@ struct WorkerShutdownSnapshot {
     struct SlotState {
         bool inUse = false;
         bool consumerCopyPending = false;
+        bool producerFencePending = false;
+        bool unknownSubmission = false;
         bool quarantined = false;
+        bool sourceCopyUnproven = false;
+        bool sourceMutexHeld = false;
     } slots[3];
     uint32_t pendingTokens = 0;
     uint32_t jobCount = 0;
@@ -663,7 +748,11 @@ static WorkerShutdownSnapshot CaptureWorkerShutdownSnapshot(const WorkerContext&
     for (uint32_t i = 0; i < 3; ++i) {
         snapshot.slots[i].inUse = context.slots[i].inUse;
         snapshot.slots[i].consumerCopyPending = context.slots[i].consumerCopyPending;
+        snapshot.slots[i].producerFencePending = context.slots[i].producerFenceValue12 != 0;
+        snapshot.slots[i].unknownSubmission = context.slots[i].unknownSubmission;
         snapshot.slots[i].quarantined = context.slots[i].quarantined;
+        snapshot.slots[i].sourceCopyUnproven = context.slots[i].sourceRetirementUnproven;
+        snapshot.slots[i].sourceMutexHeld = context.slots[i].sourceMutexHeld;
     }
     return snapshot;
 }
@@ -674,7 +763,7 @@ static void TraceWorkerShutdownSnapshot(const char* stage, const WorkerShutdownS
     FILE* file = nullptr;
     if (fopen_s(&file, path, "a") != 0 || !file) return;
     std::fprintf(file,
-                 "shutdown pid=%lu tid=%lu tick_ms=%llu session_id=%llu stage=%s pendingTokens=%u jobCount=%u inFlightJob=%d slot0.inUse=%d slot0.consumerCopyPending=%d slot0.quarantined=%d slot1.inUse=%d slot1.consumerCopyPending=%d slot1.quarantined=%d slot2.inUse=%d slot2.consumerCopyPending=%d slot2.quarantined=%d\n",
+                 "shutdown pid=%lu tid=%lu tick_ms=%llu session_id=%llu stage=%s pendingTokens=%u jobCount=%u inFlightJob=%d slot0.inUse=%d slot0.producerFencePending=%d slot0.unknownSubmission=%d slot0.consumerCopyPending=%d slot0.sourceCopyUnproven=%d slot0.sourceMutexHeld=%d slot0.quarantined=%d slot1.inUse=%d slot1.producerFencePending=%d slot1.unknownSubmission=%d slot1.consumerCopyPending=%d slot1.sourceCopyUnproven=%d slot1.sourceMutexHeld=%d slot1.quarantined=%d slot2.inUse=%d slot2.producerFencePending=%d slot2.unknownSubmission=%d slot2.consumerCopyPending=%d slot2.sourceCopyUnproven=%d slot2.sourceMutexHeld=%d slot2.quarantined=%d\n",
                  static_cast<unsigned long>(GetCurrentProcessId()),
                  static_cast<unsigned long>(GetCurrentThreadId()),
                  static_cast<unsigned long long>(GetTickCount64()),
@@ -682,13 +771,25 @@ static void TraceWorkerShutdownSnapshot(const char* stage, const WorkerShutdownS
                  stage ? stage : "unknown", snapshot.pendingTokens, snapshot.jobCount,
                  snapshot.inFlightJob ? 1 : 0,
                  snapshot.slots[0].inUse ? 1 : 0,
+                 snapshot.slots[0].producerFencePending ? 1 : 0,
+                 snapshot.slots[0].unknownSubmission ? 1 : 0,
                  snapshot.slots[0].consumerCopyPending ? 1 : 0,
+                 snapshot.slots[0].sourceCopyUnproven ? 1 : 0,
+                 snapshot.slots[0].sourceMutexHeld ? 1 : 0,
                  snapshot.slots[0].quarantined ? 1 : 0,
                  snapshot.slots[1].inUse ? 1 : 0,
+                 snapshot.slots[1].producerFencePending ? 1 : 0,
+                 snapshot.slots[1].unknownSubmission ? 1 : 0,
                  snapshot.slots[1].consumerCopyPending ? 1 : 0,
+                 snapshot.slots[1].sourceCopyUnproven ? 1 : 0,
+                 snapshot.slots[1].sourceMutexHeld ? 1 : 0,
                  snapshot.slots[1].quarantined ? 1 : 0,
                  snapshot.slots[2].inUse ? 1 : 0,
+                 snapshot.slots[2].producerFencePending ? 1 : 0,
+                 snapshot.slots[2].unknownSubmission ? 1 : 0,
                  snapshot.slots[2].consumerCopyPending ? 1 : 0,
+                 snapshot.slots[2].sourceCopyUnproven ? 1 : 0,
+                 snapshot.slots[2].sourceMutexHeld ? 1 : 0,
                  snapshot.slots[2].quarantined ? 1 : 0);
     std::fclose(file);
 }
@@ -787,11 +888,29 @@ static void RequestLeaseReturnLocked(WorkerContext& context, PreviewLeaseTokenRe
     context.condition.notify_all();
 }
 
+static bool ValidWorkerOutputOptions(const LkgWorkerOutputOptionsV1* options) {
+    return options && options->structSize == sizeof(LkgWorkerOutputOptionsV1) && options->version == 1 &&
+        options->subpixelMode <= LKG_WORKER_SUBPIXEL_CALIBRATED_CELLS && options->linearColorSpace <= 1;
+}
+
+static bool SameWorkerOutputOptions(const LkgWorkerOutputOptionsV1& left, const LkgWorkerOutputOptionsV1& right) {
+    return left.subpixelMode == right.subpixelMode && left.linearColorSpace == right.linearColorSpace;
+}
+
 LKG_EXPORT int32_t lkg_worker_acquire_preview_lease_v1(const char* runtimePath, const char* applicationName,
     uint32_t displayOrdinal, void* producerDevice, void** leaseHandle, LkgWorkerPreviewLeaseIdentityV1* identity) {
+    const LkgWorkerOutputOptionsV1 options{ sizeof(LkgWorkerOutputOptionsV1), 1, LKG_WORKER_SUBPIXEL_AUTOMATIC, 0 };
+    return lkg_worker_acquire_preview_lease_with_output_v1(runtimePath, applicationName, displayOrdinal,
+        producerDevice, &options, leaseHandle, identity);
+}
+
+LKG_EXPORT int32_t lkg_worker_acquire_preview_lease_with_output_v1(const char* runtimePath, const char* applicationName,
+    uint32_t displayOrdinal, void* producerDevice, const LkgWorkerOutputOptionsV1* options,
+    void** leaseHandle, LkgWorkerPreviewLeaseIdentityV1* identity) {
     if (leaseHandle) *leaseHandle = nullptr;
     if (identity) WritePreviewLeaseIdentity(identity, 0, 0);
-    if (!runtimePath || !runtimePath[0] || !applicationName || !applicationName[0] || !leaseHandle || !identity)
+    if (!runtimePath || !runtimePath[0] || !applicationName || !applicationName[0] || !leaseHandle || !identity ||
+        !ValidWorkerOutputOptions(options))
         return LKG_WORKER_PREVIEW_LEASE_RESULT_INVALID_ARGUMENT;
     if (finalShutdownAdmissionClosed.load(std::memory_order_acquire))
         return LKG_WORKER_PREVIEW_LEASE_RESULT_NATIVE_FAILURE;
@@ -819,7 +938,8 @@ LKG_EXPORT int32_t lkg_worker_acquire_preview_lease_v1(const char* runtimePath, 
             std::lock_guard<std::mutex> contextLock(context->mutex);
             const std::string existingPath = CanonicalWorkerString(context->runtimePath.c_str(), true);
             if (existingPath != canonicalPath || context->applicationName != exactApplication ||
-                context->displayOrdinal != displayOrdinal || !context->producerAdapterKnown ||
+                context->displayOrdinal != displayOrdinal || !SameWorkerOutputOptions(context->outputOptions, *options) ||
+                !context->producerAdapterKnown ||
                 !SameAdapterLuid(context->producerAdapterLuid, adapterLuid)) {
                 capturedDevice->Release();
                 return LKG_WORKER_PREVIEW_LEASE_RESULT_RESTART_REQUIRED;
@@ -858,6 +978,8 @@ LKG_EXPORT int32_t lkg_worker_acquire_preview_lease_v1(const char* runtimePath, 
             context->producerAdapterLuid = adapterLuid;
             context->producerAdapterKnown = true;
             context->previewLeaseEndpoint = true;
+            context->outputOptions = *options;
+            context->subpixelStatus.requestedMode = options->subpixelMode;
             context->leaseActive = true;
             context->leaseReturnRequested.store(false, std::memory_order_release);
             context->leaseEndpointId = nextPreviewEndpointId++;
@@ -1010,14 +1132,6 @@ static WorkerHost* GetPersistentHost() {
                         {
                             std::lock_guard<std::mutex> registryLock(registryMutex);
                             endpoint = previewLeaseEndpoint;
-                        }
-                        if (endpoint && endpoint->stableSdkInput) {
-                            if (endpoint->stableSdkInput->Shutdown(true)) {
-                                delete endpoint->stableSdkInput;
-                                endpoint->stableSdkInput = nullptr;
-                            } else {
-                                finalResult = -3;
-                            }
                         }
                     }
                     if (finalResult == 0) {
@@ -1180,6 +1294,9 @@ static void SetFault(WorkerContext& context, uint32_t code, const char* text) {
     std::lock_guard<std::mutex> lock(context.mutex);
     SetError(context, code, text);
     context.status.state = LKG_WORKER_FAULT;
+    context.subpixelStatus.valid = 0;
+    context.subpixelStatus.effectiveMode = UINT32_MAX;
+    context.subpixelStatus.backend = UINT32_MAX;
     context.previewPausePhase = LKG_WORKER_PREVIEW_FAULTED;
     context.previewPauseDesired = false;
     context.closeRequested.store(true, std::memory_order_release);
@@ -1187,66 +1304,227 @@ static void SetFault(WorkerContext& context, uint32_t code, const char* text) {
     TraceWorker("fault");
 }
 
+static const char* ValidateNativeSubpixelCalibration(const LkgWorkerSubpixelCalibrationV1& value,
+    uint32_t requestedMode, const LkgWorkerSubpixelCellV1 cells[4]) {
+    LkgCommonSubpixelCalibration calibration{};
+    calibration.width = value.nativeWidth;
+    calibration.height = value.nativeHeight;
+    calibration.center = value.center;
+    calibration.pitch = value.pitch;
+    calibration.slope = value.slope;
+    calibration.dpi = value.dpi;
+    calibration.flipX = value.flipX;
+    calibration.viewCone = value.viewCone;
+    calibration.fringe = value.fringe;
+    calibration.invertedViews = value.invertedViews;
+    calibration.cellPatternMode = value.cellPatternMode;
+    calibration.cellCount = value.cellCount;
+    calibration.redIndex = value.redIndex;
+    calibration.blueIndex = value.blueIndex;
+    LkgCommonSubpixelCell converted[4]{};
+    if (cells) for (size_t i = 0; i < 4; ++i) {
+        converted[i] = { cells[i].redX, cells[i].redY, cells[i].greenX, cells[i].greenY,
+            cells[i].blueX, cells[i].blueY };
+    }
+    return lkg_validate_subpixel_calibration(&calibration, requestedMode, cells ? converted : nullptr);
+}
+
 static void SetBridgeFault(WorkerContext& context, uint32_t code, const char* operation, int32_t result) {
     char bridgeError[160]{};
     lkg_bridge_last_error(bridgeError, sizeof(bridgeError));
     char message[256]{};
     std::snprintf(message, sizeof(message), "%s failed rc=%d last_error=%s", operation, result, bridgeError[0] ? bridgeError : "none");
-    SetFault(context, code, message);
+    {
+        std::lock_guard<std::mutex> lock(context.mutex);
+        if (context.status.state == LKG_WORKER_FAULT) return;
+        SetError(context, code, message);
+        context.status.state = LKG_WORKER_FAULT;
+        context.subpixelStatus.valid = 0;
+        context.subpixelStatus.effectiveMode = UINT32_MAX;
+        context.subpixelStatus.backend = UINT32_MAX;
+        context.previewPausePhase = LKG_WORKER_PREVIEW_FAULTED;
+        context.previewPauseDesired = false;
+        context.closeRequested.store(true, std::memory_order_release);
+        context.condition.notify_all();
+    }
+    TraceWorker("fault");
 }
 
 static int32_t DrawWorkerImage(WorkerContext& context, ID3D11DeviceContext* workerContext,
-    uint64_t session, ID3D11Texture2D* source, const WorkerContext::Job& job) {
-    if (!context.previewLeaseEndpoint)
-        return lkg_bridge_smoke_draw(session, source, job.columns, job.rows, job.aspect, job.zoom);
-
-    lkg::stable_input::StableSdkInput* stableInput = context.stableSdkInput;
-    if (!stableInput || !source || !workerContext) {
-        SetFault(context, 27, "persistent preview SDK input is unavailable");
+    ID3D11Device* workerDevice, uint64_t session, ID3D11Texture2D* source,
+    const WorkerContext::Job& job, ComPtr<ID3D11Query>& sourceCopyQuery, bool* sourceRetirementProven) {
+    (void)session;
+    if (sourceRetirementProven) *sourceRetirementProven = true;
+    if (!context.manualPresenter || !source || !workerContext) {
+        SetFault(context, 27, "native subpixel presenter input is unavailable");
         return -1;
     }
-    const uint32_t expectedColumns = context.fixedDisplayProfile.quilt_columns > 0
-        ? static_cast<uint32_t>(context.fixedDisplayProfile.quilt_columns) : 0;
-    const uint32_t expectedRows = context.fixedDisplayProfile.quilt_rows > 0
-        ? static_cast<uint32_t>(context.fixedDisplayProfile.quilt_rows) : 0;
-    if (job.columns != expectedColumns || job.rows != expectedRows) {
-        SetFault(context, 28, "preview quilt grid changed; restart required");
+    if (job.columns == 0 || job.rows == 0 || job.columns > 4096 || job.rows > 4096 ||
+        job.columns > UINT32_MAX / job.rows) {
+        SetFault(context, 28, "native subpixel input Quilt grid is invalid");
         return -1;
     }
 
     D3D11_TEXTURE2D_DESC sourceDescription{};
     source->GetDesc(&sourceDescription);
-    const HRESULT beginResult = stableInput->BeginUpload(source, job.columns, job.rows, sourceDescription.Format);
-    if (FAILED(beginResult)) {
-        char message[128]{};
-        std::snprintf(message, sizeof(message), "stable SDK input upload rejected hr=0x%08lx",
-            static_cast<unsigned long>(beginResult));
-        SetFault(context, 29, message);
+    if ((sourceDescription.Format != DXGI_FORMAT_R8G8B8A8_UNORM &&
+         sourceDescription.Format != DXGI_FORMAT_R8G8B8A8_UNORM_SRGB) ||
+        sourceDescription.Width == 0 || sourceDescription.Height == 0 ||
+        sourceDescription.MipLevels != 1 || sourceDescription.ArraySize != 1 ||
+        sourceDescription.SampleDesc.Count != 1 || sourceDescription.Width % job.columns != 0 ||
+        sourceDescription.Height % job.rows != 0) {
+        SetFault(context, 29, "native subpixel input requires a validated single-sample RGBA8 transport Quilt");
         return -1;
     }
-    workerContext->Flush();
-    const ULONGLONG uploadStart = GetTickCount64();
-    const uint64_t uploadTimeout = context.d3d12FenceTimeoutMs.load(std::memory_order_acquire);
-    for (;;) {
-        const lkg::stable_input::UploadState uploadState = stableInput->PollUpload();
-        if (uploadState == lkg::stable_input::UploadState::Complete) break;
-        if (uploadState == lkg::stable_input::UploadState::Fault) {
-            SetFault(context, 30, "stable SDK input upload completion query failed");
+    if (context.manualPresenter->HasPendingGpuWork()) {
+        SetFault(context, 30, "native subpixel previous frame has not retired");
+        return -1;
+    }
+    if (!context.canonicalQuilt || context.canonicalWidth != sourceDescription.Width ||
+        context.canonicalHeight != sourceDescription.Height) {
+        D3D11_TEXTURE2D_DESC canonicalDescription{};
+        canonicalDescription.Width = sourceDescription.Width;
+        canonicalDescription.Height = sourceDescription.Height;
+        canonicalDescription.MipLevels = 1;
+        canonicalDescription.ArraySize = 1;
+        canonicalDescription.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        canonicalDescription.SampleDesc.Count = 1;
+        canonicalDescription.Usage = D3D11_USAGE_DEFAULT;
+        canonicalDescription.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+        ComPtr<ID3D11Texture2D> canonical;
+        ComPtr<ID3D11Device> sourceDevice;
+        source->GetDevice(sourceDevice.GetAddressOf());
+        const HRESULT createResult = sourceDevice ? sourceDevice->CreateTexture2D(
+            &canonicalDescription, nullptr, &canonical) : E_POINTER;
+        if (FAILED(createResult)) {
+            char message[144]{};
+            std::snprintf(message, sizeof(message), "raw canonical Quilt allocation failed hr=0x%08lx",
+                static_cast<unsigned long>(createResult));
+            SetFault(context, 31, message);
             return -1;
         }
-        if (GetTickCount64() - uploadStart > uploadTimeout) {
-            SetFault(context, 31, "stable SDK input upload timed out; resources retained");
+        {
+            std::lock_guard<std::mutex> lock(context.mutex);
+            context.canonicalQuilt = std::move(canonical);
+            context.canonicalWidth = sourceDescription.Width;
+            context.canonicalHeight = sourceDescription.Height;
+        }
+    }
+    if (context.canonicalColumns != job.columns || context.canonicalRows != job.rows) {
+        std::lock_guard<std::mutex> lock(context.mutex);
+        context.canonicalColumns = job.columns;
+        context.canonicalRows = job.rows;
+    }
+    if (!workerDevice || !sourceRetirementProven) {
+        SetFault(context, 39, "native subpixel copy retirement tracking is unavailable");
+        return -1;
+    }
+    if (!sourceCopyQuery) {
+        D3D11_QUERY_DESC queryDescription{ D3D11_QUERY_EVENT, 0 };
+        const HRESULT queryResult = workerDevice->CreateQuery(&queryDescription, &sourceCopyQuery);
+        if (FAILED(queryResult)) {
+            char message[160]{};
+            std::snprintf(message, sizeof(message), "source copy retirement query creation failed hr=0x%08lx",
+                static_cast<unsigned long>(queryResult));
+            SetFault(context, 39, message);
             return -1;
+        }
+    }
+    {
+        std::lock_guard<std::mutex> lock(context.mutex);
+        context.slots[job.slot].sourceRetirementUnproven = true;
+        context.slots[job.slot].sourceCopyCompleted = false;
+        context.slots[job.slot].sourceCopyQueryIssued = false;
+    }
+    workerContext->CopyResource(context.canonicalQuilt.Get(), source);
+    workerContext->End(sourceCopyQuery.Get());
+    workerContext->Flush();
+    {
+        std::lock_guard<std::mutex> lock(context.mutex);
+        context.slots[job.slot].sourceCopyQueryIssued = true;
+    }
+    const uint32_t completedBefore = context.manualPresenter->RenderCompleted();
+    std::string presenterError;
+#if defined(LKG_WORKER_TRANSPORT_TESTING)
+    const uint32_t injectedPresent = testPresenterEarlyResult.exchange(0, std::memory_order_acq_rel);
+    const lkg::subpixel::ManualPresentResult presentResult = injectedPresent == 1
+        ? lkg::subpixel::ManualPresentResult::Failed
+        : injectedPresent == 2 ? lkg::subpixel::ManualPresentResult::Occluded
+        : context.manualPresenter->Present(context.canonicalQuilt.Get(), job.columns, job.rows,
+            job.sourceEncoding == LKG_WORKER_SOURCE_ENCODING_SRGB, job.aspect, job.zoom, &presenterError);
+    const bool throwAfterCopy = testThrowAfterSourceCopy.exchange(false, std::memory_order_acq_rel);
+    if (throwAfterCopy) throw std::runtime_error("injected exception after raw source copy");
+#else
+    const lkg::subpixel::ManualPresentResult presentResult = context.manualPresenter->Present(
+        context.canonicalQuilt.Get(), job.columns, job.rows,
+        job.sourceEncoding == LKG_WORKER_SOURCE_ENCODING_SRGB, job.aspect, job.zoom, &presenterError);
+#endif
+    const ULONGLONG presentationStart = GetTickCount64();
+    const uint64_t presentationTimeout = context.d3d12FenceTimeoutMs.load(std::memory_order_acquire);
+    bool laterPresenterQueryProvesCopy = false;
+    while (context.manualPresenter->HasPendingGpuWork()) {
+        if (!context.manualPresenter->PollGpuCompletion(&presenterError)) {
+            break;
+        }
+        if (!context.manualPresenter->HasPendingGpuWork()) break;
+        if (GetTickCount64() - presentationStart > presentationTimeout) {
+            presenterError = "manual GPU rendering timed out";
+            break;
         }
         PumpWorkerMessages(context);
         Sleep(1);
     }
-    ID3D11Texture2D* stableTexture = stableInput->GetTexture();
-    if (!stableTexture) {
-        SetFault(context, 32, "stable SDK input texture is unavailable");
+    laterPresenterQueryProvesCopy = !context.manualPresenter->HasPendingGpuWork() &&
+        context.manualPresenter->RenderCompleted() != completedBefore;
+
+    bool copyRetired = laterPresenterQueryProvesCopy;
+    if (!copyRetired) {
+        const ULONGLONG copyDeadline = GetTickCount64() + presentationTimeout;
+        for (;;) {
+            BOOL copyComplete = FALSE;
+            const HRESULT queryResult = PollSourceCopyQuery(workerContext, sourceCopyQuery.Get(), &copyComplete);
+            if (queryResult == S_OK && copyComplete) {
+                copyRetired = true;
+                break;
+            }
+            if (FAILED(queryResult)) {
+                presenterError = "independent source copy retirement query failed";
+                break;
+            }
+            if (GetTickCount64() >= copyDeadline) {
+                presenterError = "independent source copy retirement query timed out";
+                break;
+            }
+            PumpWorkerMessages(context);
+            Sleep(1);
+        }
+    }
+    *sourceRetirementProven = copyRetired;
+    if (copyRetired) {
+        std::lock_guard<std::mutex> lock(context.mutex);
+        context.slots[job.slot].sourceRetirementUnproven = false;
+        context.slots[job.slot].sourceCopyCompleted = true;
+    }
+    if (!copyRetired) {
+        char message[384]{};
+        std::snprintf(message, sizeof(message), "source retirement was not proven; resources quarantined: %.280s",
+            presenterError.empty() ? "presentation did not provide a completion proof" : presenterError.c_str());
+        SetFault(context, 42, message);
         return -1;
     }
-    return lkg_bridge_smoke_draw(session, stableTexture, expectedColumns, expectedRows, job.aspect, job.zoom);
+    if (presentResult == lkg::subpixel::ManualPresentResult::Failed) {
+        char message[384]{};
+        std::snprintf(message, sizeof(message), "manual subpixel presentation failed after source retirement: %.320s",
+            presenterError.c_str());
+        SetFault(context, 40, message);
+        return -1;
+    }
+    {
+        std::lock_guard<std::mutex> lock(context.mutex);
+        context.subpixelStatus.renderCompleted = context.manualPresenter->RenderCompleted();
+        context.subpixelStatus.presentAccepted = context.manualPresenter->PresentAccepted();
+    }
+    return 0;
 }
 
 static bool CloseRequested(WorkerContext& context) {
@@ -1312,7 +1590,8 @@ static void WorkerRenderEventImpl(int, WorkerDrawData* data) {
             selectedSlot = 3;
         } else {
             for (uint32_t index = 0; index < 3; ++index) {
-                if (!context.slots[index].inUse) {
+                if (!context.slots[index].inUse && !context.slots[index].quarantined &&
+                    !context.slots[index].sourceRetirementUnproven && !context.slots[index].sourceMutexHeld) {
                     selectedSlot = index;
                     context.slots[index].inUse = true;
                     break;
@@ -1350,7 +1629,17 @@ static void WorkerRenderEventImpl(int, WorkerDrawData* data) {
         return;
     }
     deviceContext->CopyResource(slot.producerTexture.Get(), source.Get());
-    slot.producerMutex->ReleaseSync(1);
+    const HRESULT producerRelease = slot.producerMutex->ReleaseSync(1);
+    if (FAILED(producerRelease)) {
+        {
+            std::lock_guard<std::mutex> lock(context.mutex);
+            slot.inUse = false;
+            slot.quarantined = true;
+        }
+        SetRenderFault(context, "producer keyed mutex release failed after transport copy");
+        abandon();
+        return;
+    }
     bool rejectSubmission = false;
     {
         std::lock_guard<std::mutex> lock(context.mutex);
@@ -1359,7 +1648,8 @@ static void WorkerRenderEventImpl(int, WorkerDrawData* data) {
         if (rejectSubmission) {
             slot.inUse = false;
         } else {
-            if (!EnqueueJob(context, WorkerContext::Job{ selectedSlot, data->columns, data->rows, data->aspect, data->zoom })) {
+            if (!EnqueueJob(context, WorkerContext::Job{ selectedSlot, data->columns, data->rows, data->aspect,
+                    data->zoom, data->sourceEncoding, data->sourceWasTypeless })) {
                 slot.inUse = false;
             } else {
                 ++context.status.submitted;
@@ -1470,6 +1760,25 @@ static void RunWorker(WorkerContext* context, WorkerHost* host) {
         if (workerDevice) context->retainedWorkerDevice = workerDevice;
         if (workerDeviceContext) context->retainedWorkerDeviceContext = workerDeviceContext;
         TraceWorkerShutdownEvent("cleanup-begin", cleanupSessionId);
+        if (!DrainD3D12Ownership(*context, workerDevice.Get(), workerDeviceContext.Get(), 10000))
+            cleanupProven = false;
+        if (!DrainSourceRetirement(*context, workerDeviceContext.Get(), 10000)) cleanupProven = false;
+        if (context->manualPresenter) {
+            std::string presenterError;
+            if (!context->manualPresenter->SetVisible(false, &presenterError)) cleanupProven = false;
+            const ULONGLONG deadline = GetTickCount64() + 10000;
+            while (context->manualPresenter->HasPendingGpuWork() && GetTickCount64() < deadline) {
+                if (!context->manualPresenter->PollGpuCompletion(&presenterError)) {
+                    cleanupProven = false;
+                    break;
+                }
+                if (context->manualPresenter->HasPendingGpuWork()) Sleep(1);
+            }
+            if (context->manualPresenter->HasPendingGpuWork()) cleanupProven = false;
+            if (cleanupProven && !context->manualPresenter->Close(&presenterError)) cleanupProven = false;
+            if (cleanupProven) context->manualPresenter.reset();
+            if (!cleanupProven) TraceWorkerShutdownEvent("manual-presenter-close-not-proven-retained", cleanupSessionId);
+        }
         if (session != 0) {
             void* closeData = lkg_bridge_make_close_data(session);
             auto callback = reinterpret_cast<void (*)(int, void*)>(lkg_bridge_render_event_func());
@@ -1480,7 +1789,7 @@ static void RunWorker(WorkerContext* context, WorkerHost* host) {
                 closeStatus.structSize = sizeof(closeStatus);
                 closeStatus.version = 1;
                 const int32_t queryResult = lkg_bridge_get_session_close_status_v1(session, &closeStatus);
-                cleanupProven = queryResult == 0 && closeStatus.state == LKG_BRIDGE_SESSION_CLOSE_CLOSED_SAFE;
+                cleanupProven = cleanupProven && queryResult == 0 && closeStatus.state == LKG_BRIDGE_SESSION_CLOSE_CLOSED_SAFE;
                 if (cleanupProven) cleanupProven = lkg_bridge_ack_session_close_v1(session) == 0;
                 TraceWorkerShutdownEvent(cleanupProven ? "session-close-safe-acked" : "session-close-not-proven-retained",
                     cleanupSessionId, static_cast<int>(closeStatus.state));
@@ -1532,7 +1841,7 @@ static void RunWorker(WorkerContext* context, WorkerHost* host) {
                     context->displaySnapshotResult = -7;
                     context->displaySnapshotError = context->status.error[0] ? context->status.error : "Bridge metadata worker failed before publishing a snapshot.";
                 }
-                if (!cleanupProven && context->displaySnapshotError.empty()) {
+            if (!cleanupProven && context->displaySnapshotError.empty()) {
                     context->displaySnapshotResult = -6;
                     context->displaySnapshotError = "Bridge metadata SDK cleanup was not proven.";
                 }
@@ -1708,36 +2017,72 @@ static void RunWorker(WorkerContext* context, WorkerHost* host) {
             context->physicalDisplay.dpi = physical.dpi;
             context->physicalDisplay.valid = 1;
         }
-        session = lkg_bridge_create_d3d11_session(workerDevice.Get(), display.index);
-        if (session == 0) {
-            SetBridgeFault(*context, 7, "bridge_create_session", -1);
+        LkgWorkerSubpixelCalibrationV1 calibration{};
+        calibration.structSize = sizeof(calibration);
+        calibration.version = 1;
+        const int32_t calibrationResult = lkg_bridge_get_worker_subpixel_calibration_v1(display.index, &calibration);
+        if (calibrationResult != 0) {
+            char message[192]{};
+            std::snprintf(message, sizeof(message), "Subpixel calibration unavailable rc=%d", calibrationResult);
+            SetFault(*context, 35, message);
             finish();
             return;
         }
-        context->bridgeSessionId = session;
+        if (display.width != calibration.nativeWidth || display.height != calibration.nativeHeight) {
+            SetFault(*context, 34, "SDK display dimensions differ from subpixel calibration dimensions");
+            finish();
+            return;
+        }
+        const uint32_t requestedMode = context->outputOptions.subpixelMode;
+        const bool requireCells = requestedMode == LKG_WORKER_SUBPIXEL_CALIBRATED_CELLS ||
+            (requestedMode == LKG_WORKER_SUBPIXEL_AUTOMATIC && calibration.cellCount > 0);
+        if (requireCells) {
+            std::string metadataError;
+            if (!lkg::subpixel::ReadBridgeCellTable(calibration, context->subpixelCells, metadataError)) {
+                char message[384]{};
+                std::snprintf(message, sizeof(message), "%s metadata unavailable: %.300s",
+                    requestedMode == LKG_WORKER_SUBPIXEL_CALIBRATED_CELLS ? "Calibrated Cells" : "Automatic cell calibration",
+                    metadataError.c_str());
+                SetFault(*context, 36, message);
+                finish();
+                return;
+            }
+        }
+        if (const char* validationError = ValidateNativeSubpixelCalibration(calibration, requestedMode,
+                requireCells ? context->subpixelCells : nullptr)) {
+            SetFault(*context, 33, validationError);
+            finish();
+            return;
+        }
+        auto presenter = std::unique_ptr<lkg::subpixel::ManualSubpixelPresenter>(
+            new (std::nothrow) lkg::subpixel::ManualSubpixelPresenter());
+        if (!presenter) {
+            SetFault(*context, 37, "native subpixel presenter allocation failed");
+            finish();
+            return;
+        }
+        std::string presenterError;
+#if defined(LKG_WORKER_TRANSPORT_TESTING) && defined(LKG_SUBPIXEL_PRESENTER_TESTS)
+        const bool presenterCreated = presenter->CreateOffscreenForTest(workerDevice.Get(), calibration,
+            context->subpixelCells, requestedMode, context->outputOptions.linearColorSpace != 0,
+            display.aspect, &presenterError);
+#else
+        const bool presenterCreated = presenter->Create(workerDevice.Get(), calibration, context->subpixelCells,
+            requestedMode, context->outputOptions.linearColorSpace != 0, display.aspect, &presenterError);
+#endif
+        if (!presenterCreated) {
+            char message[384]{};
+            std::snprintf(message, sizeof(message), "native subpixel presenter unavailable: %.320s",
+                presenterError.c_str());
+            SetFault(*context, 38, message);
+            context->manualPresenter = std::move(presenter);
+            finish();
+            return;
+        }
+        context->subpixelCalibration = calibration;
+        context->manualPresenter = std::move(presenter);
         context->fixedDisplayIndex = display.index;
         context->fixedDisplayProfile = display;
-        if (context->previewLeaseEndpoint) {
-            if (display.quilt_width <= 0 || display.quilt_height <= 0 ||
-                display.quilt_columns <= 0 || display.quilt_rows <= 0) {
-                SetFault(*context, 33, "fixed Bridge profile has invalid quilt dimensions; restart required");
-                finish();
-                return;
-            }
-            lkg::stable_input::StableSdkInput* stableInput = nullptr;
-            const HRESULT stableCreateResult = lkg::stable_input::StableSdkInput::Create(workerDevice.Get(),
-                static_cast<UINT>(display.quilt_width), static_cast<UINT>(display.quilt_height),
-                static_cast<UINT>(display.quilt_columns), static_cast<UINT>(display.quilt_rows), &stableInput);
-            if (FAILED(stableCreateResult) || !stableInput) {
-                char message[144]{};
-                std::snprintf(message, sizeof(message), "stable SDK input creation failed hr=0x%08lx",
-                    static_cast<unsigned long>(stableCreateResult));
-                SetFault(*context, 34, message);
-                finish();
-                return;
-            }
-            context->stableSdkInput = stableInput;
-        }
         bool readyPublished = false;
         {
         std::lock_guard<std::mutex> lock(context->mutex);
@@ -1751,12 +2096,64 @@ static void RunWorker(WorkerContext* context, WorkerHost* host) {
         context->status.quiltColumns = display.quilt_columns;
         context->status.quiltRows = display.quilt_rows;
         context->status.state = context->closeRequested.load(std::memory_order_acquire) ? LKG_WORKER_CLOSING : LKG_WORKER_READY;
+        context->subpixelStatus.structSize = sizeof(context->subpixelStatus);
+        context->subpixelStatus.version = 1;
+        context->subpixelStatus.valid = 1u;
+        context->subpixelStatus.requestedMode = context->outputOptions.subpixelMode;
+        context->subpixelStatus.effectiveMode = context->outputOptions.subpixelMode;
+        context->subpixelStatus.cellPatternMode = calibration.cellPatternMode < 0 ? UINT32_MAX :
+            static_cast<uint32_t>(calibration.cellPatternMode);
+        context->subpixelStatus.cellCount = calibration.cellCount < 0 ? 0u : static_cast<uint32_t>(calibration.cellCount);
+        context->subpixelStatus.nativeWidth = calibration.nativeWidth;
+        context->subpixelStatus.nativeHeight = calibration.nativeHeight;
+        context->subpixelStatus.backend = LKG_WORKER_SUBPIXEL_BACKEND_NATIVE_D3D11;
+#if defined(LKG_WORKER_TRANSPORT_TESTING)
+        context->testPresenterVisible = true;
+#endif
         readyPublished = context->status.state == LKG_WORKER_READY;
         }
         if (readyPublished) TraceWorker("ready");
     }
     while (true) {
         PumpWorkerMessages(*context);
+        if (!context->closeRequested.load(std::memory_order_acquire) && context->manualPresenter) {
+            std::string windowError;
+            bool windowStateValid = context->manualPresenter->PollWindowState(&windowError);
+#if defined(LKG_WORKER_TRANSPORT_TESTING)
+            if (context->testFailWindowPoll.load(std::memory_order_acquire)) windowStateValid = false;
+#endif
+            if (!windowStateValid) {
+                SetFault(*context, 44, "native output window state failed");
+            }
+        }
+#if defined(LKG_WORKER_TRANSPORT_TESTING) && defined(LKG_SUBPIXEL_PRESENTER_TESTS)
+        bool testReadbackRequested = false;
+        {
+            std::lock_guard<std::mutex> lock(context->mutex);
+            if (context->testReadbackRequested) {
+                context->testReadbackRequested = false;
+                testReadbackRequested = true;
+            }
+        }
+        if (testReadbackRequested) {
+            std::vector<uint8_t> pixels;
+            uint32_t width = 0;
+            uint32_t height = 0;
+            std::string readbackError;
+            const bool readbackSucceeded = context->manualPresenter &&
+                context->manualPresenter->ReadbackLastPresentedRGBA8(pixels, &width, &height, &readbackError);
+            {
+                std::lock_guard<std::mutex> lock(context->mutex);
+                context->testReadbackPixels = std::move(pixels);
+                context->testReadbackWidth = width;
+                context->testReadbackHeight = height;
+                context->testReadbackError = std::move(readbackError);
+                context->testReadbackResult = readbackSucceeded ? 0 : -1;
+                context->testReadbackComplete = true;
+                context->condition.notify_all();
+            }
+        }
+#endif
         WorkerContext::Job job{};
         uint64_t displayRefreshGeneration = 0;
         uint32_t visibilityRequest = UINT32_MAX;
@@ -1766,6 +2163,9 @@ static void RunWorker(WorkerContext* context, WorkerHost* host) {
             context->condition.wait_for(lock, std::chrono::milliseconds(10), [&] {
                 return context->jobCount != 0 || context->displayRefreshPending ||
                     (context->previewPausePhase == LKG_WORKER_PREVIEW_PAUSED && !context->previewPauseDesired) ||
+#if defined(LKG_WORKER_TRANSPORT_TESTING) && defined(LKG_SUBPIXEL_PRESENTER_TESTS)
+                    context->testReadbackRequested ||
+#endif
                     context->leaseReturnRequested.load(std::memory_order_acquire) ||
                     context->leaseAcquirePending || context->leaseFinalCloseRequested.load(std::memory_order_acquire) ||
                     (context->closeRequested.load(std::memory_order_acquire) && context->pendingTokens == 0);
@@ -1792,7 +2192,7 @@ static void RunWorker(WorkerContext* context, WorkerHost* host) {
                 bool slotsDrained = !context->slotsInitializing && context->pendingTokens == 0 &&
                     context->jobCount == 0 && !context->inFlightJob;
                 for (const WorkerContext::Slot& slot : context->slots)
-                    slotsDrained = slotsDrained && !slot.inUse && !slot.consumerCopyPending;
+                    slotsDrained = slotsDrained && SlotGpuOwnershipRetired(slot);
                 if (slotsDrained) {
                     visibilityRequest = 0;
                     returnLeaseNow = true;
@@ -1802,7 +2202,6 @@ static void RunWorker(WorkerContext* context, WorkerHost* host) {
                 if (context->previewPausePhase == LKG_WORKER_PREVIEW_PAUSED) {
                     if (context->previewPauseDesired) {
                         lock.unlock();
-                        TryRetainedStaticPresent(*context, session);
                         continue;
                     }
                     context->previewPausePhase = LKG_WORKER_PREVIEW_RESUMING;
@@ -1814,7 +2213,8 @@ static void RunWorker(WorkerContext* context, WorkerHost* host) {
                         context->previewPausePhase = LKG_WORKER_PREVIEW_PAUSING;
                     bool slotsDrained = !context->slotsInitializing && context->pendingTokens == 0 &&
                         context->jobCount == 0 && !context->inFlightJob;
-                    for (const WorkerContext::Slot& slot : context->slots) slotsDrained = slotsDrained && !slot.inUse;
+                    for (const WorkerContext::Slot& slot : context->slots)
+                        slotsDrained = slotsDrained && SlotGpuOwnershipRetired(slot);
                     if (context->previewPausePhase == LKG_WORKER_PREVIEW_PAUSING && slotsDrained)
                         visibilityRequest = 0;
                 } else if (context->previewPausePhase == LKG_WORKER_PREVIEW_PAUSING) {
@@ -1822,7 +2222,7 @@ static void RunWorker(WorkerContext* context, WorkerHost* host) {
                 }
             }
             if (visibilityRequest != UINT32_MAX) {
-                const bool retainPersistentVisibility = context->previewLeaseEndpoint && visibilityRequest == 0;
+                const bool retainPersistentVisibility = returnLeaseNow && context->previewLeaseEndpoint && visibilityRequest == 0;
                 const uint64_t visibilityEndpointId = context->leaseEndpointId;
                 const uint64_t visibilityGeneration = context->leaseGeneration;
                 const uint64_t visibilitySessionId = session;
@@ -1837,15 +2237,15 @@ static void RunWorker(WorkerContext* context, WorkerHost* host) {
                     context->previewPausePhase = context->previewPauseDesired &&
                         !context->closeRequested.load(std::memory_order_acquire)
                         ? LKG_WORKER_PREVIEW_PAUSED : LKG_WORKER_PREVIEW_RESUMING;
-                    if (!returnLeaseNow) {
-                        context->retainedPresentLastTick = 0;
-                        context->retainedPresentSuppressed = false;
-                    }
                     context->condition.notify_all();
                 } else {
-                    try { visibleResult = lkg_bridge_set_session_visible(session, visibilityRequest); }
-                    catch (...) { visibleResult = -1; }
+                    std::string visibilityError;
+                    visibleResult = context->manualPresenter &&
+                        context->manualPresenter->SetVisible(visibilityRequest != 0, &visibilityError) ? 0 : -1;
                     std::lock_guard<std::mutex> stateLock(context->mutex);
+#if defined(LKG_WORKER_TRANSPORT_TESTING)
+                    if (visibleResult == 0) context->testPresenterVisible = visibilityRequest != 0;
+#endif
                     if (visibleResult != 0) {
                         context->previewPausePhase = LKG_WORKER_PREVIEW_FAULTED;
                         visibilityFailed = true;
@@ -1857,15 +2257,11 @@ static void RunWorker(WorkerContext* context, WorkerHost* host) {
                         context->previewPausePhase = context->previewPauseDesired &&
                             !context->closeRequested.load(std::memory_order_acquire)
                             ? LKG_WORKER_PREVIEW_PAUSING : LKG_WORKER_PREVIEW_RUNNING;
-                        if (visibilityRequest != 0 && context->previewLeaseEndpoint) {
-                            context->retainedPresentLastTick = 0;
-                            context->retainedPresentSuppressed = false;
-                        }
                     }
                     context->condition.notify_all();
                 }
                 if (visibilityFailed)
-                    SetFault(*context, 23, visibilityRequest ? "Bridge preview resume failed" : "Bridge preview pause failed");
+                    SetFault(*context, 23, visibilityRequest ? "Native subpixel preview resume failed" : "Native subpixel preview pause failed");
                 else if (returnLeaseNow) {
                     for (uint32_t slotIndex = 0; slotIndex < 3; ++slotIndex) {
                         WorkerContext::Slot& slot = context->slots[slotIndex];
@@ -1919,8 +2315,6 @@ static void RunWorker(WorkerContext* context, WorkerHost* host) {
                         }
                     }
                     TraceWorker("lease-return-proven");
-                    TryRetainedStaticPresent(*context, session);
-
                     IUnknown* nextProducer = nullptr;
                     bool finalClose = false;
                     for (;;) {
@@ -1944,8 +2338,17 @@ static void RunWorker(WorkerContext* context, WorkerHost* host) {
                                 break;
                             }
                         }
-                        if (!finalClose && parkedRefreshGeneration == 0 && !nextProducer)
-                            TryRetainedStaticPresent(*context, session);
+                        if (!finalClose && context->manualPresenter) {
+                            std::string windowError;
+                            bool windowStateValid = context->manualPresenter->PollWindowState(&windowError);
+#if defined(LKG_WORKER_TRANSPORT_TESTING)
+                            if (context->testFailWindowPoll.load(std::memory_order_acquire)) windowStateValid = false;
+#endif
+                            if (!windowStateValid) {
+                                SetFault(*context, 43, "native output window state failed while preview lease was parked");
+                                finalClose = true;
+                            }
+                        }
                         if (finalClose) break;
                         if (parkedRefreshGeneration != 0) {
                             RefreshDisplaySnapshot(*context, parkedRefreshGeneration);
@@ -1962,13 +2365,18 @@ static void RunWorker(WorkerContext* context, WorkerHost* host) {
                         SetFault(*context, 35, "Bridge profile changed while preview was returned; restart required");
                         continue;
                     }
-                    const int32_t showResult = lkg_bridge_set_session_visible(session, 1);
+                    std::string visibilityError;
+                    const int32_t showResult = context->manualPresenter &&
+                        context->manualPresenter->SetVisible(true, &visibilityError) ? 0 : -1;
                     if (showResult != 0) {
-                        SetBridgeFault(*context, 26, "bridge_show_persistent_session", showResult);
+                        SetFault(*context, 26, "native subpixel output could not resume its presenter window");
                         continue;
                     }
                     {
                         std::lock_guard<std::mutex> stateLock(context->mutex);
+#if defined(LKG_WORKER_TRANSPORT_TESTING)
+                        context->testPresenterVisible = true;
+#endif
                         context->leaseReturnRequested.store(false, std::memory_order_release);
                         context->leaseReturnProven = false;
                         context->previewPausePhase = LKG_WORKER_PREVIEW_RUNNING;
@@ -1978,19 +2386,16 @@ static void RunWorker(WorkerContext* context, WorkerHost* host) {
                     }
                     TraceWorker("lease-resumed");
                 }
-                if (!returnLeaseNow && retainPersistentVisibility)
-                    TryRetainedStaticPresent(*context, session);
-                continue;
-            }
-            if (!closing && context->previewPausePhase == LKG_WORKER_PREVIEW_PAUSED) {
-                lock.unlock();
-                TryRetainedStaticPresent(*context, session);
                 continue;
             }
             if (!PopJob(*context, job)) continue;
             context->inFlightJob = true;
             context->inFlightSlot = job.slot;
         }
+#if defined(LKG_WORKER_TRANSPORT_TESTING)
+        if (testThrowAfterWorkerDequeue.exchange(false, std::memory_order_acq_rel))
+            throw std::runtime_error("injected worker exception after dequeue");
+#endif
         WorkerContext::Slot* slot = &context->slots[job.slot];
         if (slot->d3d12Slot) {
             ProcessD3D12WorkerJob(*context, job, workerDevice.Get(), workerDeviceContext.Get(), session);
@@ -2049,8 +2454,37 @@ static void RunWorker(WorkerContext* context, WorkerHost* host) {
             }
             continue;
         }
-        const int32_t drawResult = DrawWorkerImage(*context, workerDeviceContext.Get(), session, slot->workerTexture.Get(), job);
-        slot->workerMutex->ReleaseSync(0);
+        {
+            std::lock_guard<std::mutex> lock(context->mutex);
+            slot->sourceMutexHeld = true;
+        }
+        int32_t drawResult = -1;
+        bool sourceRetirementProven = true;
+        try {
+            drawResult = DrawWorkerImage(*context, workerDeviceContext.Get(), workerDevice.Get(), session,
+                slot->workerTexture.Get(), job, slot->sourceCopyRetirementQuery11, &sourceRetirementProven);
+        } catch (...) {
+            sourceRetirementProven = !slot->sourceRetirementUnproven;
+            SetFault(*context, 45, "worker threw while rendering; source retirement is being verified");
+        }
+        if (sourceRetirementProven) {
+            const HRESULT sourceRelease = slot->workerMutex->ReleaseSync(0);
+            if (SUCCEEDED(sourceRelease)) {
+                std::lock_guard<std::mutex> lock(context->mutex);
+                slot->sourceMutexHeld = false;
+            }
+            else {
+                {
+                    std::lock_guard<std::mutex> lock(context->mutex);
+                    slot->quarantined = true;
+                }
+                sourceRetirementProven = false;
+                SetFault(*context, 46, "worker source keyed mutex release failed");
+            }
+        } else {
+            std::lock_guard<std::mutex> lock(context->mutex);
+            slot->quarantined = true;
+        }
         if (drawResult != 0) {
             SetBridgeFault(*context, 13, "bridge_draw", drawResult);
         }
@@ -2080,24 +2514,26 @@ static void RunWorker(WorkerContext* context, WorkerHost* host) {
         SetFault(*context, 8, "worker thread exception");
         std::unique_lock<std::mutex> lock(context->mutex);
         if (context->inFlightJob) {
-            const bool d3d12Pending = context->slots[context->inFlightSlot].d3d12Slot;
-            if (!d3d12Pending) context->slots[context->inFlightSlot].inUse = false;
+            WorkerContext::Slot& slot = context->slots[context->inFlightSlot];
+            if (slot.sourceRetirementUnproven || slot.sourceMutexHeld || slot.d3d12Slot) slot.quarantined = true;
+            slot.inUse = false;
             context->inFlightJob = false;
-            if (!d3d12Pending) {
-                if (context->pendingTokens) --context->pendingTokens;
-                ++context->status.dropped;
-            }
+            if (context->pendingTokens) --context->pendingTokens;
+            ++context->status.dropped;
         }
         while (context->jobCount != 0) {
             WorkerContext::Job droppedJob{};
             PopJob(*context, droppedJob);
-            if (!context->slots[droppedJob.slot].d3d12Slot) {
-                context->slots[droppedJob.slot].inUse = false;
-                if (context->pendingTokens) --context->pendingTokens;
-                ++context->status.dropped;
-            }
+            WorkerContext::Slot& slot = context->slots[droppedJob.slot];
+            if (slot.d3d12Slot || slot.sourceRetirementUnproven || slot.sourceMutexHeld) slot.quarantined = true;
+            slot.inUse = false;
+            if (context->pendingTokens) --context->pendingTokens;
+            ++context->status.dropped;
         }
-        for (WorkerContext::Slot& slot : context->slots) if (!slot.d3d12Slot) slot.inUse = false;
+        for (WorkerContext::Slot& slot : context->slots) {
+            if (slot.d3d12Slot || slot.sourceRetirementUnproven || slot.sourceMutexHeld) slot.quarantined = true;
+            slot.inUse = false;
+        }
         context->condition.notify_all();
         context->condition.wait(lock, [&] { return context->pendingTokens == 0 && context->jobCount == 0; });
         lock.unlock();
@@ -2106,7 +2542,13 @@ static void RunWorker(WorkerContext* context, WorkerHost* host) {
 }
 
 LKG_EXPORT void* lkg_worker_begin(const char* runtimePath, const char* applicationName, uint32_t displayOrdinal, void* producerDevice) {
-    if (!runtimePath || !runtimePath[0] || !applicationName || !applicationName[0]) return nullptr;
+    const LkgWorkerOutputOptionsV1 options{ sizeof(LkgWorkerOutputOptionsV1), 1, LKG_WORKER_SUBPIXEL_AUTOMATIC, 0 };
+    return lkg_worker_begin_with_output_v1(runtimePath, applicationName, displayOrdinal, producerDevice, &options);
+}
+
+LKG_EXPORT void* lkg_worker_begin_with_output_v1(const char* runtimePath, const char* applicationName,
+    uint32_t displayOrdinal, void* producerDevice, const LkgWorkerOutputOptionsV1* options) {
+    if (!runtimePath || !runtimePath[0] || !applicationName || !applicationName[0] || !ValidWorkerOutputOptions(options)) return nullptr;
     if (!lkg_bridge_worker_claim()) return nullptr;
     WorkerContext* context = nullptr;
     try {
@@ -2115,6 +2557,8 @@ LKG_EXPORT void* lkg_worker_begin(const char* runtimePath, const char* applicati
         for (char& character : context->runtimePath) if (character == '/') character = '\\';
         context->applicationName = applicationName;
         context->displayOrdinal = displayOrdinal;
+        context->outputOptions = *options;
+        context->subpixelStatus.requestedMode = options->subpixelMode;
         context->producerDevice = reinterpret_cast<IUnknown*>(producerDevice);
         if (context->producerDevice) {
             context->producerDevice->AddRef();
@@ -2310,12 +2754,130 @@ LKG_EXPORT int32_t lkg_worker_ack_preview_lease_return_v1(void* leaseHandle,
 }
 
 #if defined(LKG_WORKER_TRANSPORT_TESTING)
+static WorkerContext* ResolveTestWorkerContextLocked(void* handle) {
+    if (!handle) return nullptr;
+    const auto direct = registry.find(static_cast<WorkerContext*>(handle));
+    if (direct != registry.end()) return *direct;
+
+    PreviewLeaseTokenRecord* token = FindPreviewLeaseTokenLocked(handle);
+    if (!token || token->acknowledged || !token->context ||
+        (token->state != LKG_WORKER_PREVIEW_LEASE_ACTIVE &&
+            token->state != LKG_WORKER_PREVIEW_LEASE_RETURNING &&
+            token->state != LKG_WORKER_PREVIEW_LEASE_RETURNED_PROVEN))
+        return nullptr;
+    WorkerContext* context = token->context;
+    if (registry.find(context) == registry.end() || context != previewLeaseEndpoint ||
+        context->leaseEndpointId != token->endpointId || context->leaseGeneration != token->generation ||
+        context->currentLeaseToken != handle)
+        return nullptr;
+    return context;
+}
+
+extern "C" LKG_EXPORT int32_t lkg_worker_test_fail_window_poll(void* handle) {
+    if (!handle) return -1;
+    std::lock_guard<std::mutex> registryLock(registryMutex);
+    WorkerContext* context = ResolveTestWorkerContextLocked(handle);
+    if (!context) return -2;
+    std::lock_guard<std::mutex> contextLock(context->mutex);
+    if (context->closeRequested.load(std::memory_order_acquire) || context->finished.load(std::memory_order_acquire))
+        return -2;
+    context->testFailWindowPoll.store(true, std::memory_order_release);
+    context->condition.notify_all();
+    return 0;
+}
+
 LKG_EXPORT void lkg_worker_test_throw_during_cleanup(void) {
     testThrowDuringWorkerCleanup.store(true, std::memory_order_release);
 }
 
 LKG_EXPORT void lkg_worker_test_throw_during_display_query(void) {
     testThrowDuringDisplayQuery.store(true, std::memory_order_release);
+}
+
+extern "C" LKG_EXPORT void lkg_worker_test_configure_source_copy(uint32_t pendingPolls, uint32_t queryFailures,
+    uint32_t presenterEarlyResult, bool throwAfterCopy, bool holdQuery) {
+    testSourceCopyPendingPolls.store(pendingPolls, std::memory_order_release);
+    testSourceCopyQueryFailures.store(queryFailures, std::memory_order_release);
+    testPresenterEarlyResult.store(presenterEarlyResult, std::memory_order_release);
+    testThrowAfterSourceCopy.store(throwAfterCopy, std::memory_order_release);
+    testHoldSourceCopyQuery.store(holdQuery, std::memory_order_release);
+}
+
+extern "C" LKG_EXPORT void lkg_worker_test_throw_after_worker_dequeue(void) {
+    testThrowAfterWorkerDequeue.store(true, std::memory_order_release);
+}
+
+extern "C" LKG_EXPORT int32_t lkg_worker_test_get_source_copy_state(void* handle, uint32_t slotIndex, uint32_t* flags) {
+    if (!handle || !flags || slotIndex >= 3) return -1;
+    std::lock_guard<std::mutex> registryLock(registryMutex);
+    WorkerContext* context = ResolveTestWorkerContextLocked(handle);
+    if (!context) return -2;
+    std::lock_guard<std::mutex> lock(context->mutex);
+    const WorkerContext::Slot& slot = context->slots[slotIndex];
+    *flags = (slot.inUse ? LKG_WORKER_TEST_SLOT_IN_USE : 0u) |
+        (slot.sourceRetirementUnproven ? LKG_WORKER_TEST_SOURCE_UNPROVEN : 0u) |
+        (slot.sourceCopyCompleted ? LKG_WORKER_TEST_SOURCE_COPY_COMPLETED : 0u) |
+        (slot.sourceMutexHeld ? LKG_WORKER_TEST_SOURCE_MUTEX_HELD : 0u) |
+        (slot.quarantined ? LKG_WORKER_TEST_SLOT_QUARANTINED : 0u) |
+        (slot.sourceCopyQueryIssued ? LKG_WORKER_TEST_SOURCE_COPY_QUERY_ISSUED : 0u) |
+        (slot.d3d12Slot && (slot.unknownSubmission || slot.producerFenceValue12 != 0 ||
+            slot.sourceTexture12 || slot.producerFence12 || slot.producerDevice12 || slot.consumerCopyPending)
+            ? LKG_WORKER_TEST_D3D12_OWNERSHIP_UNPROVEN : 0u);
+    return 0;
+}
+
+extern "C" LKG_EXPORT int32_t lkg_worker_test_get_presenter_visibility(void* handle, uint32_t* visible) {
+    if (!handle || !visible) return -1;
+    std::lock_guard<std::mutex> registryLock(registryMutex);
+    WorkerContext* context = ResolveTestWorkerContextLocked(handle);
+    if (!context) return -2;
+    std::lock_guard<std::mutex> lock(context->mutex);
+    *visible = context->testPresenterVisible ? 1u : 0u;
+    return 0;
+}
+
+extern "C" LKG_EXPORT int32_t lkg_worker_test_readback_presenter_rgba8(void* handle, uint8_t* rgba,
+    uint32_t capacity, uint32_t* width, uint32_t* height, uint32_t* requiredBytes, uint32_t timeoutMilliseconds) {
+    if (!handle || !width || !height || !requiredBytes || timeoutMilliseconds == 0) return -1;
+    std::unique_lock<std::mutex> registryLock(registryMutex);
+    WorkerContext* context = ResolveTestWorkerContextLocked(handle);
+    if (!context) return -2;
+    std::unique_lock<std::mutex> contextLock(context->mutex);
+    if (context->closeRequested.load(std::memory_order_acquire) || context->finished.load(std::memory_order_acquire))
+        return -2;
+    context->testReadbackComplete = false;
+    context->testReadbackResult = -1;
+    context->testReadbackPixels.clear();
+    context->testReadbackError.clear();
+    context->testReadbackRequested = true;
+    ++context->testReadbackWaiters;
+    context->condition.notify_all();
+    registryLock.unlock();
+    if (!context->condition.wait_for(contextLock, std::chrono::milliseconds(timeoutMilliseconds), [&] {
+            return context->testReadbackComplete || context->finished.load(std::memory_order_acquire);
+        })) {
+        --context->testReadbackWaiters;
+        return -3;
+    }
+    if (!context->testReadbackComplete || context->testReadbackResult != 0) {
+        --context->testReadbackWaiters;
+        return -4;
+    }
+    const size_t byteCount = context->testReadbackPixels.size();
+    if (byteCount > UINT32_MAX) {
+        --context->testReadbackWaiters;
+        return -5;
+    }
+    *width = context->testReadbackWidth;
+    *height = context->testReadbackHeight;
+    *requiredBytes = static_cast<uint32_t>(byteCount);
+    if (!rgba || capacity < byteCount) {
+        --context->testReadbackWaiters;
+        return -6;
+    }
+    std::memcpy(rgba, context->testReadbackPixels.data(), byteCount);
+    --context->testReadbackWaiters;
+    return 0;
 }
 
 LKG_EXPORT int32_t lkg_worker_test_set_d3d12_timeout(void* handle, uint64_t timeoutMilliseconds) {
@@ -2374,8 +2936,8 @@ LKG_EXPORT int32_t lkg_worker_test_get_preview_lease_resources(void* handle, uin
     *endpointId = token->endpointId;
     *generation = token->generation;
     *sessionId = token->context->bridgeSessionId;
-    *stableInputTexture = token->context->stableSdkInput
-        ? reinterpret_cast<uintptr_t>(token->context->stableSdkInput->GetTexture()) : 0;
+    *stableInputTexture = token->context->canonicalQuilt
+        ? reinterpret_cast<uintptr_t>(token->context->canonicalQuilt.Get()) : 0;
     return 0;
 }
 
@@ -2463,6 +3025,30 @@ LKG_EXPORT int32_t lkg_worker_get_physical_display_v1(void* handle, LkgWorkerPhy
     info->pixelHeight = context->physicalDisplay.pixelHeight;
     info->dpi = context->physicalDisplay.dpi;
     info->valid = context->physicalDisplay.valid;
+    return 0;
+}
+
+LKG_EXPORT int32_t lkg_worker_get_subpixel_status_v1(void* handle, LkgWorkerSubpixelStatusV1* status) {
+    if (!status || status->structSize != sizeof(LkgWorkerSubpixelStatusV1) || status->version != 1) return -1;
+    LkgWorkerSubpixelStatusV1 value{};
+    value.structSize = sizeof(value);
+    value.version = 1;
+    value.requestedMode = UINT32_MAX;
+    value.effectiveMode = UINT32_MAX;
+    value.cellPatternMode = UINT32_MAX;
+    value.backend = UINT32_MAX;
+    if (!handle) { *status = value; return -2; }
+    std::lock_guard<std::mutex> registryLock(registryMutex);
+    WorkerContext* context = ResolveActiveWorkerHandleLocked(handle);
+    if (!context) {
+        *status = value;
+        return FindPreviewLeaseTokenLocked(handle) ? LKG_WORKER_PREVIEW_LEASE_RESULT_STALE : -2;
+    }
+    std::lock_guard<std::mutex> contextLock(context->mutex);
+    value = context->subpixelStatus;
+    value.structSize = sizeof(value);
+    value.version = 1;
+    *status = value;
     return 0;
 }
 
@@ -2664,7 +3250,7 @@ LKG_EXPORT int32_t lkg_worker_reset_transfer(void* handle) {
         context->previewPausePhase != LKG_WORKER_PREVIEW_RUNNING || context->previewPauseDesired) return -3;
     if (context->slotsInitializing || context->pendingTokens != 0 || context->jobCount != 0 || context->inFlightJob) return -2;
     for (const WorkerContext::Slot& slot : context->slots) {
-        if (slot.inUse) return -2;
+        if (!SlotGpuOwnershipRetired(slot)) return -2;
     }
     for (WorkerContext::Slot& slot : context->slots) {
         if (slot.d3d12Slot) {
@@ -2690,8 +3276,44 @@ LKG_EXPORT int32_t lkg_worker_reset_transfer(void* handle) {
     return 0;
 }
 
+static bool ValidWorkerDrawOptions(const LkgWorkerDrawOptionsV1* options) {
+    return options && options->structSize == sizeof(LkgWorkerDrawOptionsV1) && options->version == 1 &&
+        options->sourceEncoding <= LKG_WORKER_SOURCE_ENCODING_SRGB && options->reserved0 == 0;
+}
+
+static bool ManualSourceEncodingMatchesTexture(IUnknown* texture, uint32_t sourceEncoding, bool* sourceWasTypeless) {
+    if (sourceWasTypeless) *sourceWasTypeless = false;
+    if (!texture || sourceEncoding > LKG_WORKER_SOURCE_ENCODING_SRGB) return false;
+    DXGI_FORMAT format = DXGI_FORMAT_UNKNOWN;
+    ComPtr<ID3D11Texture2D> texture11;
+    if (texture->QueryInterface(IID_PPV_ARGS(&texture11)) == S_OK) {
+        D3D11_TEXTURE2D_DESC description{};
+        texture11->GetDesc(&description);
+        format = description.Format;
+    } else {
+        ComPtr<ID3D12Resource> resource12;
+        if (texture->QueryInterface(IID_PPV_ARGS(&resource12)) != S_OK) return false;
+        format = resource12->GetDesc().Format;
+    }
+    if (format == DXGI_FORMAT_R8G8B8A8_TYPELESS) {
+        if (sourceWasTypeless) *sourceWasTypeless = true;
+        return true;
+    }
+    if (format == DXGI_FORMAT_R8G8B8A8_UNORM)
+        return sourceEncoding == LKG_WORKER_SOURCE_ENCODING_UNORM;
+    if (format == DXGI_FORMAT_R8G8B8A8_UNORM_SRGB)
+        return sourceEncoding == LKG_WORKER_SOURCE_ENCODING_SRGB;
+    return false;
+}
+
 LKG_EXPORT void* lkg_worker_make_draw_data(void* handle, void* texture, uint32_t columns, uint32_t rows, float aspect, float zoom) {
-    if (!handle || !texture) return nullptr;
+    (void)handle; (void)texture; (void)columns; (void)rows; (void)aspect; (void)zoom;
+    return nullptr;
+}
+
+LKG_EXPORT void* lkg_worker_make_draw_data_with_options_v1(void* handle, void* texture, uint32_t columns,
+    uint32_t rows, float aspect, float zoom, const LkgWorkerDrawOptionsV1* options) {
+    if (!handle || !texture || !ValidWorkerDrawOptions(options)) return nullptr;
     lkg::common::ImageDescriptor request{};
     request.columns = columns;
     request.rows = rows;
@@ -2709,14 +3331,15 @@ LKG_EXPORT void* lkg_worker_make_draw_data(void* handle, void* texture, uint32_t
         ++context->status.dropped;
         return nullptr;
     }
-    if (context->previewLeaseEndpoint &&
-        (columns != static_cast<uint32_t>(context->fixedDisplayProfile.quilt_columns) ||
-         rows != static_cast<uint32_t>(context->fixedDisplayProfile.quilt_rows))) {
+    bool sourceWasTypeless = false;
+    if (!ManualSourceEncodingMatchesTexture(reinterpret_cast<IUnknown*>(texture), options->sourceEncoding, &sourceWasTypeless)) {
         ++context->status.dropped;
         return nullptr;
     }
     auto data = std::unique_ptr<WorkerDrawData>(new (std::nothrow) WorkerDrawData{ 0, context, reinterpret_cast<IUnknown*>(texture), columns, rows, aspect, zoom });
     if (!data) return nullptr;
+    data->sourceEncoding = options->sourceEncoding;
+    data->sourceWasTypeless = sourceWasTypeless;
     if (leaseToken) data->leaseGeneration = leaseToken->generation;
     data->texture->AddRef();
     const uint64_t id = nextTokenId.fetch_add(1, std::memory_order_relaxed);
@@ -2736,7 +3359,16 @@ LKG_EXPORT int32_t lkg_worker_try_make_preview_draw_data_v1(void* leaseHandle,
     const LkgWorkerPreviewLeaseIdentityV1* identity, void* texture, uint32_t columns, uint32_t rows,
     float aspect, float zoom, void** drawData) {
     if (drawData) *drawData = nullptr;
-    if (!leaseHandle || !ValidPreviewLeaseIdentity(identity) || !texture || !drawData)
+    (void)leaseHandle; (void)identity; (void)texture; (void)columns; (void)rows; (void)aspect; (void)zoom;
+    if (drawData) *drawData = nullptr;
+    return LKG_WORKER_PREVIEW_LEASE_RESULT_INVALID_ARGUMENT;
+}
+
+LKG_EXPORT int32_t lkg_worker_try_make_preview_draw_data_with_options_v1(void* leaseHandle,
+    const LkgWorkerPreviewLeaseIdentityV1* identity, void* texture, uint32_t columns, uint32_t rows,
+    float aspect, float zoom, const LkgWorkerDrawOptionsV1* options, void** drawData) {
+    if (drawData) *drawData = nullptr;
+    if (!leaseHandle || !ValidPreviewLeaseIdentity(identity) || !texture || !drawData || !ValidWorkerDrawOptions(options))
         return LKG_WORKER_PREVIEW_LEASE_RESULT_INVALID_ARGUMENT;
 
     lkg::common::ImageDescriptor request{};
@@ -2767,8 +3399,8 @@ LKG_EXPORT int32_t lkg_worker_try_make_preview_draw_data_v1(void* leaseHandle,
     if (context->status.state != LKG_WORKER_READY || context->previewPauseDesired ||
         context->previewPausePhase != LKG_WORKER_PREVIEW_RUNNING)
         return LKG_WORKER_PREVIEW_LEASE_RESULT_NATIVE_FAILURE;
-    if (columns != static_cast<uint32_t>(context->fixedDisplayProfile.quilt_columns) ||
-        rows != static_cast<uint32_t>(context->fixedDisplayProfile.quilt_rows))
+    bool sourceWasTypeless = false;
+    if (!ManualSourceEncodingMatchesTexture(reinterpret_cast<IUnknown*>(texture), options->sourceEncoding, &sourceWasTypeless))
         return LKG_WORKER_PREVIEW_LEASE_RESULT_INVALID_ARGUMENT;
     if (context->pendingTokens >= 3) {
         ++context->status.dropped;
@@ -2778,8 +3410,10 @@ LKG_EXPORT int32_t lkg_worker_try_make_preview_draw_data_v1(void* leaseHandle,
     const uint64_t id = nextTokenId.fetch_add(1, std::memory_order_relaxed);
     if (id == 0 || id == UINT64_MAX) return LKG_WORKER_PREVIEW_LEASE_RESULT_NATIVE_FAILURE;
     std::unique_ptr<WorkerDrawData> data(new (std::nothrow) WorkerDrawData{
-        id, context, reinterpret_cast<IUnknown*>(texture), columns, rows, aspect, zoom, identity->leaseGeneration });
+        id, context, reinterpret_cast<IUnknown*>(texture), columns, rows, aspect, zoom,
+        options->sourceEncoding, identity->leaseGeneration });
     if (!data) return LKG_WORKER_PREVIEW_LEASE_RESULT_NATIVE_FAILURE;
+    data->sourceWasTypeless = sourceWasTypeless;
     data->texture->AddRef();
     try {
         std::lock_guard<std::mutex> tokenLock(tokenMutex);
@@ -3136,7 +3770,11 @@ LKG_EXPORT int32_t lkg_worker_release(void* handle) {
     if (registry.find(context) == registry.end()) return -2;
     {
         std::lock_guard<std::mutex> lock(context->mutex);
-        if (!context->cleanupProven || !context->finished.load(std::memory_order_acquire)) return -2;
+        if (!context->cleanupProven || !context->finished.load(std::memory_order_acquire)
+#if defined(LKG_WORKER_TRANSPORT_TESTING) && defined(LKG_SUBPIXEL_PRESENTER_TESTS)
+            || context->testReadbackWaiters != 0
+#endif
+            ) return -2;
     }
     if (context->thread.joinable()) context->thread.join();
 #if defined(_WIN32)

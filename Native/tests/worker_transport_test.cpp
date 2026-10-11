@@ -3,6 +3,7 @@
 #include <d3d11.h>
 #include <dxgi1_4.h>
 #include "bridge_d3d12_internal.h"
+#include "worker_transport_test_hooks.h"
 #include <wrl/client.h>
 #include <atomic>
 #include <chrono>
@@ -17,6 +18,7 @@
 #include <deque>
 #include <mutex>
 #include <array>
+#include <algorithm>
 #include <string>
 
 using Microsoft::WRL::ComPtr;
@@ -39,6 +41,16 @@ void lkg_worker_test_throw_during_display_query(void);
 void lkg_worker_test_delay_d3d12_consumer(uint32_t pendingPolls);
 uint32_t lkg_worker_test_d3d12_consumer_pending_polls(void);
 void lkg_worker_test_d3d12_set_removed(bool removed);
+extern "C" {
+void lkg_worker_test_configure_source_copy(uint32_t pendingPolls, uint32_t queryFailures,
+    uint32_t presenterEarlyResult, bool throwAfterCopy, bool holdQuery);
+int32_t lkg_worker_test_get_source_copy_state(void* handle, uint32_t slotIndex, uint32_t* flags);
+int32_t lkg_worker_test_get_presenter_visibility(void* handle, uint32_t* visible);
+int32_t lkg_worker_test_readback_presenter_rgba8(void* handle, uint8_t* rgba, uint32_t capacity,
+    uint32_t* width, uint32_t* height, uint32_t* requiredBytes, uint32_t timeoutMilliseconds);
+void lkg_worker_test_throw_after_worker_dequeue(void);
+int32_t lkg_worker_test_fail_window_poll(void* handle);
+}
 #endif
 extern "C" int32_t lkg_worker_shutdown_host(uint32_t timeoutMilliseconds);
 
@@ -56,9 +68,8 @@ static std::mutex g_fakeHostConfigMutex;
 static std::string g_fakeHostRuntime;
 static std::string g_fakeHostApplication;
 static std::string g_fakeLastError;
-static std::atomic<bool> g_drawFailure{false};
-static std::atomic<bool> g_drawThrow{false};
 static std::atomic<uint32_t> g_drawCount{0};
+static std::atomic<uint32_t> g_sdkDrawCalls{0};
 static std::atomic<bool> g_holdDraw{false};
 static std::atomic<bool> g_drawEntered{false};
 static std::atomic<uint64_t> g_fakeSessionCounter{0};
@@ -99,13 +110,6 @@ static std::atomic<bool> g_workerClaimed{false};
 static std::atomic<unsigned long> g_producerThread{0};
 static std::atomic<unsigned long> g_workerThread{0};
 static std::atomic<unsigned long> g_lastDisplayQueryThread{0};
-static std::atomic<bool> g_copyVerified{false};
-static std::atomic<bool> g_testingD3D12{false};
-static std::atomic<uint8_t> g_expectedRed{ 0x22 };
-static std::atomic<uint8_t> g_expectedGreen{ 0 };
-static std::atomic<uint8_t> g_expectedBlue{ 0 };
-static std::mutex g_expectedD3D12Mutex;
-static std::deque<std::array<uint8_t, 3>> g_expectedD3D12Pixels;
 static ComPtr<ID3D12Device> g_testD3D12Device;
 static ComPtr<ID3D12CommandQueue> g_testD3D12Queue;
 static ComPtr<ID3D12Fence> g_testD3D12Fence;
@@ -295,6 +299,95 @@ static void BeginContext(void** handle) {
     *handle = lkg_worker_begin("test-runtime", "worker-transport-test", 0, nullptr);
     Check(*handle != nullptr, "worker begin");
     Check(WaitReady(*handle), "worker ready");
+}
+
+static void* MakeWorkerDrawData(void* handle, void* texture, uint32_t columns, uint32_t rows,
+    float aspect, float zoom) {
+    const LkgWorkerDrawOptionsV1 options{ sizeof(LkgWorkerDrawOptionsV1), 1,
+        LKG_WORKER_SOURCE_ENCODING_UNORM, 0 };
+    return lkg_worker_make_draw_data_with_options_v1(handle, texture, columns, rows, aspect, zoom, &options);
+}
+
+static void* MakeWorkerDrawDataWithEncoding(void* handle, void* texture, uint32_t columns, uint32_t rows,
+    float aspect, float zoom, uint32_t sourceEncoding) {
+    const LkgWorkerDrawOptionsV1 options{ sizeof(LkgWorkerDrawOptionsV1), 1, sourceEncoding, 0 };
+    return lkg_worker_make_draw_data_with_options_v1(handle, texture, columns, rows, aspect, zoom, &options);
+}
+
+static int32_t TryMakePreviewWorkerDrawData(void* handle, const LkgWorkerPreviewLeaseIdentityV1* identity,
+    void* texture, uint32_t columns, uint32_t rows, float aspect, float zoom, void** drawData) {
+    const LkgWorkerDrawOptionsV1 options{ sizeof(LkgWorkerDrawOptionsV1), 1,
+        LKG_WORKER_SOURCE_ENCODING_UNORM, 0 };
+    return lkg_worker_try_make_preview_draw_data_with_options_v1(handle, identity, texture,
+        columns, rows, aspect, zoom, &options, drawData);
+}
+
+static int32_t TryMakePreviewWorkerDrawDataWithEncoding(void* handle,
+    const LkgWorkerPreviewLeaseIdentityV1* identity, void* texture, uint32_t columns, uint32_t rows,
+    float aspect, float zoom, uint32_t sourceEncoding, void** drawData) {
+    const LkgWorkerDrawOptionsV1 options{ sizeof(LkgWorkerDrawOptionsV1), 1, sourceEncoding, 0 };
+    return lkg_worker_try_make_preview_draw_data_with_options_v1(handle, identity, texture,
+        columns, rows, aspect, zoom, &options, drawData);
+}
+
+static LkgWorkerSubpixelStatusV1 GetSubpixelStatus(void* handle) {
+    LkgWorkerSubpixelStatusV1 status{};
+    status.structSize = sizeof(status);
+    status.version = 1;
+    Check(lkg_worker_get_subpixel_status_v1(handle, &status) == 0, "query NativeD3D11 subpixel status");
+    Check(status.valid == 1 && status.backend == LKG_WORKER_SUBPIXEL_BACKEND_NATIVE_D3D11,
+        "worker reports a valid native D3D11 presenter");
+    return status;
+}
+
+static bool WaitSubpixelFrames(void* handle, uint32_t renderCompleted, uint32_t presentAccepted,
+    uint32_t timeoutMs = 5000) {
+    const ULONGLONG deadline = GetTickCount64() + timeoutMs;
+    do {
+        LkgWorkerStatus worker{};
+        if (lkg_worker_poll(handle, &worker) != 0 || worker.state == LKG_WORKER_FAULT ||
+            worker.state == LKG_WORKER_CLOSED) return false;
+        const LkgWorkerSubpixelStatusV1 presenter = GetSubpixelStatus(handle);
+        if (presenter.renderCompleted >= renderCompleted && presenter.presentAccepted >= presentAccepted)
+            return true;
+        Sleep(1);
+    } while (GetTickCount64() < deadline);
+    return false;
+}
+
+static std::vector<uint8_t> ReadbackPresenter(void* handle, uint32_t expectedWidth, uint32_t expectedHeight) {
+    const uint64_t byteCount64 = static_cast<uint64_t>(expectedWidth) * expectedHeight * 4;
+    Check(byteCount64 <= UINT32_MAX, "presenter readback size is bounded");
+    std::vector<uint8_t> pixels(static_cast<size_t>(byteCount64));
+    uint32_t width = 0, height = 0, requiredBytes = 0;
+    Check(lkg_worker_test_readback_presenter_rgba8(handle, pixels.data(),
+        static_cast<uint32_t>(pixels.size()), &width, &height, &requiredBytes, 5000) == 0,
+        "worker-thread presenter readback completes after GPU proof");
+    Check(width == expectedWidth && height == expectedHeight && requiredBytes == pixels.size(),
+        "presenter readback dimensions match native output");
+    return pixels;
+}
+
+static void CheckRenderedPresenterPixels(const std::vector<uint8_t>& pixels, const char* message) {
+    bool hasColor = false;
+    Check((pixels.size() % 4) == 0, "presenter readback has RGBA pixels");
+    for (size_t index = 0; index < pixels.size(); index += 4) {
+        hasColor = hasColor || pixels[index] != 0 || pixels[index + 1] != 0 || pixels[index + 2] != 0;
+        Check(pixels[index + 3] == 255, "presenter output alpha is opaque");
+    }
+    Check(hasColor, message);
+}
+
+static void CheckUniformPresenterColor(const std::vector<uint8_t>& pixels,
+    const std::array<uint8_t, 3>& expected, uint8_t tolerance, const char* message) {
+    Check(!pixels.empty() && (pixels.size() % 4) == 0, "presenter readback contains complete pixels");
+    for (size_t index = 0; index < pixels.size(); index += 4) {
+        for (size_t channel = 0; channel < 3; ++channel) {
+            const int delta = static_cast<int>(pixels[index + channel]) - expected[channel];
+            Check(std::abs(delta) <= tolerance, message);
+        }
+        Check(pixels[index + 3] == 255, "presenter output alpha is opaque");
+    }
 }
 
 static void EndContext(void* handle);
@@ -650,10 +743,10 @@ static void TestBoundedCompletion() {
     auto texture = MakeTexture(DXGI_FORMAT_R8G8B8A8_UNORM, 32, 32);
     auto callback = reinterpret_cast<void (*)(int, void*)>(lkg_worker_render_event_func());
     g_producerThread.store(GetCurrentThreadId());
-    void* first = lkg_worker_make_draw_data(handle, texture.Get(), 4, 3, 1.0f, 1.0f);
-    void* second = lkg_worker_make_draw_data(handle, texture.Get(), 4, 3, 1.0f, 1.0f);
-    void* third = lkg_worker_make_draw_data(handle, texture.Get(), 4, 3, 1.0f, 1.0f);
-    void* fourth = lkg_worker_make_draw_data(handle, texture.Get(), 4, 3, 1.0f, 1.0f);
+    void* first = MakeWorkerDrawData(handle, texture.Get(), 4, 4, 1.0f, 1.0f);
+    void* second = MakeWorkerDrawData(handle, texture.Get(), 4, 4, 1.0f, 1.0f);
+    void* third = MakeWorkerDrawData(handle, texture.Get(), 4, 4, 1.0f, 1.0f);
+    void* fourth = MakeWorkerDrawData(handle, texture.Get(), 4, 4, 1.0f, 1.0f);
     Check(first && second && third && !fourth, "three token bound");
     Check(lkg_worker_reset_transfer(handle) == -2, "reset rejects pending tokens");
     Check(lkg_worker_cancel_draw_data(first) == 0, "cancel pending token");
@@ -666,13 +759,14 @@ static void TestBoundedCompletion() {
         Check(lkg_worker_poll(handle, &status) == 0, "poll bounded");
         if (status.submitted >= target) break;
         Check(GetTickCount64() < deadline, "120 submission deadline");
-        void* data = lkg_worker_make_draw_data(handle, texture.Get(), 4, 3, 1.0f, 1.0f);
+        void* data = MakeWorkerDrawData(handle, texture.Get(), 4, 4, 1.0f, 1.0f);
         if (data) callback(0, data);
         else std::this_thread::yield();
     }
     Check(WaitCompleted(handle, target, 5000), "120 draw completion");
-    Check(g_drawCount.load() >= target, "stub draw count");
-    Check(g_copyVerified.load(), "GPU copy readback");
+    Check(WaitSubpixelFrames(handle, target, target), "native presenter completed and accepted all bounded frames");
+    const auto pixels = ReadbackPresenter(handle, 32, 32);
+    CheckRenderedPresenterPixels(pixels, "native presenter readback contains rendered color output");
     Check(lkg_worker_reset_transfer(handle) == 0, "reset after drain");
     Check(g_workerThread.load() != 0 && g_workerThread.load() != g_producerThread.load(), "worker thread identity");
     EndContext(handle);
@@ -683,12 +777,14 @@ static void TestTypelessSource() {
     BeginContext(&handle);
     auto texture = MakeTypelessTexture(24, 24);
     auto callback = reinterpret_cast<void (*)(int, void*)>(lkg_worker_render_event_func());
-    g_copyVerified.store(false);
-    void* data = lkg_worker_make_draw_data(handle, texture.Get(), 4, 2, 1.0f, 1.0f);
+    void* data = MakeWorkerDrawDataWithEncoding(handle, texture.Get(), 4, 2, 1.0f, 1.0f,
+        LKG_WORKER_SOURCE_ENCODING_SRGB);
     Check(data != nullptr, "typeless token");
     callback(0, data);
     Check(WaitCompleted(handle, 1, 5000), "typeless completion");
-    Check(g_copyVerified.load(), "typeless GPU copy readback");
+    Check(WaitSubpixelFrames(handle, 1, 1), "typeless source reaches native presenter");
+    const auto pixels = ReadbackPresenter(handle, 32, 32);
+    CheckRenderedPresenterPixels(pixels, "typeless SRGB-declared transfer renders nonempty pixels");
     EndContext(handle);
 }
 
@@ -724,658 +820,338 @@ static void ResetVisibilityTestState() {
     g_sessionDestroyCount.store(0, std::memory_order_release);
 }
 
+static uint32_t GetPresenterVisibility(void* handle) {
+    uint32_t visible = UINT32_MAX;
+    Check(lkg_worker_test_get_presenter_visibility(handle, &visible) == 0,
+        "query native presenter visibility");
+    Check(visible <= 1, "native presenter visibility value is valid");
+    return visible;
+}
+
 static void TestPreviewPauseResumePreservesSessionAndDrains() {
-    ResetVisibilityTestState();
     void* handle = nullptr;
     BeginContext(&handle);
+    LkgWorkerSubpixelStatusV1 initial = GetSubpixelStatus(handle);
+    Check(initial.requestedMode == LKG_WORKER_SUBPIXEL_AUTOMATIC &&
+        initial.effectiveMode == LKG_WORKER_SUBPIXEL_AUTOMATIC && initial.cellCount == 0,
+        "default Automatic mode uses the valid scalar calibration fixture");
+    Check(GetPresenterVisibility(handle) == 1, "native presenter starts visible");
     Check(PreviewPausePhase(handle) == LKG_WORKER_PREVIEW_RUNNING, "preview starts in running phase");
     Check(lkg_worker_set_preview_paused(handle, 2) == -1, "invalid preview pause value rejected");
     Check(lkg_worker_get_preview_pause_state(handle, nullptr) == -1, "null preview phase output rejected");
 
     auto texture = MakeTexture(DXGI_FORMAT_R8G8B8A8_UNORM, 32, 32);
     auto callback = reinterpret_cast<void (*)(int, void*)>(lkg_worker_render_event_func());
-    g_holdDraw.store(true, std::memory_order_release);
-    void* token = lkg_worker_make_draw_data(handle, texture.Get(), 4, 3, 1.0f, 1.0f);
+    void* token = MakeWorkerDrawData(handle, texture.Get(), 4, 4, 1.0f, 1.0f);
     Check(token != nullptr, "pre-pause render token accepted");
-    callback(0, token);
-    const auto drawDeadline = GetTickCount64() + 2000;
-    while (!g_drawEntered.load(std::memory_order_acquire) && GetTickCount64() < drawDeadline)
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    Check(g_drawEntered.load(std::memory_order_acquire), "render entered before pause request");
-    const uint64_t session = g_lastCreatedSession.load(std::memory_order_acquire);
-    const uintptr_t workerDeviceBefore = lkg_worker_test_host_device_identity();
-    Check(session != 0 && workerDeviceBefore != 0 && g_lastDrawSession.load() == session,
-        "persistent session and host device created");
-    const uint32_t destroyCountBeforePause = g_sessionDestroyCount.load(std::memory_order_acquire);
     Check(lkg_worker_set_preview_paused(handle, 1) == 0, "pause request accepted");
-    Check(PreviewPausePhase(handle) == LKG_WORKER_PREVIEW_PAUSING, "pause request published as pausing");
-    Check(lkg_worker_make_draw_data(handle, texture.Get(), 4, 3, 1.0f, 1.0f) == nullptr,
+    Check(PreviewPausePhase(handle) == LKG_WORKER_PREVIEW_PAUSING,
+        "pause waits for already admitted producer work");
+    Check(GetPresenterVisibility(handle) == 1, "presenter remains visible until admitted work drains");
+    Check(MakeWorkerDrawData(handle, texture.Get(), 4, 4, 1.0f, 1.0f) == nullptr,
         "new submissions rejected immediately while pausing");
-    Check(g_visibilityHideCalls.load(std::memory_order_acquire) == 0,
-        "window is not hidden while producer draw is in flight");
-    g_holdDraw.store(false, std::memory_order_release);
-    Check(WaitCompleted(handle, 1, 2000), "in-flight producer draw drains before hide");
-    Check(WaitPreviewPausePhase(handle, LKG_WORKER_PREVIEW_PAUSED), "pause acknowledged after draw drain");
-    uintptr_t producerSlotBefore = 0;
-    uintptr_t workerSlotBefore = 0;
-    uint64_t slotGenerationBefore = 0;
-    Check(lkg_worker_test_get_transfer_slot_identity(handle, &producerSlotBefore, &workerSlotBefore,
-        &slotGenerationBefore) == 0 && producerSlotBefore != 0 && workerSlotBefore != 0,
-        "transfer slots remain allocated while paused");
-    Check(g_visibilityHideCalls.load(std::memory_order_acquire) == 1 &&
-        g_visibilityState.load(std::memory_order_acquire) == 0, "pause hides the existing session window");
-    Check(g_visibilityDrawCount.load(std::memory_order_acquire) >= 1,
-        "hide occurs after the in-flight draw completed");
-    Check(g_visibilitySession.load(std::memory_order_acquire) == session,
-        "pause visibility applies to the original session");
-    Check(g_visibilityThread.load(std::memory_order_acquire) == lkg_worker_test_thread_id(handle),
-        "pause visibility runs on persistent worker owner thread");
+    callback(0, token);
+    Check(WaitCompleted(handle, 1, 5000), "in-flight producer frame drains before pause");
+    Check(WaitSubpixelFrames(handle, 1, 1), "native render and accepted-present counters advance");
+    Check(WaitPreviewPausePhase(handle, LKG_WORKER_PREVIEW_PAUSED), "pause acknowledged after drain");
+    Check(GetPresenterVisibility(handle) == 0, "pause hides the native output window");
     LkgWorkerStatus pausedStatus{};
     Check(lkg_worker_poll(handle, &pausedStatus) == 0 && pausedStatus.state == LKG_WORKER_READY,
         "paused worker remains ready");
-    Check(lkg_worker_make_draw_data(handle, texture.Get(), 4, 3, 1.0f, 1.0f) == nullptr,
+    Check(MakeWorkerDrawData(handle, texture.Get(), 4, 4, 1.0f, 1.0f) == nullptr,
         "submissions remain rejected while paused");
 
     Check(lkg_worker_set_preview_paused(handle, 0) == 0, "resume request accepted");
     Check(WaitPreviewPausePhase(handle, LKG_WORKER_PREVIEW_RUNNING), "resume acknowledged after show");
-    Check(g_visibilityShowCalls.load(std::memory_order_acquire) == 1 &&
-        g_visibilityState.load(std::memory_order_acquire) == 1, "resume shows the same session window");
-    Check(g_visibilitySession.load(std::memory_order_acquire) == session &&
-        g_visibilityThread.load(std::memory_order_acquire) == lkg_worker_test_thread_id(handle),
-        "resume remains on the same session and owner thread");
-    Check(lkg_worker_test_host_device_identity() == workerDeviceBefore &&
-        g_fakeSessionCounter.load(std::memory_order_acquire) == session &&
-        g_sessionDestroyCount.load(std::memory_order_acquire) == destroyCountBeforePause,
-        "pause/resume does not recreate the session or worker device");
-    token = lkg_worker_make_draw_data(handle, texture.Get(), 4, 3, 1.0f, 1.0f);
+    Check(GetPresenterVisibility(handle) == 1, "resume shows the native output window");
+    token = MakeWorkerDrawData(handle, texture.Get(), 4, 4, 1.0f, 1.0f);
     Check(token != nullptr, "render submission accepted after resume");
     callback(0, token);
-    Check(WaitCompleted(handle, 2, 2000), "render completes after resume");
-    Check(g_lastDrawSession.load(std::memory_order_acquire) == session &&
-        g_sessionDestroyCount.load(std::memory_order_acquire) == destroyCountBeforePause,
-        "resumed render continues through the original live session");
-    uintptr_t producerSlotAfter = 0;
-    uintptr_t workerSlotAfter = 0;
-    uint64_t slotGenerationAfter = 0;
-    Check(lkg_worker_test_get_transfer_slot_identity(handle, &producerSlotAfter, &workerSlotAfter,
-        &slotGenerationAfter) == 0 && producerSlotAfter == producerSlotBefore &&
-        workerSlotAfter == workerSlotBefore && slotGenerationAfter == slotGenerationBefore,
-        "resume preserves producer and worker transfer slots and generation");
-
-    Check(lkg_worker_set_preview_paused(handle, 1) == 0, "second pause accepted before close");
-    Check(WaitPreviewPausePhase(handle, LKG_WORKER_PREVIEW_PAUSED), "second pause acknowledged");
+    Check(WaitCompleted(handle, 2, 5000), "native output completes after resume");
+    Check(WaitSubpixelFrames(handle, 2, 2), "native counters include the resumed frame");
+    Check(lkg_worker_reset_transfer(handle) == 0, "native source and output work retire before transfer reset");
     EndContext(handle);
-    Check(g_sessionDestroyCount.load(std::memory_order_acquire) == destroyCountBeforePause + 1,
-        "session is destroyed only by close after preview pause/resume");
 }
 
 static void TestPreviewPauseVisibilityFailuresDoNotAcknowledge() {
     void* handle = nullptr;
-    ResetVisibilityTestState();
     BeginContext(&handle);
-    g_visibilityFailureFor.store(0, std::memory_order_release);
-    Check(lkg_worker_set_preview_paused(handle, 1) == 0, "failing pause request accepted asynchronously");
-    Check(WaitState(handle, LKG_WORKER_FAULT, 2000), "failed hide faults worker");
-    Check(PreviewPausePhase(handle) == LKG_WORKER_PREVIEW_FAULTED &&
-        g_visibilityHideCalls.load(std::memory_order_acquire) == 0 &&
-        g_visibilityState.load(std::memory_order_acquire) == 1,
-        "failed hide never acknowledges paused");
-    ReleaseAfterFault(handle, "failed pause context release");
+    Check(GetPresenterVisibility(handle) == 1, "native presenter starts visible for pause transition");
+    Check(lkg_worker_set_preview_paused(handle, 1) == 0, "native presenter pause request accepted");
+    Check(WaitPreviewPausePhase(handle, LKG_WORKER_PREVIEW_PAUSED), "native presenter pause completes");
+    Check(GetPresenterVisibility(handle) == 0, "worker observes the actual hidden presenter state");
+    Check(lkg_worker_set_preview_paused(handle, 0) == 0, "native presenter resume request accepted");
+    Check(WaitPreviewPausePhase(handle, LKG_WORKER_PREVIEW_RUNNING), "native presenter resume completes");
+    Check(GetPresenterVisibility(handle) == 1, "worker observes the actual visible presenter state");
+    EndContext(handle);
+}
 
-    ResetVisibilityTestState();
+static void TestWindowPollFailureFaultsAndDrains() {
+    void* handle = nullptr;
     BeginContext(&handle);
-    Check(lkg_worker_set_preview_paused(handle, 1) == 0, "pause before resume failure accepted");
-    Check(WaitPreviewPausePhase(handle, LKG_WORKER_PREVIEW_PAUSED), "pause before resume failure acknowledged");
-    g_visibilityFailureFor.store(1, std::memory_order_release);
-    Check(lkg_worker_set_preview_paused(handle, 0) == 0, "failing resume request accepted asynchronously");
-    Check(WaitState(handle, LKG_WORKER_FAULT, 2000), "failed show faults worker");
-    Check(PreviewPausePhase(handle) == LKG_WORKER_PREVIEW_FAULTED &&
-        g_visibilityShowCalls.load(std::memory_order_acquire) == 0 &&
-        g_visibilityState.load(std::memory_order_acquire) == 0,
-        "failed show never acknowledges running");
-    ReleaseAfterFault(handle, "failed resume context release");
+    Check(lkg_worker_test_fail_window_poll(handle) == 0,
+        "native window health failure is configured for the active worker");
+    Check(WaitState(handle, LKG_WORKER_FAULT, 2000),
+        "persistent presenter window health failure faults the worker");
+    ReleaseAfterFault(handle, "window health fault drains and releases worker resources");
+    Check(lkg_worker_pending_count() == 0,
+        "window health fault cleanup is proven before worker collection");
 }
 
 static void TestPreviewLeaseReusesSessionAndStableSdkInput() {
-    ResetVisibilityTestState();
-    Check(g_hostInitializeCount.load() == 0 && g_hostUninitializeCount.load() == 0,
-        "preview lease test starts with an uninitialized fake SDK");
-
-    void* startupMetadata = lkg_worker_begin_metadata_v1("TEST-RUNTIME", "ViewWeave");
-    Check(startupMetadata != nullptr && WaitForDisplaySnapshot(startupMetadata, 1),
-        "legacy startup metadata performs its initial query before the first preview lease");
-    Check(lkg_worker_close(startupMetadata) == 0 && WaitForMetadataClose(startupMetadata),
-        "legacy startup metadata closes only after its initial query and cleanup proof");
-    Check(lkg_worker_end_metadata_v1(startupMetadata) == 0 && g_hostInitializeCount.load() == 1 &&
-        g_hostUninitializeCount.load() == 0,
-        "legacy metadata releases its worker while preserving exact application SDK ownership");
-
-    auto acquire = [](void** handle, LkgWorkerPreviewLeaseIdentityV1* identity) {
-        return lkg_worker_acquire_preview_lease_v1("TEST-RUNTIME", "ViewWeave", 0,
-            g_device.Get(), handle, identity);
+    LkgWorkerOutputOptionsV1 outputOptions{ sizeof(LkgWorkerOutputOptionsV1), 1,
+        LKG_WORKER_SUBPIXEL_AUTOMATIC, 0 };
+    auto acquire = [&](void** lease, LkgWorkerPreviewLeaseIdentityV1* identity) {
+        return lkg_worker_acquire_preview_lease_with_output_v1("TEST-RUNTIME", "ViewWeave", 0,
+            g_device.Get(), &outputOptions, lease, identity);
     };
-    void* firstHandle = nullptr;
-    LkgWorkerPreviewLeaseIdentityV1 firstIdentity{};
-    Check(acquire(&firstHandle, &firstIdentity) == LKG_WORKER_PREVIEW_LEASE_RESULT_OK && firstHandle != nullptr &&
-        firstIdentity.structSize == sizeof(firstIdentity) && firstIdentity.version == 1 &&
-        firstIdentity.endpointId != 0 && firstIdentity.leaseGeneration != 0,
-        "first preview lease acquires an opaque versioned token");
-    Check(WaitLeaseWorkerState(firstHandle, LKG_WORKER_READY), "first preview lease becomes ready");
-    const uint32_t firstWorkerThread = lkg_worker_test_thread_id(firstHandle);
-    Check(firstWorkerThread != 0, "preview lease has a persistent SDK owner thread");
-    const HWND firstWindow = lkg_worker_test_window(firstHandle);
-    Check(firstWindow != nullptr, "first lease creates a Bridge owner window");
+    void* lease = nullptr;
+    LkgWorkerPreviewLeaseIdentityV1 identity{};
+    Check(acquire(&lease, &identity) == LKG_WORKER_PREVIEW_LEASE_RESULT_OK && lease != nullptr &&
+        identity.structSize == sizeof(identity) && identity.version == 1 && identity.endpointId != 0 &&
+        identity.leaseGeneration != 0, "Automatic preview lease acquires a versioned identity");
+    Check(WaitLeaseWorkerState(lease, LKG_WORKER_READY), "Automatic preview lease becomes ready");
+    Check(GetPresenterVisibility(lease) == 1, "preview lease exposes the native presenter");
+    LkgWorkerSubpixelStatusV1 status = GetSubpixelStatus(lease);
+    Check(status.requestedMode == LKG_WORKER_SUBPIXEL_AUTOMATIC &&
+        status.effectiveMode == LKG_WORKER_SUBPIXEL_AUTOMATIC && status.cellCount == 0,
+        "preview lease uses Automatic scalar calibration when no cell table exists");
 
-    uint64_t firstEndpoint = 0;
-    uint64_t firstGeneration = 0;
-    uint64_t firstSession = 0;
-    uintptr_t firstStableInput = 0;
-    Check(lkg_worker_test_get_preview_lease_resources(firstHandle, &firstEndpoint, &firstGeneration,
-        &firstSession, &firstStableInput) == 0 && firstEndpoint == firstIdentity.endpointId &&
-        firstGeneration == firstIdentity.leaseGeneration && firstSession != 0 && firstStableInput != 0,
-        "first lease owns a session and profile-sized stable SDK input");
-
-    const uint32_t attemptsBeforeFirstDraw = g_staticPresentAttempts.load(std::memory_order_acquire);
-    Check(lkg_worker_set_preview_paused(firstHandle, 1) == 0 &&
-        WaitPreviewPausePhase(firstHandle, LKG_WORKER_PREVIEW_PAUSED),
-        "first lease can drain into pause before its first successful draw");
-    Check(WaitStaticPresentAttempts(attemptsBeforeFirstDraw + 1) &&
-        g_staticPresentDraws.load(std::memory_order_acquire) == 0,
-        "static present skips SDK draw until an ordinary draw establishes reusable geometry");
-    Check(lkg_worker_set_preview_paused(firstHandle, 0) == 0 &&
-        WaitPreviewPausePhase(firstHandle, LKG_WORKER_PREVIEW_RUNNING),
-        "first lease resumes after geometry-free pause");
-    const uint32_t attemptsAfterGeometryFreeResume = g_staticPresentAttempts.load(std::memory_order_acquire);
-    Sleep(250);
-    Check(g_staticPresentAttempts.load(std::memory_order_acquire) == attemptsAfterGeometryFreeResume,
-        "static present stops immediately after resume");
-
-    void* busyHandle = reinterpret_cast<void*>(static_cast<uintptr_t>(1));
-    LkgWorkerPreviewLeaseIdentityV1 busyIdentity{ 0xFFFFFFFFu, 9, 77, 88 };
-    Check(acquire(&busyHandle, &busyIdentity) == LKG_WORKER_PREVIEW_LEASE_RESULT_BUSY && busyHandle == nullptr &&
-        busyIdentity.structSize == sizeof(busyIdentity) && busyIdentity.version == 1 &&
-        busyIdentity.endpointId == 0 && busyIdentity.leaseGeneration == 0,
-        "concurrent acquire is retryable and clears all output identity fields");
-    Check(lkg_worker_ack_preview_lease_return_v1(firstHandle, &firstIdentity) == LKG_WORKER_PREVIEW_LEASE_RESULT_BUSY,
-        "active lease cannot be acknowledged as returned");
-    LkgWorkerPreviewLeaseIdentityV1 staleIdentity = firstIdentity;
-    ++staleIdentity.leaseGeneration;
-    Check(lkg_worker_request_preview_lease_return_v1(firstHandle, &staleIdentity) == LKG_WORKER_PREVIEW_LEASE_RESULT_STALE,
-        "stale lease generation cannot request return");
-    Check(lkg_worker_request_preview_lease_return_v1(reinterpret_cast<void*>(static_cast<uintptr_t>(0x12345)),
-        &firstIdentity) == LKG_WORKER_PREVIEW_LEASE_RESULT_STALE,
-        "unknown lease token is rejected rather than treated as a returned proof");
-
+    auto texture = MakeTexture(DXGI_FORMAT_R8G8B8A8_UNORM, 16, 16);
     auto callback = reinterpret_cast<void (*)(int, void*)>(lkg_worker_render_event_func());
-    auto firstTexture = MakeTexture(DXGI_FORMAT_R8G8B8A8_UNORM, 16, 16);
-    void* draw = lkg_worker_make_draw_data(firstHandle, firstTexture.Get(), 4, 4, 0.75f, 1.25f);
-    Check(draw != nullptr, "first lease accepts a profile-grid render");
-    void* consumedFirstLeaseDrawCallback = draw;
+    void* draw = nullptr;
+    Check(TryMakePreviewWorkerDrawData(lease, &identity, texture.Get(), 4, 4, 1.0f, 1.0f, &draw) ==
+        LKG_WORKER_PREVIEW_LEASE_RESULT_OK && draw != nullptr, "lease admits an options-v1 draw");
     callback(0, draw);
-    Check(WaitCompleted(firstHandle, 1, 5000), "first lease draw completes through stable input");
-    Check(g_lastDrawSession.load(std::memory_order_acquire) == firstSession &&
-        g_lastDrawTextureIdentity.load(std::memory_order_acquire) == firstStableInput,
-        "Bridge receives the persistent stable input rather than a transfer slot");
+    Check(WaitCompleted(lease, 1, 5000) && WaitSubpixelFrames(lease, 1, 1),
+        "lease draw completes on the native presenter");
 
-    LkgWorkerStatus beforeStaticPause{};
-    Check(lkg_worker_poll(firstHandle, &beforeStaticPause) == 0,
-        "poll generation counters before static pause");
-    const uint32_t drawCountBeforeStaticPause = g_drawCount.load(std::memory_order_acquire);
-    const uint32_t staticCallsBeforePause = g_staticPresentAttempts.load(std::memory_order_acquire);
-    const uint32_t staticDrawsBeforePause = g_staticPresentDraws.load(std::memory_order_acquire);
-    const uint32_t visibilityCallsBeforeLogicalPause = g_visibilityCalls.load(std::memory_order_acquire);
-    const uint32_t hideCallsBeforeLogicalPause = g_visibilityHideCalls.load(std::memory_order_acquire);
-    const uint32_t showCallsBeforeLogicalPause = g_visibilityShowCalls.load(std::memory_order_acquire);
-    Check(lkg_worker_set_preview_paused(firstHandle, 1) == 0 &&
-        WaitPreviewPausePhase(firstHandle, LKG_WORKER_PREVIEW_PAUSED),
-        "persistent lease reaches logical pause after its producer work drains");
-    Check(WaitStaticPresentAttempts(staticCallsBeforePause + 1) &&
-        g_staticPresentDraws.load(std::memory_order_acquire) >= staticDrawsBeforePause + 1,
-        "drained pause re-presents the cached primary frame");
-    Check(g_staticPresentSession.load(std::memory_order_acquire) == firstSession &&
-        g_staticPresentPrimary.load(std::memory_order_acquire) == firstStableInput &&
-        g_staticPresentColumns.load(std::memory_order_acquire) == 4 &&
-        g_staticPresentRows.load(std::memory_order_acquire) == 4 &&
-        g_staticPresentAspect.load(std::memory_order_acquire) == 0.75f &&
-        g_staticPresentZoom.load(std::memory_order_acquire) == 1.25f &&
-        g_staticPresentThread.load(std::memory_order_acquire) == firstWorkerThread &&
-        g_staticPresentEndpoint.load(std::memory_order_acquire) == firstEndpoint &&
-        g_staticPresentGeneration.load(std::memory_order_acquire) == firstGeneration,
-        "static present uses the same SDK owner, endpoint, generation, primary, and last successful geometry");
-    const uint32_t staticDrawsDuringPause = g_staticPresentDraws.load(std::memory_order_acquire);
-    Sleep(250);
-    const uint32_t staticDrawsAfterThrottleWindow = g_staticPresentDraws.load(std::memory_order_acquire);
-    if (staticDrawsAfterThrottleWindow <= staticDrawsDuringPause ||
-        staticDrawsAfterThrottleWindow > staticDrawsDuringPause + 2) {
-        std::fprintf(stderr, "static present throttle counts before=%u after=%u attempts=%u phase=%u\n",
-            staticDrawsDuringPause, staticDrawsAfterThrottleWindow,
-            g_staticPresentAttempts.load(std::memory_order_acquire), PreviewPausePhase(firstHandle));
-    }
-    Check(staticDrawsAfterThrottleWindow > staticDrawsDuringPause &&
-        staticDrawsAfterThrottleWindow <= staticDrawsDuringPause + 2,
-        "paused static present is throttled to at most five calls per second");
-    LkgWorkerStatus afterStaticPause{};
-    Check(lkg_worker_poll(firstHandle, &afterStaticPause) == 0 &&
-        afterStaticPause.submitted == beforeStaticPause.submitted &&
-        afterStaticPause.completed == beforeStaticPause.completed &&
-        afterStaticPause.dropped == beforeStaticPause.dropped &&
-        g_drawCount.load(std::memory_order_acquire) == drawCountBeforeStaticPause,
-        "static present does not alter producer completion or transport counters");
-    Check(g_visibilityCalls.load(std::memory_order_acquire) == visibilityCallsBeforeLogicalPause &&
-        g_visibilityHideCalls.load(std::memory_order_acquire) == hideCallsBeforeLogicalPause &&
-        g_visibilityShowCalls.load(std::memory_order_acquire) == showCallsBeforeLogicalPause &&
-        g_visibilityState.load(std::memory_order_acquire) == 1,
-        "persistent logical pause leaves SDK visibility unchanged without a visibility call");
-    Check(lkg_worker_make_draw_data(firstHandle, firstTexture.Get(), 4, 4, 1.0f, 1.0f) == nullptr,
-        "persistent logical pause stops new render submissions");
-    uint64_t pausedEndpoint = 0;
-    uint64_t pausedGeneration = 0;
-    uint64_t pausedSession = 0;
-    uintptr_t pausedStableInput = 0;
-    Check(lkg_worker_test_get_preview_lease_resources(firstHandle, &pausedEndpoint, &pausedGeneration,
-        &pausedSession, &pausedStableInput) == 0 && pausedEndpoint == firstEndpoint &&
-        pausedGeneration == firstGeneration && pausedSession == firstSession &&
-        pausedStableInput == firstStableInput,
-        "logical pause retains the same endpoint, session, and stable SDK input pointer identity");
-    const uint32_t visibilityCallsBeforeResume = g_visibilityCalls.load(std::memory_order_acquire);
-    Check(lkg_worker_set_preview_paused(firstHandle, 0) == 0 &&
-        WaitPreviewPausePhase(firstHandle, LKG_WORKER_PREVIEW_RUNNING),
-        "persistent lease resumes logically without replacing its endpoint");
-    const uint32_t staticCallsAfterResume = g_staticPresentAttempts.load(std::memory_order_acquire);
-    Sleep(250);
-    Check(g_staticPresentAttempts.load(std::memory_order_acquire) == staticCallsAfterResume,
-        "static present stops after resume rather than replaying stale frames");
-    Check(g_visibilityCalls.load(std::memory_order_acquire) == visibilityCallsBeforeResume + 1 &&
-        g_visibilityState.load(std::memory_order_acquire) == 1 &&
-        g_visibilityHideCalls.load(std::memory_order_acquire) == hideCallsBeforeLogicalPause &&
-        g_visibilityShowCalls.load(std::memory_order_acquire) == showCallsBeforeLogicalPause,
-        "resume uses the cached visible state without an SDK visibility transition");
-    draw = lkg_worker_make_draw_data(firstHandle, firstTexture.Get(), 4, 4, 1.0f, 1.0f);
-    Check(draw != nullptr, "resumed persistent lease accepts a new draw");
+    Check(lkg_worker_set_preview_paused(lease, 1) == 0 &&
+        WaitPreviewPausePhase(lease, LKG_WORKER_PREVIEW_PAUSED), "preview lease pauses after GPU retirement");
+    Check(GetPresenterVisibility(lease) == 0, "paused preview lease hides native output");
+    Check(lkg_worker_set_preview_paused(lease, 0) == 0 &&
+        WaitPreviewPausePhase(lease, LKG_WORKER_PREVIEW_RUNNING), "preview lease resumes");
+    Check(GetPresenterVisibility(lease) == 1, "resumed preview lease shows native output");
+
+    LkgWorkerPreviewLeaseIdentityV1 staleIdentity = identity;
+    ++staleIdentity.leaseGeneration;
+    Check(lkg_worker_request_preview_lease_return_v1(lease, &staleIdentity) ==
+        LKG_WORKER_PREVIEW_LEASE_RESULT_STALE, "stale preview generation cannot request return");
+    Check(lkg_worker_request_preview_lease_return_v1(lease, &identity) ==
+        LKG_WORKER_PREVIEW_LEASE_RESULT_OK, "active preview lease begins return");
+    Check(WaitPreviewLeaseState(lease, identity, LKG_WORKER_PREVIEW_LEASE_RETURNED_PROVEN),
+        "lease return waits for source retirement and native hide proof");
+    Check(GetPresenterVisibility(lease) == 1, "returned lease retains the last native image while parked");
+    Check(lkg_worker_ack_preview_lease_return_v1(lease, &identity) == LKG_WORKER_PREVIEW_LEASE_RESULT_OK,
+        "proven lease return can be acknowledged");
+
+    void* nextLease = nullptr;
+    LkgWorkerPreviewLeaseIdentityV1 nextIdentity{};
+    Check(acquire(&nextLease, &nextIdentity) == LKG_WORKER_PREVIEW_LEASE_RESULT_OK && nextLease != nullptr &&
+        nextIdentity.endpointId == identity.endpointId && nextIdentity.leaseGeneration > identity.leaseGeneration,
+        "reacquire reuses the native endpoint with a fresh lease generation");
+    Check(WaitLeaseWorkerState(nextLease, LKG_WORKER_READY) && GetPresenterVisibility(nextLease) == 1,
+        "reacquired lease restores the native output window");
+
+    auto typelessSrgb = MakeTypelessTexture(16, 16);
+    LkgWorkerStatus srgbWorkerBaseline{};
+    Check(lkg_worker_poll(nextLease, &srgbWorkerBaseline) == 0 &&
+        srgbWorkerBaseline.state == LKG_WORKER_READY,
+        "reacquired lease starts from a ready worker status baseline");
+    const LkgWorkerSubpixelStatusV1 srgbPresenterBaseline = GetSubpixelStatus(nextLease);
+    draw = nullptr;
+    Check(TryMakePreviewWorkerDrawDataWithEncoding(nextLease, &nextIdentity, typelessSrgb.Get(), 4, 4,
+        1.0f, 1.0f, LKG_WORKER_SOURCE_ENCODING_SRGB, &draw) == LKG_WORKER_PREVIEW_LEASE_RESULT_OK && draw != nullptr,
+        "reacquired lease admits explicitly encoded SRGB source bytes");
     callback(0, draw);
-    Check(WaitCompleted(firstHandle, 2, 5000) &&
-        g_lastDrawSession.load(std::memory_order_acquire) == firstSession &&
-        g_lastDrawTextureIdentity.load(std::memory_order_acquire) == firstStableInput,
-        "resumed persistent lease draws through the retained session and SDK input");
-
-    const uint32_t presentCallsBeforeFailure = g_staticPresentAttempts.load(std::memory_order_acquire);
-    g_staticPresentFailure.store(true, std::memory_order_release);
-    Check(lkg_worker_set_preview_paused(firstHandle, 1) == 0 &&
-        WaitPreviewPausePhase(firstHandle, LKG_WORKER_PREVIEW_PAUSED) &&
-        WaitStaticPresentAttempts(presentCallsBeforeFailure + 1),
-        "static-present failure probe reaches one drained pause attempt");
-    const uint32_t attemptsAfterStaticFailure = g_staticPresentAttempts.load(std::memory_order_acquire);
-    Sleep(450);
-    LkgWorkerStatus afterStaticFailure{};
-    Check(g_staticPresentAttempts.load(std::memory_order_acquire) == attemptsAfterStaticFailure &&
-        PreviewPausePhase(firstHandle) == LKG_WORKER_PREVIEW_PAUSED &&
-        lkg_worker_poll(firstHandle, &afterStaticFailure) == 0 && afterStaticFailure.state == LKG_WORKER_READY,
-        "one static-present failure suppresses retries without faulting pause or worker state");
-    g_staticPresentFailure.store(false, std::memory_order_release);
-    Check(lkg_worker_set_preview_paused(firstHandle, 0) == 0 &&
-        WaitPreviewPausePhase(firstHandle, LKG_WORKER_PREVIEW_RUNNING),
-        "lease resumes after a suppressed static-present failure");
-
-    Check(lkg_worker_make_draw_data(firstHandle, firstTexture.Get(), 4, 3, 1.0f, 1.0f) == nullptr,
-        "incompatible source grid is rejected without remapping");
-
-    LkgWorkerStatus beforeReturn{};
-    Check(lkg_worker_poll(firstHandle, &beforeReturn) == 0, "poll first lease before return");
-    const uint32_t staticCallsBeforeReturn = g_staticPresentAttempts.load(std::memory_order_acquire);
-    const uint32_t visibilityCallsBeforeLeaseReturn = g_visibilityCalls.load(std::memory_order_acquire);
-    void* delayedDraw = lkg_worker_make_draw_data(firstHandle, firstTexture.Get(), 4, 4, 1.0f, 1.0f);
-    Check(delayedDraw != nullptr, "unsubmitted draw token created before lease return");
-
-    Check(lkg_worker_request_preview_lease_return_v1(firstHandle, &firstIdentity) == 0 &&
-        lkg_worker_request_preview_lease_return_v1(firstHandle, &firstIdentity) == 0,
-        "duplicate lease return request is idempotent");
-    Check(lkg_worker_make_draw_data(firstHandle, firstTexture.Get(), 4, 4, 1.0f, 1.0f) == nullptr,
-        "new submissions are rejected as soon as lease return is requested");
-    void* rejectedLeaseDraw = reinterpret_cast<void*>(1);
-    Check(lkg_worker_try_make_preview_draw_data_v1(firstHandle, &firstIdentity, firstTexture.Get(),
-        4, 4, 1.0f, 1.0f, &rejectedLeaseDraw) == LKG_WORKER_PREVIEW_LEASE_RESULT_STALE && !rejectedLeaseDraw,
-        "draw admission reports returning lease as stale instead of retryable queue busy");
-    callback(0, delayedDraw);
-    LkgWorkerPreviewLeaseStatusV1 returnedDrawStatus{};
-    const int32_t statusAfterReturn = lkg_worker_get_preview_lease_status_v1(firstHandle, &firstIdentity, &returnedDrawStatus);
-    Check(statusAfterReturn == 0 && returnedDrawStatus.workerStatus.completed == beforeReturn.completed &&
-        returnedDrawStatus.workerStatus.dropped >= beforeReturn.dropped + 1,
-        "late draw callback is dropped and cannot submit after return begins");
-    Check(lkg_worker_pending_count() == 1, "returning lease is counted as outstanding ownership");
-    Check(lkg_worker_ack_preview_lease_return_v1(firstHandle, &firstIdentity) == LKG_WORKER_PREVIEW_LEASE_RESULT_BUSY,
-        "return cannot be acknowledged before native drain and producer return proof");
-    Check(WaitPreviewLeaseState(firstHandle, firstIdentity, LKG_WORKER_PREVIEW_LEASE_RETURNED_PROVEN),
-        "lease return is proven after producer drain without changing persistent visibility");
-    Check(WaitStaticPresentAttempts(staticCallsBeforeReturn + 1),
-        "returned-proven parked endpoint immediately re-presents its retained primary");
-    Check(g_visibilityHideCalls.load(std::memory_order_acquire) == hideCallsBeforeLogicalPause &&
-        g_visibilityShowCalls.load(std::memory_order_acquire) == showCallsBeforeLogicalPause &&
-        g_visibilityCalls.load(std::memory_order_acquire) == visibilityCallsBeforeLeaseReturn &&
-        g_visibilityState.load(std::memory_order_acquire) == 1 && g_sessionDestroyCount.load() == 0,
-        "persistent lease return retains visible SDK session and primary resources");
-    LkgWorkerPreviewLeaseStatusV1 firstReturned{};
-    Check(lkg_worker_get_preview_lease_status_v1(firstHandle, &firstIdentity, &firstReturned) == 0 &&
-        firstReturned.lastResult == 0 && firstReturned.workerStatus.state == LKG_WORKER_CLOSED &&
-        firstReturned.endpointId == firstEndpoint && firstReturned.leaseGeneration == firstGeneration,
-        "returned lease status carries its identity and closed worker status");
-    Check(lkg_worker_pending_count() == 1, "unacknowledged return remains outstanding");
-    void* unackedHandle = reinterpret_cast<void*>(static_cast<uintptr_t>(1));
-    LkgWorkerPreviewLeaseIdentityV1 unackedIdentity{ 0xFFFFFFFFu, 9, 77, 88 };
-    Check(acquire(&unackedHandle, &unackedIdentity) == LKG_WORKER_PREVIEW_LEASE_RESULT_BUSY &&
-        unackedHandle == nullptr && unackedIdentity.endpointId == 0 && unackedIdentity.leaseGeneration == 0,
-        "returned but unacknowledged lease blocks the next acquire");
-    Check(lkg_worker_ack_preview_lease_return_v1(firstHandle, &firstIdentity) == 0 &&
-        lkg_worker_ack_preview_lease_return_v1(firstHandle, &firstIdentity) == 0 &&
-        lkg_worker_pending_count() == 0,
-        "return acknowledgement is idempotent and releases the acquire barrier");
-    Check(lkg_worker_get_preview_lease_status_v1(firstHandle, &firstIdentity, &firstReturned) == 0 &&
-        firstReturned.state == LKG_WORKER_PREVIEW_LEASE_RETURNED_PROVEN && firstReturned.lastResult == 0 &&
-        firstReturned.workerStatus.state == LKG_WORKER_CLOSED,
-        "acknowledged return proof remains bound to its original generation");
-    LkgWorkerStatus stalePoll{};
-    Check(lkg_worker_poll(firstHandle, &stalePoll) == LKG_WORKER_PREVIEW_LEASE_RESULT_STALE,
-        "old generation handle is stale after acknowledgement");
-    Check(lkg_worker_make_draw_data(firstHandle, firstTexture.Get(), 4, 4, 1.0f, 1.0f) == nullptr,
-        "old generation cannot create draw data after acknowledgement");
-    firstTexture.Reset();
-
-    void* idleMetadata = lkg_worker_begin_metadata_v1("test-runtime", "ViewWeave");
-    Check(idleMetadata != nullptr, "idle metadata query attaches to the parked endpoint");
-    Check(WaitForDisplaySnapshot(idleMetadata, 1), "idle metadata proxy runs its initial query on the endpoint");
-    std::vector<LkgWorkerDisplaySnapshotItemV1> displayItems;
-    LkgWorkerDisplaySnapshotStatusV1 displayStatus = GetDisplaySnapshot(idleMetadata, displayItems);
-    Check(displayStatus.result == 0 && displayStatus.pending == 0 && displayStatus.itemCount == 1 &&
-        displayStatus.snapshotGeneration == 1 && displayItems[0].profile.quilt_columns == 4 &&
-        displayItems[0].profile.quilt_rows == 4,
-        "idle metadata proxy publishes its own initial snapshot generation");
-    uint64_t refreshGeneration = 0;
-    Check(lkg_worker_request_display_refresh_v1(idleMetadata, &refreshGeneration) == 0 && refreshGeneration != 0,
-        "idle metadata refresh is accepted on the persistent owner");
-    Check(WaitForDisplaySnapshot(idleMetadata, refreshGeneration), "idle endpoint publishes refreshed display metadata");
-    Check(g_lastDisplayQueryThread.load(std::memory_order_acquire) == firstWorkerThread,
-        "idle metadata refresh runs on the same persistent SDK owner thread");
-    displayStatus = GetDisplaySnapshot(idleMetadata, displayItems);
-    Check(displayStatus.result == 0 && displayStatus.pending == 0 && displayStatus.itemCount == 1 &&
-        displayStatus.snapshotGeneration == refreshGeneration &&
-        displayItems[0].profile.quilt_columns == 4 && displayItems[0].profile.quilt_rows == 4,
-        "idle metadata snapshot reads the same SDK owner without creating a worker");
-    LkgWorkerPhysicalDisplayInfoV1 metadataPhysical{};
-    metadataPhysical.structSize = sizeof(metadataPhysical);
-    metadataPhysical.version = 1;
-    Check(lkg_worker_get_physical_display_v1(idleMetadata, &metadataPhysical) == 0 && metadataPhysical.valid == 1 &&
-        metadataPhysical.pixelWidth == 1920 && metadataPhysical.pixelHeight == 1080,
-        "metadata proxy physical display lookup uses its captured snapshot");
-    Check(lkg_worker_end_metadata_v1(idleMetadata) == -3,
-        "metadata proxy cannot end before its close proof is complete");
-    Check(lkg_worker_close(idleMetadata) == 0 && WaitForMetadataClose(idleMetadata),
-        "metadata proxy close waits for its query and proves closure without closing the endpoint");
-    Check(lkg_worker_pending_count() == 1,
-        "closed metadata proxy remains pending until its owner releases the handle");
-    Check(lkg_worker_end_metadata_v1(idleMetadata) == 0 && lkg_worker_pending_count() == 0,
-        "metadata proxy releases only after closed cleanup proof");
-    Check(g_hostInitializeCount.load() == 1 && g_hostUninitializeCount.load() == 0 &&
-        g_sessionDestroyCount.load() == 0,
-        "metadata refresh preserves the initialized SDK and hidden session");
-
-    g_testHoldDisplayQuery.store(true, std::memory_order_release);
-    g_testDisplayQueryEntered.store(false, std::memory_order_release);
-    g_testReleaseDisplayQuery.store(false, std::memory_order_release);
-    void* closingMetadata = lkg_worker_begin_metadata_v1("test-runtime", "ViewWeave");
-    Check(closingMetadata != nullptr, "in-flight metadata proxy begins on the parked endpoint");
-    const auto queryWaitStart = GetTickCount64();
-    while (!g_testDisplayQueryEntered.load(std::memory_order_acquire) && GetTickCount64() - queryWaitStart < 2000)
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    Check(g_testDisplayQueryEntered.load(std::memory_order_acquire),
-        "metadata proxy initial query entered the SDK owner thread");
-    Check(lkg_worker_close(closingMetadata) == 0,
-        "metadata close is accepted while its owner-thread query is in flight");
-    std::vector<LkgWorkerDisplaySnapshotItemV1> inFlightItems;
-    LkgWorkerDisplaySnapshotStatusV1 inFlightStatus = GetDisplaySnapshot(closingMetadata, inFlightItems);
-    Check(inFlightStatus.state == LKG_WORKER_CLOSING && inFlightStatus.pending == 1 &&
-        inFlightStatus.cleanupFinished == 0 && lkg_worker_end_metadata_v1(closingMetadata) == -3,
-        "metadata close cannot claim cleanup while the owner query is still blocked");
-    g_testReleaseDisplayQuery.store(true, std::memory_order_release);
-    Check(WaitForMetadataClose(closingMetadata),
-        "in-flight metadata cancellation completes only after the owner query returns");
-    Check(lkg_worker_end_metadata_v1(closingMetadata) == 0 &&
-        g_lastDisplayQueryThread.load(std::memory_order_acquire) == firstWorkerThread &&
-        g_sessionDestroyCount.load() == 0 && g_hostUninitializeCount.load() == 0,
-        "in-flight metadata close releases its proxy without destroying the persistent endpoint");
-    g_testHoldDisplayQuery.store(false, std::memory_order_release);
-
-    void* secondHandle = nullptr;
-    LkgWorkerPreviewLeaseIdentityV1 secondIdentity{};
-    Check(acquire(&secondHandle, &secondIdentity) == 0 && secondHandle != nullptr &&
-        secondIdentity.endpointId == firstIdentity.endpointId &&
-        secondIdentity.leaseGeneration > firstIdentity.leaseGeneration,
-        "next lease keeps endpoint identity and advances its generation");
-    Check(WaitLeaseWorkerState(secondHandle, LKG_WORKER_READY), "second preview lease becomes ready");
-    Check(lkg_worker_test_window(secondHandle) == firstWindow,
-        "reacquire retains the same Bridge owner window");
-    Check(lkg_worker_get_preview_lease_status_v1(firstHandle, &firstIdentity, &firstReturned) == 0 &&
-        firstReturned.state == LKG_WORKER_PREVIEW_LEASE_RETURNED_PROVEN &&
-        firstReturned.workerStatus.state == LKG_WORKER_CLOSED,
-        "old ACKed generation still reports its own return proof after a newer acquire");
-    const uint64_t firstSubmitted = firstReturned.workerStatus.submitted;
-    const uint64_t firstCompleted = firstReturned.workerStatus.completed;
-    const uint64_t firstDropped = firstReturned.workerStatus.dropped;
-    Check(lkg_worker_ack_preview_lease_return_v1(firstHandle, &firstIdentity) == 0 &&
-        lkg_worker_request_preview_lease_return_v1(firstHandle, &firstIdentity) == LKG_WORKER_PREVIEW_LEASE_RESULT_STALE,
-        "old ACK retry remains idempotent while return requests reject the acknowledged generation");
-    LkgWorkerStatus beforeStaleCallback{};
-    Check(lkg_worker_poll(secondHandle, &beforeStaleCallback) == 0 &&
-        beforeStaleCallback.submitted == 0 && beforeStaleCallback.completed == 0 && beforeStaleCallback.dropped == 0,
-        "new lease generation starts render counters at zero");
-    callback(0, consumedFirstLeaseDrawCallback);
-    LkgWorkerStatus afterStaleCallback{};
-    Check(lkg_worker_poll(secondHandle, &afterStaleCallback) == 0 &&
-        afterStaleCallback.submitted == beforeStaleCallback.submitted &&
-        afterStaleCallback.completed == beforeStaleCallback.completed &&
-        afterStaleCallback.dropped == beforeStaleCallback.dropped,
-        "consumed old-generation callback replay cannot affect the new lease after its source is released");
-    uint64_t secondEndpoint = 0;
-    uint64_t secondGeneration = 0;
-    uint64_t secondSession = 0;
-    uintptr_t secondStableInput = 0;
-    Check(lkg_worker_test_get_preview_lease_resources(secondHandle, &secondEndpoint, &secondGeneration,
-        &secondSession, &secondStableInput) == 0 && secondEndpoint == firstEndpoint &&
-        secondGeneration == secondIdentity.leaseGeneration && secondSession == firstSession &&
-        secondStableInput == firstStableInput,
-        "reacquire preserves the endpoint, Bridge session, and stable SDK input identity");
-    Check(g_visibilityState.load(std::memory_order_acquire) == 1 && g_sessionDestroyCount.load() == 0,
-        "reacquire shows the same session without destroying it");
-
-    void* activeMetadata = lkg_worker_begin_metadata_v1("TEST-RUNTIME", "ViewWeave");
-    Check(activeMetadata != nullptr && WaitForDisplaySnapshot(activeMetadata, 1),
-        "active lease metadata proxy runs its initial query on the same endpoint");
-    uint64_t activeRefreshGeneration = 0;
-    Check(lkg_worker_request_display_refresh_v1(activeMetadata, &activeRefreshGeneration) == 0 &&
-        WaitForDisplaySnapshot(activeMetadata, activeRefreshGeneration),
-        "active lease metadata refresh completes without replacing the rendering lease");
-    Check(lkg_worker_close(activeMetadata) == 0 && WaitForMetadataClose(activeMetadata) &&
-        lkg_worker_end_metadata_v1(activeMetadata) == 0,
-        "active metadata proxy closes and ends independently of its rendering lease");
-    LkgWorkerStatus activeAfterMetadata{};
-    Check(lkg_worker_poll(secondHandle, &activeAfterMetadata) == 0 && activeAfterMetadata.state == LKG_WORKER_READY &&
-        activeAfterMetadata.submitted == 0 && activeAfterMetadata.completed == 0 &&
-        activeAfterMetadata.dropped == 0,
-        "metadata query preserves active lease render status");
-
-    Check(lkg_worker_reset_transfer(secondHandle) == 0, "quiescent lease transfer slots reset for a new quality size");
-    auto resizedTexture = MakeTexture(DXGI_FORMAT_R8G8B8A8_UNORM, 32, 16);
-    draw = lkg_worker_make_draw_data(secondHandle, resizedTexture.Get(), 4, 4, 1.0f, 1.0f);
-    Check(draw != nullptr, "second lease accepts a resized source quilt with the fixed grid");
-    callback(0, draw);
-    Check(WaitCompleted(secondHandle, 1, 5000), "resized source quilt uploads and draws");
-    LkgWorkerStatus afterSecondGenerationDraw{};
-    Check(lkg_worker_poll(secondHandle, &afterSecondGenerationDraw) == 0 &&
-        afterSecondGenerationDraw.submitted == 1 && afterSecondGenerationDraw.completed == 1 &&
-        afterSecondGenerationDraw.dropped == 0,
-        "first draw in the new generation increments only its own counters");
-    LkgWorkerPreviewLeaseStatusV1 firstAfterSecondDraw{};
-    Check(lkg_worker_get_preview_lease_status_v1(firstHandle, &firstIdentity, &firstAfterSecondDraw) == 0 &&
-        firstAfterSecondDraw.workerStatus.submitted == firstSubmitted &&
-        firstAfterSecondDraw.workerStatus.completed == firstCompleted &&
-        firstAfterSecondDraw.workerStatus.dropped == firstDropped,
-        "new-generation draws do not mutate the prior generation return snapshot");
-    Check(g_lastDrawSession.load() == firstSession && g_lastDrawTextureIdentity.load() == firstStableInput,
-        "resized quality source still draws through the same stable input and session");
-
-    Check(lkg_worker_close_all() == 0, "close_all requests lease return without finalizing the endpoint");
-    Check(lkg_worker_request_preview_lease_return_v1(secondHandle, &secondIdentity) == 0,
-        "close_all return can be observed idempotently by the lease owner");
-    Check(WaitPreviewLeaseState(secondHandle, secondIdentity, LKG_WORKER_PREVIEW_LEASE_RETURNED_PROVEN),
-        "close_all parks the endpoint after proving return");
-    Check(lkg_worker_pending_count() == 1, "close_all return remains pending until acknowledgement");
-    Check(lkg_worker_ack_preview_lease_return_v1(secondHandle, &secondIdentity) == 0,
-        "close_all parked lease acknowledgement");
-
-    void* thirdHandle = nullptr;
-    LkgWorkerPreviewLeaseIdentityV1 thirdIdentity{};
-    Check(acquire(&thirdHandle, &thirdIdentity) == 0 && thirdHandle != nullptr &&
-        thirdIdentity.endpointId == firstEndpoint,
-        "close_all does not prevent a later lease on the parked endpoint");
-    Check(WaitLeaseWorkerState(thirdHandle, LKG_WORKER_READY), "third preview lease becomes ready");
-    uint64_t thirdEndpoint = 0;
-    uint64_t thirdGeneration = 0;
-    uint64_t thirdSession = 0;
-    uintptr_t thirdStableInput = 0;
-    Check(lkg_worker_test_get_preview_lease_resources(thirdHandle, &thirdEndpoint, &thirdGeneration,
-        &thirdSession, &thirdStableInput) == 0 && thirdEndpoint == firstEndpoint &&
-        thirdSession == firstSession && thirdStableInput == firstStableInput && lkg_worker_test_window(thirdHandle) == firstWindow,
-        "third lease after close_all preserves the same SDK resources");
-
-    for (uint32_t cycle = 0; cycle < 8; ++cycle) {
-        void* returningHandle = thirdHandle;
-        const LkgWorkerPreviewLeaseIdentityV1 returningIdentity = thirdIdentity;
-        Check(lkg_worker_request_preview_lease_return_v1(thirdHandle, &thirdIdentity) == 0 &&
-            WaitPreviewLeaseState(thirdHandle, thirdIdentity, LKG_WORKER_PREVIEW_LEASE_RETURNED_PROVEN),
-            "reacquire race cycle proves prior lease return");
-        Check(lkg_worker_ack_preview_lease_return_v1(thirdHandle, &thirdIdentity) == 0,
-            "reacquire race cycle acknowledges prior generation");
-        thirdHandle = nullptr;
-        thirdIdentity = {};
-        Check(acquire(&thirdHandle, &thirdIdentity) == 0 && thirdHandle != nullptr &&
-            thirdIdentity.endpointId == firstEndpoint && thirdIdentity.leaseGeneration > returningIdentity.leaseGeneration,
-            "immediate reacquire after return proof preserves endpoint and advances generation");
-        Check(WaitLeaseWorkerState(thirdHandle, LKG_WORKER_READY),
-            "worker observes the fully published generation during immediate reacquire");
-        uint64_t cycleEndpoint = 0;
-        uint64_t cycleGeneration = 0;
-        uint64_t cycleSession = 0;
-        uintptr_t cycleStableInput = 0;
-        Check(lkg_worker_test_get_preview_lease_resources(thirdHandle, &cycleEndpoint, &cycleGeneration,
-            &cycleSession, &cycleStableInput) == 0 && cycleEndpoint == firstEndpoint &&
-            cycleGeneration == thirdIdentity.leaseGeneration && cycleSession == firstSession &&
-            cycleStableInput == firstStableInput && lkg_worker_test_window(thirdHandle) == firstWindow,
-            "repeated immediate reacquire keeps session, input, and owner window stable");
-        Check(lkg_worker_get_preview_lease_status_v1(returningHandle, &returningIdentity,
-            &firstReturned) == 0 && firstReturned.state == LKG_WORKER_PREVIEW_LEASE_RETURNED_PROVEN &&
-            firstReturned.workerStatus.state == LKG_WORKER_CLOSED,
-            "reacquire race retains the prior generation proof independently");
+    bool srgbFrameCompleted = false;
+    bool srgbPresenterCompleted = false;
+    LkgWorkerStatus srgbWorkerStatus{};
+    LkgWorkerSubpixelStatusV1 srgbPresenterStatus{};
+    srgbPresenterStatus.structSize = sizeof(srgbPresenterStatus);
+    srgbPresenterStatus.version = 1;
+    const ULONGLONG srgbDeadline = GetTickCount64() + 5000;
+    do {
+        const int32_t workerResult = lkg_worker_poll(nextLease, &srgbWorkerStatus);
+        const int32_t presenterResult = lkg_worker_get_subpixel_status_v1(nextLease, &srgbPresenterStatus);
+        if (workerResult != 0 || presenterResult != 0 || srgbWorkerStatus.state == LKG_WORKER_FAULT ||
+            srgbWorkerStatus.state == LKG_WORKER_CLOSED) break;
+        srgbFrameCompleted = srgbWorkerStatus.completed > srgbWorkerBaseline.completed;
+        srgbPresenterCompleted = srgbPresenterStatus.valid == 1 &&
+            srgbPresenterStatus.requestedMode == LKG_WORKER_SUBPIXEL_AUTOMATIC &&
+            srgbPresenterStatus.effectiveMode == LKG_WORKER_SUBPIXEL_AUTOMATIC &&
+            srgbPresenterStatus.backend == LKG_WORKER_SUBPIXEL_BACKEND_NATIVE_D3D11 &&
+            srgbPresenterStatus.renderCompleted > srgbPresenterBaseline.renderCompleted &&
+            srgbPresenterStatus.presentAccepted > srgbPresenterBaseline.presentAccepted;
+        if (srgbFrameCompleted && srgbPresenterCompleted) break;
+        Sleep(1);
+    } while (GetTickCount64() < srgbDeadline);
+    if (!srgbFrameCompleted || !srgbPresenterCompleted) {
+        uint32_t copyFlags = 0;
+        const int32_t copyResult = lkg_worker_test_get_source_copy_state(nextLease, 0, &copyFlags);
+        uint32_t visible = UINT32_MAX;
+        const int32_t visibilityResult = lkg_worker_test_get_presenter_visibility(nextLease, &visible);
+        srgbWorkerStatus = {};
+        srgbPresenterStatus = {};
+        srgbPresenterStatus.structSize = sizeof(srgbPresenterStatus);
+        srgbPresenterStatus.version = 1;
+        const int32_t workerPollResult = lkg_worker_poll(nextLease, &srgbWorkerStatus);
+        const int32_t presenterQueryResult = lkg_worker_get_subpixel_status_v1(nextLease, &srgbPresenterStatus);
+        std::fprintf(stderr,
+            "SRGB lease diagnostic worker_rc=%d state=%u submitted=%u completed=%u baseline_completed=%u dropped=%u code=%u error=%s presenter_rc=%d valid=%u requested=%u effective=%u backend=%u render=%u baseline_render=%u accepted=%u baseline_accepted=%u copy_rc=%d copy_flags=0x%08x visibility_rc=%d visible=%u\n",
+            workerPollResult, srgbWorkerStatus.state, srgbWorkerStatus.submitted, srgbWorkerStatus.completed,
+            srgbWorkerBaseline.completed,
+            srgbWorkerStatus.dropped, srgbWorkerStatus.lastErrorCode,
+            srgbWorkerStatus.error, presenterQueryResult,
+            srgbPresenterStatus.valid, srgbPresenterStatus.requestedMode, srgbPresenterStatus.effectiveMode,
+            srgbPresenterStatus.backend, srgbPresenterStatus.renderCompleted, srgbPresenterBaseline.renderCompleted,
+            srgbPresenterStatus.presentAccepted, srgbPresenterBaseline.presentAccepted,
+            copyResult, copyFlags, visibilityResult, visible);
     }
+    Check(srgbFrameCompleted && srgbPresenterCompleted,
+        "SRGB source frame reaches completed and accepted NativeD3D11 counters");
+    const auto srgbPixels = ReadbackPresenter(nextLease, 32, 32);
+    CheckRenderedPresenterPixels(srgbPixels, "explicit SRGB encoding produces a native presenter image");
 
-    auto admissionTexture = MakeTexture(DXGI_FORMAT_R8G8B8A8_UNORM, 32, 32);
-    const ULONG admissionReferenceBase = ReferenceCount(static_cast<IUnknown*>(admissionTexture.Get()));
-    LkgWorkerStatus admissionStart{};
-    Check(lkg_worker_poll(thirdHandle, &admissionStart) == 0 && admissionStart.state == LKG_WORKER_READY &&
-        admissionStart.submitted == 0 && admissionStart.completed == 0 && admissionStart.dropped == 0,
-        "draw admission starts from clean counters on the current lease generation");
-    LkgWorkerPreviewLeaseIdentityV1 malformedIdentity = thirdIdentity;
-    malformedIdentity.structSize = 0;
-    void* rejectedAdmission = reinterpret_cast<void*>(1);
-    Check(lkg_worker_try_make_preview_draw_data_v1(thirdHandle, &malformedIdentity, admissionTexture.Get(),
-        4, 4, 1.0f, 1.0f, &rejectedAdmission) == LKG_WORKER_PREVIEW_LEASE_RESULT_INVALID_ARGUMENT && !rejectedAdmission,
-        "draw admission rejects malformed identity and clears output");
-    Check(lkg_worker_try_make_preview_draw_data_v1(reinterpret_cast<void*>(static_cast<uintptr_t>(0x12345)),
-        &thirdIdentity, admissionTexture.Get(), 4, 4, 1.0f, 1.0f, &rejectedAdmission) ==
-        LKG_WORKER_PREVIEW_LEASE_RESULT_STALE && !rejectedAdmission,
-        "draw admission rejects an unknown opaque handle");
-    LkgWorkerPreviewLeaseIdentityV1 staleDrawIdentity = thirdIdentity;
-    ++staleDrawIdentity.leaseGeneration;
-    Check(lkg_worker_try_make_preview_draw_data_v1(thirdHandle, &staleDrawIdentity, admissionTexture.Get(),
-        4, 4, 1.0f, 1.0f, &rejectedAdmission) == LKG_WORKER_PREVIEW_LEASE_RESULT_STALE && !rejectedAdmission,
-        "draw admission rejects a stale generation");
-
-    void* queuedDraws[3]{};
-    for (uint32_t i = 0; i < 3; ++i) {
-        Check(lkg_worker_try_make_preview_draw_data_v1(thirdHandle, &thirdIdentity, admissionTexture.Get(),
-            4, 4, 1.0f, 1.0f, &queuedDraws[i]) == LKG_WORKER_PREVIEW_LEASE_RESULT_OK && queuedDraws[i],
-            "draw admission accepts each slot up to the bounded queue capacity");
-    }
-    const ULONG admissionReferenceFull = ReferenceCount(static_cast<IUnknown*>(admissionTexture.Get()));
-    Check(admissionReferenceFull == admissionReferenceBase + 3,
-        "each accepted draw payload owns one source reference");
-    void* overCapacityDraw = reinterpret_cast<void*>(1);
-    Check(lkg_worker_try_make_preview_draw_data_v1(thirdHandle, &thirdIdentity, admissionTexture.Get(),
-        4, 4, 1.0f, 1.0f, &overCapacityDraw) == LKG_WORKER_PREVIEW_LEASE_RESULT_BUSY && !overCapacityDraw &&
-        ReferenceCount(static_cast<IUnknown*>(admissionTexture.Get())) == admissionReferenceFull,
-        "only a valid saturated queue returns busy and the rejected request allocates no payload or reference");
-    Check(lkg_worker_try_make_preview_draw_data_v1(thirdHandle, &thirdIdentity, admissionTexture.Get(),
-        0, 4, 1.0f, 1.0f, &overCapacityDraw) == LKG_WORKER_PREVIEW_LEASE_RESULT_INVALID_ARGUMENT && !overCapacityDraw,
-        "invalid descriptor remains invalid rather than being masked by queue busy");
-    Check(lkg_worker_try_make_preview_draw_data_v1(thirdHandle, &thirdIdentity, admissionTexture.Get(),
-        3, 3, 1.0f, 1.0f, &overCapacityDraw) == LKG_WORKER_PREVIEW_LEASE_RESULT_INVALID_ARGUMENT && !overCapacityDraw,
-        "profile-incompatible grid remains invalid rather than being masked by queue busy");
-    LkgWorkerStatus fullQueueStatus{};
-    Check(lkg_worker_poll(thirdHandle, &fullQueueStatus) == 0 && fullQueueStatus.submitted == 0 &&
-        fullQueueStatus.completed == 0 && fullQueueStatus.dropped == 1,
-        "saturated admission increments only the drop counter");
-    callback(0, queuedDraws[0]);
-    callback(0, queuedDraws[1]);
-    callback(0, queuedDraws[2]);
-    Check(WaitCompleted(thirdHandle, 3, 5000), "admitted draws complete after queue drain");
-    LkgWorkerStatus drainedQueueStatus{};
-    Check(lkg_worker_poll(thirdHandle, &drainedQueueStatus) == 0 && drainedQueueStatus.submitted == 3 &&
-        drainedQueueStatus.completed == 3 && drainedQueueStatus.dropped == 1 &&
-        lkg_worker_reset_transfer(thirdHandle) == 0,
-        "drained admission retires exactly three accepted payloads and one saturated drop");
-    void* replacementDraw = nullptr;
-    Check(lkg_worker_try_make_preview_draw_data_v1(thirdHandle, &thirdIdentity, admissionTexture.Get(),
-        4, 4, 1.0f, 1.0f, &replacementDraw) == LKG_WORKER_PREVIEW_LEASE_RESULT_OK && replacementDraw,
-        "draw admission accepts again after the full queue drains");
-    callback(0, replacementDraw);
-    Check(WaitCompleted(thirdHandle, 4, 5000), "post-drain admitted draw completes");
-    Check(lkg_worker_poll(thirdHandle, &drainedQueueStatus) == 0 && drainedQueueStatus.submitted == 4 &&
-        drainedQueueStatus.completed == 4 && drainedQueueStatus.dropped == 1,
-        "post-drain draw increments the new generation counters without another drop");
-
-    Check(lkg_worker_set_preview_paused(thirdHandle, 1) == 0 &&
-        WaitPreviewPausePhase(thirdHandle, LKG_WORKER_PREVIEW_PAUSED),
-        "lease pause reaches its acknowledged paused phase");
-    Check(lkg_worker_try_make_preview_draw_data_v1(thirdHandle, &thirdIdentity, admissionTexture.Get(),
-        4, 4, 1.0f, 1.0f, &rejectedAdmission) == LKG_WORKER_PREVIEW_LEASE_RESULT_NATIVE_FAILURE && !rejectedAdmission,
-        "paused lease admission is rejected as a lifecycle failure, never queue busy");
-    Check(lkg_worker_set_preview_paused(thirdHandle, 0) == 0 &&
-        WaitPreviewPausePhase(thirdHandle, LKG_WORKER_PREVIEW_RUNNING),
-        "lease resumes after paused admission rejection");
-
-    void* finalMetadata = lkg_worker_begin_metadata_v1("TEST-RUNTIME", "ViewWeave");
-    Check(finalMetadata != nullptr && WaitForDisplaySnapshot(finalMetadata, 1),
-        "final shutdown metadata proxy completes its initial query");
-    Check(lkg_worker_close(finalMetadata) == 0 && WaitForMetadataClose(finalMetadata),
-        "final shutdown metadata proxy is closed before endpoint teardown");
-
-    const uint32_t staticCallsBeforeFinalShutdown = g_staticPresentAttempts.load(std::memory_order_acquire);
-    Check(lkg_worker_request_final_shutdown() == 0, "explicit final shutdown closes active lease and endpoint");
+    Check(lkg_worker_request_preview_lease_return_v1(nextLease, &nextIdentity) ==
+        LKG_WORKER_PREVIEW_LEASE_RESULT_OK, "second preview lease begins return");
+    Check(WaitPreviewLeaseState(nextLease, nextIdentity, LKG_WORKER_PREVIEW_LEASE_RETURNED_PROVEN),
+        "second preview lease proves return");
+    Check(lkg_worker_ack_preview_lease_return_v1(nextLease, &nextIdentity) ==
+        LKG_WORKER_PREVIEW_LEASE_RESULT_OK, "second preview lease ACK succeeds");
+    Check(lkg_worker_request_final_shutdown() == 0, "native preview endpoint final shutdown accepted");
     LkgWorkerFinalShutdownStatusV1 finalStatus{};
     finalStatus.structSize = sizeof(finalStatus);
     finalStatus.version = 1;
     Check(lkg_worker_wait_final_shutdown_v1(5000, &finalStatus) == 0 &&
         finalStatus.state == LKG_WORKER_FINAL_SHUTDOWN_COMPLETE && finalStatus.hostJoined == 1 &&
-        finalStatus.registeredContexts == 0,
-        "final shutdown proves SDK release and collects the endpoint");
-    std::vector<LkgWorkerDisplaySnapshotItemV1> finalItems;
-    LkgWorkerDisplaySnapshotStatusV1 finalSnapshot = GetDisplaySnapshot(finalMetadata, finalItems);
-    Check(finalSnapshot.state == LKG_WORKER_CLOSED && finalSnapshot.cleanupFinished == 1 &&
-        lkg_worker_end_metadata_v1(finalMetadata) == 0,
-        "metadata close proof remains readable and releasable after explicit endpoint finalization");
-    Check(lkg_worker_pending_count() == 0 && g_hostInitializeCount.load() == 1 &&
-        g_hostUninitializeCount.load() == 1 && g_sessionDestroyCount.load() == 1,
-        "final shutdown uninitializes once and closes the single persistent session once");
-    Sleep(250);
-    Check(g_staticPresentAttempts.load(std::memory_order_acquire) == staticCallsBeforeFinalShutdown,
-        "final shutdown stops retained static presents");
+        finalStatus.registeredContexts == 0, "native preview final shutdown proves worker cleanup");
+}
+
+static void TestSourceCopyRetirementGate() {
+    void* handle = nullptr;
+    BeginContext(&handle);
+    auto texture = MakeTexture(DXGI_FORMAT_R8G8B8A8_UNORM, 32, 32);
+    auto callback = reinterpret_cast<void (*)(int, void*)>(lkg_worker_render_event_func());
+    lkg_worker_test_configure_source_copy(0, 0, LKG_WORKER_TEST_PRESENTER_FAILED, false, true);
+    void* token = MakeWorkerDrawData(handle, texture.Get(), 4, 4, 1.0f, 1.0f);
+    Check(token != nullptr, "source-retirement gate token admitted");
+    callback(0, token);
+
+    uint32_t flags = 0;
+    const ULONGLONG deadline = GetTickCount64() + 1000;
+    do {
+        Check(lkg_worker_test_get_source_copy_state(handle, 0, &flags) == 0,
+            "query source-copy slot while presenter rejects early");
+        if ((flags & LKG_WORKER_TEST_SOURCE_UNPROVEN) != 0) break;
+        Sleep(1);
+    } while (GetTickCount64() < deadline);
+    Check((flags & (LKG_WORKER_TEST_SLOT_IN_USE | LKG_WORKER_TEST_SOURCE_UNPROVEN |
+        LKG_WORKER_TEST_SOURCE_MUTEX_HELD)) == (LKG_WORKER_TEST_SLOT_IN_USE |
+        LKG_WORKER_TEST_SOURCE_UNPROVEN | LKG_WORKER_TEST_SOURCE_MUTEX_HELD),
+        "early presenter failure retains the source slot and keyed mutex until copy proof");
+    uintptr_t producerTexture = 0;
+    uintptr_t workerTexture = 0;
+    uint64_t generation = 0;
+    const int32_t slotIdentityResult = lkg_worker_test_get_transfer_slot_identity(handle,
+        &producerTexture, &workerTexture, &generation);
+    if (slotIdentityResult != 0 || producerTexture == 0 || workerTexture == 0 || generation == 0) {
+        std::fprintf(stderr, "source slot snapshot failed rc=%d producer=0x%llx worker=0x%llx generation=%llu flags=0x%x\n",
+            slotIdentityResult, static_cast<unsigned long long>(producerTexture),
+            static_cast<unsigned long long>(workerTexture), static_cast<unsigned long long>(generation), flags);
+    }
+    Check(slotIdentityResult == 0 && producerTexture != 0 && workerTexture != 0 && generation != 0,
+        "source slot identities remain available while retirement is unknown");
+    ComPtr<IDXGIKeyedMutex> producerMutex;
+    Check(SUCCEEDED(reinterpret_cast<IUnknown*>(producerTexture)->QueryInterface(IID_PPV_ARGS(&producerMutex))),
+        "query producer keyed mutex while worker owns source");
+    const HRESULT prematureAcquire = producerMutex->AcquireSync(0, 0);
+    if (prematureAcquire == WAIT_OBJECT_0) producerMutex->ReleaseSync(0);
+    Check(prematureAcquire == WAIT_TIMEOUT, "producer cannot reacquire source before the copy query proves retirement");
+    Check(lkg_worker_reset_transfer(handle) == -2,
+        "transfer reset is refused while source retirement and mutex ownership are unknown");
+    Check(lkg_worker_close(handle) == 0, "close request accepted while source copy query is held");
+    Check(lkg_worker_release(handle) == -2, "context release waits for source copy retirement proof");
+    Check(lkg_worker_collect_closed() == 0 && lkg_worker_pending_count() == 1,
+        "closed-context collection is blocked while source retirement remains unknown");
+
+    lkg_worker_test_configure_source_copy(0, 0, LKG_WORKER_TEST_PRESENTER_NORMAL, false, false);
+    Check(WaitState(handle, LKG_WORKER_FAULT, 5000) || WaitState(handle, LKG_WORKER_CLOSED, 5000),
+        "worker resolves its bounded presenter failure and drains the real source-copy query");
+    const ULONGLONG retirementDeadline = GetTickCount64() + 5000;
+    do {
+        Check(lkg_worker_test_get_source_copy_state(handle, 0, &flags) == 0,
+            "query source slot after releasing the held query");
+        if ((flags & (LKG_WORKER_TEST_SOURCE_UNPROVEN | LKG_WORKER_TEST_SOURCE_MUTEX_HELD)) == 0) break;
+        Sleep(1);
+    } while (GetTickCount64() < retirementDeadline);
+    Check((flags & (LKG_WORKER_TEST_SOURCE_UNPROVEN | LKG_WORKER_TEST_SOURCE_MUTEX_HELD)) == 0 &&
+        (flags & LKG_WORKER_TEST_SOURCE_COPY_COMPLETED) != 0,
+        "late real EVENT query proof returns source mutex and records copy completion");
+    Check(producerMutex->AcquireSync(0, 0) == WAIT_OBJECT_0,
+        "producer safely reacquires the source after late query proof");
+    producerMutex->ReleaseSync(0);
+    ReleaseAfterFault(handle, "source-retirement fault context releases after proof");
+    Check(lkg_worker_pending_count() == 0, "source-retirement context collection finishes after proof");
+}
+
+static void TestPreviewLeaseReturnWaitsForSourceCopyProof() {
+    LkgWorkerOutputOptionsV1 options{ sizeof(LkgWorkerOutputOptionsV1), 1,
+        LKG_WORKER_SUBPIXEL_AUTOMATIC, 0 };
+    void* lease = nullptr;
+    LkgWorkerPreviewLeaseIdentityV1 identity{};
+    Check(lkg_worker_acquire_preview_lease_with_output_v1("TEST-RUNTIME", "ViewWeave", 0,
+        g_device.Get(), &options, &lease, &identity) == LKG_WORKER_PREVIEW_LEASE_RESULT_OK && lease,
+        "lease source-proof fixture acquires an Automatic endpoint");
+    Check(WaitLeaseWorkerState(lease, LKG_WORKER_READY), "lease source-proof endpoint becomes ready");
+    auto texture = MakeTexture(DXGI_FORMAT_R8G8B8A8_UNORM, 32, 32);
+    auto callback = reinterpret_cast<void (*)(int, void*)>(lkg_worker_render_event_func());
+    lkg_worker_test_configure_source_copy(0, 0, LKG_WORKER_TEST_PRESENTER_OCCLUDED, false, true);
+    void* draw = nullptr;
+    Check(TryMakePreviewWorkerDrawData(lease, &identity, texture.Get(), 4, 4, 1.0f, 1.0f, &draw) ==
+        LKG_WORKER_PREVIEW_LEASE_RESULT_OK && draw, "lease admits source-proof fixture draw");
+    callback(0, draw);
+
+    uint32_t flags = 0;
+    const ULONGLONG deadline = GetTickCount64() + 1000;
+    do {
+        Check(lkg_worker_test_get_source_copy_state(lease, 0, &flags) == 0,
+            "lease source-copy state is observable while query is held");
+        if ((flags & LKG_WORKER_TEST_SOURCE_UNPROVEN) != 0) break;
+        Sleep(1);
+    } while (GetTickCount64() < deadline);
+    Check((flags & (LKG_WORKER_TEST_SLOT_IN_USE | LKG_WORKER_TEST_SOURCE_UNPROVEN |
+        LKG_WORKER_TEST_SOURCE_MUTEX_HELD)) == (LKG_WORKER_TEST_SLOT_IN_USE |
+        LKG_WORKER_TEST_SOURCE_UNPROVEN | LKG_WORKER_TEST_SOURCE_MUTEX_HELD),
+        "lease slot remains owned while the copy query is unproven");
+    Check(lkg_worker_request_preview_lease_return_v1(lease, &identity) ==
+        LKG_WORKER_PREVIEW_LEASE_RESULT_OK, "lease return request enters draining state");
+    Check(WaitPreviewLeaseState(lease, identity, LKG_WORKER_PREVIEW_LEASE_RETURNING),
+        "lease stays RETURNING while source-copy completion is unknown");
+    Check(lkg_worker_ack_preview_lease_return_v1(lease, &identity) ==
+        LKG_WORKER_PREVIEW_LEASE_RESULT_BUSY, "lease ACK is refused before source-copy proof");
+    Check(lkg_worker_test_get_source_copy_state(lease, 0, &flags) == 0 &&
+        (flags & LKG_WORKER_TEST_SOURCE_UNPROVEN) != 0,
+        "RETURNING lease still reports the unproven source slot");
+    Check(GetSubpixelStatus(lease).presentAccepted == 0,
+        "occluded frame never increments accepted-present count");
+
+    lkg_worker_test_configure_source_copy(0, 0, LKG_WORKER_TEST_PRESENTER_NORMAL, false, false);
+    Check(WaitPreviewLeaseState(lease, identity, LKG_WORKER_PREVIEW_LEASE_RETURNED_PROVEN),
+        "lease return becomes proven after real EVENT query completion");
+    Check(lkg_worker_test_get_source_copy_state(lease, 0, &flags) == 0 &&
+        (flags & (LKG_WORKER_TEST_SOURCE_UNPROVEN | LKG_WORKER_TEST_SOURCE_MUTEX_HELD)) == 0 &&
+        (flags & LKG_WORKER_TEST_SOURCE_COPY_COMPLETED) != 0,
+        "lease return proof follows completed source-copy query");
+    Check(lkg_worker_ack_preview_lease_return_v1(lease, &identity) ==
+        LKG_WORKER_PREVIEW_LEASE_RESULT_OK, "proven lease return can be acknowledged");
+    Check(lkg_worker_request_final_shutdown() == 0, "lease source-proof endpoint shutdown accepted");
+    LkgWorkerFinalShutdownStatusV1 finalStatus{};
+    finalStatus.structSize = sizeof(finalStatus);
+    finalStatus.version = 1;
+    Check(lkg_worker_wait_final_shutdown_v1(5000, &finalStatus) == 0 &&
+        finalStatus.state == LKG_WORKER_FINAL_SHUTDOWN_COMPLETE && finalStatus.registeredContexts == 0,
+        "lease source-proof fixture releases endpoint after ACK");
 }
 
 static void TestTransferResetResize() {
@@ -1388,21 +1164,19 @@ static void TestTransferResetResize() {
         Check(lkg_worker_poll(handle, &before) == 0, "reset cycle poll");
         const uint32_t firstTarget = before.completed + 1;
         auto first = MakeTexture(DXGI_FORMAT_R8G8B8A8_UNORM, 24, 24);
-        g_copyVerified.store(false);
-        auto data = lkg_worker_make_draw_data(handle, first.Get(), 4, 2, 1.0f, 1.0f);
+        auto data = MakeWorkerDrawData(handle, first.Get(), 4, 2, 1.0f, 1.0f);
         Check(data != nullptr, "reset first token");
         callback(0, data);
         Check(WaitCompleted(handle, firstTarget, 5000), "reset first completion");
-        Check(g_copyVerified.load(), "reset first readback");
+        Check(WaitSubpixelFrames(handle, firstTarget, firstTarget), "reset first native render retirement");
         Check(lkg_worker_reset_transfer(handle) == 0, "quiescent transfer reset");
         const uint32_t secondTarget = firstTarget + 1;
         auto second = MakeTexture(DXGI_FORMAT_R8G8B8A8_UNORM, 32, 16);
-        g_copyVerified.store(false);
-        data = lkg_worker_make_draw_data(handle, second.Get(), 4, 2, 1.0f, 1.0f);
+        data = MakeWorkerDrawData(handle, second.Get(), 4, 2, 1.0f, 1.0f);
         Check(data != nullptr, "reset second token");
         callback(0, data);
         Check(WaitCompleted(handle, secondTarget, 5000), "reset second completion");
-        Check(g_copyVerified.load(), "reset second readback");
+        Check(WaitSubpixelFrames(handle, secondTarget, secondTarget), "reset second native render retirement");
         Check(lkg_worker_reset_transfer(handle) == 0, "cycle transfer reset");
     }
     Check(lkg_worker_close(handle) == 0, "reset close");
@@ -1417,7 +1191,7 @@ static void TestCloseDrainAndExclusiveBegin() {
     void* second = lkg_worker_begin("test-runtime", "worker-transport-test", 0, nullptr);
     Check(second == nullptr, "exclusive begin");
     auto texture = MakeTexture(DXGI_FORMAT_R8G8B8A8_UNORM, 16, 16);
-    auto data = lkg_worker_make_draw_data(handle, texture.Get(), 2, 2, 1.0f, 1.0f);
+    auto data = MakeWorkerDrawData(handle, texture.Get(), 2, 2, 1.0f, 1.0f);
     Check(data != nullptr, "close pending token");
     Check(lkg_worker_close(handle) == 0, "close pending");
     auto callback = reinterpret_cast<void (*)(int, void*)>(lkg_worker_render_event_func());
@@ -1429,7 +1203,7 @@ static void TestCloseAllRetiresLateToken() {
     void* handle = nullptr;
     BeginContext(&handle);
     auto texture = MakeTexture(DXGI_FORMAT_R8G8B8A8_UNORM, 16, 16);
-    void* stale = lkg_worker_make_draw_data(handle, texture.Get(), 2, 2, 1.0f, 1.0f);
+    void* stale = MakeWorkerDrawData(handle, texture.Get(), 2, 2, 1.0f, 1.0f);
     Check(stale != nullptr, "close all token");
     Check(lkg_worker_pending_count() == 0, "ready worker is not shutdown pending");
     Check(lkg_worker_close_all() == 0, "close all");
@@ -1469,7 +1243,7 @@ static void TestCloseAllRetiresLateToken() {
     void* next = nullptr;
     BeginContext(&next);
     auto nextTexture = MakeTexture(DXGI_FORMAT_R8G8B8A8_UNORM, 16, 16);
-    void* nextToken = lkg_worker_make_draw_data(next, nextTexture.Get(), 2, 2, 1.0f, 1.0f);
+    void* nextToken = MakeWorkerDrawData(next, nextTexture.Get(), 2, 2, 1.0f, 1.0f);
     Check(nextToken != nullptr, "new token after collect");
     callback(0, stale);
     Check(lkg_worker_pending_count() == 0, "stale token did not affect new ready context");
@@ -1482,19 +1256,21 @@ static void TestFaultCases() {
     BeginContext(&handle);
     auto badFormat = MakeTexture(DXGI_FORMAT_B8G8R8A8_UNORM, 16, 16);
     auto callback = reinterpret_cast<void (*)(int, void*)>(lkg_worker_render_event_func());
-    void* data = lkg_worker_make_draw_data(handle, badFormat.Get(), 2, 2, 1.0f, 1.0f);
-    Check(data != nullptr, "bad format token");
-    callback(0, data);
-    Check(WaitState(handle, LKG_WORKER_FAULT, 2000), "bad format fault");
-    ReleaseAfterFault(handle, "bad format release");
+    void* data = MakeWorkerDrawData(handle, badFormat.Get(), 2, 2, 1.0f, 1.0f);
+    Check(data == nullptr, "non-RGBA8 source must be rejected before draw token creation");
+    LkgWorkerStatus rejectedFormatStatus{};
+    Check(lkg_worker_poll(handle, &rejectedFormatStatus) == 0 &&
+        rejectedFormatStatus.state == LKG_WORKER_READY && lkg_worker_pending_count() == 0,
+        "rejected source format must not enqueue work or fault the worker");
+    EndContext(handle);
 
     BeginContext(&handle);
     auto first = MakeTexture(DXGI_FORMAT_R8G8B8A8_UNORM, 16, 16);
     auto second = MakeTexture(DXGI_FORMAT_R8G8B8A8_UNORM, 32, 16);
-    data = lkg_worker_make_draw_data(handle, first.Get(), 2, 2, 1.0f, 1.0f);
+    data = MakeWorkerDrawData(handle, first.Get(), 2, 2, 1.0f, 1.0f);
     Check(data != nullptr, "resize first token");
     callback(0, data);
-    data = lkg_worker_make_draw_data(handle, second.Get(), 2, 2, 1.0f, 1.0f);
+    data = MakeWorkerDrawData(handle, second.Get(), 2, 2, 1.0f, 1.0f);
     Check(data != nullptr, "resize second token");
     callback(0, data);
     Check(WaitState(handle, LKG_WORKER_FAULT, 2000), "resize fault");
@@ -1504,29 +1280,29 @@ static void TestFaultCases() {
 static void TestInitializationAndDrawFault() {
     void* handle = nullptr;
     BeginContext(&handle);
-    g_drawFailure.store(true);
+    lkg_worker_test_configure_source_copy(0, 0, LKG_WORKER_TEST_PRESENTER_FAILED, false, false);
     auto texture = MakeTexture(DXGI_FORMAT_R8G8B8A8_UNORM, 16, 16);
-    auto data = lkg_worker_make_draw_data(handle, texture.Get(), 2, 2, 1.0f, 1.0f);
+    auto data = MakeWorkerDrawData(handle, texture.Get(), 2, 2, 1.0f, 1.0f);
     Check(data != nullptr, "draw failure token");
     auto callback = reinterpret_cast<void (*)(int, void*)>(lkg_worker_render_event_func());
     callback(0, data);
     Check(WaitState(handle, LKG_WORKER_FAULT, 2000), "draw failure fault");
     ReleaseAfterFault(handle, "draw failure release");
-    g_drawFailure.store(false);
+    lkg_worker_test_configure_source_copy(0, 0, LKG_WORKER_TEST_PRESENTER_NORMAL, false, false);
 }
 
 static void TestDrawExceptionDrain() {
     void* handle = nullptr;
     BeginContext(&handle);
     auto texture = MakeTexture(DXGI_FORMAT_R8G8B8A8_UNORM, 16, 16);
-    auto data = lkg_worker_make_draw_data(handle, texture.Get(), 2, 2, 1.0f, 1.0f);
+    auto data = MakeWorkerDrawData(handle, texture.Get(), 2, 2, 1.0f, 1.0f);
     Check(data != nullptr, "draw exception token");
-    g_drawThrow.store(true);
+    lkg_worker_test_configure_source_copy(0, 0, LKG_WORKER_TEST_PRESENTER_NORMAL, true, false);
     auto callback = reinterpret_cast<void (*)(int, void*)>(lkg_worker_render_event_func());
     callback(0, data);
     Check(WaitState(handle, LKG_WORKER_FAULT, 2000), "draw exception fault");
     ReleaseAfterFault(handle, "draw exception release");
-    g_drawThrow.store(false);
+    lkg_worker_test_configure_source_copy(0, 0, LKG_WORKER_TEST_PRESENTER_NORMAL, false, false);
 }
 
 static void TestCloseAndPollResponsiveness() {
@@ -1567,43 +1343,6 @@ static void TestWorkerMessagePump() {
 #endif
 
 #include "bridge_worker_host_affinity_test.cpp"
-
-static void VerifyWorkerTexture(void* texturePointer) {
-    ComPtr<ID3D11Texture2D> texture;
-    auto* unknown = static_cast<IUnknown*>(texturePointer);
-    Check(unknown && SUCCEEDED(unknown->QueryInterface(IID_PPV_ARGS(&texture))), "worker texture query");
-    ComPtr<ID3D11Device> workerDevice;
-    texture->GetDevice(&workerDevice);
-    Check(workerDevice && workerDevice.Get() != g_device.Get(), "worker device identity");
-    g_workerThread.store(GetCurrentThreadId());
-    D3D11_TEXTURE2D_DESC desc{};
-    texture->GetDesc(&desc);
-    Check(desc.Format == DXGI_FORMAT_R8G8B8A8_UNORM, "worker shared format normalized to UNORM");
-    desc.Usage = D3D11_USAGE_STAGING;
-    desc.BindFlags = 0;
-    desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-    desc.MiscFlags = 0;
-    ComPtr<ID3D11Texture2D> staging;
-    Check(SUCCEEDED(workerDevice->CreateTexture2D(&desc, nullptr, &staging)), "worker readback texture");
-    ComPtr<ID3D11DeviceContext> context;
-    workerDevice->GetImmediateContext(&context);
-    context->CopyResource(staging.Get(), texture.Get());
-    context->Flush();
-    D3D11_MAPPED_SUBRESOURCE mapped{};
-    Check(SUCCEEDED(context->Map(staging.Get(), 0, D3D11_MAP_READ, 0, &mapped)), "worker readback map");
-    const auto* pixel = static_cast<const uint8_t*>(mapped.pData);
-    uint8_t expected[3] = { g_expectedRed.load(), g_expectedGreen.load(), g_expectedBlue.load() };
-    if (g_testingD3D12.load()) {
-        std::lock_guard<std::mutex> lock(g_expectedD3D12Mutex);
-        Check(!g_expectedD3D12Pixels.empty(), "D3D12 expected pixel queue");
-        const auto next = g_expectedD3D12Pixels.front();
-        g_expectedD3D12Pixels.pop_front();
-        expected[0] = next[0]; expected[1] = next[1]; expected[2] = next[2];
-    }
-    Check(pixel[0] == expected[0] && pixel[1] == expected[1] && pixel[2] == expected[2], "worker readback content");
-    context->Unmap(staging.Get(), 0);
-    g_copyVerified.store(true);
-}
 
 int32_t lkg_bridge_load(const char*) { g_hostLoadCount.fetch_add(1); return 0; }
 void lkg_bridge_unload(void) { g_hostUnloadCount.fetch_add(1); }
@@ -1697,6 +1436,30 @@ int32_t lkg_bridge_get_display(uint32_t ordinal, LkgBridgeDisplayInfo* info) {
     *info = LkgBridgeDisplayInfo{ ordinal, 32u + ordinal, 32, 1.0f, 1.0f, 128, 128, 4, 4 };
     return 0;
 }
+extern "C" int32_t lkg_bridge_get_worker_subpixel_calibration_v1(uint32_t displayIndex,
+    LkgWorkerSubpixelCalibrationV1* calibration) {
+    if (!calibration || calibration->structSize != sizeof(LkgWorkerSubpixelCalibrationV1) ||
+        calibration->version != 1) return -1;
+    *calibration = LkgWorkerSubpixelCalibrationV1{};
+    calibration->structSize = sizeof(*calibration);
+    calibration->version = 1;
+    calibration->displayIndex = displayIndex;
+    calibration->nativeWidth = 32u + displayIndex;
+    calibration->nativeHeight = 32;
+    calibration->center = 0.5f;
+    calibration->pitch = 50.0f;
+    calibration->slope = -7.0f;
+    calibration->dpi = 254.0f;
+    calibration->flipX = 1.0f;
+    calibration->viewCone = 40.0f;
+    calibration->fringe = 0.0f;
+    calibration->invertedViews = 1;
+    calibration->cellPatternMode = 0;
+    calibration->cellCount = 0;
+    calibration->redIndex = 0;
+    calibration->blueIndex = 2;
+    return 0;
+}
 int32_t lkg_bridge_get_physical_display_v1(uint32_t, LkgBridgePhysicalDisplayInfoV1* info) {
     if (!info || info->structSize != sizeof(LkgBridgePhysicalDisplayInfoV1) || info->version != 1) return -1;
     if (g_testCalibrationMode.load() != 0) {
@@ -1743,20 +1506,9 @@ void* lkg_bridge_render_event_func(void) {
 }
 void* lkg_bridge_make_draw_data(uint64_t, void*, uint32_t, uint32_t, float, float) { return nullptr; }
 void* lkg_bridge_make_close_data(uint64_t session) { return new uint64_t(session); }
-int32_t lkg_bridge_smoke_draw(uint64_t session, void* texture, uint32_t columns, uint32_t rows, float aspect, float zoom) {
-    if (g_drawThrow.load()) throw std::runtime_error("stub draw exception");
-    if (g_drawFailure.load()) return -202;
-    VerifyWorkerTexture(texture);
-    g_lastDrawSession.store(session, std::memory_order_release);
-    g_lastDrawTextureIdentity.store(reinterpret_cast<uintptr_t>(texture), std::memory_order_release);
-    g_lastDrawColumns.store(columns, std::memory_order_release);
-    g_lastDrawRows.store(rows, std::memory_order_release);
-    g_lastDrawAspect.store(aspect, std::memory_order_release);
-    g_lastDrawZoom.store(zoom, std::memory_order_release);
-    g_drawEntered.store(true, std::memory_order_release);
-    while (g_holdDraw.load(std::memory_order_acquire)) Sleep(1);
-    ++g_drawCount;
-    return 0;
+int32_t lkg_bridge_smoke_draw(uint64_t, void*, uint32_t, uint32_t, float, float) {
+    g_sdkDrawCalls.fetch_add(1, std::memory_order_acq_rel);
+    return -202;
 }
 
 int32_t lkg_bridge_redraw_retained_session(uint64_t session, uint64_t endpointId, uint64_t generation) {
@@ -1770,11 +1522,7 @@ int32_t lkg_bridge_redraw_retained_session(uint64_t session, uint64_t endpointId
     g_staticPresentAspect.store(g_lastDrawAspect.load(std::memory_order_acquire), std::memory_order_release);
     g_staticPresentZoom.store(g_lastDrawZoom.load(std::memory_order_acquire), std::memory_order_release);
     g_staticPresentThread.store(GetCurrentThreadId(), std::memory_order_release);
-    if (g_drawCount.load(std::memory_order_acquire) == 0 || session != g_lastDrawSession.load(std::memory_order_acquire))
-        return 1;
-    if (g_staticPresentFailure.exchange(false, std::memory_order_acq_rel)) return -2;
-    g_staticPresentDraws.fetch_add(1, std::memory_order_acq_rel);
-    return 0;
+    return -202;
 }
 
 IUnknown* lkg_bridge_unity_device_addref() {
@@ -1925,13 +1673,13 @@ static void TestD3D12RingColors() {
         std::fprintf(stdout, "D3D12 ring test skipped: no hardware D3D12 adapter\n");
         return;
     }
-    g_testingD3D12.store(true);
     void* handle = lkg_worker_begin("test-runtime", "worker-transport-test", 0, g_testD3D12Device.Get());
     Check(handle != nullptr, "D3D12 worker begin");
     Check(WaitReady(handle), "D3D12 worker ready");
     auto callback = reinterpret_cast<void (*)(int, void*)>(lkg_worker_render_event_func());
     constexpr uint32_t targetDraws = 24;
     uint32_t accepted = 0;
+    std::array<uint8_t, 3> lastAcceptedRgb{};
     for (uint32_t sequence = 0; sequence < targetDraws * 4 && accepted < targetDraws; ++sequence) {
         const std::array<uint8_t, 3> rgb = {
             static_cast<uint8_t>(24 + (sequence * 37) % 208),
@@ -1939,12 +1687,8 @@ static void TestD3D12RingColors() {
             static_cast<uint8_t>(16 + (sequence * 83) % 224)
         };
         auto texture = MakeD3D12PatternTexture(rgb);
-        void* data = lkg_worker_make_draw_data(handle, texture.Get(), 4, 3, 1.0f, 1.0f);
+        void* data = MakeWorkerDrawData(handle, texture.Get(), 4, 4, 1.0f, 1.0f);
         if (!data) continue;
-        {
-            std::lock_guard<std::mutex> lock(g_expectedD3D12Mutex);
-            g_expectedD3D12Pixels.push_back(rgb);
-        }
         LkgWorkerStatus before{};
         Check(lkg_worker_poll(handle, &before) == 0, "D3D12 worker pre-submit poll");
         callback(0, data);
@@ -1952,29 +1696,36 @@ static void TestD3D12RingColors() {
         Check(lkg_worker_poll(handle, &after) == 0, "D3D12 worker post-submit poll");
         if (after.submitted > before.submitted) {
             ++accepted;
+            lastAcceptedRgb = rgb;
             if (accepted % 3 == 0) Check(WaitCompleted(handle, accepted, 5000), "D3D12 ring batch completion");
-        } else {
-            std::lock_guard<std::mutex> lock(g_expectedD3D12Mutex);
-            if (!g_expectedD3D12Pixels.empty()) g_expectedD3D12Pixels.pop_back();
         }
     }
     Check(accepted == targetDraws, "D3D12 ring accepted sequence");
     Check(WaitCompleted(handle, targetDraws, 5000), "D3D12 ring final completion");
+    Check(WaitSubpixelFrames(handle, targetDraws, targetDraws), "D3D12 producer frames reach native presenter");
+    const auto ringPixels = ReadbackPresenter(handle, 32, 32);
+    CheckUniformPresenterColor(ringPixels, lastAcceptedRgb, 1,
+        "D3D12 ring final image matches the last accepted producer color");
     Check(lkg_worker_reset_transfer(handle) == 0, "D3D12 ring drained reset");
     EndContext(handle);
-    handle = lkg_worker_begin("test-runtime", "worker-transport-test", 0, g_testD3D12Device.Get());
+
+    const LkgWorkerOutputOptionsV1 d3d12LinearOptions{ sizeof(LkgWorkerOutputOptionsV1), 1,
+        LKG_WORKER_SUBPIXEL_AUTOMATIC, 1 };
+    handle = lkg_worker_begin_with_output_v1("test-runtime", "worker-transport-test", 0,
+        g_testD3D12Device.Get(), &d3d12LinearOptions);
     Check(handle != nullptr, "D3D12 typeless worker begin");
     Check(WaitReady(handle), "D3D12 typeless worker ready");
-    const std::array<uint8_t, 3> typelessRgb = { 63, 127, 191 };
+    const std::array<uint8_t, 3> typelessRgb = { 128, 64, 32 };
     auto typelessTexture = MakeD3D12PatternTexture(typelessRgb, DXGI_FORMAT_R8G8B8A8_TYPELESS);
-    void* typelessData = lkg_worker_make_draw_data(handle, typelessTexture.Get(), 4, 3, 1.0f, 1.0f);
+    void* typelessData = MakeWorkerDrawDataWithEncoding(handle, typelessTexture.Get(), 4, 4, 1.0f, 1.0f,
+        LKG_WORKER_SOURCE_ENCODING_SRGB);
     Check(typelessData != nullptr, "D3D12 typeless token");
-    {
-        std::lock_guard<std::mutex> lock(g_expectedD3D12Mutex);
-        g_expectedD3D12Pixels.push_back(typelessRgb);
-    }
     callback(0, typelessData);
     Check(WaitCompleted(handle, 1, 5000), "D3D12 typeless completion");
+    Check(WaitSubpixelFrames(handle, 1, 1), "D3D12 typeless SRGB bytes reach native output");
+    const auto typelessPixels = ReadbackPresenter(handle, 32, 32);
+    CheckUniformPresenterColor(typelessPixels, typelessRgb, 1,
+        "D3D12 Linear plus explicit SRGB preserves uniform midtone output values");
     Check(lkg_worker_reset_transfer(handle) == 0, "D3D12 typeless drained reset");
     EndContext(handle);
     handle = lkg_worker_begin("test-runtime", "worker-transport-test", 0, g_testD3D12Device.Get());
@@ -1982,12 +1733,8 @@ static void TestD3D12RingColors() {
     Check(WaitReady(handle), "D3D12 gate worker ready");
     const std::array<uint8_t, 3> gatedRgb = { 91, 143, 207 };
     auto gatedTexture = MakeD3D12PatternTexture(gatedRgb);
-    void* gatedData = lkg_worker_make_draw_data(handle, gatedTexture.Get(), 4, 3, 1.0f, 1.0f);
+    void* gatedData = MakeWorkerDrawData(handle, gatedTexture.Get(), 4, 4, 1.0f, 1.0f);
     Check(gatedData != nullptr, "D3D12 gated token");
-    {
-        std::lock_guard<std::mutex> lock(g_expectedD3D12Mutex);
-        g_expectedD3D12Pixels.push_back(gatedRgb);
-    }
     g_testD3D12GateProducer.store(true);
     lkg_worker_test_delay_d3d12_consumer(8);
     const ULONGLONG callbackStart = GetTickCount64();
@@ -2013,7 +1760,7 @@ static void TestD3D12RingColors() {
     Check(WaitReady(handle), "D3D12 consumer timeout worker ready");
     Check(lkg_worker_test_set_d3d12_timeout(handle, 40) == 0, "D3D12 consumer timeout setup");
     auto consumerTimeoutTexture = MakeD3D12PatternTexture({ 107, 149, 211 });
-    void* consumerTimeoutData = lkg_worker_make_draw_data(handle, consumerTimeoutTexture.Get(), 4, 3, 1.0f, 1.0f);
+    void* consumerTimeoutData = MakeWorkerDrawData(handle, consumerTimeoutTexture.Get(), 4, 4, 1.0f, 1.0f);
     Check(consumerTimeoutData != nullptr, "D3D12 consumer timeout token");
     lkg_worker_test_delay_d3d12_consumer(80);
     callback(0, consumerTimeoutData);
@@ -2038,7 +1785,7 @@ static void TestD3D12RingColors() {
     Check(WaitReady(handle), "D3D12 timeout worker ready");
     Check(lkg_worker_test_set_d3d12_timeout(handle, 40) == 0, "D3D12 test timeout setup");
     auto timeoutTexture = MakeD3D12PatternTexture({ 113, 157, 201 });
-    void* timeoutData = lkg_worker_make_draw_data(handle, timeoutTexture.Get(), 4, 3, 1.0f, 1.0f);
+    void* timeoutData = MakeWorkerDrawData(handle, timeoutTexture.Get(), 4, 4, 1.0f, 1.0f);
     Check(timeoutData != nullptr, "D3D12 timeout token");
     g_testD3D12GateValue.store(3);
     g_testD3D12GateProducer.store(true);
@@ -2061,7 +1808,7 @@ static void TestD3D12RingColors() {
     Check(handle != nullptr, "D3D12 generation worker begin");
     Check(WaitReady(handle), "D3D12 generation worker ready");
     auto staleTexture = MakeD3D12PatternTexture({ 71, 112, 183 });
-    void* staleData = lkg_worker_make_draw_data(handle, staleTexture.Get(), 4, 3, 1.0f, 1.0f);
+    void* staleData = MakeWorkerDrawData(handle, staleTexture.Get(), 4, 4, 1.0f, 1.0f);
     Check(staleData != nullptr, "D3D12 generation token");
     callback(0, staleData);
     Check(WaitState(handle, LKG_WORKER_FAULT, 2000), "D3D12 generation mismatch fault");
@@ -2072,7 +1819,7 @@ static void TestD3D12RingColors() {
         Check(unknownHandle != nullptr, "D3D12 unknown worker begin");
         Check(WaitReady(unknownHandle), "D3D12 unknown worker ready");
         auto unknownTexture = MakeD3D12PatternTexture({ 137, 173, 219 });
-        void* unknownData = lkg_worker_make_draw_data(unknownHandle, unknownTexture.Get(), 4, 3, 1.0f, 1.0f);
+        void* unknownData = MakeWorkerDrawData(unknownHandle, unknownTexture.Get(), 4, 4, 1.0f, 1.0f);
         Check(unknownData != nullptr, "D3D12 unknown token");
         g_testD3D12SubmitOverride.store(returnedValue);
         g_testD3D12SubmitOverrideActive.store(true);
@@ -2090,7 +1837,34 @@ static void TestD3D12RingColors() {
     };
     verifyUnknownSubmission(0, "worker-transport-test");
     verifyUnknownSubmission(UINT64_MAX, "worker-transport-test");
-    g_testingD3D12.store(false);
+    handle = lkg_worker_begin("test-runtime", "worker-transport-test", 0, g_testD3D12Device.Get());
+    Check(handle != nullptr && WaitReady(handle), "D3D12 outer-exception worker ready");
+    auto exceptionTexture = MakeD3D12PatternTexture({ 109, 147, 203 });
+    void* exceptionData = MakeWorkerDrawData(handle, exceptionTexture.Get(), 4, 4, 1.0f, 1.0f);
+    Check(exceptionData != nullptr, "D3D12 outer-exception token accepted");
+    g_testD3D12GateValue.store(4, std::memory_order_release);
+    g_testD3D12GateProducer.store(true, std::memory_order_release);
+    lkg_worker_test_throw_after_worker_dequeue();
+    callback(0, exceptionData);
+    g_testD3D12GateProducer.store(false, std::memory_order_release);
+    Check(WaitState(handle, LKG_WORKER_FAULT, 2000), "in-flight D3D12 job reaches the worker outer catch");
+    uint32_t ownershipFlags = 0;
+    const ULONGLONG ownershipDeadline = GetTickCount64() + 1000;
+    do {
+        Check(lkg_worker_test_get_source_copy_state(handle, 0, &ownershipFlags) == 0,
+            "query D3D12 ownership after outer catch");
+        if ((ownershipFlags & LKG_WORKER_TEST_D3D12_OWNERSHIP_UNPROVEN) != 0) break;
+        Sleep(1);
+    } while (GetTickCount64() < ownershipDeadline);
+    Check((ownershipFlags & LKG_WORKER_TEST_D3D12_OWNERSHIP_UNPROVEN) != 0,
+        "outer catch retains the producer fence and D3D12 slot without proof");
+    Check(lkg_worker_reset_transfer(handle) != 0, "transfer reset is rejected for the faulted unproven D3D12 slot");
+    Check(lkg_worker_release(handle) == -2 && lkg_worker_collect_closed() == 0 &&
+        lkg_worker_pending_count() == 1,
+        "release and collection stay blocked while the producer fence is gated");
+    Check(SUCCEEDED(g_testD3D12GateFence->Signal(4)), "signal late D3D12 producer completion proof");
+    ReleaseAfterFault(handle, "outer-catch D3D12 resources release after late producer fence proof");
+    Check(lkg_worker_pending_count() == 0, "outer-catch context is collected after late fence proof");
     g_testD3D12Device.Reset();
     g_testD3D12Queue.Reset();
     g_testD3D12Fence.Reset();
@@ -2169,6 +1943,16 @@ int main(int argc, char** argv) {
         std::fprintf(stdout, "worker_preview_lease_test pass\n");
         return 0;
     }
+    if (argc == 2 && std::strcmp(argv[1], "--source-copy-retirement-only") == 0) {
+        TestSourceCopyRetirementGate();
+        std::fprintf(stdout, "worker_source_copy_retirement_test pass\n");
+        return 0;
+    }
+    if (argc == 2 && std::strcmp(argv[1], "--lease-source-copy-retirement-only") == 0) {
+        TestPreviewLeaseReturnWaitsForSourceCopyProof();
+        std::fprintf(stdout, "worker_lease_source_copy_retirement_test pass\n");
+        return 0;
+    }
     TestD3D12RingColors();
     TestCachedPhysicalDisplayCalibration();
     TestMetadataOnlyRefreshLifecycle();
@@ -2176,6 +1960,8 @@ int main(int argc, char** argv) {
     TestActiveWorkerDisplayRefreshDoesNotMutateRenderStatus();
     TestPreviewPauseResumePreservesSessionAndDrains();
     TestPreviewPauseVisibilityFailuresDoNotAcknowledge();
+    TestWindowPollFailureFaultsAndDrains();
+    TestSourceCopyRetirementGate();
     TestTypelessSource();
     TestTransferResetResize();
     TestBoundedCompletion();
@@ -2191,6 +1977,10 @@ int main(int argc, char** argv) {
     TestWorkerMessagePump();
     TestPersistentHostIdleQuit();
 #endif
-    std::fprintf(stdout, "worker_transport_test pass draws=%u\n", g_drawCount.load());
+    Check(g_sdkDrawCalls.load(std::memory_order_acquire) == 0 && g_drawCount.load() == 0 &&
+        g_staticPresentAttempts.load(std::memory_order_acquire) == 0 &&
+        g_visibilityCalls.load(std::memory_order_acquire) == 0,
+        "native worker path never falls back to SDK draw or retained-session presentation");
+    std::fprintf(stdout, "worker_transport_test pass\n");
     return 0;
 }

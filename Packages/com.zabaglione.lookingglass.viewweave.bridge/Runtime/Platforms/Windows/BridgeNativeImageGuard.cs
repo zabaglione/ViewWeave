@@ -2,6 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
+#if UNITY_EDITOR_WIN
+using System.Runtime.InteropServices;
+#endif
 #if UNITY_EDITOR
 using UnityEditor;
 using UnityEditor.PackageManager;
@@ -33,6 +36,13 @@ namespace ViewWeave
     internal static class BridgeNativeImageGuard
     {
         const string TargetModuleName = "lookingglass_bridge_shim.dll";
+#if UNITY_EDITOR_WIN
+        const uint GetModuleHandleUnchangedRefcount = 0x00000002;
+        const uint GetModuleHandleFromAddress = 0x00000004;
+
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, EntryPoint = "GetModuleHandleExW", SetLastError = true)]
+        static extern bool GetModuleHandleExW(uint flags, IntPtr address, out IntPtr moduleHandle);
+#endif
 #if UNITY_EDITOR
         const string SessionFingerprintKey = "ViewWeave.Bridge.NativeImageFingerprint";
         static string cachedExpectedPath = string.Empty;
@@ -119,6 +129,57 @@ namespace ViewWeave
             error = string.Empty;
             return true;
 #endif
+        }
+
+        internal static bool TryValidateRenderEventFunctionAddress(IntPtr functionAddress,
+            BridgeNativeModuleIdentity identity, out string error)
+        {
+            error = string.Empty;
+            if (functionAddress == IntPtr.Zero)
+            {
+                error = "The Bridge render event function address is null.";
+                return false;
+            }
+            if (!identity.IsKnown)
+            {
+                error = "The Bridge render event function has no validated package image identity.";
+                return false;
+            }
+#if UNITY_EDITOR_WIN
+            if (!GetModuleHandleExW(GetModuleHandleFromAddress | GetModuleHandleUnchangedRefcount,
+                    functionAddress, out IntPtr resolvedBase) || resolvedBase == IntPtr.Zero)
+            {
+                error = "The Bridge render event function owner could not be resolved (Win32 error " +
+                    Marshal.GetLastWin32Error() + ").";
+                return false;
+            }
+            return TryValidateResolvedAddressBase(functionAddress, resolvedBase, identity, out error);
+#else
+            error = "Resolving a Bridge native function owner is supported only in the Windows Editor.";
+            return false;
+#endif
+        }
+
+        internal static bool TryValidateResolvedAddressBase(IntPtr functionAddress, IntPtr resolvedBase,
+            BridgeNativeModuleIdentity identity, out string error)
+        {
+            error = string.Empty;
+            if (functionAddress == IntPtr.Zero || resolvedBase == IntPtr.Zero)
+            {
+                error = "The Bridge render event function address or resolved image base is null.";
+                return false;
+            }
+            if (!identity.IsKnown)
+            {
+                error = "The Bridge render event function has no validated package image identity.";
+                return false;
+            }
+            if (resolvedBase != identity.BaseAddress)
+            {
+                error = RestartRequired("The Bridge render event function belongs to a different native image");
+                return false;
+            }
+            return true;
         }
 
         internal static bool TryValidateOwnerIdentity(BridgeNativeModuleIdentity identity, out string error)

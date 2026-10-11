@@ -98,7 +98,7 @@ void UNITY_INTERFACE_API DisplayDeviceEvent(UnityGfxDeviceEventType event) {
     });
 }
 template<class T> T Symbol(void* module, const char* name) { return reinterpret_cast<T>(dlsym(module, name)); }
-bool ReadProfile(const char* path, const char* name, uint32_t ordinal,
+bool ReadProfile(const char* path, const char* name, uint32_t ordinal, uint32_t requestedMode,
     LkgMetalDisplayInfoV3* profile, long* x, long* y) {
     auto* result = &profile->calibration;
     if (metadataFault) { lastError = "Bridge metadata shutdown is unproven; restart Unity before opening another session"; return false; }
@@ -149,13 +149,18 @@ bool ReadProfile(const char* path, const char* name, uint32_t ordinal,
                     ok = false; lastError = "Invalid calibration: display dimensions or index exceed the native ABI";
                 }
                 result->display.width = static_cast<uint32_t>(width); result->display.height = static_cast<uint32_t>(height);
-                profile->cellPatternMode = mode; profile->cellCount = cells;
-                if (ok) if (const char* error = lkg::metal::ValidateCalibration(*result, 0, 0, fringe,
-                    profile->redIndex, profile->blueIndex)) { ok = false; lastError = error; }
-                if (ok) if (const char* error = lkg::metal::ValidateCellPattern(mode,cells)) { ok = false; lastError = error; }
-                if (ok && cells > 0) ok = lkg::metal::ReadBridgeCellTable(*profile,*x,*y,lastError);
-                if (ok) if (const char* error = lkg::metal::ValidateCalibration(*result,mode,cells,fringe,
-                    profile->redIndex,profile->blueIndex,profile->cells)) { ok = false; lastError = error; }
+                const bool classicRgb = requestedMode == 1;
+                profile->cellPatternMode = classicRgb ? 0 : mode;
+                profile->cellCount = classicRgb ? 0 : cells;
+                if (ok && !classicRgb) {
+                    if (const char* error = lkg::metal::ValidateCellPattern(mode, cells)) { ok = false; lastError = error; }
+                    if (ok && cells > 0) ok = lkg::metal::ReadBridgeCellTable(*profile, *x, *y, lastError);
+                }
+                if (ok) if (const char* error = lkg::metal::ValidateCalibration(*result,
+                    profile->cellPatternMode, profile->cellCount, fringe,
+                    profile->redIndex, profile->blueIndex, profile->cells, requestedMode)) {
+                    ok = false; lastError = error;
+                }
             }
         }
         if (!ok && lastError.empty()) lastError = "Looking Glass display was not found; check Bridge and Desktop Mode";
@@ -236,10 +241,11 @@ void UNITY_INTERFACE_API Render(int, void* data) {
 }
 }
 
-static uint64_t OpenDisplay(const char* path, const char* name, uint32_t ordinal,
+static uint64_t OpenDisplay(const char* path, const char* name, uint32_t ordinal, uint32_t requestedMode,
     LkgMetalDisplayInfoV3* profile) {
     std::lock_guard<std::mutex> lock(sessionMutex);
     lastError.clear();
+    if (requestedMode > 2) { lastError = "Invalid output mode: expected Automatic, Classic RGB, or Calibrated Cells"; return 0; }
     if (!pthread_main_np() || path == nullptr || path[0] != '/' || name == nullptr) {
         lastError = "Metal display open requires the main thread, an absolute runtime path and application name"; return 0;
     }
@@ -255,7 +261,7 @@ static uint64_t OpenDisplay(const char* path, const char* name, uint32_t ordinal
         profile->calibration = {}; profile->redIndex = profile->blueIndex = 0;
         profile->cellPatternMode = profile->cellCount = 0;
         for (auto& cell : profile->cells) cell = {};
-        if (!ReadProfile(path, name, ordinal, profile, &x, &y)) return 0;
+        if (!ReadProfile(path, name, ordinal, requestedMode, profile, &x, &y)) return 0;
         auto* info = &profile->calibration;
         NSScreen* selected = nil;
         for (NSScreen* screen in NSScreen.screens) {
@@ -308,7 +314,11 @@ static uint64_t OpenDisplay(const char* path, const char* name, uint32_t ordinal
     }
 }
 extern "C" uint64_t lkg_metal_display_open_v3(const char* path, const char* name, uint32_t ordinal,
-    LkgMetalDisplayInfoV3* info) { return OpenDisplay(path, name, ordinal, info); }
+    LkgMetalDisplayInfoV3* info) { return OpenDisplay(path, name, ordinal, 0, info); }
+extern "C" uint64_t lkg_metal_display_open_v4(const char* path, const char* name, uint32_t ordinal,
+    uint32_t requestedMode, LkgMetalDisplayInfoV3* info) {
+    return OpenDisplay(path, name, ordinal, requestedMode, info);
+}
 extern "C" int32_t lkg_metal_display_submit(uint64_t sessionId, void* texture, void** data) {
     if (texture == nullptr || data == nullptr) return -1;
     std::lock_guard<std::mutex> lock(sessionMutex);

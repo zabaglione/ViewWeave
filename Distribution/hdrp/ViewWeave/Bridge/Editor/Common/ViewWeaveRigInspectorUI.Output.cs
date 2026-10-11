@@ -47,9 +47,7 @@ namespace ViewWeave.Editor
             subpixelModeField = new EnumField("Subpixel Processing", value) { name = "subpixelMode" };
             subpixelModeField.RegisterValueChangedCallback(OnSubpixelModeChanged);
             foldout.Add(subpixelModeField);
-            foldout.Add(new HelpBox(metalOutput != null
-                ? "Automatic uses Bridge calibration. Classic RGB forces evenly spaced RGB for diagnostics. Calibrated Cells requires a Bridge cell table. Stop output and close preview before changing this setting."
-                : "This setting is saved with the Rig. Windows Bridge-managed output currently supports Automatic only; manual modes report an error when device output starts.", HelpBoxMessageType.Info));
+            foldout.Add(new HelpBox("Automatic uses calibrated subpixel cells when available and otherwise uses the default RGB/BGR pattern. Classic RGB forces evenly spaced RGB. Calibrated Cells requires a valid cell table and fails to start when calibration is unavailable. Stop output and close preview before changing this setting.", HelpBoxMessageType.Info));
             RefreshSubpixelMode();
         }
 

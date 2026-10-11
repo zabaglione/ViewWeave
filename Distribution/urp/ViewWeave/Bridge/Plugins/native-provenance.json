@@ -1,35 +1,202 @@
 {
   "artifact": "lookingglass_bridge_shim.dll",
-  "sha256": "4D28B54BC09FFCF0BC2E6F9E645E9A04C6EF59210C79BB784872655DA1837F7A",
-  "nativeSourceHashes": null,
+  "artifactBuildCMakeListsSha256": "3BCDEB35718E326B186AC3463CFA1E538785B788162ED2E5EAD2157AB034DCBF",
+  "artifactSha256": "C864A363AC441C77497D4302FF25CB48FA2D6EA194B6FB8A73BAE49DC522FEE2",
+  "artifactSizeBytes": 302080,
+  "buildDirectory": ".local/windows-subpixel-native-20261011/build",
+  "ciValidation": "Historical CI for commit 054fffeb817ac8daae6ff68ed567ec7e69fe4798: workflow run 37705337066 and PR run 37705340768 succeeded with 5/5 jobs each. The jobs covered static checks, Linux portable/unsupported ABI, Windows transport, Windows fake regressions with Unity API v7, and the macOS ARM64 shim build/link plus native contract tests. These runs predate the current uncommitted final-shutdown source and do not validate or replace the current locally built Windows v8 DLL. No Unity runtime, official Bridge SDK load, physical display, or Metal consumer lifetime validation was performed.",
   "compilerVersion": null,
-  "targetArchitecture": "x64",
+  "compilerVersionNote": "Exact cl.exe version was not retained; current Windows build records MSBuild 17.14.23+b0019275e.",
   "configuration": "Release",
-  "pluginApiUnityVersion": "6000.6.4f1",
-  "buildDirectory": ".local/windows-unity-crash-20261011/fix-validation/build-vs2022-x64-release",
-  "generator": "Visual Studio 17 2022",
-  "independentCTest": "Native Release CTest passed 15/15; transport-only CTest passed 11/11. Test evidence is limited to fake Bridge/test-adapter coverage.",
+  "currentArtifactValidation": {
+    "artifactSha256": "C864A363AC441C77497D4302FF25CB48FA2D6EA194B6FB8A73BAE49DC522FEE2",
+    "artifactSizeBytes": 302080,
+    "buildDirectory": ".local/windows-subpixel-native-20261011/build",
+    "hardwareValidation": "The Native presenter executable passed 25 WARP pixel-oracle cases and 6 calibration boundaries; that WARP run did not use a physical display or official Bridge runtime. Separately, 12 Windows Editor device fixture conditions passed under the current package artifact; see currentWindowsRuntimeValidation.",
+    "nativeTestsPassed": 19,
+    "nativeTestsTotal": 19,
+    "sourceBaseCommit": "e777b34763b25e1673e5dc0188c812cda69cbcc0",
+    "testEvidencePath": ".local/windows-subpixel-native-20261011/build/Testing/Temporary/LastTest.log",
+    "transportOnlyTestsPassed": null,
+    "transportOnlyTestsTotal": null,
+    "unityEditorDeviceConditionsPassed": 12,
+    "unityEditorDeviceConditionsTotal": 12,
+    "unityEditorEvidencePath": ".local/windows-subpixel-validation-20261011/final-summary.json"
+  },
+  "currentCMakeListsSha256": "3BCDEB35718E326B186AC3463CFA1E538785B788162ED2E5EAD2157AB034DCBF",
+  "currentWindowsReleaseBuild": {
+    "artifactSha256": "C864A363AC441C77497D4302FF25CB48FA2D6EA194B6FB8A73BAE49DC522FEE2",
+    "artifactSizeBytes": 302080,
+    "buildCommand": "cmake --build .local/windows-subpixel-native-20261011/build --config Release --parallel 8",
+    "buildDirectory": ".local/windows-subpixel-native-20261011/build",
+    "compiler": "MSVC via Visual Studio 17 2022 Build Tools",
+    "compilerVersion": null,
+    "compilerVersionNote": "Exact cl.exe version was not retained; MSBuild 17.14.23+b0019275e is recorded.",
+    "configuration": "Release",
+    "dllSha256": "C864A363AC441C77497D4302FF25CB48FA2D6EA194B6FB8A73BAE49DC522FEE2",
+    "generatedAt": "2026-10-11T03:28:02Z",
+    "generatedEmbeddedShaderHeaderSha256": {
+      ".local/windows-subpixel-native-20261011/build/lookingglass_bridge_shim_manual_subpixel_shaders/manual_subpixel_presenter_pixel_shader.h": "4101973B56B9624791803222BB9898522FAC4ABA8C5DF0D0C9FFC033FE3404A4",
+      ".local/windows-subpixel-native-20261011/build/lookingglass_bridge_shim_manual_subpixel_shaders/manual_subpixel_presenter_vertex_shader.h": "A150E8E54D911F14DF53A0C3D1A46F82E74550FC980CBFC9E6C1A5AF9A7B7F22",
+      ".local/windows-subpixel-native-20261011/build/lookingglass_bridge_shim_stable_sdk_input_shaders/stable_sdk_input_d3d11_pixel_shader.h": "A452E8EE98B3ABE9DACE4A73778BBBF7EF4EDE0FA76ECA23453753D365994035",
+      ".local/windows-subpixel-native-20261011/build/lookingglass_bridge_shim_stable_sdk_input_shaders/stable_sdk_input_d3d11_vertex_shader.h": "C59BEBE17EF89273BC3441875D8B26828CD3EA61D7581F7A0619E93CF76C6E93"
+    },
+    "generator": "Visual Studio 17 2022",
+    "localCTest": {
+      "d3d12HardwareSkipMessages": 0,
+      "elapsedSeconds": 17.42,
+      "evidencePath": ".local/windows-subpixel-native-20261011/build/Testing/Temporary/LastTest.log",
+      "failed": 0,
+      "note": "All 19 registered Release CTests passed. The worker transport executable completed without a D3D12 adapter skip message. Presenter pixel-oracle WARP coverage is a separate executable result, not additional CTest entries.",
+      "passed": 19,
+      "presenterCalibrationBoundaryChecks": 6,
+      "presenterGpuOracleCases": 25,
+      "presenterGpuOracleEvidencePath": ".local/windows-subpixel-native-20261011/artifacts/presenter-warp-20261011",
+      "total": 19
+    },
+    "msbuildVersion": "17.14.23+b0019275e",
+    "nativeSourceHashes": {
+      "Native/CMakeLists.txt": "3BCDEB35718E326B186AC3463CFA1E538785B788162ED2E5EAD2157AB034DCBF",
+      "Native/bridge_d3d12_internal.h": "6B06A4792E547BDAE65EE91908CB565ED5FA1B89AD5C6E7A6EE627D6933FE154",
+      "Native/bridge_shim.h": "86C0AE009031C6894A0FEDC18AE38C80AE8D2A920A0D2FA10F60A046E474013D",
+      "Native/bridge_worker_common.h": "48ACE99B1F5C90842FB2E6B5AE6021AD835891486BC65C3969C2427F5DB96FD4",
+      "Native/bridge_worker_transport.h": "7B3466730CBFE4FDFC623C8A5BB9C20814B14CF9E77C06812F006CB68F57219A",
+      "Native/common/bridge_metadata.cpp": "3D0DCDB30963128E79EA7909EECE671CFF1F56D83E9AA04FF23BA5D11E200A7C",
+      "Native/common/bridge_metadata.h": "A0FBFCFFDE6E5C876B07EEA941ECE9669FA1049A40440EB84C928F5106C90487",
+      "Native/common/bridge_worker_common.cpp": "D57B45EA0B65FA2B3BD953853529E5005A629321D035C090C1C3D6C620C9E39B",
+      "Native/common/subpixel_calibration.cpp": "41F9E19864A80CD3ADC7833DA634736C810A71BF015FDA24E9F18C726DA1FF88",
+      "Native/common/subpixel_calibration.h": "4FCCE2FC065D3D7EACA0A860AFF0222B3913C89F370B34F128E55A12D4ED8092",
+      "Native/platform/windows/backends/d3d11_backend.inc": "95044FE8598F080631E306C70785513A44333B93F9CD3D2A317CA9100ED1208C",
+      "Native/platform/windows/backends/d3d11_d3d12_interop.inc": "FDF55A669CE099FA48B95683678ABE7F51592AA1B9E55BF097B90482F7398B28",
+      "Native/platform/windows/backends/d3d12_backend.inc": "60A158CFE6184299DC8046730B62CF93B89F3C2E424731F2C1BD06F5369F7747",
+      "Native/platform/windows/bridge_shim_windows.cpp": "B64D83423E0B286F82B7B47E3EB8D4D2009FDF6B4548DDDF7DDC68B921DCB472",
+      "Native/platform/windows/bridge_subpixel_metadata.cpp": "0CD09CA48EBF4D184D36458E49B0526E299D86993CD2B74D873002517AF102C2",
+      "Native/platform/windows/bridge_subpixel_metadata.h": "F18F6E1F094F30BCB05029D7E351FFF3D041E3F6562A64C1984597CA23CDBD7F",
+      "Native/platform/windows/bridge_worker_transport_windows.cpp": "B7280A1F0A1E27E94AB7EDE6FD8BCDA7BC0E30A99ABC5A2FC7AFEC2C6A615DFE",
+      "Native/platform/windows/manual_subpixel_presenter.cpp": "471F15765850CF2BA87CA31F8EA38A57057EB7B840913D919A745690DC67CC8D",
+      "Native/platform/windows/manual_subpixel_presenter.h": "40C45995FD9E05FAE48E463C886E9CD80051329D731472277678EE6CD3BDDB91",
+      "Native/platform/windows/manual_subpixel_presenter.hlsl": "DF58E339163CD361AE45F639EB75BA522D6E785700C96E695A901BBA015B310B",
+      "Native/platform/windows/stable_sdk_input_d3d11.cpp": "FF1BDCCEFC961168DAD81A9CC18CF8C68232C22CE33CFAC575F0901A2C7BB92F",
+      "Native/platform/windows/stable_sdk_input_d3d11.h": "77EEB054980ED87C70B99CADF909172BB6443942CA72579EC303D79EB17BFCD3",
+      "Native/platform/windows/stable_sdk_input_d3d11.hlsl": "03A54DB6F092BA48547014B8C15202313850B3CC0D24E5261CDF741F1CBE2DD0",
+      "Native/platform/windows/stdio_load_guard.cpp": "1F380F85E84BD2B999F3D95B04863B7DD2AAF140B77232613CD35BE01EF672E2",
+      "Native/platform/windows/stdio_load_guard.h": "E6FF25620FB02836979D846A7D0A9A9B281539FDCC30A223DD5917A48C442C9D",
+      "Native/stable_sdk_input_d3d11.cmake": "038658297643D42ED6FB68FDAC24C083FB069609C6C7E066BE5E10ADF5C98A03",
+      "Packages/com.zabaglione.lookingglass.viewweave.bridge/Runtime/Common/Resources/ViewWeaveSubpixelSampling.hlsl": "5A0E0B8EA9BEF1E5E44DBE836FDB7B4EC56F0B63015BEB6D7B7E2EFFFF0FC0FD"
+    },
+    "packagePath": "Packages/com.zabaglione.lookingglass.viewweave.bridge/Plugins/x86_64/lookingglass_bridge_shim.dll",
+    "sharedSubpixelHlslSha256": "5A0E0B8EA9BEF1E5E44DBE836FDB7B4EC56F0B63015BEB6D7B7E2EFFFF0FC0FD",
+    "sourceBaseCommit": "e777b34763b25e1673e5dc0188c812cda69cbcc0",
+    "sourceState": "Windows x64 Release shim built from the shared working tree at source base e777b34763b25e1673e5dc0188c812cda69cbcc0. The exact as-built Native source snapshot is recorded in nativeSourceHashes and .local/windows-subpixel-native-20261011/validation/build-manifest.json. Windows Editor device runtime validation for all 12 declared subpixel mode, pipeline, and graphics API conditions passed against this artifact; Windows Player and optical quality remain unvalidated.",
+    "targetArchitecture": "x64",
+    "unityPluginApi": "6000.6.4f1",
+    "unityPluginApiPath": "C:/Program Files/Unity/Hub/Editor/6000.6.4f1/Editor/Data/PluginAPI",
+    "validationLimits": "Windows Editor evidence is limited to the 12 recorded device fixture conditions and the connected RTX 3090 Ti / Bridge 2.6.3 setup. No Windows Player or human optical-quality review was performed. macOS execution and other display models remain unverified."
+  },
+  "currentWindowsRuntimeValidation": {
+    "artifactSha256": "C864A363AC441C77497D4302FF25CB48FA2D6EA194B6FB8A73BAE49DC522FEE2",
+    "notValidated": [
+      "Windows Player output using this new artifact",
+      "Optical quality across views and display models",
+      "macOS open_v4 source, shared shader, and runtime"
+    ],
+    "status": "PASS: 12/12 Windows Editor device conditions (URP/HDRP x D3D11/D3D12 x Automatic/ClassicRgb/CalibratedCells), zero skips, with strict PID, loaded package DLL identity, Native cleanup, natural Editor exit, zero crash events, and settings restoration.",
+    "testedRevision": "e777b34763b25e1673e5dc0188c812cda69cbcc0",
+    "testedWorkingTree": "Working tree based on source e777b34763b25e1673e5dc0188c812cda69cbcc0 plus uncommitted Native source, shared shader, Windows/common Managed, and Unity fixture changes. All 12 Windows Editor conditions passed. This is not a Windows Player or optical-quality validation.",
+    "evidenceRecordPath": ".local/windows-subpixel-validation-20261011/final-summary.json",
+    "editorDeviceConditionsPassed": 12,
+    "editorDeviceConditionsTotal": 12
+  },
   "d3d12HardwareValidation": "Limited Windows Editor evidence is recorded separately under currentWindowsRuntimeValidation; it is not a general hardware, Player, optical-quality, or TAA-pixel guarantee.",
-  "validationLimits": "Native Release CTest passed 15/15 and transport-only CTest passed 11/11 using the recorded local build. These tests use test adapters/fake Bridge runtimes; physical output evidence is recorded separately under currentWindowsRuntimeValidation. No Player, other-device optical, or TAA pixel/accumulation guarantee is implied.",
-  "license": "Apache-2.0",
-  "generatedAt": "2026-10-10T17:10:25Z",
-  "unityD3D12InterfaceSelection": "Unity 6000.6.4f1 PluginAPI was used. The exact D3D12 interface declaration selection for this build was not separately retained.",
+  "dllSha256": "C864A363AC441C77497D4302FF25CB48FA2D6EA194B6FB8A73BAE49DC522FEE2",
+  "freshRuntimeEvidence": [
+    {
+      "case": "case01-observer-ep-fix1",
+      "completedUtc": "2026-10-08T02:37:46.3962624Z",
+      "evidencePath": "E:/LookingGlassSDK/.local/shutdown-regression-fixed-c4bc909e73c14ffaac2b15e356d8efe1/Run/case01-observer-ep-fix1",
+      "limits": "Visual and performance measurements were not made; native final trace corroboration and fake consumer GPU acknowledgement were not proven.",
+      "result": "PASS: production PNG path and Native final status assertion passed; Unity Editor natural exit code 0."
+    },
+    {
+      "bridgeSdkVersion": "2.6.3",
+      "candidate": "previous frozen automatic-WM_CLOSE candidate",
+      "case": "case02-native-close1",
+      "completedUtc": "2026-10-08T03:29:19.7532144Z",
+      "editorExit": "NATURAL_EXIT code 0",
+      "editorPid": 88016,
+      "editorStartUtc": "2026-10-08T03:28:48.4888937Z",
+      "evidencePath": "E:/LookingGlassSDK/.local/shutdown-regression-fixed-c4bc909e73c14ffaac2b15e356d8efe1/Run/case02-native-close1",
+      "limits": "This runtime result does not validate the newer manual-notice-only candidate. Visual and performance measurements were not made; fake consumer GPU acknowledgement was not proven.",
+      "result": "PASS under the previous frozen automatic-WM_CLOSE candidate after two Play/Stop and domain-reload recovery cycles. Native final status ABI32/v1: result 0, state Complete (3), registered contexts 0, host running 0, host joined 1, last result 0. Managed release: Reaper 0, unproven false, handles 0, coordinator ready true.",
+      "unityVersion": "6000.6.4f1"
+    },
+    {
+      "case": "policy-playmode",
+      "completedUtc": "2026-10-08T02:06:59.0874695Z",
+      "evidencePath": "E:/LookingGlassSDK/.local/shutdown-regression-fixed-c4bc909e73c14ffaac2b15e356d8efe1/Run/policy-playmode",
+      "limits": "Policy tests do not establish optical output or hardware consumer acknowledgement.",
+      "result": "PASS, 7/7 policy PlayMode tests; Editor natural exit code 0."
+    },
+    {
+      "case": "case03-quit-gate2",
+      "completedUtc": "2026-10-08T02:50:47.6071829Z",
+      "evidencePath": "E:/LookingGlassSDK/.local/shutdown-regression-fixed-c4bc909e73c14ffaac2b15e356d8efe1/Run/case03-quit-gate2",
+      "limits": "Native final trace corroboration and fake consumer GPU acknowledgement were not proven; visual and performance measurements were not made.",
+      "result": "PASS; Editor and Player natural exit code 0. Player quit event, wants-to-quit observer, Native final join status, and managed finalization proof passed."
+    },
+    {
+      "case": "historical-controls",
+      "evidencePath": "E:/LookingGlassSDK/.local/shutdown-regression-control-4193e7ab",
+      "limits": "Historical controls are separate from the full-Bridge runtime cases above.",
+      "result": "Earlier access-violation cause remains unproven. An SDK-absent File/Exit control ended in an access violation. A separate SDK-absent queued WM_CLOSE control exited naturally, but it is not evidence for full-Bridge shutdown, optics, frame rate, or consumer GPU acknowledgement."
+    },
+    {
+      "case": "native-source-context",
+      "note": "Existing artifact SHA, nativeSourceHashes, compiler, and build metadata fields were left unchanged; they remain the as-built Native provenance.",
+      "recordedUtc": "2026-10-08",
+      "sourceBase": "454ce3898a4999a347a13b605962731d1db6a277 plus retained working-tree Native changes"
+    },
+    {
+      "case": "manual-notice-editor-close-candidate",
+      "limits": "Only the prior frozen automatic-WM_CLOSE candidate has the case02 runtime result above.",
+      "result": "NOT RUN",
+      "status": "Implemented; runtime not run. EditMode/runtime behavior is not established; no Editor runtime launch for this candidate has been performed."
+    },
+    {
+      "case": "gui-close-comparison-status",
+      "limits": "These are not successful runtime evidence and do not establish a shutdown result.",
+      "result": "NO PASS",
+      "status": "Scene 1 and windows 1/2 ended OWNER_ABORT with cancellation unobserved; prefab case not performed; window 3 retry was rejected by auto-review."
+    }
+  ],
   "freshWindowsReleaseEvidence": {
     "artifactSha256": "81CBF29737B1D1A13FBB3C1EEAB6265F3B0B076F41AB8C23B6E9229B17F0AEA9",
-    "dllSha256": "81CBF29737B1D1A13FBB3C1EEAB6265F3B0B076F41AB8C23B6E9229B17F0AEA9",
-    "sourceBaseCommit": "454ce3898a4999a347a13b605962731d1db6a277",
-    "sourceState": "Historical artifact SHA-256 81CBF29737B1D1A13FBB3C1EEAB6265F3B0B076F41AB8C23B6E9229B17F0AEA9 was built from the then-current shared working tree on source base 454ce3898a4999a347a13b605962731d1db6a277. The current top-level nativeSourceHashes describe only currentWindowsReleaseBuild and are not the source hashes for this historical artifact.",
-    "compiler": "MSVC 19.44.35217.0",
-    "targetArchitecture": "x64",
-    "configuration": "Release",
-    "generator": "Visual Studio 17 2022 / MSBuild 17.14.23",
-    "unityPluginApi": "C:/Program Files/Unity/Hub/Editor/6000.6.4f1/Editor/Data/PluginAPI",
     "buildDirectory": ".local/native-backend-split-win-full-regression-2",
+    "cleanupExceptionCoverage": "A test-only worker cleanup throw is injected after vendor close/unload and before context resource release. The isolated process joins the host, then verifies retained producer references, release rejection, zero collected contexts, and an uncompleted final-shutdown status. This is not a test of the irreversible final-shutdown latch after a final request.",
+    "compiler": "MSVC 19.44.35217.0",
+    "configuration": "Release",
+    "dllSha256": "81CBF29737B1D1A13FBB3C1EEAB6265F3B0B076F41AB8C23B6E9229B17F0AEA9",
+    "exports": {
+      "newNameCount": 38,
+      "newNamesAdded": [
+        "lkg_bridge_ack_session_close_v1",
+        "lkg_bridge_get_session_close_status_v1",
+        "lkg_worker_get_final_shutdown_status_v1",
+        "lkg_worker_request_final_shutdown",
+        "lkg_worker_wait_final_shutdown_v1"
+      ],
+      "note": "All 33 prior export names remain and five named exports were added. PE export ordinals shifted for most entries; callers must bind by name. Ordinal compatibility is not claimed.",
+      "oldNameCount": 33,
+      "oldNamesPreserved": 33,
+      "oldNamesRemoved": [],
+      "ordinalCompatibilityClaim": false
+    },
+    "generator": "Visual Studio 17 2022 / MSBuild 17.14.23",
+    "limits": "The fake Bridge/WARP tests do not establish official vendor runtime behavior, hardware output, or resolve prior shutdown access violations. Mac CI artifact remains separate historical evidence and is not included in this Windows UPM DLL.",
     "localCTest": {
-      "passed": 6,
-      "total": 6,
       "elapsedSeconds": 17.71,
       "evidencePath": ".local/native-backend-split-win-full-regression-2/Testing/Temporary/LastTest.log",
+      "passed": 6,
       "tests": [
         {
           "name": "lookingglass_worker_common_test",
@@ -55,14 +222,14 @@
           "name": "lookingglass_bridge_shutdown_exception_contract_test",
           "seconds": 5.12
         }
-      ]
+      ],
+      "total": 6
     },
     "pinnedHeaderCTest": {
-      "headerPin": "NativeRenderingPlugin 522254181faf188efa8b50c3e3bf6fce720b26e4",
-      "passed": 6,
-      "total": 6,
       "elapsedSeconds": 17.77,
       "evidencePath": ".local/native-backend-split-win-pinned-5222541/Testing/Temporary/LastTest.log",
+      "headerPin": "NativeRenderingPlugin 522254181faf188efa8b50c3e3bf6fce720b26e4",
+      "passed": 6,
       "tests": [
         {
           "name": "lookingglass_worker_common_test",
@@ -88,277 +255,47 @@
           "name": "lookingglass_bridge_shutdown_exception_contract_test",
           "seconds": 5.11
         }
-      ]
-    },
-    "exports": {
-      "oldNameCount": 33,
-      "newNameCount": 38,
-      "oldNamesPreserved": 33,
-      "newNamesAdded": [
-        "lkg_bridge_ack_session_close_v1",
-        "lkg_bridge_get_session_close_status_v1",
-        "lkg_worker_get_final_shutdown_status_v1",
-        "lkg_worker_request_final_shutdown",
-        "lkg_worker_wait_final_shutdown_v1"
       ],
-      "oldNamesRemoved": [],
-      "ordinalCompatibilityClaim": false,
-      "note": "All 33 prior export names remain and five named exports were added. PE export ordinals shifted for most entries; callers must bind by name. Ordinal compatibility is not claimed."
+      "total": 6
     },
-    "cleanupExceptionCoverage": "A test-only worker cleanup throw is injected after vendor close/unload and before context resource release. The isolated process joins the host, then verifies retained producer references, release rejection, zero collected contexts, and an uncompleted final-shutdown status. This is not a test of the irreversible final-shutdown latch after a final request.",
-    "warnings": "MSVC C4297 is emitted by the intentional test exception seam; pinned Unity headers also emit C4819 under the local code page.",
     "runtimeValidation": "At the as-built Native DLL and CTest stage, no Unity runtime or official Bridge device session was performed. Later fixture runtime lifecycle cases are listed in freshRuntimeEvidence. The case02 pass belongs to the previous frozen automatic-WM_CLOSE candidate and does not validate the newer manual-notice-only candidate; aborted or unperformed GUI comparisons are not passes. These fixture results do not establish optical output, performance, or consumer GPU acknowledgement.",
-    "limits": "The fake Bridge/WARP tests do not establish official vendor runtime behavior, hardware output, or resolve prior shutdown access violations. Mac CI artifact remains separate historical evidence and is not included in this Windows UPM DLL."
-  },
-  "historicalGpuValidation": "Earlier RTX 3090 Ti observations belong to older artifacts. Current targeted Windows runtime evidence is separately recorded under currentWindowsRuntimeValidation.",
-  "ciValidation": "Historical CI for commit 054fffeb817ac8daae6ff68ed567ec7e69fe4798: workflow run 37705337066 and PR run 37705340768 succeeded with 5/5 jobs each. The jobs covered static checks, Linux portable/unsupported ABI, Windows transport, Windows fake regressions with Unity API v7, and the macOS ARM64 shim build/link plus native contract tests. These runs predate the current uncommitted final-shutdown source and do not validate or replace the current locally built Windows v8 DLL. No Unity runtime, official Bridge SDK load, physical display, or Metal consumer lifetime validation was performed.",
-  "artifactBuildCMakeListsSha256": null,
-  "currentCMakeListsSha256": "91FC1851F641334ADA60F61AFA42E82AB7688F4AEBA6283EB666BCED60A761CA",
-  "macOSCIBuildArtifact": {
-    "workflowRunId": 37705337066,
-    "pullRequestRunId": 37705340768,
-    "sourceCommit": "054fffeb817ac8daae6ff68ed567ec7e69fe4798",
-    "workflowRunUrl": "https://github.com/zabaglione/ViewWeave/actions/runs/37705337066",
-    "pullRequestRunUrl": "https://github.com/zabaglione/ViewWeave/actions/runs/37705340768",
-    "jobsPassed": 5,
-    "jobsTotal": 5,
-    "runnerImage": "macos-14-arm64",
-    "compiler": "AppleClang 15.0.0.15000309 (CXX and ObjCXX)",
-    "buildResult": "full macOS shim compile and link passed",
-    "cmakeBuildType": "CMAKE_BUILD_TYPE was unset; no Release optimization claim is made",
-    "testsPassed": 3,
-    "testsTotal": 3,
-    "tests": [
-      "lookingglass_worker_common_test",
-      "lookingglass_metal_api_contract_test",
-      "lookingglass_metal_submission_lifetime_test"
-    ],
-    "artifactId": 11519112992,
-    "artifactName": "native-macos-metal-shim",
-    "artifactArchiveSizeBytes": 35839,
-    "artifactArchiveSha256": "0E250C63AB3F7553191F35BA44AC636A578E3DB3732B20A5C03FDC46182500EC",
-    "file": "liblookingglass_bridge_shim.dylib",
-    "fileSizeBytes": 179952,
-    "fileSha256": "C06464EEEBAA3D3B934437AD9242B6DFA4C5E37E26A3187D3BE131113213980B",
-    "machoMagic": "0xfeedfacf",
-    "machoCpuType": "0x0100000c (ARM64)",
-    "machoFileType": "MH_DYLIB",
-    "definedExternalSymbols": 101,
-    "verifiedExports": [
-      "UnityPluginLoad",
-      "UnityPluginUnload",
-      "lkg_metal_provider_query_v1",
-      "lkg_metal_provider_begin_v1",
-      "lkg_metal_provider_submit_v1",
-      "lkg_metal_provider_pump_v1",
-      "lkg_metal_provider_close",
-      "lkg_metal_provider_render_event_func",
-      "lkg_metal_provider_render_event_id"
-    ],
-    "linkedSystemLibraries": [
-      "Metal.framework",
-      "Foundation.framework",
-      "IOSurface.framework",
-      "libc++.1.dylib",
-      "libSystem.B.dylib",
-      "libobjc.A.dylib"
-    ],
-    "officialBridgeRuntimeBundled": false,
-    "includedInUPM": false,
-    "distribution": "GitHub Actions artifact; manual download only",
-    "runtimeTested": false,
-    "officialSdkLoaded": false,
-    "realDisplayTested": false,
-    "artifactContents": [
-      "liblookingglass_bridge_shim.dylib"
-    ],
-    "artifactContentsVerifiedNoVendorRuntime": true
-  },
-  "previousPackagedArtifactEvidence": {
-    "artifactSha256": "9E81DF02D065DABE39DAACC3E5F90ABECEA401F6DAD5D2E68096CEE3D7B86DCE",
-    "exportComparison": "33 export names and ordinals; base 66bc633 matches baseline DLL SHA-256 232C2364863333D5D4EF01D9D5C652F2EEAD1521855421C371345E2860E2805B",
-    "ctestPassed": 4,
-    "ctestTotal": 4,
-    "ctestRunMode": "worker transport: D3D11 WARP; D3D12 hardware branch inferred from 349 draws, no skip line, and test source. shutdown contract: WARP D3D11 feature level 0xb100 plus fake Bridge runtime. Common test is portable; loader lifecycle uses fake Bridge runtimes.",
-    "runtimeValidation": "No Unity runtime or official Bridge device/optical validation was performed in this CTest run.",
-    "dllSha256": "9E81DF02D065DABE39DAACC3E5F90ABECEA401F6DAD5D2E68096CEE3D7B86DCE",
-    "artifactBuildCMakeListsSha256": "45914253D8248BB13108A8ABD30565173F74F9BE2D47B8BDFA6AF8074F9D37EA",
-    "currentCMakeListsSha256": "3C3F0DCE7D11FB3283A8289205BBD7BA8389387812699CE469A8B935C700126B",
-    "cMakeChangeAfterArtifactBuild": "Only the macOS metal_api_contract_test target gained platform/macos/metal_submission_lifetime.cpp after the Windows DLL build. The lookingglass_bridge_shim Windows target source list and compile definitions are unchanged; the DLL was not rebuilt.",
-    "postBuildTestSourceUpdate": "bridge_shutdown_contract_test.cpp was corrected to initialize the Unity v7 interface by named member after the recorded 4/4 CTest. A later local Windows all-target compile-only check passed; no repeat CTest result is claimed.",
-    "followUpCI": "Final workflow and PR runs 37705337066/37705340768 both passed 5/5 jobs. Windows fake regressions 4/4 and transport tests 2/2 used the updated v7 header pin; they did not rebuild the packaged local v8 DLL.",
-    "ctestSourceHashes": {
-      "Native/tests/portable_common_test.cpp": "8FC86B3390C28ADF6CFC34FE85B13F769010C67A3B2BA3F82B7CB2DF4885A2AF",
-      "Native/tests/worker_transport_test.cpp": "B924A34FEE9BCA5FFD712E406E1117DDF087A4F31C9677206FFA352948BAAFF9",
-      "Native/tests/bridge_loader_lifecycle_test.cpp": "45832EA702E51428BB06722ECF6E38B365225556D9F0281C760FD8B0CEF053D8",
-      "Native/tests/bridge_shutdown_contract_test.cpp": "2A212A9649373E0C3A3BBA643BAD713FA01BF7623063EAB0425CEA917F23426F",
-      "Native/tests/fake_bridge_runtime.cpp": "03183CCC1D01732CDC74E52F2AFE682D900CF354E2846646B7949A890337FCA8",
-      "Native/tests/fake_bridge_missing.cpp": "89D4BB907704FC1A8FE1FDAD152A983779F0CED85808B77DEA9263C0B5C05FD3",
-      "Native/tests/fake_bridge_shutdown_runtime.cpp": "B6C019D18D3222EF6D321ACEA3566A186076047FE1F120E82CAFB6C7EA8FA49F"
-    },
-    "postBuildTestSourceUpdateSha256": "2F7DBF9CAD77E974592214D1708AB80D1999DF8BAAA6B81101FFAA82F5F2D542",
-    "localWindowsCompileOnly": "All local Windows targets compiled with the updated v7 header pin after correcting the fake Unity interface initializer; no CTest or runtime result is implied.",
-    "ciRunIds": [
-      37705337066,
-      37705340768
-    ],
-    "ciConclusion": "success; 5/5 jobs in each run",
-    "classification": "Historical prior packaged artifact; not the current DLL.",
-    "currentArtifact": false
-  },
-  "sourceBaseCommit": "2630bf421b02aaf470e421992fc23d2947b82140",
-  "sourceState": "Windows x64 Release shim built from repository revision 2630bf421b02aaf470e421992fc23d2947b82140 with the local Native stdio-guard changes present at build time. The build-time per-file source hash snapshot was not retained. Native/tests/metadata_test.cpp was changed after this DLL build for test coverage only and is not linked into the shim.",
-  "freshRuntimeEvidence": [
-    {
-      "limits": "Visual and performance measurements were not made; native final trace corroboration and fake consumer GPU acknowledgement were not proven.",
-      "completedUtc": "2026-10-08T02:37:46.3962624Z",
-      "evidencePath": "E:/LookingGlassSDK/.local/shutdown-regression-fixed-c4bc909e73c14ffaac2b15e356d8efe1/Run/case01-observer-ep-fix1",
-      "case": "case01-observer-ep-fix1",
-      "result": "PASS: production PNG path and Native final status assertion passed; Unity Editor natural exit code 0."
-    },
-    {
-      "limits": "This runtime result does not validate the newer manual-notice-only candidate. Visual and performance measurements were not made; fake consumer GPU acknowledgement was not proven.",
-      "editorExit": "NATURAL_EXIT code 0",
-      "completedUtc": "2026-10-08T03:29:19.7532144Z",
-      "bridgeSdkVersion": "2.6.3",
-      "editorStartUtc": "2026-10-08T03:28:48.4888937Z",
-      "result": "PASS under the previous frozen automatic-WM_CLOSE candidate after two Play/Stop and domain-reload recovery cycles. Native final status ABI32/v1: result 0, state Complete (3), registered contexts 0, host running 0, host joined 1, last result 0. Managed release: Reaper 0, unproven false, handles 0, coordinator ready true.",
-      "evidencePath": "E:/LookingGlassSDK/.local/shutdown-regression-fixed-c4bc909e73c14ffaac2b15e356d8efe1/Run/case02-native-close1",
-      "unityVersion": "6000.6.4f1",
-      "editorPid": 88016,
-      "case": "case02-native-close1",
-      "candidate": "previous frozen automatic-WM_CLOSE candidate"
-    },
-    {
-      "limits": "Policy tests do not establish optical output or hardware consumer acknowledgement.",
-      "completedUtc": "2026-10-08T02:06:59.0874695Z",
-      "evidencePath": "E:/LookingGlassSDK/.local/shutdown-regression-fixed-c4bc909e73c14ffaac2b15e356d8efe1/Run/policy-playmode",
-      "case": "policy-playmode",
-      "result": "PASS, 7/7 policy PlayMode tests; Editor natural exit code 0."
-    },
-    {
-      "limits": "Native final trace corroboration and fake consumer GPU acknowledgement were not proven; visual and performance measurements were not made.",
-      "completedUtc": "2026-10-08T02:50:47.6071829Z",
-      "evidencePath": "E:/LookingGlassSDK/.local/shutdown-regression-fixed-c4bc909e73c14ffaac2b15e356d8efe1/Run/case03-quit-gate2",
-      "case": "case03-quit-gate2",
-      "result": "PASS; Editor and Player natural exit code 0. Player quit event, wants-to-quit observer, Native final join status, and managed finalization proof passed."
-    },
-    {
-      "limits": "Historical controls are separate from the full-Bridge runtime cases above.",
-      "evidencePath": "E:/LookingGlassSDK/.local/shutdown-regression-control-4193e7ab",
-      "case": "historical-controls",
-      "result": "Earlier access-violation cause remains unproven. An SDK-absent File/Exit control ended in an access violation. A separate SDK-absent queued WM_CLOSE control exited naturally, but it is not evidence for full-Bridge shutdown, optics, frame rate, or consumer GPU acknowledgement."
-    },
-    {
-      "note": "Existing artifact SHA, nativeSourceHashes, compiler, and build metadata fields were left unchanged; they remain the as-built Native provenance.",
-      "sourceBase": "454ce3898a4999a347a13b605962731d1db6a277 plus retained working-tree Native changes",
-      "case": "native-source-context",
-      "recordedUtc": "2026-10-08"
-    },
-    {
-      "case": "manual-notice-editor-close-candidate",
-      "limits": "Only the prior frozen automatic-WM_CLOSE candidate has the case02 runtime result above.",
-      "status": "Implemented; runtime not run. EditMode/runtime behavior is not established; no Editor runtime launch for this candidate has been performed.",
-      "result": "NOT RUN"
-    },
-    {
-      "case": "gui-close-comparison-status",
-      "limits": "These are not successful runtime evidence and do not establish a shutdown result.",
-      "status": "Scene 1 and windows 1/2 ended OWNER_ABORT with cancellation unobserved; prefab case not performed; window 3 retry was rejected by auto-review.",
-      "result": "NO PASS"
-    }
-  ],
-  "postBuildSourceChanges": {
-    "scope": "Native/tests/metadata_test.cpp was expanded after the packaged DLL was built (and after the recorded CTest run) to add synthetic multi-display metadata coverage. This is test-only source and is not linked into lookingglass_bridge_shim.dll. No claim is made that the recorded CTest run includes this later edit.",
-    "files": [
-      "Native/tests/metadata_test.cpp"
-    ],
-    "verifiedAt": "2026-10-11T01:56:03+09:00"
-  },
-  "currentWindowsReleaseBuild": {
-    "artifactSha256": "4D28B54BC09FFCF0BC2E6F9E645E9A04C6EF59210C79BB784872655DA1837F7A",
-    "dllSha256": "4D28B54BC09FFCF0BC2E6F9E645E9A04C6EF59210C79BB784872655DA1837F7A",
-    "artifactSizeBytes": 223232,
-    "sourceBaseCommit": "2630bf421b02aaf470e421992fc23d2947b82140",
-    "sourceState": "Windows x64 Release shim built from repository revision 2630bf421b02aaf470e421992fc23d2947b82140 with the local Native stdio-guard changes present at build time. The build-time per-file source hash snapshot was not retained. Native/tests/metadata_test.cpp was changed after this DLL build for test coverage only and is not linked into the shim.",
-    "compiler": "MSVC via Visual Studio 17 2022 Build Tools",
-    "compilerVersion": null,
-    "compilerVersionNote": "The exact cl.exe version was not retained; the build log records MSBuild 17.14.23+b0019275e.",
-    "msbuildVersion": "17.14.23+b0019275e",
+    "sourceBaseCommit": "454ce3898a4999a347a13b605962731d1db6a277",
+    "sourceState": "Historical artifact SHA-256 81CBF29737B1D1A13FBB3C1EEAB6265F3B0B076F41AB8C23B6E9229B17F0AEA9 was built from the then-current shared working tree on source base 454ce3898a4999a347a13b605962731d1db6a277. The current top-level nativeSourceHashes describe only currentWindowsReleaseBuild and are not the source hashes for this historical artifact.",
     "targetArchitecture": "x64",
-    "configuration": "Release",
-    "generator": "Visual Studio 17 2022",
-    "unityPluginApi": "6000.6.4f1",
-    "unityPluginApiPath": "C:/Program Files/Unity/Hub/Editor/6000.6.4f1/Editor/Data/PluginAPI",
-    "buildDirectory": ".local/windows-unity-crash-20261011/fix-validation/build-vs2022-x64-release",
-    "buildCommand": "cmake --build .local/windows-unity-crash-20261011/fix-validation/build-vs2022-x64-release --config Release",
-    "nativeSourceHashes": null,
-    "nativeSourceHashesNote": "A build-time per-file source hash snapshot was not retained. Do not substitute current working-tree or metadata-test hashes as as-built hashes.",
-    "localCTest": {
-      "passed": 15,
-      "total": 15,
-      "elapsedSeconds": 12.73,
-      "evidencePath": ".local/windows-unity-crash-20261011/fix-validation/ctest-release.log",
-      "postBuildTestSourceChange": "Native/tests/metadata_test.cpp was expanded after this DLL build; that test-only edit is not part of the shim and has no new test result claim here."
-    },
-    "transportOnlyCTest": {
-      "passed": 11,
-      "total": 11,
-      "elapsedSeconds": 12.28,
-      "evidencePath": ".local/windows-unity-crash-20261011/fix-validation/ctest-transport-only.log"
-    },
-    "validationLimits": "Native Release CTest passed 15/15 and transport-only CTest passed 11/11 using the recorded local build. These tests use test adapters/fake Bridge runtimes; physical output evidence is recorded separately under currentWindowsRuntimeValidation. No Player, other-device optical, or TAA pixel/accumulation guarantee is implied."
+    "unityPluginApi": "C:/Program Files/Unity/Hub/Editor/6000.6.4f1/Editor/Data/PluginAPI",
+    "warnings": "MSVC C4297 is emitted by the intentional test exception seam; pinned Unity headers also emit C4819 under the local code page."
   },
-  "artifactSha256": "4D28B54BC09FFCF0BC2E6F9E645E9A04C6EF59210C79BB784872655DA1837F7A",
-  "dllSha256": "4D28B54BC09FFCF0BC2E6F9E645E9A04C6EF59210C79BB784872655DA1837F7A",
-  "previousCurrentWindowsReleaseBuild": {
-    "artifactSha256": "3B63E11485E520D04CF0B57539DEC697678AFC9470F273707CE40868F4CBC3B5",
-    "dllSha256": "3B63E11485E520D04CF0B57539DEC697678AFC9470F273707CE40868F4CBC3B5",
-    "sourceBaseCommit": "eb527e1ec126ec99d35e9990d8dce0119b855b4d",
-    "sourceState": "Windows x64 Release shim built from source base eb527e1ec126ec99d35e9990d8dce0119b855b4d plus the current Native working-tree counter-reset change. A reused preview lease generation resets submitted, completed, and dropped status counters under the context lock before publishing its token and generation. The persistent SDK endpoint, legacy metadata path, and existing lease lifecycle remain unchanged.",
-    "compiler": "MSVC 19.44.35217.0",
-    "shaderCompiler": "Windows SDK FXC 10.1, SDK 10.0.26100.0; stable D3D11 input shader bytecode is embedded at build time.",
-    "targetArchitecture": "x64",
-    "configuration": "Release",
-    "generator": "Visual Studio 17 2022; MSBuild 17.14.23",
-    "unityPluginApi": "6000.6.4f1",
-    "buildDirectory": "Native/build-worker-release-vs/Release",
+  "generatedAt": "2026-10-11T03:28:02Z",
+  "generator": "Visual Studio 17 2022",
+  "historical655FDB898CF7B9F9WindowsReleaseBuild": {
+    "artifactSha256": "655FDB898CF7B9F9733A1880828B740B62FB74E0C3ECDF9D825C07794F6388CD",
     "buildCommand": "cmake --build Native/build-worker-release-vs --config Release",
-    "nativeSourceHashes": {
-      "Native/CMakeLists.txt": "42DB0E552AC88A441F219A3909219F8CC1B3730519344427ADCDF5AB559F4E43",
-      "Native/bridge_d3d12_internal.h": "6B06A4792E547BDAE65EE91908CB565ED5FA1B89AD5C6E7A6EE627D6933FE154",
-      "Native/bridge_shim.cpp": "3A52FF47B7EFD550B98B1714CB8F33ECD30E4DB1E9CD44F0D6E88ABA28E079CE",
-      "Native/bridge_shim.h": "B33943E3D0BA4F5E3E7177008542BF48E94AD17846CB421C5AF834F07B687954",
-      "Native/bridge_worker_common.cpp": "D57B45EA0B65FA2B3BD953853529E5005A629321D035C090C1C3D6C620C9E39B",
-      "Native/bridge_worker_common.h": "48ACE99B1F5C90842FB2E6B5AE6021AD835891486BC65C3969C2427F5DB96FD4",
-      "Native/bridge_worker_transport.cpp": "C93D2945C4B12131C2D21C3123092011CD193D9FAD14A1F316D73787B96EF6A6",
-      "Native/bridge_worker_transport.h": "5FD1FF50F44ECAB378A99D8FA84EC9DF56609A07BF65080FADA16F774B52100A",
-      "Native/platform/unsupported/bridge_worker_transport_unsupported.inc": "FA23B976DA6CBCF5483894D2793BC0AE1B1515AE489C5DC843B2F78CA1F134BB",
-      "Native/platform/windows/backends/d3d11_backend.inc": "8358D013E24979837AF3419B23223675E211C51CAA667F78672194E5585ADDDF",
-      "Native/platform/windows/backends/d3d11_d3d12_interop.inc": "FDF55A669CE099FA48B95683678ABE7F51592AA1B9E55BF097B90482F7398B28",
-      "Native/platform/windows/backends/d3d12_backend.inc": "F3E13187FE5B0D7441437D9531D894064EC88BE2EAE1DF4982D8B2167F6CB9AB",
-      "Native/platform/windows/bridge_worker_transport_windows.inc": "72C54CA3812337963B001AB6F1BF2D17C85A8789F2F375E02A3DC45A398765CD",
-      "Native/platform/windows/stable_sdk_input_d3d11.cpp": "FF1BDCCEFC961168DAD81A9CC18CF8C68232C22CE33CFAC575F0901A2C7BB92F",
-      "Native/platform/windows/stable_sdk_input_d3d11.h": "77EEB054980ED87C70B99CADF909172BB6443942CA72579EC303D79EB17BFCD3",
-      "Native/platform/windows/stable_sdk_input_d3d11.hlsl": "03A54DB6F092BA48547014B8C15202313850B3CC0D24E5261CDF741F1CBE2DD0",
-      "Native/stable_sdk_input_d3d11.cmake": "5473AA5E44C45F1F73C9FCC08E490DB97227587B0EA22E24BB7D96915E57CD03",
-      "Native/tests/bridge_loader_lifecycle_test.cpp": "FA9E38EAF6B4492F02F2F4F45C0FDB59AEFA3227EA37116AE84EF971D19CAC3B",
-      "Native/tests/bridge_shutdown_contract.h": "407273B9AC0330ED817CD85B22BEF2070F1365BCD64B2398A9F6C638FE546B58",
-      "Native/tests/bridge_shutdown_contract_test.cpp": "5FF2677DBF79B43F571E12E9276793D8910B96018C7E42627D38D501CB39B9C0",
-      "Native/tests/bridge_worker_host_affinity_test.cpp": "87779E3B8D309A7C232CB0712A7BA1662F7FAA7E4DD0A4FD5974A5DF24183A0B",
-      "Native/tests/fake_bridge_missing.cpp": "89D4BB907704FC1A8FE1FDAD152A983779F0CED85808B77DEA9263C0B5C05FD3",
-      "Native/tests/fake_bridge_runtime.cpp": "3639075BF270849DBAA8903C9466F78B913085462B9CE8E5DF36C4FC31A6CAF8",
-      "Native/tests/fake_bridge_shutdown_runtime.cpp": "5F79C774C021FF9BD57414CD6AB2F2F02295D202CCD7115FBAC48A56B17244C3",
-      "Native/tests/portable_common_test.cpp": "ED50427D073E0FFE9692E2749DDD076EEABD3AEA3ACA6E2D481F15D0FA82772E",
-      "Native/tests/stable_sdk_input_d3d11_test.cpp": "6DB3C3CA796C39C3C28446F4BC1B101F46AA3D4E9A23FDC88A4FEA3A5800ECA2",
-      "Native/tests/unsupported_shim_abi_test.cpp": "6800FBFD53253F59733ACE5690E227F04A6804B83A98BF2B11F1BC505B2E256E",
-      "Native/tests/worker_transport_test.cpp": "F38C0ECCC49629D7D417FE665B75FDE63A4229E4401F8C09B47D68094F349DE5"
+    "buildDirectory": "Native/build-worker-release-vs/Release",
+    "classification": "Historical 655FDB898CF7B9F9 Windows Release artifact, superseded on 2026-10-10 by the persistent static-present build. Its source hashes and 12/12 CTest result describe only that historical DLL.",
+    "compiledUtc": "2026-10-09T12:09:20Z",
+    "compiler": "MSVC 19.44.35217.0",
+    "configuration": "Release",
+    "dllSha256": "655FDB898CF7B9F9733A1880828B740B62FB74E0C3ECDF9D825C07794F6388CD",
+    "exports": {
+      "baselineNamedExports": 50,
+      "baselineNamesPreserved": 50,
+      "comparedAgainstSha256": "3B63E11485E520D04CF0B57539DEC697678AFC9470F273707CE40868F4CBC3B5",
+      "currentNamedExports": 51,
+      "missingNames": [],
+      "newNames": [
+        "lkg_worker_try_make_preview_draw_data_v1"
+      ],
+      "note": "All 50 named exports from the preceding packaged DLL are present. The typed preview draw-admission V1 export is added. No test-only exports are present; callers bind exports by name and ordinal compatibility is not claimed.",
+      "ordinalCompatibilityClaim": false,
+      "testOnlyExports": []
     },
+    "generator": "Visual Studio 17 2022; MSBuild 17.14.23",
+    "historicalDate": "2026-10-09",
     "localCTest": {
-      "passed": 12,
-      "total": 12,
-      "elapsedSeconds": 11.68,
+      "elapsedSeconds": 11.97,
       "evidencePath": "Native/build-worker-release-vs/Testing/Temporary/LastTest.log",
+      "note": "Windows Release CTest passed 12/12. The worker transport suite covers three-token saturation, BUSY without payload allocation or texture AddRef, rejection of stale/returning/paused and invalid requests, and acceptance after drain. The unsupported-shim ABI stub and output-clear test source were added, but the Linux-only test was not run in this Windows invocation. Tests use fake Bridge runtimes and WARP/test adapters; no official Bridge SDK session is started.",
+      "passed": 12,
       "tests": [
         {
           "name": "lookingglass_worker_common_test"
@@ -397,48 +334,450 @@
           "name": "lookingglass_bridge_shutdown_exception_contract_test"
         }
       ],
-      "note": "Release CTest passed 12/12. The preview lease test verifies new-generation counters start at zero, the first draw increments only the new generation, and the prior return snapshot remains unchanged. Tests use fake Bridge runtimes and WARP/test adapters; no official Bridge SDK session is started."
+      "total": 12
     },
-    "managedCompileOnly": "Seven managed Editor/Player assemblies compiled at the frozen integration checkpoint. Unity runtime tests were not run against this rebuilt counter-reset DLL.",
-    "exports": {
-      "comparedAgainstSha256": "4E5E1FF81C7C1C227D45E5D38E23FB84F1AAB8A8444EF327D639E1AEB619532B",
-      "baselineNamedExports": 46,
-      "currentNamedExports": 50,
-      "baselineNamesPreserved": 46,
-      "newNames": [
-        "lkg_worker_ack_preview_lease_return_v1",
-        "lkg_worker_acquire_preview_lease_v1",
-        "lkg_worker_get_preview_lease_status_v1",
-        "lkg_worker_request_preview_lease_return_v1"
-      ],
-      "missingNames": [],
-      "testOnlyExports": [],
-      "ordinalCompatibilityClaim": false,
-      "note": "All named exports from the prior packaged DLL are present. Four Preview Lease V1 exports are added. No test-only exports are present; callers bind exports by name and ordinal compatibility is not claimed."
+    "managedCompileOnly": "No Unity Editor or Player compile/test was run specifically against this typed admission DLL.",
+    "nativeSourceHashes": {
+      "Native/CMakeLists.txt": "42DB0E552AC88A441F219A3909219F8CC1B3730519344427ADCDF5AB559F4E43",
+      "Native/bridge_d3d12_internal.h": "6B06A4792E547BDAE65EE91908CB565ED5FA1B89AD5C6E7A6EE627D6933FE154",
+      "Native/bridge_shim.cpp": "3A52FF47B7EFD550B98B1714CB8F33ECD30E4DB1E9CD44F0D6E88ABA28E079CE",
+      "Native/bridge_shim.h": "B33943E3D0BA4F5E3E7177008542BF48E94AD17846CB421C5AF834F07B687954",
+      "Native/bridge_worker_common.cpp": "D57B45EA0B65FA2B3BD953853529E5005A629321D035C090C1C3D6C620C9E39B",
+      "Native/bridge_worker_common.h": "48ACE99B1F5C90842FB2E6B5AE6021AD835891486BC65C3969C2427F5DB96FD4",
+      "Native/bridge_worker_transport.cpp": "C93D2945C4B12131C2D21C3123092011CD193D9FAD14A1F316D73787B96EF6A6",
+      "Native/bridge_worker_transport.h": "9C16B5397938E19865214DE10336339FF3FB5BD68DB44D625BF1B58B5BF4E67D",
+      "Native/platform/unsupported/bridge_worker_transport_unsupported.inc": "FE0B5193F02060E87B076796A7B80F4BE90781087D44AA35A0D7FA37B098A20E",
+      "Native/platform/windows/backends/d3d11_backend.inc": "8358D013E24979837AF3419B23223675E211C51CAA667F78672194E5585ADDDF",
+      "Native/platform/windows/backends/d3d11_d3d12_interop.inc": "FDF55A669CE099FA48B95683678ABE7F51592AA1B9E55BF097B90482F7398B28",
+      "Native/platform/windows/backends/d3d12_backend.inc": "F3E13187FE5B0D7441437D9531D894064EC88BE2EAE1DF4982D8B2167F6CB9AB",
+      "Native/platform/windows/bridge_worker_transport_windows.inc": "1491E208B831A9AC566B9C2785D1E5781E6E6A08A6A12EFA39AE404F298DBB2E",
+      "Native/platform/windows/stable_sdk_input_d3d11.cpp": "FF1BDCCEFC961168DAD81A9CC18CF8C68232C22CE33CFAC575F0901A2C7BB92F",
+      "Native/platform/windows/stable_sdk_input_d3d11.h": "77EEB054980ED87C70B99CADF909172BB6443942CA72579EC303D79EB17BFCD3",
+      "Native/platform/windows/stable_sdk_input_d3d11.hlsl": "03A54DB6F092BA48547014B8C15202313850B3CC0D24E5261CDF741F1CBE2DD0",
+      "Native/stable_sdk_input_d3d11.cmake": "5473AA5E44C45F1F73C9FCC08E490DB97227587B0EA22E24BB7D96915E57CD03",
+      "Native/tests/bridge_loader_lifecycle_test.cpp": "FA9E38EAF6B4492F02F2F4F45C0FDB59AEFA3227EA37116AE84EF971D19CAC3B",
+      "Native/tests/bridge_shutdown_contract.h": "407273B9AC0330ED817CD85B22BEF2070F1365BCD64B2398A9F6C638FE546B58",
+      "Native/tests/bridge_shutdown_contract_test.cpp": "5FF2677DBF79B43F571E12E9276793D8910B96018C7E42627D38D501CB39B9C0",
+      "Native/tests/bridge_worker_host_affinity_test.cpp": "87779E3B8D309A7C232CB0712A7BA1662F7FAA7E4DD0A4FD5974A5DF24183A0B",
+      "Native/tests/fake_bridge_missing.cpp": "89D4BB907704FC1A8FE1FDAD152A983779F0CED85808B77DEA9263C0B5C05FD3",
+      "Native/tests/fake_bridge_runtime.cpp": "3639075BF270849DBAA8903C9466F78B913085462B9CE8E5DF36C4FC31A6CAF8",
+      "Native/tests/fake_bridge_shutdown_runtime.cpp": "5F79C774C021FF9BD57414CD6AB2F2F02295D202CCD7115FBAC48A56B17244C3",
+      "Native/tests/portable_common_test.cpp": "ED50427D073E0FFE9692E2749DDD076EEABD3AEA3ACA6E2D481F15D0FA82772E",
+      "Native/tests/stable_sdk_input_d3d11_test.cpp": "6DB3C3CA796C39C3C28446F4BC1B101F46AA3D4E9A23FDC88A4FEA3A5800ECA2",
+      "Native/tests/unsupported_shim_abi_test.cpp": "6115552BCE9D8CB909F354F149F5E2A3DD9BEE00E2A6BCA8F32A8E4DAC044546",
+      "Native/tests/worker_transport_test.cpp": "D3E914E7F3F0CA908903995E325ABA423AA1ABFB47C878C5A8D10313A2B61239"
     },
-    "validationLimits": "Native Release CTest passed 12/12 using fake Bridge runtimes and WARP/test adapters. Seven managed Editor/Player assemblies compiled at the integration checkpoint; Unity runtime tests were not run against this rebuilt DLL. No official Bridge SDK, physical-device pause/resume, optical appearance, image quality, or performance validation was performed for this artifact.",
-    "compiledUtc": "2026-10-09T11:33:39Z",
-    "classification": "Historical prior Windows Release artifact before typed draw admission; retained with its counter-reset source hashes and validation evidence."
+    "shaderCompiler": "Windows SDK FXC 10.1, SDK 10.0.26100.0; stable D3D11 input shader bytecode is embedded at build time.",
+    "sourceBaseCommit": "eb527e1ec126ec99d35e9990d8dce0119b855b4d",
+    "sourceState": "Windows x64 Release shim built from source base eb527e1ec126ec99d35e9990d8dce0119b855b4d plus current Native working-tree changes. Adds lease-only typed draw admission V1: retryable BUSY is returned only for a valid, ready, running lease when the three-token queue is full; invalid, stale, paused, closing, and faulted requests remain distinct errors. The legacy untyped draw API is unchanged. New lease generations also reset submitted/completed/dropped counters before token publication.",
+    "targetArchitecture": "x64",
+    "unityPluginApi": "6000.6.4f1",
+    "unsupportedAbiTest": "The unsupported-shim ABI test is Linux-only and was not run by this Windows Release CTest invocation.",
+    "validationLimits": "Windows Native Release CTest passed 12/12 using fake Bridge runtimes and WARP/test adapters. No official Bridge SDK, Unity runtime call-site, physical-device, optical appearance, image-quality, or performance validation was performed for this artifact."
   },
+  "historicalF1B06893WindowsReleaseEvidence": {
+    "classification": "Historical current Windows artifact before publication of the stdio-guard DLL.",
+    "currentArtifactValidation": {
+      "artifactSha256": "F1B06893404D75582FF600BA733AE3C531ED0C0A7EA40E29CE56DD7A91B0A000",
+      "buildDirectory": ".local/current-sample-state/2026-10-09/shared-output-lease/parity-20261010/canonical-adopt/private-build",
+      "hardwareValidation": "not performed",
+      "nativeTestsPassed": 6,
+      "nativeTestsTotal": 6,
+      "sourceBaseCommit": "d913f9912ad2c983fcdbbdc7ed319b97d5d07354",
+      "testEvidencePath": ".local/current-sample-state/2026-10-09/shared-output-lease/parity-20261010/canonical-adopt/private-build/Testing/Temporary/LastTest.log"
+    },
+    "currentWindowsReleaseBuild": {
+      "artifactSha256": "F1B06893404D75582FF600BA733AE3C531ED0C0A7EA40E29CE56DD7A91B0A000",
+      "artifactSizeBytes": 214016,
+      "buildCommand": "After vcvars64.bat: cmake --build .local/current-sample-state/2026-10-09/shared-output-lease/parity-20261010/canonical-adopt/private-build --target lookingglass_bridge_shim lookingglass_worker_transport_test lookingglass_stable_sdk_input_d3d11_test lookingglass_bridge_static_present_test lookingglass_bridge_shutdown_contract_test --parallel 6",
+      "buildDirectory": ".local/current-sample-state/2026-10-09/shared-output-lease/parity-20261010/canonical-adopt/private-build",
+      "compiledUtc": "2026-10-10T01:28:50Z",
+      "compiler": "MSVC 19.44.35217.0",
+      "configuration": "Release",
+      "dllSha256": "F1B06893404D75582FF600BA733AE3C531ED0C0A7EA40E29CE56DD7A91B0A000",
+      "exports": {
+        "baselineNamedExports": 51,
+        "baselineNamesPreserved": 51,
+        "comparedAgainstSha256": "655FDB898CF7B9F9733A1880828B740B62FB74E0C3ECDF9D825C07794F6388CD",
+        "currentNamedExports": 51,
+        "missingNames": [],
+        "newNames": [],
+        "note": "All 51 named exports from the preceding 655FDB898CF7B9F9 DLL remain. No public or test-only exports were added; ordinal compatibility is not claimed.",
+        "ordinalCompatibilityClaim": false,
+        "testOnlyExports": []
+      },
+      "generator": "Ninja 1.13.0.git.kitware.jobserver-pipe-1; CMake 4.0.1",
+      "localCTest": {
+        "elapsedSeconds": 4.2,
+        "evidencePath": ".local/current-sample-state/2026-10-09/shared-output-lease/parity-20261010/canonical-adopt/private-build/Testing/Temporary/LastTest.log",
+        "note": "Focused Windows Release CTest passed 6/6. Coverage includes persistent preview pause, lease return/reacquire, same retained SDK primary and cached geometry static-present contract, stable D3D11 SDK input, and normal/exception shutdown contracts. Tests use fake Bridge callbacks and WARP/test adapters; no official Bridge SDK or physical device was used.",
+        "passed": 6,
+        "tests": [
+          {
+            "name": "lookingglass_worker_preview_pause_test",
+            "seconds": 0.75
+          },
+          {
+            "name": "lookingglass_worker_preview_lease_test",
+            "seconds": 2.7
+          },
+          {
+            "name": "lookingglass_bridge_static_present_test",
+            "seconds": 0.03
+          },
+          {
+            "name": "lookingglass_stable_sdk_input_d3d11_test",
+            "seconds": 0.15
+          },
+          {
+            "name": "lookingglass_bridge_shutdown_contract_test",
+            "seconds": 0.46
+          },
+          {
+            "name": "lookingglass_bridge_shutdown_exception_contract_test",
+            "seconds": 0.11
+          }
+        ],
+        "total": 6
+      },
+      "managedCompileOnly": "Unity Editor/Player assemblies and Unity Test Runner were not run for this artifact.",
+      "nativeSourceHashes": {
+        "Native/CMakeLists.txt": "C8A135B158B51E2145DCF659D71E8C4C7DB1D44DB1233D676C83646D04B7EA0D",
+        "Native/bridge_d3d12_internal.h": "6B06A4792E547BDAE65EE91908CB565ED5FA1B89AD5C6E7A6EE627D6933FE154",
+        "Native/bridge_shim.cpp": "396C926036C7290A994D6024B8691775AF90D1A88684676641A87B6076448582",
+        "Native/bridge_shim.h": "B33943E3D0BA4F5E3E7177008542BF48E94AD17846CB421C5AF834F07B687954",
+        "Native/bridge_worker_common.cpp": "D57B45EA0B65FA2B3BD953853529E5005A629321D035C090C1C3D6C620C9E39B",
+        "Native/bridge_worker_common.h": "48ACE99B1F5C90842FB2E6B5AE6021AD835891486BC65C3969C2427F5DB96FD4",
+        "Native/bridge_worker_transport.cpp": "C93D2945C4B12131C2D21C3123092011CD193D9FAD14A1F316D73787B96EF6A6",
+        "Native/bridge_worker_transport.h": "9C16B5397938E19865214DE10336339FF3FB5BD68DB44D625BF1B58B5BF4E67D",
+        "Native/platform/unsupported/bridge_worker_transport_unsupported.inc": "FE0B5193F02060E87B076796A7B80F4BE90781087D44AA35A0D7FA37B098A20E",
+        "Native/platform/windows/backends/d3d11_backend.inc": "8358D013E24979837AF3419B23223675E211C51CAA667F78672194E5585ADDDF",
+        "Native/platform/windows/backends/d3d11_d3d12_interop.inc": "FDF55A669CE099FA48B95683678ABE7F51592AA1B9E55BF097B90482F7398B28",
+        "Native/platform/windows/backends/d3d12_backend.inc": "F3E13187FE5B0D7441437D9531D894064EC88BE2EAE1DF4982D8B2167F6CB9AB",
+        "Native/platform/windows/bridge_worker_transport_windows.inc": "13E4B4D10B5FB773D5B894FC7ADD9EDB0B029C07F2E8F4D321C236990DD130A7",
+        "Native/platform/windows/stable_sdk_input_d3d11.cpp": "FF1BDCCEFC961168DAD81A9CC18CF8C68232C22CE33CFAC575F0901A2C7BB92F",
+        "Native/platform/windows/stable_sdk_input_d3d11.h": "77EEB054980ED87C70B99CADF909172BB6443942CA72579EC303D79EB17BFCD3",
+        "Native/platform/windows/stable_sdk_input_d3d11.hlsl": "03A54DB6F092BA48547014B8C15202313850B3CC0D24E5261CDF741F1CBE2DD0",
+        "Native/stable_sdk_input_d3d11.cmake": "5473AA5E44C45F1F73C9FCC08E490DB97227587B0EA22E24BB7D96915E57CD03",
+        "Native/tests/bridge_loader_lifecycle_test.cpp": "FA9E38EAF6B4492F02F2F4F45C0FDB59AEFA3227EA37116AE84EF971D19CAC3B",
+        "Native/tests/bridge_shutdown_contract.h": "407273B9AC0330ED817CD85B22BEF2070F1365BCD64B2398A9F6C638FE546B58",
+        "Native/tests/bridge_shutdown_contract_test.cpp": "5FF2677DBF79B43F571E12E9276793D8910B96018C7E42627D38D501CB39B9C0",
+        "Native/tests/bridge_static_present_test.cpp": "D72A1669E97D433C6C2EAA6373BE95CB638EFB420E694C6473C41D1774679420",
+        "Native/tests/bridge_worker_host_affinity_test.cpp": "87779E3B8D309A7C232CB0712A7BA1662F7FAA7E4DD0A4FD5974A5DF24183A0B",
+        "Native/tests/fake_bridge_missing.cpp": "89D4BB907704FC1A8FE1FDAD152A983779F0CED85808B77DEA9263C0B5C05FD3",
+        "Native/tests/fake_bridge_runtime.cpp": "3639075BF270849DBAA8903C9466F78B913085462B9CE8E5DF36C4FC31A6CAF8",
+        "Native/tests/fake_bridge_shutdown_runtime.cpp": "5F79C774C021FF9BD57414CD6AB2F2F02295D202CCD7115FBAC48A56B17244C3",
+        "Native/tests/portable_common_test.cpp": "ED50427D073E0FFE9692E2749DDD076EEABD3AEA3ACA6E2D481F15D0FA82772E",
+        "Native/tests/stable_sdk_input_d3d11_test.cpp": "6DB3C3CA796C39C3C28446F4BC1B101F46AA3D4E9A23FDC88A4FEA3A5800ECA2",
+        "Native/tests/unsupported_shim_abi_test.cpp": "6115552BCE9D8CB909F354F149F5E2A3DD9BEE00E2A6BCA8F32A8E4DAC044546",
+        "Native/tests/worker_transport_test.cpp": "EA64AEFCD7696ACC09E549FE6145249ABEC64B56CEC6EEFC83F6FE5B40002E84"
+      },
+      "shaderCompiler": "Windows SDK FXC 10.1, SDK 10.0.22621.0; stable D3D11 input shader bytecode embedded at build time.",
+      "sourceBaseCommit": "d913f9912ad2c983fcdbbdc7ed319b97d5d07354",
+      "sourceState": "Windows x64 Release shim from source base d913f9912ad2c983fcdbbdc7ed319b97d5d07354 plus the canonical Native working-tree changes. Persistent preview endpoints retain SDK visibility and the registered primary through drained logical pause and lease return; the worker re-presents the last successfully drawn primary with cached quilt geometry at no more than 5 Hz. Resume, lease admission, producer drain, return proof, acknowledgement, and final teardown preserve their existing lifecycle contracts. No new exported ABI was added.",
+      "targetArchitecture": "x64",
+      "unityPluginApi": "6000.6.4f1",
+      "unsupportedAbiTest": "Linux-only unsupported-shim ABI test was not run in this Windows Release invocation.",
+      "validationLimits": "Six focused Native Release CTests passed using fake Bridge callbacks and WARP/test adapters. No official Bridge SDK runtime, Unity Test Runner, hardware, optical appearance, image-quality, or performance validation was performed for this artifact."
+    },
+    "formerTopLevelCurrentBuildFields": {
+      "artifactBuildCMakeListsSha256": "C8A135B158B51E2145DCF659D71E8C4C7DB1D44DB1233D676C83646D04B7EA0D",
+      "artifactSha256": "F1B06893404D75582FF600BA733AE3C531ED0C0A7EA40E29CE56DD7A91B0A000",
+      "buildDirectory": ".local/current-sample-state/2026-10-09/shared-output-lease/parity-20261010/canonical-adopt/private-build",
+      "compilerVersion": "MSVC 19.44.35217.0",
+      "configuration": "Release",
+      "currentArtifactValidation": {
+        "artifactSha256": "F1B06893404D75582FF600BA733AE3C531ED0C0A7EA40E29CE56DD7A91B0A000",
+        "buildDirectory": ".local/current-sample-state/2026-10-09/shared-output-lease/parity-20261010/canonical-adopt/private-build",
+        "hardwareValidation": "not performed",
+        "nativeTestsPassed": 6,
+        "nativeTestsTotal": 6,
+        "sourceBaseCommit": "d913f9912ad2c983fcdbbdc7ed319b97d5d07354",
+        "testEvidencePath": ".local/current-sample-state/2026-10-09/shared-output-lease/parity-20261010/canonical-adopt/private-build/Testing/Temporary/LastTest.log"
+      },
+      "currentCMakeListsSha256": "C8A135B158B51E2145DCF659D71E8C4C7DB1D44DB1233D676C83646D04B7EA0D",
+      "currentWindowsReleaseBuild": {
+        "artifactSha256": "F1B06893404D75582FF600BA733AE3C531ED0C0A7EA40E29CE56DD7A91B0A000",
+        "artifactSizeBytes": 214016,
+        "buildCommand": "After vcvars64.bat: cmake --build .local/current-sample-state/2026-10-09/shared-output-lease/parity-20261010/canonical-adopt/private-build --target lookingglass_bridge_shim lookingglass_worker_transport_test lookingglass_stable_sdk_input_d3d11_test lookingglass_bridge_static_present_test lookingglass_bridge_shutdown_contract_test --parallel 6",
+        "buildDirectory": ".local/current-sample-state/2026-10-09/shared-output-lease/parity-20261010/canonical-adopt/private-build",
+        "compiledUtc": "2026-10-10T01:28:50Z",
+        "compiler": "MSVC 19.44.35217.0",
+        "configuration": "Release",
+        "dllSha256": "F1B06893404D75582FF600BA733AE3C531ED0C0A7EA40E29CE56DD7A91B0A000",
+        "exports": {
+          "baselineNamedExports": 51,
+          "baselineNamesPreserved": 51,
+          "comparedAgainstSha256": "655FDB898CF7B9F9733A1880828B740B62FB74E0C3ECDF9D825C07794F6388CD",
+          "currentNamedExports": 51,
+          "missingNames": [],
+          "newNames": [],
+          "note": "All 51 named exports from the preceding 655FDB898CF7B9F9 DLL remain. No public or test-only exports were added; ordinal compatibility is not claimed.",
+          "ordinalCompatibilityClaim": false,
+          "testOnlyExports": []
+        },
+        "generator": "Ninja 1.13.0.git.kitware.jobserver-pipe-1; CMake 4.0.1",
+        "localCTest": {
+          "elapsedSeconds": 4.2,
+          "evidencePath": ".local/current-sample-state/2026-10-09/shared-output-lease/parity-20261010/canonical-adopt/private-build/Testing/Temporary/LastTest.log",
+          "note": "Focused Windows Release CTest passed 6/6. Coverage includes persistent preview pause, lease return/reacquire, same retained SDK primary and cached geometry static-present contract, stable D3D11 SDK input, and normal/exception shutdown contracts. Tests use fake Bridge callbacks and WARP/test adapters; no official Bridge SDK or physical device was used.",
+          "passed": 6,
+          "tests": [
+            {
+              "name": "lookingglass_worker_preview_pause_test",
+              "seconds": 0.75
+            },
+            {
+              "name": "lookingglass_worker_preview_lease_test",
+              "seconds": 2.7
+            },
+            {
+              "name": "lookingglass_bridge_static_present_test",
+              "seconds": 0.03
+            },
+            {
+              "name": "lookingglass_stable_sdk_input_d3d11_test",
+              "seconds": 0.15
+            },
+            {
+              "name": "lookingglass_bridge_shutdown_contract_test",
+              "seconds": 0.46
+            },
+            {
+              "name": "lookingglass_bridge_shutdown_exception_contract_test",
+              "seconds": 0.11
+            }
+          ],
+          "total": 6
+        },
+        "managedCompileOnly": "Unity Editor/Player assemblies and Unity Test Runner were not run for this artifact.",
+        "nativeSourceHashes": {
+          "Native/CMakeLists.txt": "C8A135B158B51E2145DCF659D71E8C4C7DB1D44DB1233D676C83646D04B7EA0D",
+          "Native/bridge_d3d12_internal.h": "6B06A4792E547BDAE65EE91908CB565ED5FA1B89AD5C6E7A6EE627D6933FE154",
+          "Native/bridge_shim.cpp": "396C926036C7290A994D6024B8691775AF90D1A88684676641A87B6076448582",
+          "Native/bridge_shim.h": "B33943E3D0BA4F5E3E7177008542BF48E94AD17846CB421C5AF834F07B687954",
+          "Native/bridge_worker_common.cpp": "D57B45EA0B65FA2B3BD953853529E5005A629321D035C090C1C3D6C620C9E39B",
+          "Native/bridge_worker_common.h": "48ACE99B1F5C90842FB2E6B5AE6021AD835891486BC65C3969C2427F5DB96FD4",
+          "Native/bridge_worker_transport.cpp": "C93D2945C4B12131C2D21C3123092011CD193D9FAD14A1F316D73787B96EF6A6",
+          "Native/bridge_worker_transport.h": "9C16B5397938E19865214DE10336339FF3FB5BD68DB44D625BF1B58B5BF4E67D",
+          "Native/platform/unsupported/bridge_worker_transport_unsupported.inc": "FE0B5193F02060E87B076796A7B80F4BE90781087D44AA35A0D7FA37B098A20E",
+          "Native/platform/windows/backends/d3d11_backend.inc": "8358D013E24979837AF3419B23223675E211C51CAA667F78672194E5585ADDDF",
+          "Native/platform/windows/backends/d3d11_d3d12_interop.inc": "FDF55A669CE099FA48B95683678ABE7F51592AA1B9E55BF097B90482F7398B28",
+          "Native/platform/windows/backends/d3d12_backend.inc": "F3E13187FE5B0D7441437D9531D894064EC88BE2EAE1DF4982D8B2167F6CB9AB",
+          "Native/platform/windows/bridge_worker_transport_windows.inc": "13E4B4D10B5FB773D5B894FC7ADD9EDB0B029C07F2E8F4D321C236990DD130A7",
+          "Native/platform/windows/stable_sdk_input_d3d11.cpp": "FF1BDCCEFC961168DAD81A9CC18CF8C68232C22CE33CFAC575F0901A2C7BB92F",
+          "Native/platform/windows/stable_sdk_input_d3d11.h": "77EEB054980ED87C70B99CADF909172BB6443942CA72579EC303D79EB17BFCD3",
+          "Native/platform/windows/stable_sdk_input_d3d11.hlsl": "03A54DB6F092BA48547014B8C15202313850B3CC0D24E5261CDF741F1CBE2DD0",
+          "Native/stable_sdk_input_d3d11.cmake": "5473AA5E44C45F1F73C9FCC08E490DB97227587B0EA22E24BB7D96915E57CD03",
+          "Native/tests/bridge_loader_lifecycle_test.cpp": "FA9E38EAF6B4492F02F2F4F45C0FDB59AEFA3227EA37116AE84EF971D19CAC3B",
+          "Native/tests/bridge_shutdown_contract.h": "407273B9AC0330ED817CD85B22BEF2070F1365BCD64B2398A9F6C638FE546B58",
+          "Native/tests/bridge_shutdown_contract_test.cpp": "5FF2677DBF79B43F571E12E9276793D8910B96018C7E42627D38D501CB39B9C0",
+          "Native/tests/bridge_static_present_test.cpp": "D72A1669E97D433C6C2EAA6373BE95CB638EFB420E694C6473C41D1774679420",
+          "Native/tests/bridge_worker_host_affinity_test.cpp": "87779E3B8D309A7C232CB0712A7BA1662F7FAA7E4DD0A4FD5974A5DF24183A0B",
+          "Native/tests/fake_bridge_missing.cpp": "89D4BB907704FC1A8FE1FDAD152A983779F0CED85808B77DEA9263C0B5C05FD3",
+          "Native/tests/fake_bridge_runtime.cpp": "3639075BF270849DBAA8903C9466F78B913085462B9CE8E5DF36C4FC31A6CAF8",
+          "Native/tests/fake_bridge_shutdown_runtime.cpp": "5F79C774C021FF9BD57414CD6AB2F2F02295D202CCD7115FBAC48A56B17244C3",
+          "Native/tests/portable_common_test.cpp": "ED50427D073E0FFE9692E2749DDD076EEABD3AEA3ACA6E2D481F15D0FA82772E",
+          "Native/tests/stable_sdk_input_d3d11_test.cpp": "6DB3C3CA796C39C3C28446F4BC1B101F46AA3D4E9A23FDC88A4FEA3A5800ECA2",
+          "Native/tests/unsupported_shim_abi_test.cpp": "6115552BCE9D8CB909F354F149F5E2A3DD9BEE00E2A6BCA8F32A8E4DAC044546",
+          "Native/tests/worker_transport_test.cpp": "EA64AEFCD7696ACC09E549FE6145249ABEC64B56CEC6EEFC83F6FE5B40002E84"
+        },
+        "shaderCompiler": "Windows SDK FXC 10.1, SDK 10.0.22621.0; stable D3D11 input shader bytecode embedded at build time.",
+        "sourceBaseCommit": "d913f9912ad2c983fcdbbdc7ed319b97d5d07354",
+        "sourceState": "Windows x64 Release shim from source base d913f9912ad2c983fcdbbdc7ed319b97d5d07354 plus the canonical Native working-tree changes. Persistent preview endpoints retain SDK visibility and the registered primary through drained logical pause and lease return; the worker re-presents the last successfully drawn primary with cached quilt geometry at no more than 5 Hz. Resume, lease admission, producer drain, return proof, acknowledgement, and final teardown preserve their existing lifecycle contracts. No new exported ABI was added.",
+        "targetArchitecture": "x64",
+        "unityPluginApi": "6000.6.4f1",
+        "unsupportedAbiTest": "Linux-only unsupported-shim ABI test was not run in this Windows Release invocation.",
+        "validationLimits": "Six focused Native Release CTests passed using fake Bridge callbacks and WARP/test adapters. No official Bridge SDK runtime, Unity Test Runner, hardware, optical appearance, image-quality, or performance validation was performed for this artifact."
+      },
+      "d3d12HardwareValidation": "No hardware validation was performed for the current official F1B06893 artifact. Historical/private candidate observations are separately identified and do not validate this DLL.",
+      "dllSha256": "F1B06893404D75582FF600BA733AE3C531ED0C0A7EA40E29CE56DD7A91B0A000",
+      "generatedAt": "2026-10-10T01:28:50Z",
+      "generator": "Ninja 1.13.0.git.kitware.jobserver-pipe-1; CMake 4.0.1",
+      "historicalGpuValidation": "Historical RTX 3090 Ti D3D12 shared-resource and Editor/Player observations are not fresh evidence for this DLL. The latest local validation above is the fresh Windows Release CTest only.",
+      "independentCTest": "Current packaged Windows DLL: focused Native Release CTest passed 6/6. Tests use fake Bridge callbacks and WARP/test adapters; no official vendor SDK or physical display validation is implied.",
+      "nativeSourceHashes": {
+        "Native/CMakeLists.txt": "C8A135B158B51E2145DCF659D71E8C4C7DB1D44DB1233D676C83646D04B7EA0D",
+        "Native/bridge_d3d12_internal.h": "6B06A4792E547BDAE65EE91908CB565ED5FA1B89AD5C6E7A6EE627D6933FE154",
+        "Native/bridge_shim.cpp": "396C926036C7290A994D6024B8691775AF90D1A88684676641A87B6076448582",
+        "Native/bridge_shim.h": "B33943E3D0BA4F5E3E7177008542BF48E94AD17846CB421C5AF834F07B687954",
+        "Native/bridge_worker_common.cpp": "D57B45EA0B65FA2B3BD953853529E5005A629321D035C090C1C3D6C620C9E39B",
+        "Native/bridge_worker_common.h": "48ACE99B1F5C90842FB2E6B5AE6021AD835891486BC65C3969C2427F5DB96FD4",
+        "Native/bridge_worker_transport.cpp": "C93D2945C4B12131C2D21C3123092011CD193D9FAD14A1F316D73787B96EF6A6",
+        "Native/bridge_worker_transport.h": "9C16B5397938E19865214DE10336339FF3FB5BD68DB44D625BF1B58B5BF4E67D",
+        "Native/platform/unsupported/bridge_worker_transport_unsupported.inc": "FE0B5193F02060E87B076796A7B80F4BE90781087D44AA35A0D7FA37B098A20E",
+        "Native/platform/windows/backends/d3d11_backend.inc": "8358D013E24979837AF3419B23223675E211C51CAA667F78672194E5585ADDDF",
+        "Native/platform/windows/backends/d3d11_d3d12_interop.inc": "FDF55A669CE099FA48B95683678ABE7F51592AA1B9E55BF097B90482F7398B28",
+        "Native/platform/windows/backends/d3d12_backend.inc": "F3E13187FE5B0D7441437D9531D894064EC88BE2EAE1DF4982D8B2167F6CB9AB",
+        "Native/platform/windows/bridge_worker_transport_windows.inc": "13E4B4D10B5FB773D5B894FC7ADD9EDB0B029C07F2E8F4D321C236990DD130A7",
+        "Native/platform/windows/stable_sdk_input_d3d11.cpp": "FF1BDCCEFC961168DAD81A9CC18CF8C68232C22CE33CFAC575F0901A2C7BB92F",
+        "Native/platform/windows/stable_sdk_input_d3d11.h": "77EEB054980ED87C70B99CADF909172BB6443942CA72579EC303D79EB17BFCD3",
+        "Native/platform/windows/stable_sdk_input_d3d11.hlsl": "03A54DB6F092BA48547014B8C15202313850B3CC0D24E5261CDF741F1CBE2DD0",
+        "Native/stable_sdk_input_d3d11.cmake": "5473AA5E44C45F1F73C9FCC08E490DB97227587B0EA22E24BB7D96915E57CD03",
+        "Native/tests/bridge_loader_lifecycle_test.cpp": "FA9E38EAF6B4492F02F2F4F45C0FDB59AEFA3227EA37116AE84EF971D19CAC3B",
+        "Native/tests/bridge_shutdown_contract.h": "407273B9AC0330ED817CD85B22BEF2070F1365BCD64B2398A9F6C638FE546B58",
+        "Native/tests/bridge_shutdown_contract_test.cpp": "5FF2677DBF79B43F571E12E9276793D8910B96018C7E42627D38D501CB39B9C0",
+        "Native/tests/bridge_static_present_test.cpp": "D72A1669E97D433C6C2EAA6373BE95CB638EFB420E694C6473C41D1774679420",
+        "Native/tests/bridge_worker_host_affinity_test.cpp": "87779E3B8D309A7C232CB0712A7BA1662F7FAA7E4DD0A4FD5974A5DF24183A0B",
+        "Native/tests/fake_bridge_missing.cpp": "89D4BB907704FC1A8FE1FDAD152A983779F0CED85808B77DEA9263C0B5C05FD3",
+        "Native/tests/fake_bridge_runtime.cpp": "3639075BF270849DBAA8903C9466F78B913085462B9CE8E5DF36C4FC31A6CAF8",
+        "Native/tests/fake_bridge_shutdown_runtime.cpp": "5F79C774C021FF9BD57414CD6AB2F2F02295D202CCD7115FBAC48A56B17244C3",
+        "Native/tests/portable_common_test.cpp": "ED50427D073E0FFE9692E2749DDD076EEABD3AEA3ACA6E2D481F15D0FA82772E",
+        "Native/tests/stable_sdk_input_d3d11_test.cpp": "6DB3C3CA796C39C3C28446F4BC1B101F46AA3D4E9A23FDC88A4FEA3A5800ECA2",
+        "Native/tests/unsupported_shim_abi_test.cpp": "6115552BCE9D8CB909F354F149F5E2A3DD9BEE00E2A6BCA8F32A8E4DAC044546",
+        "Native/tests/worker_transport_test.cpp": "EA64AEFCD7696ACC09E549FE6145249ABEC64B56CEC6EEFC83F6FE5B40002E84"
+      },
+      "pluginApiUnityVersion": "6000.6.4f1",
+      "postBuildSourceChanges": {
+        "files": [],
+        "scope": "No Native source edits after the final build. The packaged DLL hash matches the Release build output.",
+        "verifiedAt": "2026-10-10T01:28:50Z"
+      },
+      "sha256": "F1B06893404D75582FF600BA733AE3C531ED0C0A7EA40E29CE56DD7A91B0A000",
+      "sourceBaseCommit": "d913f9912ad2c983fcdbbdc7ed319b97d5d07354",
+      "sourceState": "Windows x64 Release shim from source base d913f9912ad2c983fcdbbdc7ed319b97d5d07354 plus the canonical Native working-tree changes. Persistent preview endpoints retain SDK visibility and the registered primary through drained logical pause and lease return; the worker re-presents the last successfully drawn primary with cached quilt geometry at no more than 5 Hz. Resume, lease admission, producer drain, return proof, acknowledgement, and final teardown preserve their existing lifecycle contracts. No new exported ABI was added.",
+      "targetArchitecture": "x64",
+      "unityD3D12InterfaceSelection": "The current DLL was built with the local Unity 6000.6.4f1 PluginAPI; CMake selected the v8-preferred D3D12 interface declarations available in that PluginAPI.",
+      "validationLimits": "Focused Windows Native Release CTest passed 6/6 using fake Bridge callbacks and WARP/test adapters. No official Bridge SDK, Unity runtime, physical-device, optical appearance, image-quality, or performance validation was performed for this artifact."
+    },
+    "postBuildSourceChanges": {
+      "files": [],
+      "scope": "No Native source edits after the final build. The packaged DLL hash matches the Release build output.",
+      "verifiedAt": "2026-10-10T01:28:50Z"
+    }
+  },
+  "historicalGpuValidation": "Earlier RTX 3090 Ti observations belong to older artifacts. Current targeted Windows runtime evidence is separately recorded under currentWindowsRuntimeValidation.",
+  "historicalPostBuildSourceChanges": {
+    "files": [
+      "Native/tests/metadata_test.cpp"
+    ],
+    "scope": "Native/tests/metadata_test.cpp was expanded after the packaged DLL was built (and after the recorded CTest run) to add synthetic multi-display metadata coverage. This is test-only source and is not linked into lookingglass_bridge_shim.dll. No claim is made that the recorded CTest run includes this later edit.",
+    "verifiedAt": "2026-10-11T01:56:03+09:00"
+  },
+  "independentCTest": "Current Windows Native Release CTest passed 19/19. The presenter WARP executable includes 25 pixel-oracle cases and 6 calibration boundary checks (not additional CTest entries). The current Windows Editor runtime record separately covers 12 device conditions; see currentWindowsRuntimeValidation.",
+  "license": "Apache-2.0",
+  "licenseScope": "Apache-2.0 applies to original ViewWeave code only; external Unity PluginAPI declarations and the separately installed Bridge runtime have separate terms.",
+  "macOSCIBuildArtifact": {
+    "artifactArchiveSha256": "0E250C63AB3F7553191F35BA44AC636A578E3DB3732B20A5C03FDC46182500EC",
+    "artifactArchiveSizeBytes": 35839,
+    "artifactContents": [
+      "liblookingglass_bridge_shim.dylib"
+    ],
+    "artifactContentsVerifiedNoVendorRuntime": true,
+    "artifactId": 11519112992,
+    "artifactName": "native-macos-metal-shim",
+    "buildResult": "full macOS shim compile and link passed",
+    "cmakeBuildType": "CMAKE_BUILD_TYPE was unset; no Release optimization claim is made",
+    "compiler": "AppleClang 15.0.0.15000309 (CXX and ObjCXX)",
+    "definedExternalSymbols": 101,
+    "distribution": "GitHub Actions artifact; manual download only",
+    "file": "liblookingglass_bridge_shim.dylib",
+    "fileSha256": "C06464EEEBAA3D3B934437AD9242B6DFA4C5E37E26A3187D3BE131113213980B",
+    "fileSizeBytes": 179952,
+    "includedInUPM": false,
+    "jobsPassed": 5,
+    "jobsTotal": 5,
+    "linkedSystemLibraries": [
+      "Metal.framework",
+      "Foundation.framework",
+      "IOSurface.framework",
+      "libc++.1.dylib",
+      "libSystem.B.dylib",
+      "libobjc.A.dylib"
+    ],
+    "machoCpuType": "0x0100000c (ARM64)",
+    "machoFileType": "MH_DYLIB",
+    "machoMagic": "0xfeedfacf",
+    "officialBridgeRuntimeBundled": false,
+    "officialSdkLoaded": false,
+    "pullRequestRunId": 37705340768,
+    "pullRequestRunUrl": "https://github.com/zabaglione/ViewWeave/actions/runs/37705340768",
+    "realDisplayTested": false,
+    "runnerImage": "macos-14-arm64",
+    "runtimeTested": false,
+    "sourceCommit": "054fffeb817ac8daae6ff68ed567ec7e69fe4798",
+    "tests": [
+      "lookingglass_worker_common_test",
+      "lookingglass_metal_api_contract_test",
+      "lookingglass_metal_submission_lifetime_test"
+    ],
+    "testsPassed": 3,
+    "testsTotal": 3,
+    "verifiedExports": [
+      "UnityPluginLoad",
+      "UnityPluginUnload",
+      "lkg_metal_provider_query_v1",
+      "lkg_metal_provider_begin_v1",
+      "lkg_metal_provider_submit_v1",
+      "lkg_metal_provider_pump_v1",
+      "lkg_metal_provider_close",
+      "lkg_metal_provider_render_event_func",
+      "lkg_metal_provider_render_event_id"
+    ],
+    "workflowRunId": 37705337066,
+    "workflowRunUrl": "https://github.com/zabaglione/ViewWeave/actions/runs/37705337066"
+  },
+  "nativeSourceHashes": {
+    "Native/CMakeLists.txt": "3BCDEB35718E326B186AC3463CFA1E538785B788162ED2E5EAD2157AB034DCBF",
+    "Native/bridge_d3d12_internal.h": "6B06A4792E547BDAE65EE91908CB565ED5FA1B89AD5C6E7A6EE627D6933FE154",
+    "Native/bridge_shim.h": "86C0AE009031C6894A0FEDC18AE38C80AE8D2A920A0D2FA10F60A046E474013D",
+    "Native/bridge_worker_common.h": "48ACE99B1F5C90842FB2E6B5AE6021AD835891486BC65C3969C2427F5DB96FD4",
+    "Native/bridge_worker_transport.h": "7B3466730CBFE4FDFC623C8A5BB9C20814B14CF9E77C06812F006CB68F57219A",
+    "Native/common/bridge_metadata.cpp": "3D0DCDB30963128E79EA7909EECE671CFF1F56D83E9AA04FF23BA5D11E200A7C",
+    "Native/common/bridge_metadata.h": "A0FBFCFFDE6E5C876B07EEA941ECE9669FA1049A40440EB84C928F5106C90487",
+    "Native/common/bridge_worker_common.cpp": "D57B45EA0B65FA2B3BD953853529E5005A629321D035C090C1C3D6C620C9E39B",
+    "Native/common/subpixel_calibration.cpp": "41F9E19864A80CD3ADC7833DA634736C810A71BF015FDA24E9F18C726DA1FF88",
+    "Native/common/subpixel_calibration.h": "4FCCE2FC065D3D7EACA0A860AFF0222B3913C89F370B34F128E55A12D4ED8092",
+    "Native/platform/windows/backends/d3d11_backend.inc": "95044FE8598F080631E306C70785513A44333B93F9CD3D2A317CA9100ED1208C",
+    "Native/platform/windows/backends/d3d11_d3d12_interop.inc": "FDF55A669CE099FA48B95683678ABE7F51592AA1B9E55BF097B90482F7398B28",
+    "Native/platform/windows/backends/d3d12_backend.inc": "60A158CFE6184299DC8046730B62CF93B89F3C2E424731F2C1BD06F5369F7747",
+    "Native/platform/windows/bridge_shim_windows.cpp": "B64D83423E0B286F82B7B47E3EB8D4D2009FDF6B4548DDDF7DDC68B921DCB472",
+    "Native/platform/windows/bridge_subpixel_metadata.cpp": "0CD09CA48EBF4D184D36458E49B0526E299D86993CD2B74D873002517AF102C2",
+    "Native/platform/windows/bridge_subpixel_metadata.h": "F18F6E1F094F30BCB05029D7E351FFF3D041E3F6562A64C1984597CA23CDBD7F",
+    "Native/platform/windows/bridge_worker_transport_windows.cpp": "B7280A1F0A1E27E94AB7EDE6FD8BCDA7BC0E30A99ABC5A2FC7AFEC2C6A615DFE",
+    "Native/platform/windows/manual_subpixel_presenter.cpp": "471F15765850CF2BA87CA31F8EA38A57057EB7B840913D919A745690DC67CC8D",
+    "Native/platform/windows/manual_subpixel_presenter.h": "40C45995FD9E05FAE48E463C886E9CD80051329D731472277678EE6CD3BDDB91",
+    "Native/platform/windows/manual_subpixel_presenter.hlsl": "DF58E339163CD361AE45F639EB75BA522D6E785700C96E695A901BBA015B310B",
+    "Native/platform/windows/stable_sdk_input_d3d11.cpp": "FF1BDCCEFC961168DAD81A9CC18CF8C68232C22CE33CFAC575F0901A2C7BB92F",
+    "Native/platform/windows/stable_sdk_input_d3d11.h": "77EEB054980ED87C70B99CADF909172BB6443942CA72579EC303D79EB17BFCD3",
+    "Native/platform/windows/stable_sdk_input_d3d11.hlsl": "03A54DB6F092BA48547014B8C15202313850B3CC0D24E5261CDF741F1CBE2DD0",
+    "Native/platform/windows/stdio_load_guard.cpp": "1F380F85E84BD2B999F3D95B04863B7DD2AAF140B77232613CD35BE01EF672E2",
+    "Native/platform/windows/stdio_load_guard.h": "E6FF25620FB02836979D846A7D0A9A9B281539FDCC30A223DD5917A48C442C9D",
+    "Native/stable_sdk_input_d3d11.cmake": "038658297643D42ED6FB68FDAC24C083FB069609C6C7E066BE5E10ADF5C98A03",
+    "Packages/com.zabaglione.lookingglass.viewweave.bridge/Runtime/Common/Resources/ViewWeaveSubpixelSampling.hlsl": "5A0E0B8EA9BEF1E5E44DBE836FDB7B4EC56F0B63015BEB6D7B7E2EFFFF0FC0FD"
+  },
+  "nativeSourceHashesNote": "Exact Native source hashes for the current Windows Release artifact were captured at build time and are stored in currentWindowsReleaseBuild.nativeSourceHashes and .local/windows-subpixel-native-20261011/validation/build-manifest.json.",
   "olderCurrentWindowsReleaseBuild": {
-    "classification": "Historical prior currentWindowsReleaseBuild preserved before publishing the new Native lease/metadata artifact.",
     "build": {
       "artifactSha256": "4E5E1FF81C7C1C227D45E5D38E23FB84F1AAB8A8444EF327D639E1AEB619532B",
-      "dllSha256": "4E5E1FF81C7C1C227D45E5D38E23FB84F1AAB8A8444EF327D639E1AEB619532B",
-      "sourceBaseCommit": "b4cf0f6907ac823454a203b8f2e8372381b1e6f6",
-      "sourceState": "Windows x64 Release shim built from source base b4cf0f6907ac823454a203b8f2e8372381b1e6f6 plus the current Native working-tree changes. It implements same-worker preview pause/resume: pause gates new submissions, drains in-flight work, then hides the existing session on its SDK owner thread; resume shows that session without recreating the window or transfer resources. Full close continues to drain and release resources after proof. No vendor optical-output validation is claimed.",
-      "compiler": "MSVC 19.44.35217.0",
-      "targetArchitecture": "x64",
-      "configuration": "Release",
-      "generator": "Visual Studio 17 2022; MSBuild 17.14.23",
-      "unityPluginApi": "6000.6.4f1",
-      "buildDirectory": "Native/build-worker-release-vs/Release",
       "buildCommand": "cmake --build Native/build-worker-release-vs --config Release --target lookingglass_bridge_shim",
+      "buildDirectory": "Native/build-worker-release-vs/Release",
+      "classification": "Historical prior packaged Windows release; not the current DLL.",
+      "compiledUtc": "2026-10-09T08:19:48Z",
+      "compiler": "MSVC 19.44.35217.0",
+      "configuration": "Release",
+      "diagnosticTwoColorRun": {
+        "dllSha256": "DAECE40186CBDF12C95105649B764BC274B0A5F93FCDE43A3C1DEF14CDA3B004",
+        "environment": "Unity 6000.6.4f1 URP fixture, Windows D3D12, official Bridge runtime, display ordinal 0 (SDK display index 2), Preview quality, Half view render mode, physical framing disabled, reference-camera FOV following enabled.",
+        "evidencePath": ".local/current-sample-state/2026-10-09/device-restart-fixed-diag-daec",
+        "limits": "This run enabled native snapshot and staging-readback diagnostics. It establishes software texture handoff and process SDK finalization for this fixture only; it is not an optical display-quality assessment. A separate non-diagnostic run is recorded below.",
+        "result": "Two render sessions completed five submissions each. Native trace reported source_match=1 and bridge_match=1 for the shared D3D11 device identity. Source and Bridge texture frame 3 and frame 5 readbacks each matched the expected color: green in session 1 and magenta in session 2, with 348096 matching pixels per frame. Both sessions stopped with native pending=0 and preview-retention pending=0; final SDK uninitialize returned success.",
+        "status": "PASS; final SDK uninitialize succeeded"
+      },
+      "dllSha256": "4E5E1FF81C7C1C227D45E5D38E23FB84F1AAB8A8444EF327D639E1AEB619532B",
+      "freshHardwareEvidence": {
+        "note": "The metadata/Play/toolbar-Stop/refresh pass used the 0405c09 DLL (SHA-256 D46AAADDFC035FCC3AF3FAD5B6886AF7DE1D9E0816846C4A5874A52F815944DF). The diagnostic and non-diagnostic two-color runs below used DLL DAECE40186CBDF12C95105649B764BC274B0A5F93FCDE43A3C1DEF14CDA3B004. They are historical software-side handoff evidence; the user observed black physical output during the candidate hold. None of these runs validates pause/resume visibility in the current DLL.",
+        "previousArtifactSha256": "D46AAADDFC035FCC3AF3FAD5B6886AF7DE1D9E0816846C4A5874A52F815944DF",
+        "previousEvidencePath": ".local/current-sample-state/2026-10-09/refresh-2da34c050b2f4e0493e4308a7dfa693b",
+        "status": "Historical on the earlier DLL: software-image checks passed; the user reported a black physical output during the observed baseline and candidate holds. This does not validate the current pause/resume DLL."
+      },
+      "generator": "Visual Studio 17 2022; MSBuild 17.14.23",
+      "historicalDllSha256": "4E5E1FF81C7C1C227D45E5D38E23FB84F1AAB8A8444EF327D639E1AEB619532B",
       "localCTest": {
-        "passed": 10,
-        "total": 10,
         "elapsedSeconds": 10.11,
         "evidencePath": "Native/build-worker-release-vs/Testing/Temporary/LastTest.log",
+        "note": "Includes lookingglass_worker_preview_pause_test for drain-before-hide, phase acknowledgement, same-session/worker resource retention, submit rejection while paused, and full close from paused state.",
+        "passed": 10,
         "tests": [
           {
             "name": "lookingglass_worker_common_test"
@@ -471,48 +810,36 @@
             "name": "lookingglass_bridge_shutdown_exception_contract_test"
           }
         ],
-        "note": "Includes lookingglass_worker_preview_pause_test for drain-before-hide, phase acknowledgement, same-session/worker resource retention, submit rejection while paused, and full close from paused state."
-      },
-      "notes": "The source Bridge package DLL matches this artifact SHA-256. Native Release CTest passed 10/10. These tests validate Native worker lifecycle contracts; they do not establish official Bridge device visibility or optical appearance.",
-      "freshHardwareEvidence": {
-        "status": "Historical on the earlier DLL: software-image checks passed; the user reported a black physical output during the observed baseline and candidate holds. This does not validate the current pause/resume DLL.",
-        "previousArtifactSha256": "D46AAADDFC035FCC3AF3FAD5B6886AF7DE1D9E0816846C4A5874A52F815944DF",
-        "previousEvidencePath": ".local/current-sample-state/2026-10-09/refresh-2da34c050b2f4e0493e4308a7dfa693b",
-        "note": "The metadata/Play/toolbar-Stop/refresh pass used the 0405c09 DLL (SHA-256 D46AAADDFC035FCC3AF3FAD5B6886AF7DE1D9E0816846C4A5874A52F815944DF). The diagnostic and non-diagnostic two-color runs below used DLL DAECE40186CBDF12C95105649B764BC274B0A5F93FCDE43A3C1DEF14CDA3B004. They are historical software-side handoff evidence; the user observed black physical output during the candidate hold. None of these runs validates pause/resume visibility in the current DLL."
-      },
-      "diagnosticTwoColorRun": {
-        "status": "PASS; final SDK uninitialize succeeded",
-        "dllSha256": "DAECE40186CBDF12C95105649B764BC274B0A5F93FCDE43A3C1DEF14CDA3B004",
-        "evidencePath": ".local/current-sample-state/2026-10-09/device-restart-fixed-diag-daec",
-        "environment": "Unity 6000.6.4f1 URP fixture, Windows D3D12, official Bridge runtime, display ordinal 0 (SDK display index 2), Preview quality, Half view render mode, physical framing disabled, reference-camera FOV following enabled.",
-        "result": "Two render sessions completed five submissions each. Native trace reported source_match=1 and bridge_match=1 for the shared D3D11 device identity. Source and Bridge texture frame 3 and frame 5 readbacks each matched the expected color: green in session 1 and magenta in session 2, with 348096 matching pixels per frame. Both sessions stopped with native pending=0 and preview-retention pending=0; final SDK uninitialize returned success.",
-        "limits": "This run enabled native snapshot and staging-readback diagnostics. It establishes software texture handoff and process SDK finalization for this fixture only; it is not an optical display-quality assessment. A separate non-diagnostic run is recorded below."
+        "total": 10
       },
       "nonDiagnosticTwoColorRun": {
-        "status": "PASS; process exited naturally with code 0 and the Editor PID was confirmed gone",
-        "dllSha256": "DAECE40186CBDF12C95105649B764BC274B0A5F93FCDE43A3C1DEF14CDA3B004",
-        "testSourceSha256AtRun": "10FCF9DC672BECE6DA62C548CE94F8B6D4663EA5F04B4D2F6714483BA7ED9312",
-        "evidencePath": ".local/current-sample-state/2026-10-09/device-restart-visual-observer-daec",
-        "environment": "Unity 6000.6.4f1 URP fixture, Windows D3D12, official Bridge runtime, display ordinal 0 (SDK display index 2), Preview quality, Half view render mode, physical framing disabled, reference-camera FOV following enabled.",
-        "result": "The one-test run passed in 142.287 seconds, including a 120-second active magenta hold. Green and magenta appeared in the Unity source ReadPixels checks on both render sessions; the test continued to observe draw activity after restart. Both preview stops reached native pending=0 and preview-retention pending=0, and final SDK uninitialize succeeded.",
         "diagnostics": "No native texture snapshot or staging-readback diagnostics were enabled; the fixture still used Unity source ReadPixels. The optional null-trace-path guard in the test source was applied after this run and does not change the executed test result.",
-        "limits": "The software-side two-color result is not confirmation of physical display appearance. During the observed hold, the user reported that the physical output remained black. This is historical for the DAECE artifact and does not test the current pause/resume DLL."
+        "dllSha256": "DAECE40186CBDF12C95105649B764BC274B0A5F93FCDE43A3C1DEF14CDA3B004",
+        "environment": "Unity 6000.6.4f1 URP fixture, Windows D3D12, official Bridge runtime, display ordinal 0 (SDK display index 2), Preview quality, Half view render mode, physical framing disabled, reference-camera FOV following enabled.",
+        "evidencePath": ".local/current-sample-state/2026-10-09/device-restart-visual-observer-daec",
+        "limits": "The software-side two-color result is not confirmation of physical display appearance. During the observed hold, the user reported that the physical output remained black. This is historical for the DAECE artifact and does not test the current pause/resume DLL.",
+        "result": "The one-test run passed in 142.287 seconds, including a 120-second active magenta hold. Green and magenta appeared in the Unity source ReadPixels checks on both render sessions; the test continued to observe draw activity after restart. Both preview stops reached native pending=0 and preview-retention pending=0, and final SDK uninitialize succeeded.",
+        "status": "PASS; process exited naturally with code 0 and the Editor PID was confirmed gone",
+        "testSourceSha256AtRun": "10FCF9DC672BECE6DA62C548CE94F8B6D4663EA5F04B4D2F6714483BA7ED9312"
       },
+      "notes": "The source Bridge package DLL matches this artifact SHA-256. Native Release CTest passed 10/10. These tests validate Native worker lifecycle contracts; they do not establish official Bridge device visibility or optical appearance.",
+      "sourceBaseCommit": "b4cf0f6907ac823454a203b8f2e8372381b1e6f6",
+      "sourceState": "Windows x64 Release shim built from source base b4cf0f6907ac823454a203b8f2e8372381b1e6f6 plus the current Native working-tree changes. It implements same-worker preview pause/resume: pause gates new submissions, drains in-flight work, then hides the existing session on its SDK owner thread; resume shows that session without recreating the window or transfer resources. Full close continues to drain and release resources after proof. No vendor optical-output validation is claimed.",
+      "targetArchitecture": "x64",
       "traceOnlyBuild": {
+        "compiledUtc": "2026-10-09T02:38:44Z",
+        "dllSha256": "D8C5C1FF4C651278737612A1DA061DAD8D7CF3C333CF41192095FC1E506E79EA",
+        "dllSizeBytes": 167424,
+        "optionalSnapshotOutput": "LKG_BRIDGE_SNAPSHOT_SESSION_SUFFIX=1 appends .session-<id> before the extension. LKG_BRIDGE_SNAPSHOT_FRAME_SEQUENCE=1 saves source and Bridge textures after successful draw at frames 1, 3, and 5 with per-session filenames and opt-in D3D11 staging readback pixel statistics. Unset preserves the existing single-snapshot behavior.",
         "purpose": "Conditional session/window/device/texture lifecycle tracing and explicit per-frame texture diagnostics for the Start-Stop-Start investigation.",
         "sourceFile": "Native/bridge_shim.cpp",
         "sourceSha256": "B88AC70DAD533DDFE8E750FE0DDF35DD00D1E0FF0BA68A8ADBE4AD8DCAF32ECC",
-        "dllSha256": "D8C5C1FF4C651278737612A1DA061DAD8D7CF3C333CF41192095FC1E506E79EA",
-        "dllSizeBytes": 167424,
-        "compiledUtc": "2026-10-09T02:38:44Z",
-        "traceOutput": "Enabled only when LKG_NATIVE_TRACE is set. Records process/thread/tick/session IDs, opaque window/device/texture values, operation results, and COM device identity comparisons.",
-        "optionalSnapshotOutput": "LKG_BRIDGE_SNAPSHOT_SESSION_SUFFIX=1 appends .session-<id> before the extension. LKG_BRIDGE_SNAPSHOT_FRAME_SEQUENCE=1 saves source and Bridge textures after successful draw at frames 1, 3, and 5 with per-session filenames and opt-in D3D11 staging readback pixel statistics. Unset preserves the existing single-snapshot behavior.",
-        "tests": "Windows Release DLL target compiled successfully. Existing 8/8 CTest evidence predates this diagnostic rebuild and was not rerun."
+        "tests": "Windows Release DLL target compiled successfully. Existing 8/8 CTest evidence predates this diagnostic rebuild and was not rerun.",
+        "traceOutput": "Enabled only when LKG_NATIVE_TRACE is set. Records process/thread/tick/session IDs, opaque window/device/texture values, operation results, and COM device identity comparisons."
       },
-      "compiledUtc": "2026-10-09T08:19:48Z",
-      "classification": "Historical prior packaged Windows release; not the current DLL.",
-      "historicalDllSha256": "4E5E1FF81C7C1C227D45E5D38E23FB84F1AAB8A8444EF327D639E1AEB619532B"
+      "unityPluginApi": "6000.6.4f1"
     },
+    "classification": "Historical prior currentWindowsReleaseBuild preserved before publishing the new Native lease/metadata artifact.",
     "nativeSourceHashes": {
       "Native/CMakeLists.txt": "E8FC7AE1EA5E1839C13003DDA9667790007DD304FCEE2C4E841637B0924CC009",
       "Native/bridge_d3d12_internal.h": "6B06A4792E547BDAE65EE91908CB565ED5FA1B89AD5C6E7A6EE627D6933FE154",
@@ -538,19 +865,85 @@
       "Native/tests/worker_transport_test.cpp": "5518C9F95A49BC7235B52A572B01C01D96DA516D38735290AFE13DD445B35ED6"
     }
   },
+  "pluginApiUnityVersion": "6000.6.4f1",
+  "postBuildSourceChanges": {
+    "files": [],
+    "scope": "No Native production source edits occurred after the Release DLL build and final CTest run before packaging.",
+    "verifiedAt": "2026-10-11T12:28:02+09:00"
+  },
   "preCounterResetWindowsReleaseBuild": {
     "artifactSha256": "A6A062343710AF2362DAF7B923A9BB98BDD5D381D896C68AE3190CA55655FBC7",
-    "dllSha256": "A6A062343710AF2362DAF7B923A9BB98BDD5D381D896C68AE3190CA55655FBC7",
-    "sourceBaseCommit": "c92fa1b64a6420a452e62d3d219a714f5ebe60b7",
-    "sourceState": "Windows x64 Release shim built from source base c92fa1b64a6420a452e62d3d219a714f5ebe60b7 plus current Native working-tree changes. The internal Preview Lease V1 transport reuses one persistent SDK endpoint across producer leases, gates reacquire publication under the context lock, and preserves same-generation return proof. Legacy metadata handles on that endpoint perform an initial snapshot query, own their snapshot generations, and require close/cleanup proof before End; application names remain exact while runtime paths are canonicalized. No new public managed API is claimed.",
-    "compiler": "MSVC 19.44.35217.0",
-    "shaderCompiler": "Windows SDK FXC 10.1, SDK 10.0.26100.0; stable D3D11 input shader bytecode is embedded at build time.",
-    "targetArchitecture": "x64",
-    "configuration": "Release",
-    "generator": "Visual Studio 17 2022; MSBuild 17.14.23",
-    "unityPluginApi": "6000.6.4f1",
-    "buildDirectory": "Native/build-worker-release-vs/Release",
     "buildCommand": "cmake --build Native/build-worker-release-vs --config Release",
+    "buildDirectory": "Native/build-worker-release-vs/Release",
+    "classification": "Historical prior currentWindowsReleaseBuild preserved before publishing the Native per-lease counter reset artifact.",
+    "compiledUtc": "2026-10-09T10:14:14Z",
+    "compiler": "MSVC 19.44.35217.0",
+    "configuration": "Release",
+    "dllSha256": "A6A062343710AF2362DAF7B923A9BB98BDD5D381D896C68AE3190CA55655FBC7",
+    "exports": {
+      "baselineNamedExports": 46,
+      "baselineNamesPreserved": 46,
+      "comparedAgainstSha256": "4E5E1FF81C7C1C227D45E5D38E23FB84F1AAB8A8444EF327D639E1AEB619532B",
+      "currentNamedExports": 50,
+      "missingNames": [],
+      "newNames": [
+        "lkg_worker_ack_preview_lease_return_v1",
+        "lkg_worker_acquire_preview_lease_v1",
+        "lkg_worker_get_preview_lease_status_v1",
+        "lkg_worker_request_preview_lease_return_v1"
+      ],
+      "note": "All named exports from the prior packaged DLL are present. Four Preview Lease V1 exports are added. No test-only exports are present; callers bind exports by name and ordinal compatibility is not claimed.",
+      "ordinalCompatibilityClaim": false,
+      "testOnlyExports": []
+    },
+    "generator": "Visual Studio 17 2022; MSBuild 17.14.23",
+    "historicalDllSha256": "A6A062343710AF2362DAF7B923A9BB98BDD5D381D896C68AE3190CA55655FBC7",
+    "localCTest": {
+      "elapsedSeconds": 10.8,
+      "evidencePath": "Native/build-worker-release-vs/Testing/Temporary/LastTest.log",
+      "note": "Release CTest covers the preview lease return/reacquire barrier, same endpoint/session/window/stable input, legacy metadata Begin/snapshot/Close/End compatibility, in-flight metadata close proof, and explicit final shutdown. Tests use fake Bridge runtimes and WARP/test adapters; no official Bridge SDK session is started.",
+      "passed": 12,
+      "tests": [
+        {
+          "name": "lookingglass_worker_common_test"
+        },
+        {
+          "name": "lookingglass_worker_transport_test"
+        },
+        {
+          "name": "lookingglass_worker_cleanup_exception_test"
+        },
+        {
+          "name": "lookingglass_worker_host_initialize_failure_test"
+        },
+        {
+          "name": "lookingglass_worker_host_uninitialize_failure_test"
+        },
+        {
+          "name": "lookingglass_persistent_d3d11_device_test"
+        },
+        {
+          "name": "lookingglass_worker_preview_pause_test"
+        },
+        {
+          "name": "lookingglass_worker_preview_lease_test"
+        },
+        {
+          "name": "lookingglass_stable_sdk_input_d3d11_test"
+        },
+        {
+          "name": "lookingglass_bridge_loader_lifecycle_test"
+        },
+        {
+          "name": "lookingglass_bridge_shutdown_contract_test"
+        },
+        {
+          "name": "lookingglass_bridge_shutdown_exception_contract_test"
+        }
+      ],
+      "total": 12
+    },
+    "managedCompileOnly": "Seven Editor/Player assemblies compiled against the integration checkpoint. Unity EditMode/PlayMode tests and GPU fixture tests were not run against this DLL.",
     "nativeSourceHashes": {
       "Native/CMakeLists.txt": "42DB0E552AC88A441F219A3909219F8CC1B3730519344427ADCDF5AB559F4E43",
       "Native/bridge_d3d12_internal.h": "6B06A4792E547BDAE65EE91908CB565ED5FA1B89AD5C6E7A6EE627D6933FE154",
@@ -581,11 +974,171 @@
       "Native/tests/unsupported_shim_abi_test.cpp": "6800FBFD53253F59733ACE5690E227F04A6804B83A98BF2B11F1BC505B2E256E",
       "Native/tests/worker_transport_test.cpp": "11FC85817C25B4BCFB58ACDA6CCC1FCE302D4A97B096EFF6A449BADDEAFABBBF"
     },
+    "shaderCompiler": "Windows SDK FXC 10.1, SDK 10.0.26100.0; stable D3D11 input shader bytecode is embedded at build time.",
+    "sourceBaseCommit": "c92fa1b64a6420a452e62d3d219a714f5ebe60b7",
+    "sourceState": "Windows x64 Release shim built from source base c92fa1b64a6420a452e62d3d219a714f5ebe60b7 plus current Native working-tree changes. The internal Preview Lease V1 transport reuses one persistent SDK endpoint across producer leases, gates reacquire publication under the context lock, and preserves same-generation return proof. Legacy metadata handles on that endpoint perform an initial snapshot query, own their snapshot generations, and require close/cleanup proof before End; application names remain exact while runtime paths are canonicalized. No new public managed API is claimed.",
+    "targetArchitecture": "x64",
+    "unityPluginApi": "6000.6.4f1",
+    "validationLimits": "Native Release CTest passed 12/12 using fake Bridge runtimes and WARP/test adapters. Seven managed Editor/Player assemblies compiled, but Unity tests were not run against this DLL. No official Bridge SDK, Unity Editor runtime, new physical-device pause/resume, optical appearance, image quality, or performance validation was performed for this artifact. Earlier human-visible pause/resume evidence applies to the prior packaged DLL and is historical only."
+  },
+  "previousCurrentArtifactValidation": {
+    "artifactSha256": "4D28B54BC09FFCF0BC2E6F9E645E9A04C6EF59210C79BB784872655DA1837F7A",
+    "artifactSizeBytes": 223232,
+    "buildDirectory": ".local/windows-unity-crash-20261011/fix-validation/build-vs2022-x64-release",
+    "hardwareValidation": "limited; see currentWindowsRuntimeValidation and docs/windows-stdout-crash-20261011.md",
+    "nativeTestsPassed": 15,
+    "nativeTestsTotal": 15,
+    "sourceBaseCommit": "2630bf421b02aaf470e421992fc23d2947b82140",
+    "testEvidencePath": ".local/windows-unity-crash-20261011/fix-validation/ctest-release.log",
+    "transportOnlyTestsPassed": 11,
+    "transportOnlyTestsTotal": 11
+  },
+  "previousCurrentWindowsReleaseBuild": {
+    "artifactSha256": "4D28B54BC09FFCF0BC2E6F9E645E9A04C6EF59210C79BB784872655DA1837F7A",
+    "artifactSizeBytes": 223232,
+    "buildCommand": "cmake --build .local/windows-unity-crash-20261011/fix-validation/build-vs2022-x64-release --config Release",
+    "buildDirectory": ".local/windows-unity-crash-20261011/fix-validation/build-vs2022-x64-release",
+    "compiler": "MSVC via Visual Studio 17 2022 Build Tools",
+    "compilerVersion": null,
+    "compilerVersionNote": "The exact cl.exe version was not retained; the build log records MSBuild 17.14.23+b0019275e.",
+    "configuration": "Release",
+    "dllSha256": "4D28B54BC09FFCF0BC2E6F9E645E9A04C6EF59210C79BB784872655DA1837F7A",
+    "generator": "Visual Studio 17 2022",
     "localCTest": {
-      "passed": 12,
-      "total": 12,
-      "elapsedSeconds": 10.8,
+      "elapsedSeconds": 12.73,
+      "evidencePath": ".local/windows-unity-crash-20261011/fix-validation/ctest-release.log",
+      "passed": 15,
+      "postBuildTestSourceChange": "Native/tests/metadata_test.cpp was expanded after this DLL build; that test-only edit is not part of the shim and has no new test result claim here.",
+      "total": 15
+    },
+    "msbuildVersion": "17.14.23+b0019275e",
+    "nativeSourceHashes": null,
+    "nativeSourceHashesNote": "A build-time per-file source hash snapshot was not retained. Do not substitute current working-tree or metadata-test hashes as as-built hashes.",
+    "sourceBaseCommit": "2630bf421b02aaf470e421992fc23d2947b82140",
+    "sourceState": "Windows x64 Release shim built from repository revision 2630bf421b02aaf470e421992fc23d2947b82140 with the local Native stdio-guard changes present at build time. The build-time per-file source hash snapshot was not retained. Native/tests/metadata_test.cpp was changed after this DLL build for test coverage only and is not linked into the shim.",
+    "targetArchitecture": "x64",
+    "transportOnlyCTest": {
+      "elapsedSeconds": 12.28,
+      "evidencePath": ".local/windows-unity-crash-20261011/fix-validation/ctest-transport-only.log",
+      "passed": 11,
+      "total": 11
+    },
+    "unityPluginApi": "6000.6.4f1",
+    "unityPluginApiPath": "C:/Program Files/Unity/Hub/Editor/6000.6.4f1/Editor/Data/PluginAPI",
+    "validationLimits": "Native Release CTest passed 15/15 and transport-only CTest passed 11/11 using the recorded local build. These tests use test adapters/fake Bridge runtimes; physical output evidence is recorded separately under currentWindowsRuntimeValidation. No Player, other-device optical, or TAA pixel/accumulation guarantee is implied."
+  },
+  "previousPackagedArtifactEvidence": {
+    "artifactBuildCMakeListsSha256": "45914253D8248BB13108A8ABD30565173F74F9BE2D47B8BDFA6AF8074F9D37EA",
+    "artifactSha256": "9E81DF02D065DABE39DAACC3E5F90ABECEA401F6DAD5D2E68096CEE3D7B86DCE",
+    "cMakeChangeAfterArtifactBuild": "Only the macOS metal_api_contract_test target gained platform/macos/metal_submission_lifetime.cpp after the Windows DLL build. The lookingglass_bridge_shim Windows target source list and compile definitions are unchanged; the DLL was not rebuilt.",
+    "ciConclusion": "success; 5/5 jobs in each run",
+    "ciRunIds": [
+      37705337066,
+      37705340768
+    ],
+    "classification": "Historical prior packaged artifact; not the current DLL.",
+    "ctestPassed": 4,
+    "ctestRunMode": "worker transport: D3D11 WARP; D3D12 hardware branch inferred from 349 draws, no skip line, and test source. shutdown contract: WARP D3D11 feature level 0xb100 plus fake Bridge runtime. Common test is portable; loader lifecycle uses fake Bridge runtimes.",
+    "ctestSourceHashes": {
+      "Native/tests/bridge_loader_lifecycle_test.cpp": "45832EA702E51428BB06722ECF6E38B365225556D9F0281C760FD8B0CEF053D8",
+      "Native/tests/bridge_shutdown_contract_test.cpp": "2A212A9649373E0C3A3BBA643BAD713FA01BF7623063EAB0425CEA917F23426F",
+      "Native/tests/fake_bridge_missing.cpp": "89D4BB907704FC1A8FE1FDAD152A983779F0CED85808B77DEA9263C0B5C05FD3",
+      "Native/tests/fake_bridge_runtime.cpp": "03183CCC1D01732CDC74E52F2AFE682D900CF354E2846646B7949A890337FCA8",
+      "Native/tests/fake_bridge_shutdown_runtime.cpp": "B6C019D18D3222EF6D321ACEA3566A186076047FE1F120E82CAFB6C7EA8FA49F",
+      "Native/tests/portable_common_test.cpp": "8FC86B3390C28ADF6CFC34FE85B13F769010C67A3B2BA3F82B7CB2DF4885A2AF",
+      "Native/tests/worker_transport_test.cpp": "B924A34FEE9BCA5FFD712E406E1117DDF087A4F31C9677206FFA352948BAAFF9"
+    },
+    "ctestTotal": 4,
+    "currentArtifact": false,
+    "currentCMakeListsSha256": "3C3F0DCE7D11FB3283A8289205BBD7BA8389387812699CE469A8B935C700126B",
+    "dllSha256": "9E81DF02D065DABE39DAACC3E5F90ABECEA401F6DAD5D2E68096CEE3D7B86DCE",
+    "exportComparison": "33 export names and ordinals; base 66bc633 matches baseline DLL SHA-256 232C2364863333D5D4EF01D9D5C652F2EEAD1521855421C371345E2860E2805B",
+    "followUpCI": "Final workflow and PR runs 37705337066/37705340768 both passed 5/5 jobs. Windows fake regressions 4/4 and transport tests 2/2 used the updated v7 header pin; they did not rebuild the packaged local v8 DLL.",
+    "localWindowsCompileOnly": "All local Windows targets compiled with the updated v7 header pin after correcting the fake Unity interface initializer; no CTest or runtime result is implied.",
+    "postBuildTestSourceUpdate": "bridge_shutdown_contract_test.cpp was corrected to initialize the Unity v7 interface by named member after the recorded 4/4 CTest. A later local Windows all-target compile-only check passed; no repeat CTest result is claimed.",
+    "postBuildTestSourceUpdateSha256": "2F7DBF9CAD77E974592214D1708AB80D1999DF8BAAA6B81101FFAA82F5F2D542",
+    "runtimeValidation": "No Unity runtime or official Bridge device/optical validation was performed in this CTest run."
+  },
+  "previousWindowsRuntimeValidation": {
+    "device": "NVIDIA GeForce RTX 3090 Ti",
+    "deviceLifecycleCases": [
+      {
+        "case": "DeviceEditorPreviewPausesAndResumesSameWorkerWhenExplicitlyEnabled",
+        "graphicsApi": "Direct3D 11",
+        "loadedShimHashMatched": true,
+        "passed": 1,
+        "pipeline": "HDRP",
+        "total": 1
+      },
+      {
+        "case": "DevicePreviewStopsBeforePlayAndRuntimeSessionRendersWhenExplicitlyEnabled",
+        "graphicsApi": "Direct3D 12",
+        "loadedShimHashMatched": true,
+        "passed": 1,
+        "pipeline": "URP",
+        "total": 1
+      }
+    ],
+    "documentation": "docs/windows-stdout-crash-20261011.md",
+    "environment": "Windows Editor, selected cases only",
+    "notValidated": [
+      "Windows Player output",
+      "other display models and general optical quality",
+      "URP TAA history accumulation and per-view separation",
+      "HDRP TAA pixel output and accumulation",
+      "all scenes, all graphics suites, and all shutdown failure modes"
+    ],
+    "playModeSuites": [
+      {
+        "graphicsApi": "Direct3D 11",
+        "passed": 22,
+        "scope": "Selected URP/HDRP PlayMode suites; not the complete GraphicsCompatibility suite.",
+        "skipped": 0,
+        "total": 22
+      },
+      {
+        "graphicsApi": "Direct3D 12",
+        "passed": 22,
+        "scope": "Selected URP/HDRP PlayMode suites; not the complete GraphicsCompatibility suite.",
+        "skipped": 0,
+        "total": 22
+      }
+    ],
+    "testedRevision": "62d0e0cb380bf663e4b33d2ad2095b09e4e872f9",
+    "testedWorkingTree": "Windows stdio guard and HDRP history-renderer local fixes were applied at test time; these fixes are included in this change. This runtime record is later than the DLL build record above.",
+    "unityVersion": "6000.6.4f1"
+  },
+  "priorCurrentWindowsReleaseBuildBeforeLatest": {
+    "artifactSha256": "3B63E11485E520D04CF0B57539DEC697678AFC9470F273707CE40868F4CBC3B5",
+    "buildCommand": "cmake --build Native/build-worker-release-vs --config Release",
+    "buildDirectory": "Native/build-worker-release-vs/Release",
+    "classification": "Historical prior Windows Release artifact before typed draw admission; retained with its counter-reset source hashes and validation evidence.",
+    "compiledUtc": "2026-10-09T11:33:39Z",
+    "compiler": "MSVC 19.44.35217.0",
+    "configuration": "Release",
+    "dllSha256": "3B63E11485E520D04CF0B57539DEC697678AFC9470F273707CE40868F4CBC3B5",
+    "exports": {
+      "baselineNamedExports": 46,
+      "baselineNamesPreserved": 46,
+      "comparedAgainstSha256": "4E5E1FF81C7C1C227D45E5D38E23FB84F1AAB8A8444EF327D639E1AEB619532B",
+      "currentNamedExports": 50,
+      "missingNames": [],
+      "newNames": [
+        "lkg_worker_ack_preview_lease_return_v1",
+        "lkg_worker_acquire_preview_lease_v1",
+        "lkg_worker_get_preview_lease_status_v1",
+        "lkg_worker_request_preview_lease_return_v1"
+      ],
+      "note": "All named exports from the prior packaged DLL are present. Four Preview Lease V1 exports are added. No test-only exports are present; callers bind exports by name and ordinal compatibility is not claimed.",
+      "ordinalCompatibilityClaim": false,
+      "testOnlyExports": []
+    },
+    "generator": "Visual Studio 17 2022; MSBuild 17.14.23",
+    "localCTest": {
+      "elapsedSeconds": 11.68,
       "evidencePath": "Native/build-worker-release-vs/Testing/Temporary/LastTest.log",
+      "note": "Release CTest passed 12/12. The preview lease test verifies new-generation counters start at zero, the first draw increments only the new generation, and the prior return snapshot remains unchanged. Tests use fake Bridge runtimes and WARP/test adapters; no official Bridge SDK session is started.",
+      "passed": 12,
       "tests": [
         {
           "name": "lookingglass_worker_common_test"
@@ -624,43 +1177,9 @@
           "name": "lookingglass_bridge_shutdown_exception_contract_test"
         }
       ],
-      "note": "Release CTest covers the preview lease return/reacquire barrier, same endpoint/session/window/stable input, legacy metadata Begin/snapshot/Close/End compatibility, in-flight metadata close proof, and explicit final shutdown. Tests use fake Bridge runtimes and WARP/test adapters; no official Bridge SDK session is started."
+      "total": 12
     },
-    "managedCompileOnly": "Seven Editor/Player assemblies compiled against the integration checkpoint. Unity EditMode/PlayMode tests and GPU fixture tests were not run against this DLL.",
-    "exports": {
-      "comparedAgainstSha256": "4E5E1FF81C7C1C227D45E5D38E23FB84F1AAB8A8444EF327D639E1AEB619532B",
-      "baselineNamedExports": 46,
-      "currentNamedExports": 50,
-      "baselineNamesPreserved": 46,
-      "newNames": [
-        "lkg_worker_ack_preview_lease_return_v1",
-        "lkg_worker_acquire_preview_lease_v1",
-        "lkg_worker_get_preview_lease_status_v1",
-        "lkg_worker_request_preview_lease_return_v1"
-      ],
-      "missingNames": [],
-      "testOnlyExports": [],
-      "ordinalCompatibilityClaim": false,
-      "note": "All named exports from the prior packaged DLL are present. Four Preview Lease V1 exports are added. No test-only exports are present; callers bind exports by name and ordinal compatibility is not claimed."
-    },
-    "validationLimits": "Native Release CTest passed 12/12 using fake Bridge runtimes and WARP/test adapters. Seven managed Editor/Player assemblies compiled, but Unity tests were not run against this DLL. No official Bridge SDK, Unity Editor runtime, new physical-device pause/resume, optical appearance, image quality, or performance validation was performed for this artifact. Earlier human-visible pause/resume evidence applies to the prior packaged DLL and is historical only.",
-    "compiledUtc": "2026-10-09T10:14:14Z",
-    "classification": "Historical prior currentWindowsReleaseBuild preserved before publishing the Native per-lease counter reset artifact.",
-    "historicalDllSha256": "A6A062343710AF2362DAF7B923A9BB98BDD5D381D896C68AE3190CA55655FBC7"
-  },
-  "historical655FDB898CF7B9F9WindowsReleaseBuild": {
-    "artifactSha256": "655FDB898CF7B9F9733A1880828B740B62FB74E0C3ECDF9D825C07794F6388CD",
-    "dllSha256": "655FDB898CF7B9F9733A1880828B740B62FB74E0C3ECDF9D825C07794F6388CD",
-    "sourceBaseCommit": "eb527e1ec126ec99d35e9990d8dce0119b855b4d",
-    "sourceState": "Windows x64 Release shim built from source base eb527e1ec126ec99d35e9990d8dce0119b855b4d plus current Native working-tree changes. Adds lease-only typed draw admission V1: retryable BUSY is returned only for a valid, ready, running lease when the three-token queue is full; invalid, stale, paused, closing, and faulted requests remain distinct errors. The legacy untyped draw API is unchanged. New lease generations also reset submitted/completed/dropped counters before token publication.",
-    "compiler": "MSVC 19.44.35217.0",
-    "shaderCompiler": "Windows SDK FXC 10.1, SDK 10.0.26100.0; stable D3D11 input shader bytecode is embedded at build time.",
-    "targetArchitecture": "x64",
-    "configuration": "Release",
-    "generator": "Visual Studio 17 2022; MSBuild 17.14.23",
-    "unityPluginApi": "6000.6.4f1",
-    "buildDirectory": "Native/build-worker-release-vs/Release",
-    "buildCommand": "cmake --build Native/build-worker-release-vs --config Release",
+    "managedCompileOnly": "Seven managed Editor/Player assemblies compiled at the frozen integration checkpoint. Unity runtime tests were not run against this rebuilt counter-reset DLL.",
     "nativeSourceHashes": {
       "Native/CMakeLists.txt": "42DB0E552AC88A441F219A3909219F8CC1B3730519344427ADCDF5AB559F4E43",
       "Native/bridge_d3d12_internal.h": "6B06A4792E547BDAE65EE91908CB565ED5FA1B89AD5C6E7A6EE627D6933FE154",
@@ -669,12 +1188,12 @@
       "Native/bridge_worker_common.cpp": "D57B45EA0B65FA2B3BD953853529E5005A629321D035C090C1C3D6C620C9E39B",
       "Native/bridge_worker_common.h": "48ACE99B1F5C90842FB2E6B5AE6021AD835891486BC65C3969C2427F5DB96FD4",
       "Native/bridge_worker_transport.cpp": "C93D2945C4B12131C2D21C3123092011CD193D9FAD14A1F316D73787B96EF6A6",
-      "Native/bridge_worker_transport.h": "9C16B5397938E19865214DE10336339FF3FB5BD68DB44D625BF1B58B5BF4E67D",
-      "Native/platform/unsupported/bridge_worker_transport_unsupported.inc": "FE0B5193F02060E87B076796A7B80F4BE90781087D44AA35A0D7FA37B098A20E",
+      "Native/bridge_worker_transport.h": "5FD1FF50F44ECAB378A99D8FA84EC9DF56609A07BF65080FADA16F774B52100A",
+      "Native/platform/unsupported/bridge_worker_transport_unsupported.inc": "FA23B976DA6CBCF5483894D2793BC0AE1B1515AE489C5DC843B2F78CA1F134BB",
       "Native/platform/windows/backends/d3d11_backend.inc": "8358D013E24979837AF3419B23223675E211C51CAA667F78672194E5585ADDDF",
       "Native/platform/windows/backends/d3d11_d3d12_interop.inc": "FDF55A669CE099FA48B95683678ABE7F51592AA1B9E55BF097B90482F7398B28",
       "Native/platform/windows/backends/d3d12_backend.inc": "F3E13187FE5B0D7441437D9531D894064EC88BE2EAE1DF4982D8B2167F6CB9AB",
-      "Native/platform/windows/bridge_worker_transport_windows.inc": "1491E208B831A9AC566B9C2785D1E5781E6E6A08A6A12EFA39AE404F298DBB2E",
+      "Native/platform/windows/bridge_worker_transport_windows.inc": "72C54CA3812337963B001AB6F1BF2D17C85A8789F2F375E02A3DC45A398765CD",
       "Native/platform/windows/stable_sdk_input_d3d11.cpp": "FF1BDCCEFC961168DAD81A9CC18CF8C68232C22CE33CFAC575F0901A2C7BB92F",
       "Native/platform/windows/stable_sdk_input_d3d11.h": "77EEB054980ED87C70B99CADF909172BB6443942CA72579EC303D79EB17BFCD3",
       "Native/platform/windows/stable_sdk_input_d3d11.hlsl": "03A54DB6F092BA48547014B8C15202313850B3CC0D24E5261CDF741F1CBE2DD0",
@@ -688,424 +1207,47 @@
       "Native/tests/fake_bridge_shutdown_runtime.cpp": "5F79C774C021FF9BD57414CD6AB2F2F02295D202CCD7115FBAC48A56B17244C3",
       "Native/tests/portable_common_test.cpp": "ED50427D073E0FFE9692E2749DDD076EEABD3AEA3ACA6E2D481F15D0FA82772E",
       "Native/tests/stable_sdk_input_d3d11_test.cpp": "6DB3C3CA796C39C3C28446F4BC1B101F46AA3D4E9A23FDC88A4FEA3A5800ECA2",
-      "Native/tests/unsupported_shim_abi_test.cpp": "6115552BCE9D8CB909F354F149F5E2A3DD9BEE00E2A6BCA8F32A8E4DAC044546",
-      "Native/tests/worker_transport_test.cpp": "D3E914E7F3F0CA908903995E325ABA423AA1ABFB47C878C5A8D10313A2B61239"
+      "Native/tests/unsupported_shim_abi_test.cpp": "6800FBFD53253F59733ACE5690E227F04A6804B83A98BF2B11F1BC505B2E256E",
+      "Native/tests/worker_transport_test.cpp": "F38C0ECCC49629D7D417FE665B75FDE63A4229E4401F8C09B47D68094F349DE5"
     },
-    "localCTest": {
-      "passed": 12,
-      "total": 12,
-      "elapsedSeconds": 11.97,
-      "evidencePath": "Native/build-worker-release-vs/Testing/Temporary/LastTest.log",
-      "tests": [
-        {
-          "name": "lookingglass_worker_common_test"
-        },
-        {
-          "name": "lookingglass_worker_transport_test"
-        },
-        {
-          "name": "lookingglass_worker_cleanup_exception_test"
-        },
-        {
-          "name": "lookingglass_worker_host_initialize_failure_test"
-        },
-        {
-          "name": "lookingglass_worker_host_uninitialize_failure_test"
-        },
-        {
-          "name": "lookingglass_persistent_d3d11_device_test"
-        },
-        {
-          "name": "lookingglass_worker_preview_pause_test"
-        },
-        {
-          "name": "lookingglass_worker_preview_lease_test"
-        },
-        {
-          "name": "lookingglass_stable_sdk_input_d3d11_test"
-        },
-        {
-          "name": "lookingglass_bridge_loader_lifecycle_test"
-        },
-        {
-          "name": "lookingglass_bridge_shutdown_contract_test"
-        },
-        {
-          "name": "lookingglass_bridge_shutdown_exception_contract_test"
-        }
-      ],
-      "note": "Windows Release CTest passed 12/12. The worker transport suite covers three-token saturation, BUSY without payload allocation or texture AddRef, rejection of stale/returning/paused and invalid requests, and acceptance after drain. The unsupported-shim ABI stub and output-clear test source were added, but the Linux-only test was not run in this Windows invocation. Tests use fake Bridge runtimes and WARP/test adapters; no official Bridge SDK session is started."
-    },
-    "unsupportedAbiTest": "The unsupported-shim ABI test is Linux-only and was not run by this Windows Release CTest invocation.",
-    "managedCompileOnly": "No Unity Editor or Player compile/test was run specifically against this typed admission DLL.",
-    "exports": {
-      "comparedAgainstSha256": "3B63E11485E520D04CF0B57539DEC697678AFC9470F273707CE40868F4CBC3B5",
-      "baselineNamedExports": 50,
-      "currentNamedExports": 51,
-      "baselineNamesPreserved": 50,
-      "newNames": [
-        "lkg_worker_try_make_preview_draw_data_v1"
-      ],
-      "missingNames": [],
-      "testOnlyExports": [],
-      "ordinalCompatibilityClaim": false,
-      "note": "All 50 named exports from the preceding packaged DLL are present. The typed preview draw-admission V1 export is added. No test-only exports are present; callers bind exports by name and ordinal compatibility is not claimed."
-    },
-    "validationLimits": "Windows Native Release CTest passed 12/12 using fake Bridge runtimes and WARP/test adapters. No official Bridge SDK, Unity runtime call-site, physical-device, optical appearance, image-quality, or performance validation was performed for this artifact.",
-    "compiledUtc": "2026-10-09T12:09:20Z",
-    "classification": "Historical 655FDB898CF7B9F9 Windows Release artifact, superseded on 2026-10-10 by the persistent static-present build. Its source hashes and 12/12 CTest result describe only that historical DLL.",
-    "historicalDate": "2026-10-09"
+    "shaderCompiler": "Windows SDK FXC 10.1, SDK 10.0.26100.0; stable D3D11 input shader bytecode is embedded at build time.",
+    "sourceBaseCommit": "eb527e1ec126ec99d35e9990d8dce0119b855b4d",
+    "sourceState": "Windows x64 Release shim built from source base eb527e1ec126ec99d35e9990d8dce0119b855b4d plus the current Native working-tree counter-reset change. A reused preview lease generation resets submitted, completed, and dropped status counters under the context lock before publishing its token and generation. The persistent SDK endpoint, legacy metadata path, and existing lease lifecycle remain unchanged.",
+    "targetArchitecture": "x64",
+    "unityPluginApi": "6000.6.4f1",
+    "validationLimits": "Native Release CTest passed 12/12 using fake Bridge runtimes and WARP/test adapters. Seven managed Editor/Player assemblies compiled at the integration checkpoint; Unity runtime tests were not run against this rebuilt DLL. No official Bridge SDK, physical-device pause/resume, optical appearance, image quality, or performance validation was performed for this artifact."
   },
   "privateHardwareEvidence": {
     "artifactSha256": "00CEFDA953D695202F195E43F32D2C8EB260E18356F147643E441CCEE50208C2",
-    "sourceProvenance": ".local/current-sample-state/2026-10-09/shared-output-lease/parity-20261010/static-present/source/provenance.json",
-    "classification": "Separate private comparison candidate with diagnostic build instrumentation; its hardware observations do not validate the official F1B06893 artifact."
+    "classification": "Separate private comparison candidate with diagnostic build instrumentation; its hardware observations do not validate the official F1B06893 artifact.",
+    "sourceProvenance": ".local/current-sample-state/2026-10-09/shared-output-lease/parity-20261010/static-present/source/provenance.json"
   },
-  "currentArtifactValidation": {
-    "artifactSha256": "4D28B54BC09FFCF0BC2E6F9E645E9A04C6EF59210C79BB784872655DA1837F7A",
-    "artifactSizeBytes": 223232,
-    "sourceBaseCommit": "2630bf421b02aaf470e421992fc23d2947b82140",
-    "buildDirectory": ".local/windows-unity-crash-20261011/fix-validation/build-vs2022-x64-release",
-    "testEvidencePath": ".local/windows-unity-crash-20261011/fix-validation/ctest-release.log",
-    "nativeTestsPassed": 15,
-    "nativeTestsTotal": 15,
-    "transportOnlyTestsPassed": 11,
-    "transportOnlyTestsTotal": 11,
-    "hardwareValidation": "limited; see currentWindowsRuntimeValidation and docs/windows-stdout-crash-20261011.md"
-  },
-  "licenseScope": "Apache-2.0 applies to original ViewWeave code only; external Unity PluginAPI declarations and the separately installed Bridge runtime have separate terms.",
+  "sha256": "C864A363AC441C77497D4302FF25CB48FA2D6EA194B6FB8A73BAE49DC522FEE2",
+  "sourceBaseCommit": "e777b34763b25e1673e5dc0188c812cda69cbcc0",
+  "sourceState": "Windows x64 Release shim built from the shared working tree at source base e777b34763b25e1673e5dc0188c812cda69cbcc0. The exact as-built Native source snapshot is recorded in nativeSourceHashes and .local/windows-subpixel-native-20261011/validation/build-manifest.json. Windows Editor device runtime validation for all 12 declared subpixel mode, pipeline, and graphics API conditions passed against this artifact; Windows Player and optical quality remain unvalidated.",
+  "targetArchitecture": "x64",
+  "unityD3D12InterfaceSelection": "Unity 6000.6.4f1 PluginAPI was used. The exact D3D12 interface declaration selection for this build was not separately retained.",
   "unityPluginApiProvenance": {
-    "source": "Installed Unity 6000.6.4f1 PluginAPI, as recorded at build time",
-    "headerSha256": null,
     "fileSpecificNoticesVerified": false,
-    "verificationLimit": "Individual build header hashes and file-specific notices were not retained. No equivalence to the pinned public NativeRenderingPlugin headers is asserted.",
-    "thirdPartyNotice": "../../../NOTICE.md",
+    "headerSha256": null,
     "licenseFiles": [
       "../../../ThirdPartyLicenses/Unity-Companion-License.txt",
       "../../../ThirdPartyLicenses/Unity-NativeRenderingPlugin-MIT.txt"
-    ]
-  },
-  "historicalF1B06893WindowsReleaseEvidence": {
-    "currentWindowsReleaseBuild": {
-      "artifactSha256": "F1B06893404D75582FF600BA733AE3C531ED0C0A7EA40E29CE56DD7A91B0A000",
-      "dllSha256": "F1B06893404D75582FF600BA733AE3C531ED0C0A7EA40E29CE56DD7A91B0A000",
-      "artifactSizeBytes": 214016,
-      "sourceBaseCommit": "d913f9912ad2c983fcdbbdc7ed319b97d5d07354",
-      "sourceState": "Windows x64 Release shim from source base d913f9912ad2c983fcdbbdc7ed319b97d5d07354 plus the canonical Native working-tree changes. Persistent preview endpoints retain SDK visibility and the registered primary through drained logical pause and lease return; the worker re-presents the last successfully drawn primary with cached quilt geometry at no more than 5 Hz. Resume, lease admission, producer drain, return proof, acknowledgement, and final teardown preserve their existing lifecycle contracts. No new exported ABI was added.",
-      "compiler": "MSVC 19.44.35217.0",
-      "shaderCompiler": "Windows SDK FXC 10.1, SDK 10.0.22621.0; stable D3D11 input shader bytecode embedded at build time.",
-      "targetArchitecture": "x64",
-      "configuration": "Release",
-      "generator": "Ninja 1.13.0.git.kitware.jobserver-pipe-1; CMake 4.0.1",
-      "unityPluginApi": "6000.6.4f1",
-      "buildDirectory": ".local/current-sample-state/2026-10-09/shared-output-lease/parity-20261010/canonical-adopt/private-build",
-      "buildCommand": "After vcvars64.bat: cmake --build .local/current-sample-state/2026-10-09/shared-output-lease/parity-20261010/canonical-adopt/private-build --target lookingglass_bridge_shim lookingglass_worker_transport_test lookingglass_stable_sdk_input_d3d11_test lookingglass_bridge_static_present_test lookingglass_bridge_shutdown_contract_test --parallel 6",
-      "nativeSourceHashes": {
-        "Native/bridge_d3d12_internal.h": "6B06A4792E547BDAE65EE91908CB565ED5FA1B89AD5C6E7A6EE627D6933FE154",
-        "Native/bridge_shim.cpp": "396C926036C7290A994D6024B8691775AF90D1A88684676641A87B6076448582",
-        "Native/bridge_shim.h": "B33943E3D0BA4F5E3E7177008542BF48E94AD17846CB421C5AF834F07B687954",
-        "Native/bridge_worker_common.cpp": "D57B45EA0B65FA2B3BD953853529E5005A629321D035C090C1C3D6C620C9E39B",
-        "Native/bridge_worker_common.h": "48ACE99B1F5C90842FB2E6B5AE6021AD835891486BC65C3969C2427F5DB96FD4",
-        "Native/bridge_worker_transport.cpp": "C93D2945C4B12131C2D21C3123092011CD193D9FAD14A1F316D73787B96EF6A6",
-        "Native/bridge_worker_transport.h": "9C16B5397938E19865214DE10336339FF3FB5BD68DB44D625BF1B58B5BF4E67D",
-        "Native/CMakeLists.txt": "C8A135B158B51E2145DCF659D71E8C4C7DB1D44DB1233D676C83646D04B7EA0D",
-        "Native/platform/unsupported/bridge_worker_transport_unsupported.inc": "FE0B5193F02060E87B076796A7B80F4BE90781087D44AA35A0D7FA37B098A20E",
-        "Native/platform/windows/backends/d3d11_backend.inc": "8358D013E24979837AF3419B23223675E211C51CAA667F78672194E5585ADDDF",
-        "Native/platform/windows/backends/d3d11_d3d12_interop.inc": "FDF55A669CE099FA48B95683678ABE7F51592AA1B9E55BF097B90482F7398B28",
-        "Native/platform/windows/backends/d3d12_backend.inc": "F3E13187FE5B0D7441437D9531D894064EC88BE2EAE1DF4982D8B2167F6CB9AB",
-        "Native/platform/windows/bridge_worker_transport_windows.inc": "13E4B4D10B5FB773D5B894FC7ADD9EDB0B029C07F2E8F4D321C236990DD130A7",
-        "Native/platform/windows/stable_sdk_input_d3d11.cpp": "FF1BDCCEFC961168DAD81A9CC18CF8C68232C22CE33CFAC575F0901A2C7BB92F",
-        "Native/platform/windows/stable_sdk_input_d3d11.h": "77EEB054980ED87C70B99CADF909172BB6443942CA72579EC303D79EB17BFCD3",
-        "Native/platform/windows/stable_sdk_input_d3d11.hlsl": "03A54DB6F092BA48547014B8C15202313850B3CC0D24E5261CDF741F1CBE2DD0",
-        "Native/stable_sdk_input_d3d11.cmake": "5473AA5E44C45F1F73C9FCC08E490DB97227587B0EA22E24BB7D96915E57CD03",
-        "Native/tests/bridge_loader_lifecycle_test.cpp": "FA9E38EAF6B4492F02F2F4F45C0FDB59AEFA3227EA37116AE84EF971D19CAC3B",
-        "Native/tests/bridge_shutdown_contract_test.cpp": "5FF2677DBF79B43F571E12E9276793D8910B96018C7E42627D38D501CB39B9C0",
-        "Native/tests/bridge_shutdown_contract.h": "407273B9AC0330ED817CD85B22BEF2070F1365BCD64B2398A9F6C638FE546B58",
-        "Native/tests/bridge_static_present_test.cpp": "D72A1669E97D433C6C2EAA6373BE95CB638EFB420E694C6473C41D1774679420",
-        "Native/tests/bridge_worker_host_affinity_test.cpp": "87779E3B8D309A7C232CB0712A7BA1662F7FAA7E4DD0A4FD5974A5DF24183A0B",
-        "Native/tests/fake_bridge_missing.cpp": "89D4BB907704FC1A8FE1FDAD152A983779F0CED85808B77DEA9263C0B5C05FD3",
-        "Native/tests/fake_bridge_runtime.cpp": "3639075BF270849DBAA8903C9466F78B913085462B9CE8E5DF36C4FC31A6CAF8",
-        "Native/tests/fake_bridge_shutdown_runtime.cpp": "5F79C774C021FF9BD57414CD6AB2F2F02295D202CCD7115FBAC48A56B17244C3",
-        "Native/tests/portable_common_test.cpp": "ED50427D073E0FFE9692E2749DDD076EEABD3AEA3ACA6E2D481F15D0FA82772E",
-        "Native/tests/stable_sdk_input_d3d11_test.cpp": "6DB3C3CA796C39C3C28446F4BC1B101F46AA3D4E9A23FDC88A4FEA3A5800ECA2",
-        "Native/tests/unsupported_shim_abi_test.cpp": "6115552BCE9D8CB909F354F149F5E2A3DD9BEE00E2A6BCA8F32A8E4DAC044546",
-        "Native/tests/worker_transport_test.cpp": "EA64AEFCD7696ACC09E549FE6145249ABEC64B56CEC6EEFC83F6FE5B40002E84"
-      },
-      "localCTest": {
-        "passed": 6,
-        "total": 6,
-        "elapsedSeconds": 4.2,
-        "evidencePath": ".local/current-sample-state/2026-10-09/shared-output-lease/parity-20261010/canonical-adopt/private-build/Testing/Temporary/LastTest.log",
-        "tests": [
-          {
-            "seconds": 0.75,
-            "name": "lookingglass_worker_preview_pause_test"
-          },
-          {
-            "seconds": 2.7,
-            "name": "lookingglass_worker_preview_lease_test"
-          },
-          {
-            "seconds": 0.03,
-            "name": "lookingglass_bridge_static_present_test"
-          },
-          {
-            "seconds": 0.15,
-            "name": "lookingglass_stable_sdk_input_d3d11_test"
-          },
-          {
-            "seconds": 0.46,
-            "name": "lookingglass_bridge_shutdown_contract_test"
-          },
-          {
-            "seconds": 0.11,
-            "name": "lookingglass_bridge_shutdown_exception_contract_test"
-          }
-        ],
-        "note": "Focused Windows Release CTest passed 6/6. Coverage includes persistent preview pause, lease return/reacquire, same retained SDK primary and cached geometry static-present contract, stable D3D11 SDK input, and normal/exception shutdown contracts. Tests use fake Bridge callbacks and WARP/test adapters; no official Bridge SDK or physical device was used."
-      },
-      "unsupportedAbiTest": "Linux-only unsupported-shim ABI test was not run in this Windows Release invocation.",
-      "managedCompileOnly": "Unity Editor/Player assemblies and Unity Test Runner were not run for this artifact.",
-      "exports": {
-        "comparedAgainstSha256": "655FDB898CF7B9F9733A1880828B740B62FB74E0C3ECDF9D825C07794F6388CD",
-        "baselineNamedExports": 51,
-        "currentNamedExports": 51,
-        "baselineNamesPreserved": 51,
-        "newNames": [],
-        "missingNames": [],
-        "testOnlyExports": [],
-        "ordinalCompatibilityClaim": false,
-        "note": "All 51 named exports from the preceding 655FDB898CF7B9F9 DLL remain. No public or test-only exports were added; ordinal compatibility is not claimed."
-      },
-      "validationLimits": "Six focused Native Release CTests passed using fake Bridge callbacks and WARP/test adapters. No official Bridge SDK runtime, Unity Test Runner, hardware, optical appearance, image-quality, or performance validation was performed for this artifact.",
-      "compiledUtc": "2026-10-10T01:28:50Z"
-    },
-    "currentArtifactValidation": {
-      "artifactSha256": "F1B06893404D75582FF600BA733AE3C531ED0C0A7EA40E29CE56DD7A91B0A000",
-      "sourceBaseCommit": "d913f9912ad2c983fcdbbdc7ed319b97d5d07354",
-      "buildDirectory": ".local/current-sample-state/2026-10-09/shared-output-lease/parity-20261010/canonical-adopt/private-build",
-      "testEvidencePath": ".local/current-sample-state/2026-10-09/shared-output-lease/parity-20261010/canonical-adopt/private-build/Testing/Temporary/LastTest.log",
-      "nativeTestsPassed": 6,
-      "nativeTestsTotal": 6,
-      "hardwareValidation": "not performed"
-    },
-    "postBuildSourceChanges": {
-      "scope": "No Native source edits after the final build. The packaged DLL hash matches the Release build output.",
-      "files": [],
-      "verifiedAt": "2026-10-10T01:28:50Z"
-    },
-    "formerTopLevelCurrentBuildFields": {
-      "sha256": "F1B06893404D75582FF600BA733AE3C531ED0C0A7EA40E29CE56DD7A91B0A000",
-      "artifactSha256": "F1B06893404D75582FF600BA733AE3C531ED0C0A7EA40E29CE56DD7A91B0A000",
-      "dllSha256": "F1B06893404D75582FF600BA733AE3C531ED0C0A7EA40E29CE56DD7A91B0A000",
-      "nativeSourceHashes": {
-        "Native/bridge_d3d12_internal.h": "6B06A4792E547BDAE65EE91908CB565ED5FA1B89AD5C6E7A6EE627D6933FE154",
-        "Native/bridge_shim.cpp": "396C926036C7290A994D6024B8691775AF90D1A88684676641A87B6076448582",
-        "Native/bridge_shim.h": "B33943E3D0BA4F5E3E7177008542BF48E94AD17846CB421C5AF834F07B687954",
-        "Native/bridge_worker_common.cpp": "D57B45EA0B65FA2B3BD953853529E5005A629321D035C090C1C3D6C620C9E39B",
-        "Native/bridge_worker_common.h": "48ACE99B1F5C90842FB2E6B5AE6021AD835891486BC65C3969C2427F5DB96FD4",
-        "Native/bridge_worker_transport.cpp": "C93D2945C4B12131C2D21C3123092011CD193D9FAD14A1F316D73787B96EF6A6",
-        "Native/bridge_worker_transport.h": "9C16B5397938E19865214DE10336339FF3FB5BD68DB44D625BF1B58B5BF4E67D",
-        "Native/CMakeLists.txt": "C8A135B158B51E2145DCF659D71E8C4C7DB1D44DB1233D676C83646D04B7EA0D",
-        "Native/platform/unsupported/bridge_worker_transport_unsupported.inc": "FE0B5193F02060E87B076796A7B80F4BE90781087D44AA35A0D7FA37B098A20E",
-        "Native/platform/windows/backends/d3d11_backend.inc": "8358D013E24979837AF3419B23223675E211C51CAA667F78672194E5585ADDDF",
-        "Native/platform/windows/backends/d3d11_d3d12_interop.inc": "FDF55A669CE099FA48B95683678ABE7F51592AA1B9E55BF097B90482F7398B28",
-        "Native/platform/windows/backends/d3d12_backend.inc": "F3E13187FE5B0D7441437D9531D894064EC88BE2EAE1DF4982D8B2167F6CB9AB",
-        "Native/platform/windows/bridge_worker_transport_windows.inc": "13E4B4D10B5FB773D5B894FC7ADD9EDB0B029C07F2E8F4D321C236990DD130A7",
-        "Native/platform/windows/stable_sdk_input_d3d11.cpp": "FF1BDCCEFC961168DAD81A9CC18CF8C68232C22CE33CFAC575F0901A2C7BB92F",
-        "Native/platform/windows/stable_sdk_input_d3d11.h": "77EEB054980ED87C70B99CADF909172BB6443942CA72579EC303D79EB17BFCD3",
-        "Native/platform/windows/stable_sdk_input_d3d11.hlsl": "03A54DB6F092BA48547014B8C15202313850B3CC0D24E5261CDF741F1CBE2DD0",
-        "Native/stable_sdk_input_d3d11.cmake": "5473AA5E44C45F1F73C9FCC08E490DB97227587B0EA22E24BB7D96915E57CD03",
-        "Native/tests/bridge_loader_lifecycle_test.cpp": "FA9E38EAF6B4492F02F2F4F45C0FDB59AEFA3227EA37116AE84EF971D19CAC3B",
-        "Native/tests/bridge_shutdown_contract_test.cpp": "5FF2677DBF79B43F571E12E9276793D8910B96018C7E42627D38D501CB39B9C0",
-        "Native/tests/bridge_shutdown_contract.h": "407273B9AC0330ED817CD85B22BEF2070F1365BCD64B2398A9F6C638FE546B58",
-        "Native/tests/bridge_static_present_test.cpp": "D72A1669E97D433C6C2EAA6373BE95CB638EFB420E694C6473C41D1774679420",
-        "Native/tests/bridge_worker_host_affinity_test.cpp": "87779E3B8D309A7C232CB0712A7BA1662F7FAA7E4DD0A4FD5974A5DF24183A0B",
-        "Native/tests/fake_bridge_missing.cpp": "89D4BB907704FC1A8FE1FDAD152A983779F0CED85808B77DEA9263C0B5C05FD3",
-        "Native/tests/fake_bridge_runtime.cpp": "3639075BF270849DBAA8903C9466F78B913085462B9CE8E5DF36C4FC31A6CAF8",
-        "Native/tests/fake_bridge_shutdown_runtime.cpp": "5F79C774C021FF9BD57414CD6AB2F2F02295D202CCD7115FBAC48A56B17244C3",
-        "Native/tests/portable_common_test.cpp": "ED50427D073E0FFE9692E2749DDD076EEABD3AEA3ACA6E2D481F15D0FA82772E",
-        "Native/tests/stable_sdk_input_d3d11_test.cpp": "6DB3C3CA796C39C3C28446F4BC1B101F46AA3D4E9A23FDC88A4FEA3A5800ECA2",
-        "Native/tests/unsupported_shim_abi_test.cpp": "6115552BCE9D8CB909F354F149F5E2A3DD9BEE00E2A6BCA8F32A8E4DAC044546",
-        "Native/tests/worker_transport_test.cpp": "EA64AEFCD7696ACC09E549FE6145249ABEC64B56CEC6EEFC83F6FE5B40002E84"
-      },
-      "compilerVersion": "MSVC 19.44.35217.0",
-      "targetArchitecture": "x64",
-      "configuration": "Release",
-      "pluginApiUnityVersion": "6000.6.4f1",
-      "buildDirectory": ".local/current-sample-state/2026-10-09/shared-output-lease/parity-20261010/canonical-adopt/private-build",
-      "generator": "Ninja 1.13.0.git.kitware.jobserver-pipe-1; CMake 4.0.1",
-      "independentCTest": "Current packaged Windows DLL: focused Native Release CTest passed 6/6. Tests use fake Bridge callbacks and WARP/test adapters; no official vendor SDK or physical display validation is implied.",
-      "d3d12HardwareValidation": "No hardware validation was performed for the current official F1B06893 artifact. Historical/private candidate observations are separately identified and do not validate this DLL.",
-      "validationLimits": "Focused Windows Native Release CTest passed 6/6 using fake Bridge callbacks and WARP/test adapters. No official Bridge SDK, Unity runtime, physical-device, optical appearance, image-quality, or performance validation was performed for this artifact.",
-      "generatedAt": "2026-10-10T01:28:50Z",
-      "unityD3D12InterfaceSelection": "The current DLL was built with the local Unity 6000.6.4f1 PluginAPI; CMake selected the v8-preferred D3D12 interface declarations available in that PluginAPI.",
-      "sourceBaseCommit": "d913f9912ad2c983fcdbbdc7ed319b97d5d07354",
-      "sourceState": "Windows x64 Release shim from source base d913f9912ad2c983fcdbbdc7ed319b97d5d07354 plus the canonical Native working-tree changes. Persistent preview endpoints retain SDK visibility and the registered primary through drained logical pause and lease return; the worker re-presents the last successfully drawn primary with cached quilt geometry at no more than 5 Hz. Resume, lease admission, producer drain, return proof, acknowledgement, and final teardown preserve their existing lifecycle contracts. No new exported ABI was added.",
-      "artifactBuildCMakeListsSha256": "C8A135B158B51E2145DCF659D71E8C4C7DB1D44DB1233D676C83646D04B7EA0D",
-      "currentCMakeListsSha256": "C8A135B158B51E2145DCF659D71E8C4C7DB1D44DB1233D676C83646D04B7EA0D",
-      "currentWindowsReleaseBuild": {
-        "artifactSha256": "F1B06893404D75582FF600BA733AE3C531ED0C0A7EA40E29CE56DD7A91B0A000",
-        "dllSha256": "F1B06893404D75582FF600BA733AE3C531ED0C0A7EA40E29CE56DD7A91B0A000",
-        "artifactSizeBytes": 214016,
-        "sourceBaseCommit": "d913f9912ad2c983fcdbbdc7ed319b97d5d07354",
-        "sourceState": "Windows x64 Release shim from source base d913f9912ad2c983fcdbbdc7ed319b97d5d07354 plus the canonical Native working-tree changes. Persistent preview endpoints retain SDK visibility and the registered primary through drained logical pause and lease return; the worker re-presents the last successfully drawn primary with cached quilt geometry at no more than 5 Hz. Resume, lease admission, producer drain, return proof, acknowledgement, and final teardown preserve their existing lifecycle contracts. No new exported ABI was added.",
-        "compiler": "MSVC 19.44.35217.0",
-        "shaderCompiler": "Windows SDK FXC 10.1, SDK 10.0.22621.0; stable D3D11 input shader bytecode embedded at build time.",
-        "targetArchitecture": "x64",
-        "configuration": "Release",
-        "generator": "Ninja 1.13.0.git.kitware.jobserver-pipe-1; CMake 4.0.1",
-        "unityPluginApi": "6000.6.4f1",
-        "buildDirectory": ".local/current-sample-state/2026-10-09/shared-output-lease/parity-20261010/canonical-adopt/private-build",
-        "buildCommand": "After vcvars64.bat: cmake --build .local/current-sample-state/2026-10-09/shared-output-lease/parity-20261010/canonical-adopt/private-build --target lookingglass_bridge_shim lookingglass_worker_transport_test lookingglass_stable_sdk_input_d3d11_test lookingglass_bridge_static_present_test lookingglass_bridge_shutdown_contract_test --parallel 6",
-        "nativeSourceHashes": {
-          "Native/bridge_d3d12_internal.h": "6B06A4792E547BDAE65EE91908CB565ED5FA1B89AD5C6E7A6EE627D6933FE154",
-          "Native/bridge_shim.cpp": "396C926036C7290A994D6024B8691775AF90D1A88684676641A87B6076448582",
-          "Native/bridge_shim.h": "B33943E3D0BA4F5E3E7177008542BF48E94AD17846CB421C5AF834F07B687954",
-          "Native/bridge_worker_common.cpp": "D57B45EA0B65FA2B3BD953853529E5005A629321D035C090C1C3D6C620C9E39B",
-          "Native/bridge_worker_common.h": "48ACE99B1F5C90842FB2E6B5AE6021AD835891486BC65C3969C2427F5DB96FD4",
-          "Native/bridge_worker_transport.cpp": "C93D2945C4B12131C2D21C3123092011CD193D9FAD14A1F316D73787B96EF6A6",
-          "Native/bridge_worker_transport.h": "9C16B5397938E19865214DE10336339FF3FB5BD68DB44D625BF1B58B5BF4E67D",
-          "Native/CMakeLists.txt": "C8A135B158B51E2145DCF659D71E8C4C7DB1D44DB1233D676C83646D04B7EA0D",
-          "Native/platform/unsupported/bridge_worker_transport_unsupported.inc": "FE0B5193F02060E87B076796A7B80F4BE90781087D44AA35A0D7FA37B098A20E",
-          "Native/platform/windows/backends/d3d11_backend.inc": "8358D013E24979837AF3419B23223675E211C51CAA667F78672194E5585ADDDF",
-          "Native/platform/windows/backends/d3d11_d3d12_interop.inc": "FDF55A669CE099FA48B95683678ABE7F51592AA1B9E55BF097B90482F7398B28",
-          "Native/platform/windows/backends/d3d12_backend.inc": "F3E13187FE5B0D7441437D9531D894064EC88BE2EAE1DF4982D8B2167F6CB9AB",
-          "Native/platform/windows/bridge_worker_transport_windows.inc": "13E4B4D10B5FB773D5B894FC7ADD9EDB0B029C07F2E8F4D321C236990DD130A7",
-          "Native/platform/windows/stable_sdk_input_d3d11.cpp": "FF1BDCCEFC961168DAD81A9CC18CF8C68232C22CE33CFAC575F0901A2C7BB92F",
-          "Native/platform/windows/stable_sdk_input_d3d11.h": "77EEB054980ED87C70B99CADF909172BB6443942CA72579EC303D79EB17BFCD3",
-          "Native/platform/windows/stable_sdk_input_d3d11.hlsl": "03A54DB6F092BA48547014B8C15202313850B3CC0D24E5261CDF741F1CBE2DD0",
-          "Native/stable_sdk_input_d3d11.cmake": "5473AA5E44C45F1F73C9FCC08E490DB97227587B0EA22E24BB7D96915E57CD03",
-          "Native/tests/bridge_loader_lifecycle_test.cpp": "FA9E38EAF6B4492F02F2F4F45C0FDB59AEFA3227EA37116AE84EF971D19CAC3B",
-          "Native/tests/bridge_shutdown_contract_test.cpp": "5FF2677DBF79B43F571E12E9276793D8910B96018C7E42627D38D501CB39B9C0",
-          "Native/tests/bridge_shutdown_contract.h": "407273B9AC0330ED817CD85B22BEF2070F1365BCD64B2398A9F6C638FE546B58",
-          "Native/tests/bridge_static_present_test.cpp": "D72A1669E97D433C6C2EAA6373BE95CB638EFB420E694C6473C41D1774679420",
-          "Native/tests/bridge_worker_host_affinity_test.cpp": "87779E3B8D309A7C232CB0712A7BA1662F7FAA7E4DD0A4FD5974A5DF24183A0B",
-          "Native/tests/fake_bridge_missing.cpp": "89D4BB907704FC1A8FE1FDAD152A983779F0CED85808B77DEA9263C0B5C05FD3",
-          "Native/tests/fake_bridge_runtime.cpp": "3639075BF270849DBAA8903C9466F78B913085462B9CE8E5DF36C4FC31A6CAF8",
-          "Native/tests/fake_bridge_shutdown_runtime.cpp": "5F79C774C021FF9BD57414CD6AB2F2F02295D202CCD7115FBAC48A56B17244C3",
-          "Native/tests/portable_common_test.cpp": "ED50427D073E0FFE9692E2749DDD076EEABD3AEA3ACA6E2D481F15D0FA82772E",
-          "Native/tests/stable_sdk_input_d3d11_test.cpp": "6DB3C3CA796C39C3C28446F4BC1B101F46AA3D4E9A23FDC88A4FEA3A5800ECA2",
-          "Native/tests/unsupported_shim_abi_test.cpp": "6115552BCE9D8CB909F354F149F5E2A3DD9BEE00E2A6BCA8F32A8E4DAC044546",
-          "Native/tests/worker_transport_test.cpp": "EA64AEFCD7696ACC09E549FE6145249ABEC64B56CEC6EEFC83F6FE5B40002E84"
-        },
-        "localCTest": {
-          "passed": 6,
-          "total": 6,
-          "elapsedSeconds": 4.2,
-          "evidencePath": ".local/current-sample-state/2026-10-09/shared-output-lease/parity-20261010/canonical-adopt/private-build/Testing/Temporary/LastTest.log",
-          "tests": [
-            {
-              "seconds": 0.75,
-              "name": "lookingglass_worker_preview_pause_test"
-            },
-            {
-              "seconds": 2.7,
-              "name": "lookingglass_worker_preview_lease_test"
-            },
-            {
-              "seconds": 0.03,
-              "name": "lookingglass_bridge_static_present_test"
-            },
-            {
-              "seconds": 0.15,
-              "name": "lookingglass_stable_sdk_input_d3d11_test"
-            },
-            {
-              "seconds": 0.46,
-              "name": "lookingglass_bridge_shutdown_contract_test"
-            },
-            {
-              "seconds": 0.11,
-              "name": "lookingglass_bridge_shutdown_exception_contract_test"
-            }
-          ],
-          "note": "Focused Windows Release CTest passed 6/6. Coverage includes persistent preview pause, lease return/reacquire, same retained SDK primary and cached geometry static-present contract, stable D3D11 SDK input, and normal/exception shutdown contracts. Tests use fake Bridge callbacks and WARP/test adapters; no official Bridge SDK or physical device was used."
-        },
-        "unsupportedAbiTest": "Linux-only unsupported-shim ABI test was not run in this Windows Release invocation.",
-        "managedCompileOnly": "Unity Editor/Player assemblies and Unity Test Runner were not run for this artifact.",
-        "exports": {
-          "comparedAgainstSha256": "655FDB898CF7B9F9733A1880828B740B62FB74E0C3ECDF9D825C07794F6388CD",
-          "baselineNamedExports": 51,
-          "currentNamedExports": 51,
-          "baselineNamesPreserved": 51,
-          "newNames": [],
-          "missingNames": [],
-          "testOnlyExports": [],
-          "ordinalCompatibilityClaim": false,
-          "note": "All 51 named exports from the preceding 655FDB898CF7B9F9 DLL remain. No public or test-only exports were added; ordinal compatibility is not claimed."
-        },
-        "validationLimits": "Six focused Native Release CTests passed using fake Bridge callbacks and WARP/test adapters. No official Bridge SDK runtime, Unity Test Runner, hardware, optical appearance, image-quality, or performance validation was performed for this artifact.",
-        "compiledUtc": "2026-10-10T01:28:50Z"
-      },
-      "currentArtifactValidation": {
-        "artifactSha256": "F1B06893404D75582FF600BA733AE3C531ED0C0A7EA40E29CE56DD7A91B0A000",
-        "sourceBaseCommit": "d913f9912ad2c983fcdbbdc7ed319b97d5d07354",
-        "buildDirectory": ".local/current-sample-state/2026-10-09/shared-output-lease/parity-20261010/canonical-adopt/private-build",
-        "testEvidencePath": ".local/current-sample-state/2026-10-09/shared-output-lease/parity-20261010/canonical-adopt/private-build/Testing/Temporary/LastTest.log",
-        "nativeTestsPassed": 6,
-        "nativeTestsTotal": 6,
-        "hardwareValidation": "not performed"
-      },
-      "postBuildSourceChanges": {
-        "scope": "No Native source edits after the final build. The packaged DLL hash matches the Release build output.",
-        "files": [],
-        "verifiedAt": "2026-10-10T01:28:50Z"
-      },
-      "historicalGpuValidation": "Historical RTX 3090 Ti D3D12 shared-resource and Editor/Player observations are not fresh evidence for this DLL. The latest local validation above is the fresh Windows Release CTest only."
-    },
-    "classification": "Historical current Windows artifact before publication of the stdio-guard DLL."
-  },
-  "currentWindowsRuntimeValidation": {
-    "testedRevision": "62d0e0cb380bf663e4b33d2ad2095b09e4e872f9",
-    "testedWorkingTree": "Windows stdio guard and HDRP history-renderer local fixes were applied at test time; these fixes are included in this change. This runtime record is later than the DLL build record above.",
-    "unityVersion": "6000.6.4f1",
-    "device": "NVIDIA GeForce RTX 3090 Ti",
-    "environment": "Windows Editor, selected cases only",
-    "playModeSuites": [
-      {
-        "graphicsApi": "Direct3D 11",
-        "passed": 22,
-        "total": 22,
-        "skipped": 0,
-        "scope": "Selected URP/HDRP PlayMode suites; not the complete GraphicsCompatibility suite."
-      },
-      {
-        "graphicsApi": "Direct3D 12",
-        "passed": 22,
-        "total": 22,
-        "skipped": 0,
-        "scope": "Selected URP/HDRP PlayMode suites; not the complete GraphicsCompatibility suite."
-      }
     ],
-    "deviceLifecycleCases": [
-      {
-        "pipeline": "HDRP",
-        "graphicsApi": "Direct3D 11",
-        "case": "DeviceEditorPreviewPausesAndResumesSameWorkerWhenExplicitlyEnabled",
-        "passed": 1,
-        "total": 1,
-        "loadedShimHashMatched": true
-      },
-      {
-        "pipeline": "URP",
-        "graphicsApi": "Direct3D 12",
-        "case": "DevicePreviewStopsBeforePlayAndRuntimeSessionRendersWhenExplicitlyEnabled",
-        "passed": 1,
-        "total": 1,
-        "loadedShimHashMatched": true
-      }
-    ],
-    "documentation": "docs/windows-stdout-crash-20261011.md",
-    "notValidated": [
-      "Windows Player output",
-      "other display models and general optical quality",
-      "URP TAA history accumulation and per-view separation",
-      "HDRP TAA pixel output and accumulation",
-      "all scenes, all graphics suites, and all shutdown failure modes"
-    ]
+    "source": "Installed Unity 6000.6.4f1 PluginAPI, as recorded at build time",
+    "thirdPartyNotice": "../../../NOTICE.md",
+    "verificationLimit": "Individual build header hashes and file-specific notices were not retained. No equivalence to the pinned public NativeRenderingPlugin headers is asserted."
   },
-  "artifactSizeBytes": 223232,
-  "nativeSourceHashesNote": "No build-time source hash snapshot was retained for the current DLL; see currentWindowsReleaseBuild.nativeSourceHashesNote.",
-  "compilerVersionNote": "Exact cl.exe version not retained; build log records MSBuild 17.14.23+b0019275e."
+  "validationLimits": "Historical root-level 15/15 Native and 11/11 transport-only counts belong to earlier checkpoints and remain in historicalLegacyTopLevelFields and detailed history. Current Windows Release CTest is 19/19; WARP presenter coverage is separately 25 pixel-oracle cases and 6 calibration boundaries. Current runtime evidence covers 12 Windows Editor device conditions under the current artifact. No Windows Player, other-device optical, or TAA pixel/accumulation guarantee is implied.",
+  "historicalLegacyTopLevelFields": {
+    "buildDirectory": ".local/windows-unity-crash-20261011/fix-validation/build-vs2022-x64-release",
+    "sha256": "4D28B54BC09FFCF0BC2E6F9E645E9A04C6EF59210C79BB784872655DA1837F7A",
+    "sourceBaseCommit": "2630bf421b02aaf470e421992fc23d2947b82140",
+    "sourceState": "Windows x64 Release shim built from repository revision 2630bf421b02aaf470e421992fc23d2947b82140 with the local Native stdio-guard changes present at build time. The build-time per-file source hash snapshot was not retained. Native/tests/metadata_test.cpp was changed after this DLL build for test coverage only and is not linked into the shim.",
+    "generatedAt": "2026-10-10T17:10:25Z",
+    "currentCMakeListsSha256": "91FC1851F641334ADA60F61AFA42E82AB7688F4AEBA6283EB666BCED60A761CA",
+    "artifactBuildCMakeListsSha256": null,
+    "independentCTest": "Native Release CTest passed 15/15; transport-only CTest passed 11/11. Test evidence is limited to fake Bridge/test-adapter coverage.",
+    "validationLimits": "Native Release CTest passed 15/15 and transport-only CTest passed 11/11 using the recorded local build. These tests use test adapters/fake Bridge runtimes; physical output evidence is recorded separately under currentWindowsRuntimeValidation. No Player, other-device optical, or TAA pixel/accumulation guarantee is implied."
+  }
 }

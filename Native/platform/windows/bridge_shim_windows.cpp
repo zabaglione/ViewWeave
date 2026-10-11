@@ -37,6 +37,7 @@ using InitializeFn = Bool (*)(
 );
 using UninitializeFn = Bool (*)();
 using GetPositionDisplayFn = Bool (*)(unsigned long, long*, long*);
+using GetChannelIndexFn = Bool (*)(unsigned long, int*);
 using GetWindowDisplayFn = Bool (*)(WindowHandle, unsigned long*);
 
 using ReleaseDeviceFn = Bool (*)(IUnknown*);
@@ -187,6 +188,8 @@ static GetDimensionsFn g_get_dimensions{};
 static GetViewconeFn g_get_viewcone{};
 static GetDefaultQuiltFn g_get_default_quilt{};
 static GetPositionDisplayFn g_get_position_display{};
+static GetChannelIndexFn g_get_ri{};
+static GetChannelIndexFn g_get_bi{};
 static GetWindowDisplayFn g_get_window_display{};
 static GetCalibrationFn g_get_calibration{};
 static ReleaseDeviceFn g_release_device{};
@@ -836,7 +839,7 @@ static T sym(const char* name) {
 static void clear_symbols() {
     g_initialize = nullptr; g_uninitialize = nullptr; g_version = nullptr;
     g_get_displays = nullptr; g_get_dimensions = nullptr; g_get_viewcone = nullptr; g_get_calibration = nullptr;
-    g_get_default_quilt = nullptr; g_get_position_display = nullptr; g_get_window_display = nullptr;
+    g_get_default_quilt = nullptr; g_get_position_display = nullptr; g_get_ri = nullptr; g_get_bi = nullptr; g_get_window_display = nullptr;
     g_release_device = nullptr; g_instance_window = nullptr; g_show_window = nullptr;
     g_register_texture = nullptr; g_unregister_texture = nullptr; g_draw_texture = nullptr;
     g_create_texture = nullptr; g_copy_texture = nullptr; g_release_texture = nullptr;
@@ -868,6 +871,8 @@ static bool bind_symbols() {
     g_get_dimensions = sym<GetDimensionsFn>("get_dimensions_for_display"); g_get_viewcone = sym<GetViewconeFn>("get_viewcone_for_display");
     g_get_default_quilt = sym<GetDefaultQuiltFn>("get_default_quilt_settings_for_display");
     g_get_position_display = sym<GetPositionDisplayFn>("get_window_position_for_display");
+    g_get_ri = sym<GetChannelIndexFn>("get_ri_for_display");
+    g_get_bi = sym<GetChannelIndexFn>("get_bi_for_display");
     g_get_window_display = sym<GetWindowDisplayFn>("get_display_for_window");
     g_release_device = sym<ReleaseDeviceFn>("release_device_dx"); g_instance_window = sym<InstanceWindowFn>("instance_window_dx");
     g_show_window = sym<ShowWindowFn>("show_window"); g_register_texture = sym<RegisterTextureFn>("register_texture_dx");
@@ -1059,6 +1064,67 @@ LKG_EXPORT int32_t lkg_bridge_get_physical_display_v1(uint32_t displayIndex, Lkg
     info->pixelWidth = 0; info->pixelHeight = 0; info->dpi = 0.0f; info->valid = 0;
     if (!has_sdk_ownership() || !g_initialized) return -7;
     return lkg::metadata::ReadPhysicalDisplay(metadata_symbols(), displayIndex, info);
+}
+
+int32_t lkg_bridge_get_worker_subpixel_calibration_v1(uint32_t displayIndex,
+    LkgWorkerSubpixelCalibrationV1* calibration) {
+    if (!calibration || calibration->structSize != sizeof(LkgWorkerSubpixelCalibrationV1) || calibration->version != 1)
+        return -1;
+    calibration->displayIndex = displayIndex;
+    calibration->nativeWidth = 0;
+    calibration->nativeHeight = 0;
+    calibration->center = 0.0f;
+    calibration->pitch = 0.0f;
+    calibration->slope = 0.0f;
+    calibration->dpi = 0.0f;
+    calibration->flipX = 0.0f;
+    calibration->viewCone = 0.0f;
+    calibration->fringe = 0.0f;
+    calibration->invertedViews = 0;
+    calibration->cellPatternMode = UINT32_MAX;
+    calibration->cellCount = 0;
+    calibration->windowX = 0;
+    calibration->windowY = 0;
+    if (direct_call_rejected()) return -6;
+    if (!g_worker_scope || !has_sdk_ownership() || !g_initialized) return -7;
+    if (!g_get_calibration || !g_get_position_display || !g_get_ri || !g_get_bi) return -2;
+    float center = 0.0f, pitch = 0.0f, slope = 0.0f, dpi = 0.0f, flipX = 0.0f;
+    float viewCone = 0.0f, fringe = 0.0f;
+    int width = 0, height = 0, invertedViews = 0, cellPatternMode = 0, cellCount = 0;
+    long windowX = 0, windowY = 0;
+    int redIndex = 0, blueIndex = 0;
+    bool ok = false;
+    try {
+        ok = g_get_calibration(static_cast<unsigned long>(displayIndex), &center, &pitch, &slope,
+            &width, &height, &dpi, &flipX, &invertedViews, &viewCone, &fringe,
+            &cellPatternMode, &cellCount, nullptr) &&
+            g_get_position_display(static_cast<unsigned long>(displayIndex), &windowX, &windowY) &&
+            g_get_ri(static_cast<unsigned long>(displayIndex), &redIndex) &&
+            g_get_bi(static_cast<unsigned long>(displayIndex), &blueIndex);
+    } catch (...) {
+        ok = false;
+    }
+    if (!ok || width <= 0 || height <= 0 || width > 16384 || height > 16384 ||
+        !std::isfinite(center) || !std::isfinite(pitch) ||
+        !std::isfinite(slope) || !std::isfinite(dpi) || !std::isfinite(flipX) ||
+        !std::isfinite(viewCone) || !std::isfinite(fringe)) return -3;
+    calibration->nativeWidth = static_cast<uint32_t>(width);
+    calibration->nativeHeight = static_cast<uint32_t>(height);
+    calibration->center = center;
+    calibration->pitch = pitch;
+    calibration->slope = slope;
+    calibration->dpi = dpi;
+    calibration->flipX = flipX;
+    calibration->viewCone = viewCone;
+    calibration->fringe = fringe;
+    calibration->invertedViews = invertedViews;
+    calibration->cellPatternMode = cellPatternMode;
+    calibration->cellCount = cellCount;
+    calibration->windowX = static_cast<int32_t>(windowX);
+    calibration->windowY = static_cast<int32_t>(windowY);
+    calibration->redIndex = redIndex;
+    calibration->blueIndex = blueIndex;
+    return 0;
 }
 
 LKG_EXPORT uint64_t lkg_bridge_create_d3d11_session(void* device, uint32_t display) {

@@ -45,6 +45,28 @@ public static class MetalShaderValidation
         Vector2 offset = RawOffsets[Pattern[mode][(y % 4) * 2 + x % 2] * 3 + channel];
         return (u + offset.x / Width + (v + offset.y / Height) * direction * Tilt) * Pitch - center;
     }
+    static double BilinearChannel(Texture2D quilt, int tileX, int tileY, double withinX, double withinY, int channel)
+    {
+        double positionX = Math.Max(tileX * TileSize + .5,
+            Math.Min((tileX + 1) * TileSize - .5, (tileX + withinX) * TileSize));
+        double positionY = Math.Max(tileY * TileSize + .5,
+            Math.Min((tileY + 1) * TileSize - .5, (tileY + withinY) * TileSize));
+        double sampleX = positionX - .5, sampleY = positionY - .5;
+        int floorX = (int)Math.Floor(sampleX), floorY = (int)Math.Floor(sampleY);
+        int x0 = Math.Max(tileX * TileSize, Math.Min((tileX + 1) * TileSize - 1, floorX));
+        int x1 = Math.Max(tileX * TileSize, Math.Min((tileX + 1) * TileSize - 1, floorX + 1));
+        int y0 = Math.Max(tileY * TileSize, Math.Min((tileY + 1) * TileSize - 1, floorY));
+        int y1 = Math.Max(tileY * TileSize, Math.Min((tileY + 1) * TileSize - 1, floorY + 1));
+        double fx = sampleX - floorX, fy = sampleY - floorY;
+        double top = Mathf.Lerp(quilt.GetPixel(x0, y0)[channel], quilt.GetPixel(x1, y0)[channel], (float)fx);
+        double bottom = Mathf.Lerp(quilt.GetPixel(x0, y1)[channel], quilt.GetPixel(x1, y1)[channel], (float)fx);
+        return Mathf.Lerp((float)top, (float)bottom, (float)fy);
+    }
+    static float ExactSrgbEncode(double value)
+    {
+        value = Math.Max(0, Math.Min(1, value));
+        return (float)(value <= .0031308 ? value * 12.92 : 1.055 * Math.Pow(value, 1.0 / 2.4) - .055);
+    }
     static double FindCenter(out double margin)
     {
         // Keep discontinuous view boundaries away from float-rounding ambiguity.
@@ -93,7 +115,9 @@ public static class MetalShaderValidation
         {
             if (!target.Create()) throw new Exception("GPU validation texture creation failed");
             material.SetVector("_Grid",new Vector4(Columns,Rows,TileSize,TileSize));
-            material.SetVector("_QuiltSize",new Vector4(quilt.width,quilt.height,1,0));
+            material.SetVector("_QuiltSize",new Vector4(quilt.width,quilt.height,1,1));
+            material.SetVector("_SourceOptions",new Vector4(
+                QualitySettings.activeColorSpace == ColorSpace.Linear ? 1 : 0, 0, 0, 0));
             var offsets = new Vector4[12];
             for (int i = 0; i < offsets.Length; ++i)
                 offsets[i] = new Vector4(RawOffsets[i].x/Width,RawOffsets[i].y/Height,0,0);
@@ -119,10 +143,8 @@ public static class MetalShaderValidation
                     phase -= Math.Floor(phase);
                     double fraction = mode >= 0 || inverted == 1 ? 1-phase : phase;
                     int view = Math.Min(Columns*Rows-1,(int)Math.Floor(fraction*Columns*Rows));
-                    int sourceX = view%Columns*TileSize+Math.Min(TileSize-1,(int)(u*TileSize));
-                    int sourceY = view/Columns*TileSize+Math.Min(TileSize-1,(int)(v*TileSize));
-                    float expected = quilt.GetPixel(sourceX,sourceY)[channel];
-                    if (QualitySettings.activeColorSpace == ColorSpace.Linear) expected = Mathf.LinearToGammaSpace(expected);
+                    float expected = (float)BilinearChannel(quilt, view % Columns, view / Columns, u, v, channel);
+                    if (QualitySettings.activeColorSpace == ColorSpace.Linear) expected = ExactSrgbEncode(expected);
                     float actual = capture.GetPixel(x,y)[channel];
                     float difference = Mathf.Abs(expected-actual);
                     report.maximumError = Mathf.Max(report.maximumError,difference);

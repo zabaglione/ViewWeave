@@ -29,6 +29,7 @@ namespace ViewWeave.Editor
         static RenderPipelineAsset pipelineAtStart;
         static QuiltSettings sourceSettingsAtStart;
         static QuiltQualityPreset qualityAtStart;
+        static BridgeSubpixelMode subpixelModeAtStart;
         static string configuredRuntimePathAtStart;
         static string configuredApplicationNameAtStart;
         static string configuredOutputRuntimePathAtStart;
@@ -147,8 +148,8 @@ namespace ViewWeave.Editor
             outputToDevice = outputToDeviceValue;
             sourceSession = rig.GetComponent<ViewWeaveBridgeSession>();
             sourceOutput = rig.Renderer.OutputBehaviour as BridgeWorkerQuiltOutput;
-            if (outputToDevice && sourceSession != null &&
-                !BridgeSubpixelPolicy.ValidateBridgeManagedOutput(sourceSession.SubpixelMode, out string subpixelError))
+            subpixelModeAtStart = sourceSession == null ? BridgeSubpixelMode.Automatic : sourceSession.SubpixelMode;
+            if (outputToDevice && !BridgeSubpixelPolicy.Validate(subpixelModeAtStart, out string subpixelError))
                 return ResetFailedStart(subpixelError, out error);
             if (sourceSession != null && sourceSession.State != ViewWeaveBridgeSession.SessionState.Idle && sourceSession.State != ViewWeaveBridgeSession.SessionState.Fault)
                 return ResetFailedStart("Stop the regular Bridge session before starting Edit Mode preview.", out error);
@@ -185,7 +186,8 @@ namespace ViewWeave.Editor
                 if (outputToDevice)
                 {
                     retentionRecord.SetWorkerProofExpected(true);
-                    if (producerOutput == null || !producerOutput.TryBeginEditorPreview(OwnerToken, retentionRecord, out error))
+                    if (producerOutput == null || !producerOutput.TryBeginEditorPreview(OwnerToken, retentionRecord,
+                            subpixelModeAtStart, out error))
                     {
                         string beginError = string.IsNullOrEmpty(error) ? "Bridge Worker preview could not start." : error;
                         if (retentionRecord != null && retentionRecord.WorkerRecoveryRecord == null)
@@ -859,7 +861,7 @@ namespace ViewWeave.Editor
                 if (quality != qualityAtStart) return true;
                 if (sourceSession != null && (sourceSession.runtimePath != configuredRuntimePathAtStart ||
                     sourceSession.applicationName != configuredApplicationNameAtStart || sourceSession.displayOrdinal != displayOrdinalAtStart ||
-                    sourceSession.SubpixelMode != BridgeSubpixelMode.Automatic)) return true;
+                    sourceSession.SubpixelMode != subpixelModeAtStart)) return true;
                 if (sourceOutput != null && (sourceOutput.runtimePath != configuredOutputRuntimePathAtStart ||
                     sourceOutput.applicationName != configuredOutputApplicationNameAtStart || sourceOutput.displayOrdinal != configuredOutputDisplayOrdinalAtStart)) return true;
             }
@@ -1197,6 +1199,7 @@ namespace ViewWeave.Editor
             rendering = false;
             profileApplied = false;
             refreshRequested = false;
+            subpixelModeAtStart = BridgeSubpixelMode.Automatic;
             sourceSession = null;
             sourceOutput = null;
             QuiltDisplaySettingsResolver.NotifyChanged();

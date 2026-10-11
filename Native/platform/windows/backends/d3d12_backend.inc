@@ -158,7 +158,8 @@ static void WorkerRenderEventD3D12(WorkerContext& context, WorkerDrawData& data,
         std::lock_guard<std::mutex> lock(context.mutex);
         if (context.status.state == LKG_WORKER_READY && !context.closeRequested.load(std::memory_order_acquire)) {
             for (uint32_t index = 0; index < 3; ++index) {
-                if (!context.slots[index].inUse) {
+                if (!context.slots[index].inUse && !context.slots[index].quarantined &&
+                    !context.slots[index].sourceRetirementUnproven && !context.slots[index].sourceMutexHeld) {
                     selectedSlot = index;
                     context.slots[index].inUse = true;
                     break;
@@ -220,7 +221,8 @@ static void WorkerRenderEventD3D12(WorkerContext& context, WorkerDrawData& data,
         releaseSnapshot();
         {
             std::lock_guard<std::mutex> lock(context.mutex);
-            EnqueueJob(context, WorkerContext::Job{ selectedSlot, data.columns, data.rows, data.aspect, data.zoom });
+            EnqueueJob(context, WorkerContext::Job{ selectedSlot, data.columns, data.rows, data.aspect,
+                data.zoom, data.sourceEncoding, data.sourceWasTypeless });
             ++context.status.submitted;
             context.condition.notify_one();
         }
@@ -238,7 +240,8 @@ static void WorkerRenderEventD3D12(WorkerContext& context, WorkerDrawData& data,
     bool submitted = false;
     {
         std::lock_guard<std::mutex> lock(context.mutex);
-        WorkerContext::Job job{ selectedSlot, data.columns, data.rows, data.aspect, data.zoom };
+        WorkerContext::Job job{ selectedSlot, data.columns, data.rows, data.aspect, data.zoom,
+            data.sourceEncoding, data.sourceWasTypeless };
         if (EnqueueJob(context, job)) {
             ++context.status.submitted;
             submitted = true;
@@ -271,8 +274,13 @@ static void D3D12WorkerJobQuarantine(WorkerContext& context, const WorkerContext
     D3D12WorkerJobDeferred(context, job);
 }
 
-static void D3D12WorkerJobRetire(WorkerContext& context, uint32_t slotIndex) {
+static void D3D12WorkerJobRetire(WorkerContext& context, uint32_t slotIndex, bool completed = false) {
     WorkerContext::Slot& slot = context.slots[slotIndex];
+    if (!D3D12OwnershipRetired(slot)) {
+        slot.quarantined = true;
+        SetFault(context, 29, "D3D12 slot retirement refused before all GPU completion proofs");
+        return;
+    }
     slot.sourceTexture12.Reset();
     slot.producerFence12.Reset();
     slot.producerDevice12.Reset();
@@ -281,11 +289,13 @@ static void D3D12WorkerJobRetire(WorkerContext& context, uint32_t slotIndex) {
     slot.timedOut = false;
     slot.consumerTimedOut = false;
     slot.consumerCopyPending = false;
+    slot.sourceCopyRetirementQuery11.Reset();
     {
         std::lock_guard<std::mutex> lock(context.mutex);
         slot.inUse = false;
         if (context.pendingTokens) --context.pendingTokens;
-        ++context.status.dropped;
+        if (completed) ++context.status.completed;
+        else ++context.status.dropped;
         context.inFlightJob = false;
         context.condition.notify_all();
     }
@@ -302,6 +312,11 @@ static void ProcessD3D12WorkerJob(WorkerContext& context, const WorkerContext::J
                 slot.quarantined = true;
                 SetFault(context, 21, "D3D12 unknown submission retired after confirmed device removal");
             }
+            slot.sourceTexture12.Reset();
+            slot.producerFence12.Reset();
+            slot.producerDevice12.Reset();
+            slot.producerFenceValue12 = 0;
+            slot.unknownSubmission = false;
             D3D12WorkerJobRetire(context, job.slot);
             return;
         }
@@ -325,6 +340,10 @@ static void ProcessD3D12WorkerJob(WorkerContext& context, const WorkerContext::J
                 slot.quarantined = true;
                 SetFault(context, 21, "D3D12 producer fence reports device removal");
             }
+            slot.sourceTexture12.Reset();
+            slot.producerFence12.Reset();
+            slot.producerDevice12.Reset();
+            slot.producerFenceValue12 = 0;
             D3D12WorkerJobRetire(context, job.slot);
             return;
         }
@@ -337,6 +356,12 @@ static void ProcessD3D12WorkerJob(WorkerContext& context, const WorkerContext::J
             return;
         }
         if (slot.timedOut) {
+            // The producer fence is now observed complete. Drop its ownership proof before
+            // the guarded retirement path evaluates the slot predicates.
+            slot.sourceTexture12.Reset();
+            slot.producerFence12.Reset();
+            slot.producerDevice12.Reset();
+            slot.producerFenceValue12 = 0;
             D3D12WorkerJobRetire(context, job.slot);
             return;
         }
@@ -428,27 +453,112 @@ static void ProcessD3D12WorkerJob(WorkerContext& context, const WorkerContext::J
         return;
     }
     int32_t drawResult = -1;
+    bool sourceRetirementProven = true;
     try {
-        drawResult = DrawWorkerImage(context, workerContext, session, slot.producerTexture.Get(), job);
+        drawResult = DrawWorkerImage(context, workerContext, workerDevice, session, slot.producerTexture.Get(), job,
+            slot.sourceCopyRetirementQuery11, &sourceRetirementProven);
     } catch (...) {
-        SetFault(context, 27, "D3D12 Bridge draw threw after consumer copy completed");
-        D3D12WorkerJobRetire(context, job.slot);
+        sourceRetirementProven = !slot.sourceRetirementUnproven;
+        SetFault(context, 27, "D3D12 worker draw threw; source retirement is being verified");
+    }
+    if (!sourceRetirementProven) {
+        slot.quarantined = true;
+        slot.inUse = false;
+        {
+            std::lock_guard<std::mutex> lock(context.mutex);
+            if (context.pendingTokens) --context.pendingTokens;
+            ++context.status.dropped;
+            context.inFlightJob = false;
+            context.condition.notify_all();
+        }
         return;
     }
     if (drawResult != 0) SetBridgeFault(context, 13, "bridge_draw", drawResult);
-    {
-        std::lock_guard<std::mutex> lock(context.mutex);
-        slot.inUse = false;
-        if (context.pendingTokens) --context.pendingTokens;
-        context.inFlightJob = false;
-        if (drawResult == 0) ++context.status.completed;
-        else ++context.status.dropped;
-        context.condition.notify_all();
-    }
+    D3D12WorkerJobRetire(context, job.slot, drawResult == 0);
     TraceWorker(drawResult == 0 ? "d3d12-draw-complete" : "d3d12-draw-drop");
 }
 
+static bool DrainD3D12Ownership(WorkerContext& context, ID3D11Device* workerDevice,
+    ID3D11DeviceContext* workerContext, uint64_t timeoutMs) {
+    const ULONGLONG deadline = GetTickCount64() + timeoutMs;
+    for (WorkerContext::Slot& slot : context.slots) {
+        if (!slot.d3d12Slot) continue;
+        for (;;) {
+            bool waiting = false;
+            if (slot.unknownSubmission) {
+                if (!slot.producerFence12 || !slot.producerDevice12) return false;
+                const UINT64 completed = D3D12FenceCompletedValue(slot.producerFence12.Get());
+                const HRESULT removedReason = slot.producerDevice12->GetDeviceRemovedReason();
+                if (completed == UINT64_MAX || FAILED(removedReason)) {
+                    // Preserve the existing unknown-submission rule: only confirmed device
+                    // removal makes an invalid submission fence safe to retire.
+                    slot.sourceTexture12.Reset();
+                    slot.producerFence12.Reset();
+                    slot.producerDevice12.Reset();
+                    slot.producerFenceValue12 = 0;
+                    slot.unknownSubmission = false;
+                } else {
+                    waiting = true;
+                }
+            } else if (slot.producerFenceValue12 != 0) {
+                if (!slot.producerFence12 || !slot.producerDevice12) return false;
+                const UINT64 completed = D3D12FenceCompletedValue(slot.producerFence12.Get());
+                const HRESULT removedReason = slot.producerDevice12->GetDeviceRemovedReason();
+                if (completed == UINT64_MAX || FAILED(removedReason)) {
+                    slot.sourceTexture12.Reset();
+                    slot.producerFence12.Reset();
+                    slot.producerDevice12.Reset();
+                    slot.producerFenceValue12 = 0;
+                } else if (completed >= slot.producerFenceValue12) {
+                    slot.sourceTexture12.Reset();
+                    slot.producerFence12.Reset();
+                    slot.producerDevice12.Reset();
+                    slot.producerFenceValue12 = 0;
+                } else {
+                    waiting = true;
+                }
+            } else if (slot.sourceTexture12 || slot.producerFence12 || slot.producerDevice12) {
+                // GPU ownership is present without a completion value to prove retirement.
+                return false;
+            }
+
+            if (slot.consumerCopyPending) {
+                if (!workerContext || !slot.consumerQuery11) return false;
+                BOOL consumerComplete = FALSE;
+                const HRESULT queryResult = workerContext->GetData(slot.consumerQuery11.Get(),
+                    &consumerComplete, sizeof(consumerComplete), D3D11_ASYNC_GETDATA_DONOTFLUSH);
+                if (queryResult == S_OK && consumerComplete) {
+                    slot.consumerCopyPending = false;
+                } else if (FAILED(queryResult) && workerDevice &&
+                    FAILED(workerDevice->GetDeviceRemovedReason())) {
+                    // The consumer device removal is the existing safe-retirement proof.
+                    slot.consumerCopyPending = false;
+                } else {
+                    waiting = true;
+                }
+            }
+
+            if (slot.unknownSubmission || slot.producerFenceValue12 != 0 || slot.consumerCopyPending) {
+                waiting = true;
+            }
+            if (!waiting) break;
+            if (GetTickCount64() >= deadline) return false;
+            Sleep(1);
+        }
+    }
+    for (const WorkerContext::Slot& slot : context.slots) {
+        if (slot.d3d12Slot && (slot.inUse || slot.unknownSubmission || slot.producerFenceValue12 != 0 ||
+            slot.sourceTexture12 || slot.producerFence12 || slot.producerDevice12 || slot.consumerCopyPending))
+            return false;
+    }
+    return true;
+}
+
 static void ClearD3D12Slot(WorkerContext::Slot& slot) {
+    if (slot.inUse || !D3D12OwnershipRetired(slot)) {
+        slot.quarantined = true;
+        return;
+    }
     slot.sourceTexture12.Reset();
     slot.producerFence12.Reset();
     slot.producerDevice12.Reset();
@@ -456,6 +566,7 @@ static void ClearD3D12Slot(WorkerContext::Slot& slot) {
     slot.allocator12.Reset();
     slot.commandList12.Reset();
     slot.consumerQuery11.Reset();
+    slot.sourceCopyRetirementQuery11.Reset();
     slot.workerTexture.Reset();
     slot.producerTexture.Reset();
     slot.producerMutex.Reset();
@@ -470,6 +581,9 @@ static void ClearD3D12Slot(WorkerContext::Slot& slot) {
     slot.consumerTimedOut = false;
     slot.consumerCopyStartedTick = 0;
     slot.quarantined = false;
+    slot.sourceRetirementUnproven = false;
+    slot.sourceCopyCompleted = false;
+    slot.sourceMutexHeld = false;
     slot.consumerCopyPending = false;
     slot.d3d12Slot = false;
     slot.generation = 0;

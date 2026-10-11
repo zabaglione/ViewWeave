@@ -89,6 +89,15 @@ namespace ViewWeave.RigCameraCreationValidation
         }
 
         [Test]
+        public void MetalOutputMissingSerializedModeDefaultsToAutomatic()
+        {
+            gameObject = new GameObject("Legacy Metal Output Serialization");
+            BridgeMetalQuiltOutput output = gameObject.AddComponent<BridgeMetalQuiltOutput>();
+            EditorJsonUtility.FromJsonOverwrite("{\"applicationName\":\"LegacyOutput\"}", output);
+            Assert.That(output.SubpixelMode, Is.EqualTo(BridgeSubpixelMode.Automatic));
+        }
+
+        [Test]
         public void SubpixelModeRejectsInvalidValuesAndRecordingOwnership()
         {
             VisualElement root = CreateMetalInspector(out ViewWeaveRig rig, out BridgeMetalQuiltOutput output);
@@ -124,7 +133,7 @@ namespace ViewWeave.RigCameraCreationValidation
         [TestCase(BridgeSubpixelMode.ClassicRgb, false)]
         [TestCase(BridgeSubpixelMode.CalibratedCells, false)]
         [TestCase((BridgeSubpixelMode)999, false)]
-        public void BridgeManagedSubpixelPolicyAcceptsAutomaticOnly(BridgeSubpixelMode mode, bool accepted)
+        public void LegacyDirectSubpixelPolicyAcceptsAutomaticOnly(BridgeSubpixelMode mode, bool accepted)
         {
             Assert.That(BridgeSubpixelPolicy.ValidateBridgeManagedOutput(mode, out string error), Is.EqualTo(accepted));
             Assert.That(string.IsNullOrEmpty(error), Is.EqualTo(accepted));

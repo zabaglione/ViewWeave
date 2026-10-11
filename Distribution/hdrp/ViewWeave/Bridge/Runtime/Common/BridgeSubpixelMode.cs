@@ -5,9 +5,14 @@ namespace ViewWeave
     /// <summary>Requested subpixel processing, independent of the graphics backend.</summary>
     public enum BridgeSubpixelMode
     {
-        [InspectorName("Automatic (Bridge Calibration)")] Automatic = 0,
+        [InspectorName("Automatic (Calibration When Available)")] Automatic = 0,
         [InspectorName("Classic RGB (Diagnostic)")] ClassicRgb = 1,
         [InspectorName("Calibrated Cells (Required)")] CalibratedCells = 2
+    }
+
+    public enum BridgeSubpixelBackend : uint
+    {
+        NativeD3D11 = 1
     }
 
     public static class BridgeSubpixelPolicy
@@ -38,7 +43,7 @@ namespace ViewWeave
         {
             if (!Validate(mode, out error)) return false;
             if (mode == BridgeSubpixelMode.Automatic) return true;
-            error = "Bridge-managed output currently supports only Automatic subpixel processing. Manual modes are not implemented.";
+            error = "Legacy Direct output uses Bridge-managed Automatic subpixel processing only.";
             return false;
         }
     }

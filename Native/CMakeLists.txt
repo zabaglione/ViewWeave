@@ -14,7 +14,7 @@ endif()
 option(LKG_TRANSPORT_TESTS_ONLY "Build only the stubbed worker transport test" OFF)
 option(LKG_D3D12_SHARED_PROBE "Build the independent D3D12 to D3D11 shared resource probe" OFF)
 
-set(LKG_COMMON_SOURCES common/bridge_worker_common.cpp common/bridge_metadata.cpp)
+set(LKG_COMMON_SOURCES common/bridge_worker_common.cpp common/bridge_metadata.cpp common/subpixel_calibration.cpp)
 if (WIN32)
   set(LKG_TRANSPORT_SOURCE platform/windows/bridge_worker_transport_windows.cpp)
 else()
@@ -26,6 +26,8 @@ if (NOT LKG_TRANSPORT_TESTS_ONLY)
     add_library(lookingglass_bridge_shim SHARED
       platform/windows/bridge_shim_windows.cpp
       platform/windows/stdio_load_guard.cpp
+      platform/windows/bridge_subpixel_metadata.cpp
+      platform/windows/manual_subpixel_presenter.cpp
       ${LKG_TRANSPORT_SOURCE}
       ${LKG_COMMON_SOURCES})
   elseif(APPLE)
@@ -78,8 +80,33 @@ if (NOT LKG_TRANSPORT_TESTS_ONLY)
       target_compile_definitions(lookingglass_bridge_shim PRIVATE LKG_UNITY_GRAPHICS_D3D12_V8)
     endif()
     target_compile_definitions(lookingglass_bridge_shim PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
-    target_link_libraries(lookingglass_bridge_shim PRIVATE user32 d3d11 d3d12 dxgi)
+    target_link_libraries(lookingglass_bridge_shim PRIVATE user32 d3d11 d3d12 dxgi winhttp)
     lkg_add_stable_sdk_input(lookingglass_bridge_shim)
+    lkg_add_manual_subpixel_presenter_shaders(lookingglass_bridge_shim)
+    if (BUILD_TESTING)
+      add_library(lookingglass_bridge_worker_test_shim SHARED
+        platform/windows/bridge_shim_windows.cpp
+        platform/windows/stdio_load_guard.cpp
+        platform/windows/bridge_subpixel_metadata.cpp
+        platform/windows/manual_subpixel_presenter.cpp
+        ${LKG_TRANSPORT_SOURCE}
+        ${LKG_COMMON_SOURCES})
+      set_target_properties(lookingglass_bridge_worker_test_shim PROPERTIES
+        OUTPUT_NAME lookingglass_bridge_worker_test_shim)
+      target_compile_features(lookingglass_bridge_worker_test_shim PRIVATE cxx_std_17)
+      target_compile_definitions(lookingglass_bridge_worker_test_shim PRIVATE
+        LKG_BRIDGE_SHIM_EXPORTS WIN32_LEAN_AND_MEAN NOMINMAX
+        LKG_WORKER_TRANSPORT_TESTING LKG_SUBPIXEL_PRESENTER_TESTS)
+      target_include_directories(lookingglass_bridge_worker_test_shim PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}" "${UNITY_PLUGIN_API_DIR}")
+      file(STRINGS "${UNITY_PLUGIN_API_DIR}/IUnityGraphicsD3D12.h" unity_test_d3d12_v8_declaration REGEX "IUnityGraphicsD3D12v8")
+      if (unity_test_d3d12_v8_declaration)
+        target_compile_definitions(lookingglass_bridge_worker_test_shim PRIVATE LKG_UNITY_GRAPHICS_D3D12_V8)
+      endif()
+      target_link_libraries(lookingglass_bridge_worker_test_shim PRIVATE user32 d3d11 d3d12 dxgi winhttp)
+      lkg_add_stable_sdk_input(lookingglass_bridge_worker_test_shim)
+      lkg_add_manual_subpixel_presenter_shaders(lookingglass_bridge_worker_test_shim)
+    endif()
   elseif(APPLE)
     if (NOT DEFINED UNITY_PLUGIN_API_DIR OR UNITY_PLUGIN_API_DIR STREQUAL "")
       set(UNITY_PLUGIN_API_DIR "$ENV{UNITY_PLUGIN_API_DIR}")
@@ -142,8 +169,14 @@ if (BUILD_TESTING)
   target_include_directories(lookingglass_metadata_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
   add_test(NAME lookingglass_metadata_test COMMAND lookingglass_metadata_test)
 
+  add_executable(lookingglass_subpixel_calibration_test
+    common/subpixel_calibration.cpp tests/subpixel_calibration_test.cpp)
+  target_compile_features(lookingglass_subpixel_calibration_test PRIVATE cxx_std_17)
+  target_include_directories(lookingglass_subpixel_calibration_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+  add_test(NAME lookingglass_subpixel_calibration_test COMMAND lookingglass_subpixel_calibration_test)
+
   add_executable(lookingglass_metal_calibration_test
-    platform/macos/metal_calibration.cpp tests/metal_calibration_test.cpp)
+    platform/macos/metal_calibration.cpp common/subpixel_calibration.cpp tests/metal_calibration_test.cpp)
   target_compile_features(lookingglass_metal_calibration_test PRIVATE cxx_std_17)
   target_include_directories(lookingglass_metal_calibration_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
   add_test(NAME lookingglass_metal_calibration_test COMMAND lookingglass_metal_calibration_test)
@@ -193,6 +226,33 @@ if (BUILD_TESTING)
 endif()
 
 if (WIN32 AND BUILD_TESTING)
+  add_executable(lookingglass_bridge_subpixel_metadata_test
+    platform/windows/bridge_subpixel_metadata.cpp
+    common/subpixel_calibration.cpp
+    tests/bridge_subpixel_metadata_test.cpp)
+  target_compile_features(lookingglass_bridge_subpixel_metadata_test PRIVATE cxx_std_17)
+  target_compile_definitions(lookingglass_bridge_subpixel_metadata_test PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
+  target_include_directories(lookingglass_bridge_subpixel_metadata_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+  target_link_libraries(lookingglass_bridge_subpixel_metadata_test PRIVATE winhttp ws2_32)
+  add_test(NAME lookingglass_bridge_subpixel_metadata_test COMMAND lookingglass_bridge_subpixel_metadata_test)
+  set_tests_properties(lookingglass_bridge_subpixel_metadata_test PROPERTIES TIMEOUT 30)
+
+  add_executable(lookingglass_manual_subpixel_presenter_test
+    platform/windows/manual_subpixel_presenter.cpp
+    common/subpixel_calibration.cpp
+    tests/manual_subpixel_presenter_test.cpp)
+  target_compile_features(lookingglass_manual_subpixel_presenter_test PRIVATE cxx_std_17)
+  target_compile_definitions(lookingglass_manual_subpixel_presenter_test PRIVATE
+    WIN32_LEAN_AND_MEAN NOMINMAX LKG_SUBPIXEL_PRESENTER_TESTS)
+  file(SHA256 "${CMAKE_CURRENT_SOURCE_DIR}/../Packages/com.zabaglione.lookingglass.viewweave.bridge/Runtime/Common/Resources/ViewWeaveSubpixelSampling.hlsl"
+    LKG_SUBPIXEL_COMMON_HLSL_SHA256)
+  message(STATUS "Manual subpixel shared HLSL SHA256: ${LKG_SUBPIXEL_COMMON_HLSL_SHA256}")
+  target_include_directories(lookingglass_manual_subpixel_presenter_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+  target_link_libraries(lookingglass_manual_subpixel_presenter_test PRIVATE d3d11 dxgi user32)
+  lkg_add_manual_subpixel_presenter_shaders(lookingglass_manual_subpixel_presenter_test)
+  add_test(NAME lookingglass_manual_subpixel_presenter_test COMMAND lookingglass_manual_subpixel_presenter_test)
+  set_tests_properties(lookingglass_manual_subpixel_presenter_test PROPERTIES TIMEOUT 60)
+
   if (NOT LKG_TRANSPORT_TESTS_ONLY)
     add_library(lkg_fake_static_stdio_rebind SHARED tests/fake_static_stdio_rebind.cpp)
     target_compile_features(lkg_fake_static_stdio_rebind PRIVATE cxx_std_17)
@@ -227,12 +287,18 @@ if (WIN32 AND BUILD_TESTING)
   add_executable(lookingglass_worker_transport_test
     ${LKG_TRANSPORT_SOURCE}
     common/bridge_worker_common.cpp
+    common/bridge_metadata.cpp
+    common/subpixel_calibration.cpp
+    platform/windows/bridge_subpixel_metadata.cpp
+    platform/windows/manual_subpixel_presenter.cpp
+    tests/worker_transport_test_hooks.h
     tests/worker_transport_test.cpp)
   target_compile_features(lookingglass_worker_transport_test PRIVATE cxx_std_17)
   target_include_directories(lookingglass_worker_transport_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
-  target_compile_definitions(lookingglass_worker_transport_test PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX LKG_WORKER_TRANSPORT_TESTING)
-  target_link_libraries(lookingglass_worker_transport_test PRIVATE d3d11 d3d12 dxgi user32)
+  target_compile_definitions(lookingglass_worker_transport_test PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX LKG_WORKER_TRANSPORT_TESTING LKG_SUBPIXEL_PRESENTER_TESTS)
+  target_link_libraries(lookingglass_worker_transport_test PRIVATE d3d11 d3d12 dxgi user32 winhttp)
   lkg_add_stable_sdk_input(lookingglass_worker_transport_test)
+  lkg_add_manual_subpixel_presenter_shaders(lookingglass_worker_transport_test)
   add_test(NAME lookingglass_worker_transport_test COMMAND lookingglass_worker_transport_test)
   set_tests_properties(lookingglass_worker_transport_test PROPERTIES TIMEOUT 60)
   add_test(NAME lookingglass_worker_cleanup_exception_test
@@ -272,6 +338,8 @@ if (WIN32 AND BUILD_TESTING)
     add_library(lkg_fake_bridge_fault_runtime SHARED tests/fake_bridge_fault_runtime.cpp)
     add_library(lkg_fake_bridge_shutdown_runtime SHARED tests/fake_bridge_shutdown_runtime.cpp)
     add_library(lkg_fake_bridge_missing SHARED tests/fake_bridge_missing.cpp)
+    target_compile_features(lkg_fake_bridge_shutdown_runtime PRIVATE cxx_std_17)
+    target_include_directories(lkg_fake_bridge_shutdown_runtime PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
     target_compile_definitions(lkg_fake_bridge_fault_runtime PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
     target_compile_definitions(lkg_fake_bridge_shutdown_runtime PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
     target_link_libraries(lkg_fake_bridge_fault_runtime PRIVATE d3d11 dxgi)
@@ -301,16 +369,19 @@ if (WIN32 AND BUILD_TESTING)
       "${UNITY_PLUGIN_API_DIR}")
     target_compile_definitions(lookingglass_bridge_shutdown_contract_test PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
     target_link_libraries(lookingglass_bridge_shutdown_contract_test PRIVATE d3d11 dxgi user32)
-    add_dependencies(lookingglass_bridge_shutdown_contract_test lookingglass_bridge_shim lkg_fake_bridge_shutdown_runtime)
+    add_dependencies(lookingglass_bridge_shutdown_contract_test
+      lookingglass_bridge_shim lookingglass_bridge_worker_test_shim lkg_fake_bridge_shutdown_runtime)
     add_test(NAME lookingglass_bridge_shutdown_contract_test
       COMMAND lookingglass_bridge_shutdown_contract_test
         "$<TARGET_FILE:lookingglass_bridge_shim>"
-        "$<TARGET_FILE:lkg_fake_bridge_shutdown_runtime>")
+        "$<TARGET_FILE:lkg_fake_bridge_shutdown_runtime>"
+        "$<TARGET_FILE:lookingglass_bridge_worker_test_shim>")
     set_tests_properties(lookingglass_bridge_shutdown_contract_test PROPERTIES TIMEOUT 60 RUN_SERIAL TRUE)
     add_test(NAME lookingglass_bridge_shutdown_exception_contract_test
       COMMAND lookingglass_bridge_shutdown_contract_test
         "$<TARGET_FILE:lookingglass_bridge_shim>"
         "$<TARGET_FILE:lkg_fake_bridge_shutdown_runtime>"
+        "$<TARGET_FILE:lookingglass_bridge_worker_test_shim>"
         "--uninitialize-exception")
     set_tests_properties(lookingglass_bridge_shutdown_exception_contract_test PROPERTIES TIMEOUT 60 RUN_SERIAL TRUE)
   endif()

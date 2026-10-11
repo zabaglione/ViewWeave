@@ -66,6 +66,7 @@ static bool EnsureSharedSlots(WorkerContext& context, ID3D11Device* device, cons
             context.slots[index].producerTexture = std::move(temporary[index].producerTexture);
             context.slots[index].producerMutex = std::move(temporary[index].producerMutex);
             context.slots[index].sharedHandle = temporary[index].sharedHandle;
+            context.slots[index].generation = context.nextSlotGeneration++;
             temporary[index].sharedHandle = nullptr;
         }
         context.textureWidth = source.Width;

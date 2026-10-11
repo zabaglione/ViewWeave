@@ -19,12 +19,18 @@ Quick StartのSample sceneはWindows上で再検証していません。特定�
 | 範囲 | 確認済み | 未検証・制限 |
 | --- | --- | --- |
 | URP/HDRP Quick Start Sample | ローカルからUPM Import。 | macOSの校正出力検証は、このSampleがすべての機器で動くことを示しません。このSampleのWindowsでのGit/UPM導入、D3D11/D3D12実機出力、Playerビルド。[Quick Start記録](../quick-start-validation-20261010.md)を参照。 |
-| 現在同梱するWindows DLL | 同期済みshimのサイズ223,232 bytesとSHAは現行provenanceに記録。Native CTest 15/15、transport-only 11/11、UPM distribution checkを確認。Windows Editorの選択graphics／device-preview fixtureに加え、URP/HDRPそれぞれでD3D11 DevelopmentとD3D12 ReleaseのPlayer sample各1件が公式Bridge機器出力を使い、Native 48視点・全tile色・移動、pending 0、自然終了を確認。 | 描画専用Player経路、他のAPI／build構成、一般project運用、全視点の実機光学品質、module captureを取っていないrunごとのロードidentity。[来歴](../../Packages/com.zabaglione.lookingglass.viewweave.bridge/Plugins/native-provenance.json)と[現行Windows graphics記録](../windows-current-feature-validation-20261011.md)を参照。 |
-| macOS runtime | 現行校正検証でNative CTest 7/7とv3接続・取消3 cycleを確認。Built-in Linear／Gamma GPU比較は各28 cases・各64,512 samplesで通過し、最大誤差は0.001956／0.001961。URP／HDRP Linear比較も各28 casesで通過。現行URP／HDRP EditorのPreview／Play、PNG保存、無音録画・再生、Stop／Restartを確認。arm64／MetalのURP／HDRP × Development／Release Go機器Player計4件でも描画・設定拒否・保持資源0・自然終了を確認。 | macOSの音声録画には非対応です。16-inch Spatial Landscapeの実機出力と機器一般の光学対応は未検証です。これらのソフトウェア試験は全視点・全機器の光学品質を示しません。[現行macOS校正検証](../macos-metal-subpixel-validation-20261011.md)に正確な範囲と制約を記載。 |
+| 現在同梱するWindows DLL | 未公開shimは302,080 bytes、SHA-256 `C864A363AC441C77497D4302FF25CB48FA2D6EA194B6FB8A73BAE49DC522FEE2`。Native Release CTest 19/19。Windows Editor device fixtureはURP/HDRP × D3D11/D3D12 × 3 modeの12条件すべてで、ロードidentity・lifecycle・cleanup gateを通過。 | 新しい出力経路のWindows Player利用、全view／全display modelの光学品質、新macOS `open_v4` source／shaderは未検証。旧shimで実施したPlayer／実機／色の記録は歴史的結果です。[来歴](../../Packages/com.zabaglione.lookingglass.viewweave.bridge/Plugins/native-provenance.json)と[Windows subpixel検証](../windows-subpixel-validation-20261011.md)を参照。 |
+| macOS runtime（v3の歴史的記録） | 2026-10-11のv3校正記録でNative CTest 7/7と接続・取消3 cycleを確認。Built-in Linear／Gamma GPU比較は各28 cases・各64,512 samplesで通過し、最大誤差は0.001956／0.001961。URP／HDRP Linear比較も各28 casesで通過。記録上のURP／HDRP Editor Preview／Play、PNG保存、無音録画・再生、Stop／Restartを確認。arm64／MetalのURP／HDRP × Development／Release Go機器Player計4件でも描画・設定拒否・保持資源0・自然終了を確認。これらは当時のsourceとv3 binaryに対する結果で、新shared shaderや`open_v4`契約の検証ではありません。 | macOSの音声録画には非対応です。16-inch Spatial Landscapeの実機出力と機器一般の光学対応は未検証です。これらのソフトウェア試験は全視点・全機器の光学品質を示しません。[歴史的macOS校正記録](../macos-metal-subpixel-validation-20261011.md)に正確な範囲と制約を記載。 |
 | 配布・導入 | 生成配布物とローカルpackageのImportを確認。 | 公開後の認証なしのGit導入とクリーンな利用者環境での導入。同梱macOS shimはリンカーによるad hoc署名で、Developer ID署名ではありません。公証と利用者環境のGatekeeper受入は未検証です。 |
 | 外部権利・来歴 | 固定した公開Unity PluginAPIのライセンス通知全文を同梱。macOSヘッダのハッシュを記録。公式Bridge runtimeは別途導入。 | インストール版Windows Unity PluginAPIの個別ヘッダのハッシュ・通知は保持されていません。Bridgeの商用利用・再配布条件は利用者の契約によります。[第三者ライセンス表記](THIRD_PARTY_NOTICES.md)を参照。 |
 
 以降の過去の失敗や未解決のVFX・終了処理は、それぞれ記載した試験条件での結果です。ビルド成功やローカルQuilt描画を、実機の光学品質や一般的な対応の証明とは扱いません。
+
+## サブピクセル出力の作業中実装
+
+`e777b34763b25e1673e5dc0188c812cda69cbcc0`を基準とする未公開working treeでは、`Automatic=0`を既定、`ClassicRgb=1`、`CalibratedCells=2`としています。Windows Bridge Workerの3 modeはNative D3D11 interlacerを使い、Legacy Directは別のSDK-managed経路です。Native CTest 19/19とWindows Editor実機matrix 12/12を確認しました。過去のWindows Player／機器／色校正結果は旧DLLに対するもので、今回の出力実装の根拠にはしません。
+
+新macOS sourceは`open_v4`を必須としますが、このWindows環境にあるbinaryは旧v3で、新source／shaderのmacOS build・実行は未実施です。旧macOS検証は歴史的証拠として保持します。実装境界と未通過gateは[Windows subpixel validation](../windows-subpixel-validation-20261011.md)と[Bridge校正契約](../bridge-subpixel-calibration.md)を参照してください。
 
 2026-10-11のWindows Editor graphics記録はruntime revision `7a00adf89e9243c738648ef520488a26a2f33ad7`とtest-only working-tree変更を基準にしています。D3D12 graphics-core初回56/57とfocused修正、URP TAAのD3D12 8/8およびD3D11初回7/8＋capability-aware focused pass、capture、別々のaudio follow-up、HDRP effect pixelの未通過と限定SSGI/Clouds pass、指定Editor Preview-to-Play、機器Player、GRD、MP4、playback結果を記録しています。これらは個別fixtureの範囲で一般対応の保証ではありません。別環境のmacOS校正検証は、現行の確認項目と光学上の制約を[現行macOS校正検証](../macos-metal-subpixel-validation-20261011.md)に記録しています。
 

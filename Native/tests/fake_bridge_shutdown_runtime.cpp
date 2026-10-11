@@ -6,6 +6,7 @@
 #include <mutex>
 #include <stdexcept>
 #include <vector>
+#include "../common/bridge_metadata.h"
 #include "bridge_shutdown_contract.h"
 
 namespace {
@@ -203,6 +204,35 @@ extern "C" __declspec(dllexport) bool get_dimensions_for_display(unsigned long, 
 
 extern "C" __declspec(dllexport) bool get_viewcone_for_display(unsigned long, float* value) {
     if (value) *value = 40.0f;
+    return true;
+}
+
+extern "C" __declspec(dllexport) bool get_calibration_for_display(unsigned long,
+    float* center, float* pitch, float* slope, int* width, int* height, float* dpi, float* flipX,
+    int* invertedViews, float* viewCone, float* fringe, int* cellPatternMode, int* cellCount,
+    lkg::metadata::CalibrationSubpixelCell*) {
+    if (center) *center = 0.0f;
+    if (pitch) *pitch = 1.0f;
+    if (slope) *slope = -1.0f;
+    if (width) *width = 1920;
+    if (height) *height = 1080;
+    if (dpi) *dpi = 100.0f;
+    if (flipX) *flipX = 0.0f;
+    if (invertedViews) *invertedViews = 0;
+    if (viewCone) *viewCone = 40.0f;
+    if (fringe) *fringe = 0.0f;
+    if (cellPatternMode) *cellPatternMode = 0;
+    if (cellCount) *cellCount = 0;
+    return true;
+}
+
+extern "C" __declspec(dllexport) bool get_ri_for_display(unsigned long, int* value) {
+    if (value) *value = 0;
+    return true;
+}
+
+extern "C" __declspec(dllexport) bool get_bi_for_display(unsigned long, int* value) {
+    if (value) *value = 2;
     return true;
 }
 

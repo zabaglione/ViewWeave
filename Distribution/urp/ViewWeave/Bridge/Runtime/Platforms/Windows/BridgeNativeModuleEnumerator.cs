@@ -60,6 +60,7 @@ namespace ViewWeave
                 IntPtr snapshot = IntPtr.Zero;
                 bool retry = false;
                 bool complete = false;
+                string attemptError = string.Empty;
                 var candidate = new List<BridgeNativeModuleIdentity>();
                 try
                 {
@@ -67,9 +68,9 @@ namespace ViewWeave
                     if (snapshot == IntPtr.Zero || snapshot == new IntPtr(-1))
                     {
                         retry = createError == ErrorBadLength;
-                        if (!retry) error = Win32Failure("create the module snapshot", createError);
+                        attemptError = Win32Failure("create the module snapshot", createError);
                     }
-                    else if (!EnumerateSnapshot(api, snapshot, candidate, out retry, out error))
+                    else if (!EnumerateSnapshot(api, snapshot, candidate, out retry, out attemptError))
                     {
                         complete = false;
                     }
@@ -80,7 +81,8 @@ namespace ViewWeave
                 }
                 catch (Exception exception)
                 {
-                    error = "Unable to inspect the current-process module snapshot (" + exception.GetType().Name + ").";
+                    attemptError = AppendFailure(attemptError,
+                        "Unable to inspect the current-process module snapshot (" + exception.GetType().Name + ").");
                     retry = true;
                 }
                 finally
@@ -93,14 +95,15 @@ namespace ViewWeave
                             {
                                 complete = false;
                                 retry = closeError == ErrorBadLength;
-                                if (!retry) error = Win32Failure("close the module snapshot", closeError);
+                                attemptError = AppendFailure(attemptError, Win32Failure("close the module snapshot", closeError));
                             }
                         }
                         catch (Exception exception)
                         {
                             complete = false;
                             retry = true;
-                            error = "Unable to close the current-process module snapshot (" + exception.GetType().Name + ").";
+                            attemptError = AppendFailure(attemptError,
+                                "Unable to close the current-process module snapshot (" + exception.GetType().Name + ").");
                         }
                     }
                 }
@@ -111,10 +114,10 @@ namespace ViewWeave
                     error = string.Empty;
                     return true;
                 }
+                error = FormatFailure(attempt + 1, attemptError);
                 if (!retry) return false;
             }
 
-            error = "The current-process module list changed during every bounded snapshot attempt.";
             return false;
         }
 
@@ -127,7 +130,7 @@ namespace ViewWeave
             {
                 if (firstError == ErrorNoMoreFiles) return true;
                 retry = firstError == ErrorBadLength;
-                if (!retry) error = Win32Failure("read the first module entry", firstError);
+                error = Win32Failure("read the first module entry", firstError);
                 return false;
             }
 
@@ -140,7 +143,7 @@ namespace ViewWeave
                     {
                         retry = true;
                         error = pathError == 0
-                            ? "Unable to resolve the loaded Bridge shim path from the module handle."
+                            ? "Unable to resolve the loaded Bridge shim path from the module handle (Win32 error 0)."
                             : Win32Failure("resolve the loaded Bridge shim path", pathError);
                         return false;
                     }
@@ -150,7 +153,7 @@ namespace ViewWeave
                 if (api.ModuleNext(snapshot, out entry, out int nextError)) continue;
                 if (nextError == ErrorNoMoreFiles) return true;
                 retry = nextError == ErrorBadLength;
-                if (!retry) error = Win32Failure("read the next module entry", nextError);
+                error = Win32Failure("read the next module entry", nextError);
                 return false;
             }
         }
@@ -158,6 +161,19 @@ namespace ViewWeave
         static string Win32Failure(string operation, int errorCode)
         {
             return "Unable to " + operation + " (Win32 error " + errorCode + ").";
+        }
+
+        static string AppendFailure(string current, string addition)
+        {
+            if (string.IsNullOrEmpty(current)) return addition;
+            if (string.IsNullOrEmpty(addition)) return current;
+            return current + " Close/cleanup also failed: " + addition;
+        }
+
+        static string FormatFailure(int attempts, string detail)
+        {
+            return "Module snapshot failed after " + attempts + " attempt(s): " +
+                (string.IsNullOrEmpty(detail) ? "no operation detail was reported." : detail);
         }
 
 #if UNITY_EDITOR_WIN

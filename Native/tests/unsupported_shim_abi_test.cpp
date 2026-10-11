@@ -23,15 +23,17 @@ int main(int argc, char** argv) {
         "lkg_bridge_get_display_count", "lkg_bridge_get_display", "lkg_bridge_get_physical_display_v1", "lkg_bridge_create_d3d11_session",
         "lkg_bridge_destroy_session", "lkg_bridge_get_session_close_status_v1", "lkg_bridge_ack_session_close_v1",
         "lkg_bridge_render_event_func", "lkg_bridge_make_draw_data",
-        "lkg_bridge_make_close_data", "lkg_bridge_smoke_draw", "lkg_worker_begin", "lkg_worker_poll",
+        "lkg_bridge_make_close_data", "lkg_bridge_smoke_draw", "lkg_worker_begin", "lkg_worker_begin_with_output_v1", "lkg_worker_poll",
         "lkg_worker_close", "lkg_worker_reset_transfer", "lkg_worker_release", "lkg_worker_make_draw_data",
-        "lkg_worker_acquire_preview_lease_v1", "lkg_worker_request_preview_lease_return_v1",
+        "lkg_worker_acquire_preview_lease_v1", "lkg_worker_acquire_preview_lease_with_output_v1",
+        "lkg_worker_request_preview_lease_return_v1",
         "lkg_worker_get_preview_lease_status_v1", "lkg_worker_ack_preview_lease_return_v1",
         "lkg_worker_try_make_preview_draw_data_v1",
+        "lkg_worker_try_make_preview_draw_data_with_options_v1", "lkg_worker_make_draw_data_with_options_v1",
         "lkg_worker_cancel_draw_data", "lkg_worker_render_event_func", "lkg_worker_render_event_id",
         "lkg_worker_close_all", "lkg_worker_collect_closed", "lkg_worker_pending_count", "lkg_worker_shutdown_host",
         "lkg_worker_request_final_shutdown", "lkg_worker_get_final_shutdown_status_v1", "lkg_worker_wait_final_shutdown_v1",
-        "lkg_worker_get_physical_display_v1"
+        "lkg_worker_get_physical_display_v1", "lkg_worker_get_subpixel_status_v1"
     };
     for (const char* symbol : symbols) Check(dlsym(library, symbol) != nullptr, symbol);
     using LoadFn = int (*)(const char*);
@@ -63,6 +65,20 @@ int main(int argc, char** argv) {
     Check(lastError(error, sizeof(error)) < 0 && std::strcmp(error, "unsupported graphics backend") == 0,
           "unsupported diagnostic");
     Check(pending() == 0 && closeAll() == 0, "unsupported worker stays empty");
+    using BeginWithOutputFn = void* (*)(const char*, const char*, uint32_t, void*, const LkgWorkerOutputOptionsV1*);
+    auto beginWithOutput = reinterpret_cast<BeginWithOutputFn>(dlsym(library, "lkg_worker_begin_with_output_v1"));
+    LkgWorkerOutputOptionsV1 outputOptions{ sizeof(LkgWorkerOutputOptionsV1), 1, LKG_WORKER_SUBPIXEL_AUTOMATIC, 0 };
+    Check(beginWithOutput && beginWithOutput("runtime", "application", 0, nullptr, &outputOptions) == nullptr,
+          "unsupported output worker remains unavailable");
+    outputOptions.linearColorSpace = 1;
+    Check(beginWithOutput("runtime", "application", 0, nullptr, &outputOptions) == nullptr,
+          "automatic output accepts the linear-space option without changing unsupported backend status");
+    LkgWorkerSubpixelStatusV1 subpixelStatus{ sizeof(LkgWorkerSubpixelStatusV1), 1 };
+    using GetSubpixelStatusFn = int32_t (*)(void*, LkgWorkerSubpixelStatusV1*);
+    auto getSubpixelStatus = reinterpret_cast<GetSubpixelStatusFn>(dlsym(library, "lkg_worker_get_subpixel_status_v1"));
+    Check(getSubpixelStatus && getSubpixelStatus(nullptr, &subpixelStatus) == -2 && subpixelStatus.valid == 0 &&
+              subpixelStatus.effectiveMode == UINT32_MAX && subpixelStatus.cellPatternMode == UINT32_MAX,
+          "unsupported subpixel status never reports a valid mode");
     LkgWorkerFinalShutdownStatusV1 finalStatus{};
     finalStatus.structSize = sizeof(finalStatus);
     finalStatus.version = 1;
@@ -110,6 +126,17 @@ int main(int argc, char** argv) {
               leaseHandle == nullptr && leaseIdentity.structSize == sizeof(leaseIdentity) && leaseIdentity.version == 1 &&
               leaseIdentity.endpointId == 0 && leaseIdentity.leaseGeneration == 0,
           "unsupported preview lease acquire clears output identity and handle");
+    using AcquireLeaseWithOutputFn = int32_t (*)(const char*, const char*, uint32_t, void*,
+        const LkgWorkerOutputOptionsV1*, void**, LkgWorkerPreviewLeaseIdentityV1*);
+    auto acquireLeaseWithOutput = reinterpret_cast<AcquireLeaseWithOutputFn>(
+        dlsym(library, "lkg_worker_acquire_preview_lease_with_output_v1"));
+    leaseHandle = reinterpret_cast<void*>(1);
+    leaseIdentity = {};
+    Check(acquireLeaseWithOutput && acquireLeaseWithOutput("runtime", "application", 0, nullptr, &outputOptions,
+              &leaseHandle, &leaseIdentity) == -2 && leaseHandle == nullptr &&
+              leaseIdentity.structSize == sizeof(leaseIdentity) && leaseIdentity.version == 1 &&
+              leaseIdentity.endpointId == 0 && leaseIdentity.leaseGeneration == 0,
+          "unsupported output preview lease clears handle and identity");
     leaseIdentity.structSize = sizeof(leaseIdentity);
     leaseIdentity.version = 1;
     leaseIdentity.endpointId = 77;
@@ -132,6 +159,28 @@ int main(int argc, char** argv) {
     Check(tryMakePreviewDrawData(reinterpret_cast<void*>(1), &leaseIdentity,
         reinterpret_cast<void*>(1), 0, 4, 1.0f, 1.0f, &drawData) == -1 && drawData == nullptr,
         "unsupported lease draw admission rejects invalid descriptors before backend status");
+    using TryMakePreviewDrawDataWithOptionsFn = int32_t (*)(void*, const LkgWorkerPreviewLeaseIdentityV1*, void*,
+        uint32_t, uint32_t, float, float, const LkgWorkerDrawOptionsV1*, void**);
+    auto tryMakePreviewDrawDataWithOptions = reinterpret_cast<TryMakePreviewDrawDataWithOptionsFn>(
+        dlsym(library, "lkg_worker_try_make_preview_draw_data_with_options_v1"));
+    LkgWorkerDrawOptionsV1 drawOptions{ sizeof(LkgWorkerDrawOptionsV1), 1, LKG_WORKER_SOURCE_ENCODING_SRGB, 0 };
+    drawData = reinterpret_cast<void*>(1);
+    Check(tryMakePreviewDrawDataWithOptions && tryMakePreviewDrawDataWithOptions(reinterpret_cast<void*>(1),
+        &leaseIdentity, reinterpret_cast<void*>(1), 4, 4, 1.0f, 1.0f, &drawOptions, &drawData) == -2 && drawData == nullptr,
+        "unsupported source-encoding lease draw clears output and reports unsupported");
+    drawOptions.reserved0 = 1;
+    drawData = reinterpret_cast<void*>(1);
+    Check(tryMakePreviewDrawDataWithOptions(reinterpret_cast<void*>(1), &leaseIdentity, reinterpret_cast<void*>(1),
+        4, 4, 1.0f, 1.0f, &drawOptions, &drawData) == -1 && drawData == nullptr,
+        "source-encoding lease draw rejects reserved bits before backend status");
+    using MakeDrawDataWithOptionsFn = void* (*)(void*, void*, uint32_t, uint32_t, float, float,
+        const LkgWorkerDrawOptionsV1*);
+    auto makeDrawDataWithOptions = reinterpret_cast<MakeDrawDataWithOptionsFn>(
+        dlsym(library, "lkg_worker_make_draw_data_with_options_v1"));
+    drawOptions.reserved0 = 0;
+    Check(makeDrawDataWithOptions && makeDrawDataWithOptions(reinterpret_cast<void*>(1), reinterpret_cast<void*>(1),
+        4, 4, 1.0f, 1.0f, &drawOptions) == nullptr,
+        "unsupported source-encoding worker draw remains unavailable");
     leaseIdentity.leaseGeneration = 0;
     Check(ackLeaseReturn(reinterpret_cast<void*>(1), &leaseIdentity) == -1,
           "preview lease ACK rejects a zero generation");
