@@ -828,7 +828,7 @@
   },
   "notVerified": [
     "Windows runtime for new authoring auto-discovery and UI",
-    "Windows rebuilt native artifact with strict individual geometry query checks",
+    "Windows packaged DLL replacement and live-device validation of strict geometry query checks",
     "new macOS artifact Player output",
     "physical hotplug",
     "16 Spatial Landscape",
@@ -837,5 +837,63 @@
     "physical panel optical quality",
     "long duration operation"
   ],
-  "rawArtifactsCommitted": false
+  "rawArtifactsCommitted": false,
+  "implementationCommit": "64803f6d221965deb56f59b50510a19fe71d3f6e",
+  "ci": {
+    "runId": 38128398151,
+    "url": "https://github.com/zabaglione/ViewWeave/actions/runs/38128398151",
+    "headSha": "64803f6d221965deb56f59b50510a19fe71d3f6e",
+    "conclusion": "success",
+    "logSha256": "e3abfb1f661bef75698fbcfc7f8a288bccfc2cc915ed19778a368eb3f1c16d54",
+    "jobs": [
+      {
+        "name": "native-portable",
+        "conclusion": "success",
+        "startedAt": "2026-10-11T09:26:55Z",
+        "completedAt": "2026-10-11T09:27:04Z",
+        "url": "https://github.com/zabaglione/ViewWeave/actions/runs/38128398151/job/114437461816",
+        "ctestPassed": 5,
+        "ctestTotal": 5,
+        "ctestSkipped": 0
+      },
+      {
+        "name": "static",
+        "conclusion": "success",
+        "startedAt": "2026-10-11T09:26:56Z",
+        "completedAt": "2026-10-11T09:27:04Z",
+        "url": "https://github.com/zabaglione/ViewWeave/actions/runs/38128398151/job/114437461930"
+      },
+      {
+        "name": "native-transport",
+        "conclusion": "success",
+        "startedAt": "2026-10-11T09:26:55Z",
+        "completedAt": "2026-10-11T09:28:14Z",
+        "url": "https://github.com/zabaglione/ViewWeave/actions/runs/38128398151/job/114437461941",
+        "ctestPassed": 15,
+        "ctestTotal": 15,
+        "ctestSkipped": 0
+      },
+      {
+        "name": "native-macos-metal",
+        "conclusion": "success",
+        "startedAt": "2026-10-11T09:27:01Z",
+        "completedAt": "2026-10-11T09:27:20Z",
+        "url": "https://github.com/zabaglione/ViewWeave/actions/runs/38128398151/job/114437461952",
+        "ctestPassed": 10,
+        "ctestTotal": 10,
+        "ctestSkipped": 0
+      },
+      {
+        "name": "native-windows-fake-regressions",
+        "conclusion": "success",
+        "startedAt": "2026-10-11T09:26:55Z",
+        "completedAt": "2026-10-11T09:28:15Z",
+        "url": "https://github.com/zabaglione/ViewWeave/actions/runs/38128398151/job/114437461960",
+        "ctestPassed": 19,
+        "ctestTotal": 19,
+        "ctestSkipped": 0
+      }
+    ],
+    "executionBoundary": "CI source builds and native fake/transport fixtures, not Unity Editor UI or physical Looking Glass testing. The bundled Windows C864 DLL was not replaced by these CI builds."
+  }
 }

@@ -20,7 +20,7 @@ Windowsの稼働中output／device Previewでは既存workerのrefreshを使い�
 
 ## 検証コードとartifact
 
-基準commitは`1ac8ae1a102bd616cf7c966f0ce8f168ac6a8867`です。検証時は本変更のsource／fixture／Distributionが未commitでした。[構造化結果](validation/bridge-authoring-discovery-20261011.json)に測定source、全test名、result XML hash、sampleの取得結果を保存します。この記録はrelease保証ではありません。
+実装commitは`64803f6d221965deb56f59b50510a19fe71d3f6e`です。検証時の基準commitは`1ac8ae1a102bd616cf7c966f0ce8f168ac6a8867`です。検証時は本変更のsource／fixture／Distributionが未commitでした。[構造化結果](validation/bridge-authoring-discovery-20261011.json)に測定source、全test名、result XML hash、sampleの取得結果を保存します。この記録はrelease保証ではありません。
 
 macOS arm64 Release shimは160,016 bytes、SHA-256 `c97856ea3bb910a1456eb044347a18ac8117c140ddd149f8e9ec240600766c5b`です。本体package・URP・HDRP Distributionで一致します。URP実プロセスのloaded imageがURP Distributionの同shimであることも確認しました。以前の`f2539810...`／157,712 bytesの出力結果を、このartifactでのPlayer出力成功として扱いません。
 
@@ -51,6 +51,10 @@ CLI経由の一部起動はMetal初期化中に終了し、成功に数えてい
 両方でStop後のoutput／closing停止・GPU retirement 0、Play終了後の9:16保持、Console error 0を確認し、Editor processはcode 0で終了しました。Preview、pause/resume、再開始、録画・画像保存、Playerはこの回帰試験に含めません。通常QuickStartは`startOnEnable=false`で、自動出力を有効にしていなければPlayだけではGo表示は始まりません。今回そのサンプル既定を変更していません。
 
 最終レビューで、Bridge履歴のないLocal Previewを「Last successful Bridge geometry」と表示する問題を修正しました。Bridge由来の4 sourceだけを許可しました。LocalRendererSettings／LocalPreviewの共通UI 2 caseと、接続中のprofileが残っていても再取得失敗の案内を隠さないcaseを追加した最終EditMode 79件で確認しました。active outputの成功表示は現在の取得requestがないときだけ使い、処理中・失敗statusを保持します。初回機器情報・HDRP出力のcaptureはsource表示制限の修正前、URP出力はその修正後です。再取得statusの修正は両出力測定後のUI変更です。Native・geometry・output sourceとmetadata query処理は測定時から変更していません。URP初回のCLI Play終了後captureはまだplaying／outputRunning=trueであり、終了証拠に採用しません。最終runでは検証コピーのPlay内で再自動開始を無効にしてStopし、GUIのPlay buttonでEditへ戻した後、playing／outputRunning／outputClosing=falseとretirement 0を別captureでassertしています。
+
+## 実装commitのCI
+
+[GitHub Actions run 38128398151](https://github.com/zabaglione/ViewWeave/actions/runs/38128398151)は実装commit `64803f6d221965deb56f59b50510a19fe71d3f6e`で5/5 job成功です。static検査、portable Native 5/5、Windows transport 15/15、Windows fake-runtime regressions 19/19、macOS Metal Native 10/10を確認しました。CTestのskipは0です。これはCIでのsource buildとNative fixtureであり、Windows Unity Editorの自動取得UI・接続実機の検証ではありません。CIでbuildしたWindows artifactによる同梱C864 DLLの置換も行っていません。
 
 ## 未検証と管理範囲
 
