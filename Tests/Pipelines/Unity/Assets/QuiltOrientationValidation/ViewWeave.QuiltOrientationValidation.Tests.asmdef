@@ -1,0 +1,11 @@
+{
+  "name": "ViewWeave.QuiltOrientationValidation.Tests",
+  "rootNamespace": "ViewWeave.QuiltOrientationValidation",
+  "references": ["ViewWeave.Core", "ViewWeave.Bridge", "ViewWeave.URP", "ViewWeave.HDRP", "Unity.RenderPipelines.Universal.Runtime", "Unity.RenderPipelines.HighDefinition.Runtime"],
+  "overrideReferences": true,
+  "precompiledReferences": ["nunit.framework.dll"],
+  "optionalUnityReferences": ["TestAssemblies"],
+  "defineConstraints": ["UNITY_INCLUDE_TESTS"],
+  "includePlatforms": [],
+  "autoReferenced": false
+}

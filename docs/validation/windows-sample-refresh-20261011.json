@@ -1,0 +1,213 @@
+{
+  "schema": 1,
+  "validationDate": "2026-10-11",
+  "baselineCommit": "e9232d31afdbb80f2577c12955d9d060dba44441",
+  "unityVersion": "6000.6.4f1",
+  "scope": "UPM Client.Add refresh plus verify-only package/source comparison and cold native module/pending-count validation; no session initialization or rendering",
+  "samples": [
+    {
+      "pipeline": "URP",
+      "project": "E:\\URPSample_6.6.41f1",
+      "packageName": "com.zabaglione.lookingglass.viewweave.urp",
+      "manifestUri": "https://github.com/zabaglione/ViewWeave.git?path=/Distribution/urp#main",
+      "expectedGitHash": "e9232d31afdbb80f2577c12955d9d060dba44441",
+      "resolvedPath": "E:\\URPSample_6.6.41f1\\Library\\PackageCache\\com.zabaglione.lookingglass.viewweave.urp@2ccb8cbca6fc\\ViewWeave",
+      "resolvedPackageFingerprint": "2ccb8cbca6fc01b3fc52f6555d403921e6bc42c1",
+      "packageMetadataCanonicalSha256": "031CEBD32ACFAC222D38B642D4A0E55D8355FCF96788432FB326BB090D2ED0DE",
+      "packageMetadataMatch": true,
+      "fingerprintExcludedOnlyFromMetadataComparison": true,
+      "dependenciesMatch": true,
+      "addedTargetLockDependency": "com.unity.modules.animation:1.0.0",
+      "targetLockHash": "e9232d31afdbb80f2577c12955d9d060dba44441",
+      "manifestBytesPreserved": true,
+      "unrelatedLockEntriesUnchanged": true,
+      "protectedBaselineFileCount": 3440,
+      "assetsProjectSettingsAdded": 0,
+      "assetsProjectSettingsChanged": 0,
+      "assetsProjectSettingsMissing": 0,
+      "viewWeaveTreeFiles": 246,
+      "canonicalTextFiles": 244,
+      "rawBinaryFiles": 2,
+      "treeMismatches": 0,
+      "editorRun": {
+        "operation": "verify-only",
+        "startedUtc": "2026-10-11T07:56:32.6632529Z",
+        "endedUtc": "2026-10-11T07:57:02.0416729Z",
+        "exitCode": 0,
+        "naturalExit": true,
+        "processRecord": ".local/sample-refresh-latest-20261011/urp/verify-only-full-source/process.txt",
+        "processRecordSha256": "1E9A629E9BA6E1C3F80EC9947BE1E6203EBAD20378B886D7826C66C96255D4C9",
+        "editorLog": ".local/sample-refresh-latest-20261011/urp/verify-only-full-source/editor.log",
+        "editorLogSha256": "0106028240891A1506FF66B1CECC5FC0152CC850D7819B3070A5D7A53A7A8E37",
+        "helperHashRecorded": false
+      },
+      "native": {
+        "dllSha256": "C864A363AC441C77497D4302FF25CB48FA2D6EA194B6FB8A73BAE49DC522FEE2",
+        "dllBytes": 302080,
+        "moduleCount": 1,
+        "pendingCount": 0,
+        "initPerformed": false,
+        "uninit": "not-applicable"
+      },
+      "macDylib": {
+        "sha256": "F2539810F3A63CC3998F0A9EF7B3B96A50CF29031EA986E67CA753787C5CCA0F",
+        "bytes": 157712,
+        "loaded": false
+      },
+      "graphicsApi": "Direct3D 12 [level 12.2]",
+      "gpu": "NVIDIA GeForce RTX 3090 Ti",
+      "treeComparisonRecord": ".local/sample-refresh-latest-20261011/urp/offline-tree-comparison.json",
+      "treeComparisonRecordSha256": "A9C23AA1A1F2D5715BDF33A0CF2B8822F178CDF6F6F8459D423C46A19FD38555",
+      "protectedAuditRecord": ".local/sample-refresh-latest-20261011/baseline/urp/final-audit.json",
+      "protectedAuditRecordSha256": "EE41126C9C785C47A31DE9FE463B5B1DBD055FBD0887E42C9AF1CCAB0E76D7C3"
+    },
+    {
+      "pipeline": "HDRP",
+      "project": "E:\\My project (34)",
+      "packageName": "com.zabaglione.lookingglass.viewweave.hdrp",
+      "manifestUri": "ssh://git@github.com/zabaglione/ViewWeave.git?path=/Distribution/hdrp#main",
+      "expectedGitHash": "e9232d31afdbb80f2577c12955d9d060dba44441",
+      "resolvedPath": "E:\\My project (34)\\Library\\PackageCache\\com.zabaglione.lookingglass.viewweave.hdrp@12897fecf3c4\\ViewWeave",
+      "resolvedPackageFingerprint": "12897fecf3c4c46785d9ab099627845ba69523f4",
+      "packageMetadataCanonicalSha256": "BB69642746D5945A3F8C146CFB9BE10FC5C5D94D274735F84919D697A585477E",
+      "packageMetadataMatch": true,
+      "fingerprintExcludedOnlyFromMetadataComparison": true,
+      "dependenciesMatch": true,
+      "addedTargetLockDependency": "com.unity.modules.animation:1.0.0",
+      "targetLockHash": "e9232d31afdbb80f2577c12955d9d060dba44441",
+      "manifestBytesPreserved": true,
+      "unrelatedLockEntriesUnchanged": true,
+      "protectedBaselineFileCount": 1386,
+      "assetsProjectSettingsAdded": 0,
+      "assetsProjectSettingsChanged": 0,
+      "assetsProjectSettingsMissing": 0,
+      "viewWeaveTreeFiles": 253,
+      "canonicalTextFiles": 251,
+      "rawBinaryFiles": 2,
+      "treeMismatches": 0,
+      "editorRun": {
+        "operation": "verify-only",
+        "startedUtc": "2026-10-11T08:04:24.4488726Z",
+        "endedUtc": "2026-10-11T08:04:44.2774082Z",
+        "exitCode": 0,
+        "naturalExit": true,
+        "processRecord": ".local/sample-refresh-latest-20261011/hdrp/verify-only-nativeguard-final/process.txt",
+        "processRecordSha256": "40184F7F3A1FDA3FFB562036CA592A415978C7EF471DBE14B3CCCEB9D8C9487B",
+        "editorLog": ".local/sample-refresh-latest-20261011/hdrp/verify-only-nativeguard-final/editor.log",
+        "editorLogSha256": "15A7953E355B9DFB75CEFE4932B8886A90FADD9FDA0DB2F7D183B8A9066FD900",
+        "helperSourceSha256": "47E5554ED3671ECD36CD44B44A51CFE063D1F70AA1F1B1C3693393F23C4744C8",
+        "compiledHelperSha256": "D77F1E635A327A64187C468670E2E9DD1712B22C50CDB95D721C713D92FF8D89"
+      },
+      "native": {
+        "dllSha256": "C864A363AC441C77497D4302FF25CB48FA2D6EA194B6FB8A73BAE49DC522FEE2",
+        "dllBytes": 302080,
+        "moduleCount": 1,
+        "pendingCount": 0,
+        "initPerformed": false,
+        "uninit": "not-applicable"
+      },
+      "macDylib": {
+        "sha256": "F2539810F3A63CC3998F0A9EF7B3B96A50CF29031EA986E67CA753787C5CCA0F",
+        "bytes": 157712,
+        "loaded": false
+      },
+      "graphicsApi": "Direct3D 12 [level 12.2]",
+      "gpu": "NVIDIA GeForce RTX 3090 Ti",
+      "treeComparisonRecord": ".local/sample-refresh-latest-20261011/hdrp/offline-tree-comparison.json",
+      "treeComparisonRecordSha256": "6648FD4AA4C9228FB9E2D561EB902DE883F8B185F2678FFCED1190AF089BE8F3",
+      "protectedAuditRecord": ".local/sample-refresh-latest-20261011/baseline/hdrp/final-audit.json",
+      "protectedAuditRecordSha256": "C49B54D11814E19970BB4CC2016B306861A3369E3DFAB399A6552C3841041A7F"
+    }
+  ],
+  "packageMetadataComparison": {
+    "method": "Canonical JSON comparison after removing only the UPM-generated _fingerprint property from the resolved package.json",
+    "record": ".local/sample-refresh-latest-20261011/package-metadata-comparison.json",
+    "recordSha256": "CD7C84DA74D8DA84F1CBB850E4962F5AFC4E1F03FCA85D50B248C5CABDA5A5A3"
+  },
+  "failures": [
+    {
+      "pipeline": "URP",
+      "operation": "Client.Add",
+      "phase": "helper compilation",
+      "exitCode": 1,
+      "result": "TrimEnd character literal caused C# compile errors CS1010, CS1012, CS1003, CS1026.",
+      "processRecord": ".local/sample-refresh-latest-20261011/urp/process.txt",
+      "processRecordSha256": "B2A2CE01B991FA3058169D2F3571D33B39847C0F4F828FC429ABE4C827CA4EAC",
+      "editorLog": ".local/sample-refresh-latest-20261011/urp/editor.log",
+      "editorLogSha256": "4A5BF5F353A2C1350525A43BB3679B2FBEFA0F747565BAB44B78B6DC39EA06D7"
+    },
+    {
+      "pipeline": "URP",
+      "operation": "Client.Add",
+      "phase": "helper compilation",
+      "exitCode": 1,
+      "result": "PackageCollection and PackageInfo[] were incompatible operands for null-coalescing; C# compile error CS0019.",
+      "processRecord": ".local/sample-refresh-latest-20261011/urp/compile-fix-retry/process.txt",
+      "processRecordSha256": "4DFF92569404A09C94B66AAAA9502801DD1FDC2FB2E5097EF630354E05C750DE",
+      "editorLog": ".local/sample-refresh-latest-20261011/urp/compile-fix-retry/editor.log",
+      "editorLogSha256": "BFB4B9DD1BF7183D2E7E64AC701495CD9A047B2A37294724A45C762D2D8ABB3F"
+    },
+    {
+      "pipeline": "URP",
+      "operation": "Client.Add",
+      "phase": "package/source verification",
+      "exitCode": 1,
+      "result": "Client.Add completed; the canonical source comparison falsely rejected Bridge.meta due to line-ending normalization not being applied.",
+      "processRecord": ".local/sample-refresh-latest-20261011/urp/package-refresh/process.txt",
+      "processRecordSha256": "1DF224A9774204DE5B9F5C709E5208AEB7CA5F87D32F6878441567CAD6F51E2D",
+      "editorLog": ".local/sample-refresh-latest-20261011/urp/package-refresh/editor.log",
+      "editorLogSha256": "D163CB27580551798E855E3B435D0A027C1A502FDDAEE2FB8C263CBEE98992A6"
+    },
+    {
+      "pipeline": "URP",
+      "operation": "verify-only",
+      "phase": "package/source verification",
+      "exitCode": 1,
+      "result": "Text classifier omitted .asmdef, so line-ending differences caused a false mismatch at Bridge/Editor/ViewWeave.Bridge.Editor.asmdef.",
+      "processRecord": ".local/sample-refresh-latest-20261011/urp/verify-only-source-canonical/process.txt",
+      "processRecordSha256": "ED7E3391F37668C426974E0D0117DFF3D160EB36A07CFF79DA1800FA51244BCB",
+      "editorLog": ".local/sample-refresh-latest-20261011/urp/verify-only-source-canonical/editor.log",
+      "editorLogSha256": "45D68CAFB1F61E8F48879589422BFFA560B06E0914AEE67C91EC603B7BDAA418"
+    },
+    {
+      "pipeline": "HDRP",
+      "operation": "Client.Add",
+      "exitCode": 1,
+      "result": "UPM resolved expected revision and source comparison completed; cold Native image guard returned generic rejection; guard detail was not recorded, cause unknown",
+      "processRecord": ".local/sample-refresh-latest-20261011/hdrp/client-add/process.txt"
+    },
+    {
+      "pipeline": "HDRP",
+      "operation": "verify-only",
+      "exitCode": 1,
+      "result": "Unity rejected split projectPath argument; test method was not reached",
+      "processRecord": ".local/sample-refresh-latest-20261011/hdrp/verify-only-coldnative-diagnostic/process.txt"
+    },
+    {
+      "pipeline": "HDRP",
+      "operation": "verify-only",
+      "exitCode": 1,
+      "result": "Runner treated cache-generated _fingerprint as package content; corrected to exclude only this property",
+      "processRecord": ".local/sample-refresh-latest-20261011/hdrp/verify-only-coldnative-diagnostic-argvfix/process.txt"
+    }
+  ],
+  "finalGates": {
+    "unityEditorsRemaining": 0,
+    "temporaryHelpersRemaining": 0,
+    "graphicsApi": "Direct3D 12 [level 12.2]",
+    "deviceSessionStarted": false,
+    "renderingPerformed": false,
+    "playerTested": false,
+    "opticalTested": false,
+    "scenesChanged": false,
+    "physicalFramingChanged": false,
+    "gpu": "NVIDIA GeForce RTX 3090 Ti"
+  },
+  "evidenceRoot": ".local/sample-refresh-latest-20261011",
+  "portableReport": "docs/windows-sample-refresh-20261011.md",
+  "recordStatus": {
+    "kind": "historical-git-package-refresh",
+    "note": "Preserve these earlier Git-package results as recorded. They are separate from the later local Distribution package import and fresh cold-load checks.",
+    "laterLocalDistributionEvidence": "docs/validation/windows-quilt-orientation-20261011.json#sampleRefreshEvidence"
+  }
+}

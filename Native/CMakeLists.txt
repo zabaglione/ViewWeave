@@ -263,6 +263,21 @@ if (WIN32 AND BUILD_TESTING)
   add_test(NAME lookingglass_manual_subpixel_presenter_test COMMAND lookingglass_manual_subpixel_presenter_test)
   set_tests_properties(lookingglass_manual_subpixel_presenter_test PROPERTIES TIMEOUT 60)
 
+  # External Unity AsyncGPUReadback captures are supplied explicitly; this is
+  # a command-line GPU oracle and is intentionally not registered with CTest.
+  add_executable(lookingglass_unity_quilt_orientation_oracle
+    platform/windows/manual_subpixel_presenter.cpp
+    common/subpixel_calibration.cpp
+    tests/unity_quilt_orientation_oracle.cpp)
+  target_compile_features(lookingglass_unity_quilt_orientation_oracle PRIVATE cxx_std_17)
+  target_compile_definitions(lookingglass_unity_quilt_orientation_oracle PRIVATE
+    WIN32_LEAN_AND_MEAN NOMINMAX _WIN32_WINNT=0x0A00 WINVER=0x0A00
+    LKG_SUBPIXEL_PRESENTER_TESTS)
+  target_include_directories(lookingglass_unity_quilt_orientation_oracle PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}")
+  target_link_libraries(lookingglass_unity_quilt_orientation_oracle PRIVATE d3d11 dxgi user32)
+  lkg_add_manual_subpixel_presenter_shaders(lookingglass_unity_quilt_orientation_oracle)
+
   if (NOT LKG_TRANSPORT_TESTS_ONLY)
     add_library(lkg_fake_static_stdio_rebind SHARED tests/fake_static_stdio_rebind.cpp)
     target_compile_features(lkg_fake_static_stdio_rebind PRIVATE cxx_std_17)

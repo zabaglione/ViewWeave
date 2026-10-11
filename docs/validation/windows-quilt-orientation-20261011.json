@@ -1,0 +1,1676 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-11",
+  "repositoryCommit": "e9232d31afdbb80f2577c12955d9d060dba44441",
+  "workingTreeStatus": "At validation time: Windows C# transfer fix and test-only oracle/fixture changes were uncommitted; this describes the run baseline, not current Git status.",
+  "sourceIdentity": [
+    {
+      "path": "Packages/com.zabaglione.lookingglass.viewweave.bridge/Runtime/Platforms/Windows/BridgeWorkerQuiltOutput.cs",
+      "sha256": "DA85161E83D88A52BA04321501D05428ADA83D52854682116550EFD6C9BD5F8E"
+    },
+    {
+      "path": "Native/platform/windows/manual_subpixel_presenter.hlsl",
+      "sha256": "DF58E339163CD361AE45F639EB75BA522D6E785700C96E695A901BBA015B310B"
+    },
+    {
+      "path": "Native/platform/windows/manual_subpixel_presenter.cpp",
+      "sha256": "471F15765850CF2BA87CA31F8EA38A57057EB7B840913D919A745690DC67CC8D"
+    },
+    {
+      "path": "Packages/com.zabaglione.lookingglass.viewweave.bridge/Runtime/Common/Resources/ViewWeaveSubpixelSampling.hlsl",
+      "sha256": "5A0E0B8EA9BEF1E5E44DBE836FDB7B4EC56F0B63015BEB6D7B7E2EFFFF0FC0FD"
+    },
+    {
+      "path": "Native/CMakeLists.txt",
+      "sha256": "E17781ABE5E58CE5B5E27CA2A530589EEAE240293D30A4C8FAA81754859E3138"
+    },
+    {
+      "path": "Native/tests/unity_quilt_orientation_oracle.cpp",
+      "sha256": "925DB9B4B58F363CE93CC3BAF940240E3E81084E509C18D6C09891D2583F75CD"
+    },
+    {
+      "path": "Tests/Pipelines/Unity/Tools/Invoke-UnityQuiltOrientationOracle.ps1",
+      "sha256": "A48ED1B24E2C73D187C11BF728F4E184135FF29ED38341CE7E730927A5942013"
+    }
+  ],
+  "nativeDlls": [
+    {
+      "path": "Packages/com.zabaglione.lookingglass.viewweave.bridge/Plugins/x86_64/lookingglass_bridge_shim.dll",
+      "bytes": 302080,
+      "sha256": "C864A363AC441C77497D4302FF25CB48FA2D6EA194B6FB8A73BAE49DC522FEE2"
+    },
+    {
+      "path": "Distribution/urp/ViewWeave/Bridge/Plugins/x86_64/lookingglass_bridge_shim.dll",
+      "bytes": 302080,
+      "sha256": "C864A363AC441C77497D4302FF25CB48FA2D6EA194B6FB8A73BAE49DC522FEE2"
+    },
+    {
+      "path": "Distribution/hdrp/ViewWeave/Bridge/Plugins/x86_64/lookingglass_bridge_shim.dll",
+      "bytes": 302080,
+      "sha256": "C864A363AC441C77497D4302FF25CB48FA2D6EA194B6FB8A73BAE49DC522FEE2"
+    }
+  ],
+  "nativeTarget": {
+    "name": "lookingglass_unity_quilt_orientation_oracle",
+    "ctestRegistered": false,
+    "graphicsDevice": "D3D11 WARP",
+    "outputGeometry": "9x7",
+    "calibration": "synthetic manual_subpixel_presenter_test fixture; not a calibrated panel",
+    "modes": [
+      {
+        "name": "Automatic",
+        "id": 0
+      },
+      {
+        "name": "Classic RGB",
+        "id": 1
+      },
+      {
+        "name": "Calibrated Cells",
+        "id": 2
+      }
+    ],
+    "shaderSource": "Native/platform/windows/manual_subpixel_presenter.hlsl plus shared ViewWeaveSubpixelSampling.hlsl",
+    "msvcBuild": "CMake configure succeeded; MSBuild execution was blocked by sandbox Windows SDK registry access",
+    "ninjaMinGWBuild": "Release target built and executed successfully with repository FXC helper"
+  },
+  "unityProducerFinalRuns": [
+    {
+      "run": "producer-urp-d3d11-msaa1-copygate",
+      "evidenceDirectory": ".local/windows-quilt-orientation-20261011/producer-urp-d3d11-msaa1-copygate",
+      "runSummarySha256": "08D004EAE3E8CCABCD8EBEDBD9304F440638D862AA44EB79AB2A3AAEE84D0566",
+      "producerMetadataSha256": "8D410165DDD94DC1D833AB8BD0B64CB56BA679CCBEA2ADED701B871679E8AC9A",
+      "testXmlSha256": "67C03E841735FDC3BA3D289A1C03EE80D67D2816CFF4EA053A725300E89E79F7",
+      "unityEditorVersion": "6000.6.4f1",
+      "testFilter": "ViewWeave.QuiltOrientationValidation.QuiltOrientationDiagnosticTests.UrpRequestCapturesActualQuiltAndBothTransferOrientations",
+      "mode": "PlayMode",
+      "graphicsApiRequested": "D3D11",
+      "graphicsApiCaptured": "Direct3D11",
+      "graphicsDeviceVersion": "Direct3D 11.0 [level 11.1]",
+      "renderPipeline": "UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset",
+      "requestedMsaaSamples": 1,
+      "effectiveViewAntiAliasing": 1,
+      "resolveTextureCreated": false,
+      "width": 320,
+      "height": 160,
+      "columns": 4,
+      "rows": 2,
+      "viewCount": 8,
+      "renderCallbackCount": 8,
+      "cliExitCode": 0,
+      "editorNaturalExitObserved": true,
+      "testCounts": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0
+      },
+      "passGate": true,
+      "settingsDiffCount": 0,
+      "sourceFiles": [
+        {
+          "path": "Tests/Pipelines/Unity/Assets/QuiltOrientationValidation/QuiltOrientationDiagnosticTests.cs",
+          "sha256": "b04c1ac0ef80ba0bdea1ece9c43052fafd7c30f8f34692a79c5b11f86153ba75"
+        },
+        {
+          "path": "Tests/Pipelines/Unity/Assets/QuiltOrientationValidation/QuiltOrientationDiagnostic.shader",
+          "sha256": "1140880a9f3cdad133f9df556db90621ddd3dfadc08220287490bd09963c5c01"
+        },
+        {
+          "path": "Tests/Pipelines/Unity/Assets/QuiltOrientationValidation/ViewWeave.QuiltOrientationValidation.Tests.asmdef",
+          "sha256": "0dd6f539ed3d62f5a0edafa287ae8f9e68d46c9d100310ea36b45c1621cd1abb"
+        }
+      ],
+      "rawFiles": [
+        {
+          "name": "source-quilt.rgba8",
+          "sha256": "3045e5a2fff05e897aebb877475cfacca1c55bae991444b5983b77774a978bd2",
+          "byteCount": 204800
+        },
+        {
+          "name": "transfer-current-flip.rgba8",
+          "sha256": "7dfa3667178e1aa5d66d2f128bddd487d09ef0874b3d7f8aa119c452390bf055",
+          "byteCount": 204800
+        },
+        {
+          "name": "transfer-no-flip.rgba8",
+          "sha256": "3045e5a2fff05e897aebb877475cfacca1c55bae991444b5983b77774a978bd2",
+          "byteCount": 204800
+        },
+        {
+          "name": "transfer-production-copy.rgba8",
+          "sha256": "3045e5a2fff05e897aebb877475cfacca1c55bae991444b5983b77774a978bd2",
+          "byteCount": 204800
+        }
+      ],
+      "nativeOracleResultSha256": "64EF153A53B4F12A7B64A38D6EFB38E5516D098FCE810C46CAC602848EE37831",
+      "nativeOracleResults": [
+        {
+          "candidate": "transfer-current-flip",
+          "mode": 0,
+          "modeName": "Automatic",
+          "orientation": "top-blue-bottom-red",
+          "topRedMean": 0.0,
+          "topBlueMean": 255.0,
+          "bottomRedMean": 255.0,
+          "bottomBlueMean": 0.0,
+          "uniqueGreenChannels": 15,
+          "inputSha256": "7DFA3667178E1AA5D66D2F128BDDD487D09EF0874B3D7F8AA119C452390BF055",
+          "outputSha256": "FED4F3FB64589349AE72F3AC6A3CBD7F612B724B965DA5FBC6FCB3603D1122A4",
+          "outputMetadata": "transfer-current-flip.mode-0.native.json"
+        },
+        {
+          "candidate": "transfer-current-flip",
+          "mode": 1,
+          "modeName": "Classic RGB",
+          "orientation": "top-blue-bottom-red",
+          "topRedMean": 0.0,
+          "topBlueMean": 255.0,
+          "bottomRedMean": 255.0,
+          "bottomBlueMean": 0.0,
+          "uniqueGreenChannels": 16,
+          "inputSha256": "7DFA3667178E1AA5D66D2F128BDDD487D09EF0874B3D7F8AA119C452390BF055",
+          "outputSha256": "EEDB6D34DF20C85917DAE8C3176F7CF85FA6A5A1BCA89B2F2B15A69A249FBF48",
+          "outputMetadata": "transfer-current-flip.mode-1.native.json"
+        },
+        {
+          "candidate": "transfer-current-flip",
+          "mode": 2,
+          "modeName": "Calibrated Cells",
+          "orientation": "top-blue-bottom-red",
+          "topRedMean": 0.0,
+          "topBlueMean": 255.0,
+          "bottomRedMean": 255.0,
+          "bottomBlueMean": 0.0,
+          "uniqueGreenChannels": 15,
+          "inputSha256": "7DFA3667178E1AA5D66D2F128BDDD487D09EF0874B3D7F8AA119C452390BF055",
+          "outputSha256": "FED4F3FB64589349AE72F3AC6A3CBD7F612B724B965DA5FBC6FCB3603D1122A4",
+          "outputMetadata": "transfer-current-flip.mode-2.native.json"
+        },
+        {
+          "candidate": "transfer-no-flip",
+          "mode": 0,
+          "modeName": "Automatic",
+          "orientation": "top-red-bottom-blue",
+          "topRedMean": 255.0,
+          "topBlueMean": 0.0,
+          "bottomRedMean": 0.0,
+          "bottomBlueMean": 255.0,
+          "uniqueGreenChannels": 16,
+          "inputSha256": "3045E5A2FFF05E897AEBB877475CFACCA1C55BAE991444B5983B77774A978BD2",
+          "outputSha256": "B28C256D7E5E9039CD9D4D164BB0C70A2620D39740D125926357270D57B73141",
+          "outputMetadata": "transfer-no-flip.mode-0.native.json"
+        },
+        {
+          "candidate": "transfer-no-flip",
+          "mode": 1,
+          "modeName": "Classic RGB",
+          "orientation": "top-red-bottom-blue",
+          "topRedMean": 255.0,
+          "topBlueMean": 0.0,
+          "bottomRedMean": 0.0,
+          "bottomBlueMean": 255.0,
+          "uniqueGreenChannels": 16,
+          "inputSha256": "3045E5A2FFF05E897AEBB877475CFACCA1C55BAE991444B5983B77774A978BD2",
+          "outputSha256": "2D45B05A9FCBCD1523CBDE72D97CD58116614638FE5A0A3491E347A668A1C420",
+          "outputMetadata": "transfer-no-flip.mode-1.native.json"
+        },
+        {
+          "candidate": "transfer-no-flip",
+          "mode": 2,
+          "modeName": "Calibrated Cells",
+          "orientation": "top-red-bottom-blue",
+          "topRedMean": 255.0,
+          "topBlueMean": 0.0,
+          "bottomRedMean": 0.0,
+          "bottomBlueMean": 255.0,
+          "uniqueGreenChannels": 16,
+          "inputSha256": "3045E5A2FFF05E897AEBB877475CFACCA1C55BAE991444B5983B77774A978BD2",
+          "outputSha256": "B28C256D7E5E9039CD9D4D164BB0C70A2620D39740D125926357270D57B73141",
+          "outputMetadata": "transfer-no-flip.mode-2.native.json"
+        },
+        {
+          "candidate": "transfer-production-copy",
+          "mode": 0,
+          "modeName": "Automatic",
+          "orientation": "top-red-bottom-blue",
+          "topRedMean": 255.0,
+          "topBlueMean": 0.0,
+          "bottomRedMean": 0.0,
+          "bottomBlueMean": 255.0,
+          "uniqueGreenChannels": 16,
+          "inputSha256": "3045E5A2FFF05E897AEBB877475CFACCA1C55BAE991444B5983B77774A978BD2",
+          "outputSha256": "B28C256D7E5E9039CD9D4D164BB0C70A2620D39740D125926357270D57B73141",
+          "outputMetadata": "transfer-production-copy.mode-0.native.json"
+        },
+        {
+          "candidate": "transfer-production-copy",
+          "mode": 1,
+          "modeName": "Classic RGB",
+          "orientation": "top-red-bottom-blue",
+          "topRedMean": 255.0,
+          "topBlueMean": 0.0,
+          "bottomRedMean": 0.0,
+          "bottomBlueMean": 255.0,
+          "uniqueGreenChannels": 16,
+          "inputSha256": "3045E5A2FFF05E897AEBB877475CFACCA1C55BAE991444B5983B77774A978BD2",
+          "outputSha256": "2D45B05A9FCBCD1523CBDE72D97CD58116614638FE5A0A3491E347A668A1C420",
+          "outputMetadata": "transfer-production-copy.mode-1.native.json"
+        },
+        {
+          "candidate": "transfer-production-copy",
+          "mode": 2,
+          "modeName": "Calibrated Cells",
+          "orientation": "top-red-bottom-blue",
+          "topRedMean": 255.0,
+          "topBlueMean": 0.0,
+          "bottomRedMean": 0.0,
+          "bottomBlueMean": 255.0,
+          "uniqueGreenChannels": 16,
+          "inputSha256": "3045E5A2FFF05E897AEBB877475CFACCA1C55BAE991444B5983B77774A978BD2",
+          "outputSha256": "B28C256D7E5E9039CD9D4D164BB0C70A2620D39740D125926357270D57B73141",
+          "outputMetadata": "transfer-production-copy.mode-2.native.json"
+        }
+      ]
+    },
+    {
+      "run": "producer-urp-d3d11-msaa4-copygate",
+      "evidenceDirectory": ".local/windows-quilt-orientation-20261011/producer-urp-d3d11-msaa4-copygate",
+      "runSummarySha256": "59F097AAB989FED067C2A50459F884C5A11012310554C8355636175895A6CA69",
+      "producerMetadataSha256": "15E01ADBA2BFD8922522134E047573E4278B8C03662AB510662C369E26886DEE",
+      "testXmlSha256": "2CA7AEB3FC3800BAC4DACC0191078E0BD7A44FAD460F7A0FB909F27EE53379C1",
+      "unityEditorVersion": "6000.6.4f1",
+      "testFilter": "ViewWeave.QuiltOrientationValidation.QuiltOrientationDiagnosticTests.UrpRequestCapturesActualQuiltAndBothTransferOrientations",
+      "mode": "PlayMode",
+      "graphicsApiRequested": "D3D11",
+      "graphicsApiCaptured": "Direct3D11",
+      "graphicsDeviceVersion": "Direct3D 11.0 [level 11.1]",
+      "renderPipeline": "UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset",
+      "requestedMsaaSamples": 4,
+      "effectiveViewAntiAliasing": 4,
+      "resolveTextureCreated": true,
+      "width": 320,
+      "height": 160,
+      "columns": 4,
+      "rows": 2,
+      "viewCount": 8,
+      "renderCallbackCount": 8,
+      "cliExitCode": 0,
+      "editorNaturalExitObserved": true,
+      "testCounts": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0
+      },
+      "passGate": true,
+      "settingsDiffCount": 0,
+      "sourceFiles": [
+        {
+          "path": "Tests/Pipelines/Unity/Assets/QuiltOrientationValidation/QuiltOrientationDiagnosticTests.cs",
+          "sha256": "b04c1ac0ef80ba0bdea1ece9c43052fafd7c30f8f34692a79c5b11f86153ba75"
+        },
+        {
+          "path": "Tests/Pipelines/Unity/Assets/QuiltOrientationValidation/QuiltOrientationDiagnostic.shader",
+          "sha256": "1140880a9f3cdad133f9df556db90621ddd3dfadc08220287490bd09963c5c01"
+        },
+        {
+          "path": "Tests/Pipelines/Unity/Assets/QuiltOrientationValidation/ViewWeave.QuiltOrientationValidation.Tests.asmdef",
+          "sha256": "0dd6f539ed3d62f5a0edafa287ae8f9e68d46c9d100310ea36b45c1621cd1abb"
+        }
+      ],
+      "rawFiles": [
+        {
+          "name": "source-quilt.rgba8",
+          "sha256": "3045e5a2fff05e897aebb877475cfacca1c55bae991444b5983b77774a978bd2",
+          "byteCount": 204800
+        },
+        {
+          "name": "transfer-current-flip.rgba8",
+          "sha256": "7dfa3667178e1aa5d66d2f128bddd487d09ef0874b3d7f8aa119c452390bf055",
+          "byteCount": 204800
+        },
+        {
+          "name": "transfer-no-flip.rgba8",
+          "sha256": "3045e5a2fff05e897aebb877475cfacca1c55bae991444b5983b77774a978bd2",
+          "byteCount": 204800
+        },
+        {
+          "name": "transfer-production-copy.rgba8",
+          "sha256": "3045e5a2fff05e897aebb877475cfacca1c55bae991444b5983b77774a978bd2",
+          "byteCount": 204800
+        }
+      ],
+      "nativeOracleResultSha256": "59C928493045B5B0704471A2433990FA5AE18CB34C1D7E41881EB091E8E0D91A",
+      "nativeOracleResults": [
+        {
+          "candidate": "transfer-current-flip",
+          "mode": 0,
+          "modeName": "Automatic",
+          "orientation": "top-blue-bottom-red",
+          "topRedMean": 0.0,
+          "topBlueMean": 255.0,
+          "bottomRedMean": 255.0,
+          "bottomBlueMean": 0.0,
+          "uniqueGreenChannels": 15,
+          "inputSha256": "7DFA3667178E1AA5D66D2F128BDDD487D09EF0874B3D7F8AA119C452390BF055",
+          "outputSha256": "FED4F3FB64589349AE72F3AC6A3CBD7F612B724B965DA5FBC6FCB3603D1122A4",
+          "outputMetadata": "transfer-current-flip.mode-0.native.json"
+        },
+        {
+          "candidate": "transfer-current-flip",
+          "mode": 1,
+          "modeName": "Classic RGB",
+          "orientation": "top-blue-bottom-red",
+          "topRedMean": 0.0,
+          "topBlueMean": 255.0,
+          "bottomRedMean": 255.0,
+          "bottomBlueMean": 0.0,
+          "uniqueGreenChannels": 16,
+          "inputSha256": "7DFA3667178E1AA5D66D2F128BDDD487D09EF0874B3D7F8AA119C452390BF055",
+          "outputSha256": "EEDB6D34DF20C85917DAE8C3176F7CF85FA6A5A1BCA89B2F2B15A69A249FBF48",
+          "outputMetadata": "transfer-current-flip.mode-1.native.json"
+        },
+        {
+          "candidate": "transfer-current-flip",
+          "mode": 2,
+          "modeName": "Calibrated Cells",
+          "orientation": "top-blue-bottom-red",
+          "topRedMean": 0.0,
+          "topBlueMean": 255.0,
+          "bottomRedMean": 255.0,
+          "bottomBlueMean": 0.0,
+          "uniqueGreenChannels": 15,
+          "inputSha256": "7DFA3667178E1AA5D66D2F128BDDD487D09EF0874B3D7F8AA119C452390BF055",
+          "outputSha256": "FED4F3FB64589349AE72F3AC6A3CBD7F612B724B965DA5FBC6FCB3603D1122A4",
+          "outputMetadata": "transfer-current-flip.mode-2.native.json"
+        },
+        {
+          "candidate": "transfer-no-flip",
+          "mode": 0,
+          "modeName": "Automatic",
+          "orientation": "top-red-bottom-blue",
+          "topRedMean": 255.0,
+          "topBlueMean": 0.0,
+          "bottomRedMean": 0.0,
+          "bottomBlueMean": 255.0,
+          "uniqueGreenChannels": 16,
+          "inputSha256": "3045E5A2FFF05E897AEBB877475CFACCA1C55BAE991444B5983B77774A978BD2",
+          "outputSha256": "B28C256D7E5E9039CD9D4D164BB0C70A2620D39740D125926357270D57B73141",
+          "outputMetadata": "transfer-no-flip.mode-0.native.json"
+        },
+        {
+          "candidate": "transfer-no-flip",
+          "mode": 1,
+          "modeName": "Classic RGB",
+          "orientation": "top-red-bottom-blue",
+          "topRedMean": 255.0,
+          "topBlueMean": 0.0,
+          "bottomRedMean": 0.0,
+          "bottomBlueMean": 255.0,
+          "uniqueGreenChannels": 16,
+          "inputSha256": "3045E5A2FFF05E897AEBB877475CFACCA1C55BAE991444B5983B77774A978BD2",
+          "outputSha256": "2D45B05A9FCBCD1523CBDE72D97CD58116614638FE5A0A3491E347A668A1C420",
+          "outputMetadata": "transfer-no-flip.mode-1.native.json"
+        },
+        {
+          "candidate": "transfer-no-flip",
+          "mode": 2,
+          "modeName": "Calibrated Cells",
+          "orientation": "top-red-bottom-blue",
+          "topRedMean": 255.0,
+          "topBlueMean": 0.0,
+          "bottomRedMean": 0.0,
+          "bottomBlueMean": 255.0,
+          "uniqueGreenChannels": 16,
+          "inputSha256": "3045E5A2FFF05E897AEBB877475CFACCA1C55BAE991444B5983B77774A978BD2",
+          "outputSha256": "B28C256D7E5E9039CD9D4D164BB0C70A2620D39740D125926357270D57B73141",
+          "outputMetadata": "transfer-no-flip.mode-2.native.json"
+        },
+        {
+          "candidate": "transfer-production-copy",
+          "mode": 0,
+          "modeName": "Automatic",
+          "orientation": "top-red-bottom-blue",
+          "topRedMean": 255.0,
+          "topBlueMean": 0.0,
+          "bottomRedMean": 0.0,
+          "bottomBlueMean": 255.0,
+          "uniqueGreenChannels": 16,
+          "inputSha256": "3045E5A2FFF05E897AEBB877475CFACCA1C55BAE991444B5983B77774A978BD2",
+          "outputSha256": "B28C256D7E5E9039CD9D4D164BB0C70A2620D39740D125926357270D57B73141",
+          "outputMetadata": "transfer-production-copy.mode-0.native.json"
+        },
+        {
+          "candidate": "transfer-production-copy",
+          "mode": 1,
+          "modeName": "Classic RGB",
+          "orientation": "top-red-bottom-blue",
+          "topRedMean": 255.0,
+          "topBlueMean": 0.0,
+          "bottomRedMean": 0.0,
+          "bottomBlueMean": 255.0,
+          "uniqueGreenChannels": 16,
+          "inputSha256": "3045E5A2FFF05E897AEBB877475CFACCA1C55BAE991444B5983B77774A978BD2",
+          "outputSha256": "2D45B05A9FCBCD1523CBDE72D97CD58116614638FE5A0A3491E347A668A1C420",
+          "outputMetadata": "transfer-production-copy.mode-1.native.json"
+        },
+        {
+          "candidate": "transfer-production-copy",
+          "mode": 2,
+          "modeName": "Calibrated Cells",
+          "orientation": "top-red-bottom-blue",
+          "topRedMean": 255.0,
+          "topBlueMean": 0.0,
+          "bottomRedMean": 0.0,
+          "bottomBlueMean": 255.0,
+          "uniqueGreenChannels": 16,
+          "inputSha256": "3045E5A2FFF05E897AEBB877475CFACCA1C55BAE991444B5983B77774A978BD2",
+          "outputSha256": "B28C256D7E5E9039CD9D4D164BB0C70A2620D39740D125926357270D57B73141",
+          "outputMetadata": "transfer-production-copy.mode-2.native.json"
+        }
+      ]
+    },
+    {
+      "run": "producer-urp-d3d12-msaa1-copygate",
+      "evidenceDirectory": ".local/windows-quilt-orientation-20261011/producer-urp-d3d12-msaa1-copygate",
+      "runSummarySha256": "ED8C68C816D32B94DFCE8F7990366F41AA5CBD65A63CE46BA0D0C41925633D73",
+      "producerMetadataSha256": "624BC1A843DDEFCD174F2A189A732803AA69DB26BBF35F57B40C9DA8363C0FD4",
+      "testXmlSha256": "4BBF18F36F6F4CA2989F3E99FC2231642190525FEA9A9BE05C7472FB2B7A9904",
+      "unityEditorVersion": "6000.6.4f1",
+      "testFilter": "ViewWeave.QuiltOrientationValidation.QuiltOrientationDiagnosticTests.UrpRequestCapturesActualQuiltAndBothTransferOrientations",
+      "mode": "PlayMode",
+      "graphicsApiRequested": "D3D12",
+      "graphicsApiCaptured": "Direct3D12",
+      "graphicsDeviceVersion": "Direct3D 12 [level 12.2]",
+      "renderPipeline": "UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset",
+      "requestedMsaaSamples": 1,
+      "effectiveViewAntiAliasing": 1,
+      "resolveTextureCreated": false,
+      "width": 320,
+      "height": 160,
+      "columns": 4,
+      "rows": 2,
+      "viewCount": 8,
+      "renderCallbackCount": 8,
+      "cliExitCode": 0,
+      "editorNaturalExitObserved": true,
+      "testCounts": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0
+      },
+      "passGate": true,
+      "settingsDiffCount": 0,
+      "sourceFiles": [
+        {
+          "path": "Tests/Pipelines/Unity/Assets/QuiltOrientationValidation/QuiltOrientationDiagnosticTests.cs",
+          "sha256": "b04c1ac0ef80ba0bdea1ece9c43052fafd7c30f8f34692a79c5b11f86153ba75"
+        },
+        {
+          "path": "Tests/Pipelines/Unity/Assets/QuiltOrientationValidation/QuiltOrientationDiagnostic.shader",
+          "sha256": "1140880a9f3cdad133f9df556db90621ddd3dfadc08220287490bd09963c5c01"
+        },
+        {
+          "path": "Tests/Pipelines/Unity/Assets/QuiltOrientationValidation/ViewWeave.QuiltOrientationValidation.Tests.asmdef",
+          "sha256": "0dd6f539ed3d62f5a0edafa287ae8f9e68d46c9d100310ea36b45c1621cd1abb"
+        }
+      ],
+      "rawFiles": [
+        {
+          "name": "source-quilt.rgba8",
+          "sha256": "3045e5a2fff05e897aebb877475cfacca1c55bae991444b5983b77774a978bd2",
+          "byteCount": 204800
+        },
+        {
+          "name": "transfer-current-flip.rgba8",
+          "sha256": "7dfa3667178e1aa5d66d2f128bddd487d09ef0874b3d7f8aa119c452390bf055",
+          "byteCount": 204800
+        },
+        {
+          "name": "transfer-no-flip.rgba8",
+          "sha256": "3045e5a2fff05e897aebb877475cfacca1c55bae991444b5983b77774a978bd2",
+          "byteCount": 204800
+        },
+        {
+          "name": "transfer-production-copy.rgba8",
+          "sha256": "3045e5a2fff05e897aebb877475cfacca1c55bae991444b5983b77774a978bd2",
+          "byteCount": 204800
+        }
+      ],
+      "nativeOracleResultSha256": "FBEB6425733C48C61B33D2F71C1600D0E2E3E7C45ED5CFA843790E673AD69A74",
+      "nativeOracleResults": [
+        {
+          "candidate": "transfer-current-flip",
+          "mode": 0,
+          "modeName": "Automatic",
+          "orientation": "top-blue-bottom-red",
+          "topRedMean": 0.0,
+          "topBlueMean": 255.0,
+          "bottomRedMean": 255.0,
+          "bottomBlueMean": 0.0,
+          "uniqueGreenChannels": 15,
+          "inputSha256": "7DFA3667178E1AA5D66D2F128BDDD487D09EF0874B3D7F8AA119C452390BF055",
+          "outputSha256": "FED4F3FB64589349AE72F3AC6A3CBD7F612B724B965DA5FBC6FCB3603D1122A4",
+          "outputMetadata": "transfer-current-flip.mode-0.native.json"
+        },
+        {
+          "candidate": "transfer-current-flip",
+          "mode": 1,
+          "modeName": "Classic RGB",
+          "orientation": "top-blue-bottom-red",
+          "topRedMean": 0.0,
+          "topBlueMean": 255.0,
+          "bottomRedMean": 255.0,
+          "bottomBlueMean": 0.0,
+          "uniqueGreenChannels": 16,
+          "inputSha256": "7DFA3667178E1AA5D66D2F128BDDD487D09EF0874B3D7F8AA119C452390BF055",
+          "outputSha256": "EEDB6D34DF20C85917DAE8C3176F7CF85FA6A5A1BCA89B2F2B15A69A249FBF48",
+          "outputMetadata": "transfer-current-flip.mode-1.native.json"
+        },
+        {
+          "candidate": "transfer-current-flip",
+          "mode": 2,
+          "modeName": "Calibrated Cells",
+          "orientation": "top-blue-bottom-red",
+          "topRedMean": 0.0,
+          "topBlueMean": 255.0,
+          "bottomRedMean": 255.0,
+          "bottomBlueMean": 0.0,
+          "uniqueGreenChannels": 15,
+          "inputSha256": "7DFA3667178E1AA5D66D2F128BDDD487D09EF0874B3D7F8AA119C452390BF055",
+          "outputSha256": "FED4F3FB64589349AE72F3AC6A3CBD7F612B724B965DA5FBC6FCB3603D1122A4",
+          "outputMetadata": "transfer-current-flip.mode-2.native.json"
+        },
+        {
+          "candidate": "transfer-no-flip",
+          "mode": 0,
+          "modeName": "Automatic",
+          "orientation": "top-red-bottom-blue",
+          "topRedMean": 255.0,
+          "topBlueMean": 0.0,
+          "bottomRedMean": 0.0,
+          "bottomBlueMean": 255.0,
+          "uniqueGreenChannels": 16,
+          "inputSha256": "3045E5A2FFF05E897AEBB877475CFACCA1C55BAE991444B5983B77774A978BD2",
+          "outputSha256": "B28C256D7E5E9039CD9D4D164BB0C70A2620D39740D125926357270D57B73141",
+          "outputMetadata": "transfer-no-flip.mode-0.native.json"
+        },
+        {
+          "candidate": "transfer-no-flip",
+          "mode": 1,
+          "modeName": "Classic RGB",
+          "orientation": "top-red-bottom-blue",
+          "topRedMean": 255.0,
+          "topBlueMean": 0.0,
+          "bottomRedMean": 0.0,
+          "bottomBlueMean": 255.0,
+          "uniqueGreenChannels": 16,
+          "inputSha256": "3045E5A2FFF05E897AEBB877475CFACCA1C55BAE991444B5983B77774A978BD2",
+          "outputSha256": "2D45B05A9FCBCD1523CBDE72D97CD58116614638FE5A0A3491E347A668A1C420",
+          "outputMetadata": "transfer-no-flip.mode-1.native.json"
+        },
+        {
+          "candidate": "transfer-no-flip",
+          "mode": 2,
+          "modeName": "Calibrated Cells",
+          "orientation": "top-red-bottom-blue",
+          "topRedMean": 255.0,
+          "topBlueMean": 0.0,
+          "bottomRedMean": 0.0,
+          "bottomBlueMean": 255.0,
+          "uniqueGreenChannels": 16,
+          "inputSha256": "3045E5A2FFF05E897AEBB877475CFACCA1C55BAE991444B5983B77774A978BD2",
+          "outputSha256": "B28C256D7E5E9039CD9D4D164BB0C70A2620D39740D125926357270D57B73141",
+          "outputMetadata": "transfer-no-flip.mode-2.native.json"
+        },
+        {
+          "candidate": "transfer-production-copy",
+          "mode": 0,
+          "modeName": "Automatic",
+          "orientation": "top-red-bottom-blue",
+          "topRedMean": 255.0,
+          "topBlueMean": 0.0,
+          "bottomRedMean": 0.0,
+          "bottomBlueMean": 255.0,
+          "uniqueGreenChannels": 16,
+          "inputSha256": "3045E5A2FFF05E897AEBB877475CFACCA1C55BAE991444B5983B77774A978BD2",
+          "outputSha256": "B28C256D7E5E9039CD9D4D164BB0C70A2620D39740D125926357270D57B73141",
+          "outputMetadata": "transfer-production-copy.mode-0.native.json"
+        },
+        {
+          "candidate": "transfer-production-copy",
+          "mode": 1,
+          "modeName": "Classic RGB",
+          "orientation": "top-red-bottom-blue",
+          "topRedMean": 255.0,
+          "topBlueMean": 0.0,
+          "bottomRedMean": 0.0,
+          "bottomBlueMean": 255.0,
+          "uniqueGreenChannels": 16,
+          "inputSha256": "3045E5A2FFF05E897AEBB877475CFACCA1C55BAE991444B5983B77774A978BD2",
+          "outputSha256": "2D45B05A9FCBCD1523CBDE72D97CD58116614638FE5A0A3491E347A668A1C420",
+          "outputMetadata": "transfer-production-copy.mode-1.native.json"
+        },
+        {
+          "candidate": "transfer-production-copy",
+          "mode": 2,
+          "modeName": "Calibrated Cells",
+          "orientation": "top-red-bottom-blue",
+          "topRedMean": 255.0,
+          "topBlueMean": 0.0,
+          "bottomRedMean": 0.0,
+          "bottomBlueMean": 255.0,
+          "uniqueGreenChannels": 16,
+          "inputSha256": "3045E5A2FFF05E897AEBB877475CFACCA1C55BAE991444B5983B77774A978BD2",
+          "outputSha256": "B28C256D7E5E9039CD9D4D164BB0C70A2620D39740D125926357270D57B73141",
+          "outputMetadata": "transfer-production-copy.mode-2.native.json"
+        }
+      ]
+    },
+    {
+      "run": "producer-urp-d3d12-msaa4-copygate",
+      "evidenceDirectory": ".local/windows-quilt-orientation-20261011/producer-urp-d3d12-msaa4-copygate",
+      "runSummarySha256": "E493C6744E1A90B00D8E2D9D43BB238DF510378A6FBDCB7E07569D59ACAC658B",
+      "producerMetadataSha256": "E0683D601C76526868743DF825C3DCC3DFD5CD45955095C103E08B94AA36A120",
+      "testXmlSha256": "A15E6081AE5436E34A2FCAC9F2BD83ACE078EB670336E108F79E64F9F29206B6",
+      "unityEditorVersion": "6000.6.4f1",
+      "testFilter": "ViewWeave.QuiltOrientationValidation.QuiltOrientationDiagnosticTests.UrpRequestCapturesActualQuiltAndBothTransferOrientations",
+      "mode": "PlayMode",
+      "graphicsApiRequested": "D3D12",
+      "graphicsApiCaptured": "Direct3D12",
+      "graphicsDeviceVersion": "Direct3D 12 [level 12.2]",
+      "renderPipeline": "UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset",
+      "requestedMsaaSamples": 4,
+      "effectiveViewAntiAliasing": 4,
+      "resolveTextureCreated": true,
+      "width": 320,
+      "height": 160,
+      "columns": 4,
+      "rows": 2,
+      "viewCount": 8,
+      "renderCallbackCount": 8,
+      "cliExitCode": 0,
+      "editorNaturalExitObserved": true,
+      "testCounts": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0
+      },
+      "passGate": true,
+      "settingsDiffCount": 0,
+      "sourceFiles": [
+        {
+          "path": "Tests/Pipelines/Unity/Assets/QuiltOrientationValidation/QuiltOrientationDiagnosticTests.cs",
+          "sha256": "b04c1ac0ef80ba0bdea1ece9c43052fafd7c30f8f34692a79c5b11f86153ba75"
+        },
+        {
+          "path": "Tests/Pipelines/Unity/Assets/QuiltOrientationValidation/QuiltOrientationDiagnostic.shader",
+          "sha256": "1140880a9f3cdad133f9df556db90621ddd3dfadc08220287490bd09963c5c01"
+        },
+        {
+          "path": "Tests/Pipelines/Unity/Assets/QuiltOrientationValidation/ViewWeave.QuiltOrientationValidation.Tests.asmdef",
+          "sha256": "0dd6f539ed3d62f5a0edafa287ae8f9e68d46c9d100310ea36b45c1621cd1abb"
+        }
+      ],
+      "rawFiles": [
+        {
+          "name": "source-quilt.rgba8",
+          "sha256": "3045e5a2fff05e897aebb877475cfacca1c55bae991444b5983b77774a978bd2",
+          "byteCount": 204800
+        },
+        {
+          "name": "transfer-current-flip.rgba8",
+          "sha256": "7dfa3667178e1aa5d66d2f128bddd487d09ef0874b3d7f8aa119c452390bf055",
+          "byteCount": 204800
+        },
+        {
+          "name": "transfer-no-flip.rgba8",
+          "sha256": "3045e5a2fff05e897aebb877475cfacca1c55bae991444b5983b77774a978bd2",
+          "byteCount": 204800
+        },
+        {
+          "name": "transfer-production-copy.rgba8",
+          "sha256": "3045e5a2fff05e897aebb877475cfacca1c55bae991444b5983b77774a978bd2",
+          "byteCount": 204800
+        }
+      ],
+      "nativeOracleResultSha256": "07351DA75EB1A94E58BFD17E5053D7638EC4E3ABDEAC7249D80F872250BA5917",
+      "nativeOracleResults": [
+        {
+          "candidate": "transfer-current-flip",
+          "mode": 0,
+          "modeName": "Automatic",
+          "orientation": "top-blue-bottom-red",
+          "topRedMean": 0.0,
+          "topBlueMean": 255.0,
+          "bottomRedMean": 255.0,
+          "bottomBlueMean": 0.0,
+          "uniqueGreenChannels": 15,
+          "inputSha256": "7DFA3667178E1AA5D66D2F128BDDD487D09EF0874B3D7F8AA119C452390BF055",
+          "outputSha256": "FED4F3FB64589349AE72F3AC6A3CBD7F612B724B965DA5FBC6FCB3603D1122A4",
+          "outputMetadata": "transfer-current-flip.mode-0.native.json"
+        },
+        {
+          "candidate": "transfer-current-flip",
+          "mode": 1,
+          "modeName": "Classic RGB",
+          "orientation": "top-blue-bottom-red",
+          "topRedMean": 0.0,
+          "topBlueMean": 255.0,
+          "bottomRedMean": 255.0,
+          "bottomBlueMean": 0.0,
+          "uniqueGreenChannels": 16,
+          "inputSha256": "7DFA3667178E1AA5D66D2F128BDDD487D09EF0874B3D7F8AA119C452390BF055",
+          "outputSha256": "EEDB6D34DF20C85917DAE8C3176F7CF85FA6A5A1BCA89B2F2B15A69A249FBF48",
+          "outputMetadata": "transfer-current-flip.mode-1.native.json"
+        },
+        {
+          "candidate": "transfer-current-flip",
+          "mode": 2,
+          "modeName": "Calibrated Cells",
+          "orientation": "top-blue-bottom-red",
+          "topRedMean": 0.0,
+          "topBlueMean": 255.0,
+          "bottomRedMean": 255.0,
+          "bottomBlueMean": 0.0,
+          "uniqueGreenChannels": 15,
+          "inputSha256": "7DFA3667178E1AA5D66D2F128BDDD487D09EF0874B3D7F8AA119C452390BF055",
+          "outputSha256": "FED4F3FB64589349AE72F3AC6A3CBD7F612B724B965DA5FBC6FCB3603D1122A4",
+          "outputMetadata": "transfer-current-flip.mode-2.native.json"
+        },
+        {
+          "candidate": "transfer-no-flip",
+          "mode": 0,
+          "modeName": "Automatic",
+          "orientation": "top-red-bottom-blue",
+          "topRedMean": 255.0,
+          "topBlueMean": 0.0,
+          "bottomRedMean": 0.0,
+          "bottomBlueMean": 255.0,
+          "uniqueGreenChannels": 16,
+          "inputSha256": "3045E5A2FFF05E897AEBB877475CFACCA1C55BAE991444B5983B77774A978BD2",
+          "outputSha256": "B28C256D7E5E9039CD9D4D164BB0C70A2620D39740D125926357270D57B73141",
+          "outputMetadata": "transfer-no-flip.mode-0.native.json"
+        },
+        {
+          "candidate": "transfer-no-flip",
+          "mode": 1,
+          "modeName": "Classic RGB",
+          "orientation": "top-red-bottom-blue",
+          "topRedMean": 255.0,
+          "topBlueMean": 0.0,
+          "bottomRedMean": 0.0,
+          "bottomBlueMean": 255.0,
+          "uniqueGreenChannels": 16,
+          "inputSha256": "3045E5A2FFF05E897AEBB877475CFACCA1C55BAE991444B5983B77774A978BD2",
+          "outputSha256": "2D45B05A9FCBCD1523CBDE72D97CD58116614638FE5A0A3491E347A668A1C420",
+          "outputMetadata": "transfer-no-flip.mode-1.native.json"
+        },
+        {
+          "candidate": "transfer-no-flip",
+          "mode": 2,
+          "modeName": "Calibrated Cells",
+          "orientation": "top-red-bottom-blue",
+          "topRedMean": 255.0,
+          "topBlueMean": 0.0,
+          "bottomRedMean": 0.0,
+          "bottomBlueMean": 255.0,
+          "uniqueGreenChannels": 16,
+          "inputSha256": "3045E5A2FFF05E897AEBB877475CFACCA1C55BAE991444B5983B77774A978BD2",
+          "outputSha256": "B28C256D7E5E9039CD9D4D164BB0C70A2620D39740D125926357270D57B73141",
+          "outputMetadata": "transfer-no-flip.mode-2.native.json"
+        },
+        {
+          "candidate": "transfer-production-copy",
+          "mode": 0,
+          "modeName": "Automatic",
+          "orientation": "top-red-bottom-blue",
+          "topRedMean": 255.0,
+          "topBlueMean": 0.0,
+          "bottomRedMean": 0.0,
+          "bottomBlueMean": 255.0,
+          "uniqueGreenChannels": 16,
+          "inputSha256": "3045E5A2FFF05E897AEBB877475CFACCA1C55BAE991444B5983B77774A978BD2",
+          "outputSha256": "B28C256D7E5E9039CD9D4D164BB0C70A2620D39740D125926357270D57B73141",
+          "outputMetadata": "transfer-production-copy.mode-0.native.json"
+        },
+        {
+          "candidate": "transfer-production-copy",
+          "mode": 1,
+          "modeName": "Classic RGB",
+          "orientation": "top-red-bottom-blue",
+          "topRedMean": 255.0,
+          "topBlueMean": 0.0,
+          "bottomRedMean": 0.0,
+          "bottomBlueMean": 255.0,
+          "uniqueGreenChannels": 16,
+          "inputSha256": "3045E5A2FFF05E897AEBB877475CFACCA1C55BAE991444B5983B77774A978BD2",
+          "outputSha256": "2D45B05A9FCBCD1523CBDE72D97CD58116614638FE5A0A3491E347A668A1C420",
+          "outputMetadata": "transfer-production-copy.mode-1.native.json"
+        },
+        {
+          "candidate": "transfer-production-copy",
+          "mode": 2,
+          "modeName": "Calibrated Cells",
+          "orientation": "top-red-bottom-blue",
+          "topRedMean": 255.0,
+          "topBlueMean": 0.0,
+          "bottomRedMean": 0.0,
+          "bottomBlueMean": 255.0,
+          "uniqueGreenChannels": 16,
+          "inputSha256": "3045E5A2FFF05E897AEBB877475CFACCA1C55BAE991444B5983B77774A978BD2",
+          "outputSha256": "B28C256D7E5E9039CD9D4D164BB0C70A2620D39740D125926357270D57B73141",
+          "outputMetadata": "transfer-production-copy.mode-2.native.json"
+        }
+      ]
+    },
+    {
+      "run": "producer-hdrp-d3d11-msaa1-historycams",
+      "evidenceDirectory": ".local/windows-quilt-orientation-20261011/producer-hdrp-d3d11-msaa1-historycams",
+      "runSummarySha256": "3AF68CE350F2294803AEA3F3338D0FC0A7813E9D1C5C32F9CC67633FF3B89CBE",
+      "producerMetadataSha256": "3E9E04551E688F279686212B72D8F3FA0E50D4B1CA262BFF602D74E278255F14",
+      "testXmlSha256": "11918B0657C3860FD71C838713042186D57EA54BB8E103F3A2FBFD04A5163B08",
+      "unityEditorVersion": "6000.6.4f1",
+      "testFilter": "ViewWeave.QuiltOrientationValidation.QuiltOrientationDiagnosticTests.HdrpRequestCapturesActualQuiltAndBothTransferOrientations",
+      "mode": "PlayMode",
+      "graphicsApiRequested": "D3D11",
+      "graphicsApiCaptured": "Direct3D11",
+      "graphicsDeviceVersion": "Direct3D 11.0 [level 11.1]",
+      "renderPipeline": "UnityEngine.Rendering.HighDefinition.HDRenderPipelineAsset",
+      "requestedMsaaSamples": 1,
+      "effectiveViewAntiAliasing": 1,
+      "resolveTextureCreated": false,
+      "width": 320,
+      "height": 160,
+      "columns": 4,
+      "rows": 2,
+      "viewCount": 8,
+      "renderCallbackCount": 8,
+      "ownedHistoryCameraCallbacks": 8,
+      "cliExitCode": 0,
+      "editorNaturalExitObserved": true,
+      "testCounts": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0
+      },
+      "passGate": true,
+      "settingsDiffCount": 0,
+      "sourceFiles": [
+        {
+          "path": "Tests/Pipelines/Unity/Assets/QuiltOrientationValidation/QuiltOrientationDiagnosticTests.cs",
+          "sha256": "10b2055e5a42d6bbed1ba9113ac681c94ca73cb38569f2232514b3058a88d767"
+        },
+        {
+          "path": "Tests/Pipelines/Unity/Assets/QuiltOrientationValidation/QuiltOrientationDiagnostic.shader",
+          "sha256": "1140880a9f3cdad133f9df556db90621ddd3dfadc08220287490bd09963c5c01"
+        },
+        {
+          "path": "Tests/Pipelines/Unity/Assets/QuiltOrientationValidation/ViewWeave.QuiltOrientationValidation.Tests.asmdef",
+          "sha256": "82924766e83513d0fb03f69176e522217721619308f53d188a3cfc888c9ad62d"
+        }
+      ],
+      "rawFiles": [
+        {
+          "name": "source-quilt.rgba8",
+          "sha256": "cfdc4c4442278bc36fb85fc0ecded8a9777253d5908793a6862182025fa1e1ac",
+          "byteCount": 204800
+        },
+        {
+          "name": "transfer-current-flip.rgba8",
+          "sha256": "d60e474caa0e52966d03b5ef32481a8e10b6d6926a46e130b3fe15debee17e14",
+          "byteCount": 204800
+        },
+        {
+          "name": "transfer-no-flip.rgba8",
+          "sha256": "cfdc4c4442278bc36fb85fc0ecded8a9777253d5908793a6862182025fa1e1ac",
+          "byteCount": 204800
+        },
+        {
+          "name": "transfer-production-copy.rgba8",
+          "sha256": "cfdc4c4442278bc36fb85fc0ecded8a9777253d5908793a6862182025fa1e1ac",
+          "byteCount": 204800
+        }
+      ],
+      "nativeOracleResultSha256": "1728C6F4F1A483FBD0C8EF04C6626D8EA5AEBF1E15C5FC51F9272D8CC92620F0",
+      "nativeOracleResults": [
+        {
+          "candidate": "transfer-current-flip",
+          "mode": 0,
+          "modeName": "Automatic",
+          "orientation": "top-blue-bottom-red",
+          "topRedMean": 33.0,
+          "topBlueMean": 205.0,
+          "bottomRedMean": 208.0,
+          "bottomBlueMean": 43.0,
+          "uniqueGreenChannels": 32,
+          "inputSha256": "D60E474CAA0E52966D03B5EF32481A8E10B6D6926A46E130B3FE15DEBEE17E14",
+          "outputSha256": "7C6E0FC7C69106449776086B944FA191A955E7D32CE30AA492FF2C45DB34AF75",
+          "outputMetadata": "transfer-current-flip.mode-0.native.json"
+        },
+        {
+          "candidate": "transfer-current-flip",
+          "mode": 1,
+          "modeName": "Classic RGB",
+          "orientation": "top-blue-bottom-red",
+          "topRedMean": 43.0,
+          "topBlueMean": 205.0,
+          "bottomRedMean": 208.0,
+          "bottomBlueMean": 40.0,
+          "uniqueGreenChannels": 36,
+          "inputSha256": "D60E474CAA0E52966D03B5EF32481A8E10B6D6926A46E130B3FE15DEBEE17E14",
+          "outputSha256": "CB6EEE905DF5CCFEA0987856FBC7DFFF47611245850D8A591B6246465BE2E891",
+          "outputMetadata": "transfer-current-flip.mode-1.native.json"
+        },
+        {
+          "candidate": "transfer-current-flip",
+          "mode": 2,
+          "modeName": "Calibrated Cells",
+          "orientation": "top-blue-bottom-red",
+          "topRedMean": 33.0,
+          "topBlueMean": 205.0,
+          "bottomRedMean": 208.0,
+          "bottomBlueMean": 43.0,
+          "uniqueGreenChannels": 32,
+          "inputSha256": "D60E474CAA0E52966D03B5EF32481A8E10B6D6926A46E130B3FE15DEBEE17E14",
+          "outputSha256": "7C6E0FC7C69106449776086B944FA191A955E7D32CE30AA492FF2C45DB34AF75",
+          "outputMetadata": "transfer-current-flip.mode-2.native.json"
+        },
+        {
+          "candidate": "transfer-no-flip",
+          "mode": 0,
+          "modeName": "Automatic",
+          "orientation": "top-red-bottom-blue",
+          "topRedMean": 208.0,
+          "topBlueMean": 43.0,
+          "bottomRedMean": 41.0,
+          "bottomBlueMean": 205.0,
+          "uniqueGreenChannels": 33,
+          "inputSha256": "CFDC4C4442278BC36FB85FC0ECDED8A9777253D5908793A6862182025FA1E1AC",
+          "outputSha256": "BF94F2D3D2381BFBA86C956F1F139D783FD5D5FEF572C44E191AAB0CB695F6D7",
+          "outputMetadata": "transfer-no-flip.mode-0.native.json"
+        },
+        {
+          "candidate": "transfer-no-flip",
+          "mode": 1,
+          "modeName": "Classic RGB",
+          "orientation": "top-red-bottom-blue",
+          "topRedMean": 208.0,
+          "topBlueMean": 43.0,
+          "bottomRedMean": 36.0,
+          "bottomBlueMean": 205.0,
+          "uniqueGreenChannels": 33,
+          "inputSha256": "CFDC4C4442278BC36FB85FC0ECDED8A9777253D5908793A6862182025FA1E1AC",
+          "outputSha256": "DEF293832760238C7A1244AE4E34CB71F771FA82D8880C2437577E23D738666F",
+          "outputMetadata": "transfer-no-flip.mode-1.native.json"
+        },
+        {
+          "candidate": "transfer-no-flip",
+          "mode": 2,
+          "modeName": "Calibrated Cells",
+          "orientation": "top-red-bottom-blue",
+          "topRedMean": 208.0,
+          "topBlueMean": 43.0,
+          "bottomRedMean": 41.0,
+          "bottomBlueMean": 205.0,
+          "uniqueGreenChannels": 33,
+          "inputSha256": "CFDC4C4442278BC36FB85FC0ECDED8A9777253D5908793A6862182025FA1E1AC",
+          "outputSha256": "BF94F2D3D2381BFBA86C956F1F139D783FD5D5FEF572C44E191AAB0CB695F6D7",
+          "outputMetadata": "transfer-no-flip.mode-2.native.json"
+        },
+        {
+          "candidate": "transfer-production-copy",
+          "mode": 0,
+          "modeName": "Automatic",
+          "orientation": "top-red-bottom-blue",
+          "topRedMean": 208.0,
+          "topBlueMean": 43.0,
+          "bottomRedMean": 41.0,
+          "bottomBlueMean": 205.0,
+          "uniqueGreenChannels": 33,
+          "inputSha256": "CFDC4C4442278BC36FB85FC0ECDED8A9777253D5908793A6862182025FA1E1AC",
+          "outputSha256": "BF94F2D3D2381BFBA86C956F1F139D783FD5D5FEF572C44E191AAB0CB695F6D7",
+          "outputMetadata": "transfer-production-copy.mode-0.native.json"
+        },
+        {
+          "candidate": "transfer-production-copy",
+          "mode": 1,
+          "modeName": "Classic RGB",
+          "orientation": "top-red-bottom-blue",
+          "topRedMean": 208.0,
+          "topBlueMean": 43.0,
+          "bottomRedMean": 36.0,
+          "bottomBlueMean": 205.0,
+          "uniqueGreenChannels": 33,
+          "inputSha256": "CFDC4C4442278BC36FB85FC0ECDED8A9777253D5908793A6862182025FA1E1AC",
+          "outputSha256": "DEF293832760238C7A1244AE4E34CB71F771FA82D8880C2437577E23D738666F",
+          "outputMetadata": "transfer-production-copy.mode-1.native.json"
+        },
+        {
+          "candidate": "transfer-production-copy",
+          "mode": 2,
+          "modeName": "Calibrated Cells",
+          "orientation": "top-red-bottom-blue",
+          "topRedMean": 208.0,
+          "topBlueMean": 43.0,
+          "bottomRedMean": 41.0,
+          "bottomBlueMean": 205.0,
+          "uniqueGreenChannels": 33,
+          "inputSha256": "CFDC4C4442278BC36FB85FC0ECDED8A9777253D5908793A6862182025FA1E1AC",
+          "outputSha256": "BF94F2D3D2381BFBA86C956F1F139D783FD5D5FEF572C44E191AAB0CB695F6D7",
+          "outputMetadata": "transfer-production-copy.mode-2.native.json"
+        }
+      ],
+      "productionCopyMatchesNoFlipSha256": true,
+      "nativeProductionCopyDifferenceByMode": [
+        {
+          "mode": 0,
+          "differentChannels": 0
+        },
+        {
+          "mode": 1,
+          "differentChannels": 0
+        },
+        {
+          "mode": 2,
+          "differentChannels": 0
+        }
+      ]
+    },
+    {
+      "run": "producer-hdrp-d3d12-msaa1-historycams",
+      "evidenceDirectory": ".local/windows-quilt-orientation-20261011/producer-hdrp-d3d12-msaa1-historycams",
+      "runSummarySha256": "606015B537C3B32512C46F997B69B7D6A47659308CAE4FF7D515873F596A1619",
+      "producerMetadataSha256": "103F1696B0FAFB10F48B276B816A1CCB7A1FED24C4B97951812EA09095E20C7B",
+      "testXmlSha256": "21A96EBD56CBDF610A198D0935AFB9CF2424F508695EE9665D2864E0C4EB7171",
+      "unityEditorVersion": "6000.6.4f1",
+      "testFilter": "ViewWeave.QuiltOrientationValidation.QuiltOrientationDiagnosticTests.HdrpRequestCapturesActualQuiltAndBothTransferOrientations",
+      "mode": "PlayMode",
+      "graphicsApiRequested": "D3D12",
+      "graphicsApiCaptured": "Direct3D12",
+      "graphicsDeviceVersion": "Direct3D 12 [level 12.2]",
+      "renderPipeline": "UnityEngine.Rendering.HighDefinition.HDRenderPipelineAsset",
+      "requestedMsaaSamples": 1,
+      "effectiveViewAntiAliasing": 1,
+      "resolveTextureCreated": false,
+      "width": 320,
+      "height": 160,
+      "columns": 4,
+      "rows": 2,
+      "viewCount": 8,
+      "renderCallbackCount": 8,
+      "ownedHistoryCameraCallbacks": 8,
+      "cliExitCode": 0,
+      "editorNaturalExitObserved": true,
+      "testCounts": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0
+      },
+      "passGate": true,
+      "settingsDiffCount": 0,
+      "sourceFiles": [
+        {
+          "path": "Tests/Pipelines/Unity/Assets/QuiltOrientationValidation/QuiltOrientationDiagnosticTests.cs",
+          "sha256": "10b2055e5a42d6bbed1ba9113ac681c94ca73cb38569f2232514b3058a88d767"
+        },
+        {
+          "path": "Tests/Pipelines/Unity/Assets/QuiltOrientationValidation/QuiltOrientationDiagnostic.shader",
+          "sha256": "1140880a9f3cdad133f9df556db90621ddd3dfadc08220287490bd09963c5c01"
+        },
+        {
+          "path": "Tests/Pipelines/Unity/Assets/QuiltOrientationValidation/ViewWeave.QuiltOrientationValidation.Tests.asmdef",
+          "sha256": "82924766e83513d0fb03f69176e522217721619308f53d188a3cfc888c9ad62d"
+        }
+      ],
+      "rawFiles": [
+        {
+          "name": "source-quilt.rgba8",
+          "sha256": "cfdc4c4442278bc36fb85fc0ecded8a9777253d5908793a6862182025fa1e1ac",
+          "byteCount": 204800
+        },
+        {
+          "name": "transfer-current-flip.rgba8",
+          "sha256": "d60e474caa0e52966d03b5ef32481a8e10b6d6926a46e130b3fe15debee17e14",
+          "byteCount": 204800
+        },
+        {
+          "name": "transfer-no-flip.rgba8",
+          "sha256": "cfdc4c4442278bc36fb85fc0ecded8a9777253d5908793a6862182025fa1e1ac",
+          "byteCount": 204800
+        },
+        {
+          "name": "transfer-production-copy.rgba8",
+          "sha256": "cfdc4c4442278bc36fb85fc0ecded8a9777253d5908793a6862182025fa1e1ac",
+          "byteCount": 204800
+        }
+      ],
+      "nativeOracleResultSha256": "F104A3BC621C5972C2BE999A45F46FCA05C1B73F9CC9087828C9F28DF9B4A321",
+      "nativeOracleResults": [
+        {
+          "candidate": "transfer-current-flip",
+          "mode": 0,
+          "modeName": "Automatic",
+          "orientation": "top-blue-bottom-red",
+          "topRedMean": 33.0,
+          "topBlueMean": 205.0,
+          "bottomRedMean": 208.0,
+          "bottomBlueMean": 43.0,
+          "uniqueGreenChannels": 32,
+          "inputSha256": "D60E474CAA0E52966D03B5EF32481A8E10B6D6926A46E130B3FE15DEBEE17E14",
+          "outputSha256": "7C6E0FC7C69106449776086B944FA191A955E7D32CE30AA492FF2C45DB34AF75",
+          "outputMetadata": "transfer-current-flip.mode-0.native.json"
+        },
+        {
+          "candidate": "transfer-current-flip",
+          "mode": 1,
+          "modeName": "Classic RGB",
+          "orientation": "top-blue-bottom-red",
+          "topRedMean": 43.0,
+          "topBlueMean": 205.0,
+          "bottomRedMean": 208.0,
+          "bottomBlueMean": 40.0,
+          "uniqueGreenChannels": 36,
+          "inputSha256": "D60E474CAA0E52966D03B5EF32481A8E10B6D6926A46E130B3FE15DEBEE17E14",
+          "outputSha256": "CB6EEE905DF5CCFEA0987856FBC7DFFF47611245850D8A591B6246465BE2E891",
+          "outputMetadata": "transfer-current-flip.mode-1.native.json"
+        },
+        {
+          "candidate": "transfer-current-flip",
+          "mode": 2,
+          "modeName": "Calibrated Cells",
+          "orientation": "top-blue-bottom-red",
+          "topRedMean": 33.0,
+          "topBlueMean": 205.0,
+          "bottomRedMean": 208.0,
+          "bottomBlueMean": 43.0,
+          "uniqueGreenChannels": 32,
+          "inputSha256": "D60E474CAA0E52966D03B5EF32481A8E10B6D6926A46E130B3FE15DEBEE17E14",
+          "outputSha256": "7C6E0FC7C69106449776086B944FA191A955E7D32CE30AA492FF2C45DB34AF75",
+          "outputMetadata": "transfer-current-flip.mode-2.native.json"
+        },
+        {
+          "candidate": "transfer-no-flip",
+          "mode": 0,
+          "modeName": "Automatic",
+          "orientation": "top-red-bottom-blue",
+          "topRedMean": 208.0,
+          "topBlueMean": 43.0,
+          "bottomRedMean": 41.0,
+          "bottomBlueMean": 205.0,
+          "uniqueGreenChannels": 33,
+          "inputSha256": "CFDC4C4442278BC36FB85FC0ECDED8A9777253D5908793A6862182025FA1E1AC",
+          "outputSha256": "BF94F2D3D2381BFBA86C956F1F139D783FD5D5FEF572C44E191AAB0CB695F6D7",
+          "outputMetadata": "transfer-no-flip.mode-0.native.json"
+        },
+        {
+          "candidate": "transfer-no-flip",
+          "mode": 1,
+          "modeName": "Classic RGB",
+          "orientation": "top-red-bottom-blue",
+          "topRedMean": 208.0,
+          "topBlueMean": 43.0,
+          "bottomRedMean": 36.0,
+          "bottomBlueMean": 205.0,
+          "uniqueGreenChannels": 33,
+          "inputSha256": "CFDC4C4442278BC36FB85FC0ECDED8A9777253D5908793A6862182025FA1E1AC",
+          "outputSha256": "DEF293832760238C7A1244AE4E34CB71F771FA82D8880C2437577E23D738666F",
+          "outputMetadata": "transfer-no-flip.mode-1.native.json"
+        },
+        {
+          "candidate": "transfer-no-flip",
+          "mode": 2,
+          "modeName": "Calibrated Cells",
+          "orientation": "top-red-bottom-blue",
+          "topRedMean": 208.0,
+          "topBlueMean": 43.0,
+          "bottomRedMean": 41.0,
+          "bottomBlueMean": 205.0,
+          "uniqueGreenChannels": 33,
+          "inputSha256": "CFDC4C4442278BC36FB85FC0ECDED8A9777253D5908793A6862182025FA1E1AC",
+          "outputSha256": "BF94F2D3D2381BFBA86C956F1F139D783FD5D5FEF572C44E191AAB0CB695F6D7",
+          "outputMetadata": "transfer-no-flip.mode-2.native.json"
+        },
+        {
+          "candidate": "transfer-production-copy",
+          "mode": 0,
+          "modeName": "Automatic",
+          "orientation": "top-red-bottom-blue",
+          "topRedMean": 208.0,
+          "topBlueMean": 43.0,
+          "bottomRedMean": 41.0,
+          "bottomBlueMean": 205.0,
+          "uniqueGreenChannels": 33,
+          "inputSha256": "CFDC4C4442278BC36FB85FC0ECDED8A9777253D5908793A6862182025FA1E1AC",
+          "outputSha256": "BF94F2D3D2381BFBA86C956F1F139D783FD5D5FEF572C44E191AAB0CB695F6D7",
+          "outputMetadata": "transfer-production-copy.mode-0.native.json"
+        },
+        {
+          "candidate": "transfer-production-copy",
+          "mode": 1,
+          "modeName": "Classic RGB",
+          "orientation": "top-red-bottom-blue",
+          "topRedMean": 208.0,
+          "topBlueMean": 43.0,
+          "bottomRedMean": 36.0,
+          "bottomBlueMean": 205.0,
+          "uniqueGreenChannels": 33,
+          "inputSha256": "CFDC4C4442278BC36FB85FC0ECDED8A9777253D5908793A6862182025FA1E1AC",
+          "outputSha256": "DEF293832760238C7A1244AE4E34CB71F771FA82D8880C2437577E23D738666F",
+          "outputMetadata": "transfer-production-copy.mode-1.native.json"
+        },
+        {
+          "candidate": "transfer-production-copy",
+          "mode": 2,
+          "modeName": "Calibrated Cells",
+          "orientation": "top-red-bottom-blue",
+          "topRedMean": 208.0,
+          "topBlueMean": 43.0,
+          "bottomRedMean": 41.0,
+          "bottomBlueMean": 205.0,
+          "uniqueGreenChannels": 33,
+          "inputSha256": "CFDC4C4442278BC36FB85FC0ECDED8A9777253D5908793A6862182025FA1E1AC",
+          "outputSha256": "BF94F2D3D2381BFBA86C956F1F139D783FD5D5FEF572C44E191AAB0CB695F6D7",
+          "outputMetadata": "transfer-production-copy.mode-2.native.json"
+        }
+      ],
+      "productionCopyMatchesNoFlipSha256": true,
+      "nativeProductionCopyDifferenceByMode": [
+        {
+          "mode": 0,
+          "differentChannels": 0
+        },
+        {
+          "mode": 1,
+          "differentChannels": 0
+        },
+        {
+          "mode": 2,
+          "differentChannels": 0
+        }
+      ]
+    }
+  ],
+  "orientationControls": [
+    {
+      "run": "producer-builtin-d3d11-02",
+      "evidenceDirectory": ".local/windows-quilt-orientation-20261011/producer-builtin-d3d11-02",
+      "testFilter": "ViewWeave.QuiltOrientationValidation.QuiltOrientationDiagnosticTests.BuiltinCapturesActualQuiltAndBothTransferOrientations",
+      "graphicsApiRequested": "D3D11",
+      "graphicsApiCaptured": "Direct3D11",
+      "renderPipeline": "BuiltIn",
+      "testCounts": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0
+      },
+      "passGate": true,
+      "rawFiles": [
+        {
+          "name": "source-quilt.rgba8",
+          "sha256": "d58646644faf22d6eb6fcddb433aebfabd4090a1dbcd43da2dd577fcb9645cf6",
+          "byteCount": 204800
+        },
+        {
+          "name": "transfer-current-flip.rgba8",
+          "sha256": "b36d86960f7e00bca1d1d9795bf08470879213368f5fd6636477c7d1c609d93c",
+          "byteCount": 204800
+        },
+        {
+          "name": "transfer-no-flip.rgba8",
+          "sha256": "d58646644faf22d6eb6fcddb433aebfabd4090a1dbcd43da2dd577fcb9645cf6",
+          "byteCount": 204800
+        }
+      ],
+      "role": "orientation candidate control only; earlier fixture did not capture production helper output"
+    },
+    {
+      "run": "producer-urp-d3d11-03",
+      "evidenceDirectory": ".local/windows-quilt-orientation-20261011/producer-urp-d3d11-03",
+      "testFilter": "ViewWeave.QuiltOrientationValidation.QuiltOrientationDiagnosticTests.UrpRequestCapturesActualQuiltAndBothTransferOrientations",
+      "graphicsApiRequested": "D3D11",
+      "graphicsApiCaptured": "Direct3D11",
+      "renderPipeline": "UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset",
+      "testCounts": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0
+      },
+      "passGate": true,
+      "rawFiles": [
+        {
+          "name": "source-quilt.rgba8",
+          "sha256": "3045e5a2fff05e897aebb877475cfacca1c55bae991444b5983b77774a978bd2",
+          "byteCount": 204800
+        },
+        {
+          "name": "transfer-current-flip.rgba8",
+          "sha256": "7dfa3667178e1aa5d66d2f128bddd487d09ef0874b3d7f8aa119c452390bf055",
+          "byteCount": 204800
+        },
+        {
+          "name": "transfer-no-flip.rgba8",
+          "sha256": "3045e5a2fff05e897aebb877475cfacca1c55bae991444b5983b77774a978bd2",
+          "byteCount": 204800
+        }
+      ],
+      "role": "orientation candidate control only; earlier fixture did not capture production helper output"
+    }
+  ],
+  "excludedDiagnostics": [
+    {
+      "run": "producer-d3d11",
+      "classification": "excluded",
+      "reason": "Unity scripts had compiler errors; test counts null and no XML pass",
+      "cliExitCode": 6,
+      "testCounts": null,
+      "passGate": false
+    },
+    {
+      "run": "producer-builtin-d3d11-01",
+      "classification": "excluded",
+      "reason": "XML reported 1/1 PASS, but the transfer RGB capture was all black and invalid for orientation",
+      "cliExitCode": 0,
+      "testCounts": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0
+      },
+      "passGate": true
+    },
+    {
+      "run": "producer-urp-d3d11-01",
+      "classification": "excluded",
+      "reason": "Focused Unity producer run failed; not used as evidence",
+      "cliExitCode": 8,
+      "testCounts": {
+        "total": 1,
+        "passed": 0,
+        "failed": 1,
+        "skipped": 0
+      },
+      "passGate": false
+    },
+    {
+      "run": "producer-urp-d3d11-02",
+      "classification": "excluded",
+      "reason": "No complete raw producer capture/run summary; excluded",
+      "cliExitCode": 6,
+      "testCounts": null,
+      "passGate": false
+    },
+    {
+      "run": "producer-hdrp-d3d11-msaa1-copygate",
+      "classification": "excluded",
+      "reason": "HDRP first render had not completed before the capture assertion.",
+      "evidenceDirectory": ".local/windows-quilt-orientation-20261011/producer-hdrp-d3d11-msaa1-copygate",
+      "runSummarySha256": "895DA16D215F7F5A20467F12D5B3B8DFE4A6F282AD34092F239FE36DB3771E98",
+      "testXmlSha256": "2862FB4BED354AC1F3C0B5C0EE9A3C04221406F98E69CCF5FCDA131AF1ECBBB2",
+      "cliExitCode": 8,
+      "editorNaturalExitObserved": true,
+      "testCounts": {
+        "total": 1,
+        "passed": 0,
+        "failed": 1,
+        "skipped": 0
+      },
+      "passGate": false,
+      "testSourceSha256": "765ac5eb4f2f80edd53c92f12b920bddbacbb7088eef74163abf019da5b49696"
+    },
+    {
+      "run": "producer-hdrp-d3d11-msaa1-ready",
+      "classification": "excluded",
+      "reason": "Exposure-preparation cameras were counted, producing 11 callbacks instead of the expected 8; the final fixture filters exact history cameras.",
+      "evidenceDirectory": ".local/windows-quilt-orientation-20261011/producer-hdrp-d3d11-msaa1-ready",
+      "runSummarySha256": "D19DADBF3F8AA0A07E146C587BB45FE91E7705F69AD08D68E8A7F6B80C1995FC",
+      "testXmlSha256": "449744188A20B66CD8FAB797E6B4F93BDDB95F1B93B4721C4FC3B0DBF8FA091A",
+      "cliExitCode": 8,
+      "editorNaturalExitObserved": true,
+      "testCounts": {
+        "total": 1,
+        "passed": 0,
+        "failed": 1,
+        "skipped": 0
+      },
+      "passGate": false,
+      "testSourceSha256": "45a228410a7e34f6d06a9d81231427b5511f951ca0736dfe530f0a83ea199282"
+    }
+  ],
+  "interpretation": {
+    "unityReadbackRow0": "Recorded in returned raw byte order; no physical-top assumption",
+    "producerSampleNames": "rawTop/rawBottom describe low-Y memory row progression for this capture UV convention; not scanout labels",
+    "nativeOutputRow0": "D3D11 staging texture Y=0 maps viewport top in the 9x7 offscreen output",
+    "cpuReferenceUsedToJudgeStorageDirection": false,
+    "perFinalRunModes": 3,
+    "perFinalRunProducerCandidates": 3,
+    "perFinalRunNativeFrames": 9,
+    "expectedOrientation": "top red, bottom blue",
+    "observedProductionCopy": "Byte-identical to no-flip source; all modes classified top-red-bottom-blue and differed from no-flip by 0/252 bytes",
+    "finalProducerRuns": 6,
+    "finalProducerRunMatrix": "URP D3D11/D3D12 x MSAA 1/4; HDRP D3D11/D3D12 x MSAA 1",
+    "nativeFrameExecution": "54/54 GPU submissions completed, read back, and closed successfully; frame execution success does not imply all candidates have correct orientation",
+    "nativeFrameClassification": {
+      "productionCopy": "18/18 outputs (six producer captures x three modes) classified top-red-bottom-blue and matched no-flip output byte-for-byte",
+      "noFlipControl": "18/18 outputs classified top-red-bottom-blue",
+      "currentFlipNegativeControl": "18/18 outputs classified top-blue-bottom-red; these are expected negative controls, not correctness passes"
+    },
+    "unityFinalRunCount": "6 runs, each XML 1/1 pass, zero failures and skips",
+    "deviceEvidenceSeparateFromProducerAndOracle": true
+  },
+  "pending": [
+    "Windows Player output and physical-panel optical validation"
+  ],
+  "deviceDeliveryEvidence": {
+    "run": "device-urp-d3d12-automatic",
+    "evidenceDirectory": ".local/windows-quilt-orientation-20261011/device-urp-d3d12-automatic",
+    "summarySha256": "A97D42B27A8F6070A1BC72FFB181947FE3C1D7EFA41F050E34C99F66FF042B18",
+    "testXmlSha256": "B5A6267DDF3A9D00B5AB7593CD53141AAB7CE213B786A19C7338F4B3E727673D",
+    "loadedModulesSha256": "EFE3FE754D253B78EEA3F5E44E36B47DE506701D3F36030BCE6F32E443C74994",
+    "nativeTraceSha256": "E51D1C7CA1BD0C56198C6F41F47A0D3CAB7D85BD7758AB66E3EB2B0A07C04F3D",
+    "unityEditorVersion": "6000.6.4f1",
+    "mode": "EditMode",
+    "renderPipeline": "URP",
+    "graphicsApi": "Direct3D 12",
+    "graphicsDevice": "NVIDIA GeForce RTX 3090 Ti (ID=0x2203)",
+    "subpixelMode": "Automatic",
+    "testFilter": "ViewWeave.BridgeEditorPreviewValidation.BridgeEditorPreviewGpuTests.DevicePreviewStopsBeforePlayAndRuntimeSessionRendersWhenExplicitlyEnabled",
+    "testCounts": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    "cliExitCode": 0,
+    "editorReportedExitCodeZero": true,
+    "pidCrosscheck": true,
+    "loadedPackageShimPathMatches": true,
+    "loadedPackageShimHashMatches": true,
+    "nativeLoadInitializeDisplayAndCleanup": {
+      "tracePresent": true,
+      "loadOk": true,
+      "initializeOk": true,
+      "displayOne": true,
+      "pendingZero": true,
+      "uninitializeOk": true
+    },
+    "applicationEventCount": 0,
+    "crashReportFileCount": 0,
+    "settingsCleanupStatus": [],
+    "opticalPanelVisualValidation": false
+  },
+  "excludedDiagnosticsNote": "There are six recorded failed/invalid diagnostic runs overall; zero of them are included in pass counts. See .local/windows-quilt-orientation-20261011/orientation-summary.json failureHistory for the complete chronology.",
+  "fixtureGuardOnlyDelta": {
+    "path": "Tests/Pipelines/Unity/Assets/QuiltOrientationValidation/QuiltOrientationDiagnosticTests.cs",
+    "currentSha256": "422e430854b8609317cfc9d313f2da3ebb1240dde9fdd0217f5fb6ceceee317e",
+    "change": "Preprocessor guard narrowed from UNITY_INCLUDE_TESTS to UNITY_INCLUDE_TESTS && UNITY_EDITOR_WIN; body unchanged.",
+    "windowsEditorBodyValidatedByPriorRuns": true,
+    "macEditorAndPlayerCompilationExcluded": true,
+    "priorPassingRunFingerprints": [
+      {
+        "run": "producer-urp-d3d11-msaa1-copygate",
+        "testSourceSha256": "b04c1ac0ef80ba0bdea1ece9c43052fafd7c30f8f34692a79c5b11f86153ba75"
+      },
+      {
+        "run": "producer-urp-d3d11-msaa4-copygate",
+        "testSourceSha256": "b04c1ac0ef80ba0bdea1ece9c43052fafd7c30f8f34692a79c5b11f86153ba75"
+      },
+      {
+        "run": "producer-urp-d3d12-msaa1-copygate",
+        "testSourceSha256": "b04c1ac0ef80ba0bdea1ece9c43052fafd7c30f8f34692a79c5b11f86153ba75"
+      },
+      {
+        "run": "producer-urp-d3d12-msaa4-copygate",
+        "testSourceSha256": "b04c1ac0ef80ba0bdea1ece9c43052fafd7c30f8f34692a79c5b11f86153ba75"
+      },
+      {
+        "run": "producer-hdrp-d3d11-msaa1-historycams",
+        "testSourceSha256": "10b2055e5a42d6bbed1ba9113ac681c94ca73cb38569f2232514b3058a88d767"
+      },
+      {
+        "run": "producer-hdrp-d3d12-msaa1-historycams",
+        "testSourceSha256": "10b2055e5a42d6bbed1ba9113ac681c94ca73cb38569f2232514b3058a88d767"
+      }
+    ],
+    "validationBoundary": "The six final producer runs retain their per-run source fingerprints above. No Unity rerun was performed with currentSha256; only the preprocessor compile-scope guard changed and the Windows Editor test body is unchanged."
+  },
+  "sampleRefreshEvidence": {
+    "finalSummary": ".local/windows-quilt-orientation-20261011/sample-refresh/final-summary.json",
+    "finalSummarySha256": "AA457FFDEB8F3D037C24E241D8310FA55C49A548ED4BD90736A4567E0B792681",
+    "sourceHead": "e9232d31afdbb80f2577c12955d9d060dba44441",
+    "packageState": "Local file packages; this verifies the working-tree Distribution content, not a release or Git-tracked package revision.",
+    "productionCopy": {
+      "source": "Packages/com.zabaglione.lookingglass.viewweave.bridge/Runtime/Platforms/Windows/BridgeWorkerQuiltOutput.cs",
+      "sourceSha256": "DA85161E83D88A52BA04321501D05428ADA83D52854682116550EFD6C9BD5F8E",
+      "urpDistributionSha256": "DA85161E83D88A52BA04321501D05428ADA83D52854682116550EFD6C9BD5F8E",
+      "hdrpDistributionSha256": "DA85161E83D88A52BA04321501D05428ADA83D52854682116550EFD6C9BD5F8E",
+      "allCopiesEqual": true
+    },
+    "nativeDll": {
+      "sha256": "C864A363AC441C77497D4302FF25CB48FA2D6EA194B6FB8A73BAE49DC522FEE2",
+      "bytes": 302080,
+      "urpHash": "C864A363AC441C77497D4302FF25CB48FA2D6EA194B6FB8A73BAE49DC522FEE2",
+      "hdrpHash": "C864A363AC441C77497D4302FF25CB48FA2D6EA194B6FB8A73BAE49DC522FEE2"
+    },
+    "samples": [
+      {
+        "pipeline": "URP",
+        "unityEditorVersion": "6000.6.4f1",
+        "distributionPath": "Distribution/urp",
+        "distributionPackage": "file:E:/LookingGlassSDK/Distribution/urp",
+        "packageSource": "VW_SAMPLE_LOCAL_PACKAGE name=com.zabaglione.lookingglass.viewweave.urp version=0.1.0 source=Local resolvedPath=E:\\LookingGlassSDK\\Distribution\\urp",
+        "finalSummary": ".local/windows-quilt-orientation-20261011/sample-refresh/baseline/urp/final-summary.json",
+        "finalSummarySha256": "FC9DF3731F8357FC3BDAA6EDD2F176B51CDD790DE07D8CCF631D2214CE096CA7",
+        "clientAddObserved": true,
+        "clientAddExitCode": 0,
+        "clientAddLogSha256": "FAB0662554E4994B4455407B8B774FE574924C7C027B38F580161CB36E99472E",
+        "resolvedPackageMetadataMatches": true,
+        "installSourceEntriesCompared": 246,
+        "resolvedTreeEntryCount": 246,
+        "resolvedTreeMismatchCount": 0,
+        "freshColdVerify": {
+          "operation": "verify-only",
+          "pid": 88200,
+          "exitCode": 0,
+          "log": ".local/windows-quilt-orientation-20261011/sample-refresh/baseline/urp/local-package-refresh-editor-attempt-03.log",
+          "logSha256": "08FCF204E286327BE4E2EE3E9685D036E4AF3840DE483CC2998B621A1A6060C8",
+          "passMarker": "VW_SAMPLE_LOCAL_PASS kind=urp resolvedPath=E:\\LookingGlassSDK\\Distribution\\urp"
+        },
+        "loadedDistributionNativeModule": {
+          "path": "Distribution/urp/ViewWeave/Bridge/Plugins/x86_64/lookingglass_bridge_shim.dll",
+          "sha256": "C864A363AC441C77497D4302FF25CB48FA2D6EA194B6FB8A73BAE49DC522FEE2",
+          "bytes": 302080,
+          "moduleCount": 1,
+          "pending": 0,
+          "init": "not-performed",
+          "uninit": "not-applicable"
+        },
+        "projectTreeAudit": {
+          "added": 0,
+          "changed": 0,
+          "missing": 0
+        },
+        "unrelatedManifestAndLockUnchanged": true,
+        "temporaryHelperRemoved": true,
+        "finalEditorProcessCount": 0,
+        "nonAsciiLogChars": 0,
+        "evidenceScope": "package import, package tree comparison, and cold Native module load only; no sample rendering or device/optical validation"
+      },
+      {
+        "pipeline": "HDRP",
+        "unityEditorVersion": "6000.6.4f1",
+        "distributionPath": "Distribution/hdrp",
+        "distributionPackage": "file:E:/LookingGlassSDK/Distribution/hdrp",
+        "packageSource": "VW_SAMPLE_LOCAL_PACKAGE name=com.zabaglione.lookingglass.viewweave.hdrp version=0.1.0 source=Local resolvedPath=E:\\LookingGlassSDK\\Distribution\\hdrp",
+        "finalSummary": ".local/windows-quilt-orientation-20261011/sample-refresh/baseline/hdrp/final-summary.json",
+        "finalSummarySha256": "EF03BA0A26F3A1B4E8EA50F6603B8DA988B485A17F3DC2FBC07CCF6FE0E08C68",
+        "clientAddObserved": true,
+        "clientAddExitCode": 1,
+        "clientAddLogSha256": "F827EBF6341EE6D51B1248AFC97D677AC9DEEFD707F9F8D8CB393F32103747EC",
+        "resolvedPackageMetadataMatches": true,
+        "installSourceEntriesCompared": 253,
+        "resolvedTreeEntryCount": 253,
+        "resolvedTreeMismatchCount": 0,
+        "freshColdVerify": {
+          "operation": "verify-only",
+          "pid": 98744,
+          "exitCode": 0,
+          "log": ".local/windows-quilt-orientation-20261011/sample-refresh/baseline/hdrp/local-package-refresh-editor-attempt-02.log",
+          "logSha256": "64FF757135A9B935DA18ECFC62AED01C2D21450301135FC505407D30DAB5BF41",
+          "passMarker": "VW_SAMPLE_LOCAL_PASS kind=hdrp resolvedPath=E:\\LookingGlassSDK\\Distribution\\hdrp"
+        },
+        "loadedDistributionNativeModule": {
+          "path": "Distribution/hdrp/ViewWeave/Bridge/Plugins/x86_64/lookingglass_bridge_shim.dll",
+          "sha256": "C864A363AC441C77497D4302FF25CB48FA2D6EA194B6FB8A73BAE49DC522FEE2",
+          "bytes": 302080,
+          "moduleCount": 1,
+          "pending": 0,
+          "init": "not-performed",
+          "uninit": "not-applicable"
+        },
+        "projectTreeAudit": {
+          "added": 0,
+          "changed": 0,
+          "missing": 0
+        },
+        "unrelatedManifestAndLockUnchanged": true,
+        "temporaryHelperRemoved": true,
+        "finalEditorProcessCount": 0,
+        "nonAsciiLogChars": 0,
+        "evidenceScope": "package import, package tree comparison, and cold Native module load only; no sample rendering or device/optical validation"
+      }
+    ],
+    "historicalFailures": [
+      {
+        "kind": "urp",
+        "stage": "first runner attempt",
+        "result": "executeMethod class name did not match the compiled runner class; Editor log reported class not found before Client.Add."
+      },
+      {
+        "kind": "urp",
+        "stage": "first corrected direct-invocation attempt",
+        "result": "pass marker observed but PowerShell did not wait for the GUI Editor process, so exitCode was not captured; superseded by the awaited Client.Add run."
+      },
+      {
+        "kind": "hdrp",
+        "stage": "Client.Add session",
+        "result": "UPM resolved Local package and package source comparisons completed, but strict native image guard rejected path change within the same Editor session; exitCode 1. A separate fresh verify-only Editor run passed."
+      }
+    ],
+    "scopeLimit": "Both fresh cold verify-only Editor processes passed. This does not establish sample rendering, runtime initialization, device output, Player behavior, or optical quality. The HDRP Client.Add attempt observed local resolution and package tree agreement but exited 1 when a strict Native image guard saw the loaded DLL path change within the same Editor; the separate fresh cold verify-only process passed."
+  },
+  "postValidationPublication": {
+    "repositoryHead": "1ac8ae1a102bd616cf7c966f0ce8f168ac6a8867",
+    "changeScope": "Fast-forward after validation; upstream commit added documentation only. The Windows production source and packaged Native DLL identities listed here were unchanged.",
+    "windowsProductionSourceSha256": "DA85161E83D88A52BA04321501D05428ADA83D52854682116550EFD6C9BD5F8E",
+    "nativeDllSha256": "C864A363AC441C77497D4302FF25CB48FA2D6EA194B6FB8A73BAE49DC522FEE2",
+    "samplePackageVerification": "The latest local Distribution import and cold-load results are in sampleRefreshEvidence; they are not the earlier Git-package evidence in docs/validation/windows-sample-refresh-20261011.json."
+  }
+}

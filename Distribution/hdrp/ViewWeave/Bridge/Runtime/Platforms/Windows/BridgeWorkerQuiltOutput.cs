@@ -1032,9 +1032,7 @@ namespace ViewWeave
             }
             SubmissionAttempts++;
             if (!EnsureTransferTexture(quiltTexture)) return false;
-            RenderTexture previous = RenderTexture.active;
-            try { Graphics.Blit(quiltTexture, transferTexture, new Vector2(1f, -1f), new Vector2(0f, 1f)); }
-            finally { RenderTexture.active = previous; }
+            CopyQuiltToTransferTexture(quiltTexture, transferTexture);
             IntPtr drawData;
             BridgeWorkerNative.WorkerDrawOptionsV1 drawOptions = new BridgeWorkerNative.WorkerDrawOptionsV1
             {
@@ -1265,6 +1263,20 @@ namespace ViewWeave
             transferAntiAliasingDiagnostic = transferTexture.antiAliasing;
             transferDimensionName = transferTexture.dimension.ToString();
             return true;
+        }
+
+        internal static void CopyQuiltToTransferTexture(RenderTexture source, RenderTexture destination)
+        {
+            RenderTexture previous = RenderTexture.active;
+            try
+            {
+                // Preserve logical quilt rows and within-view Y for the Native presenter.
+                Graphics.Blit(source, destination);
+            }
+            finally
+            {
+                RenderTexture.active = previous;
+            }
         }
 
         bool Fail(string message) { LastError = message; state = WorkerState.Fault; if (handle != IntPtr.Zero || previewLease || previewLeaseAcquirePending) Dispose(); return false; }
