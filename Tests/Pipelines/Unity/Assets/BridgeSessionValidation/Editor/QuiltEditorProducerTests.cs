@@ -17,10 +17,12 @@ namespace ViewWeave.BridgeEditorPreviewValidation
         RenderPipelineAsset previousPipeline, previousQuality;
         UniversalRenderPipelineAsset pipeline;
         UniversalRendererData rendererData;
+        bool previousAutomaticRequestsEnabled;
 
         [UnitySetUp]
         public IEnumerator Setup()
         {
+            previousAutomaticRequestsEnabled = BridgeEditorDisplayDiscovery.AutomaticRequestsEnabled;
             BridgeEditorDisplayDiscovery.AutomaticRequestsEnabled = false;
             previousPipeline = GraphicsSettings.defaultRenderPipeline;
             previousQuality = QualitySettings.renderPipeline;
@@ -41,7 +43,7 @@ namespace ViewWeave.BridgeEditorPreviewValidation
             if (pipeline != null) Object.DestroyImmediate(pipeline);
             if (rendererData != null) Object.DestroyImmediate(rendererData);
             BridgeEditorDisplayDiscovery.Cancel();
-            BridgeEditorDisplayDiscovery.AutomaticRequestsEnabled = true;
+            BridgeEditorDisplayDiscovery.AutomaticRequestsEnabled = previousAutomaticRequestsEnabled;
             yield return null;
             Assert.That(QuiltEditorResourceRecord.PendingCount, Is.Zero);
         }

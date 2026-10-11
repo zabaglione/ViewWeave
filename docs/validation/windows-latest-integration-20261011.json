@@ -127,7 +127,7 @@
     "reuseAsCurrentEvidence": false
   },
   "unityValidation": {
-    "status": "Selected Windows Unity checks passed, including separate URP and HDRP local Distribution VerifyOnly cold-load checks.",
+    "status": "Selected Windows Unity checks passed: common Editor helper, one specified device route, and separate URP/HDRP local Distribution VerifyOnly cold-load checks. This is not a complete pipeline/API/mode matrix.",
     "currentArtifactSha256": "CEE089B1779752DAB4FFABDFFC44B879A0E4D09414C9A85F7590C8D9A9DDCF4D",
     "observedRuns": [
       {
@@ -227,6 +227,38 @@
         "settingsRestored": true,
         "evidenceDir": ".local/windows-quilt-orientation-20261011/latest-integration-64803f6/device-urp-d3d12-automatic-64803f6-filterfix",
         "interpretation": "One specified current-CEE device route, not a complete pipeline/API/mode matrix or physical optical assessment."
+      },
+      {
+        "suite": "Common QuiltEditorProducer geometry and quality synchronization helper",
+        "revision": "8b8431f2668e19926c2f442a55ad44606ce35b6f",
+        "graphicsApi": "D3D11",
+        "pipelineAdapter": "Fake URP adapter",
+        "unityVersion": "6000.6.4f1",
+        "gpu": "NVIDIA GeForce RTX 3090 Ti (ID=0x2203)",
+        "total": 6,
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0,
+        "cliExitCode": 0,
+        "editorNaturalExitObserved": true,
+        "deviceOptIn": false,
+        "testFilter": "ViewWeave.BridgeEditorPreviewValidation.QuiltEditorProducerTests",
+        "cases": {
+          "RetainedGeometryKeepsPrivateRigAndRendererInAgreement": 4,
+          "DeviceSyncPreservesAcquiredQualityInsteadOfRetainedSourceGeometry": 2
+        },
+        "fixtureSourceSha256": "E31509AA346E24A5CD8AD1AD7D9EFC15B9D5902DDF030740F6CE7A4783E4F99E",
+        "settings": {
+          "graphicsAndQualitySettingsChangedDuringRun": 2,
+          "fixtureOwnedRestoreCompleted": true,
+          "finalProjectSettingsClean": true
+        },
+        "nativeModuleCaptured": false,
+        "nativeSdkLifecycleObserved": false,
+        "evidenceDir": ".local/windows-quilt-orientation-20261011/latest-integration-a3fcd1d/editmode-quilt-editor-producer-a3fcd1d",
+        "interpretation": "Shared Editor helper test using a fake URP adapter; not an HDRP pipeline, Windows device output, or Metal runtime test.",
+        "fixtureWorkingTreeChange": "Test-only save/restore of BridgeEditorDisplayDiscovery.AutomaticRequestsEnabled; this exact fixture was used for the run.",
+        "sourceState": "Revision 8b8431f plus the test-only fixture working-tree change identified by fixtureSourceSha256."
       }
     ],
     "excludedAttempts": [
@@ -340,6 +372,57 @@
         "Player",
         "physical optical output"
       ]
+    },
+    "latestSampleColdLoadFollowUp": {
+      "scope": "Separate local Distribution VerifyOnly cold-load checks; no sample rendering or Native SDK initialization claim.",
+      "revision": "8b8431f2668e19926c2f442a55ad44606ce35b6f",
+      "unityVersion": "6000.6.4f1",
+      "graphicsApi": "Direct3D 12 level 12.2",
+      "gpu": "NVIDIA GeForce RTX 3090 Ti (ID=0x2203)",
+      "dllSha256": "CEE089B1779752DAB4FFABDFFC44B879A0E4D09414C9A85F7590C8D9A9DDCF4D",
+      "dllBytes": 302080,
+      "moduleCount": 1,
+      "pending": 0,
+      "naturalExit": true,
+      "exitCode": 0,
+      "applicationEvents1000_1001": 0,
+      "nativeTracePresent": false,
+      "nativeInitialization": "Not observed; no trace file was emitted.",
+      "manifestPreserved": true,
+      "targetLockVerified": true,
+      "targetDependenciesMatchDistribution": true,
+      "unrelatedLockEntriesUnchanged": true,
+      "assetsProjectSettingsChanged": 0,
+      "temporaryHelperRemoved": true,
+      "summary": ".local/windows-quilt-orientation-20261011/latest-integration-a3fcd1d/sample-refresh-latest-CEE/final-summary.json",
+      "summarySha256": "5DA207E837BCB17D8349555D91990FF8642D0893A4DF57DF5CC7AE77386636E8",
+      "urp": {
+        "project": "E:/URPSample_6.6.41f1",
+        "pid": 12096,
+        "operation": "VerifyOnly",
+        "sourceRecordsMatched": "248/248",
+        "localDistribution": "E:/LookingGlassSDK/Distribution/urp",
+        "clientAddIssued": false,
+        "evidenceDir": ".local/windows-quilt-orientation-20261011/latest-integration-a3fcd1d/sample-refresh-latest-CEE/urp-verify-only-a3fcd1d"
+      },
+      "hdrp": {
+        "project": "E:/My project (34)",
+        "pid": 25256,
+        "operation": "VerifyOnly",
+        "sourceRecordsMatched": "255/255",
+        "localDistribution": "E:/LookingGlassSDK/Distribution/hdrp",
+        "clientAddIssued": false,
+        "evidenceDir": ".local/windows-quilt-orientation-20261011/latest-integration-a3fcd1d/sample-refresh-latest-CEE/hdrp-verify-only-a3fcd1d"
+      },
+      "asRunProvenanceSha256": {
+        "package": "1CC712AC08ACEA025DE5388627E3FBB4D5C96EBD09D90DB92277EB5102E9C4C4",
+        "distribution": "248682D681BC880988A3B37D7E827B53EA11100FDA6D10AC7290F1DCD8B2A59A"
+      },
+      "postSampleCurrentProvenanceSha256": {
+        "package": "1CC712AC08ACEA025DE5388627E3FBB4D5C96EBD09D90DB92277EB5102E9C4C4",
+        "urp": "248682D681BC880988A3B37D7E827B53EA11100FDA6D10AC7290F1DCD8B2A59A",
+        "hdrp": "248682D681BC880988A3B37D7E827B53EA11100FDA6D10AC7290F1DCD8B2A59A"
+      }
     }
   },
   "evidence": {
