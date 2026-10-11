@@ -1,0 +1,76 @@
+<?xml version='1.0' encoding='utf-8'?>
+<test-run id="2" testcasecount="1" result="Failed(Child)" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-11 07:11:18Z" end-time="2026-10-11 07:11:19Z" duration="0.785416">
+  <test-suite type="TestSuite" id="1000" name="PipelineSmoke" fullname="PipelineSmoke" runstate="Runnable" testcasecount="137" result="Failed" site="Child" start-time="2026-10-11 07:11:18Z" end-time="2026-10-11 07:11:19Z" duration="0.785416" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <failure>
+      <message>One or more child tests had errors</message>
+    </failure>
+    <test-suite type="Assembly" id="1100" name="ViewWeave.BridgeEditorPreviewValidation.Editor.Tests.dll" fullname="E:/LookingGlassSDK/Tests/Pipelines/Unity/Library/ScriptAssemblies/ViewWeave.BridgeEditorPreviewValidation.Editor.Tests.dll" runstate="Runnable" testcasecount="82" result="Failed" site="Child" start-time="2026-10-11 07:11:18Z" end-time="2026-10-11 07:11:19Z" duration="0.577681" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <failure>
+        <message>One or more child tests had errors</message>
+      </failure>
+      <test-suite type="TestSuite" id="1101" name="ViewWeave" fullname="ViewWeave" runstate="Runnable" testcasecount="82" result="Failed" site="Child" start-time="2026-10-11 07:11:18Z" end-time="2026-10-11 07:11:19Z" duration="0.560230" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <failure>
+          <message>One or more child tests had errors</message>
+        </failure>
+        <test-suite type="TestSuite" id="1103" name="BridgeEditorPreviewValidation" fullname="ViewWeave.BridgeEditorPreviewValidation" runstate="Runnable" testcasecount="34" result="Failed" site="Child" start-time="2026-10-11 07:11:18Z" end-time="2026-10-11 07:11:19Z" duration="0.558443" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <failure>
+            <message>One or more child tests had errors</message>
+          </failure>
+          <test-suite type="TestFixture" id="1080" name="BridgeEditorPreviewGpuTests" fullname="ViewWeave.BridgeEditorPreviewValidation.BridgeEditorPreviewGpuTests" classname="ViewWeave.BridgeEditorPreviewValidation.BridgeEditorPreviewGpuTests" runstate="Runnable" testcasecount="19" result="Failed" site="Child" start-time="2026-10-11 07:11:18Z" end-time="2026-10-11 07:11:19Z" duration="0.556434" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <failure>
+              <message>One or more child tests had errors</message>
+            </failure>
+            <test-case id="1098" name="DevicePreviewStopsBeforePlayAndRuntimeSessionRendersWhenExplicitlyEnabled" fullname="ViewWeave.BridgeEditorPreviewValidation.BridgeEditorPreviewGpuTests.DevicePreviewStopsBeforePlayAndRuntimeSessionRendersWhenExplicitlyEnabled" methodname="DevicePreviewStopsBeforePlayAndRuntimeSessionRendersWhenExplicitlyEnabled" classname="ViewWeave.BridgeEditorPreviewValidation.BridgeEditorPreviewGpuTests" runstate="Runnable" seed="2054173475" result="Failed" label="Error" start-time="2026-10-11 07:10:49Z" end-time="2026-10-11 07:11:19Z" duration="29.540470" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <failure>
+                <message>System.ArgumentOutOfRangeException : Specified argument was out of the range of valid values.
+Parameter name: profile</message>
+                <stack-trace>  at ViewWeave.BridgeQuiltInputPolicy.CreateQualityProfile (ViewWeave.BridgeDisplayProfile profile, ViewWeave.QuiltQualityPreset preset) [0x000bc] in E:\LookingGlassSDK\Packages\com.zabaglione.lookingglass.viewweave.bridge\Runtime\Common\BridgeQuiltInputPolicy.cs:24
+  at ViewWeave.ViewWeaveBridgeSession.CreateQualityProfile (ViewWeave.BridgeDisplayProfile profile, ViewWeave.QuiltQualityPreset preset) [0x00000] in E:\LookingGlassSDK\Packages\com.zabaglione.lookingglass.viewweave.bridge\Runtime\Platforms\Windows\ViewWeaveBridgeSession.cs:668
+  at ViewWeave.BridgeEditorPreviewValidation.BridgeEditorPreviewGpuTests+&lt;RunDevicePreviewStopsBeforePlayAndRuntimeSessionRendersWhenExplicitlyEnabled&gt;d__63.MoveNext () [0x011ef] in E:\LookingGlassSDK\Tests\Pipelines\Unity\Assets\BridgeSessionValidation\Editor\BridgeEditorPreviewGpuTests.cs:2134
+  at UnityEngine.TestTools.TestEnumerator+&lt;Execute&gt;d__8.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@80f691d4262b\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:52 </stack-trace>
+              </failure>
+              <output>EDITOR_PREVIEW_DEVICE requestedPipeline=URP, activePipelineType=UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset
+Warning in Graph at Packages/com.unity.shadergraph/GraphTemplates/Cross Pipeline/2_Particle Lit.shadergraph on line 5: Treating '#include_with_pragmas' directive as '#include'
+Shader Graph at Packages/com.unity.render-pipelines.high-definition/Runtime/Tools/ColorChecker/ColorCheckerShader.shadergraph has 2 warning(s), the first is: Validation: Exposure Node is not allowed by Universal implementation
+Warning in Graph at Packages/com.unity.shadergraph/GraphTemplates/Cross Pipeline/0_Particle Unlit.shadergraph on line 5: Treating '#include_with_pragmas' directive as '#include'
+EDITOR_PREVIEW_DEVICE requestedSubpixelMode=Automatic
+EDITOR_PREVIEW_DEVICE_METADATA generation=1, displays=1, calibration=true
+EDITOR_PREVIEW_DEVICE requestedQuality=Native
+EDITOR_PREVIEW_DEVICE playOptions=None
+EDITOR_PREVIEW_DEVICE start accepted
+EDITOR_PREVIEW_DEVICE ready phase=before-play, profile=display=2 size=3840x2160 quilt=7680x4320 grid=8x6 aspect=1.77778 viewcone=50, submissions=1, completed=1
+EDITOR_SUBPIXEL_STATUS phase=editor-preview, valid=true, requested=Automatic, effective=Automatic, backend=NativeD3D11, patternMode=2, cellCount=2, nativeWidth=3840, nativeHeight=2160, renderCompleted=1, presentAccepted=1
+EDITOR_PREVIEW_DEVICE_QUALITY phase=editor-preview, preset=Native, rawQuilt=7680x4320, renderedQuilt=7680x4320, grid=8x6, views=48, aspect=1.77778, viewCone=50
+EDITOR_SUBPIXEL_MUTATION phase=editor-preview, active=Automatic, attempted=ClassicRgb, rejected=true, retained=Automatic, reason=The Editor preview owns this Rig; stop preview before changing its structure or transport.
+EDITOR_SUBPIXEL_PROGRESS phase=editor-preview, completedBefore=1, completedAfter=2, presentBefore=1, presentAfter=2
+EDITOR_PREVIEW_DEVICE pause_requested phase=before-play, generation=1, submissions=2
+EDITOR_PREVIEW_DEVICE paused phase=before-play, active=true, generation=1, submissions=2, retainedRecords=1, stoppingRecords=false, nativePending=0, elapsedSeconds=0.0
+EDITOR_PREVIEW_DEVICE_PLAY pausedBeforeTransition=true, generation=1, nativePending=0, retentionPending=1
+EDITOR_PREVIEW_DEVICE_PLAY activePipelineType=UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset, assetPath=Assets/__ViewWeaveDevicePlayTransition_f55a387430394ce8b0f31ff1648eec7c/Pipeline.asset
+EDITOR_PREVIEW_DEVICE_PLAY editorProducerStopped=true retentionPending=0 nativePending=0
+EDITOR_PREVIEW_DEVICE_PLAY fixtureCleanupDeferredUntilEditorExit=true
+Saving results to: &lt;USER_PROFILE&gt;/AppData/LocalLow/zabaglione/PipelineSmoke\TestResults.xml
+</output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

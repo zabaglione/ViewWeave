@@ -40,4 +40,4 @@ Gamma GPU初回2 runはsRGB入力が実際には作成できないことをasser
 
 製品ソース、native artifact／provenance、追加fixture、共有用の本report／構造化記録／HTMLは管理対象です。raw XML／JSON、画像、Player、ログ、SRPへ展開した一時fixtureは無視対象の`.local/macos-unified-20261011/`等に保存し、commitしません。共有記録ではrawファイルの位置・SHA-256と結果の範囲を示し、Bridge token／serial／raw responseを含めません。
 
-Windowsでの今回のNative品質helper再実行、Legacy Direct実機、16 Spatial Landscape、特殊セル実機・光学、セルありinvView=0、未知pattern／4超cells、回転、hotplug、複数機器、Intel実行、長時間、window-close／強制終了、任意scene／全効果、性能は未検証です。以前のWindows native／device結果はその時点のコードと条件に限り、今回のMac結果をWindowsへ一般化しません。
+Windowsでの今回のNative品質helper再実行、Legacy Direct実機、16 Spatial Landscape、特殊セル実機・光学、セルありinvView=0、未知pattern／4超cells、回転、hotplug、複数機器、Intel実行、長時間、window-close／強制終了、任意scene／全効果、性能は未検証です。以前のWindows native／device結果はその時点のコードと条件に限り、今回のMac結果をWindowsへ一般化しません。 この記録後のWindows共通品質helper評価は[Windows検証記録](windows-mac-quality-profile-validation-20261011.md)に分けて記載しています。

@@ -1,0 +1,711 @@
+{
+  "schemaVersion": 1,
+  "createdUtc": "2026-10-11T07:25:27.0018161Z",
+  "validation": "Windows shared connected-display quality profile re-evaluation",
+  "checkout": {
+    "head": "fd5f29e1eac499ca0b14bed4f1b925ef693277f3",
+    "baseMacValidation": "be3cbb7f6967c3090d5e446b01a8e9a3ff3b4920",
+    "testOnlyDeviceFixtureSha256": "A173BFEBA723789E00C6D24AC6AA3EBE1356B57EC0A9C9C01043F640B0B58ED6",
+    "preCorrectionDeviceFixtureSha256": "0A3CA279FFB6089FBB8D62326F5FCF807E8D4F5D7DD70748434112910C24009F",
+    "commonSuitePreflightSourceTestSha256": "7297076E9E5EDB07F5F71C1F325D0B4112E7220A46E3906F4466C7C481AB3FC2",
+    "runnerSha256": "3AAA6B767459599510C3551EC28007DBC802DD0B8088CF50C3A69559E5252296"
+  },
+  "environment": {
+    "unityVersion": "6000.6.4f1",
+    "gpu": "NVIDIA GeForce RTX 3090 Ti",
+    "officialBridgeRuntime": "2.6.3",
+    "packageShimPath": "Packages/com.zabaglione.lookingglass.viewweave.bridge/Plugins/x86_64/lookingglass_bridge_shim.dll",
+    "packageShimBytes": 302080,
+    "packageShimSha256": "C864A363AC441C77497D4302FF25CB48FA2D6EA194B6FB8A73BAE49DC522FEE2",
+    "urpHdrpDistributionCopiesMatch": true
+  },
+  "results": {
+    "commonSyntheticQualityPlayMode": {
+      "run": "common-quality-input-playmode-d3d11",
+      "tests": 9,
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "api": "Direct3D 11",
+      "pipeline": "Mixed",
+      "scope": "Synthetic profile conversion and complete-grid policy; no connected display or URP/HDRP rendering",
+      "testSelection": [
+        "GenericConnectedDisplayProfilesPreserveDeviceMetadata:3",
+        "InvalidProfilePresetIsRejectedBeforeProfileUse:1",
+        "QualityPresetKeepsPreviewBalancedAndNativeDimensionsDistinct:1",
+        "SharedQuiltInputPolicy acceptance/rejection:4"
+      ],
+      "editorReportedExitCodeZero": true,
+      "portableXml": {
+        "path": "docs/validation/windows-mac-quality-profile-common-quality-input-playmode-d3d11.xml",
+        "sha256": "53557FA62F0F0FACC6F5510648216B10235A0D699D42831ED31548D4823AB054"
+      }
+    },
+    "nativeQualityConnectedDeviceEditor": {
+      "passingConditions": 4,
+      "totalConditions": 4,
+      "testsPerCondition": "1/1",
+      "skipped": 0,
+      "quality": "Native",
+      "subpixel": "Automatic",
+      "conditions": [
+        "URP/D3D11",
+        "HDRP/D3D11",
+        "URP/D3D12",
+        "HDRP/D3D12"
+      ],
+      "nativeGates": [
+        "shim load",
+        "initialize",
+        "one display",
+        "pending zero after Stop",
+        "uninitialize",
+        "native status counters advance in Preview and runtime"
+      ],
+      "otherGates": [
+        "requested and actual graphics API match",
+        "exact Editor process identity crosschecked",
+        "loaded module package path and SHA match",
+        "Editor and CLI natural exit code 0",
+        "Windows application crash events 1000/1001 absent",
+        "crash reports absent",
+        "generated project settings restored"
+      ],
+      "connectedOutput": {
+        "rawQuilt": "7680x4320",
+        "grid": "8x6",
+        "views": 48,
+        "expectedRenderedProfileDerived": true
+      },
+      "conditionResults": [
+        {
+          "run": "device-quality-native-urp-d3d11-profile-snapshot-fix",
+          "pipeline": "URP",
+          "requestedApi": "-force-d3d11",
+          "actualApi": "Direct3D 11",
+          "qualityPreset": "Native",
+          "subpixelMode": "Automatic",
+          "tests": {
+            "total": 1,
+            "passed": 1,
+            "failed": 0,
+            "skipped": 0
+          },
+          "cliExitCode": 0,
+          "editorNaturalExit": true,
+          "editorReportedExitCodeZero": true,
+          "pidCrosscheck": true,
+          "loadedPackagePathMatches": true,
+          "loadedPackageHashMatches": true,
+          "packageShimSha256": "C864A363AC441C77497D4302FF25CB48FA2D6EA194B6FB8A73BAE49DC522FEE2",
+          "nativeGates": {
+            "tracePresent": true,
+            "loadOk": true,
+            "initializeOk": true,
+            "displayOne": true,
+            "pendingZero": true,
+            "uninitializeOk": true
+          },
+          "applicationEvent1000_1001Count": 0,
+          "crashReportFileCount": 0,
+          "settingsRemaining": 0,
+          "portableXml": {
+            "path": "docs/validation/windows-mac-quality-profile-device-quality-native-urp-d3d11-profile-snapshot-fix.xml",
+            "sha256": "3E0E3C929056D55713D1ECEF5027A09E27828E56979005A8828D06DC9E5E6E26"
+          },
+          "localEvidence": {
+            "summarySha256": "D7109E9546165252FED20987996CBC7FEE987CD2C3002707D1149E006CD86310",
+            "sourceManifestSha256": "98E2FF87DEB1A3FA0A3B36B27B0713DDB17E468A7113496B17B1049CABE5777E",
+            "loadedModulesSha256": "79E24A672372BE2AE7697239B3FA4F2D2AFDD34CC1477BE34B3CE980809FCB17",
+            "editorLogSha256": "945381F913BBA5D28EC2E2AB155914B521C2174BE6F7E2A5B1A5BD902C737CCF",
+            "nativeTraceSha256": "20A886A9A40906F8BCC5740AE1231A7F898B0DD82651C528B8A75B8A66F6CB32"
+          }
+        },
+        {
+          "run": "device-quality-native-hdrp-d3d11",
+          "pipeline": "HDRP",
+          "requestedApi": "-force-d3d11",
+          "actualApi": "Direct3D 11",
+          "qualityPreset": "Native",
+          "subpixelMode": "Automatic",
+          "tests": {
+            "total": 1,
+            "passed": 1,
+            "failed": 0,
+            "skipped": 0
+          },
+          "cliExitCode": 0,
+          "editorNaturalExit": true,
+          "editorReportedExitCodeZero": true,
+          "pidCrosscheck": true,
+          "loadedPackagePathMatches": true,
+          "loadedPackageHashMatches": true,
+          "packageShimSha256": "C864A363AC441C77497D4302FF25CB48FA2D6EA194B6FB8A73BAE49DC522FEE2",
+          "nativeGates": {
+            "tracePresent": true,
+            "loadOk": true,
+            "initializeOk": true,
+            "displayOne": true,
+            "pendingZero": true,
+            "uninitializeOk": true
+          },
+          "applicationEvent1000_1001Count": 0,
+          "crashReportFileCount": 0,
+          "settingsRemaining": 0,
+          "portableXml": {
+            "path": "docs/validation/windows-mac-quality-profile-device-quality-native-hdrp-d3d11.xml",
+            "sha256": "47C6ED121872792AFC0E950CC69E9FC77D13243FA4A6572AF074E28578E531F7"
+          },
+          "localEvidence": {
+            "summarySha256": "6292FEA806384B9DC14C0E2FC8651EEE6B78E3AD04787A13D17C4E0760F7DA49",
+            "sourceManifestSha256": "FF7C27E4F120B374BAE7EC0CB382E41242F982D188203480C408928F2C65DB24",
+            "loadedModulesSha256": "92EF00FF091D256101A8C6EEE0592331D4D02BD24BA738711B1289FE4B92F950",
+            "editorLogSha256": "EF20C226FF7B64E8CADEDAD1524F09E1395BA02A07F11B0F5856AF4331532477",
+            "nativeTraceSha256": "9E746A6529566EAACCCF3CB4ACA57968A8C3835F2E34A7B63620DAFDFB336257"
+          }
+        },
+        {
+          "run": "device-quality-native-urp-d3d12",
+          "pipeline": "URP",
+          "requestedApi": "-force-d3d12",
+          "actualApi": "Direct3D 12",
+          "qualityPreset": "Native",
+          "subpixelMode": "Automatic",
+          "tests": {
+            "total": 1,
+            "passed": 1,
+            "failed": 0,
+            "skipped": 0
+          },
+          "cliExitCode": 0,
+          "editorNaturalExit": true,
+          "editorReportedExitCodeZero": true,
+          "pidCrosscheck": true,
+          "loadedPackagePathMatches": true,
+          "loadedPackageHashMatches": true,
+          "packageShimSha256": "C864A363AC441C77497D4302FF25CB48FA2D6EA194B6FB8A73BAE49DC522FEE2",
+          "nativeGates": {
+            "tracePresent": true,
+            "loadOk": true,
+            "initializeOk": true,
+            "displayOne": true,
+            "pendingZero": true,
+            "uninitializeOk": true
+          },
+          "applicationEvent1000_1001Count": 0,
+          "crashReportFileCount": 0,
+          "settingsRemaining": 0,
+          "portableXml": {
+            "path": "docs/validation/windows-mac-quality-profile-device-quality-native-urp-d3d12.xml",
+            "sha256": "1772422D9C9994DC3880F570B9EFEE6F0DFB48E820C390E7F628EEBD75570F7C"
+          },
+          "localEvidence": {
+            "summarySha256": "DC4CD8CC9BC5B2D0DD07E818D290C4A51BD06F51B92BD43B41432D11E4362DA3",
+            "sourceManifestSha256": "264E2FE60BFF9DDF094B4C8A333A28BE1152246B5313E4E5FFEA818C37C157B5",
+            "loadedModulesSha256": "C8547F5CFD2C2584A240251E1FD239BC35131543D972AB61115CCDCBD41B9538",
+            "editorLogSha256": "35C2213CCB891660037F46EBE941EA71EBE94D0F0D7684D5DD9BE5675066057A",
+            "nativeTraceSha256": "4A13BAC9190C3FEDB51219648621D61D45A12393C91C6179988DE84FAD61ADFF"
+          }
+        },
+        {
+          "run": "device-quality-native-hdrp-d3d12",
+          "pipeline": "HDRP",
+          "requestedApi": "-force-d3d12",
+          "actualApi": "Direct3D 12",
+          "qualityPreset": "Native",
+          "subpixelMode": "Automatic",
+          "tests": {
+            "total": 1,
+            "passed": 1,
+            "failed": 0,
+            "skipped": 0
+          },
+          "cliExitCode": 0,
+          "editorNaturalExit": true,
+          "editorReportedExitCodeZero": true,
+          "pidCrosscheck": true,
+          "loadedPackagePathMatches": true,
+          "loadedPackageHashMatches": true,
+          "packageShimSha256": "C864A363AC441C77497D4302FF25CB48FA2D6EA194B6FB8A73BAE49DC522FEE2",
+          "nativeGates": {
+            "tracePresent": true,
+            "loadOk": true,
+            "initializeOk": true,
+            "displayOne": true,
+            "pendingZero": true,
+            "uninitializeOk": true
+          },
+          "applicationEvent1000_1001Count": 0,
+          "crashReportFileCount": 0,
+          "settingsRemaining": 0,
+          "portableXml": {
+            "path": "docs/validation/windows-mac-quality-profile-device-quality-native-hdrp-d3d12.xml",
+            "sha256": "0AD50482B698DBB5ADF266855C9F87235A9EA8934E872103AF78496AD4776ADF"
+          },
+          "localEvidence": {
+            "summarySha256": "CA6F528176991C79364AA887C5A6E4B87AE7B56B2A1C5F697869BC7D07FE4208",
+            "sourceManifestSha256": "E11BCB2EADE43E7230AB15D73ACDF2908CF31C2646D43F3464EBF1E48478EE17",
+            "loadedModulesSha256": "F9C5B8C6636B93C2F7005CD840700F62D0BE4357EB3110738D2D758CDD53CBD5",
+            "editorLogSha256": "F0C4407C426F9F0E07F285B23AACD0092A15B963F6DCE473096B5E29B988CE8B",
+            "nativeTraceSha256": "603D5D19357F2C8AF1C91F12B9B14B9C893F3FE120CE93662B266802FD890C61"
+          }
+        }
+      ]
+    },
+    "freshNativeTransport": {
+      "sourceBase": "be3cbb7f6967c3090d5e446b01a8e9a3ff3b4920",
+      "sourceHead": "fd5f29e1eac499ca0b14bed4f1b925ef693277f3",
+      "registered": 15,
+      "passed": 15,
+      "failed": 0,
+      "skipped": 0,
+      "exitCode": 0,
+      "elapsedSeconds": 18.76,
+      "rawLogPath": "docs/validation/windows-mac-quality-profile-native-transport-ctest.txt",
+      "rawLogSha256": "96893FC787CBB1608008C13122952AABD3D1434F8FB9A9A553933DB687E2D41F",
+      "configuration": {
+        "freshBuildDirectory": true,
+        "generator": "Visual Studio 17 2022",
+        "architecture": "x64",
+        "configuration": "Release",
+        "explicitFxcCacheArgument": false,
+        "fxcProcessEnvironmentVariablesBeforeConfigure": {
+          "LKG_FXC_EXECUTABLE": null,
+          "WindowsSDKVersion": null,
+          "WindowsSdkDir": null
+        },
+        "fxcPathDiscoveredFromInstalledSdk": "C:/Program Files (x86)/Windows Kits/10/bin/10.0.26100.0/x64/fxc.exe",
+        "configureTimePathRecorded": false,
+        "configureTimePathBoundary": "Not recorded at configure time; later current-process PATH observation is not treated as configure evidence."
+      },
+      "localRawLogPath": ".local/windows-macos-pull-native-20261011/validation/transport-ctest.log",
+      "nativeSummaryPath": ".local/windows-macos-pull-native-20261011/summary.json",
+      "nativeSummarySha256": "C400BD48D00CBDA530D0E749996DA395FC1453309E9AFC9003FCC2BE270FFC10"
+    }
+  },
+  "initialFixtureFailure": {
+    "run": "device-quality-native-urp-d3d11",
+    "tests": {
+      "total": 1,
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0
+    },
+    "cliExitCode": 8,
+    "classification": "Test fixture readonly profile local reset across Play Mode domain reload",
+    "excludedFromPassCount": true,
+    "correctedInFixture": true,
+    "fixtureSourceSha256": "0A3CA279FFB6089FBB8D62326F5FCF807E8D4F5D7DD70748434112910C24009F",
+    "portableXml": {
+      "path": "docs/validation/windows-mac-quality-profile-device-quality-native-urp-d3d11.xml",
+      "sha256": "E639BA175ECF9E60FF4278D04A5FC0000A993C0F72509BABA6BA749AC03B4CC9"
+    }
+  },
+  "evidenceFiles": [
+    {
+      "run": "common-quality-input-playmode-d3d11",
+      "file": "summary.json",
+      "path": ".local/windows-mac-quality-validation-20261011/common-quality-input-playmode-d3d11/summary.json",
+      "sha256": "BC921831270EA56410991D42A13B16FD4964BA533373612EEFCEAF5A5EA65906",
+      "portable": false
+    },
+    {
+      "run": "common-quality-input-playmode-d3d11",
+      "file": "launch.json",
+      "path": ".local/windows-mac-quality-validation-20261011/common-quality-input-playmode-d3d11/launch.json",
+      "sha256": "C8C3C252B72E8BDC75B1C72E6F65F2D418A3A163A1C78D364F8CA723173024A2",
+      "portable": false
+    },
+    {
+      "run": "common-quality-input-playmode-d3d11",
+      "file": "source-manifest.json",
+      "path": ".local/windows-mac-quality-validation-20261011/common-quality-input-playmode-d3d11/source-manifest.json",
+      "sha256": "72CBF13D482B03C1AB99646C9A491C60C7787BF022A1F153A70E0F4F09D2F923",
+      "portable": false
+    },
+    {
+      "run": "common-quality-input-playmode-d3d11",
+      "file": "test-results.xml",
+      "path": "docs/validation/windows-mac-quality-profile-common-quality-input-playmode-d3d11.xml",
+      "sha256": "53557FA62F0F0FACC6F5510648216B10235A0D699D42831ED31548D4823AB054",
+      "portable": true
+    },
+    {
+      "run": "common-quality-input-playmode-d3d11",
+      "file": "unity-editor.log",
+      "path": ".local/windows-mac-quality-validation-20261011/common-quality-input-playmode-d3d11/unity-editor.log",
+      "sha256": "0BAD92302285D9D11BA2C6D4E5814838DD078B2CA71789113405E8F69BC67BD4",
+      "portable": false
+    },
+    {
+      "run": "device-quality-native-urp-d3d11",
+      "file": "summary.json",
+      "path": ".local/windows-mac-quality-validation-20261011/device-quality-native-urp-d3d11/summary.json",
+      "sha256": "8F83E6B10DF32C5A4C717D2F68FF15B48767A04C4B7380DF2997E558A7EA1FE9",
+      "portable": false
+    },
+    {
+      "run": "device-quality-native-urp-d3d11",
+      "file": "launch.json",
+      "path": ".local/windows-mac-quality-validation-20261011/device-quality-native-urp-d3d11/launch.json",
+      "sha256": "19F6ECD720030EB6540CDFE81DC1CDD294C1EC2EDC910147B2DAD1B8C16BBC6F",
+      "portable": false
+    },
+    {
+      "run": "device-quality-native-urp-d3d11",
+      "file": "source-manifest.json",
+      "path": ".local/windows-mac-quality-validation-20261011/device-quality-native-urp-d3d11/source-manifest.json",
+      "sha256": "7218E4019C2A941E37F66B42058DB85D949E787CA6314AB9B65FD7C9646FDCAC",
+      "portable": false
+    },
+    {
+      "run": "device-quality-native-urp-d3d11",
+      "file": "test-results.xml",
+      "path": "docs/validation/windows-mac-quality-profile-device-quality-native-urp-d3d11.xml",
+      "sha256": "E639BA175ECF9E60FF4278D04A5FC0000A993C0F72509BABA6BA749AC03B4CC9",
+      "portable": true
+    },
+    {
+      "run": "device-quality-native-urp-d3d11",
+      "file": "unity-editor.log",
+      "path": ".local/windows-mac-quality-validation-20261011/device-quality-native-urp-d3d11/unity-editor.log",
+      "sha256": "373440F0456F98847137E1730B146808C684BBD2162B685395A3327B77BB07E2",
+      "portable": false
+    },
+    {
+      "run": "device-quality-native-urp-d3d11",
+      "file": "native-trace.log",
+      "path": ".local/windows-mac-quality-validation-20261011/device-quality-native-urp-d3d11/native-trace.log",
+      "sha256": "2C389089F98BD1762CEF40C9410346ACC9220247E07294FF3401219225542C65",
+      "portable": false
+    },
+    {
+      "run": "device-quality-native-urp-d3d11",
+      "file": "loaded-modules.json",
+      "path": ".local/windows-mac-quality-validation-20261011/device-quality-native-urp-d3d11/loaded-modules.json",
+      "sha256": "D8BC7A408BE740337749225B0F11EF566DCC4969BF74D0934F60AD75F2A1F969",
+      "portable": false
+    },
+    {
+      "run": "device-quality-native-urp-d3d11-profile-snapshot-fix",
+      "file": "summary.json",
+      "path": ".local/windows-mac-quality-validation-20261011/device-quality-native-urp-d3d11-profile-snapshot-fix/summary.json",
+      "sha256": "D7109E9546165252FED20987996CBC7FEE987CD2C3002707D1149E006CD86310",
+      "portable": false
+    },
+    {
+      "run": "device-quality-native-urp-d3d11-profile-snapshot-fix",
+      "file": "launch.json",
+      "path": ".local/windows-mac-quality-validation-20261011/device-quality-native-urp-d3d11-profile-snapshot-fix/launch.json",
+      "sha256": "BE6C93F3A6A74C2BE7B431FE82A12956510A9325748F232D13FDD22ABCAD684D",
+      "portable": false
+    },
+    {
+      "run": "device-quality-native-urp-d3d11-profile-snapshot-fix",
+      "file": "source-manifest.json",
+      "path": ".local/windows-mac-quality-validation-20261011/device-quality-native-urp-d3d11-profile-snapshot-fix/source-manifest.json",
+      "sha256": "98E2FF87DEB1A3FA0A3B36B27B0713DDB17E468A7113496B17B1049CABE5777E",
+      "portable": false
+    },
+    {
+      "run": "device-quality-native-urp-d3d11-profile-snapshot-fix",
+      "file": "test-results.xml",
+      "path": "docs/validation/windows-mac-quality-profile-device-quality-native-urp-d3d11-profile-snapshot-fix.xml",
+      "sha256": "3E0E3C929056D55713D1ECEF5027A09E27828E56979005A8828D06DC9E5E6E26",
+      "portable": true
+    },
+    {
+      "run": "device-quality-native-urp-d3d11-profile-snapshot-fix",
+      "file": "unity-editor.log",
+      "path": ".local/windows-mac-quality-validation-20261011/device-quality-native-urp-d3d11-profile-snapshot-fix/unity-editor.log",
+      "sha256": "945381F913BBA5D28EC2E2AB155914B521C2174BE6F7E2A5B1A5BD902C737CCF",
+      "portable": false
+    },
+    {
+      "run": "device-quality-native-urp-d3d11-profile-snapshot-fix",
+      "file": "native-trace.log",
+      "path": ".local/windows-mac-quality-validation-20261011/device-quality-native-urp-d3d11-profile-snapshot-fix/native-trace.log",
+      "sha256": "20A886A9A40906F8BCC5740AE1231A7F898B0DD82651C528B8A75B8A66F6CB32",
+      "portable": false
+    },
+    {
+      "run": "device-quality-native-urp-d3d11-profile-snapshot-fix",
+      "file": "loaded-modules.json",
+      "path": ".local/windows-mac-quality-validation-20261011/device-quality-native-urp-d3d11-profile-snapshot-fix/loaded-modules.json",
+      "sha256": "79E24A672372BE2AE7697239B3FA4F2D2AFDD34CC1477BE34B3CE980809FCB17",
+      "portable": false
+    },
+    {
+      "run": "device-quality-native-hdrp-d3d11",
+      "file": "summary.json",
+      "path": ".local/windows-mac-quality-validation-20261011/device-quality-native-hdrp-d3d11/summary.json",
+      "sha256": "6292FEA806384B9DC14C0E2FC8651EEE6B78E3AD04787A13D17C4E0760F7DA49",
+      "portable": false
+    },
+    {
+      "run": "device-quality-native-hdrp-d3d11",
+      "file": "launch.json",
+      "path": ".local/windows-mac-quality-validation-20261011/device-quality-native-hdrp-d3d11/launch.json",
+      "sha256": "D1BF6D56E920920C951AFC587311922E85F2CD218485DFB1DE8B74E5FEACC2D7",
+      "portable": false
+    },
+    {
+      "run": "device-quality-native-hdrp-d3d11",
+      "file": "source-manifest.json",
+      "path": ".local/windows-mac-quality-validation-20261011/device-quality-native-hdrp-d3d11/source-manifest.json",
+      "sha256": "FF7C27E4F120B374BAE7EC0CB382E41242F982D188203480C408928F2C65DB24",
+      "portable": false
+    },
+    {
+      "run": "device-quality-native-hdrp-d3d11",
+      "file": "test-results.xml",
+      "path": "docs/validation/windows-mac-quality-profile-device-quality-native-hdrp-d3d11.xml",
+      "sha256": "47C6ED121872792AFC0E950CC69E9FC77D13243FA4A6572AF074E28578E531F7",
+      "portable": true
+    },
+    {
+      "run": "device-quality-native-hdrp-d3d11",
+      "file": "unity-editor.log",
+      "path": ".local/windows-mac-quality-validation-20261011/device-quality-native-hdrp-d3d11/unity-editor.log",
+      "sha256": "EF20C226FF7B64E8CADEDAD1524F09E1395BA02A07F11B0F5856AF4331532477",
+      "portable": false
+    },
+    {
+      "run": "device-quality-native-hdrp-d3d11",
+      "file": "native-trace.log",
+      "path": ".local/windows-mac-quality-validation-20261011/device-quality-native-hdrp-d3d11/native-trace.log",
+      "sha256": "9E746A6529566EAACCCF3CB4ACA57968A8C3835F2E34A7B63620DAFDFB336257",
+      "portable": false
+    },
+    {
+      "run": "device-quality-native-hdrp-d3d11",
+      "file": "loaded-modules.json",
+      "path": ".local/windows-mac-quality-validation-20261011/device-quality-native-hdrp-d3d11/loaded-modules.json",
+      "sha256": "92EF00FF091D256101A8C6EEE0592331D4D02BD24BA738711B1289FE4B92F950",
+      "portable": false
+    },
+    {
+      "run": "device-quality-native-urp-d3d12",
+      "file": "summary.json",
+      "path": ".local/windows-mac-quality-validation-20261011/device-quality-native-urp-d3d12/summary.json",
+      "sha256": "DC4CD8CC9BC5B2D0DD07E818D290C4A51BD06F51B92BD43B41432D11E4362DA3",
+      "portable": false
+    },
+    {
+      "run": "device-quality-native-urp-d3d12",
+      "file": "launch.json",
+      "path": ".local/windows-mac-quality-validation-20261011/device-quality-native-urp-d3d12/launch.json",
+      "sha256": "3C6A11B219739BB4F8BCAFC94F375F59EAF0AA2BF6412BAFBBF68CAB8A6BCD0F",
+      "portable": false
+    },
+    {
+      "run": "device-quality-native-urp-d3d12",
+      "file": "source-manifest.json",
+      "path": ".local/windows-mac-quality-validation-20261011/device-quality-native-urp-d3d12/source-manifest.json",
+      "sha256": "264E2FE60BFF9DDF094B4C8A333A28BE1152246B5313E4E5FFEA818C37C157B5",
+      "portable": false
+    },
+    {
+      "run": "device-quality-native-urp-d3d12",
+      "file": "test-results.xml",
+      "path": "docs/validation/windows-mac-quality-profile-device-quality-native-urp-d3d12.xml",
+      "sha256": "1772422D9C9994DC3880F570B9EFEE6F0DFB48E820C390E7F628EEBD75570F7C",
+      "portable": true
+    },
+    {
+      "run": "device-quality-native-urp-d3d12",
+      "file": "unity-editor.log",
+      "path": ".local/windows-mac-quality-validation-20261011/device-quality-native-urp-d3d12/unity-editor.log",
+      "sha256": "35C2213CCB891660037F46EBE941EA71EBE94D0F0D7684D5DD9BE5675066057A",
+      "portable": false
+    },
+    {
+      "run": "device-quality-native-urp-d3d12",
+      "file": "native-trace.log",
+      "path": ".local/windows-mac-quality-validation-20261011/device-quality-native-urp-d3d12/native-trace.log",
+      "sha256": "4A13BAC9190C3FEDB51219648621D61D45A12393C91C6179988DE84FAD61ADFF",
+      "portable": false
+    },
+    {
+      "run": "device-quality-native-urp-d3d12",
+      "file": "loaded-modules.json",
+      "path": ".local/windows-mac-quality-validation-20261011/device-quality-native-urp-d3d12/loaded-modules.json",
+      "sha256": "C8547F5CFD2C2584A240251E1FD239BC35131543D972AB61115CCDCBD41B9538",
+      "portable": false
+    },
+    {
+      "run": "device-quality-native-hdrp-d3d12",
+      "file": "summary.json",
+      "path": ".local/windows-mac-quality-validation-20261011/device-quality-native-hdrp-d3d12/summary.json",
+      "sha256": "CA6F528176991C79364AA887C5A6E4B87AE7B56B2A1C5F697869BC7D07FE4208",
+      "portable": false
+    },
+    {
+      "run": "device-quality-native-hdrp-d3d12",
+      "file": "launch.json",
+      "path": ".local/windows-mac-quality-validation-20261011/device-quality-native-hdrp-d3d12/launch.json",
+      "sha256": "173DDB04B8784F69390B8BC376965E9EA194E1ECA44EADA6658350DC4A02351C",
+      "portable": false
+    },
+    {
+      "run": "device-quality-native-hdrp-d3d12",
+      "file": "source-manifest.json",
+      "path": ".local/windows-mac-quality-validation-20261011/device-quality-native-hdrp-d3d12/source-manifest.json",
+      "sha256": "E11BCB2EADE43E7230AB15D73ACDF2908CF31C2646D43F3464EBF1E48478EE17",
+      "portable": false
+    },
+    {
+      "run": "device-quality-native-hdrp-d3d12",
+      "file": "test-results.xml",
+      "path": "docs/validation/windows-mac-quality-profile-device-quality-native-hdrp-d3d12.xml",
+      "sha256": "0AD50482B698DBB5ADF266855C9F87235A9EA8934E872103AF78496AD4776ADF",
+      "portable": true
+    },
+    {
+      "run": "device-quality-native-hdrp-d3d12",
+      "file": "unity-editor.log",
+      "path": ".local/windows-mac-quality-validation-20261011/device-quality-native-hdrp-d3d12/unity-editor.log",
+      "sha256": "F0C4407C426F9F0E07F285B23AACD0092A15B963F6DCE473096B5E29B988CE8B",
+      "portable": false
+    },
+    {
+      "run": "device-quality-native-hdrp-d3d12",
+      "file": "native-trace.log",
+      "path": ".local/windows-mac-quality-validation-20261011/device-quality-native-hdrp-d3d12/native-trace.log",
+      "sha256": "603D5D19357F2C8AF1C91F12B9B14B9C893F3FE120CE93662B266802FD890C61",
+      "portable": false
+    },
+    {
+      "run": "device-quality-native-hdrp-d3d12",
+      "file": "loaded-modules.json",
+      "path": ".local/windows-mac-quality-validation-20261011/device-quality-native-hdrp-d3d12/loaded-modules.json",
+      "sha256": "F9C5B8C6636B93C2F7005CD840700F62D0BE4357EB3110738D2D758CDD53CBD5",
+      "portable": false
+    },
+    {
+      "run": "native-fresh-transport-ctest",
+      "file": "transport-ctest.txt",
+      "path": "docs/validation/windows-mac-quality-profile-native-transport-ctest.txt",
+      "sha256": "96893FC787CBB1608008C13122952AABD3D1434F8FB9A9A553933DB687E2D41F",
+      "portable": true
+    },
+    {
+      "run": "native-fresh-transport-ctest",
+      "file": "summary.json",
+      "path": ".local/windows-macos-pull-native-20261011/summary.json",
+      "sha256": "C400BD48D00CBDA530D0E749996DA395FC1453309E9AFC9003FCC2BE270FFC10",
+      "portable": false
+    },
+    {
+      "run": "common-quality-input-playmode-d3d11",
+      "file": "raw-test-results.xml",
+      "path": ".local/windows-mac-quality-validation-20261011/common-quality-input-playmode-d3d11/test-results.xml",
+      "sha256": "96C6794A9336839F47DFCC104162EA11E78622EE3FA6D72D4274916B10458BAF",
+      "portable": false
+    },
+    {
+      "run": "device-quality-native-urp-d3d11",
+      "file": "raw-test-results.xml",
+      "path": ".local/windows-mac-quality-validation-20261011/device-quality-native-urp-d3d11/test-results.xml",
+      "sha256": "2EA0BE9DBE75A9BCA721F5D438DEFEA1BACD691FD01F81D21359E4090D540337",
+      "portable": false
+    },
+    {
+      "run": "device-quality-native-urp-d3d11-profile-snapshot-fix",
+      "file": "raw-test-results.xml",
+      "path": ".local/windows-mac-quality-validation-20261011/device-quality-native-urp-d3d11-profile-snapshot-fix/test-results.xml",
+      "sha256": "B731CD0D6D9FC163A8D39A4BC4E9B39B491EF8D2D8623D1C2D7B22E0F28FE32B",
+      "portable": false
+    },
+    {
+      "run": "device-quality-native-hdrp-d3d11",
+      "file": "raw-test-results.xml",
+      "path": ".local/windows-mac-quality-validation-20261011/device-quality-native-hdrp-d3d11/test-results.xml",
+      "sha256": "96F938058FB820BB7D2F60ED7B837CDA35A0F68CCE8133FCE7B1B7715DB20BC1",
+      "portable": false
+    },
+    {
+      "run": "device-quality-native-urp-d3d12",
+      "file": "raw-test-results.xml",
+      "path": ".local/windows-mac-quality-validation-20261011/device-quality-native-urp-d3d12/test-results.xml",
+      "sha256": "5119FC3BC51F48522A103BB7D7E8B13786ABA3EF509D87E9BA31E0C4040DFBAF",
+      "portable": false
+    },
+    {
+      "run": "device-quality-native-hdrp-d3d12",
+      "file": "raw-test-results.xml",
+      "path": ".local/windows-mac-quality-validation-20261011/device-quality-native-hdrp-d3d12/test-results.xml",
+      "sha256": "F146A421FA23C724174EB4251258DC6844FE60D7DA1F73C86750F5FD2FB25398",
+      "portable": false
+    }
+  ],
+  "limits": [
+    "Editor fixtures only; Windows Player behavior is not validated",
+    "No optical or image-quality validation",
+    "Connected-device runs cover only Native quality and Automatic subpixel mode",
+    "The common 9-case run is synthetic and does not prove connected-device rendering",
+    "Other display geometries and project configurations are not generalized",
+    "Mac results remain separate and are not extended by Windows results"
+  ],
+  "localEvidenceRoot": ".local/windows-mac-quality-validation-20261011",
+  "portableXmlSanitization": {
+    "policy": "Remove one _PID property and replace one user-profile path prefix per shared XML; raw local XML remains unchanged.",
+    "testNamesCountsAndResultsPreserved": true,
+    "runs": {
+      "common-quality-input-playmode-d3d11": {
+        "portablePath": "docs/validation/windows-mac-quality-profile-common-quality-input-playmode-d3d11.xml",
+        "portableSha256": "53557FA62F0F0FACC6F5510648216B10235A0D699D42831ED31548D4823AB054",
+        "rawPath": ".local/windows-mac-quality-validation-20261011/common-quality-input-playmode-d3d11/test-results.xml",
+        "rawSha256": "96C6794A9336839F47DFCC104162EA11E78622EE3FA6D72D4274916B10458BAF",
+        "removedPidProperties": 1,
+        "replacedUserProfilePrefixes": 1,
+        "nunitMetadataUnchanged": true
+      },
+      "device-quality-native-urp-d3d11": {
+        "portablePath": "docs/validation/windows-mac-quality-profile-device-quality-native-urp-d3d11.xml",
+        "portableSha256": "E639BA175ECF9E60FF4278D04A5FC0000A993C0F72509BABA6BA749AC03B4CC9",
+        "rawPath": ".local/windows-mac-quality-validation-20261011/device-quality-native-urp-d3d11/test-results.xml",
+        "rawSha256": "2EA0BE9DBE75A9BCA721F5D438DEFEA1BACD691FD01F81D21359E4090D540337",
+        "removedPidProperties": 1,
+        "replacedUserProfilePrefixes": 1,
+        "nunitMetadataUnchanged": true
+      },
+      "device-quality-native-urp-d3d11-profile-snapshot-fix": {
+        "portablePath": "docs/validation/windows-mac-quality-profile-device-quality-native-urp-d3d11-profile-snapshot-fix.xml",
+        "portableSha256": "3E0E3C929056D55713D1ECEF5027A09E27828E56979005A8828D06DC9E5E6E26",
+        "rawPath": ".local/windows-mac-quality-validation-20261011/device-quality-native-urp-d3d11-profile-snapshot-fix/test-results.xml",
+        "rawSha256": "B731CD0D6D9FC163A8D39A4BC4E9B39B491EF8D2D8623D1C2D7B22E0F28FE32B",
+        "removedPidProperties": 1,
+        "replacedUserProfilePrefixes": 1,
+        "nunitMetadataUnchanged": true
+      },
+      "device-quality-native-hdrp-d3d11": {
+        "portablePath": "docs/validation/windows-mac-quality-profile-device-quality-native-hdrp-d3d11.xml",
+        "portableSha256": "47C6ED121872792AFC0E950CC69E9FC77D13243FA4A6572AF074E28578E531F7",
+        "rawPath": ".local/windows-mac-quality-validation-20261011/device-quality-native-hdrp-d3d11/test-results.xml",
+        "rawSha256": "96F938058FB820BB7D2F60ED7B837CDA35A0F68CCE8133FCE7B1B7715DB20BC1",
+        "removedPidProperties": 1,
+        "replacedUserProfilePrefixes": 1,
+        "nunitMetadataUnchanged": true
+      },
+      "device-quality-native-urp-d3d12": {
+        "portablePath": "docs/validation/windows-mac-quality-profile-device-quality-native-urp-d3d12.xml",
+        "portableSha256": "1772422D9C9994DC3880F570B9EFEE6F0DFB48E820C390E7F628EEBD75570F7C",
+        "rawPath": ".local/windows-mac-quality-validation-20261011/device-quality-native-urp-d3d12/test-results.xml",
+        "rawSha256": "5119FC3BC51F48522A103BB7D7E8B13786ABA3EF509D87E9BA31E0C4040DFBAF",
+        "removedPidProperties": 1,
+        "replacedUserProfilePrefixes": 1,
+        "nunitMetadataUnchanged": true
+      },
+      "device-quality-native-hdrp-d3d12": {
+        "portablePath": "docs/validation/windows-mac-quality-profile-device-quality-native-hdrp-d3d12.xml",
+        "portableSha256": "0AD50482B698DBB5ADF266855C9F87235A9EA8934E872103AF78496AD4776ADF",
+        "rawPath": ".local/windows-mac-quality-validation-20261011/device-quality-native-hdrp-d3d12/test-results.xml",
+        "rawSha256": "F146A421FA23C724174EB4251258DC6844FE60D7DA1F73C86750F5FD2FB25398",
+        "removedPidProperties": 1,
+        "replacedUserProfilePrefixes": 1,
+        "nunitMetadataUnchanged": true
+      }
+    }
+  }
+}

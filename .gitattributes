@@ -21,3 +21,6 @@ CMakeLists.txt text eol=lf
 *.jpeg binary
 *.tga binary
 *.psd binary
+# Preserve validation evidence bytes and allow their CRLF line endings.
+docs/validation/windows-mac-quality-profile-*.xml -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+docs/validation/windows-mac-quality-profile-native-transport-ctest.txt -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

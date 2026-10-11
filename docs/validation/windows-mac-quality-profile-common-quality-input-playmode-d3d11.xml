@@ -1,0 +1,83 @@
+<?xml version='1.0' encoding='utf-8'?>
+<test-run id="2" testcasecount="9" result="Passed" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-11 07:08:43Z" end-time="2026-10-11 07:08:43Z" duration="0.1113129">
+  <test-suite type="TestSuite" id="1307" name="PipelineSmoke" fullname="PipelineSmoke" runstate="Runnable" testcasecount="248" result="Passed" start-time="2026-10-11 07:08:43Z" end-time="2026-10-11 07:08:43Z" duration="0.111313" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1106" name="ViewWeave.BridgeSessionValidation.Tests.dll" fullname="E:/LookingGlassSDK/Tests/Pipelines/Unity/Library/ScriptAssemblies/ViewWeave.BridgeSessionValidation.Tests.dll" runstate="Runnable" testcasecount="93" result="Passed" start-time="2026-10-11 07:08:43Z" end-time="2026-10-11 07:08:43Z" duration="0.080249" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1107" name="ViewWeave" fullname="ViewWeave" runstate="Runnable" testcasecount="93" result="Passed" start-time="2026-10-11 07:08:43Z" end-time="2026-10-11 07:08:43Z" duration="0.077809" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1108" name="BridgeSessionValidation" fullname="ViewWeave.BridgeSessionValidation" runstate="Runnable" testcasecount="93" result="Passed" start-time="2026-10-11 07:08:43Z" end-time="2026-10-11 07:08:43Z" duration="0.075768" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1054" name="BridgeSessionValidationTests" fullname="ViewWeave.BridgeSessionValidation.BridgeSessionValidationTests" classname="ViewWeave.BridgeSessionValidation.BridgeSessionValidationTests" runstate="Runnable" testcasecount="33" result="Passed" start-time="2026-10-11 07:08:43Z" end-time="2026-10-11 07:08:43Z" duration="0.063913" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="ParameterizedMethod" id="1080" name="GenericConnectedDisplayProfilesPreserveDeviceMetadata" fullname="ViewWeave.BridgeSessionValidation.BridgeSessionValidationTests.GenericConnectedDisplayProfilesPreserveDeviceMetadata" classname="ViewWeave.BridgeSessionValidation.BridgeSessionValidationTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-11 07:08:43Z" end-time="2026-10-11 07:08:43Z" duration="0.032315" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1077" name="GenericConnectedDisplayProfilesPreserveDeviceMetadata(7,1920,1080,4000,4000,1000,999,2000,1998,5,9,35.0f,120.0f)" fullname="ViewWeave.BridgeSessionValidation.BridgeSessionValidationTests.GenericConnectedDisplayProfilesPreserveDeviceMetadata(7,1920,1080,4000,4000,1000,999,2000,1998,5,9,35.0f,120.0f)" methodname="GenericConnectedDisplayProfilesPreserveDeviceMetadata" classname="ViewWeave.BridgeSessionValidation.BridgeSessionValidationTests" runstate="Runnable" seed="1169855037" result="Passed" start-time="2026-10-11 07:08:43Z" end-time="2026-10-11 07:08:43Z" duration="0.022783" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1078" name="GenericConnectedDisplayProfilesPreserveDeviceMetadata(42,1440,2560,4092,4092,1023,1020,2046,2046,11,6,54.0f,300.0f)" fullname="ViewWeave.BridgeSessionValidation.BridgeSessionValidationTests.GenericConnectedDisplayProfilesPreserveDeviceMetadata(42,1440,2560,4092,4092,1023,1020,2046,2046,11,6,54.0f,300.0f)" methodname="GenericConnectedDisplayProfilesPreserveDeviceMetadata" classname="ViewWeave.BridgeSessionValidation.BridgeSessionValidationTests" runstate="Runnable" seed="1139476485" result="Passed" start-time="2026-10-11 07:08:43Z" end-time="2026-10-11 07:08:43Z" duration="0.000547" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1079" name="GenericConnectedDisplayProfilesPreserveDeviceMetadata(301,5120,2880,8192,8192,2048,2046,4096,4098,8,6,50.0f,190.0f)" fullname="ViewWeave.BridgeSessionValidation.BridgeSessionValidationTests.GenericConnectedDisplayProfilesPreserveDeviceMetadata(301,5120,2880,8192,8192,2048,2046,4096,4098,8,6,50.0f,190.0f)" methodname="GenericConnectedDisplayProfilesPreserveDeviceMetadata" classname="ViewWeave.BridgeSessionValidation.BridgeSessionValidationTests" runstate="Runnable" seed="2072817685" result="Passed" start-time="2026-10-11 07:08:43Z" end-time="2026-10-11 07:08:43Z" duration="0.000361" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-case id="1075" name="InvalidProfilePresetIsRejectedBeforeProfileUse" fullname="ViewWeave.BridgeSessionValidation.BridgeSessionValidationTests.InvalidProfilePresetIsRejectedBeforeProfileUse" methodname="InvalidProfilePresetIsRejectedBeforeProfileUse" classname="ViewWeave.BridgeSessionValidation.BridgeSessionValidationTests" runstate="Runnable" seed="665081687" result="Passed" start-time="2026-10-11 07:08:43Z" end-time="2026-10-11 07:08:43Z" duration="0.003062" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1076" name="QualityPresetKeepsPreviewBalancedAndNativeDimensionsDistinct" fullname="ViewWeave.BridgeSessionValidation.BridgeSessionValidationTests.QualityPresetKeepsPreviewBalancedAndNativeDimensionsDistinct" methodname="QualityPresetKeepsPreviewBalancedAndNativeDimensionsDistinct" classname="ViewWeave.BridgeSessionValidation.BridgeSessionValidationTests" runstate="Runnable" seed="402271993" result="Passed" start-time="2026-10-11 07:08:43Z" end-time="2026-10-11 07:08:43Z" duration="0.000681" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1061" name="SharedQuiltInputPolicyAcceptsNonDefaultCompleteGrid" fullname="ViewWeave.BridgeSessionValidation.BridgeSessionValidationTests.SharedQuiltInputPolicyAcceptsNonDefaultCompleteGrid" methodname="SharedQuiltInputPolicyAcceptsNonDefaultCompleteGrid" classname="ViewWeave.BridgeSessionValidation.BridgeSessionValidationTests" runstate="Runnable" seed="11986352" result="Passed" start-time="2026-10-11 07:08:43Z" end-time="2026-10-11 07:08:43Z" duration="0.000423" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1063" name="SharedQuiltInputPolicyRejectsPaddedTextureDimensions" fullname="ViewWeave.BridgeSessionValidation.BridgeSessionValidationTests.SharedQuiltInputPolicyRejectsPaddedTextureDimensions" methodname="SharedQuiltInputPolicyRejectsPaddedTextureDimensions" classname="ViewWeave.BridgeSessionValidation.BridgeSessionValidationTests" runstate="Runnable" seed="1655654354" result="Passed" start-time="2026-10-11 07:08:43Z" end-time="2026-10-11 07:08:43Z" duration="0.000429" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1064" name="SharedQuiltInputPolicyRejectsPartialAndDefaultLayouts" fullname="ViewWeave.BridgeSessionValidation.BridgeSessionValidationTests.SharedQuiltInputPolicyRejectsPartialAndDefaultLayouts" methodname="SharedQuiltInputPolicyRejectsPartialAndDefaultLayouts" classname="ViewWeave.BridgeSessionValidation.BridgeSessionValidationTests" runstate="Runnable" seed="2094691962" result="Passed" start-time="2026-10-11 07:08:43Z" end-time="2026-10-11 07:08:43Z" duration="0.000332" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1062" name="SharedQuiltInputPolicyRejectsTextureLayoutDimensionMismatch" fullname="ViewWeave.BridgeSessionValidation.BridgeSessionValidationTests.SharedQuiltInputPolicyRejectsTextureLayoutDimensionMismatch" methodname="SharedQuiltInputPolicyRejectsTextureLayoutDimensionMismatch" classname="ViewWeave.BridgeSessionValidation.BridgeSessionValidationTests" runstate="Runnable" seed="330746316" result="Passed" start-time="2026-10-11 07:08:43Z" end-time="2026-10-11 07:08:43Z" duration="0.000249" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output>Saving results to: &lt;USER_PROFILE&gt;/AppData/LocalLow/zabaglione/PipelineSmoke\TestResults.xml
+</output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

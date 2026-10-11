@@ -49,7 +49,29 @@ namespace ViewWeave.BridgeEditorPreviewValidation
         const string DevicePlayTransitionStatePrefix = "ViewWeave.EditorPreview.DevicePlayTransition.";
         const string DevicePlayTransitionExitingEditModeObservedKey = DevicePlayTransitionStatePrefix + "exitingEditModeObserved";
         const string DevicePlayTransitionRequestedSubpixelModeKey = DevicePlayTransitionStatePrefix + "requestedSubpixelMode";
+        const string DevicePlayTransitionRequestedQualityKey = DevicePlayTransitionStatePrefix + "requestedQuality";
+        const string DevicePlayTransitionDisplayProfileKey = DevicePlayTransitionStatePrefix + "displayProfile";
         const string DevicePlayTransitionAssetFolderPrefix = "Assets/__ViewWeaveDevicePlayTransition_";
+
+        [Serializable]
+        sealed class DeviceDisplayProfileSnapshot
+        {
+            public int schemaVersion;
+            public bool valid;
+            public uint displayIndex;
+            public uint width;
+            public uint height;
+            public float aspect;
+            public float viewcone;
+            public int quiltWidth;
+            public int quiltHeight;
+            public int columns;
+            public int rows;
+            public bool hasPhysicalCalibration;
+            public float physicalWidthMillimeters;
+            public float physicalHeightMillimeters;
+            public float calibrationDpi;
+        }
 
         [UnityTest]
         public IEnumerator DisplaySnapshotCacheIdentitySurvivesOptions3AndDiffersForDuplicates()
@@ -1895,6 +1917,7 @@ namespace ViewWeave.BridgeEditorPreviewValidation
             BridgeWorkerQuiltOutput sourceOutput = null;
             ViewWeaveBridgeSession session = null;
             Action<BridgeDisplaySnapshot> onSnapshot = null;
+            QuiltQualityProfile originalRigProfile = default;
             try
             {
                 string pipelineAssetDirectory = CreateOwnedDeviceTransitionAssetFolder();
@@ -1920,6 +1943,7 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                     fixture.PreviousQualityPipeline,
                     previousOptionsEnabled,
                     previousOptions);
+                originalRigProfile = fixture.Rig.Profile;
                 fixture.Rig.gameObject.SetActive(false);
                 fixture.Rig.gameObject.name = DevicePlayTransitionRigName;
                 fixture.TargetObject.name = DevicePlayTransitionTargetName;
@@ -1930,7 +1954,9 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                 session = fixture.Rig.gameObject.AddComponent<ViewWeaveBridgeSession>();
                 session.startOnEnable = false;
                 BridgeSubpixelMode requestedSubpixelMode = ReadDeviceSubpixelMode();
+                QuiltQualityPreset requestedQuality = ReadDeviceQualityPreset();
                 SessionState.SetInt(DevicePlayTransitionRequestedSubpixelModeKey, (int)requestedSubpixelMode);
+                SessionState.SetInt(DevicePlayTransitionRequestedQualityKey, (int)requestedQuality);
                 double nativeAdmissionStartedAt = EditorApplication.timeSinceStartup;
                 double nativeAdmissionDeadline = nativeAdmissionStartedAt + 30.0;
                 double nextNativeAdmissionLog = nativeAdmissionStartedAt + 5.0;
@@ -2028,8 +2054,16 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                     "The selected display ordinal must be present in the refreshed snapshot.");
                 Assert.IsTrue(profile.IsValid, "The selected display profile must have valid geometry.");
                 Assert.IsTrue(profile.HasPhysicalCalibration, "The selected display must include physical calibration data.");
+                SessionState.SetString(DevicePlayTransitionDisplayProfileKey, SerializeDeviceDisplayProfile(profile));
                 Debug.Log("EDITOR_PREVIEW_DEVICE_METADATA generation=" + refreshedSnapshot.Generation +
                     ", displays=" + refreshedSnapshot.Displays.Count + ", calibration=true");
+
+                Assert.IsTrue(session.SetQuality(requestedQuality),
+                    "The connected-device quality preset must be accepted before Editor Preview starts. " + session.LastError);
+                Assert.AreEqual(requestedQuality, session.Quality,
+                    "The selected quality preset must be retained by the Session before preview.");
+                AssertRigProfileEquals(originalRigProfile, fixture.Rig.Profile, "before-editor-preview");
+                Debug.Log("EDITOR_PREVIEW_DEVICE requestedQuality=" + requestedQuality);
 
                 session.startOnEnable = true;
                 previewAttempted = true;
@@ -2039,6 +2073,9 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                 BridgeWorkerQuiltOutput previewOutput = PreviewApi.ProducerOutput;
                 Assert.IsNotNull(previewOutput);
                 AssertSubpixelOutputStatus(previewOutput, requestedSubpixelMode, "editor-preview");
+                AssertDeviceQualityOutput(profile, requestedQuality, originalRigProfile,
+                    fixture.Rig.Profile, PreviewApi.ProducerRenderer, PreviewApi.Texture, PreviewApi.Layout,
+                    "editor-preview");
                 Assert.Greater(previewOutput.Submissions, 0);
                 Assert.Greater(previewOutput.Completed, 0);
                 uint previewCompletedBefore = previewOutput.SubpixelRenderCompleted;
@@ -2063,6 +2100,10 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                 Assert.IsTrue(Enum.IsDefined(typeof(BridgeSubpixelMode), restoredSubpixelModeValue),
                     "The requested subpixel mode must survive the Play Mode transition.");
                 requestedSubpixelMode = (BridgeSubpixelMode)restoredSubpixelModeValue;
+                int restoredQualityValue = SessionState.GetInt(DevicePlayTransitionRequestedQualityKey, -1);
+                Assert.IsTrue(Enum.IsDefined(typeof(QuiltQualityPreset), restoredQualityValue),
+                    "The requested connected-device quality preset must survive the Play Mode transition.");
+                requestedQuality = (QuiltQualityPreset)restoredQualityValue;
                 RenderPipelineAsset playPipeline = GraphicsSettings.currentRenderPipeline;
                 Assert.IsNotNull(playPipeline, "The fixture render pipeline asset must remain selected after entering Play Mode.");
                 string expectedPlayPipelinePath = SessionState.GetString(DevicePlayTransitionStatePrefix + "fixturePipelinePath", string.Empty);
@@ -2110,6 +2151,15 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                     "The runtime Bridge Session did not reach Rendering after the Editor preview stopped.");
                 Assert.IsTrue(sourceOutput.Ready, "The runtime Bridge worker must be Ready.");
                 Assert.Greater(sourceOutput.Completed, 0, "The runtime Bridge worker must complete a submission.");
+                Assert.AreEqual(requestedQuality, session.Quality,
+                    "The connected-device quality preset must survive the Play Mode transition.");
+                BridgeDisplayProfile restoredDisplayProfile = RestoreDeviceDisplayProfile();
+                AssertBridgeDisplayProfileEquals(restoredDisplayProfile, sourceOutput.Profile, "runtime-session-native-profile");
+                QuiltQualityProfile expectedRuntimeProfile = ViewWeaveBridgeSession.CreateQualityProfile(
+                    restoredDisplayProfile, requestedQuality);
+                AssertDeviceQualityOutput(restoredDisplayProfile, requestedQuality, expectedRuntimeProfile,
+                    reloadedRig.Profile, reloadedRig.Renderer, sourceOutput.QuiltTexture, sourceOutput.Layout,
+                    "runtime-session");
                 AssertSubpixelOutputStatus(sourceOutput, requestedSubpixelMode, "runtime-session");
                 uint runtimeCompletedBefore = sourceOutput.SubpixelRenderCompleted;
                 uint runtimePresentedBefore = sourceOutput.SubpixelPresentAccepted;
@@ -2251,6 +2301,8 @@ namespace ViewWeave.BridgeEditorPreviewValidation
             SessionState.SetString(DevicePlayTransitionStatePrefix + "fixturePipelinePath", string.Empty);
             SessionState.SetString(DevicePlayTransitionStatePrefix + "fixturePipelineType", string.Empty);
             SessionState.EraseInt(DevicePlayTransitionRequestedSubpixelModeKey);
+            SessionState.EraseInt(DevicePlayTransitionRequestedQualityKey);
+            SessionState.EraseString(DevicePlayTransitionDisplayProfileKey);
             SessionState.SetBool(DevicePlayTransitionStatePrefix + "cleanupDone", true);
             Debug.Log("EDITOR_PREVIEW_DEVICE_PLAY fixtureCleanup=true");
         }
@@ -2477,6 +2529,122 @@ namespace ViewWeave.BridgeEditorPreviewValidation
             if (!BridgeSubpixelPolicy.Validate(mode, out string error))
                 throw new AssertionException("VIEWWEAVE_EDITOR_PREVIEW_SUBPIXEL_MODE must be Automatic, ClassicRgb, or CalibratedCells. " + error);
             return mode;
+        }
+
+        static QuiltQualityPreset ReadDeviceQualityPreset()
+        {
+            string value = Environment.GetEnvironmentVariable("VIEWWEAVE_EDITOR_PREVIEW_QUALITY");
+            if (string.IsNullOrWhiteSpace(value)) return QuiltQualityPreset.Preview;
+            if (!Enum.TryParse(value, true, out QuiltQualityPreset preset) || !Enum.IsDefined(typeof(QuiltQualityPreset), preset))
+                throw new AssertionException("VIEWWEAVE_EDITOR_PREVIEW_QUALITY must be Preview, Balanced, or Native.");
+            return preset;
+        }
+
+        static string SerializeDeviceDisplayProfile(BridgeDisplayProfile profile)
+        {
+            if (!profile.IsValid || !profile.HasPhysicalCalibration)
+                throw new AssertionException("The selected Bridge display profile must be valid and calibrated before persistence.");
+            return JsonUtility.ToJson(new DeviceDisplayProfileSnapshot
+            {
+                schemaVersion = 1,
+                valid = true,
+                displayIndex = profile.DisplayIndex,
+                width = profile.Width,
+                height = profile.Height,
+                aspect = profile.Aspect,
+                viewcone = profile.Viewcone,
+                quiltWidth = profile.QuiltWidth,
+                quiltHeight = profile.QuiltHeight,
+                columns = profile.Columns,
+                rows = profile.Rows,
+                hasPhysicalCalibration = profile.HasPhysicalCalibration,
+                physicalWidthMillimeters = profile.PhysicalWidthMillimeters,
+                physicalHeightMillimeters = profile.PhysicalHeightMillimeters,
+                calibrationDpi = profile.CalibrationDpi
+            });
+        }
+
+        static BridgeDisplayProfile RestoreDeviceDisplayProfile()
+        {
+            string json = SessionState.GetString(DevicePlayTransitionDisplayProfileKey, string.Empty);
+            if (string.IsNullOrWhiteSpace(json))
+                throw new AssertionException("The connected Bridge profile snapshot did not survive the Play Mode transition.");
+            DeviceDisplayProfileSnapshot snapshot;
+            try { snapshot = JsonUtility.FromJson<DeviceDisplayProfileSnapshot>(json); }
+            catch (Exception exception)
+            {
+                throw new AssertionException("The connected Bridge profile snapshot could not be decoded: " + ToAscii(exception.Message));
+            }
+            if (snapshot == null || snapshot.schemaVersion != 1 || !snapshot.valid || !snapshot.hasPhysicalCalibration)
+                throw new AssertionException("The connected Bridge profile snapshot is missing its supported schema or validity marker.");
+            if (!BridgeDisplayProfile.TryCreateCached(snapshot.displayIndex, snapshot.width, snapshot.height,
+                snapshot.aspect, snapshot.viewcone, snapshot.quiltWidth, snapshot.quiltHeight,
+                snapshot.columns, snapshot.rows, snapshot.hasPhysicalCalibration,
+                snapshot.physicalWidthMillimeters, snapshot.physicalHeightMillimeters, snapshot.calibrationDpi,
+                out BridgeDisplayProfile profile))
+                throw new AssertionException("The persisted connected Bridge profile failed geometry or physical-calibration validation.");
+            return profile;
+        }
+
+        static void AssertBridgeDisplayProfileEquals(BridgeDisplayProfile expected, BridgeDisplayProfile actual, string phase)
+        {
+            Assert.IsTrue(actual.IsValid, phase + " runtime profile is invalid.");
+            Assert.AreEqual(expected.DisplayIndex, actual.DisplayIndex, phase + " display ordinal.");
+            Assert.AreEqual(expected.Width, actual.Width, phase + " display width.");
+            Assert.AreEqual(expected.Height, actual.Height, phase + " display height.");
+            Assert.AreEqual(expected.Aspect, actual.Aspect, 0.0001f, phase + " display aspect.");
+            Assert.AreEqual(expected.Viewcone, actual.Viewcone, 0.0001f, phase + " display view cone.");
+            Assert.AreEqual(expected.QuiltWidth, actual.QuiltWidth, phase + " raw quilt width.");
+            Assert.AreEqual(expected.QuiltHeight, actual.QuiltHeight, phase + " raw quilt height.");
+            Assert.AreEqual(expected.Columns, actual.Columns, phase + " raw grid columns.");
+            Assert.AreEqual(expected.Rows, actual.Rows, phase + " raw grid rows.");
+            Assert.AreEqual(expected.HasPhysicalCalibration, actual.HasPhysicalCalibration, phase + " calibration availability.");
+            Assert.AreEqual(expected.PhysicalWidthMillimeters, actual.PhysicalWidthMillimeters, 0.01f, phase + " physical width.");
+            Assert.AreEqual(expected.PhysicalHeightMillimeters, actual.PhysicalHeightMillimeters, 0.01f, phase + " physical height.");
+            Assert.AreEqual(expected.CalibrationDpi, actual.CalibrationDpi, 0.001f, phase + " calibration DPI.");
+        }
+
+        static void AssertDeviceQualityOutput(BridgeDisplayProfile connectedProfile, QuiltQualityPreset preset,
+            QuiltQualityProfile expectedRigProfile, QuiltQualityProfile currentRigProfile, QuiltRenderer renderer,
+            RenderTexture texture, QuiltLayout layout, string phase)
+        {
+            QuiltQualityProfile expected = ViewWeaveBridgeSession.CreateQualityProfile(connectedProfile, preset);
+            Assert.IsNotNull(renderer, phase + " renderer is missing.");
+            Assert.IsNotNull(texture, phase + " quilt RenderTexture is missing.");
+            Assert.IsTrue(texture.IsCreated(), phase + " quilt RenderTexture is not created.");
+            Assert.AreEqual(expected.QuiltWidth, texture.width, phase + " RenderTexture width must use the selected connected-device quality.");
+            Assert.AreEqual(expected.QuiltHeight, texture.height, phase + " RenderTexture height must use the selected connected-device quality.");
+            Assert.AreEqual(expected.QuiltWidth, renderer.settings.quiltWidth, phase + " renderer width.");
+            Assert.AreEqual(expected.QuiltHeight, renderer.settings.quiltHeight, phase + " renderer height.");
+            Assert.AreEqual(expected.Columns, renderer.settings.columns, phase + " renderer columns.");
+            Assert.AreEqual(expected.Rows, renderer.settings.rows, phase + " renderer rows.");
+            Assert.AreEqual(expected.Views, renderer.settings.views, phase + " renderer full view count.");
+            Assert.AreEqual(expected.Aspect, renderer.settings.viewAspect, 0.0001f, phase + " renderer aspect.");
+            Assert.AreEqual(expected.ViewCone, renderer.settings.viewCone, 0.0001f, phase + " renderer view cone.");
+            Assert.AreEqual(expected.QuiltWidth, layout.QuiltWidth, phase + " complete layout width.");
+            Assert.AreEqual(expected.QuiltHeight, layout.QuiltHeight, phase + " complete layout height.");
+            Assert.AreEqual(expected.Columns, layout.Columns, phase + " complete layout columns.");
+            Assert.AreEqual(expected.Rows, layout.Rows, phase + " complete layout rows.");
+            Assert.AreEqual(expected.Views, layout.ViewCount, phase + " complete layout view count.");
+            Assert.AreEqual(expected.Aspect, layout.AspectRatio, 0.0001f, phase + " layout aspect.");
+            AssertRigProfileEquals(expectedRigProfile, currentRigProfile, phase + " rig-profile");
+            Debug.Log("EDITOR_PREVIEW_DEVICE_QUALITY phase=" + phase + ", preset=" + preset +
+                ", rawQuilt=" + connectedProfile.QuiltWidth + "x" + connectedProfile.QuiltHeight +
+                ", renderedQuilt=" + texture.width + "x" + texture.height +
+                ", grid=" + layout.Columns + "x" + layout.Rows + ", views=" + layout.ViewCount +
+                ", aspect=" + layout.AspectRatio.ToString("R", System.Globalization.CultureInfo.InvariantCulture) +
+                ", viewCone=" + renderer.settings.viewCone.ToString("R", System.Globalization.CultureInfo.InvariantCulture));
+        }
+
+        static void AssertRigProfileEquals(QuiltQualityProfile expected, QuiltQualityProfile actual, string phase)
+        {
+            Assert.AreEqual(expected.QuiltWidth, actual.QuiltWidth, phase + " source profile width.");
+            Assert.AreEqual(expected.QuiltHeight, actual.QuiltHeight, phase + " source profile height.");
+            Assert.AreEqual(expected.Columns, actual.Columns, phase + " source profile columns.");
+            Assert.AreEqual(expected.Rows, actual.Rows, phase + " source profile rows.");
+            Assert.AreEqual(expected.Views, actual.Views, phase + " source profile views.");
+            Assert.AreEqual(expected.Aspect, actual.Aspect, 0.0001f, phase + " source profile aspect.");
+            Assert.AreEqual(expected.ViewCone, actual.ViewCone, 0.0001f, phase + " source profile view cone.");
         }
 
         static void AssertSubpixelOutputStatus(BridgeWorkerQuiltOutput output, BridgeSubpixelMode requested, string phase)
