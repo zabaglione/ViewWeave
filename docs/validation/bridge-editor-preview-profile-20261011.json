@@ -1,0 +1,254 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-11",
+  "basisCommit": "b7140a59fa025df3169584615e01e1381dfd7bae",
+  "measuredWithUncommittedChanges": true,
+  "environment": {
+    "os": "macOS 26.6.2",
+    "arch": "arm64",
+    "gpu": "Apple M3 Max",
+    "unity": "6000.6.4f1",
+    "pipeline": "HDRP 17.6.0",
+    "graphicsApi": "Metal",
+    "bridge": "2.6.3",
+    "device": "Looking Glass Go"
+  },
+  "sourceSha256": {
+    "Packages/com.zabaglione.lookingglass.viewweave.bridge/Editor/Common/QuiltEditorProducer.cs": "df766ae6dfd0d0471588c65186a67a6d4cde2c052cfa8746bb2660327ffbf84d",
+    "Distribution/urp/ViewWeave/Bridge/Editor/Common/QuiltEditorProducer.cs": "df766ae6dfd0d0471588c65186a67a6d4cde2c052cfa8746bb2660327ffbf84d",
+    "Distribution/hdrp/ViewWeave/Bridge/Editor/Common/QuiltEditorProducer.cs": "df766ae6dfd0d0471588c65186a67a6d4cde2c052cfa8746bb2660327ffbf84d",
+    "Tests/Pipelines/Unity/Assets/BridgeSessionValidation/Editor/QuiltEditorProducerTests.cs": "d9a527a138ee660fb58455ed8dc7b8db177a3e652471a66bb538f2e3b3733189",
+    "Tests/Pipelines/Unity/Assets/BridgeSessionValidation/Editor/BridgeDisplayGeometryTests.cs": "4f8a488a5aa4bc213e1ddfbccf978f9ab20ec86b09d15b622085d9c92d8a0124",
+    "Tests/Pipelines/Unity/Assets/RigCameraCreationValidation/Editor/MetalEditorPreviewTests.cs": "19726e3240fad74e3481e3ed63cd439e140d7badb1895f4bb8288bf434ee75a4"
+  },
+  "native": {
+    "sha256": "c97856ea3bb910a1456eb044347a18ac8117c140ddd149f8e9ec240600766c5b",
+    "bytes": 160016,
+    "changed": false,
+    "sameInBothDistributions": true
+  },
+  "managed": {
+    "xmlPath": ".local/metadata-preview-profile-20261011/editmode.xml",
+    "xmlSha256": "524b5b1f7e7ccdcfa9545a47edbdc7c1b0b42180b4a131bb0dae09cfd37f47cc",
+    "total": 27,
+    "passed": 27,
+    "failed": 0,
+    "skipped": 0,
+    "startUtc": "2026-10-11 09:53:22Z",
+    "endUtc": "2026-10-11 09:53:36Z",
+    "testCases": [
+      {
+        "name": "ViewWeave.BridgeEditorPreviewValidation.BridgeDisplayGeometryTests.AnotherRendererCannotBorrowAnAttachedOutputsGeometry",
+        "result": "Passed"
+      },
+      {
+        "name": "ViewWeave.BridgeEditorPreviewValidation.BridgeDisplayGeometryTests.BothOutputsRetainBridgeGeometryWithNoActiveConnection(True,0.5625f)",
+        "result": "Passed"
+      },
+      {
+        "name": "ViewWeave.BridgeEditorPreviewValidation.BridgeDisplayGeometryTests.BothOutputsRetainBridgeGeometryWithNoActiveConnection(True,1.777778f)",
+        "result": "Passed"
+      },
+      {
+        "name": "ViewWeave.BridgeEditorPreviewValidation.BridgeDisplayGeometryTests.BothOutputsRetainBridgeGeometryWithNoActiveConnection(False,0.5625f)",
+        "result": "Passed"
+      },
+      {
+        "name": "ViewWeave.BridgeEditorPreviewValidation.BridgeDisplayGeometryTests.BothOutputsRetainBridgeGeometryWithNoActiveConnection(False,1.777778f)",
+        "result": "Passed"
+      },
+      {
+        "name": "ViewWeave.BridgeEditorPreviewValidation.BridgeDisplayGeometryTests.ChangedSelectionOrOutputDoesNotReusePreviousDisplay(True)",
+        "result": "Passed"
+      },
+      {
+        "name": "ViewWeave.BridgeEditorPreviewValidation.BridgeDisplayGeometryTests.ChangedSelectionOrOutputDoesNotReusePreviousDisplay(False)",
+        "result": "Passed"
+      },
+      {
+        "name": "ViewWeave.BridgeEditorPreviewValidation.BridgeDisplayGeometryTests.LocalPreviewSettingsUseTheSameRetainedGeometry(True)",
+        "result": "Passed"
+      },
+      {
+        "name": "ViewWeave.BridgeEditorPreviewValidation.BridgeDisplayGeometryTests.LocalPreviewSettingsUseTheSameRetainedGeometry(False)",
+        "result": "Passed"
+      },
+      {
+        "name": "ViewWeave.BridgeEditorPreviewValidation.BridgeDisplayGeometryTests.NewBridgeResultUpdatesGeometryWhileInvalidResultDoesNotEraseIt(True)",
+        "result": "Passed"
+      },
+      {
+        "name": "ViewWeave.BridgeEditorPreviewValidation.BridgeDisplayGeometryTests.NewBridgeResultUpdatesGeometryWhileInvalidResultDoesNotEraseIt(False)",
+        "result": "Passed"
+      },
+      {
+        "name": "ViewWeave.BridgeEditorPreviewValidation.BridgeDisplayGeometryTests.OlderWindowsSnapshotCannotOverrideNewerRecognizedGeometry",
+        "result": "Passed"
+      },
+      {
+        "name": "ViewWeave.BridgeEditorPreviewValidation.BridgeDisplayGeometryTests.RetainedPhysicalCalibrationDoesNotEnableConnectedCalibrationActions",
+        "result": "Passed"
+      },
+      {
+        "name": "ViewWeave.BridgeEditorPreviewValidation.BridgeDisplayGeometryTests.SoleTransportRetainsGeometryAfterItsTemporaryBindingIsRestored(True)",
+        "result": "Passed"
+      },
+      {
+        "name": "ViewWeave.BridgeEditorPreviewValidation.BridgeDisplayGeometryTests.SoleTransportRetainsGeometryAfterItsTemporaryBindingIsRestored(False)",
+        "result": "Passed"
+      },
+      {
+        "name": "ViewWeave.BridgeEditorPreviewValidation.QuiltEditorProducerTests.DeviceSyncPreservesAcquiredQualityInsteadOfRetainedSourceGeometry(True)",
+        "result": "Passed"
+      },
+      {
+        "name": "ViewWeave.BridgeEditorPreviewValidation.QuiltEditorProducerTests.DeviceSyncPreservesAcquiredQualityInsteadOfRetainedSourceGeometry(False)",
+        "result": "Passed"
+      },
+      {
+        "name": "ViewWeave.BridgeEditorPreviewValidation.QuiltEditorProducerTests.RetainedGeometryKeepsPrivateRigAndRendererInAgreement(True,0.5625f)",
+        "result": "Passed"
+      },
+      {
+        "name": "ViewWeave.BridgeEditorPreviewValidation.QuiltEditorProducerTests.RetainedGeometryKeepsPrivateRigAndRendererInAgreement(False,0.5625f)",
+        "result": "Passed"
+      },
+      {
+        "name": "ViewWeave.BridgeEditorPreviewValidation.QuiltEditorProducerTests.RetainedGeometryKeepsPrivateRigAndRendererInAgreement(True,1.777778f)",
+        "result": "Passed"
+      },
+      {
+        "name": "ViewWeave.BridgeEditorPreviewValidation.QuiltEditorProducerTests.RetainedGeometryKeepsPrivateRigAndRendererInAgreement(False,1.777778f)",
+        "result": "Passed"
+      },
+      {
+        "name": "ViewWeave.RigCameraCreationValidation.MetalEditorPreviewTests.ClosingAuthoringWindowStopsItsMetalPreview",
+        "result": "Passed"
+      },
+      {
+        "name": "ViewWeave.RigCameraCreationValidation.MetalEditorPreviewTests.ClosingRigWhileInspectorExistsDoesNotRefreshDestroyedTargets",
+        "result": "Passed"
+      },
+      {
+        "name": "ViewWeave.RigCameraCreationValidation.MetalEditorPreviewTests.InvalidSourceLayoutStopsPreviewWithoutLeakingOwnership",
+        "result": "Passed"
+      },
+      {
+        "name": "ViewWeave.RigCameraCreationValidation.MetalEditorPreviewTests.LocalPreviewPauseClosePreservesSourceAndReleasesOwnership",
+        "result": "Passed"
+      },
+      {
+        "name": "ViewWeave.RigCameraCreationValidation.MetalEditorPreviewTests.PlaybackRequiresPlayAndDoesNotAcquireOwnershipInEditMode",
+        "result": "Passed"
+      },
+      {
+        "name": "ViewWeave.RigCameraCreationValidation.MetalEditorPreviewTests.PlaybackUsesBoundOutputWhenBothPlatformComponentsExist",
+        "result": "Passed"
+      }
+    ],
+    "boundary": "macOS Metal EditMode with URP adapter: new private producer geometry 6, existing geometry 15, existing Metal preview/ownership/playback 6. Not Windows or HDRP rendering proof.",
+    "initialFixtureFailure": "Initial six new cases used invalid 11-view/12-cell Rig profile and failed before producer creation; corrected to the required complete grid. Initial 21 pass / 6 fail is excluded from final pass count."
+  },
+  "hardware": {
+    "scene": "Assets/Scenes/SampleScene.unity",
+    "projectName": "HDRP_60000604",
+    "invocation": "Public BridgeMetalEditorPreview.Start(rig, true), driven through Unity CLI; not an Inspector button click test.",
+    "beforeFix": {
+      "scene": "Assets/Scenes/SampleScene.unity",
+      "sourceValid": true,
+      "rigError": null,
+      "started": false,
+      "error": "Invalid ViewWeaveRig: QuiltRenderer settings do not match the rig profile",
+      "dirty": false,
+      "active": false,
+      "stopping": false
+    },
+    "startAfterFix": {
+      "scene": "Assets/Scenes/SampleScene.unity",
+      "rigError": null,
+      "started": true,
+      "error": "",
+      "dirty": false,
+      "active": true,
+      "stopping": false
+    },
+    "running": {
+      "playing": false,
+      "active": true,
+      "frames": 90,
+      "presented": 65,
+      "error": "",
+      "texture": true,
+      "dirty": false,
+      "producers": [
+        {
+          "valid": true,
+          "error": null,
+          "aspect": 0.5625,
+          "rendererAspect": 0.5625,
+          "cone": 54,
+          "rendererCone": 54
+        }
+      ]
+    },
+    "quiltReadback": {
+      "width": 4092,
+      "height": 4092,
+      "samples": 1046529,
+      "black": 0,
+      "red": 27,
+      "green": 0,
+      "blue": 0,
+      "magenta": 0,
+      "nonBlack": 1046529
+    },
+    "sampleStridePixels": 16,
+    "quiltImage": {
+      "rawPath": ".local/metadata-preview-profile-20261011/hdrp-quilt.png",
+      "sha256": "11b6b2e551520fc7b429d06e5b9de201aea022b9342347c6fec4dea1990131ce",
+      "bytes": 36514857,
+      "width": 4092,
+      "height": 4092,
+      "visuallyReviewed": true,
+      "observed": "Garden scene content across multiple views; no magenta material error"
+    },
+    "stop": {
+      "frames": 565,
+      "presented": 216,
+      "active": false,
+      "stopping": true
+    },
+    "afterStop": {
+      "scene": "Assets/Scenes/SampleScene.unity",
+      "dirty": false,
+      "playing": false,
+      "active": false,
+      "stopping": false,
+      "pending": 0,
+      "retirement": 0,
+      "valid": true,
+      "error": null
+    },
+    "sourceRigAndRendererSerializationUnchanged": true,
+    "sceneFileSha256": "c36c23ebe41b9c97945b3c9921b3612cfa900d50d4be4208e84f8780edbefbbc",
+    "sceneFileUnchanged": true,
+    "sceneSaved": false,
+    "editorLeftOpen": true,
+    "console": {
+      "errors": 0,
+      "warnings": 11,
+      "compilationFailed": false
+    },
+    "opticalQualityTested": false,
+    "playModeRetest": false,
+    "playModeUserReportedWorking": true
+  },
+  "rawArtifactsCommitted": false,
+  "notVerified": [
+    "Windows Editor device preview execution for this revision",
+    "URP sample device preview execution for this revision",
+    "HDRP optical panel quality",
+    "device preview pause/resume or transition to Play",
+    "Player and long duration use"
+  ]
+}

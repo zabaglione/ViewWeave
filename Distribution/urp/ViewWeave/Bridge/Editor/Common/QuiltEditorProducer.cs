@@ -52,7 +52,13 @@ namespace ViewWeave.Editor
             output.useRenderRequests = input.useRenderRequests;
             output.settings = input.settings.Clone();
             if (deviceProfile) producer.Profile.ApplyTo(output.settings);
-            else BridgeDisplayGeometryStore.ApplyToLocalPreview(input, output.settings);
+            else
+            {
+                BridgeDisplayGeometryStore.ApplyToLocalPreview(input, output.settings);
+                QuiltSettings settings = output.settings;
+                producer.ApplyProfile(new QuiltQualityProfile(settings.quiltWidth, settings.quiltHeight,
+                    settings.columns, settings.rows, settings.views, settings.viewAspect, settings.viewCone));
+            }
             output.physicalFraming = input.physicalFraming == null ? new QuiltPhysicalFraming() : input.physicalFraming.Clone();
             output.viewRenderMode = input.viewRenderMode;
             output.autoRender = false;
