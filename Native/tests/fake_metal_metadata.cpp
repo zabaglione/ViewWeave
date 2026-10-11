@@ -20,6 +20,6 @@ bool get_calibration_for_display(unsigned long index, float* center, float* pitc
     float* dpi, float* flip, int* invert, float* cone, float* fringe, int* mode, int* cells, void*) {
     *center = 0.17f; *pitch = 45; *slope = -7.5f; *width = 17; *height = 23;
     *dpi = 300; *flip = index == 1 ? 1 : 0; *invert = 0; *cone = 40; *fringe = 0;
-    *mode = index == 2 ? 1 : 0; *cells = 0; return true;
+    *mode = index == 2 ? 99 : 0; *cells = 0; return true;
 }
 }

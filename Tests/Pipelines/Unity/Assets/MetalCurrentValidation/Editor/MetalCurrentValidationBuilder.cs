@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
@@ -15,6 +16,17 @@ using ViewWeave.HDRP;
 public static class MetalCurrentValidationBuilder
 {
     const string Generated = "Assets/SamplePlayerValidationGenerated/MetalCurrent";
+    static double buildDeadline;
+    [Serializable] sealed class BuildEvidence
+    {
+        public string pipeline, activeAsset, activePipeline, shaderPipelineTag;
+        public int configuredQualityAssets;
+        public bool preparedInSeparateProcess, succeeded;
+    }
+    static bool IsHdrp => Argument("-validationPipeline") == "HDRP";
+    static string ExpectedTag => IsHdrp ? "HDRenderPipeline" : "UniversalPipeline";
+    static bool CorrectAsset(RenderPipelineAsset asset) => IsHdrp ? asset is HDRenderPipelineAsset : asset is UniversalRenderPipelineAsset;
+    static bool CorrectPipeline() => IsHdrp ? RenderPipelineManager.currentPipeline is HDRenderPipeline : RenderPipelineManager.currentPipeline is UniversalRenderPipeline;
     public static string Argument(string key)
     {
         string[] args = Environment.GetCommandLineArgs();
@@ -119,6 +131,35 @@ public static class MetalCurrentValidationBuilder
         Debug.Log("Metal current fixture prepared: " + runner.pipelineName);
     }
 
+    // Open in a fresh, non-batch Editor after Prepare has saved the fixture and exited.
+    public static void BuildWhenReady()
+    {
+        EditorSceneManager.OpenScene(Generated + "/Validation.unity");
+        buildDeadline = EditorApplication.timeSinceStartup + 90d;
+        EditorApplication.update += WaitForPipeline;
+    }
+
+    static void WaitForPipeline()
+    {
+        if (EditorApplication.isCompiling || EditorApplication.isUpdating) return;
+        if (!CorrectPipeline() || Shader.globalRenderPipeline != ExpectedTag)
+        {
+            if (EditorApplication.timeSinceStartup < buildDeadline)
+            {
+                EditorApplication.QueuePlayerLoopUpdate();
+                SceneView.RepaintAll();
+                return;
+            }
+            EditorApplication.update -= WaitForPipeline;
+            Debug.LogError("Prepared render pipeline did not become active: " + Shader.globalRenderPipeline);
+            EditorApplication.Exit(1);
+            return;
+        }
+        EditorApplication.update -= WaitForPipeline;
+        try { Build(); EditorApplication.Exit(0); }
+        catch (Exception exception) { Debug.LogException(exception); EditorApplication.Exit(1); }
+    }
+
     public static void Build()
     {
         string output = Argument("-buildOutput");
@@ -133,7 +174,21 @@ public static class MetalCurrentValidationBuilder
         var oldSetup = EditorSceneManager.GetSceneManagerSetup();
         try
         {
-            Prepare();
+            var prepared = AssetDatabase.LoadAssetAtPath<RenderPipelineAsset>(Generated + "/Pipeline.asset");
+            if (!CorrectAsset(prepared) || GraphicsSettings.currentRenderPipeline != prepared || !CorrectPipeline() ||
+                Shader.globalRenderPipeline != ExpectedTag)
+                throw new InvalidOperationException("The saved fixture pipeline must be active before building.");
+            var assets = new List<RenderPipelineAsset>();
+            QualitySettings.GetAllRenderPipelineAssetsForPlatform(NamedBuildTarget.Standalone.TargetName, ref assets);
+            foreach (var asset in assets)
+                if (asset != null && !CorrectAsset(asset)) throw new InvalidOperationException("Standalone quality settings contain a different render pipeline.");
+            var evidence = new BuildEvidence
+            {
+                pipeline = IsHdrp ? "HDRP" : "URP", activeAsset = AssetDatabase.GetAssetPath(prepared),
+                activePipeline = IsHdrp ? "HDRenderPipeline" : "UniversalRenderPipeline",
+                shaderPipelineTag = Shader.globalRenderPipeline, configuredQualityAssets = assets.Count,
+                preparedInSeparateProcess = true
+            };
             PlayerSettings.runInBackground = true;
             PlayerSettings.SetArchitecture(NamedBuildTarget.Standalone, (int)OSArchitecture.ARM64);
             PlayerSettings.SetUseDefaultGraphicsAPIs(BuildTarget.StandaloneOSX, false);
@@ -145,6 +200,8 @@ public static class MetalCurrentValidationBuilder
                 options = Argument("-validationConfiguration") == "Development" ? BuildOptions.Development : BuildOptions.None
             });
             if (report.summary.result != BuildResult.Succeeded) throw new InvalidOperationException("Player build failed: " + report.summary.result);
+            evidence.succeeded = true;
+            File.WriteAllText(Path.Combine(Argument("-validationRoot"), "build.json"), JsonUtility.ToJson(evidence, true));
         }
         finally
         {

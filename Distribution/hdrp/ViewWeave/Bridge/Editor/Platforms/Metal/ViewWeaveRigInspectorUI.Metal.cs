@@ -35,6 +35,7 @@ namespace ViewWeave.Editor
             transportMutationFields.Add(AddBoundProperty(foldout, metalOutputObject, "runtimePath", "Bridge Runtime Path"));
             transportMutationFields.Add(AddBoundProperty(foldout, metalOutputObject, "applicationName", "Application Name"));
             transportMutationFields.Add(AddBoundProperty(foldout, metalOutputObject, "displayOrdinal", "Display Ordinal"));
+            BuildSubpixelMode(foldout);
             startMetalButton = new Button(() => { metalOutput.StartOutput(); Refresh(); }) { name = "startOutput", text = "Start Output" };
             stopMetalButton = new Button(() => { metalOutput.StopOutput(); Refresh(); }) { name = "stopOutput", text = "Stop Output" };
             foldout.Add(startMetalButton);

@@ -1,0 +1,815 @@
+{
+  "schemaVersion": 1,
+  "dateJst": "2026-10-11",
+  "sourceBaseline": "b3cae92a5df06c40f0ac4bad372c3b197186048d",
+  "integrationRevision": "9d0309c8610981617fe11ef889359299a774ec9e",
+  "changes": "common Inspector subpixel selection, native v3, bounded Bridge JSON cell retrieval, managed cell transfer, independent shader cell math and fixtures; measured working tree before commit",
+  "environment": {
+    "unity": "6000.6.4f1",
+    "urp": "17.6.0",
+    "hdrp": "17.6.0",
+    "macOS": "26.6.2",
+    "gpu": "Apple M3 Max",
+    "architecture": "arm64",
+    "graphicsApi": "Metal",
+    "bridge": "2.6.3",
+    "deviceTested": "Looking Glass Go",
+    "deviceSelection": "Bridge metadata and calibration, no model/serial allowlist",
+    "goCellPatternMode": 0,
+    "goCellCount": 0,
+    "panel": [
+      1440,
+      2560
+    ],
+    "quilt": [
+      1023,
+      1020
+    ],
+    "grid": [
+      11,
+      6
+    ],
+    "views": 66
+  },
+  "productSources": {
+    "Native/CMakeLists.txt": "04952175b0462528e6ab55304755c866676f53daba161a255637788442f8eee8",
+    "Native/platform/macos/metal_calibration.cpp": "6097864cb2834a9342c4cf1aae368f5ec2683303545d1e432c966c1357c8293d",
+    "Native/platform/macos/metal_calibration.h": "ff0c79341de803d227ebd13e7724f12593193cd0072bf00834bbaea265f0233d",
+    "Native/platform/macos/metal_display.h": "b872074353d3d89f063d2760afb82c05316a2aafcf08021839c4b8deee24bcdf",
+    "Native/platform/macos/metal_display.mm": "d0dcbe4a027d9622c43faacb1eb2f38453233d3ea9bca1f27bbe2cdf3dc5cc1b",
+    "Native/platform/macos/metal_bridge_cells.h": "aa5f56b881d7e7362c4b4edf26f84dd7f1a6d2f9eb27fd3b6ecc025d89540515",
+    "Native/platform/macos/metal_bridge_cells.mm": "5f106af15048be1f0125d2e92a114050509f86c705a23b0f0539636fc2b03541",
+    "Packages/com.zabaglione.lookingglass.viewweave.bridge/Runtime/Platforms/Metal/BridgeMetalQuiltOutput.cs": "9f9f6f02ca3c07b49942595c16c6bc990406ac7fd5a3d186742c7e3d062ec3e2",
+    "Packages/com.zabaglione.lookingglass.viewweave.bridge/Runtime/Platforms/Metal/Resources/ViewWeaveMetalInterlace.shader": "21b8e7c2b80b58e74f2834170017364b6c08e3b0ebf15f8442aee90819c7b437",
+    "Packages/com.zabaglione.lookingglass.viewweave.bridge/Editor/Common/ViewWeaveRigInspectorUI.Output.cs": "67e9a24e265b327c4a807e1f4bb3caf3381a9b93c360db4615008232c75b86e1",
+    "Packages/com.zabaglione.lookingglass.viewweave.bridge/Editor/Platforms/Metal/BridgeMetalEditorPreview.cs": "51b0ca6e305c7b1b1a6caf05c683608e9bee1b509d372d84b2b41eb3713afb69",
+    "Packages/com.zabaglione.lookingglass.viewweave.bridge/Editor/Platforms/Metal/ViewWeaveRigInspectorUI.Metal.cs": "7e7d4cf9067595cf9f419436033c1024eb138c7a84a8d98bed42b1ce7514123c",
+    "Packages/com.zabaglione.lookingglass.viewweave.bridge/Editor/Platforms/Windows/BridgeEditorPreview.cs": "4bbcbe19fbf7643ceb019ab24ef0366a58eb6b05560b915750ab257fd0f7f718",
+    "Packages/com.zabaglione.lookingglass.viewweave.bridge/Editor/Platforms/Windows/ViewWeaveRigInspectorUI.Windows.cs": "2f0c53285186ae7526679470d092e33c7dbd1512c96008e51c3e06758850ee44",
+    "Packages/com.zabaglione.lookingglass.viewweave.bridge/Runtime/Common/BridgeSubpixelMode.cs": "e298bc0056e616dc821af36c5659652ca8b2595fa0ef0cbd86e7780e53248670",
+    "Packages/com.zabaglione.lookingglass.viewweave.bridge/Runtime/Platforms/Windows/ViewWeaveBridgeSession.cs": "d727c8f4d4c9df908445f31a787b38d7843264b01caf314e6b1c3c71a066fcf0"
+  },
+  "validationSources": {
+    "Native/tests/metal_calibration_test.cpp": "f2b3a07c782f6a887626aa67435ddb9d9a5dc7e97ee2093920828d4e301d4aa5",
+    "Native/tests/metal_display_metadata_test.cpp": "2baddcebf342abccb04ffa26fdfff3dfe95078c564204a6d5c3ea1b635e0f558",
+    "Native/tests/fake_metal_metadata.cpp": "cf9c3b5200fd1ceb0bbcfa537253ccf64cc700277e32e7c803842c94c165a781",
+    "Native/tests/metal_bridge_cells_test.mm": "7df79500cbf63d2c3efde8036869287769e9b4c90a327b440575b5ab4e1c7fbb",
+    "Tests/Metal/Unity/Assets/Editor/MetalShaderValidation.cs": "7118884602aba10e509a05086cec8ed81278fbf437cc88bbfe4573d594a8206a",
+    "Tests/Metal/Unity/Assets/Editor/MetalNativeSessionValidation.cs": "af96571245ebed681bf85722289140bba3d382277ead275bc0c5c34504ab499e",
+    "Tests/Pipelines/Unity/Assets/MetalCurrentValidation/Editor/MetalCurrentEditorValidation.cs": "f9b324472581d448850f7c298fa0ace8ffee472493737b8793366b5c710b5b3a",
+    "Tests/Pipelines/Unity/Assets/MetalCurrentValidation/Editor/MetalCurrentValidationBuilder.cs": "4b122bd1b3e14f14635a70ce823aa09b5012cb9771fab7c290c999a258faa1fb",
+    "Tests/Pipelines/Unity/Assets/MetalCurrentValidation/MetalCurrentValidationRunner.cs": "d74ae20ae0dad70f999bca9688c5f51bfbf036136fca498ef00329c1963b78b5",
+    "Tests/Pipelines/Unity/Assets/BridgeSessionValidation/BridgeSessionValidationTests.cs": "c6dc9e084c4b70260bab327ec5c72b83bbe5137b250b4063ebd0b6adb9c09286",
+    "Tests/Pipelines/Unity/Assets/RigCameraCreationValidation/Editor/RigAuthoringInspectorTests.cs": "1d637c9565b4caaafdc3743a7e2f911f1c99f7455106986a8f0d52d846880b71",
+    "Tests/Pipelines/Unity/Assets/RigCameraCreationValidation/Editor/RigMetalInspectorTests.cs": "6dd69af53ccf351f326d94708c83a7f7405c436aa30aa44b3f8f248ec9a9765a"
+  },
+  "native": {
+    "build": "Release arm64",
+    "passed": 7,
+    "total": 7,
+    "failed": 0,
+    "skipped": 0,
+    "raw": {
+      "path": ".local/metal-subpixel-20261011/native-build-final.log",
+      "sha256": "91f1a36f393f747376e0bb6b57e93319ffe170cc048cb8d98dc02eaf3349ec35"
+    },
+    "jsonCases": 20,
+    "httpScenarios": [
+      "success",
+      "retrieval failure",
+      "invalid JSON",
+      "size limit",
+      "cleanup failure"
+    ],
+    "additionalGuards": [
+      "both mode aliases",
+      "conflicting mode aliases",
+      "missing cell mode",
+      "intermediate float overflow",
+      "malformed cells",
+      "duplicate native indices",
+      "native/JSON fingerprint mismatch"
+    ],
+    "warnings": [
+      "preexisting optional Qt library search path missing"
+    ]
+  },
+  "gpu": [
+    {
+      "passed": true,
+      "unity": "6000.6.4f1",
+      "graphicsApi": "Metal",
+      "colorSpace": "Linear",
+      "classicCases": 8,
+      "cellCases": 20,
+      "channelSamples": 64512,
+      "width": 32,
+      "height": 24,
+      "maximumError": 0.0019561350345611572,
+      "phaseBoundaryMargin": 0.0004687306936830282,
+      "pipeline": "BuiltIn",
+      "raw": {
+        "path": ".local/metal-subpixel-20261011/shader-linear.json",
+        "sha256": "d7e4436497b67866f0a1344183ee5c1327728945e5b13a01e73fa6703079f8b2"
+      },
+      "log": {
+        "path": ".local/metal-subpixel-20261011/shader-linear.log",
+        "sha256": "2df80cb15b9cc1efa999340fa91103e75022441ceef10bef7f80c576e94b826a"
+      },
+      "threshold": 0.006,
+      "pixelsSkipped": 0
+    },
+    {
+      "passed": true,
+      "unity": "6000.6.4f1",
+      "graphicsApi": "Metal",
+      "colorSpace": "Gamma",
+      "classicCases": 8,
+      "cellCases": 20,
+      "channelSamples": 64512,
+      "width": 32,
+      "height": 24,
+      "maximumError": 0.0019608139991760254,
+      "phaseBoundaryMargin": 0.0004687306936830282,
+      "pipeline": "BuiltIn",
+      "raw": {
+        "path": ".local/metal-subpixel-20261011/shader-gamma.json",
+        "sha256": "29e53e23022f4e7276945fc9fb6e7eb4b7828afdcbe864ac489ac2cc70b1320e"
+      },
+      "log": {
+        "path": ".local/metal-subpixel-20261011/shader-gamma.log",
+        "sha256": "bf50c27040ef463dcba73bec46839e732857f5b2b49c2d79bca1ef7fd674a3c5"
+      },
+      "threshold": 0.006,
+      "pixelsSkipped": 0
+    },
+    {
+      "passed": true,
+      "unity": "6000.6.4f1",
+      "graphicsApi": "Metal",
+      "colorSpace": "Linear",
+      "classicCases": 8,
+      "cellCases": 20,
+      "channelSamples": 64512,
+      "width": 32,
+      "height": 24,
+      "maximumError": 0.0019561350345611572,
+      "phaseBoundaryMargin": 0.0004687306936830282,
+      "pipeline": "URP",
+      "raw": {
+        "path": ".local/metal-subpixel-20261011/shader-urp.json",
+        "sha256": "d7e4436497b67866f0a1344183ee5c1327728945e5b13a01e73fa6703079f8b2"
+      },
+      "log": {
+        "path": ".local/metal-subpixel-20261011/shader-urp.log",
+        "sha256": "7427567462f93892014f76e7ee14a4589ca2825cab52d3b84f6b5ab5fb458cc1"
+      },
+      "threshold": 0.006,
+      "pixelsSkipped": 0
+    },
+    {
+      "passed": true,
+      "unity": "6000.6.4f1",
+      "graphicsApi": "Metal",
+      "colorSpace": "Linear",
+      "classicCases": 8,
+      "cellCases": 20,
+      "channelSamples": 64512,
+      "width": 32,
+      "height": 24,
+      "maximumError": 0.0019561350345611572,
+      "phaseBoundaryMargin": 0.0004687306936830282,
+      "pipeline": "HDRP",
+      "raw": {
+        "path": ".local/metal-subpixel-20261011/shader-hdrp.json",
+        "sha256": "d7e4436497b67866f0a1344183ee5c1327728945e5b13a01e73fa6703079f8b2"
+      },
+      "log": {
+        "path": ".local/metal-subpixel-20261011/shader-hdrp.log",
+        "sha256": "6b0fe234f731458a681db58a9b6984a87f03253c10924e314c4ce26972a31f70"
+      },
+      "threshold": 0.006,
+      "pixelsSkipped": 0
+    }
+  ],
+  "editors": [
+    {
+      "passed": true,
+      "pipeline": "URP",
+      "error": "",
+      "localFrames": 9,
+      "deviceFrames": 45,
+      "sequenceObservedMask": 7,
+      "pendingResources": 0,
+      "pendingRetirement": 0,
+      "runtime": {
+        "passed": true,
+        "development": true,
+        "editor": true,
+        "unityVersion": "6000.6.4f1",
+        "graphicsApi": "Metal",
+        "pipeline": "URP",
+        "error": "",
+        "capture": ".local/metal-subpixel-20261011/urp-editor/current.png",
+        "sequence": ".local/metal-subpixel-20261011/urp-editor/ViewWeave_20261011_101822_233_66ac3556ee7c41959d2f02926eef5866",
+        "actualPipeline": "UniversalRenderPipeline",
+        "shaderPipelineTag": "UniversalPipeline",
+        "firstCompleted": 60,
+        "restartedCompleted": 30,
+        "recordedFrames": 3,
+        "distinctColors": 15,
+        "width": 1023,
+        "height": 1020,
+        "views": 66,
+        "pendingRetirement": 0,
+        "cellPatternMode": 0,
+        "subpixelCellCount": 0,
+        "redPixels": 152354,
+        "greenPixels": 96813,
+        "magentaPixels": 0,
+        "activeSubpixelChangeRejected": true,
+        "missingCellsRejected": true,
+        "classicRestartVerified": true,
+        "missingCellsError": "Calibrated Cells requires a Bridge subpixel cell table for the selected display.",
+        "restartSubpixelMode": "ClassicRgb"
+      },
+      "raw": {
+        "path": ".local/metal-subpixel-20261011/urp-editor/editor.json",
+        "sha256": "4f9e0ecd0ddac7f46137f32da6aca411d8406c9334203bddbab471e8336a613c"
+      },
+      "capturePixels": {
+        "path": ".local/metal-subpixel-20261011/urp-editor/current.png",
+        "sha256": "ae293b00aada68185630fe211c6e71064ba76e0845b84231692ce9780f42e95b",
+        "redPixels": 152354,
+        "greenPixels": 96813,
+        "magentaPixels": 0,
+        "thresholds": "red:r>2g,r>2b,r>24;green:g>2r,g>2b,g>24;magenta:r>180,b>180,g<80"
+      },
+      "classicPixels": {
+        "path": ".local/metal-subpixel-20261011/urp-editor/classic.png",
+        "sha256": "ae293b00aada68185630fe211c6e71064ba76e0845b84231692ce9780f42e95b",
+        "redPixels": 152354,
+        "greenPixels": 96813,
+        "magentaPixels": 0,
+        "thresholds": "red:r>2g,r>2b,r>24;green:g>2r,g>2b,g>24;magenta:r>180,b>180,g<80"
+      },
+      "guiConsoleErrors": 0,
+      "guiConsoleWarnings": 0,
+      "editorNaturalExitCode": 0
+    },
+    {
+      "passed": true,
+      "pipeline": "HDRP",
+      "error": "",
+      "localFrames": 9,
+      "deviceFrames": 45,
+      "sequenceObservedMask": 7,
+      "pendingResources": 0,
+      "pendingRetirement": 0,
+      "runtime": {
+        "passed": true,
+        "development": true,
+        "editor": true,
+        "unityVersion": "6000.6.4f1",
+        "graphicsApi": "Metal",
+        "pipeline": "HDRP",
+        "error": "",
+        "capture": ".local/metal-subpixel-20261011/hdrp-editor/current.png",
+        "sequence": ".local/metal-subpixel-20261011/hdrp-editor/ViewWeave_20261011_102016_370_3de0178b1b224fe1b38cf0e844c6c21c",
+        "actualPipeline": "HDRenderPipeline",
+        "shaderPipelineTag": "HDRenderPipeline",
+        "firstCompleted": 60,
+        "restartedCompleted": 30,
+        "recordedFrames": 3,
+        "distinctColors": 1636,
+        "width": 1023,
+        "height": 1020,
+        "views": 66,
+        "pendingRetirement": 0,
+        "cellPatternMode": 0,
+        "subpixelCellCount": 0,
+        "redPixels": 167982,
+        "greenPixels": 106817,
+        "magentaPixels": 0,
+        "activeSubpixelChangeRejected": true,
+        "missingCellsRejected": true,
+        "classicRestartVerified": true,
+        "missingCellsError": "Calibrated Cells requires a Bridge subpixel cell table for the selected display.",
+        "restartSubpixelMode": "ClassicRgb"
+      },
+      "raw": {
+        "path": ".local/metal-subpixel-20261011/hdrp-editor/editor.json",
+        "sha256": "372f1c436c703476d06ef96a243658141c4c21c894770a0c1155860877c472dc"
+      },
+      "capturePixels": {
+        "path": ".local/metal-subpixel-20261011/hdrp-editor/current.png",
+        "sha256": "e126dad7380d5820df199ac3271de4c7b381ded8470261c7906ad1fd85111200",
+        "redPixels": 167982,
+        "greenPixels": 106817,
+        "magentaPixels": 0,
+        "thresholds": "red:r>2g,r>2b,r>24;green:g>2r,g>2b,g>24;magenta:r>180,b>180,g<80"
+      },
+      "classicPixels": {
+        "path": ".local/metal-subpixel-20261011/hdrp-editor/classic.png",
+        "sha256": "e126dad7380d5820df199ac3271de4c7b381ded8470261c7906ad1fd85111200",
+        "redPixels": 167982,
+        "greenPixels": 106817,
+        "magentaPixels": 0,
+        "thresholds": "red:r>2g,r>2b,r>24;green:g>2r,g>2b,g>24;magenta:r>180,b>180,g<80"
+      },
+      "guiConsoleErrors": 0,
+      "guiConsoleWarnings": 0,
+      "editorNaturalExitCode": 0
+    }
+  ],
+  "players": [
+    {
+      "passed": true,
+      "development": true,
+      "editor": false,
+      "unityVersion": "6000.6.4f1",
+      "graphicsApi": "Metal",
+      "pipeline": "URP",
+      "error": "",
+      "capture": ".local/metal-subpixel-20261011/urp-development/current.png",
+      "sequence": ".local/metal-subpixel-20261011/urp-development/ViewWeave_20261011_102545_662_c9c75c817fcd424192cd7a0023d40250",
+      "actualPipeline": "UniversalRenderPipeline",
+      "shaderPipelineTag": "UniversalPipeline",
+      "firstCompleted": 60,
+      "restartedCompleted": 30,
+      "recordedFrames": 3,
+      "distinctColors": 15,
+      "width": 1023,
+      "height": 1020,
+      "views": 66,
+      "pendingRetirement": 0,
+      "cellPatternMode": 0,
+      "subpixelCellCount": 0,
+      "redPixels": 152354,
+      "greenPixels": 96813,
+      "magentaPixels": 0,
+      "activeSubpixelChangeRejected": true,
+      "missingCellsRejected": true,
+      "classicRestartVerified": true,
+      "missingCellsError": "Calibrated Cells requires a Bridge subpixel cell table for the selected display.",
+      "restartSubpixelMode": "ClassicRgb",
+      "configuration": "Development",
+      "buildSucceeded": true,
+      "naturalExitCode": 0,
+      "executableSha256": "6f76f09ba57135eaa63cb29310146ba4f4bae621e10f1d0e42a4eddab2dd0be3",
+      "build": {
+        "pipeline": "URP",
+        "activeAsset": "Assets/SamplePlayerValidationGenerated/MetalCurrent/Pipeline.asset",
+        "activePipeline": "UniversalRenderPipeline",
+        "shaderPipelineTag": "UniversalPipeline",
+        "configuredQualityAssets": 6,
+        "preparedInSeparateProcess": true,
+        "succeeded": true
+      },
+      "buildRaw": {
+        "path": ".local/metal-subpixel-20261011/urp-development/build.json",
+        "sha256": "490699e40fc03f12349d6cb95e3042cb6f76a8c66ba317dd7db01c08fd10e915"
+      },
+      "buildLog": {
+        "path": ".local/metal-subpixel-20261011/urp-development-build.log",
+        "sha256": "6ff9bf848a4ae645af12963261be834cb6ebb720a388d4e92699f63de5ac9cde"
+      },
+      "classicPixels": {
+        "path": ".local/metal-subpixel-20261011/urp-development/classic.png",
+        "sha256": "ae293b00aada68185630fe211c6e71064ba76e0845b84231692ce9780f42e95b",
+        "redPixels": 152354,
+        "greenPixels": 96813,
+        "magentaPixels": 0,
+        "thresholds": "red:r>2g,r>2b,r>24;green:g>2r,g>2b,g>24;magenta:r>180,b>180,g<80"
+      },
+      "raw": {
+        "path": ".local/metal-subpixel-20261011/urp-development/runtime.json",
+        "sha256": "6120fc886f492204369b98332403509e24ffd71e25d4d8418a7b820619f87663"
+      },
+      "log": {
+        "path": ".local/metal-subpixel-20261011/urp-development-player.log",
+        "sha256": "89b0629c35e22a1cc869bceaaf9d3627796011fd3198f18bbcb12def2b143587"
+      },
+      "capturePixels": {
+        "path": ".local/metal-subpixel-20261011/urp-development/current.png",
+        "sha256": "ae293b00aada68185630fe211c6e71064ba76e0845b84231692ce9780f42e95b",
+        "redPixels": 152354,
+        "greenPixels": 96813,
+        "magentaPixels": 0,
+        "thresholds": "red:r>2g,r>2b,r>24;green:g>2r,g>2b,g>24;magenta:r>180,b>180,g<80"
+      }
+    },
+    {
+      "passed": true,
+      "development": false,
+      "editor": false,
+      "unityVersion": "6000.6.4f1",
+      "graphicsApi": "Metal",
+      "pipeline": "URP",
+      "error": "",
+      "capture": ".local/metal-subpixel-20261011/urp-release/current.png",
+      "sequence": ".local/metal-subpixel-20261011/urp-release/ViewWeave_20261011_102621_875_fc8e49c33bd3420e8743a70c38896435",
+      "actualPipeline": "UniversalRenderPipeline",
+      "shaderPipelineTag": "UniversalPipeline",
+      "firstCompleted": 60,
+      "restartedCompleted": 30,
+      "recordedFrames": 3,
+      "distinctColors": 15,
+      "width": 1023,
+      "height": 1020,
+      "views": 66,
+      "pendingRetirement": 0,
+      "cellPatternMode": 0,
+      "subpixelCellCount": 0,
+      "redPixels": 152354,
+      "greenPixels": 96813,
+      "magentaPixels": 0,
+      "activeSubpixelChangeRejected": true,
+      "missingCellsRejected": true,
+      "classicRestartVerified": true,
+      "missingCellsError": "Calibrated Cells requires a Bridge subpixel cell table for the selected display.",
+      "restartSubpixelMode": "ClassicRgb",
+      "configuration": "Release",
+      "buildSucceeded": true,
+      "naturalExitCode": 0,
+      "executableSha256": "de3f50a1639d4b83a733b1d96a12c6a73ca71ac579a517168f782618c1e8e2c6",
+      "build": {
+        "pipeline": "URP",
+        "activeAsset": "Assets/SamplePlayerValidationGenerated/MetalCurrent/Pipeline.asset",
+        "activePipeline": "UniversalRenderPipeline",
+        "shaderPipelineTag": "UniversalPipeline",
+        "configuredQualityAssets": 6,
+        "preparedInSeparateProcess": true,
+        "succeeded": true
+      },
+      "buildRaw": {
+        "path": ".local/metal-subpixel-20261011/urp-release/build.json",
+        "sha256": "490699e40fc03f12349d6cb95e3042cb6f76a8c66ba317dd7db01c08fd10e915"
+      },
+      "buildLog": {
+        "path": ".local/metal-subpixel-20261011/urp-release-build.log",
+        "sha256": "9f81569f5aa6e54a3da25bb3cb228cdcddb5640fdbbd9a5b0ae6628a8af38ef2"
+      },
+      "classicPixels": {
+        "path": ".local/metal-subpixel-20261011/urp-release/classic.png",
+        "sha256": "ae293b00aada68185630fe211c6e71064ba76e0845b84231692ce9780f42e95b",
+        "redPixels": 152354,
+        "greenPixels": 96813,
+        "magentaPixels": 0,
+        "thresholds": "red:r>2g,r>2b,r>24;green:g>2r,g>2b,g>24;magenta:r>180,b>180,g<80"
+      },
+      "raw": {
+        "path": ".local/metal-subpixel-20261011/urp-release/runtime.json",
+        "sha256": "47ef87668832ba6d4a50f1b23166029c25f31571b3bd99c0568b8f39dbba9720"
+      },
+      "log": {
+        "path": ".local/metal-subpixel-20261011/urp-release-player.log",
+        "sha256": "1c7c82404be597c58647956388e9c4a69dafa4596f95bb2000cf65c917a6ae85"
+      },
+      "capturePixels": {
+        "path": ".local/metal-subpixel-20261011/urp-release/current.png",
+        "sha256": "ae293b00aada68185630fe211c6e71064ba76e0845b84231692ce9780f42e95b",
+        "redPixels": 152354,
+        "greenPixels": 96813,
+        "magentaPixels": 0,
+        "thresholds": "red:r>2g,r>2b,r>24;green:g>2r,g>2b,g>24;magenta:r>180,b>180,g<80"
+      }
+    },
+    {
+      "passed": true,
+      "development": true,
+      "editor": false,
+      "unityVersion": "6000.6.4f1",
+      "graphicsApi": "Metal",
+      "pipeline": "HDRP",
+      "error": "",
+      "capture": ".local/metal-subpixel-20261011/hdrp-development/current.png",
+      "sequence": ".local/metal-subpixel-20261011/hdrp-development/ViewWeave_20261011_102726_829_2b3f44b1b02e4e78915efa85de3338bf",
+      "actualPipeline": "HDRenderPipeline",
+      "shaderPipelineTag": "HDRenderPipeline",
+      "firstCompleted": 60,
+      "restartedCompleted": 30,
+      "recordedFrames": 3,
+      "distinctColors": 1612,
+      "width": 1023,
+      "height": 1020,
+      "views": 66,
+      "pendingRetirement": 0,
+      "cellPatternMode": 0,
+      "subpixelCellCount": 0,
+      "redPixels": 167918,
+      "greenPixels": 107167,
+      "magentaPixels": 0,
+      "activeSubpixelChangeRejected": true,
+      "missingCellsRejected": true,
+      "classicRestartVerified": true,
+      "missingCellsError": "Calibrated Cells requires a Bridge subpixel cell table for the selected display.",
+      "restartSubpixelMode": "ClassicRgb",
+      "configuration": "Development",
+      "buildSucceeded": true,
+      "naturalExitCode": 0,
+      "executableSha256": "10f460fd6af8060360951b5ffec8e577ea7fd60d92e54bb5e08321a632a528da",
+      "build": {
+        "pipeline": "HDRP",
+        "activeAsset": "Assets/SamplePlayerValidationGenerated/MetalCurrent/Pipeline.asset",
+        "activePipeline": "HDRenderPipeline",
+        "shaderPipelineTag": "HDRenderPipeline",
+        "configuredQualityAssets": 6,
+        "preparedInSeparateProcess": true,
+        "succeeded": true
+      },
+      "buildRaw": {
+        "path": ".local/metal-subpixel-20261011/hdrp-development/build.json",
+        "sha256": "07afeb7a9c2c2852d72d56f154f58f9a12e10cb77d9320ea4ec10dcdfa7280fe"
+      },
+      "buildLog": {
+        "path": ".local/metal-subpixel-20261011/hdrp-development-build.log",
+        "sha256": "a38ff9e808fed3bce8e3890e4634983f21775adcd9486a65bfbad3542f48e252"
+      },
+      "classicPixels": {
+        "path": ".local/metal-subpixel-20261011/hdrp-development/classic.png",
+        "sha256": "07ec1e19d7d26ac5f01915cfae55df95068fb681f240eef7780a859541dba44b",
+        "redPixels": 167918,
+        "greenPixels": 107167,
+        "magentaPixels": 0,
+        "thresholds": "red:r>2g,r>2b,r>24;green:g>2r,g>2b,g>24;magenta:r>180,b>180,g<80"
+      },
+      "raw": {
+        "path": ".local/metal-subpixel-20261011/hdrp-development/runtime.json",
+        "sha256": "332d6882cf52b76ab63dac1975452c51b96c3344ca8f834d83f88600e5c7203f"
+      },
+      "log": {
+        "path": ".local/metal-subpixel-20261011/hdrp-development-player.log",
+        "sha256": "f95682a00d17833d98e9511586093c2d1456b54f878e014d79c89c3cf21893f9"
+      },
+      "capturePixels": {
+        "path": ".local/metal-subpixel-20261011/hdrp-development/current.png",
+        "sha256": "07ec1e19d7d26ac5f01915cfae55df95068fb681f240eef7780a859541dba44b",
+        "redPixels": 167918,
+        "greenPixels": 107167,
+        "magentaPixels": 0,
+        "thresholds": "red:r>2g,r>2b,r>24;green:g>2r,g>2b,g>24;magenta:r>180,b>180,g<80"
+      }
+    },
+    {
+      "passed": true,
+      "development": false,
+      "editor": false,
+      "unityVersion": "6000.6.4f1",
+      "graphicsApi": "Metal",
+      "pipeline": "HDRP",
+      "error": "",
+      "capture": ".local/metal-subpixel-20261011/hdrp-release/current.png",
+      "sequence": ".local/metal-subpixel-20261011/hdrp-release/ViewWeave_20261011_102824_396_a50c33327eb14e1ca6605fbbf000d43e",
+      "actualPipeline": "HDRenderPipeline",
+      "shaderPipelineTag": "HDRenderPipeline",
+      "firstCompleted": 60,
+      "restartedCompleted": 30,
+      "recordedFrames": 3,
+      "distinctColors": 1612,
+      "width": 1023,
+      "height": 1020,
+      "views": 66,
+      "pendingRetirement": 0,
+      "cellPatternMode": 0,
+      "subpixelCellCount": 0,
+      "redPixels": 167918,
+      "greenPixels": 107167,
+      "magentaPixels": 0,
+      "activeSubpixelChangeRejected": true,
+      "missingCellsRejected": true,
+      "classicRestartVerified": true,
+      "missingCellsError": "Calibrated Cells requires a Bridge subpixel cell table for the selected display.",
+      "restartSubpixelMode": "ClassicRgb",
+      "configuration": "Release",
+      "buildSucceeded": true,
+      "naturalExitCode": 0,
+      "executableSha256": "3ea8621fae24dcb88fbcdcb376235749ef8bb6783f620fc4f684c924fb9965fb",
+      "build": {
+        "pipeline": "HDRP",
+        "activeAsset": "Assets/SamplePlayerValidationGenerated/MetalCurrent/Pipeline.asset",
+        "activePipeline": "HDRenderPipeline",
+        "shaderPipelineTag": "HDRenderPipeline",
+        "configuredQualityAssets": 6,
+        "preparedInSeparateProcess": true,
+        "succeeded": true
+      },
+      "buildRaw": {
+        "path": ".local/metal-subpixel-20261011/hdrp-release/build.json",
+        "sha256": "07afeb7a9c2c2852d72d56f154f58f9a12e10cb77d9320ea4ec10dcdfa7280fe"
+      },
+      "buildLog": {
+        "path": ".local/metal-subpixel-20261011/hdrp-release-build.log",
+        "sha256": "38180ee1210a3065b3f2894d50045f17f246ce8b47a72283fea569f98b790c01"
+      },
+      "classicPixels": {
+        "path": ".local/metal-subpixel-20261011/hdrp-release/classic.png",
+        "sha256": "07ec1e19d7d26ac5f01915cfae55df95068fb681f240eef7780a859541dba44b",
+        "redPixels": 167918,
+        "greenPixels": 107167,
+        "magentaPixels": 0,
+        "thresholds": "red:r>2g,r>2b,r>24;green:g>2r,g>2b,g>24;magenta:r>180,b>180,g<80"
+      },
+      "raw": {
+        "path": ".local/metal-subpixel-20261011/hdrp-release/runtime.json",
+        "sha256": "786adafc491253c32cc4197020771b76ba03f19362be9e515fdf2975b38c89dc"
+      },
+      "log": {
+        "path": ".local/metal-subpixel-20261011/hdrp-release-player.log",
+        "sha256": "2d48a67269b02176589df7705dbe7bf0bfa3b53fb092dcd9e88f57f58b52258d"
+      },
+      "capturePixels": {
+        "path": ".local/metal-subpixel-20261011/hdrp-release/current.png",
+        "sha256": "07ec1e19d7d26ac5f01915cfae55df95068fb681f240eef7780a859541dba44b",
+        "redPixels": 167918,
+        "greenPixels": 107167,
+        "magentaPixels": 0,
+        "thresholds": "red:r>2g,r>2b,r>24;green:g>2r,g>2b,g>24;magenta:r>180,b>180,g<80"
+      }
+    }
+  ],
+  "nativeGoSession": {
+    "passed": true,
+    "cycles": 3,
+    "raw": {
+      "path": ".local/metal-subpixel-20261011/native-go-session.log",
+      "sha256": "3bbd91e764a5652458cc262b4ba05c1005e58b3e48a207c7b915adb9455588d4"
+    }
+  },
+  "nativeArtifact": {
+    "sha256": "5df5b50af994539b97372c4776b24245e2aa6054411f16f6ed9fcec6d1057cc2",
+    "bytes": 156944,
+    "matchedPaths": [
+      "Packages/com.zabaglione.lookingglass.viewweave.bridge/Plugins/macOS/lookingglass_bridge_shim.dylib",
+      "Distribution/urp/ViewWeave/Bridge/Plugins/macOS/lookingglass_bridge_shim.dylib",
+      "Distribution/hdrp/ViewWeave/Bridge/Plugins/macOS/lookingglass_bridge_shim.dylib",
+      ".local/metal-subpixel-20261011/URPDevelopment.app/Contents/PlugIns/ARM64/lookingglass_bridge_shim.dylib",
+      ".local/metal-subpixel-20261011/URPRelease.app/Contents/PlugIns/ARM64/lookingglass_bridge_shim.dylib",
+      ".local/metal-subpixel-20261011/HDRPDevelopment.app/Contents/PlugIns/ARM64/lookingglass_bridge_shim.dylib",
+      ".local/metal-subpixel-20261011/HDRPRelease.app/Contents/PlugIns/ARM64/lookingglass_bridge_shim.dylib"
+    ],
+    "provenance": {
+      "path": "Packages/com.zabaglione.lookingglass.viewweave.bridge/Plugins/macOS/native-provenance.json",
+      "sha256": "3bde642bf448886554a2e9fc2655ee3c6e9810c4cb554d5ad69aae6df8c17332"
+    }
+  },
+  "references": {
+    "unityPlugin": {
+      "version": "3.2.8",
+      "sourcePage": "https://lookingglassfactory.com/software/looking-glass-unity-plugin",
+      "sha256": "0c0628d6d8ea2fbfe54006392abcdfd5702d61f2bc5ab0e7329696674a8c3f31",
+      "codePorted": false
+    },
+    "toolkitCommit": "0b6209bfa83c8eda5dd862666d4af83bd9e1ec67",
+    "bridgeJsCommit": "f09f7f7510b09bb502d602c26907c958ed77075f"
+  },
+  "liveBridgeMetadata": {
+    "rawAvailableOutputDevices": {
+      "path": ".local/metal-subpixel-20261011/raw/available_output_devices.json",
+      "sha256": "2e082f9bb1fe67dffa73501c865a458f9dd1c55451f4dfb3f6f0e5ffb81271ff"
+    },
+    "goJsonOmitsCellMetadata": true,
+    "specialCellHttpProductionOnPhysicalDevice": false
+  },
+  "inspectorTests": {
+    "mode": "EditMode",
+    "passed": 15,
+    "total": 15,
+    "failed": 0,
+    "skipped": 0,
+    "platform": "macOS Metal",
+    "scope": "Rig Metal Inspector, Undo, mutation ownership and shared subpixel policy",
+    "raw": {
+      "path": ".local/metal-subpixel-20261011/subpixel-inspector.xml",
+      "sha256": "7f7a3789f95b771f62651b6a28031ced4f8a5445e3a7737c4d73b23c0d6a6997"
+    },
+    "log": {
+      "path": ".local/metal-subpixel-20261011/subpixel-inspector.log",
+      "sha256": "0799c8446cdd3bb7b358859d8b6669b1ecbb5423e29a27013ecdecf8c2903ab0"
+    }
+  },
+  "windowsConfigurationTestsOnMac": [
+    {
+      "passed": 1,
+      "total": 1,
+      "mode": "EditMode",
+      "host": "macOS",
+      "WindowsNativeDeviceExecuted": false,
+      "raw": {
+        "path": ".local/metal-subpixel-20261011/windows-subpixel-ui.xml",
+        "sha256": "1d2b34a2610d8f9a4a8bfddabb66d11661c5dc6240d3410e39b894e693b0f704"
+      },
+      "log": {
+        "path": ".local/metal-subpixel-20261011/windows-subpixel-ui.log",
+        "sha256": "f36910a56481dc6d4a30c24ad27e4d6cccaa7ba57559ced7e71b89b66abf39ad"
+      }
+    },
+    {
+      "passed": 1,
+      "total": 1,
+      "mode": "PlayMode",
+      "host": "macOS",
+      "WindowsNativeDeviceExecuted": false,
+      "raw": {
+        "path": ".local/metal-subpixel-20261011/windows-subpixel-policy.xml",
+        "sha256": "5bcfaa0368fdaf8c4fd6815c0842c7030ee22c939b3ef534c2c3a2c6a0899819"
+      },
+      "log": {
+        "path": ".local/metal-subpixel-20261011/windows-subpixel-policy.log",
+        "sha256": "8051243a8d0cad3a27251edbc2c1ab382107801722ca800ba1b2bde17f21ff94"
+      }
+    }
+  ],
+  "subpixelSelection": {
+    "modes": [
+      "Automatic",
+      "ClassicRgb",
+      "CalibratedCells"
+    ],
+    "WindowsManualApplication": "unsupported; non-Automatic rejected before native session start",
+    "classicRgbPhaseIndices": [
+      0,
+      1,
+      2
+    ],
+    "imageGateScope": "producer quilt only; interlace math checked separately with synthetic GPU data",
+    "configurationScope": "shared Bridge policy and Inspector contract; macOS Go execution plus synthetic policy/UI tests"
+  },
+  "preliminaryFailures": [
+    {
+      "run": "initial Windows-backed Inspector test on Mac",
+      "tests": 1,
+      "passed": 0,
+      "reason": "fixture root was not attached to a UI panel, so value change dispatched no callback; actual Inspector window attachment fixed before successful rerun",
+      "raw": {
+        "path": ".local/metal-subpixel-20261011/windows-subpixel-ui-first.xml",
+        "sha256": "ecf116fe27caaae61c188a7d72b37bfecfe21caeb1d9e41fd2f8a43de166bc93"
+      },
+      "log": {
+        "path": ".local/metal-subpixel-20261011/windows-subpixel-ui-first.log",
+        "sha256": "6ed7fe579811452f18d16125b332c349dabb94603ba244a7ceddda433c924d63"
+      },
+      "productFailure": false
+    },
+    {
+      "run": "first selection URP Editor attempt",
+      "reason": "existing output PNG and sidecar protected from overwrite; isolated fresh directory used for final rerun; duplicate ignored fixture menu warning removed",
+      "testsPassed": false,
+      "runtime": {
+        "path": ".local/metal-subpixel-20261011/before-final-selection/urp-editor/runtime.json",
+        "sha256": "ced157e004774375ebb3a6e71b522bb4123d7250f043d21de4659c9bbdd34f22"
+      },
+      "editor": {
+        "path": ".local/metal-subpixel-20261011/before-final-selection/urp-editor/editor.json",
+        "sha256": "383cbb549b445ae339f46b96ef77fbbc59b45c9a592dd16e7f0ce0a16dbc2da5"
+      },
+      "log": {
+        "path": ".local/metal-subpixel-20261011/before-final-selection/urp-editor.log",
+        "sha256": "829c22e16f7376c5d93a3179750f150e69c8f88f718953d022053fd664370c4b"
+      },
+      "productFailure": false
+    },
+    {
+      "run": "initial URP Development Player",
+      "lifecycleCountersPassed": true,
+      "imageGatePassed": false,
+      "redPixels": 0,
+      "greenPixels": 0,
+      "magentaPixels": 247052,
+      "reason": "fixture URP Unlit shader stripped due to render pipeline tag mismatch; prepare/build readiness fix verified in rerun",
+      "runtime": {
+        "path": ".local/metal-subpixel-20261011/initial-device-validation/urp-development/runtime.json",
+        "sha256": "5de7dc7eb9efa9c466662a83bbe9f8b23b2549ee8306a622262c04e3cf529598"
+      },
+      "buildLog": {
+        "path": ".local/metal-subpixel-20261011/initial-device-validation/urp-development-build.log",
+        "sha256": "623c9822f5318c99dd8ce9925aa821622b297232b838e4988074bd5436ee4f62"
+      },
+      "capture": {
+        "path": ".local/metal-subpixel-20261011/initial-device-validation/urp-development/current.png",
+        "sha256": "9d27c1fa711346b53760162cad99c3237721e943436536ebcefecc94bab7fd12"
+      },
+      "productFailure": false
+    },
+    {
+      "run": "first URP GPU attempt",
+      "tests": 0,
+      "reason": "duplicate class from an older ignored generated fixture; new fixture renamed before successful rerun",
+      "productFailure": false
+    }
+  ],
+  "unverified": [
+    "special-cell physical device output and optical alignment",
+    "16 Spatial Landscape",
+    "cell-table invView=0",
+    "more than four cells",
+    "unknown mode",
+    "rotated display",
+    "Intel runtime",
+    "long duration",
+    "hotplug/multiple devices",
+    "Player window-close/forced exit",
+    "arbitrary scenes/effects",
+    "Gamma scene/device output generally"
+  ]
+}

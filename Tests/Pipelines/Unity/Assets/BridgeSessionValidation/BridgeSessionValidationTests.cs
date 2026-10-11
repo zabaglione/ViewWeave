@@ -13,6 +13,25 @@ namespace ViewWeave.BridgeSessionValidation
     public sealed class BridgeSessionValidationTests
     {
         [Test]
+        public void ManualSubpixelModeIsSavedButCannotStartBridgeManagedOutput()
+        {
+            GameObject host = CreateHost(false);
+            try
+            {
+                ViewWeaveBridgeSession session = host.GetComponent<ViewWeaveBridgeSession>();
+                Assert.That(session.TrySetSubpixelMode(BridgeSubpixelMode.ClassicRgb, out string error), Is.True, error);
+                Assert.That(session.SubpixelMode, Is.EqualTo(BridgeSubpixelMode.ClassicRgb));
+                Assert.That(session.StartSession(), Is.False);
+                Assert.That(session.LastError, Does.Contain("Automatic"));
+                Assert.That(session.SubpixelMode, Is.EqualTo(BridgeSubpixelMode.ClassicRgb));
+                Assert.That(host.GetComponent<BridgeWorkerQuiltOutput>().State, Is.EqualTo(BridgeWorkerQuiltOutput.WorkerState.Closed));
+                Assert.That(session.TrySetSubpixelMode((BridgeSubpixelMode)999, out error), Is.False);
+                Assert.That(session.SubpixelMode, Is.EqualTo(BridgeSubpixelMode.ClassicRgb));
+            }
+            finally { Object.DestroyImmediate(host); }
+        }
+
+        [Test]
         public void InvalidQualityIsRejectedWithoutChangingQuality()
         {
             GameObject host = CreateHost(false);

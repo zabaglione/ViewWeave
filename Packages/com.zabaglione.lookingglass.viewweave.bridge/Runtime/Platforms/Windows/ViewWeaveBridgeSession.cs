@@ -23,10 +23,12 @@ namespace ViewWeave
         public string applicationName = "ViewWeave";
         public uint displayOrdinal;
         [SerializeField] QuiltQualityPreset quality = QuiltQualityPreset.Balanced;
+        [SerializeField] BridgeSubpixelMode subpixelMode = BridgeSubpixelMode.Automatic;
 
         public SessionState State { get; private set; }
         public string LastError { get; private set; }
         public QuiltQualityPreset Quality => quality;
+        public BridgeSubpixelMode SubpixelMode => subpixelMode;
         public BridgeDisplayProfile Profile => output == null ? default : output.Profile;
 
         ViewWeaveRig rig;
@@ -231,6 +233,28 @@ namespace ViewWeave
             PollCompletionWatchdog();
         }
 
+        public bool CanChangeSubpixelMode(out string error)
+        {
+            error = string.Empty;
+            if ((State != SessionState.Idle && State != SessionState.Fault) || playbackToken != null ||
+                BridgeWorkerQuiltOutput.ShutdownPendingCount != 0 ||
+                (output != null && output.State != BridgeWorkerQuiltOutput.WorkerState.Closed))
+            {
+                error = "Stop Bridge output and wait for cleanup before changing subpixel processing.";
+                return false;
+            }
+            ViewWeaveRig owner = rig != null ? rig : GetComponent<ViewWeaveRig>();
+            return owner == null || owner.Renderer == null ||
+                owner.Renderer.TryCheckMutation(QuiltRendererMutationKind.Transport, out error);
+        }
+
+        public bool TrySetSubpixelMode(BridgeSubpixelMode value, out string error)
+        {
+            if (!BridgeSubpixelPolicy.Validate(value, out error) || !CanChangeSubpixelMode(out error)) return false;
+            subpixelMode = value;
+            return true;
+        }
+
         public bool StartSession()
         {
             ReleaseMutationOwnerIfStopped();
@@ -244,6 +268,8 @@ namespace ViewWeave
                 SetError("Bridge session is already active");
                 return false;
             }
+            if (!BridgeSubpixelPolicy.ValidateBridgeManagedOutput(subpixelMode, out string subpixelError))
+                return Fail(subpixelError);
             if (BridgeDisplayDiscovery.IsBusy)
             {
                 SetError("Bridge display metadata is still refreshing or cleaning up. Wait before starting a Session.");
@@ -577,7 +603,8 @@ namespace ViewWeave
         {
             if (rig == null || rig.Renderer == null || output == null) return true;
             QuiltRenderer renderer = rig.Renderer;
-            return renderer.sourceCamera != sourceCameraAtStart || renderer.referenceCamera != referenceCameraAtStart ||
+            return subpixelMode != BridgeSubpixelMode.Automatic ||
+                   renderer.sourceCamera != sourceCameraAtStart || renderer.referenceCamera != referenceCameraAtStart ||
                    renderer.GuardBehaviour != guardAtStart || renderer.OutputBehaviour != outputBehaviourAtStart ||
                    renderer.useRenderRequests != useRenderRequestsAtStart ||
                    !string.Equals(runtimePath ?? string.Empty, profileRuntimePathAtStart, StringComparison.Ordinal) ||

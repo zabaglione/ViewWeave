@@ -147,6 +147,9 @@ namespace ViewWeave.Editor
             outputToDevice = outputToDeviceValue;
             sourceSession = rig.GetComponent<ViewWeaveBridgeSession>();
             sourceOutput = rig.Renderer.OutputBehaviour as BridgeWorkerQuiltOutput;
+            if (outputToDevice && sourceSession != null &&
+                !BridgeSubpixelPolicy.ValidateBridgeManagedOutput(sourceSession.SubpixelMode, out string subpixelError))
+                return ResetFailedStart(subpixelError, out error);
             if (sourceSession != null && sourceSession.State != ViewWeaveBridgeSession.SessionState.Idle && sourceSession.State != ViewWeaveBridgeSession.SessionState.Fault)
                 return ResetFailedStart("Stop the regular Bridge session before starting Edit Mode preview.", out error);
             if (outputToDevice && rig.Renderer.physicalFraming != null && rig.Renderer.physicalFraming.enabled && sourceOutput != null && sourceOutput.zoom != 1f)
@@ -855,7 +858,8 @@ namespace ViewWeave.Editor
                 QuiltQualityPreset quality = sourceSession == null ? QuiltQualityPreset.Balanced : sourceSession.Quality;
                 if (quality != qualityAtStart) return true;
                 if (sourceSession != null && (sourceSession.runtimePath != configuredRuntimePathAtStart ||
-                    sourceSession.applicationName != configuredApplicationNameAtStart || sourceSession.displayOrdinal != displayOrdinalAtStart)) return true;
+                    sourceSession.applicationName != configuredApplicationNameAtStart || sourceSession.displayOrdinal != displayOrdinalAtStart ||
+                    sourceSession.SubpixelMode != BridgeSubpixelMode.Automatic)) return true;
                 if (sourceOutput != null && (sourceOutput.runtimePath != configuredOutputRuntimePathAtStart ||
                     sourceOutput.applicationName != configuredOutputApplicationNameAtStart || sourceOutput.displayOrdinal != configuredOutputDisplayOrdinalAtStart)) return true;
             }

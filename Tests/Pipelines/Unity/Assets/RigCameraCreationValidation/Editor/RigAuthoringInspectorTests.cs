@@ -299,12 +299,16 @@ namespace ViewWeave.RigCameraCreationValidation
         {
             GameObject rigObject = new GameObject("Profile With Session Rig");
             UnityEditor.Editor editor = null;
+            InspectorTestHostWindow window = null;
             try
             {
                 ViewWeaveRig rig = rigObject.AddComponent<ViewWeaveRig>();
                 rigObject.AddComponent<ViewWeaveBridgeSession>();
                 editor = UnityEditor.Editor.CreateEditor(rig, typeof(ViewWeaveRigInspector));
                 VisualElement root = editor.CreateInspectorGUI();
+                window = ScriptableObject.CreateInstance<InspectorTestHostWindow>();
+                window.Show();
+                window.rootVisualElement.Add(root);
 
                 PropertyField profileField = root.Q<PropertyField>("rigQualityProfile");
                 Assert.That(profileField, Is.Not.Null);
@@ -313,6 +317,17 @@ namespace ViewWeave.RigCameraCreationValidation
                 Assert.That(sessionQuality, Is.Not.Null);
                 Assert.That(sessionQuality.value, Is.EqualTo(QuiltQualityPreset.Balanced));
                 Assert.That(sessionQuality.enabledInHierarchy, Is.True, "an idle Session should expose its quality setting");
+                EnumField subpixelMode = root.Q<EnumField>("subpixelMode");
+                Assert.That(subpixelMode, Is.Not.Null, "Windows Session must expose the shared subpixel setting");
+                Assert.That(subpixelMode.panel, Is.Not.Null);
+                Assert.That(subpixelMode.enabledInHierarchy, Is.True);
+                var session = rigObject.GetComponent<ViewWeaveBridgeSession>();
+                Assert.That(session.CanChangeSubpixelMode(out string reason), Is.True, reason);
+                Assert.That(subpixelMode.value, Is.EqualTo(BridgeSubpixelMode.Automatic));
+                subpixelMode.value = BridgeSubpixelMode.CalibratedCells;
+                Assert.That(session.SubpixelMode, Is.EqualTo(BridgeSubpixelMode.CalibratedCells));
+                Assert.That(new SerializedObject(session).FindProperty("subpixelMode").intValue,
+                    Is.EqualTo((int)BridgeSubpixelMode.CalibratedCells));
                 EnumField renderMode = root.Q<EnumField>("viewRenderMode");
                 Assert.That(renderMode, Is.Not.Null);
                 Assert.That(renderMode.value, Is.EqualTo(QuiltViewRenderMode.Full));
@@ -326,6 +341,7 @@ namespace ViewWeave.RigCameraCreationValidation
             }
             finally
             {
+                if (window != null) window.Close();
                 if (editor != null) Object.DestroyImmediate(editor);
                 Object.DestroyImmediate(rigObject);
             }

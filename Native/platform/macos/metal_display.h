@@ -8,20 +8,23 @@ struct LkgMetalDisplayInfo {
     float center, pitch, slope, dpi, flipX;
     int32_t invertedViews;
 };
-// Keep the original 60-byte export intact for already-loaded managed clients.
-struct LkgMetalDisplayInfoV2 {
+struct LkgMetalSubpixelCell {
+    float redX, redY, greenX, greenY, blueX, blueY;
+};
+// Modes 0..4 address at most four cells. All offsets remain in display pixels.
+struct LkgMetalDisplayInfoV3 {
     uint32_t structSize, apiVersion;
     LkgMetalDisplayInfo calibration;
     int32_t redIndex, blueIndex;
+    int32_t cellPatternMode, cellCount;
+    LkgMetalSubpixelCell cells[4];
 };
 struct LkgMetalDisplayStatus {
     uint32_t submitted, completed, dropped, error, pending, closing;
 };
 extern "C" {
-LKG_EXPORT uint64_t lkg_metal_display_open(const char* path, const char* applicationName,
-    uint32_t ordinal, LkgMetalDisplayInfo* info);
-LKG_EXPORT uint64_t lkg_metal_display_open_v2(const char* path, const char* applicationName,
-    uint32_t ordinal, LkgMetalDisplayInfoV2* info);
+LKG_EXPORT uint64_t lkg_metal_display_open_v3(const char* path, const char* applicationName,
+    uint32_t ordinal, LkgMetalDisplayInfoV3* info);
 LKG_EXPORT int32_t lkg_metal_display_submit(uint64_t session, void* texture, void** eventData);
 LKG_EXPORT int32_t lkg_metal_display_status(uint64_t session, LkgMetalDisplayStatus* status);
 LKG_EXPORT void lkg_metal_display_close(uint64_t session);

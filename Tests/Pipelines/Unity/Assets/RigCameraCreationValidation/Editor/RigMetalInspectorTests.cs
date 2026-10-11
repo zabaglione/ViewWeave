@@ -71,6 +71,64 @@ namespace ViewWeave.RigCameraCreationValidation
             }
             Assert.That(output.TrySetQuality(QuiltQualityPreset.Native, out error), Is.True, error);
         }
+
+        [Test]
+        public void SubpixelControlPersistsAndSupportsUndo()
+        {
+            VisualElement root = CreateMetalInspector(out _, out BridgeMetalQuiltOutput output);
+            EnumField mode = root.Q<EnumField>("subpixelMode");
+            Assert.That(mode, Is.Not.Null);
+            Assert.That(output.SubpixelMode, Is.EqualTo(BridgeSubpixelMode.Automatic));
+            mode.value = BridgeSubpixelMode.ClassicRgb;
+            Undo.FlushUndoRecordObjects();
+            Assert.That(output.SubpixelMode, Is.EqualTo(BridgeSubpixelMode.ClassicRgb));
+            var serialized = new SerializedObject(output);
+            Assert.That(serialized.FindProperty("subpixelMode").intValue, Is.EqualTo((int)BridgeSubpixelMode.ClassicRgb));
+            Undo.PerformUndo();
+            Assert.That(output.SubpixelMode, Is.EqualTo(BridgeSubpixelMode.Automatic));
+        }
+
+        [Test]
+        public void SubpixelModeRejectsInvalidValuesAndRecordingOwnership()
+        {
+            VisualElement root = CreateMetalInspector(out ViewWeaveRig rig, out BridgeMetalQuiltOutput output);
+            Assert.That(output.TrySetSubpixelMode((BridgeSubpixelMode)999, out string error), Is.False);
+            Assert.That(error, Is.Not.Empty);
+            Assert.That(QuiltRendererOperationLease.TryAcquire(rig.Renderer, QuiltRendererOperationKind.Recording,
+                out QuiltRendererOperationLease lease, out error), Is.True, error);
+            using (lease)
+            {
+                Assert.That(output.TrySetSubpixelMode(BridgeSubpixelMode.ClassicRgb, out error), Is.False);
+                root.Q<EnumField>("subpixelMode").value = BridgeSubpixelMode.ClassicRgb;
+                Assert.That(output.SubpixelMode, Is.EqualTo(BridgeSubpixelMode.Automatic));
+            }
+            Assert.That(output.TrySetSubpixelMode(BridgeSubpixelMode.CalibratedCells, out error), Is.True, error);
+        }
+
+        [TestCase(BridgeSubpixelMode.Automatic, false, true, false)]
+        [TestCase(BridgeSubpixelMode.Automatic, true, true, true)]
+        [TestCase(BridgeSubpixelMode.ClassicRgb, false, true, false)]
+        [TestCase(BridgeSubpixelMode.ClassicRgb, true, true, false)]
+        [TestCase(BridgeSubpixelMode.CalibratedCells, false, false, false)]
+        [TestCase(BridgeSubpixelMode.CalibratedCells, true, true, true)]
+        [TestCase((BridgeSubpixelMode)999, true, false, false)]
+        public void SubpixelPolicyRequiresCellsWithoutGuessingCalibration(BridgeSubpixelMode mode,
+            bool hasCells, bool accepted, bool expectedCells)
+        {
+            Assert.That(BridgeSubpixelPolicy.TryResolveCellUsage(mode, hasCells, out bool useCells, out string error), Is.EqualTo(accepted));
+            Assert.That(useCells, Is.EqualTo(expectedCells));
+            Assert.That(string.IsNullOrEmpty(error), Is.EqualTo(accepted));
+        }
+
+        [TestCase(BridgeSubpixelMode.Automatic, true)]
+        [TestCase(BridgeSubpixelMode.ClassicRgb, false)]
+        [TestCase(BridgeSubpixelMode.CalibratedCells, false)]
+        [TestCase((BridgeSubpixelMode)999, false)]
+        public void BridgeManagedSubpixelPolicyAcceptsAutomaticOnly(BridgeSubpixelMode mode, bool accepted)
+        {
+            Assert.That(BridgeSubpixelPolicy.ValidateBridgeManagedOutput(mode, out string error), Is.EqualTo(accepted));
+            Assert.That(string.IsNullOrEmpty(error), Is.EqualTo(accepted));
+        }
     }
 }
 #endif

@@ -3,6 +3,8 @@ using System.Collections;
 using System.IO;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
+using UnityEngine.Rendering.HighDefinition;
 using ViewWeave;
 
 // Current Bridge-calibration path fixture. Presentation completion is not optical proof.
@@ -19,8 +21,13 @@ public sealed class MetalCurrentValidationRunner : MonoBehaviour
     {
         public bool passed, development, editor;
         public string unityVersion, graphicsApi, pipeline, error, capture, sequence;
+        public string actualPipeline, shaderPipelineTag;
         public int firstCompleted, restartedCompleted, recordedFrames, distinctColors;
         public int width, height, views, pendingRetirement;
+        public int cellPatternMode, subpixelCellCount;
+        public int redPixels, greenPixels, magentaPixels;
+        public bool activeSubpixelChangeRejected, missingCellsRejected, classicRestartVerified;
+        public string missingCellsError, restartSubpixelMode;
     }
 
     IEnumerator Start()
@@ -62,6 +69,11 @@ public sealed class MetalCurrentValidationRunner : MonoBehaviour
     {
         Require(SystemInfo.graphicsDeviceType == GraphicsDeviceType.Metal, "Metal is required.");
         Require(output.StartOutput(), "Output start failed: " + output.LastError);
+        Result.cellPatternMode = output.CellPatternMode;
+        Result.subpixelCellCount = output.SubpixelCellCount;
+        Result.activeSubpixelChangeRejected = !output.TrySetSubpixelMode(BridgeSubpixelMode.ClassicRgb, out _) &&
+            output.SubpixelMode == BridgeSubpixelMode.Automatic;
+        Require(Result.activeSubpixelChangeRejected, "Running output accepted a subpixel configuration change.");
         double deadline = Time.realtimeSinceStartupAsDouble + 60d;
         while (output.CompletedFrames < 60 && Time.realtimeSinceStartupAsDouble < deadline)
         {
@@ -71,6 +83,12 @@ public sealed class MetalCurrentValidationRunner : MonoBehaviour
         Require(output.CompletedFrames >= 60, "Initial presentation timed out.");
         Require(string.IsNullOrEmpty(output.LastError), output.LastError);
         Result.firstCompleted = (int)output.CompletedFrames;
+        Result.actualPipeline = RenderPipelineManager.currentPipeline is UniversalRenderPipeline ? "UniversalRenderPipeline" :
+            RenderPipelineManager.currentPipeline is HDRenderPipeline ? "HDRenderPipeline" : "OtherOrInactive";
+        Result.shaderPipelineTag = Shader.globalRenderPipeline;
+        Require(Result.actualPipeline == (pipelineName == "HDRP" ? "HDRenderPipeline" : "UniversalRenderPipeline") &&
+            Result.shaderPipelineTag == (pipelineName == "HDRP" ? "HDRenderPipeline" : "UniversalPipeline"),
+            "Actual render pipeline or shader tag differs from the requested fixture.");
         var renderer = output.rig.Renderer;
         Result.width = renderer.LatestSnapshot.Layout.QuiltWidth;
         Result.height = renderer.LatestSnapshot.Layout.QuiltHeight;
@@ -84,9 +102,18 @@ public sealed class MetalCurrentValidationRunner : MonoBehaviour
         var image = still.LoadFrame(0);
         try
         {
-            var colors = new System.Collections.Generic.HashSet<Color32>(image.GetPixels32());
+            Color32[] pixels = image.GetPixels32();
+            var colors = new System.Collections.Generic.HashSet<Color32>(pixels);
             Result.distinctColors = colors.Count;
             Require(colors.Count > 2, "Fixture quilt has no visible color variation.");
+            foreach (Color32 pixel in pixels)
+            {
+                if (pixel.r > 2 * pixel.g && pixel.r > 2 * pixel.b && pixel.r > 24) Result.redPixels++;
+                if (pixel.g > 2 * pixel.r && pixel.g > 2 * pixel.b && pixel.g > 24) Result.greenPixels++;
+                if (pixel.r > 180 && pixel.b > 180 && pixel.g < 80) Result.magentaPixels++;
+            }
+            Require(Result.redPixels > 1000 && Result.greenPixels > 1000 && Result.magentaPixels == 0,
+                "Fixture red/green drawing or missing-shader pixel gate failed.");
         }
         finally { Destroy(image); }
         recorder = output.gameObject.AddComponent<QuiltRecorder>();
@@ -105,7 +132,16 @@ public sealed class MetalCurrentValidationRunner : MonoBehaviour
             yield return null;
         Require(!output.IsClosing && BridgeMetalQuiltOutput.PendingRetirementCount == 0, "Stop did not retire GPU resources.");
         Require(string.IsNullOrEmpty(output.LastError), output.LastError);
+        Require(output.TrySetSubpixelMode(BridgeSubpixelMode.CalibratedCells, out string modeError), modeError);
+        Result.missingCellsRejected = !output.StartOutput();
+        Result.missingCellsError = output.LastError;
+        Require(Result.missingCellsRejected && !string.IsNullOrEmpty(Result.missingCellsError), "Tableless Go accepted required-cell output.");
+        deadline = Time.realtimeSinceStartupAsDouble + 30d;
+        while ((output.IsClosing || BridgeMetalQuiltOutput.PendingRetirementCount != 0) && Time.realtimeSinceStartupAsDouble < deadline)
+            yield return null;
+        Require(output.TrySetSubpixelMode(BridgeSubpixelMode.ClassicRgb, out modeError), modeError);
         Require(output.StartOutput(), "Output restart failed: " + output.LastError);
+        Result.restartSubpixelMode = output.SubpixelMode.ToString();
         deadline = Time.realtimeSinceStartupAsDouble + 60d;
         while (output.CompletedFrames < 30 && Time.realtimeSinceStartupAsDouble < deadline)
         {
@@ -115,6 +151,22 @@ public sealed class MetalCurrentValidationRunner : MonoBehaviour
         Require(output.CompletedFrames >= 30, "Restarted presentation timed out.");
         Require(string.IsNullOrEmpty(output.LastError), output.LastError);
         Result.restartedCompleted = (int)output.CompletedFrames;
+        QuiltCaptureUtility.SaveLatest(renderer, Path.Combine(reportDirectory, "classic.png"));
+        var classicImage = QuiltPlaybackSource.Open(Path.Combine(reportDirectory, "classic.png")).LoadFrame(0);
+        try
+        {
+            int red = 0, green = 0, magenta = 0;
+            foreach (Color32 pixel in classicImage.GetPixels32())
+            {
+                if (pixel.r > 2 * pixel.g && pixel.r > 2 * pixel.b && pixel.r > 24) red++;
+                if (pixel.g > 2 * pixel.r && pixel.g > 2 * pixel.b && pixel.g > 24) green++;
+                if (pixel.r > 180 && pixel.b > 180 && pixel.g < 80) magenta++;
+            }
+            Require(red > 1000 && green > 1000 && magenta == 0, "Classic RGB image gate failed.");
+        }
+        finally { Destroy(classicImage); }
+        Result.classicRestartVerified = output.SubpixelMode == BridgeSubpixelMode.ClassicRgb;
+        Require(Result.classicRestartVerified, "Classic RGB selection was not retained.");
     }
 
     static void Require(bool condition, string message)

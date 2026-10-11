@@ -79,6 +79,7 @@ namespace ViewWeave.Editor
                 transportMutationFields.Add(AddBoundProperty(foldout, sessionObject, "runtimePath", "Bridge Runtime Path"));
                 transportMutationFields.Add(AddBoundProperty(foldout, sessionObject, "applicationName", "Application Name"));
                 transportMutationFields.Add(AddBoundProperty(foldout, sessionObject, "displayOrdinal", "Display Ordinal"));
+                BuildSubpixelMode(foldout);
                 startWindowsButton = new Button(() => { session.StartSession(); Refresh(); }) { name = "startOutput", text = "Start Output" };
                 stopWindowsButton = new Button(() => { session.StopSession(); Refresh(); }) { name = "stopOutput", text = "Stop Output" };
                 foldout.Add(startWindowsButton);

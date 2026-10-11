@@ -16,9 +16,14 @@ namespace ViewWeave
         public string applicationName = "ViewWeave";
         public uint displayOrdinal;
         public QuiltQualityPreset quality = QuiltQualityPreset.Balanced;
+        [SerializeField] BridgeSubpixelMode subpixelMode = BridgeSubpixelMode.Automatic;
+        public BridgeSubpixelMode SubpixelMode => subpixelMode;
+        public bool IsUsingSubpixelCells => IsRunning && activeUsesSubpixelCells;
         public RenderTexture QuiltTexture { get; private set; }
         public QuiltLayout Layout { get; private set; }
         public BridgeDisplayProfile Profile { get; private set; }
+        public int CellPatternMode { get; private set; }
+        public int SubpixelCellCount { get; private set; }
         string lastError = string.Empty;
         public string LastError
         {
@@ -35,6 +40,8 @@ namespace ViewWeave
         ulong session;
         ulong closingSession;
         NativeStatus status;
+        BridgeSubpixelMode activeSubpixelMode;
+        bool activeUsesSubpixelCells;
         Material interlace;
         RenderTexture screenTexture;
         CommandBuffer command;
@@ -58,11 +65,30 @@ namespace ViewWeave
             internal int invertedViews;
         }
         [StructLayout(LayoutKind.Sequential)]
-        internal struct NativeDisplayV2
+        internal struct NativeCell
+        {
+            internal float redX, redY, greenX, greenY, blueX, blueY;
+        }
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct NativeDisplayV3
         {
             internal uint structSize, apiVersion;
             internal NativeDisplay calibration;
             internal int redIndex, blueIndex;
+            internal int cellPatternMode, cellCount;
+            internal NativeCell cell0, cell1, cell2, cell3;
+
+            internal NativeCell Cell(int index)
+            {
+                switch (index)
+                {
+                    case 0: return cell0;
+                    case 1: return cell1;
+                    case 2: return cell2;
+                    case 3: return cell3;
+                    default: throw new ArgumentOutOfRangeException(nameof(index));
+                }
+            }
         }
         [StructLayout(LayoutKind.Sequential)]
         struct NativeStatus { internal uint submitted, completed, dropped, error, pending, closing; }
@@ -70,8 +96,8 @@ namespace ViewWeave
         {
             const string Library = "lookingglass_bridge_shim";
             [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ulong lkg_metal_display_open_v2([MarshalAs(UnmanagedType.LPUTF8Str)] string path,
-                [MarshalAs(UnmanagedType.LPUTF8Str)] string name, uint ordinal, ref NativeDisplayV2 info);
+            internal static extern ulong lkg_metal_display_open_v3([MarshalAs(UnmanagedType.LPUTF8Str)] string path,
+                [MarshalAs(UnmanagedType.LPUTF8Str)] string name, uint ordinal, ref NativeDisplayV3 info);
             [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
             internal static extern int lkg_metal_display_submit(ulong session, IntPtr texture, out IntPtr data);
             [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
@@ -98,6 +124,8 @@ namespace ViewWeave
         {
             if (stopRequested) { stopRequested = false; StopOutput(); }
             if (session == 0) return;
+            if (subpixelMode != activeSubpixelMode)
+            { subpixelMode = activeSubpixelMode; Fail("Subpixel processing cannot change while Metal output is active. Stop output before changing it."); return; }
             if (Native.lkg_metal_display_status(session, out status) != 0 || status.error != 0)
             { Fail("Metal presentation failed (code " + status.error + ")"); return; }
             if (rig == null || rig.Renderer == null || !rig.HasOutputBinding(this))
@@ -111,7 +139,7 @@ namespace ViewWeave
             error = string.Empty;
             if (IsRunning || IsClosing || PendingRetirementCount != 0)
             {
-                error = "Stop Metal output and wait for GPU retirement before changing quality or transport.";
+                error = "Stop Metal output and wait for GPU retirement before changing quality, subpixel processing or transport.";
                 return false;
             }
             ViewWeaveRig ownerRig = rig != null ? rig : GetComponent<ViewWeaveRig>();
@@ -128,6 +156,13 @@ namespace ViewWeave
             }
             if (!CanChangeConfiguration(out error)) return false;
             quality = value;
+            return true;
+        }
+
+        public bool TrySetSubpixelMode(BridgeSubpixelMode value, out string error)
+        {
+            if (!BridgeSubpixelPolicy.Validate(value, out error) || !CanChangeConfiguration(out error)) return false;
+            subpixelMode = value;
             return true;
         }
 
@@ -162,14 +197,17 @@ namespace ViewWeave
                 (Application.platform != RuntimePlatform.OSXEditor && Application.platform != RuntimePlatform.OSXPlayer) ||
                 SystemInfo.graphicsDeviceType != GraphicsDeviceType.Metal)
                 return Fail("Metal output requires macOS Play mode or macOS Player with Metal");
-            if (Marshal.SizeOf<NativeDisplay>() != 60 || Marshal.SizeOf<NativeDisplayV2>() != 76 || IntPtr.Size != 8 ||
-                Marshal.OffsetOf<NativeDisplayV2>(nameof(NativeDisplayV2.calibration)).ToInt32() != 8 ||
-                Marshal.OffsetOf<NativeDisplayV2>(nameof(NativeDisplayV2.redIndex)).ToInt32() != 68 ||
-                Marshal.OffsetOf<NativeDisplayV2>(nameof(NativeDisplayV2.blueIndex)).ToInt32() != 72)
+            if (Marshal.SizeOf<NativeDisplay>() != 60 || Marshal.SizeOf<NativeCell>() != 24 ||
+                Marshal.SizeOf<NativeDisplayV3>() != 180 || IntPtr.Size != 8 ||
+                Marshal.OffsetOf<NativeDisplayV3>(nameof(NativeDisplayV3.calibration)).ToInt32() != 8 ||
+                Marshal.OffsetOf<NativeDisplayV3>(nameof(NativeDisplayV3.redIndex)).ToInt32() != 68 ||
+                Marshal.OffsetOf<NativeDisplayV3>(nameof(NativeDisplayV3.blueIndex)).ToInt32() != 72 ||
+                Marshal.OffsetOf<NativeDisplayV3>(nameof(NativeDisplayV3.cell0)).ToInt32() != 84)
                 return Fail("Unsupported Metal display ABI");
             if (rig == null) rig = GetComponent<ViewWeaveRig>();
             if (rig == null) return Fail("A ViewWeaveRig is required");
             if (!Enum.IsDefined(typeof(QuiltQualityPreset), quality)) return Fail("Output quality is invalid.");
+            if (!BridgeSubpixelPolicy.Validate(subpixelMode, out string subpixelError)) return Fail(subpixelError);
             if (!rig.ValidateRig(out string rigError)) return Fail("Invalid ViewWeaveRig: " + rigError);
             if (!BridgeRuntimeLocator.TryResolve(runtimePath, out string path, out string error)) return Fail(error);
             if (rig.Renderer.IsRendering || !QuiltRendererMutationPolicy.TryCheck(rig.Renderer,
@@ -181,9 +219,13 @@ namespace ViewWeave
             {
                 mutationOwner = QuiltRendererMutationPolicy.RegisterOwner(rig.Renderer, this, GetMutationBlockReason, out error);
                 if (mutationOwner == null) return Fail(error);
-                var nativeInfo = new NativeDisplayV2 { structSize = 76, apiVersion = 2 };
-                session = Native.lkg_metal_display_open_v2(path, applicationName, displayOrdinal, ref nativeInfo);
+                var nativeInfo = new NativeDisplayV3 { structSize = 180, apiVersion = 3 };
+                activeSubpixelMode = subpixelMode;
+                session = Native.lkg_metal_display_open_v3(path, applicationName, displayOrdinal, ref nativeInfo);
                 if (session == 0) return Fail(Marshal.PtrToStringAnsi(Native.lkg_metal_display_error()) ?? "Metal window could not be opened");
+                if (!BridgeSubpixelPolicy.TryResolveCellUsage(subpixelMode, nativeInfo.cellCount > 0,
+                    out bool useCells, out subpixelError)) return Fail(subpixelError);
+                activeUsesSubpixelCells = useCells;
                 NativeDisplay display = nativeInfo.calibration;
                 Profile = new BridgeDisplayProfile(display.display, new BridgeNative.PhysicalDisplayInfoV1
                 {
@@ -204,7 +246,21 @@ namespace ViewWeave
                 interlace.SetVector("_Calibration", new Vector4(calibratedPitch, direction * Profile.Height / (Profile.Width * display.slope),
                     display.center, display.invertedViews));
                 interlace.SetVector("_Screen", new Vector4(Profile.Width, Profile.Height, direction / (3f * Profile.Width), 0f));
-                interlace.SetVector("_ChannelOrder", new Vector4(nativeInfo.redIndex, 1f, nativeInfo.blueIndex, display.flipX));
+                bool forceClassicRgb = subpixelMode == BridgeSubpixelMode.ClassicRgb;
+                interlace.SetVector("_ChannelOrder", new Vector4(forceClassicRgb ? 0 : nativeInfo.redIndex, 1f,
+                    forceClassicRgb ? 2 : nativeInfo.blueIndex, display.flipX));
+                CellPatternMode = nativeInfo.cellPatternMode;
+                SubpixelCellCount = nativeInfo.cellCount;
+                interlace.SetVector("_SubpixelPattern", new Vector4(CellPatternMode, useCells ? SubpixelCellCount : 0, 0f, 0f));
+                var offsets = new Vector4[12];
+                for (int i = 0; i < SubpixelCellCount; ++i)
+                {
+                    NativeCell cell = nativeInfo.Cell(i);
+                    offsets[i * 3] = new Vector4(cell.redX / Profile.Width, cell.redY / Profile.Height, 0f, 0f);
+                    offsets[i * 3 + 1] = new Vector4(cell.greenX / Profile.Width, cell.greenY / Profile.Height, 0f, 0f);
+                    offsets[i * 3 + 2] = new Vector4(cell.blueX / Profile.Width, cell.blueY / Profile.Height, 0f, 0f);
+                }
+                interlace.SetVectorArray("_SubpixelOffsets", offsets);
                 screenTexture = new RenderTexture((int)Profile.Width, (int)Profile.Height, 0)
                 {
                     graphicsFormat = GraphicsFormat.R8G8B8A8_UNorm,
@@ -222,7 +278,7 @@ namespace ViewWeave
                 return true;
             }
             catch (DllNotFoundException) { return Fail("Native macOS Bridge shim is missing; build the macOS plugin first"); }
-            catch (EntryPointNotFoundException) { return Fail("Native macOS Bridge shim does not contain Metal display API v2; update the plugin and restart Unity"); }
+            catch (EntryPointNotFoundException) { return Fail("Native macOS Bridge shim does not contain Metal display API v3; update the plugin and restart Unity"); }
             catch (Exception exception) { return Fail(exception.Message); }
         }
 

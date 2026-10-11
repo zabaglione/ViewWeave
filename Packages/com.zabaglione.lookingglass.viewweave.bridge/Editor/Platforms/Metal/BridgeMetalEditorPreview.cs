@@ -11,6 +11,8 @@ namespace ViewWeave.Editor
     {
         static ViewWeaveRig target, producer;
         static BridgeMetalQuiltOutput output;
+        static BridgeMetalQuiltOutput configuredOutput;
+        static BridgeSubpixelMode subpixelModeAtStart;
         static QuiltEditorResourceRecord resources;
         static IDisposable owner;
         static readonly object OwnerToken = new object();
@@ -75,12 +77,15 @@ namespace ViewWeave.Editor
                 {
                     BridgeMetalQuiltOutput configured = rig.GetComponent<BridgeMetalQuiltOutput>();
                     if (configured == null) throw new InvalidOperationException("A Metal output component is required for device preview.");
+                    configuredOutput = configured;
+                    subpixelModeAtStart = configured.SubpixelMode;
                     output = producer.gameObject.AddComponent<BridgeMetalQuiltOutput>();
                     output.rig = producer;
                     output.runtimePath = configured.runtimePath;
                     output.applicationName = configured.applicationName;
                     output.displayOrdinal = configured.displayOrdinal;
                     output.quality = configured.quality;
+                    if (!output.TrySetSubpixelMode(subpixelModeAtStart, out error)) throw new InvalidOperationException(error);
                     if (!output.StartEditorPreview()) throw new InvalidOperationException(output.LastError);
                 }
                 owner = QuiltRendererMutationPolicy.RegisterOwner(renderer, OwnerToken, BlockMutation, out error);
@@ -147,6 +152,7 @@ namespace ViewWeave.Editor
                 {
                     producer = null;
                     output = null;
+                    configuredOutput = null;
                     target = null;
                     if (BridgeMetalQuiltOutput.PendingRetirementCount == 0) Status = string.IsNullOrEmpty(LastError) ? "Idle" : "Stopped with an error";
                 }
@@ -162,6 +168,8 @@ namespace ViewWeave.Editor
                 { Stop(); return; }
                 if (output != null)
                 {
+                    if (configuredOutput == null || configuredOutput.SubpixelMode != subpixelModeAtStart)
+                        throw new InvalidOperationException("Subpixel processing changed during device preview. Close preview before changing it.");
                     output.PumpStatus();
                     if (!output.IsRunning) throw new InvalidOperationException(output.LastError);
                 }

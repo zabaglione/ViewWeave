@@ -7,7 +7,7 @@ This source package supports repository development. End users should install on
 ## Output routes
 
 - **Windows Bridge Worker:** regular Editor Play and Windows Player output on D3D11 or D3D12. See [Compatibility](../../docs/compatibility.md) for current conditions and limits.
-- **macOS Looking Glass Go:** a separate `BridgeMetalQuiltOutput` route using Metal on Apple Silicon. See the [macOS Metal guide](../../docs/macos-metal.md) and [Compatibility](../../docs/compatibility.md).
+- **macOS Looking Glass output:** `BridgeMetalQuiltOutput` uses Bridge calibration and cell-array metadata with Metal on Apple Silicon. See the [macOS Metal guide](../../docs/macos-metal.md) and [Compatibility](../../docs/compatibility.md) for validated conditions.
 - **Legacy Direct:** a separate Windows D3D11-only route.
 
 ## Quick Start samples
