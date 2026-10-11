@@ -435,6 +435,18 @@ namespace ViewWeave.BridgeSessionValidation
             Assert.AreEqual(1024, preview.QuiltWidth);
             Assert.AreEqual(2048, balanced.QuiltWidth);
             Assert.AreEqual(4096, nativeProfile.QuiltWidth);
+            Assert.AreEqual(1026, preview.QuiltHeight);
+            Assert.AreEqual(2046, balanced.QuiltHeight);
+            Assert.AreEqual(4092, nativeProfile.QuiltHeight);
+            Assert.AreEqual(4096, profile.QuiltHeight, "The raw Bridge metadata must not be rewritten.");
+            var texture = new RenderTexture(nativeProfile.QuiltWidth, nativeProfile.QuiltHeight, 0);
+            try
+            {
+                var layout = new QuiltLayout(nativeProfile.QuiltWidth, nativeProfile.QuiltHeight,
+                    nativeProfile.Rows, nativeProfile.Columns, nativeProfile.Views, nativeProfile.Aspect);
+                Assert.That(BridgeQuiltInputPolicy.TryValidate(texture, layout, out string error), Is.True, error);
+            }
+            finally { UnityEngine.Object.DestroyImmediate(texture); }
             Assert.AreEqual(48, preview.Views);
             Assert.AreEqual(48, balanced.Views);
             Assert.AreEqual(48, nativeProfile.Views);
@@ -506,9 +518,19 @@ namespace ViewWeave.BridgeSessionValidation
                 }
                 else
                 {
-                    Assert.AreEqual(quiltWidth, quality.QuiltWidth, "Native quilt width");
-                    Assert.AreEqual(quiltHeight, quality.QuiltHeight, "Native quilt height");
+                    Assert.AreEqual(quiltWidth / columns * columns, quality.QuiltWidth, "Native used quilt width");
+                    Assert.AreEqual(quiltHeight / rows * rows, quality.QuiltHeight, "Native used quilt height");
                 }
+
+                var texture = new RenderTexture(quality.QuiltWidth, quality.QuiltHeight, 0);
+                try
+                {
+                    var layout = new QuiltLayout(quality.QuiltWidth, quality.QuiltHeight, quality.Rows,
+                        quality.Columns, quality.Views, quality.Aspect);
+                    Assert.That(BridgeQuiltInputPolicy.TryValidate(texture, layout, out string inputError), Is.True,
+                        preset + ": " + inputError);
+                }
+                finally { UnityEngine.Object.DestroyImmediate(texture); }
 
                 var settings = new QuiltSettings();
                 Assert.AreEqual(4096, settings.quiltWidth, "baseline quilt width");

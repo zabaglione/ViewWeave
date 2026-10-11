@@ -1,0 +1,1081 @@
+{
+  "formatVersion": 1,
+  "date": "2026-10-11",
+  "baseRevision": "be3cbb7f6967c3090d5e446b01a8e9a3ff3b4920",
+  "workingTreeChangesDuringRun": true,
+  "changedScopes": [
+    "native test link",
+    "native v4 fixtures",
+    "rebuilt arm64 artifact",
+    "shared complete-grid Native quality helper",
+    "managed quality fixture",
+    "expanded synthetic GPU oracle"
+  ],
+  "releaseGuarantee": false,
+  "environment": {
+    "os": "macOS 26.6.2",
+    "architecture": "arm64",
+    "gpu": "Apple M3 Max",
+    "unity": "6000.6.4f1",
+    "urp": "17.6.0",
+    "hdrp": "17.6.0",
+    "graphicsApi": "Metal",
+    "bridge": "2.6.3",
+    "connectedDevice": "Looking Glass Go",
+    "displayWidth": 1440,
+    "displayHeight": 2560,
+    "aspect": 0.5625,
+    "cellPatternMode": 0,
+    "subpixelCellCount": 0,
+    "otherDeviceConnected": false
+  },
+  "artifact": {
+    "path": "Packages/com.zabaglione.lookingglass.viewweave.bridge/Plugins/macOS/lookingglass_bridge_shim.dylib",
+    "sha256": "f2539810f3a63cc3998f0a9ef7b3b96a50cf29031ea986e67ca753787c5cca0f",
+    "bytes": 157712
+  },
+  "provenance": {
+    "path": "Packages/com.zabaglione.lookingglass.viewweave.bridge/Plugins/macOS/native-provenance.json",
+    "sha256": "c9c41e9178fda4268aa59ef26f7c6e2f3d66d3fed127dff86439fcc68589982f",
+    "bytes": 14656
+  },
+  "nativeSourceSha256": {
+    "Native/CMakeLists.txt": "47602688fd4e46baed3fbb069fa7653145122ec4b568452d4683115c7d1115cb",
+    "Native/bridge_d3d12_internal.h": "6b06a4792e547bdae65ee91908cb565ed5fa1b89ad5c6e7a6ee627d6933fe154",
+    "Native/bridge_probe.cpp": "0d1268b7fb5162c943ef8b5a971eece1d640a77b5d48405849ac5922bb1ae692",
+    "Native/bridge_shim.cpp": "5cfed02b9e0dbfe806c7a2bb2de23413efdae8f47caabcb82c1961c93a108ea7",
+    "Native/bridge_shim.h": "86c0ae009031c6894a0fedc18ae38c80ae8d2a920a0d2fa10f60a046e474013d",
+    "Native/bridge_threaded_probe.cpp": "b24aef010a044725714f06d99a1d88de65b14e715c81e98e7fb0455d4fff65d5",
+    "Native/bridge_worker_common.cpp": "dae12d704a62d00c0a4a92e02b99c066d16d4fdb33b94f6f0c909fb2aed77150",
+    "Native/bridge_worker_common.h": "48ace99b1f5c90842fb2e6b5ae6021ad835891486bc65c3969c2427f5db96fd4",
+    "Native/bridge_worker_session_probe.cpp": "2c507cdf1399ae537191fabc196807920ba418611a7dca2c1fddc503494eaac5",
+    "Native/bridge_worker_transport.cpp": "e7666d9092b393005a197c406974de6c5d2461896fc8ce58d76762fd06a40ece",
+    "Native/bridge_worker_transport.h": "7b3466730cbfe4fdfc623c8a5bb9c20814b14cf9e77c06812f006cb68f57219a",
+    "Native/common/bridge_metadata.cpp": "3d0dcdb30963128e79ea7909eece671cff1f56d83e9aa04ff23ba5d11e200a7c",
+    "Native/common/bridge_metadata.h": "a0fbfcffde6e5c876b07eea941ece9669fa1049a40440eb84c928f5106c90487",
+    "Native/common/bridge_runtime_api.h": "b11e305eaeaa9a478b1ffcd7f019bdcefc702cf5f9c69ef55648d4009d994122",
+    "Native/common/bridge_worker_common.cpp": "d57b45ea0b65fa2b3bd953853529e5005a629321d035c090c1c3d6c620c9e39b",
+    "Native/common/subpixel_calibration.cpp": "41f9e19864a80cd3adc7833da634736c810a71bf015fda24e9f18c726da1ff88",
+    "Native/common/subpixel_calibration.h": "4fcce2fc065d3d7eaca0a860aff0222b3913c89f370b34f128e55a12d4ed8092",
+    "Native/platform/macos/bridge_metal_api.h": "6c6ecaf86dbda9663fea2abf42f409199e635c23d2e4f656e75daed39f734ba1",
+    "Native/platform/macos/bridge_metal_api.mm": "24be05480da80a67ca9d230e6cfdb01b5b8e6da66996578929ef0246c6d08d5c",
+    "Native/platform/macos/bridge_metal_api_contract.cpp": "ffeaf6ecf029640eea55f05a3591d652225ea32a3e39a3a323465cd717ce373c",
+    "Native/platform/macos/bridge_shim_macos.cpp": "f726de7490c1b80892f3e9358ca9cb9328496154df0d94db9015ad08640faa66",
+    "Native/platform/macos/metal_bridge_cells.h": "aa5f56b881d7e7362c4b4edf26f84dd7f1a6d2f9eb27fd3b6ecc025d89540515",
+    "Native/platform/macos/metal_bridge_cells.mm": "5f106af15048be1f0125d2e92a114050509f86c705a23b0f0539636fc2b03541",
+    "Native/platform/macos/metal_calibration.cpp": "48af03641a3e76e80adacd01fff9381a2d5f09f6cc8f8fee8e5dff3fc91c6e48",
+    "Native/platform/macos/metal_calibration.h": "807068904dc2bfafe7f86094671241779992454a7a4e8474b829b2b39ded73a2",
+    "Native/platform/macos/metal_display.h": "fc7b0b694a5661a70286e0a877e159dbfd62346207895e8f86505fafec47382f",
+    "Native/platform/macos/metal_display.mm": "0430725372548e78de0342595feac639e3c0c4aaab3ad9fdfa1e84ad926573c9",
+    "Native/platform/macos/metal_provider_api.h": "d97a46cc7ce783e98c7d72ea21441e6c00178dafbbcd32c311c53d57a8d702ef",
+    "Native/platform/macos/metal_submission_lifetime.cpp": "aa67cbdbada8d2e6ff4da4e3051325a9a73af63eebfc76cdd17735a78276193a",
+    "Native/platform/macos/metal_submission_lifetime.h": "6b7dc206c11b8d86d322da0b8db8cb380657d1480fc304403c95c298bbe3c7fd",
+    "Native/platform/macos/unity_metal_producer.h": "dad2dcc8516b063380dc964cc1e76c8192949e024779dfe79c48cdc649699193",
+    "Native/platform/macos/unity_metal_producer.mm": "89e6cea5f6209f6b7fde5916cef691e3060f93c0b002bcf33fcd88d9b202f990",
+    "Native/platform/unsupported/bridge_d3d_stubs.cpp": "c9bd92a191e05648232ff0ad071d855746f4d1e31a393b2d40789fb3096ead9b",
+    "Native/platform/unsupported/bridge_shim_unsupported.cpp": "8c87cd23e5b6fa98dd78cf935e4d1383b579ad88c490ab951517876fd8a5689e",
+    "Native/platform/unsupported/bridge_worker_transport_unsupported.cpp": "6f6011ee3e84fe3b06b08ceda26b59790339f546cca0f1d8d277f6b0ff243975",
+    "Native/platform/windows/backends/d3d11_backend.inc": "060031e4ec7bada0732dd33fdd103038663c29a709c2ee1c17791a2d5bb16ee5",
+    "Native/platform/windows/backends/d3d11_d3d12_interop.inc": "afd291114eb920d0dc52611e55e0885402ba82af7e6c07cd96947ffa80b98a26",
+    "Native/platform/windows/backends/d3d12_backend.inc": "7b42c6db2e9c0d860b4826cab95a1eb4d903ae3895d151875f4ea356eb3971a7",
+    "Native/platform/windows/bridge_d3d_api.h": "7662aa1ff30ec412d430b54b0acea10751e82b7ee93edb7777a234ccacc01046",
+    "Native/platform/windows/bridge_shim_windows.cpp": "b64d83423e0b286f82b7b47e3eb8d4d2009fdf6b4548dddf7ddc68b921dcb472",
+    "Native/platform/windows/bridge_subpixel_metadata.cpp": "0cd09ca48ebf4d184d36458e49b0526e299d86993cd2b74d873002517af102c2",
+    "Native/platform/windows/bridge_subpixel_metadata.h": "f18f6e1f094f30bcb05029d7e351fff3d041e3f6562a64c1984597ca23cdbd7f",
+    "Native/platform/windows/bridge_worker_transport_windows.cpp": "b7280a1f0a1e27e94ab7ede6fd8bcda7bc0e30a99abc5a2fc7afec2c6a615dfe",
+    "Native/platform/windows/manual_subpixel_presenter.cpp": "471f15765850cf2ba87ca31f8ea38a57057eb7b840913d919a745690dc67cc8d",
+    "Native/platform/windows/manual_subpixel_presenter.h": "40c45995fd9e05fae48e463c886e9cd80051329d731472277678ee6cd3bddb91",
+    "Native/platform/windows/stable_sdk_input_d3d11.cpp": "ff1bdccefc961168dad81a9cc18cf8c68232c22ce33cfac575f0901a2c7bb92f",
+    "Native/platform/windows/stable_sdk_input_d3d11.h": "77eeb054980ed87c70b99cadf909172bb6443942ca72579ec303d79eb17bfcd3",
+    "Native/platform/windows/stdio_load_guard.cpp": "1f380f85e84bd2b999f3d95b04863b7dd2aaf140b77232613cd35be01ef672e2",
+    "Native/platform/windows/stdio_load_guard.h": "e6ff25620fb02836979d846a7d0a9a9b281539fdcc30a223dd5917a48c442c9d",
+    "Native/stable_sdk_input_d3d11.cmake": "038658297643d42ed6fb68fdac24c083fb069609c6c7e066be5e10adf5c98a03",
+    "Native/tests/bridge_loader_lifecycle_test.cpp": "fa9e38eaf6b4492f02f2f4f45c0fdb59aefa3227ea37116ae84ef971d19cac3b",
+    "Native/tests/bridge_shutdown_contract.h": "407273b9ac0330ed817cd85b22bef2070f1365bcd64b2398a9f6c638fe546b58",
+    "Native/tests/bridge_shutdown_contract_test.cpp": "fba97daf4cf8427718db58d8a800bbec8d31ef7c63ee48cd331d2f9e296f746e",
+    "Native/tests/bridge_static_present_test.cpp": "d72a1669e97d433c6c2eaa6373be95cb638efb420e694c6473c41d1774679420",
+    "Native/tests/bridge_subpixel_metadata_test.cpp": "b608603f13a0fbc903be02e6967a9a1c82fc1d2c0837e594d10cdaeb5752a64a",
+    "Native/tests/bridge_worker_host_affinity_test.cpp": "87779e3b8d309a7c232cb0712a7ba1662f7faa7e4dd0a4fd5974a5df24183a0b",
+    "Native/tests/d3d12_d3d11_shared_probe.cpp": "8cde21daa564b3543c891770c6b382aac18926e3e87ea9ab7b25031bd8242000",
+    "Native/tests/fake_bridge_fault_runtime.cpp": "d7aae483c1808e447d52bc62060a7d1633d1766b6c29bf389022773476b24f77",
+    "Native/tests/fake_bridge_missing.cpp": "89d4bb907704fc1a8fe1fdad152a983779f0ced85808b77dea9263c0b5c05fd3",
+    "Native/tests/fake_bridge_runtime.cpp": "3639075bf270849dbaa8903c9466f78b913085462b9ce8e5df36c4fc31a6caf8",
+    "Native/tests/fake_bridge_shutdown_runtime.cpp": "83292ca0a55120153c734b93829515511837d1e6b3c53c6876c9f3f8f5171516",
+    "Native/tests/fake_metal_metadata.cpp": "cf9c3b5200fd1ceb0bbcfa537253ccf64cc700277e32e7c803842c94c165a781",
+    "Native/tests/fake_static_stdio_rebind.cpp": "2c7cf51ad849750f327d5f1cbe3fc2d54d39bbdf1d1c58f5dffd007407c1e7d9",
+    "Native/tests/manual_subpixel_presenter_test.cpp": "c96f37cf3149df50feb38a594a897bd4fc98ec2ed22c844b91b85315925af5ff",
+    "Native/tests/metadata_test.cpp": "dfdb134b6fbf30171122278ea51d3dad45759b74fad38b5692b1173cd6cc655c",
+    "Native/tests/metal_api_contract_test.cpp": "977bfa3a318eeb87ad326574bbe6ec6d02927b35961078eeea64a77c18556c7b",
+    "Native/tests/metal_bridge_cells_test.mm": "7df79500cbf63d2c3efde8036869287769e9b4c90a327b440575b5ab4e1c7fbb",
+    "Native/tests/metal_calibration_test.cpp": "f2b3a07c782f6a887626aa67435ddb9d9a5dc7e97ee2093920828d4e301d4aa5",
+    "Native/tests/metal_display_metadata_test.cpp": "2d68beabf66aaf4bd15fa11dd4771f4ff2ceaeb0f51598b606c95a4df2bb4cba",
+    "Native/tests/metal_submission_lifetime_test.cpp": "a9eae00f0fc378cf75b53a90bf67cf1405784e1298c3250b6595a4e2dd7c4684",
+    "Native/tests/portable_common_test.cpp": "ed50427d073e0ffe9692e2749ddd076eeabd3aea3aca6e2d481f15d0fa82772e",
+    "Native/tests/stable_sdk_input_d3d11_test.cpp": "6db3c3ca796c39c3c28446f4bc1b101f46aa3d4e9a23fdc88a4fea3a5800eca2",
+    "Native/tests/stdio_load_guard_test.cpp": "d7bb2fcfdb4be37efe07e1a18c56d7015e9e370f7cd77ee75adb391ebc8c4c08",
+    "Native/tests/subpixel_calibration_test.cpp": "d6e89bb0dffe6e03ba9e8874c48a07e04032e85a67b4bb72a65d3fef750e615b",
+    "Native/tests/unsupported_shim_abi_test.cpp": "58b3875620c9c383458dee36a5cb49b58e14bb7fc15b605d4f68743d0216525b",
+    "Native/tests/worker_transport_test.cpp": "55ccc282e2ba9c012bfcabd8a96a0662ed32b393c154c0790430acfba979a64d",
+    "Native/tests/worker_transport_test_hooks.h": "1f13bb66c15629cc57fc7dbd5270943deaf5a8d93dae58a54f9c9aa9906203aa"
+  },
+  "productFiles": [
+    {
+      "path": "Native/CMakeLists.txt",
+      "sha256": "47602688fd4e46baed3fbb069fa7653145122ec4b568452d4683115c7d1115cb",
+      "bytes": 23823
+    },
+    {
+      "path": "Native/common/subpixel_calibration.cpp",
+      "sha256": "41f9e19864a80cd3adc7833da634736c810a71bf015fda24e9f18c726da1ff88",
+      "bytes": 6115
+    },
+    {
+      "path": "Native/common/subpixel_calibration.h",
+      "sha256": "4fcce2fc065d3d7eaca0a860aff0222b3913c89f370b34f128e55a12d4ed8092",
+      "bytes": 1077
+    },
+    {
+      "path": "Packages/com.zabaglione.lookingglass.viewweave.bridge/Runtime/Common/BridgeQuiltInputPolicy.cs",
+      "sha256": "ca40d3bd1970e79d5335321bce0a80f30732bc5db72ee6a848b9fabf25519966",
+      "bytes": 3451
+    },
+    {
+      "path": "Packages/com.zabaglione.lookingglass.viewweave.bridge/Runtime/Platforms/Metal/BridgeMetalQuiltOutput.cs",
+      "sha256": "0247edbb0b0e6d2df3783075da02e821c8a6e4dd425e4f11bc07f7dfabba9d63",
+      "bytes": 26281
+    },
+    {
+      "path": "Packages/com.zabaglione.lookingglass.viewweave.bridge/Runtime/Platforms/Windows/ViewWeaveBridgeSession.cs",
+      "sha256": "9a5aaa91de996834b5430d34f8e3762713a95c96d7ed2e4d6943c842b09b4849",
+      "bytes": 35929
+    },
+    {
+      "path": "Packages/com.zabaglione.lookingglass.viewweave.bridge/Runtime/Common/BridgeSubpixelMode.cs",
+      "sha256": "6eaf8b16d20fa72cd2983423b013589f719dea9df28fa5a1628bfbe16475c0ee",
+      "bytes": 1907
+    },
+    {
+      "path": "Packages/com.zabaglione.lookingglass.viewweave.bridge/Runtime/Common/Resources/ViewWeaveSubpixelSampling.hlsl",
+      "sha256": "5a0e0b8ea9bef1e5e44dbe836fdb7b4ec56f0b63015beb6d7b7e2effff0fc0fd",
+      "bytes": 3366
+    },
+    {
+      "path": "Packages/com.zabaglione.lookingglass.viewweave.bridge/Runtime/Platforms/Metal/Resources/ViewWeaveMetalInterlace.shader",
+      "sha256": "fdc482d024b22ea6cd714e4ca1c4ddd61108a1a368213e4f35a3b71096448e6d",
+      "bytes": 4522
+    }
+  ],
+  "fixtureFiles": [
+    {
+      "path": "Native/tests/metal_display_metadata_test.cpp",
+      "sha256": "2d68beabf66aaf4bd15fa11dd4771f4ff2ceaeb0f51598b606c95a4df2bb4cba",
+      "bytes": 2994
+    },
+    {
+      "path": "Tests/Metal/Unity/Assets/Editor/MetalNativeSessionValidation.cs",
+      "sha256": "a30c0a65baa847744f522200cb19da75e53a5d8daeb995b1f7cd1e5a44dcef32",
+      "bytes": 5170
+    },
+    {
+      "path": "Tests/Metal/Unity/Assets/Editor/MetalShaderValidation.cs",
+      "sha256": "a4b7efc8b417b892a873ef7f61df662f2257f74f58f3bff98608a983a7982851",
+      "bytes": 14338
+    },
+    {
+      "path": "Tests/Pipelines/Unity/Assets/BridgeSessionValidation/BridgeSessionValidationTests.cs",
+      "sha256": "7297076e9e5edb07f5f71c1f325d0b4112e7220a46e3906f4466c7c481ab3fc2",
+      "bytes": 46153
+    },
+    {
+      "path": "Tests/Pipelines/Unity/Assets/BridgeSessionValidation/Editor/BridgeDisplayGeometryTests.cs",
+      "sha256": "4f8a488a5aa4bc213e1ddfbccf978f9ab20ec86b09d15b622085d9c92d8a0124",
+      "bytes": 9762
+    },
+    {
+      "path": "Tests/Pipelines/Unity/Assets/RigCameraCreationValidation/Editor/RigMetalInspectorTests.cs",
+      "sha256": "4e97e790142f0cf386a0e61994359996ab86060dd663cdf7886ca3831d68771f",
+      "bytes": 7443
+    },
+    {
+      "path": "Tests/Pipelines/Unity/Assets/MetalCurrentValidation/Editor/MetalCurrentValidationBuilder.cs",
+      "sha256": "4b122bd1b3e14f14635a70ce823aa09b5012cb9771fab7c290c999a258faa1fb",
+      "bytes": 11772
+    },
+    {
+      "path": "Tests/Pipelines/Unity/Assets/MetalCurrentValidation/Editor/MetalCurrentEditorValidation.cs",
+      "sha256": "f9b324472581d448850f7c298fa0ace8ffee472493737b8793366b5c710b5b3a",
+      "bytes": 11172
+    },
+    {
+      "path": "Tests/Pipelines/Unity/Assets/MetalCurrentValidation/MetalCurrentValidationRunner.cs",
+      "sha256": "d74ae20ae0dad70f999bca9688c5f51bfbf036136fca498ef00329c1963b78b5",
+      "bytes": 10222
+    },
+    {
+      "path": "Tests/Pipelines/Unity/Assets/MetalCurrentValidation/Editor/BridgeDisplayGeometryValidation.cs",
+      "sha256": "2332de37cc1625cc3219905d22cafc6d8f8330e88aa8326f7741d7b33b739d4b",
+      "bytes": 14737
+    }
+  ],
+  "generatedSrpGpuFixture": {
+    "file": {
+      "path": "Tests/Pipelines/Unity/Assets/SamplePlayerValidationGenerated/MetalSharedShader/Editor/MetalShaderValidation.cs",
+      "sha256": "891b03efcad9db5bd455b7e8c79d39a63a985eea616db7d74879ca8c7d67401f",
+      "bytes": 14351
+    },
+    "committed": false,
+    "adaptation": "Class renamed MetalSharedShaderValidation; menu renamed Validate Shared Metal Interlacing; same oracle math as canonical Metal fixture."
+  },
+  "native": {
+    "configuration": "Release",
+    "architecture": "arm64",
+    "passed": 8,
+    "failed": 0,
+    "exitCode": 0,
+    "testExecutables": [
+      "lookingglass_worker_common_test",
+      "lookingglass_metadata_test",
+      "lookingglass_subpixel_calibration_test",
+      "lookingglass_metal_calibration_test",
+      "lookingglass_metal_display_metadata_test",
+      "lookingglass_metal_bridge_cells_test",
+      "lookingglass_metal_api_contract_test",
+      "lookingglass_metal_submission_lifetime_test"
+    ],
+    "raw": {
+      "path": ".local/macos-unified-20261011/native-final.log",
+      "sha256": "234544591690739836152180a073e549979a87a6496ff29cbbe3b039fb223827",
+      "bytes": 3543
+    },
+    "ctest": {
+      "command": [
+        "ctest",
+        "--test-dir",
+        "${REPOSITORY_ROOT}/Native/build-macos-unified-20261011",
+        "-C",
+        "Release",
+        "--output-on-failure"
+      ],
+      "outputTail": [
+        "Test project ${REPOSITORY_ROOT}/Native/build-macos-unified-20261011",
+        "    Start 1: lookingglass_worker_common_test",
+        "1/8 Test #1: lookingglass_worker_common_test ...............   Passed    0.00 sec",
+        "    Start 2: lookingglass_metadata_test",
+        "2/8 Test #2: lookingglass_metadata_test ....................   Passed    0.01 sec",
+        "    Start 3: lookingglass_subpixel_calibration_test",
+        "3/8 Test #3: lookingglass_subpixel_calibration_test ........   Passed    0.02 sec",
+        "    Start 4: lookingglass_metal_calibration_test",
+        "4/8 Test #4: lookingglass_metal_calibration_test ...........   Passed    0.00 sec",
+        "    Start 5: lookingglass_metal_display_metadata_test",
+        "5/8 Test #5: lookingglass_metal_display_metadata_test ......   Passed    0.32 sec",
+        "    Start 6: lookingglass_metal_bridge_cells_test",
+        "6/8 Test #6: lookingglass_metal_bridge_cells_test ..........   Passed    0.02 sec",
+        "    Start 7: lookingglass_metal_api_contract_test",
+        "7/8 Test #7: lookingglass_metal_api_contract_test ..........   Passed    0.00 sec",
+        "    Start 8: lookingglass_metal_submission_lifetime_test",
+        "8/8 Test #8: lookingglass_metal_submission_lifetime_test ...   Passed    0.00 sec",
+        "",
+        "100% tests passed out of 8",
+        "",
+        "Total Test time (real) =   0.38 sec"
+      ],
+      "returnCode": 0,
+      "summary": "100% tests passed out of 8"
+    }
+  },
+  "managed": [
+    {
+      "mode": "EditMode",
+      "passed": 31,
+      "failed": 0,
+      "skipped": 0,
+      "raw": {
+        "path": ".local/macos-unified-20261011/managed.xml",
+        "sha256": "6525649c1a0a61b3554a519a4aec2c9de2c26786426dd426dfee4206489da44a",
+        "bytes": 32416
+      },
+      "testCases": [
+        "ViewWeave.BridgeEditorPreviewValidation.BridgeDisplayGeometryTests.AnotherRendererCannotBorrowAnAttachedOutputsGeometry",
+        "ViewWeave.BridgeEditorPreviewValidation.BridgeDisplayGeometryTests.BothOutputsRetainBridgeGeometryWithNoActiveConnection(True,0.5625f)",
+        "ViewWeave.BridgeEditorPreviewValidation.BridgeDisplayGeometryTests.BothOutputsRetainBridgeGeometryWithNoActiveConnection(True,1.777778f)",
+        "ViewWeave.BridgeEditorPreviewValidation.BridgeDisplayGeometryTests.BothOutputsRetainBridgeGeometryWithNoActiveConnection(False,0.5625f)",
+        "ViewWeave.BridgeEditorPreviewValidation.BridgeDisplayGeometryTests.BothOutputsRetainBridgeGeometryWithNoActiveConnection(False,1.777778f)",
+        "ViewWeave.BridgeEditorPreviewValidation.BridgeDisplayGeometryTests.ChangedSelectionOrOutputDoesNotReusePreviousDisplay(True)",
+        "ViewWeave.BridgeEditorPreviewValidation.BridgeDisplayGeometryTests.ChangedSelectionOrOutputDoesNotReusePreviousDisplay(False)",
+        "ViewWeave.BridgeEditorPreviewValidation.BridgeDisplayGeometryTests.LocalPreviewSettingsUseTheSameRetainedGeometry(True)",
+        "ViewWeave.BridgeEditorPreviewValidation.BridgeDisplayGeometryTests.LocalPreviewSettingsUseTheSameRetainedGeometry(False)",
+        "ViewWeave.BridgeEditorPreviewValidation.BridgeDisplayGeometryTests.NewBridgeResultUpdatesGeometryWhileInvalidResultDoesNotEraseIt(True)",
+        "ViewWeave.BridgeEditorPreviewValidation.BridgeDisplayGeometryTests.NewBridgeResultUpdatesGeometryWhileInvalidResultDoesNotEraseIt(False)",
+        "ViewWeave.BridgeEditorPreviewValidation.BridgeDisplayGeometryTests.OlderWindowsSnapshotCannotOverrideNewerRecognizedGeometry",
+        "ViewWeave.BridgeEditorPreviewValidation.BridgeDisplayGeometryTests.RetainedPhysicalCalibrationDoesNotEnableConnectedCalibrationActions",
+        "ViewWeave.BridgeEditorPreviewValidation.BridgeDisplayGeometryTests.SoleTransportRetainsGeometryAfterItsTemporaryBindingIsRestored(True)",
+        "ViewWeave.BridgeEditorPreviewValidation.BridgeDisplayGeometryTests.SoleTransportRetainsGeometryAfterItsTemporaryBindingIsRestored(False)",
+        "ViewWeave.RigCameraCreationValidation.RigMetalInspectorTests.LegacyDirectSubpixelPolicyAcceptsAutomaticOnly(Automatic,True)",
+        "ViewWeave.RigCameraCreationValidation.RigMetalInspectorTests.LegacyDirectSubpixelPolicyAcceptsAutomaticOnly(ClassicRgb,False)",
+        "ViewWeave.RigCameraCreationValidation.RigMetalInspectorTests.LegacyDirectSubpixelPolicyAcceptsAutomaticOnly(CalibratedCells,False)",
+        "ViewWeave.RigCameraCreationValidation.RigMetalInspectorTests.LegacyDirectSubpixelPolicyAcceptsAutomaticOnly(999,False)",
+        "ViewWeave.RigCameraCreationValidation.RigMetalInspectorTests.MetalOutputMissingSerializedModeDefaultsToAutomatic",
+        "ViewWeave.RigCameraCreationValidation.RigMetalInspectorTests.QualityRejectsUnknownValuesAndRecordingOwnership",
+        "ViewWeave.RigCameraCreationValidation.RigMetalInspectorTests.RigOwnsQualityTransportAndCommonCameraControlsForMetal",
+        "ViewWeave.RigCameraCreationValidation.RigMetalInspectorTests.SubpixelControlPersistsAndSupportsUndo",
+        "ViewWeave.RigCameraCreationValidation.RigMetalInspectorTests.SubpixelModeRejectsInvalidValuesAndRecordingOwnership",
+        "ViewWeave.RigCameraCreationValidation.RigMetalInspectorTests.SubpixelPolicyRequiresCellsWithoutGuessingCalibration(Automatic,False,True,False)",
+        "ViewWeave.RigCameraCreationValidation.RigMetalInspectorTests.SubpixelPolicyRequiresCellsWithoutGuessingCalibration(Automatic,True,True,True)",
+        "ViewWeave.RigCameraCreationValidation.RigMetalInspectorTests.SubpixelPolicyRequiresCellsWithoutGuessingCalibration(ClassicRgb,False,True,False)",
+        "ViewWeave.RigCameraCreationValidation.RigMetalInspectorTests.SubpixelPolicyRequiresCellsWithoutGuessingCalibration(ClassicRgb,True,True,False)",
+        "ViewWeave.RigCameraCreationValidation.RigMetalInspectorTests.SubpixelPolicyRequiresCellsWithoutGuessingCalibration(CalibratedCells,False,False,False)",
+        "ViewWeave.RigCameraCreationValidation.RigMetalInspectorTests.SubpixelPolicyRequiresCellsWithoutGuessingCalibration(CalibratedCells,True,True,True)",
+        "ViewWeave.RigCameraCreationValidation.RigMetalInspectorTests.SubpixelPolicyRequiresCellsWithoutGuessingCalibration(999,True,False,False)"
+      ]
+    },
+    {
+      "mode": "PlayMode",
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "raw": {
+        "path": ".local/macos-unified-20261011/complete-grid-final.xml",
+        "sha256": "8ae4c5d4f3669e68c89a4d832e96c20d135e4f8927fca8486d2b18d78be7b08a",
+        "bytes": 10306
+      },
+      "testCases": [
+        "ViewWeave.BridgeSessionValidation.BridgeSessionValidationTests.GenericConnectedDisplayProfilesPreserveDeviceMetadata(7,1920,1080,4000,4000,1000,999,2000,1998,5,9,35.0f,120.0f)",
+        "ViewWeave.BridgeSessionValidation.BridgeSessionValidationTests.GenericConnectedDisplayProfilesPreserveDeviceMetadata(42,1440,2560,4092,4092,1023,1020,2046,2046,11,6,54.0f,300.0f)",
+        "ViewWeave.BridgeSessionValidation.BridgeSessionValidationTests.GenericConnectedDisplayProfilesPreserveDeviceMetadata(301,5120,2880,8192,8192,2048,2046,4096,4098,8,6,50.0f,190.0f)",
+        "ViewWeave.BridgeSessionValidation.BridgeSessionValidationTests.InvalidProfilePresetIsRejectedBeforeProfileUse",
+        "ViewWeave.BridgeSessionValidation.BridgeSessionValidationTests.QualityPresetKeepsPreviewBalancedAndNativeDimensionsDistinct",
+        "ViewWeave.BridgeSessionValidation.BridgeSessionValidationTests.SharedQuiltInputPolicyAcceptsNonDefaultCompleteGrid",
+        "ViewWeave.BridgeSessionValidation.BridgeSessionValidationTests.SharedQuiltInputPolicyRejectsPaddedTextureDimensions",
+        "ViewWeave.BridgeSessionValidation.BridgeSessionValidationTests.SharedQuiltInputPolicyRejectsPartialAndDefaultLayouts",
+        "ViewWeave.BridgeSessionValidation.BridgeSessionValidationTests.SharedQuiltInputPolicyRejectsTextureLayoutDimensionMismatch"
+      ]
+    }
+  ],
+  "gpu": [
+    {
+      "scope": "Built-in Linear",
+      "exitCode": 0,
+      "result": {
+        "passed": true,
+        "unity": "6000.6.4f1",
+        "graphicsApi": "Metal",
+        "gpu": "Apple M3 Max",
+        "colorSpace": "Linear",
+        "pipeline": "",
+        "classicCases": 72,
+        "cellCases": 180,
+        "channelSamples": 580608,
+        "width": 32,
+        "height": 24,
+        "sourceFormats": 3,
+        "samplingVariants": 3,
+        "unavailableSourceFormats": 0,
+        "gammaSrgbRequestBecameUnorm": false,
+        "maximumError": 0.002277389168739319,
+        "phaseBoundaryMargin": 0.0004687306936830282
+      },
+      "raw": {
+        "path": ".local/macos-unified-20261011/gpu-linear-final.json",
+        "sha256": "c7d521616b896de9b8530eaa6a42774b8a0fc494e1659bf56d5752f49f21557d",
+        "bytes": 484
+      }
+    },
+    {
+      "scope": "Built-in Gamma",
+      "exitCode": 0,
+      "result": {
+        "passed": true,
+        "unity": "6000.6.4f1",
+        "graphicsApi": "Metal",
+        "gpu": "Apple M3 Max",
+        "colorSpace": "Gamma",
+        "pipeline": "",
+        "classicCases": 48,
+        "cellCases": 120,
+        "channelSamples": 387072,
+        "width": 32,
+        "height": 24,
+        "sourceFormats": 2,
+        "samplingVariants": 3,
+        "unavailableSourceFormats": 1,
+        "gammaSrgbRequestBecameUnorm": true,
+        "maximumError": 0.0019608139991760254,
+        "phaseBoundaryMargin": 0.0004687306936830282
+      },
+      "raw": {
+        "path": ".local/macos-unified-20261011/gpu-gamma-available.json",
+        "sha256": "5923b7adbfc16575ae678c4764cda336bddfc4562a818c183735bf3eba397803",
+        "bytes": 483
+      }
+    },
+    {
+      "scope": "URP Linear",
+      "exitCode": 0,
+      "result": {
+        "passed": true,
+        "unity": "6000.6.4f1",
+        "graphicsApi": "Metal",
+        "gpu": "Apple M3 Max",
+        "colorSpace": "Linear",
+        "pipeline": "UniversalPipeline",
+        "classicCases": 72,
+        "cellCases": 180,
+        "channelSamples": 580608,
+        "width": 32,
+        "height": 24,
+        "sourceFormats": 3,
+        "samplingVariants": 3,
+        "unavailableSourceFormats": 0,
+        "gammaSrgbRequestBecameUnorm": false,
+        "maximumError": 0.002277389168739319,
+        "phaseBoundaryMargin": 0.0004687306936830282
+      },
+      "raw": {
+        "path": ".local/macos-unified-20261011/gpu-urp.json",
+        "sha256": "bc2e8c59ca04acf53a72610788e5ed8a7453db5cef3b254257b21a857971e197",
+        "bytes": 501
+      }
+    },
+    {
+      "scope": "HDRP Linear",
+      "exitCode": 0,
+      "result": {
+        "passed": true,
+        "unity": "6000.6.4f1",
+        "graphicsApi": "Metal",
+        "gpu": "Apple M3 Max",
+        "colorSpace": "Linear",
+        "pipeline": "HDRenderPipeline",
+        "classicCases": 72,
+        "cellCases": 180,
+        "channelSamples": 580608,
+        "width": 32,
+        "height": 24,
+        "sourceFormats": 3,
+        "samplingVariants": 3,
+        "unavailableSourceFormats": 0,
+        "gammaSrgbRequestBecameUnorm": false,
+        "maximumError": 0.002277389168739319,
+        "phaseBoundaryMargin": 0.0004687306936830282
+      },
+      "raw": {
+        "path": ".local/macos-unified-20261011/gpu-hdrp.json",
+        "sha256": "3b967a3b75796c867a879f67705e252c8706396ea7b148397a869abc77eb07c8",
+        "bytes": 500
+      }
+    }
+  ],
+  "gpuTotals": {
+    "cases": 924,
+    "channelSamples": 2128896,
+    "maximumAllowedError": 0.006,
+    "skippedPixels": 0,
+    "gammaUnavailableSourceFormats": 1,
+    "gammaUnavailableCasesNotCountedAsPass": 84,
+    "gammaActualSrgbInputVerified": false
+  },
+  "goNativeCancellation": {
+    "cycles": 3,
+    "exitCode": 0,
+    "width": 1440,
+    "height": 2560,
+    "contract": "open_v4 / 180-byte ProfileV3",
+    "raw": {
+      "path": ".local/macos-unified-20261011/native-cancel.log",
+      "sha256": "9f5ca766f59f77cf7e930e2b839f7af5ed4ef50ba7d504a50a7293acb6090299",
+      "bytes": 32941
+    },
+    "gates": [
+      "unissued frame cancellation",
+      "busy submission drop",
+      "delayed event from old generation",
+      "close and reopen"
+    ]
+  },
+  "goEditor": [
+    {
+      "scope": "urp-editor-postfix",
+      "exitCode": 0,
+      "runtime": {
+        "passed": true,
+        "development": true,
+        "editor": true,
+        "unityVersion": "6000.6.4f1",
+        "graphicsApi": "Metal",
+        "pipeline": "URP",
+        "error": "",
+        "capture": ".local/macos-unified-20261011/urp-editor-postfix/current.png",
+        "sequence": ".local/macos-unified-20261011/urp-editor-postfix/ViewWeave_20261011_152414_524_d4ce3dc4c9184e0bb09b7d9bfe078d36",
+        "actualPipeline": "UniversalRenderPipeline",
+        "shaderPipelineTag": "UniversalPipeline",
+        "firstCompleted": 60,
+        "restartedCompleted": 30,
+        "recordedFrames": 3,
+        "distinctColors": 15,
+        "width": 1023,
+        "height": 1020,
+        "views": 66,
+        "pendingRetirement": 0,
+        "cellPatternMode": 0,
+        "subpixelCellCount": 0,
+        "redPixels": 152354,
+        "greenPixels": 96813,
+        "magentaPixels": 0,
+        "activeSubpixelChangeRejected": true,
+        "missingCellsRejected": true,
+        "classicRestartVerified": true,
+        "missingCellsError": "Invalid calibration: Calibrated Cells requires an actual cell table",
+        "restartSubpixelMode": "ClassicRgb"
+      },
+      "editor": {
+        "passed": true,
+        "pipeline": "URP",
+        "error": "",
+        "localFrames": 9,
+        "deviceFrames": 45,
+        "sequenceObservedMask": 7,
+        "pendingResources": 0,
+        "pendingRetirement": 0
+      },
+      "raw": [
+        {
+          "path": ".local/macos-unified-20261011/urp-editor-postfix/runtime.json",
+          "sha256": "c18b4ca746f3004c92331208f2a3a0c27e729105531fbe60226ab4c8fe99d43d",
+          "bytes": 1119
+        },
+        {
+          "path": ".local/macos-unified-20261011/urp-editor-postfix/editor.json",
+          "sha256": "0905d3a0541d82ce8df3fc4c62e01dfdadd829b95bde5ea3b51322723c25e2d6",
+          "bytes": 1239
+        }
+      ],
+      "gates": [
+        "Local Preview pause/resume",
+        "Device Preview progress",
+        "Play progress",
+        "still playback presentation and hold",
+        "sequence all indices and EOF live restore",
+        "save and record",
+        "active mode mutation rejection",
+        "required cells missing rejection",
+        "ClassicRgb restart",
+        "resource retirement"
+      ],
+      "recordingPauseResumeTested": false,
+      "stillPlaybackPauseResumeTested": false
+    },
+    {
+      "scope": "hdrp-editor",
+      "exitCode": 0,
+      "runtime": {
+        "passed": true,
+        "development": true,
+        "editor": true,
+        "unityVersion": "6000.6.4f1",
+        "graphicsApi": "Metal",
+        "pipeline": "HDRP",
+        "error": "",
+        "capture": ".local/macos-unified-20261011/hdrp-editor/current.png",
+        "sequence": ".local/macos-unified-20261011/hdrp-editor/ViewWeave_20261011_152032_116_50ea299bf921479f91ea1656e4abc663",
+        "actualPipeline": "HDRenderPipeline",
+        "shaderPipelineTag": "HDRenderPipeline",
+        "firstCompleted": 60,
+        "restartedCompleted": 30,
+        "recordedFrames": 3,
+        "distinctColors": 1636,
+        "width": 1023,
+        "height": 1020,
+        "views": 66,
+        "pendingRetirement": 0,
+        "cellPatternMode": 0,
+        "subpixelCellCount": 0,
+        "redPixels": 167982,
+        "greenPixels": 106817,
+        "magentaPixels": 0,
+        "activeSubpixelChangeRejected": true,
+        "missingCellsRejected": true,
+        "classicRestartVerified": true,
+        "missingCellsError": "Invalid calibration: Calibrated Cells requires an actual cell table",
+        "restartSubpixelMode": "ClassicRgb"
+      },
+      "editor": {
+        "passed": true,
+        "pipeline": "HDRP",
+        "error": "",
+        "localFrames": 9,
+        "deviceFrames": 45,
+        "sequenceObservedMask": 7,
+        "pendingResources": 0,
+        "pendingRetirement": 0
+      },
+      "raw": [
+        {
+          "path": ".local/macos-unified-20261011/hdrp-editor/runtime.json",
+          "sha256": "da7caf268e0a66fcdd248a0854816ceec3053ae84055710d3c207aff3c88c4ae",
+          "bytes": 1101
+        },
+        {
+          "path": ".local/macos-unified-20261011/hdrp-editor/editor.json",
+          "sha256": "a69257eaad0fc89bf032be9d9c6de2910a3b75767df48c1b2cc0264b097778af",
+          "bytes": 1222
+        }
+      ],
+      "gates": [
+        "Local Preview pause/resume",
+        "Device Preview progress",
+        "Play progress",
+        "still playback presentation and hold",
+        "sequence all indices and EOF live restore",
+        "save and record",
+        "active mode mutation rejection",
+        "required cells missing rejection",
+        "ClassicRgb restart",
+        "resource retirement"
+      ],
+      "recordingPauseResumeTested": false,
+      "stillPlaybackPauseResumeTested": false
+    }
+  ],
+  "goPlayers": [
+    {
+      "scope": "urp-development",
+      "runtime": {
+        "passed": true,
+        "development": true,
+        "editor": false,
+        "unityVersion": "6000.6.4f1",
+        "graphicsApi": "Metal",
+        "pipeline": "URP",
+        "error": "",
+        "capture": ".local/macos-unified-20261011/urp-development/current.png",
+        "sequence": ".local/macos-unified-20261011/urp-development/ViewWeave_20261011_152752_083_bf5c1e2d433d47b7a58dd5694b24e8ba",
+        "actualPipeline": "UniversalRenderPipeline",
+        "shaderPipelineTag": "UniversalPipeline",
+        "firstCompleted": 60,
+        "restartedCompleted": 30,
+        "recordedFrames": 3,
+        "distinctColors": 15,
+        "width": 1023,
+        "height": 1020,
+        "views": 66,
+        "pendingRetirement": 0,
+        "cellPatternMode": 0,
+        "subpixelCellCount": 0,
+        "redPixels": 152354,
+        "greenPixels": 96813,
+        "magentaPixels": 0,
+        "activeSubpixelChangeRejected": true,
+        "missingCellsRejected": true,
+        "classicRestartVerified": true,
+        "missingCellsError": "Invalid calibration: Calibrated Cells requires an actual cell table",
+        "restartSubpixelMode": "ClassicRgb"
+      },
+      "build": {
+        "pipeline": "URP",
+        "activeAsset": "Assets/SamplePlayerValidationGenerated/MetalCurrent/Pipeline.asset",
+        "activePipeline": "UniversalRenderPipeline",
+        "shaderPipelineTag": "UniversalPipeline",
+        "configuredQualityAssets": 6,
+        "preparedInSeparateProcess": true,
+        "succeeded": true
+      },
+      "processes": {
+        "pipeline": "URP",
+        "configuration": "Development",
+        "root": ".local/macos-unified-20261011/urp-development",
+        "stages": {
+          "prepare": 0,
+          "build": 0,
+          "player": 0
+        }
+      },
+      "raw": [
+        {
+          "path": ".local/macos-unified-20261011/urp-development/runtime.json",
+          "sha256": "f8aa73d500069222132c23fd940f5b867d1dc0955791d2f8050dbe9cdb14e974",
+          "bytes": 1114
+        },
+        {
+          "path": ".local/macos-unified-20261011/urp-development/build.json",
+          "sha256": "490699e40fc03f12349d6cb95e3042cb6f76a8c66ba317dd7db01c08fd10e915",
+          "bytes": 305
+        },
+        {
+          "path": ".local/macos-unified-20261011/urp-development/processes.json",
+          "sha256": "4bcdc83d6d5705dc1eec66d6e9def37713dc73fb3103cd498f252a7e75151c9a",
+          "bytes": 224
+        }
+      ],
+      "packagedNative": {
+        "path": ".local/macos-unified-20261011/urp-development/PipelineSmoke.app/Contents/Plugins/ARM64/lookingglass_bridge_shim.dylib",
+        "sha256": "f2539810f3a63cc3998f0a9ef7b3b96a50cf29031ea986e67ca753787c5cca0f",
+        "bytes": 157712,
+        "architecture": "arm64"
+      },
+      "playerArchitecture": "arm64",
+      "gates": [
+        "actual SRP and tag",
+        "presentation progress",
+        "PNG and central view save",
+        "PNG reopen",
+        "3-frame sequence save and reopen",
+        "active mode mutation rejection",
+        "missing table rejection",
+        "ClassicRgb restart",
+        "retirement zero",
+        "natural process exit 0"
+      ],
+      "playbackOutputTested": false,
+      "pauseResumeTested": false
+    },
+    {
+      "scope": "urp-release",
+      "runtime": {
+        "passed": true,
+        "development": false,
+        "editor": false,
+        "unityVersion": "6000.6.4f1",
+        "graphicsApi": "Metal",
+        "pipeline": "URP",
+        "error": "",
+        "capture": ".local/macos-unified-20261011/urp-release/current.png",
+        "sequence": ".local/macos-unified-20261011/urp-release/ViewWeave_20261011_152827_641_e478a6fd70a7460d8a3e9fc396901b31",
+        "actualPipeline": "UniversalRenderPipeline",
+        "shaderPipelineTag": "UniversalPipeline",
+        "firstCompleted": 60,
+        "restartedCompleted": 30,
+        "recordedFrames": 3,
+        "distinctColors": 15,
+        "width": 1023,
+        "height": 1020,
+        "views": 66,
+        "pendingRetirement": 0,
+        "cellPatternMode": 0,
+        "subpixelCellCount": 0,
+        "redPixels": 152354,
+        "greenPixels": 96813,
+        "magentaPixels": 0,
+        "activeSubpixelChangeRejected": true,
+        "missingCellsRejected": true,
+        "classicRestartVerified": true,
+        "missingCellsError": "Invalid calibration: Calibrated Cells requires an actual cell table",
+        "restartSubpixelMode": "ClassicRgb"
+      },
+      "build": {
+        "pipeline": "URP",
+        "activeAsset": "Assets/SamplePlayerValidationGenerated/MetalCurrent/Pipeline.asset",
+        "activePipeline": "UniversalRenderPipeline",
+        "shaderPipelineTag": "UniversalPipeline",
+        "configuredQualityAssets": 6,
+        "preparedInSeparateProcess": true,
+        "succeeded": true
+      },
+      "processes": {
+        "pipeline": "URP",
+        "configuration": "Release",
+        "root": ".local/macos-unified-20261011/urp-release",
+        "stages": {
+          "prepare": 0,
+          "build": 0,
+          "player": 0
+        }
+      },
+      "raw": [
+        {
+          "path": ".local/macos-unified-20261011/urp-release/runtime.json",
+          "sha256": "55a0fc6e1f472266d26bf4e1494e06bc367549518d74391916730dae8c433b8b",
+          "bytes": 1107
+        },
+        {
+          "path": ".local/macos-unified-20261011/urp-release/build.json",
+          "sha256": "490699e40fc03f12349d6cb95e3042cb6f76a8c66ba317dd7db01c08fd10e915",
+          "bytes": 305
+        },
+        {
+          "path": ".local/macos-unified-20261011/urp-release/processes.json",
+          "sha256": "fb9f90dd5bef31b9738984e39298adfd1761a703b2e3d519a7cb17db81cd0605",
+          "bytes": 216
+        }
+      ],
+      "packagedNative": {
+        "path": ".local/macos-unified-20261011/urp-release/PipelineSmoke.app/Contents/Plugins/ARM64/lookingglass_bridge_shim.dylib",
+        "sha256": "f2539810f3a63cc3998f0a9ef7b3b96a50cf29031ea986e67ca753787c5cca0f",
+        "bytes": 157712,
+        "architecture": "arm64"
+      },
+      "playerArchitecture": "arm64",
+      "gates": [
+        "actual SRP and tag",
+        "presentation progress",
+        "PNG and central view save",
+        "PNG reopen",
+        "3-frame sequence save and reopen",
+        "active mode mutation rejection",
+        "missing table rejection",
+        "ClassicRgb restart",
+        "retirement zero",
+        "natural process exit 0"
+      ],
+      "playbackOutputTested": false,
+      "pauseResumeTested": false
+    },
+    {
+      "scope": "hdrp-development",
+      "runtime": {
+        "passed": true,
+        "development": true,
+        "editor": false,
+        "unityVersion": "6000.6.4f1",
+        "graphicsApi": "Metal",
+        "pipeline": "HDRP",
+        "error": "",
+        "capture": ".local/macos-unified-20261011/hdrp-development/current.png",
+        "sequence": ".local/macos-unified-20261011/hdrp-development/ViewWeave_20261011_152943_772_4bc63aa6c1a8493fbb1604697f87f6c0",
+        "actualPipeline": "HDRenderPipeline",
+        "shaderPipelineTag": "HDRenderPipeline",
+        "firstCompleted": 60,
+        "restartedCompleted": 30,
+        "recordedFrames": 3,
+        "distinctColors": 1612,
+        "width": 1023,
+        "height": 1020,
+        "views": 66,
+        "pendingRetirement": 0,
+        "cellPatternMode": 0,
+        "subpixelCellCount": 0,
+        "redPixels": 167918,
+        "greenPixels": 107167,
+        "magentaPixels": 0,
+        "activeSubpixelChangeRejected": true,
+        "missingCellsRejected": true,
+        "classicRestartVerified": true,
+        "missingCellsError": "Invalid calibration: Calibrated Cells requires an actual cell table",
+        "restartSubpixelMode": "ClassicRgb"
+      },
+      "build": {
+        "pipeline": "HDRP",
+        "activeAsset": "Assets/SamplePlayerValidationGenerated/MetalCurrent/Pipeline.asset",
+        "activePipeline": "HDRenderPipeline",
+        "shaderPipelineTag": "HDRenderPipeline",
+        "configuredQualityAssets": 6,
+        "preparedInSeparateProcess": true,
+        "succeeded": true
+      },
+      "processes": {
+        "pipeline": "HDRP",
+        "configuration": "Development",
+        "root": ".local/macos-unified-20261011/hdrp-development",
+        "stages": {
+          "prepare": 0,
+          "build": 0,
+          "player": 0
+        }
+      },
+      "raw": [
+        {
+          "path": ".local/macos-unified-20261011/hdrp-development/runtime.json",
+          "sha256": "c49dfeab3700496c0e6315fdfb6098cac847a7025573b1d956cb3dd63554158d",
+          "bytes": 1112
+        },
+        {
+          "path": ".local/macos-unified-20261011/hdrp-development/build.json",
+          "sha256": "07afeb7a9c2c2852d72d56f154f58f9a12e10cb77d9320ea4ec10dcdfa7280fe",
+          "bytes": 298
+        },
+        {
+          "path": ".local/macos-unified-20261011/hdrp-development/processes.json",
+          "sha256": "d6a90900e2a3fbf77c4c6bc5578611fc127d5244387a2386830bb442ed8aaa60",
+          "bytes": 226
+        }
+      ],
+      "packagedNative": {
+        "path": ".local/macos-unified-20261011/hdrp-development/PipelineSmoke.app/Contents/Plugins/ARM64/lookingglass_bridge_shim.dylib",
+        "sha256": "f2539810f3a63cc3998f0a9ef7b3b96a50cf29031ea986e67ca753787c5cca0f",
+        "bytes": 157712,
+        "architecture": "arm64"
+      },
+      "playerArchitecture": "arm64",
+      "gates": [
+        "actual SRP and tag",
+        "presentation progress",
+        "PNG and central view save",
+        "PNG reopen",
+        "3-frame sequence save and reopen",
+        "active mode mutation rejection",
+        "missing table rejection",
+        "ClassicRgb restart",
+        "retirement zero",
+        "natural process exit 0"
+      ],
+      "playbackOutputTested": false,
+      "pauseResumeTested": false
+    },
+    {
+      "scope": "hdrp-release",
+      "runtime": {
+        "passed": true,
+        "development": false,
+        "editor": false,
+        "unityVersion": "6000.6.4f1",
+        "graphicsApi": "Metal",
+        "pipeline": "HDRP",
+        "error": "",
+        "capture": ".local/macos-unified-20261011/hdrp-release/current.png",
+        "sequence": ".local/macos-unified-20261011/hdrp-release/ViewWeave_20261011_153042_104_02e6706116714b7783e04f4e75b44a06",
+        "actualPipeline": "HDRenderPipeline",
+        "shaderPipelineTag": "HDRenderPipeline",
+        "firstCompleted": 60,
+        "restartedCompleted": 30,
+        "recordedFrames": 3,
+        "distinctColors": 1612,
+        "width": 1023,
+        "height": 1020,
+        "views": 66,
+        "pendingRetirement": 0,
+        "cellPatternMode": 0,
+        "subpixelCellCount": 0,
+        "redPixels": 167918,
+        "greenPixels": 107167,
+        "magentaPixels": 0,
+        "activeSubpixelChangeRejected": true,
+        "missingCellsRejected": true,
+        "classicRestartVerified": true,
+        "missingCellsError": "Invalid calibration: Calibrated Cells requires an actual cell table",
+        "restartSubpixelMode": "ClassicRgb"
+      },
+      "build": {
+        "pipeline": "HDRP",
+        "activeAsset": "Assets/SamplePlayerValidationGenerated/MetalCurrent/Pipeline.asset",
+        "activePipeline": "HDRenderPipeline",
+        "shaderPipelineTag": "HDRenderPipeline",
+        "configuredQualityAssets": 6,
+        "preparedInSeparateProcess": true,
+        "succeeded": true
+      },
+      "processes": {
+        "pipeline": "HDRP",
+        "configuration": "Release",
+        "root": ".local/macos-unified-20261011/hdrp-release",
+        "stages": {
+          "prepare": 0,
+          "build": 0,
+          "player": 0
+        }
+      },
+      "raw": [
+        {
+          "path": ".local/macos-unified-20261011/hdrp-release/runtime.json",
+          "sha256": "0c5dd740b2fd4dd6899e7bb7033103a7fd0fb590ecbbf537c4abc3071fa6e702",
+          "bytes": 1105
+        },
+        {
+          "path": ".local/macos-unified-20261011/hdrp-release/build.json",
+          "sha256": "07afeb7a9c2c2852d72d56f154f58f9a12e10cb77d9320ea4ec10dcdfa7280fe",
+          "bytes": 298
+        },
+        {
+          "path": ".local/macos-unified-20261011/hdrp-release/processes.json",
+          "sha256": "f7e5f52cd925590dec9ef4695abe80c24113e26b12d15562078d83a6720a94a6",
+          "bytes": 218
+        }
+      ],
+      "packagedNative": {
+        "path": ".local/macos-unified-20261011/hdrp-release/PipelineSmoke.app/Contents/Plugins/ARM64/lookingglass_bridge_shim.dylib",
+        "sha256": "f2539810f3a63cc3998f0a9ef7b3b96a50cf29031ea986e67ca753787c5cca0f",
+        "bytes": 157712,
+        "architecture": "arm64"
+      },
+      "playerArchitecture": "arm64",
+      "gates": [
+        "actual SRP and tag",
+        "presentation progress",
+        "PNG and central view save",
+        "PNG reopen",
+        "3-frame sequence save and reopen",
+        "active mode mutation rejection",
+        "missing table rejection",
+        "ClassicRgb restart",
+        "retirement zero",
+        "natural process exit 0"
+      ],
+      "playbackOutputTested": false,
+      "pauseResumeTested": false
+    }
+  ],
+  "gui": {
+    "observer": "Codex CUA",
+    "pipelines": [
+      "URP",
+      "HDRP"
+    ],
+    "gameViewRedGreenFixture": true,
+    "hierarchyAndInspectorChecked": true,
+    "missingScriptOrReferenceObserved": false,
+    "pinkObserved": false,
+    "consoleWarnings": 0,
+    "consoleErrors": 0,
+    "retainedPurpleFocusAspect": "9:16",
+    "scope": "URP full GUI before quality helper, Game/Console repeated after helper; HDRP full GUI after helper. Focus observed after Stop/Play exit. No physical-panel optical evaluation."
+  },
+  "initialFailuresNotCountedAsPass": [
+    {
+      "scope": "native build",
+      "reason": "cells test missing common calibration link",
+      "raw": {
+        "path": ".local/macos-unified-native-initial.log",
+        "sha256": "63e3158de670dfb5a874355fe922f8a6658eea1e4b9d9891dea7dbe6ed828104",
+        "bytes": 7478
+      }
+    },
+    {
+      "scope": "expanded native v4 CTest",
+      "passed": 7,
+      "failed": 1,
+      "reason": "fixture expected error substring differed; actual missing-table rejection was correct",
+      "raw": {
+        "path": ".local/macos-unified-20261011/native-v4-ctest.log",
+        "sha256": "a6882cb96522d671b350707c5331a92138b4dd2df745185ce8604a31a7ceefd0",
+        "bytes": 1402
+      }
+    },
+    {
+      "scope": "Gamma synthetic GPU first two attempts",
+      "completed": false,
+      "reason": "sRGB request created UNORM; no completed GPU report",
+      "raw": [
+        {
+          "path": ".local/macos-unified-20261011/gpu-gamma.log",
+          "sha256": "f099929e5bc0c4821969f1c9ae25597b49dc1a1e422ccad16d32c62ebd51baf9",
+          "bytes": 23426
+        },
+        {
+          "path": ".local/macos-unified-20261011/gpu-gamma-final.log",
+          "sha256": "77efb88ca37e02fb6c37b8929cfc97f02a763075042be31fbc201f6f03e01fdf",
+          "bytes": 25288
+        }
+      ]
+    },
+    {
+      "scope": "URP Editor initial start",
+      "testCases": 0,
+      "reason": "ignored generated fixture class collision; compile failed; process exit 0 is not test pass",
+      "raw": {
+        "path": ".local/macos-unified-20261011/urp-editor.log",
+        "sha256": "64f985f0523fd0cad7478aa26453c20a04b2368310c04c24cb515446dd2e6eb9",
+        "bytes": 82321
+      }
+    }
+  ],
+  "limits": [
+    "Windows execution of changed common Native-quality helper not repeated",
+    "16 Spatial Landscape not connected",
+    "special-cell physical output and optical quality unverified",
+    "Gamma actual sRGB Texture2D input unavailable and excluded",
+    "cell table with invView=0 rejected",
+    "unknown patterns and more than four cells unsupported",
+    "rotated/non-native/mirrored display conditions rejected",
+    "hotplug, multiple devices, Intel execution, long duration, own-window close, forced shutdown, arbitrary scenes, all effects and performance unverified",
+    "Go output counters do not establish physical-panel optical correctness"
+  ],
+  "rawArtifactsCommitted": false
+}

@@ -10,17 +10,17 @@ Unity機能ごとの現在の対応状況は[Unity機能×環境表](ja/unity-fe
 
 Windows WorkerはAutomaticを含む全modeをViewWeaveのNative D3D11 interlacerで処理します。D3D12 Unity producerも同じGPU上のD3D11 workerへquiltsを渡します。別経路のLegacy DirectはSDK-managed出力のままです。active preview／Session中はmode変更を拒否します。Windows Native Release CTest 19/19、D3D11 WARP shader oracle 25 casesと校正boundary 6件、Managed/UIの16/16 EditMode、9/9 PlayMode、module enumerator 25/25、guard/discovery 46/46、実機Editorの全12 mode×pipeline×API条件がPASSしました。各実機fixtureはmode status、Native D3D11 backend、render/present counter進行、Preview-to-Play lifecycleとcleanupを確認します。これは検証時の未commit作業treeと指定RTX 3090 Ti機器条件に限られ、光学品質やWindows Playerを証明しません。詳細は[Windows subpixel validation](windows-subpixel-validation-20261011.md)に記録します。
 
-sampling/color実装はNative WARP pixel oracle 25 casesと6校正境界で確認しました。macOSのshader samplingは元の入力`uv`にtexel-center offsetを加えて`tex2Dlod`でsampleし、native最終presentではUVを変更しません。Windowsは既存producer transferのY反転後にNative側でsource寸法のquiltをraw-copyし、physical outputへの最終bilinear scaleを1回だけ行います。共通shaderはLinear／Gamma contentと、source textureの実際のUNORM／sRGB encodingを明示的に扱います。Windows Editor device fixtureでも3 modeすべてのrender/present counter進行を確認しましたが、人手光学評価、全viewの画質、Mac新source/shaderの実行は未確認です。aspect値はmacOS SDK display profileと同じ定義へ揃えます。
+sampling/color実装はNative WARP pixel oracle 25 casesと6校正境界で確認しました。macOSのshader samplingは元の入力`uv`にtexel-center offsetを加えて`tex2Dlod`でsampleし、native最終presentではUVを変更しません。Windowsは既存producer transferのY反転後にNative側でsource寸法のquiltをraw-copyし、physical outputへの最終bilinear scaleを1回だけ行います。共通shaderはLinear／Gamma contentと、source textureの実際のUNORM／sRGB encodingを明示的に扱います。Windows Editor device fixtureでも3 modeすべてのrender/present counter進行を確認しましたが、人手光学評価と全viewの画質は未確認です。新しいmacOS source／shaderは[後続の共通契約検証](macos-unified-subpixel-validation-20261011.md)で確認しています。aspect値はmacOS SDK display profileと同じ定義へ揃えます。
 
-共通入力gateは実texture寸法と`QuiltLayout`寸法の一致、正の完全grid、grid各軸4096以下、paddingなしの割り切れる寸法、実gridから導くtile寸法一致、有限かつ正のview aspectを要求します。部分view countや空layoutを受け付けません。9件のManaged contract PlayMode suiteで非既定15x10 / 3x2 / 6-view layoutの受理、寸法不一致・padding・partial count・default layoutの拒否を確認しました。これによりMetal runtimeやMac shaderの実行を主張するものではありません。
+共通入力gateは実texture寸法と`QuiltLayout`寸法の一致、正の完全grid、grid各軸4096以下、paddingなしの割り切れる寸法、実gridから導くtile寸法一致、有限かつ正のview aspectを要求します。部分view countや空layoutを受け付けません。9件のManaged contract PlayMode suiteで非既定15x10 / 3x2 / 6-view layoutの受理、寸法不一致・padding・partial count・default layoutの拒否を確認しました。これは入力規則の検証です。Metal runtime／shaderは別の[macOS実行記録](macos-unified-subpixel-validation-20261011.md)で確認しています。Native品質の描画profileは両OS共通でraw Bridge寸法の完全tile使用領域から導きます（4096×4096 / 8×6 → 4096×4092）。元のBridge profileと光学校正は保持し、Preview／Balancedの縮小規則は維持します。
 
-macOS sourceも共通Native校正validatorとshaderへ移行中で、新しいmode引数には`open_v4`を必須とします。このWindows環境にあるmacOS shimは旧v3 buildで、新source／shaderはmacOS上でbuildまたは実行されていません。以前のmacOS測定はその時点のコードとbinaryに対する歴史的結果です。新共通shaderや校正実装の検証結果には流用しません。
+macOSは共通Native校正validatorとsampling shaderを使い、mode引数付き`open_v4`を必須とします。arm64 shimを再ビルドし、Native CTest 8/8、合成Metal GPU、Goのv4取消・再開始とURP／HDRP回帰を実行しました。旧v3の測定は過去のsource／binaryの証拠として分けます。件数・範囲・失敗は[macOS共通契約検証](macos-unified-subpixel-validation-20261011.md)に記録しています。
 
 Metal経路はBridgeの表示機器識別子を許可リストにせず、校正値から出力profileを作ります。機種名と`CellPatternMode`の対応表は公開資料から確認できていません。したがって、個々のBridge値を検証して出力する実装は、全機種の光学対応を意味しません。
 
 ## 校正データとmode
 
-Bridgeの校正には`CellPatternMode`とRGB各サブピクセルのraw X/Y pixel offsetを持つ`subpixelCells`があります。旧macOS検証binaryは`open_v3`と180-byteの`LkgMetalDisplayInfoV3`を使いました。現在の未検証sourceは新しいmode引数を持つ`open_v4`を必須とします。各cellは24 bytesでRGBの6値を保持し、最大4個を含めます。
+Bridgeの校正には`CellPatternMode`とRGB各サブピクセルのraw X/Y pixel offsetを持つ`subpixelCells`があります。現行macOS経路はmode引数付き`open_v4`と180-byte応答`LkgMetalDisplayInfoV3`を使います。各cellは24 bytesでRGBの6値を保持し、最大4個を含めます。
 
 以下のmode別cell index規則は、公式Looking Glass Unity Plugin 3.2.8の数学式を照合してViewWeave側で独自に実装したものです。`x`,`y`はnative display pixel座標で、表のセル数はtableの最小必要数を示します。
 
@@ -53,4 +53,4 @@ SDKの`get_calibration_for_display`はcell数とcell pointerを受け取りま�
 
 ## Inspector設定の共通契約
 
-`BridgeSubpixelMode`の3値はRig InspectorとSession／output設定で共有され、mode未指定のserialized objectはAutomaticになります。Windows Workerは3値をNative D3D11 interlacerへ渡す実装済みで、Unity Editorの指定device fixtureでは12条件を限定確認しました。Legacy Directは独立したSDK-managed pathです。macOS sourceも同じmode意味へ移行中ですが、現macOS binaryは新しい`open_v4`契約に対応していません。共通UIは稼働中のmode変更を拒否します。macOS新sourceは未build・未実行です。
+`BridgeSubpixelMode`の3値はRig InspectorとSession／output設定で共有され、mode未指定のserialized objectはAutomaticになります。Windows Workerは3値をNative D3D11 interlacerへ渡す実装済みで、Unity Editorの指定device fixtureでは12条件を限定確認しました。Legacy Directは独立したSDK-managed pathです。macOSも同じmode意味を`open_v4`で処理します。GoではAutomatic／ClassicRgbの出力と、セル表なしCalibratedCellsの開始拒否を確認しています。共通UIは稼働中のmode変更を拒否します。

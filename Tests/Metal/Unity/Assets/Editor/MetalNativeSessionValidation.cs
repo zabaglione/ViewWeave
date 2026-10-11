@@ -30,7 +30,7 @@ public static class MetalNativeSessionValidation
     [StructLayout(LayoutKind.Sequential)]
     struct Status { internal uint submitted, completed, dropped, error, pending, closing; }
     const string Library = "lookingglass_bridge_shim";
-    [DllImport(Library)] static extern ulong lkg_metal_display_open_v3(string path, string name, uint ordinal, ref ProfileV3 info);
+    [DllImport(Library)] static extern ulong lkg_metal_display_open_v4(string path, string name, uint ordinal, uint requestedMode, ref ProfileV3 info);
     [DllImport(Library)] static extern int lkg_metal_display_submit(ulong id, IntPtr texture, out IntPtr data);
     [DllImport(Library)] static extern int lkg_metal_display_status(ulong id, out Status status);
     [DllImport(Library)] static extern void lkg_metal_display_close(ulong id);
@@ -55,7 +55,8 @@ public static class MetalNativeSessionValidation
             for (int cycle = 0; cycle < 3; ++cycle)
             {
                 var profile = new ProfileV3 { structSize = 180, apiVersion = 3 };
-                id = lkg_metal_display_open_v3(path, "ViewWeave Metal cancellation validation", 0, ref profile);
+                id = lkg_metal_display_open_v4(path, "ViewWeave Metal cancellation validation", 0,
+                    (uint)BridgeSubpixelMode.Automatic, ref profile);
                 if (id == 0) throw new Exception(Marshal.PtrToStringAnsi(lkg_metal_display_error()));
                 Display info = profile.calibration;
                 if (source == null)

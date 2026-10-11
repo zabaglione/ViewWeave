@@ -20,12 +20,42 @@ public static class MetalShaderValidation
     };
     const int Width = 32, Height = 24, Columns = 4, Rows = 3, TileSize = 8;
     const double Pitch = 8.25, Tilt = -.3125;
+    static string expectedPipeline;
+    static double deadline;
+
+    // SRP validation starts only after the saved pipeline is active in a fresh Editor.
+    public static void RunWhenReady()
+    {
+        string[] args = Environment.GetCommandLineArgs();
+        for (int i = 0; i + 1 < args.Length; ++i)
+            if (args[i] == "-expectedShaderPipeline") expectedPipeline = args[i + 1];
+        if (string.IsNullOrEmpty(expectedPipeline)) throw new Exception("-expectedShaderPipeline is required");
+        deadline = EditorApplication.timeSinceStartup + 90;
+        EditorApplication.update += WaitForPipeline;
+    }
+
+    static void WaitForPipeline()
+    {
+        if (EditorApplication.isCompiling || EditorApplication.isUpdating) return;
+        if (Shader.globalRenderPipeline != expectedPipeline || UnityEngine.Rendering.RenderPipelineManager.currentPipeline == null)
+        {
+            if (EditorApplication.timeSinceStartup < deadline)
+            { EditorApplication.QueuePlayerLoopUpdate(); SceneView.RepaintAll(); return; }
+            EditorApplication.update -= WaitForPipeline;
+            Debug.LogError("The expected shader pipeline did not become active");
+            EditorApplication.Exit(1); return;
+        }
+        EditorApplication.update -= WaitForPipeline;
+        try { Run(); EditorApplication.Exit(0); }
+        catch (Exception exception) { Debug.LogException(exception); EditorApplication.Exit(1); }
+    }
 
     [Serializable] sealed class Report
     {
         public bool passed;
-        public string unity, graphicsApi, colorSpace;
-        public int classicCases, cellCases, channelSamples, width, height;
+        public string unity, graphicsApi, gpu, colorSpace, pipeline;
+        public int classicCases, cellCases, channelSamples, width, height, sourceFormats, samplingVariants, unavailableSourceFormats;
+        public bool gammaSrgbRequestBecameUnorm;
         public float maximumError;
         public double phaseBoundaryMargin;
     }
@@ -45,7 +75,7 @@ public static class MetalShaderValidation
         Vector2 offset = RawOffsets[Pattern[mode][(y % 4) * 2 + x % 2] * 3 + channel];
         return (u + offset.x / Width + (v + offset.y / Height) * direction * Tilt) * Pitch - center;
     }
-    static double BilinearChannel(Texture2D quilt, int tileX, int tileY, double withinX, double withinY, int channel)
+    static double BilinearChannel(Texture2D quilt, int tileX, int tileY, double withinX, double withinY, int channel, bool decodeSrgb)
     {
         double positionX = Math.Max(tileX * TileSize + .5,
             Math.Min((tileX + 1) * TileSize - .5, (tileX + withinX) * TileSize));
@@ -58,10 +88,14 @@ public static class MetalShaderValidation
         int y0 = Math.Max(tileY * TileSize, Math.Min((tileY + 1) * TileSize - 1, floorY));
         int y1 = Math.Max(tileY * TileSize, Math.Min((tileY + 1) * TileSize - 1, floorY + 1));
         double fx = sampleX - floorX, fy = sampleY - floorY;
-        double top = Mathf.Lerp(quilt.GetPixel(x0, y0)[channel], quilt.GetPixel(x1, y0)[channel], (float)fx);
-        double bottom = Mathf.Lerp(quilt.GetPixel(x0, y1)[channel], quilt.GetPixel(x1, y1)[channel], (float)fx);
+        double a = quilt.GetPixel(x0, y0)[channel], b = quilt.GetPixel(x1, y0)[channel];
+        double c = quilt.GetPixel(x0, y1)[channel], d = quilt.GetPixel(x1, y1)[channel];
+        if (decodeSrgb) { a = ExactSrgbDecode(a); b = ExactSrgbDecode(b); c = ExactSrgbDecode(c); d = ExactSrgbDecode(d); }
+        double top = Mathf.Lerp((float)a, (float)b, (float)fx);
+        double bottom = Mathf.Lerp((float)c, (float)d, (float)fx);
         return Mathf.Lerp((float)top, (float)bottom, (float)fy);
     }
+    static double ExactSrgbDecode(double value) => value <= .04045 ? value / 12.92 : Math.Pow((value + .055) / 1.055, 2.4);
     static float ExactSrgbEncode(double value)
     {
         value = Math.Max(0, Math.Min(1, value));
@@ -95,18 +129,18 @@ public static class MetalShaderValidation
         if (SystemInfo.graphicsDeviceType != UnityEngine.Rendering.GraphicsDeviceType.Metal)
             throw new Exception("GPU validation requires Metal");
         var report = new Report { unity = Application.unityVersion, graphicsApi = SystemInfo.graphicsDeviceType.ToString(),
-            colorSpace = QualitySettings.activeColorSpace.ToString(), width = Width, height = Height };
+            gpu = SystemInfo.graphicsDeviceName, pipeline = Shader.globalRenderPipeline,
+            colorSpace = QualitySettings.activeColorSpace.ToString(), width = Width, height = Height,
+            sourceFormats = 3, samplingVariants = 3 };
         double center = FindCenter(out report.phaseBoundaryMargin);
-        var quilt = new Texture2D(Columns*TileSize,Rows*TileSize,TextureFormat.RGBAFloat,false,true)
-            { filterMode = FilterMode.Point };
-        var pixels = new Color[quilt.width*quilt.height];
-        for (int y = 0; y < quilt.height; ++y) for (int x = 0; x < quilt.width; ++x)
+        Texture2D quilt = null;
+        var pixels = new Color[Columns*Rows*TileSize*TileSize];
+        for (int y = 0; y < Rows*TileSize; ++y) for (int x = 0; x < Columns*TileSize; ++x)
         {
             int view = x/TileSize + y/TileSize*Columns;
-            pixels[x+y*quilt.width] = new Color(.1f+view/32f+x%TileSize*.005f,
+            pixels[x+y*Columns*TileSize] = new Color(.1f+view/32f+x%TileSize*.005f,
                 .1f+(12-view)/32f+y%TileSize*.005f, .1f+(view*7%13)/32f+x%TileSize*.003f+y%TileSize*.002f,1);
         }
-        quilt.SetPixels(pixels); quilt.Apply();
         var material = new Material(shader);
         var target = new RenderTexture(Width,Height,0) { graphicsFormat = GraphicsFormat.R8G8B8A8_UNorm };
         var capture = new Texture2D(Width,Height,TextureFormat.RGBA32,false,true);
@@ -115,45 +149,75 @@ public static class MetalShaderValidation
         {
             if (!target.Create()) throw new Exception("GPU validation texture creation failed");
             material.SetVector("_Grid",new Vector4(Columns,Rows,TileSize,TileSize));
-            material.SetVector("_QuiltSize",new Vector4(quilt.width,quilt.height,1,1));
-            material.SetVector("_SourceOptions",new Vector4(
-                QualitySettings.activeColorSpace == ColorSpace.Linear ? 1 : 0, 0, 0, 0));
             var offsets = new Vector4[12];
             for (int i = 0; i < offsets.Length; ++i)
                 offsets[i] = new Vector4(RawOffsets[i].x/Width,RawOffsets[i].y/Height,0,0);
             material.SetVectorArray("_SubpixelOffsets",offsets);
-            for (int mode = -1; mode <= 4; ++mode) for (int flipped = 0; flipped < 2; ++flipped)
-            for (int red = 0; red <= 2; red += 2) for (int inverted = mode < 0 ? 0 : 1; inverted <= 1; ++inverted)
+            for (int format = 0; format < 3; ++format)
             {
-                float direction = flipped == 1 ? -1f : 1f;
-                material.SetVector("_Screen",new Vector4(Width,Height,direction/(Width*3f),0));
-                material.SetVector("_ChannelOrder",new Vector4(red,1,2-red,flipped));
-                material.SetVector("_Calibration",new Vector4((float)Pitch,direction*(float)Tilt,(float)center,inverted));
-                int count = mode < 0 ? 0 : mode == 0 ? 1 : mode == 3 ? 4 : 2;
-                material.SetVector("_SubpixelPattern",new Vector4(Math.Max(0,mode),count,0,0));
-                Graphics.Blit(quilt,target,material);
-                RenderTexture.active = target;
-                capture.ReadPixels(new Rect(0,0,Width,Height),0,0); capture.Apply();
-                for (int y = 0; y < Height; ++y) for (int x = 0; x < Width; ++x)
-                for (int channel = 0; channel < 3; ++channel)
+                bool srgb = format == 2;
+                quilt = new Texture2D(Columns*TileSize,Rows*TileSize,
+                    format == 0 ? GraphicsFormat.R32G32B32A32_SFloat :
+                        srgb ? GraphicsFormat.R8G8B8A8_SRGB : GraphicsFormat.R8G8B8A8_UNorm, TextureCreationFlags.None)
+                    { filterMode = FilterMode.Point };
+                quilt.SetPixels(pixels); quilt.Apply();
+                bool actualSrgb = GraphicsFormatUtility.IsSRGBFormat(quilt.graphicsFormat);
+                if (srgb && !actualSrgb && QualitySettings.activeColorSpace == ColorSpace.Gamma)
                 {
-                    double u = (x+.5)/Width, v = (y+.5)/Height;
-                    if (mode < 0 && flipped == 1) u = 1-u;
-                    double phase = Phase(x,y,channel,mode,flipped,red,center);
-                    phase -= Math.Floor(phase);
-                    double fraction = mode >= 0 || inverted == 1 ? 1-phase : phase;
-                    int view = Math.Min(Columns*Rows-1,(int)Math.Floor(fraction*Columns*Rows));
-                    float expected = (float)BilinearChannel(quilt, view % Columns, view / Columns, u, v, channel);
-                    if (QualitySettings.activeColorSpace == ColorSpace.Linear) expected = ExactSrgbEncode(expected);
-                    float actual = capture.GetPixel(x,y)[channel];
-                    float difference = Mathf.Abs(expected-actual);
-                    report.maximumError = Mathf.Max(report.maximumError,difference);
-                    if (difference > .006f) throw new Exception($"Metal interlace mismatch mode={mode} flip={flipped} red={red} inverted={inverted} pixel={x},{y} channel={channel} expected={expected} actual={actual}");
-                    ++report.channelSamples;
+                    report.gammaSrgbRequestBecameUnorm = true;
+                    ++report.unavailableSourceFormats; --report.sourceFormats;
+                    UnityEngine.Object.DestroyImmediate(quilt); quilt = null;
+                    continue;
                 }
-                if (mode < 0) ++report.classicCases; else ++report.cellCases;
+                if (actualSrgb != srgb)
+                    throw new Exception("Source encoding does not match the requested texture format");
+                material.SetVector("_SourceOptions",new Vector4(
+                    QualitySettings.activeColorSpace == ColorSpace.Linear ? 1 : 0, srgb ? 1 : 0, srgb ? 1 : 0, 0));
+                for (int sampling = 0; sampling < 3; ++sampling)
+                {
+                double aspect = sampling == 1 ? 1.4 : sampling == 2 ? .75 : 1;
+                double zoom = sampling == 2 ? 1.25 : 1;
+                material.SetVector("_QuiltSize",new Vector4(quilt.width,quilt.height,(float)aspect,(float)zoom));
+                for (int mode = -1; mode <= 4; ++mode) for (int flipped = 0; flipped < 2; ++flipped)
+                for (int red = 0; red <= 2; red += 2) for (int inverted = mode < 0 ? 0 : 1; inverted <= 1; ++inverted)
+                {
+                    float direction = flipped == 1 ? -1f : 1f;
+                    material.SetVector("_Screen",new Vector4(Width,Height,direction/(Width*3f),0));
+                    material.SetVector("_ChannelOrder",new Vector4(red,1,2-red,flipped));
+                    material.SetVector("_Calibration",new Vector4((float)Pitch,direction*(float)Tilt,(float)center,inverted));
+                    int count = mode < 0 ? 0 : mode == 0 ? 1 : mode == 3 ? 4 : 2;
+                    material.SetVector("_SubpixelPattern",new Vector4(Math.Max(0,mode),count,0,0));
+                    Graphics.Blit(quilt,target,material);
+                    RenderTexture.active = target;
+                    capture.ReadPixels(new Rect(0,0,Width,Height),0,0); capture.Apply();
+                    for (int y = 0; y < Height; ++y) for (int x = 0; x < Width; ++x)
+                    for (int channel = 0; channel < 3; ++channel)
+                    {
+                        double u = (x+.5)/Width, v = (y+.5)/Height;
+                        if (mode < 0 && flipped == 1) u = 1-u;
+                        double phase = Phase(x,y,channel,mode,flipped,red,center);
+                        phase -= Math.Floor(phase);
+                        double fraction = mode >= 0 || inverted == 1 ? 1-phase : phase;
+                        int view = Math.Min(Columns*Rows-1,(int)Math.Floor(fraction*Columns*Rows));
+                        double withinX = (u - .5) * aspect / zoom + .5, withinY = (v - .5) / zoom + .5;
+                        bool outside = withinX < 0 || withinX > 1 || withinY < 0 || withinY > 1;
+                        float expected = outside ? 0 : (float)BilinearChannel(quilt, view % Columns, view / Columns,
+                            withinX, withinY, channel, srgb && QualitySettings.activeColorSpace == ColorSpace.Linear);
+                        if (QualitySettings.activeColorSpace == ColorSpace.Linear) expected = ExactSrgbEncode(expected);
+                        float actual = capture.GetPixel(x,y)[channel];
+                        float difference = Mathf.Abs(expected-actual);
+                        report.maximumError = Mathf.Max(report.maximumError,difference);
+                        if (difference > .006f) throw new Exception($"Metal interlace mismatch format={format} sampling={sampling} mode={mode} flip={flipped} red={red} inverted={inverted} pixel={x},{y} channel={channel} expected={expected} actual={actual}");
+                        ++report.channelSamples;
+                    }
+                    if (mode < 0) ++report.classicCases; else ++report.cellCases;
+                }
+                }
+            UnityEngine.Object.DestroyImmediate(quilt); quilt = null;
             }
-            report.passed = report.classicCases == 8 && report.cellCases == 20 && report.channelSamples == 64512;
+            int variants = report.sourceFormats * report.samplingVariants;
+            report.passed = report.classicCases == 8 * variants && report.cellCases == 20 * variants &&
+                report.channelSamples == 64512 * variants;
             if (!report.passed) throw new Exception("GPU validation case count mismatch");
             string[] args = Environment.GetCommandLineArgs();
             for (int i = 0; i+1 < args.Length; ++i) if (args[i] == "-shaderReport")

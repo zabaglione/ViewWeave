@@ -665,20 +665,7 @@ namespace ViewWeave
         }
 
         public static QuiltQualityProfile CreateQualityProfile(BridgeDisplayProfile profile, QuiltQualityPreset preset)
-        {
-            if (!Enum.IsDefined(typeof(QuiltQualityPreset), preset)) throw new ArgumentOutOfRangeException(nameof(preset));
-            switch (preset)
-            {
-                case QuiltQualityPreset.Preview:
-                    return QuiltQualityProfile.Preview(profile.QuiltWidth, profile.QuiltHeight, profile.Columns, profile.Rows, profile.Aspect, profile.Viewcone);
-                case QuiltQualityPreset.Balanced:
-                    return QuiltQualityProfile.Balanced(profile.QuiltWidth, profile.QuiltHeight, profile.Columns, profile.Rows, profile.Aspect, profile.Viewcone);
-                case QuiltQualityPreset.Native:
-                    return QuiltQualityProfile.Native(profile.QuiltWidth, profile.QuiltHeight, profile.Columns, profile.Rows, profile.Aspect, profile.Viewcone);
-                default:
-                    return QuiltQualityProfile.Balanced(profile.QuiltWidth, profile.QuiltHeight, profile.Columns, profile.Rows, profile.Aspect, profile.Viewcone);
-            }
-        }
+            => BridgeQuiltInputPolicy.CreateQualityProfile(profile, preset);
 
         bool ValidateRig()
         {

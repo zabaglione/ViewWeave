@@ -200,7 +200,7 @@ if (BUILD_TESTING)
       add_test(NAME lookingglass_metal_display_metadata_test COMMAND lookingglass_metal_display_metadata_test
         "$<TARGET_FILE:lookingglass_bridge_shim>" "$<TARGET_FILE:lkg_fake_metal_metadata>")
       add_executable(lookingglass_metal_bridge_cells_test platform/macos/metal_bridge_cells.mm
-        platform/macos/metal_calibration.cpp tests/metal_bridge_cells_test.mm)
+        platform/macos/metal_calibration.cpp common/subpixel_calibration.cpp tests/metal_bridge_cells_test.mm)
       target_compile_features(lookingglass_metal_bridge_cells_test PRIVATE cxx_std_17)
       set_target_properties(lookingglass_metal_bridge_cells_test PROPERTIES OBJCXX_STANDARD 17 OBJCXX_STANDARD_REQUIRED ON)
       target_include_directories(lookingglass_metal_bridge_cells_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")

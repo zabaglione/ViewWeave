@@ -239,9 +239,7 @@ namespace ViewWeave
                 });
                 if (!Profile.IsValid) return Fail("Invalid Looking Glass display profile");
                 if (!string.IsNullOrEmpty(GetPhysicalOutputError())) return Fail(GetPhysicalOutputError());
-                QuiltQualityProfile profile = QuiltQualityProfile.FromScaled(Profile.QuiltWidth, Profile.QuiltHeight,
-                    Profile.Columns, Profile.Rows, Profile.Aspect, Profile.Viewcone,
-                    quality == QuiltQualityPreset.Preview ? 0.25f : quality == QuiltQualityPreset.Balanced ? 0.5f : 1f);
+                QuiltQualityProfile profile = BridgeQuiltInputPolicy.CreateQualityProfile(Profile, quality);
                 if (!rig.ApplyProfileForBridgeOwner(profile, this, out error) || !rig.SetOutputForBridgeOwner(this, this, out error)) return Fail(error);
                 Shader shader = Resources.Load<Shader>("ViewWeaveMetalInterlace");
                 if (shader == null || !shader.isSupported) return Fail("Metal interlace shader is unavailable");

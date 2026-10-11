@@ -7,6 +7,24 @@ namespace ViewWeave
     {
         const int MaximumGridDimension = 4096;
 
+        internal static QuiltQualityProfile CreateQualityProfile(BridgeDisplayProfile profile, QuiltQualityPreset preset)
+        {
+            if (!Enum.IsDefined(typeof(QuiltQualityPreset), preset)) throw new ArgumentOutOfRangeException(nameof(preset));
+            if (!profile.IsValid) throw new ArgumentOutOfRangeException(nameof(profile));
+            switch (preset)
+            {
+                case QuiltQualityPreset.Preview:
+                    return QuiltQualityProfile.Preview(profile.QuiltWidth, profile.QuiltHeight, profile.Columns, profile.Rows, profile.Aspect, profile.Viewcone);
+                case QuiltQualityPreset.Balanced:
+                    return QuiltQualityProfile.Balanced(profile.QuiltWidth, profile.QuiltHeight, profile.Columns, profile.Rows, profile.Aspect, profile.Viewcone);
+                default:
+                    // Keep the Bridge metadata intact; draw only its complete tile area.
+                    int width = profile.QuiltWidth / profile.Columns * profile.Columns;
+                    int height = profile.QuiltHeight / profile.Rows * profile.Rows;
+                    return QuiltQualityProfile.Native(width, height, profile.Columns, profile.Rows, profile.Aspect, profile.Viewcone);
+            }
+        }
+
         internal static bool TryValidate(RenderTexture texture, QuiltLayout layout, out string error)
         {
             error = string.Empty;
