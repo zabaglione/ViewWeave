@@ -21,6 +21,7 @@ namespace ViewWeave.Editor
         {
             profile = default;
             if (renderer == null) return false;
+            BridgeEditorDisplayDiscovery.EnsureRequested(renderer);
             if (BridgeMetalEditorPreview.ResolveDisplayProfile(renderer, out profile))
                 return ResolvePreviewOrRemembered(renderer, ref profile);
             BridgeDisplayGeometryStore.TryConfiguration(renderer, out UnityEngine.MonoBehaviour selectedOutput, out _, out _, out _);

@@ -43,6 +43,7 @@ if (NOT LKG_TRANSPORT_TESTS_ONLY)
       platform/macos/metal_calibration.cpp
       platform/macos/metal_bridge_cells.mm
       platform/macos/metal_display.mm)
+    target_sources(lookingglass_bridge_shim PRIVATE platform/macos/bridge_metadata_worker.cpp)
   else()
     add_library(lookingglass_bridge_shim SHARED
       platform/unsupported/bridge_shim_unsupported.cpp
@@ -193,6 +194,15 @@ if (BUILD_TESTING)
   if (APPLE)
     if (NOT LKG_TRANSPORT_TESTS_ONLY)
       add_library(lkg_fake_metal_metadata SHARED tests/fake_metal_metadata.cpp)
+      add_library(lkg_fake_geometry_metadata SHARED tests/fake_geometry_metadata.cpp)
+      add_executable(lookingglass_metadata_worker_macos_test tests/metadata_worker_macos_test.cpp)
+      target_compile_features(lookingglass_metadata_worker_macos_test PRIVATE cxx_std_17)
+      target_include_directories(lookingglass_metadata_worker_macos_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+      target_link_libraries(lookingglass_metadata_worker_macos_test PRIVATE ${CMAKE_DL_LIBS})
+      add_test(NAME lookingglass_metadata_worker_macos_test COMMAND lookingglass_metadata_worker_macos_test
+        "$<TARGET_FILE:lookingglass_bridge_shim>" "$<TARGET_FILE:lkg_fake_geometry_metadata>")
+      add_test(NAME lookingglass_metadata_worker_macos_shutdown_test COMMAND lookingglass_metadata_worker_macos_test
+        "$<TARGET_FILE:lookingglass_bridge_shim>" "$<TARGET_FILE:lkg_fake_geometry_metadata>" shutdown-failure)
       add_executable(lookingglass_metal_display_metadata_test tests/metal_display_metadata_test.cpp)
       target_compile_features(lookingglass_metal_display_metadata_test PRIVATE cxx_std_17)
       target_include_directories(lookingglass_metal_display_metadata_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")

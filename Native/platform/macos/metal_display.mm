@@ -16,6 +16,8 @@
 #include <unordered_map>
 #include <vector>
 static_assert(sizeof(LkgMetalDisplayInfo) == 60, "Metal display ABI mismatch");
+bool lkg_bridge_worker_claim();
+void lkg_bridge_worker_release_claim();
 
 namespace {
 std::atomic<IUnityGraphicsMetal*> unityMetal{nullptr};
@@ -315,6 +317,16 @@ static uint64_t OpenDisplay(const char* path, const char* name, uint32_t ordinal
 }
 extern "C" uint64_t lkg_metal_display_open_v3(const char* path, const char* name, uint32_t ordinal,
     LkgMetalDisplayInfoV3* info) { return OpenDisplay(path, name, ordinal, 0, info); }
+// Metadata workers and the presenter share SDK admission, including failed shutdown.
+extern "C" bool lkg_metal_metadata_claim() {
+    std::lock_guard<std::mutex> lock(sessionMutex);
+    return !activeSession && !metadataFault && lkg_bridge_is_initialized() == 0 && lkg_bridge_worker_claim();
+}
+extern "C" void lkg_metal_metadata_release(bool shutdownProven) {
+    std::lock_guard<std::mutex> lock(sessionMutex);
+    if (shutdownProven) lkg_bridge_worker_release_claim();
+    else metadataFault = true;
+}
 extern "C" uint64_t lkg_metal_display_open_v4(const char* path, const char* name, uint32_t ordinal,
     uint32_t requestedMode, LkgMetalDisplayInfoV3* info) {
     return OpenDisplay(path, name, ordinal, requestedMode, info);

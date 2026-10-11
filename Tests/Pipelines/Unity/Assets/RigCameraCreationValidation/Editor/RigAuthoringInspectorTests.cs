@@ -397,77 +397,30 @@ namespace ViewWeave.RigCameraCreationValidation
 
         [TestCase(false)]
         [TestCase(true)]
-        public void ConnectedDisplaySizeCopiesCalibrationAndPreservesFramingToggleAndUndoRestoresBoth(bool physicalFramingEnabled)
+        public void DisplayDiscoveryIsExpandedAtTopForBothTransports(bool metal)
         {
-            GameObject rigObject = new GameObject("Connected Calibration Copy Rig");
+            GameObject host = new GameObject("Display Discovery UI");
             UnityEditor.Editor editor = null;
-            QuiltDisplaySettingsResolver.RegisterProvider(ProvideConnectedCalibration);
             try
             {
-                ViewWeaveRig rig = rigObject.AddComponent<ViewWeaveRig>();
-                QuiltRenderer renderer = rigObject.GetComponent<QuiltRenderer>();
-                Assert.That(renderer.physicalFraming.enabled, Is.False, "physical 1:1 framing must default off");
-                renderer.physicalFraming.enabled = physicalFramingEnabled;
-                renderer.physicalFraming.visibleApertureWidthMillimeters = 120f;
-                renderer.physicalFraming.visibleApertureHeightMillimeters = 80f;
-                renderer.physicalFraming.unitsPerMeter = 2f;
+                var rig = host.AddComponent<ViewWeaveRig>();
+                MonoBehaviour output = metal ? (MonoBehaviour)host.AddComponent<BridgeMetalQuiltOutput>() : host.AddComponent<BridgeWorkerQuiltOutput>();
+                rig.SetOutput(output);
                 editor = UnityEditor.Editor.CreateEditor(rig, typeof(ViewWeaveRigInspector));
                 VisualElement root = editor.CreateInspectorGUI();
-                object view = GetField<object>(editor, "view");
-                Button copyButton = root.Q<Button>("copyConnectedDisplaySize");
-                Assert.That(copyButton, Is.Not.Null);
-                Assert.That(copyButton.enabledInHierarchy, Is.True);
-
-                Invoke(view, "CopyConnectedDisplaySize");
-                Assert.That(renderer.physicalFraming.enabled, Is.EqualTo(physicalFramingEnabled), "copying dimensions must preserve the current physical framing switch state");
-                Assert.That(renderer.physicalFraming.visibleApertureWidthMillimeters, Is.EqualTo(344.65018f).Within(0.01f));
-                Assert.That(renderer.physicalFraming.visibleApertureHeightMillimeters, Is.EqualTo(193.86572f).Within(0.01f));
-                Assert.That(renderer.physicalFraming.unitsPerMeter, Is.EqualTo(2f), "copy must preserve project units per meter");
-
-                Undo.PerformUndo();
-                Assert.That(renderer.physicalFraming.enabled, Is.EqualTo(physicalFramingEnabled));
-                Assert.That(renderer.physicalFraming.visibleApertureWidthMillimeters, Is.EqualTo(120f).Within(0.001f));
-                Assert.That(renderer.physicalFraming.visibleApertureHeightMillimeters, Is.EqualTo(80f).Within(0.001f));
-                Assert.That(renderer.physicalFraming.unitsPerMeter, Is.EqualTo(2f).Within(0.001f));
+                Foldout display = FindFoldout(root, "Looking Glass Display");
+                Assert.That(display, Is.Not.Null);
+                Assert.That(display.value, Is.True);
+                Assert.That(root.Query<Foldout>().First(), Is.SameAs(display), "Discovery must precede camera/rendering controls.");
+                Assert.That(display.Q<Button>("refreshConnectedDisplays"), Is.Not.Null);
+                Assert.That(display.Q<HelpBox>("displayDiscoveryStatus"), Is.Not.Null);
+                Assert.That(root.Q<Button>("copyConnectedDisplaySize"), Is.Null, "Automatic acquisition replaces the deeply nested copy action.");
+                Assert.That(rig.Renderer.QuiltTexture, Is.Null);
             }
             finally
             {
-                QuiltDisplaySettingsResolver.RegisterProvider(null);
                 if (editor != null) Object.DestroyImmediate(editor);
-                Object.DestroyImmediate(rigObject);
-            }
-        }
-
-        [Test]
-        public void ConnectedDisplayCopyWithoutValidCalibrationReportsErrorAndLeavesRigUntouched()
-        {
-            GameObject rigObject = new GameObject("Missing Calibration Copy Rig");
-            UnityEditor.Editor editor = null;
-            QuiltDisplaySettingsResolver.RegisterProvider(NoConnectedCalibration);
-            try
-            {
-                ViewWeaveRig rig = rigObject.AddComponent<ViewWeaveRig>();
-                QuiltRenderer renderer = rigObject.GetComponent<QuiltRenderer>();
-                renderer.physicalFraming.enabled = false;
-                renderer.physicalFraming.visibleApertureWidthMillimeters = 123f;
-                renderer.physicalFraming.visibleApertureHeightMillimeters = 77f;
-                renderer.physicalFraming.unitsPerMeter = 1.5f;
-                editor = UnityEditor.Editor.CreateEditor(rig, typeof(ViewWeaveRigInspector));
-                VisualElement root = editor.CreateInspectorGUI();
-                object view = GetField<object>(editor, "view");
-
-                Invoke(view, "CopyConnectedDisplaySize");
-                Assert.That(renderer.physicalFraming.enabled, Is.False);
-                Assert.That(renderer.physicalFraming.visibleApertureWidthMillimeters, Is.EqualTo(123f).Within(0.001f));
-                Assert.That(renderer.physicalFraming.visibleApertureHeightMillimeters, Is.EqualTo(77f).Within(0.001f));
-                Assert.That(renderer.physicalFraming.unitsPerMeter, Is.EqualTo(1.5f).Within(0.001f));
-                StringAssert.Contains("No valid display calibration is cached", root.Q<Label>("physicalFramingStatus").text);
-            }
-            finally
-            {
-                QuiltDisplaySettingsResolver.RegisterProvider(null);
-                if (editor != null) Object.DestroyImmediate(editor);
-                Object.DestroyImmediate(rigObject);
+                Object.DestroyImmediate(host);
             }
         }
 

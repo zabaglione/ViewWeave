@@ -57,10 +57,21 @@ namespace ViewWeave
 
         internal static bool TryRequest(string runtimePath, string applicationName, uint displayOrdinal, object owner,
             Action<BridgeDisplaySnapshot> onSuccess, Action<string> onFailure, out string error)
+            => TryRequestCore(runtimePath, applicationName, displayOrdinal, owner, onSuccess, onFailure, false, out error);
+
+        internal static bool TryRequestForTests(string runtimePath, string applicationName, uint displayOrdinal, object owner,
+            Action<BridgeDisplaySnapshot> onSuccess, Action<string> onFailure, out string error)
+        {
+            if (!BridgeDisplayDiscoveryNative.IsTestAdapter) throw new InvalidOperationException("Install a fake Bridge adapter first.");
+            return TryRequestCore(runtimePath, applicationName, displayOrdinal, owner, onSuccess, onFailure, true, out error);
+        }
+
+        static bool TryRequestCore(string runtimePath, string applicationName, uint displayOrdinal, object owner,
+            Action<BridgeDisplaySnapshot> onSuccess, Action<string> onFailure, bool allowTestAdapter, out string error)
         {
             error = string.Empty;
             if (!IsMainThread(out error)) return false;
-            if (BridgeDisplayDiscoveryNative.IsTestAdapter)
+            if (BridgeDisplayDiscoveryNative.IsTestAdapter && !allowTestAdapter)
                 return FailRequest("The test adapter can only be used through the managed lifecycle test seam.", onFailure);
             if (Application.isPlaying)
             {
@@ -89,9 +100,9 @@ namespace ViewWeave
                 return FailRequest(error, onFailure);
             }
 #if UNITY_EDITOR
-            if (!BridgeNativeImageGuard.TryInspectEditorProcess(out error)) return FailRequest(error, onFailure);
+            if (!allowTestAdapter && !BridgeNativeImageGuard.TryInspectEditorProcess(out error)) return FailRequest(error, onFailure);
             BridgeNativeModuleIdentity identity = default;
-            if (Application.platform == RuntimePlatform.WindowsEditor)
+            if (!allowTestAdapter && Application.platform == RuntimePlatform.WindowsEditor)
             {
                 IntPtr renderEventFunction;
                 try
@@ -454,7 +465,7 @@ namespace ViewWeave
                     valid = item.physical.valid
                 };
                 BridgeDisplayProfile profile = new BridgeDisplayProfile(display, physical);
-                if (!profile.IsValid)
+                if (!profile.IsValid || item.profile.viewcone <= 0f)
                 {
                     error = "Bridge returned invalid display geometry.";
                     return false;
@@ -944,7 +955,8 @@ namespace ViewWeave
             if (BridgeDisplayDiscoveryNative.IsTestAdapter && testValidationPending.HasValue)
                 return testValidationPending.Value;
 #if UNITY_EDITOR
-            return !BridgeDisplayDiscoveryNative.IsTestAdapter && BridgeNativeImageGuard.IsValidationPending;
+            return Application.platform == RuntimePlatform.WindowsEditor &&
+                !BridgeDisplayDiscoveryNative.IsTestAdapter && BridgeNativeImageGuard.IsValidationPending;
 #else
             return false;
 #endif

@@ -228,6 +228,7 @@ namespace ViewWeave.Editor
             }
             Entry entry = Entry.Create(key, runtime, application, ordinal, profile);
             if (!entry.TryProfile(out _)) return;
+            ApplyPhysicalDimensions(renderer, profile);
             bool temporary = key.StartsWith("Temporary:", StringComparison.Ordinal);
             List<Entry> values = temporary ? Transient : instance.entries;
             Entry old = values.Find(value => value.identity == key);
@@ -271,6 +272,20 @@ namespace ViewWeave.Editor
                 false, retained.HasPhysicalCalibration, retained.PhysicalWidthMillimeters, retained.PhysicalHeightMillimeters,
                 retained.CalibrationDpi, "Last successful Bridge API result: " + retained);
             return true;
+        }
+
+        static void ApplyPhysicalDimensions(QuiltRenderer renderer, BridgeDisplayProfile profile)
+        {
+            if (Application.isPlaying || !profile.HasPhysicalCalibration || !renderer.TryGetFraming(out QuiltCameraFraming framing)) return;
+            if (Mathf.Approximately(framing.ApertureWidthMillimeters, profile.PhysicalWidthMillimeters) &&
+                Mathf.Approximately(framing.ApertureHeightMillimeters, profile.PhysicalHeightMillimeters)) return;
+            var candidate = new QuiltCameraFraming(framing.VerticalFieldOfView, framing.FocusDistance, framing.PhysicalFramingEnabled,
+                profile.PhysicalWidthMillimeters, profile.PhysicalHeightMillimeters, framing.UnitsPerMeter);
+            if (!renderer.TryCheckMutation(new QuiltRendererMutationRequest(candidate), out _)) return;
+            Undo.RecordObject(renderer, "Apply Bridge Display Dimensions");
+            if (!renderer.TrySetFraming(candidate, out _)) return;
+            EditorUtility.SetDirty(renderer);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(renderer);
         }
 
         internal static void ApplyToLocalPreview(QuiltRenderer source, QuiltSettings settings)

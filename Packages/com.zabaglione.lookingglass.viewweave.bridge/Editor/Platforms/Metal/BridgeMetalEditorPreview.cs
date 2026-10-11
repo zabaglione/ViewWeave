@@ -49,6 +49,7 @@ namespace ViewWeave.Editor
         public static bool Start(ViewWeaveRig rig, bool outputToDevice, out string error)
         {
             error = string.Empty;
+            if (BridgeDisplayDiscovery.IsBusy) return Fail("Bridge device discovery is still closing. Wait for completion before starting Preview.", out error);
             if (Application.isPlaying || EditorApplication.isPlayingOrWillChangePlaymode || EditorApplication.isCompiling || EditorApplication.isUpdating || Application.platform != RuntimePlatform.OSXEditor ||
                 SystemInfo.graphicsDeviceType != GraphicsDeviceType.Metal || GraphicsSettings.currentRenderPipeline == null)
                 return Fail("Metal preview requires stable macOS Edit Mode with an SRP and Metal.", out error);

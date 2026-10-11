@@ -22,17 +22,21 @@ int32_t ReadDisplayCount(const Symbols& symbols, uint32_t* count) {
 }
 
 int32_t ReadDisplay(const Symbols& symbols, uint32_t ordinal, LkgBridgeDisplayInfo* info) {
-    if (!symbols.displays || !info) return -1;
+    if (!symbols.displays || !symbols.dimensions || !symbols.viewcone || !symbols.defaultQuilt || !info) return -1;
     int number = 0;
     if (!symbols.displays(&number, nullptr) || number <= 0 || number > kMaximumBridgeDisplays || ordinal >= static_cast<uint32_t>(number)) return -2;
     const int capacity = number;
     std::vector<unsigned long> ids(static_cast<size_t>(capacity));
     number = capacity;
     if (!symbols.displays(&number, ids.data()) || number <= 0 || number > capacity || ordinal >= static_cast<uint32_t>(number)) return -3;
-    const unsigned long id = ids[ordinal]; std::memset(info, 0, sizeof(*info)); info->index = static_cast<uint32_t>(id);
-    if (symbols.dimensions) { unsigned long width = 0, height = 0; if (symbols.dimensions(id, &width, &height)) { info->width = static_cast<uint32_t>(width); info->height = static_cast<uint32_t>(height); } }
-    if (symbols.viewcone) symbols.viewcone(id, &info->viewcone);
-    if (symbols.defaultQuilt) symbols.defaultQuilt(id, &info->aspect, &info->quilt_width, &info->quilt_height, &info->quilt_columns, &info->quilt_rows);
+    const unsigned long id = ids[ordinal];
+    unsigned long width = 0, height = 0;
+    LkgBridgeDisplayInfo candidate{};
+    if (id > UINT32_MAX || !symbols.dimensions(id, &width, &height) || width > UINT32_MAX || height > UINT32_MAX ||
+        !symbols.viewcone(id, &candidate.viewcone) || !symbols.defaultQuilt(id, &candidate.aspect,
+            &candidate.quilt_width, &candidate.quilt_height, &candidate.quilt_columns, &candidate.quilt_rows)) return -4;
+    candidate.index = static_cast<uint32_t>(id); candidate.width = static_cast<uint32_t>(width); candidate.height = static_cast<uint32_t>(height);
+    *info = candidate;
     return 0;
 }
 

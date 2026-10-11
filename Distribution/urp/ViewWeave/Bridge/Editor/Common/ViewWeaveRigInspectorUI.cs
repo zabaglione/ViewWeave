@@ -57,7 +57,6 @@ namespace ViewWeave.Editor
         Label effectiveFocusDistanceLabel;
         HelpBox physicalFocusError;
         Label physicalFramingStatus;
-        Button copyConnectedDisplayButton;
         Toggle physicalFramingEnabledToggle;
         Button localPreviewButton;
         Button devicePreviewButton;
@@ -96,7 +95,6 @@ namespace ViewWeave.Editor
         {
             if (disposed) return;
             ClearReferenceCameraAssignmentError();
-            CancelPendingCalibrationCopy();
             structuralMutationFields.Clear();
             transportMutationFields.Clear();
             rig = rigProvider == null ? null : rigProvider();
@@ -123,6 +121,7 @@ namespace ViewWeave.Editor
             }
 
             AddIntro();
+            BuildDisplayDiscoverySection();
             BuildCameraSection();
             BuildRenderingSection();
             BuildPreviewSection();
@@ -135,7 +134,6 @@ namespace ViewWeave.Editor
         public void Dispose()
         {
             disposed = true;
-            CancelPendingCalibrationCopy();
         }
 
         public void Refresh(bool updateSelectionTarget = false)
@@ -220,7 +218,7 @@ namespace ViewWeave.Editor
             };
             physicalFramingEnabledToggle.RegisterValueChangedCallback(evt => SetPhysicalFramingEnabled(evt.newValue));
             foldout.Add(physicalFramingEnabledToggle);
-            var physicalToggleHelp = new HelpBox("Physical 1:1 framing is off by default. Use Connected Display Size below to copy calibrated dimensions; this keeps the current switch state. Turn the switch on explicitly to enable 1:1 framing.", HelpBoxMessageType.Info);
+            var physicalToggleHelp = new HelpBox("Bridge display dimensions are acquired automatically when the scene opens. Connect the display and use Refresh Connected Displays at the top of this Inspector to retry. Turn this switch on to enable physical 1:1 framing.", HelpBoxMessageType.Info);
             physicalToggleHelp.style.whiteSpace = WhiteSpace.Normal;
             foldout.Add(physicalToggleHelp);
             var physicalFoldout = new Foldout { text = "Physical Display Framing", value = false };
@@ -239,8 +237,6 @@ namespace ViewWeave.Editor
             physicalFramingStatus = new Label { name = "physicalFramingStatus" };
             physicalFramingStatus.style.whiteSpace = WhiteSpace.Normal;
             physicalFoldout.Add(physicalFramingStatus);
-            copyConnectedDisplayButton = new Button(CopyConnectedDisplaySize) { name = "copyConnectedDisplaySize", text = "Use Connected Display Size" };
-            physicalFoldout.Add(copyConnectedDisplayButton);
             RefreshPhysicalFramingState();
             fieldOfViewContainer = new VisualElement();
             foldout.Add(fieldOfViewContainer);
@@ -639,46 +635,12 @@ namespace ViewWeave.Editor
                     : "Geometry source: " + profile.source + "; physical framing is invalid: " + profileError;
             }
             else physicalFramingStatus.text = "Display aspect source: " + profile.source + "; aspect: " + profile.aspect.ToString("0.####", System.Globalization.CultureInfo.InvariantCulture) + ". Physical framing is disabled.";
-            bool canCopy = QuiltDisplaySettingsResolver.TryGetConnectedPhysicalCalibration(renderer, out QuiltEditorDisplayProfile calibration);
-            if (canCopy)
-            {
-                bool matches = physicalEnabled && Math.Abs(renderer.physicalFraming.visibleApertureWidthMillimeters - calibration.widthMillimeters) < 0.1f &&
-                    Math.Abs(renderer.physicalFraming.visibleApertureHeightMillimeters - calibration.heightMillimeters) < 0.1f;
-                string calibrationSource = calibration.source == QuiltDisplaySettingsSource.ConnectedDisplaySnapshot
-                    ? "Last Bridge refresh" : "Active Bridge profile";
-                physicalFramingStatus.text += " " + calibrationSource + " calibration: " + calibration.widthMillimeters.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + " x " +
-                    calibration.heightMillimeters.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + " mm at " + calibration.dpi.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + " DPI; configured aperture " + (matches ? "matches" : "differs") + ".";
-            }
-            else physicalFramingStatus.text += " No valid connected physical calibration is available; saved dimensions are manual values or a previous explicit copy.";
-            string mutationReason = string.Empty;
-            bool canCopyMutation = renderer.TryCheckMutation(QuiltRendererMutationKind.Framing, out mutationReason);
-            if (canCopy && canCopyMutation && renderer.TryGetFraming(out QuiltCameraFraming currentFraming))
-                canCopyMutation = renderer.TryCheckMutation(new QuiltRendererMutationRequest(new QuiltCameraFraming(
-                    currentFraming.VerticalFieldOfView, currentFraming.FocusDistance, currentFraming.PhysicalFramingEnabled,
-                    calibration.widthMillimeters, calibration.heightMillimeters, currentFraming.UnitsPerMeter)), out mutationReason);
-            bool canRequestCalibration = CanRequestConnectedCalibration();
-            copyConnectedDisplayButton?.SetEnabled(canCopy ? canCopyMutation : canRequestCalibration && canCopyMutation);
-            if (copyConnectedDisplayButton != null) copyConnectedDisplayButton.tooltip = canCopyMutation
-                ? canCopy ? "Copy the latest valid Bridge calibration into the Rig's aperture fields without changing whether physical 1:1 framing is enabled."
-                    : canRequestCalibration ? "Refresh Bridge metadata now, then copy the aperture dimensions if this Rig remains unchanged; the current framing switch state is preserved."
-                    : "Connect display output in Play mode to obtain calibration; discovery may also be unavailable while an output is starting or stopping."
-                : mutationReason;
+            if (profileResolved && profile.hasPhysicalCalibration)
+                physicalFramingStatus.text += " Last successful Bridge dimensions: " + profile.widthMillimeters.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + " x " +
+                    profile.heightMillimeters.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + " mm at " + profile.dpi.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + " DPI.";
+            else physicalFramingStatus.text += " Connect a Looking Glass display and use Refresh Connected Displays at the top of this Inspector to acquire its dimensions.";
             if (!string.IsNullOrEmpty(framingStatusOverride)) physicalFramingStatus.text += " " + framingStatusOverride;
         }
-
-        void CopyConnectedDisplaySize()
-        {
-            if (renderer == null || !renderer.TryGetFraming(out QuiltCameraFraming framing)) return;
-            if (QuiltDisplaySettingsResolver.TryGetConnectedPhysicalCalibration(renderer, out QuiltEditorDisplayProfile profile))
-            {
-                CommitFraming(new QuiltCameraFraming(framing.VerticalFieldOfView, framing.FocusDistance, framing.PhysicalFramingEnabled,
-                    profile.widthMillimeters, profile.heightMillimeters, framing.UnitsPerMeter), "Copy Connected Display Size");
-                return;
-            }
-            RequestConnectedCalibration(framing);
-        }
-
-
 
         void OnFieldOfViewChanged(float value)
         {

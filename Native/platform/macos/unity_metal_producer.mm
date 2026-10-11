@@ -11,6 +11,8 @@
 #include <mutex>
 #include <string>
 #include <utility>
+extern "C" bool lkg_metal_metadata_claim();
+extern "C" void lkg_metal_metadata_release(bool shutdownProven);
 
 namespace lkg::metal {
 namespace {
@@ -420,8 +422,12 @@ bool QueueProviderBegin(const BeginRequestV1* request, void** renderEventData) n
     owned.zoom = request->zoom;
 
     std::lock_guard<std::mutex> lock(g_providerMutex);
+    if (!lkg_metal_metadata_claim()) return false;
     if (!g_pluginActive.load(std::memory_order_acquire) || !g_lifetime->IsAccepting() ||
-        !g_beginLifecycle.Queue(g_deviceGeneration.load(std::memory_order_acquire), &g_beginTicket)) return false;
+        !g_beginLifecycle.Queue(g_deviceGeneration.load(std::memory_order_acquire), &g_beginTicket)) {
+        lkg_metal_metadata_release(true);
+        return false;
+    }
     g_beginRequest = std::move(owned);
     g_providerState.store(static_cast<uint32_t>(ProviderState::BeginQueued), std::memory_order_release);
     *renderEventData = &g_beginEventToken;

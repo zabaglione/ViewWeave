@@ -14,7 +14,9 @@ extern "C" LKG_EXPORT void* lkg_worker_begin_with_output_v1(const char*, const c
     return nullptr;
 }
 extern "C" LKG_EXPORT int32_t lkg_worker_poll(void*, LkgWorkerStatus*) { return -1; }
+#if !defined(__APPLE__)
 extern "C" LKG_EXPORT int32_t lkg_worker_close(void*) { return -1; }
+#endif
 extern "C" LKG_EXPORT int32_t lkg_worker_reset_transfer(void*) { return -1; }
 extern "C" LKG_EXPORT int32_t lkg_worker_set_preview_paused(void*, uint32_t) { return -2; }
 extern "C" LKG_EXPORT int32_t lkg_worker_get_preview_pause_state(void*, uint32_t* phase) {
@@ -162,8 +164,9 @@ extern "C" LKG_EXPORT int32_t lkg_worker_get_subpixel_status_v1(void*, LkgWorker
     status->presentAccepted = 0;
     return -2;
 }
-extern "C" LKG_EXPORT void* lkg_worker_begin_metadata_v1(const char*, const char*) { return nullptr; }
 extern "C" LKG_EXPORT int32_t lkg_worker_request_display_refresh_v1(void*, uint64_t*) { return -2; }
+#if !defined(__APPLE__)
+extern "C" LKG_EXPORT void* lkg_worker_begin_metadata_v1(const char*, const char*) { return nullptr; }
 extern "C" LKG_EXPORT int32_t lkg_worker_get_display_snapshot_v1(void*, LkgWorkerDisplaySnapshotStatusV1* status,
     LkgWorkerDisplaySnapshotItemV1*, uint32_t, uint32_t* requiredCount) {
     if (requiredCount) *requiredCount = 0;
@@ -179,3 +182,4 @@ extern "C" LKG_EXPORT int32_t lkg_worker_get_display_snapshot_v1(void*, LkgWorke
     return -2;
 }
 extern "C" LKG_EXPORT int32_t lkg_worker_end_metadata_v1(void*) { return -2; }
+#endif

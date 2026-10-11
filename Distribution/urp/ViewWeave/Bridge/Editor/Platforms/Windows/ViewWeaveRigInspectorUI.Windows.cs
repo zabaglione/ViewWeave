@@ -10,32 +10,12 @@ namespace ViewWeave.Editor
     {
         ViewWeaveBridgeSession session;
         BridgeWorkerQuiltOutput output;
-        BridgeWorkerQuiltOutput pendingCopyOutput;
-        BridgeWorkerQuiltOutput pendingCopyRequestOutput;
-        ViewWeaveBridgeSession pendingCopySession;
-        BridgeDisplaySnapshot lastRenderedDisplaySnapshot;
         SerializedObject sessionObject;
         SerializedObject outputObject;
         FloatField zoomField;
         Label sessionStatus;
         Label sessionError;
         Button startWindowsButton, stopWindowsButton;
-        Button refreshConnectedDisplaysButton;
-        Label connectedDisplaysStatus;
-        bool pendingCalibrationCopy;
-        QuiltRenderer pendingCopyRenderer;
-        ViewWeaveRig pendingCopyRig;
-        QuiltCameraFraming pendingCopyFraming;
-        uint pendingCopyOrdinal;
-        float pendingCopyZoom;
-        long pendingCopyRequestToken;
-        string pendingCopySessionRuntimePath;
-        string pendingCopySessionApplicationName;
-        string pendingCopyOutputRuntimePath;
-        string pendingCopyOutputApplicationName;
-        uint pendingCopyOutputOrdinal;
-        string lastRenderedDisplayStatus;
-        string lastRenderedDisplayText;
 
         void InitializeWindowsOutputUI()
         {
@@ -44,11 +24,6 @@ namespace ViewWeave.Editor
             sessionObject = session == null ? null : new SerializedObject(session);
             outputObject = output == null ? null : new SerializedObject(output);
         }
-
-        bool CanRequestWindowsConnectedCalibration() => output != null && !BridgeDisplayDiscovery.IsBusy &&
-                BridgeEditorPreview.CanRefreshDisplaysForRig(rig) &&
-                (output.Ready || output.State == BridgeWorkerQuiltOutput.WorkerState.Closed) &&
-                (session == null || session.State == ViewWeaveBridgeSession.SessionState.Idle || session.State == ViewWeaveBridgeSession.SessionState.Rendering);
 
         void RefreshWindowsMutationControls()
         {
@@ -90,15 +65,6 @@ namespace ViewWeave.Editor
                 zoomField = new FloatField("Bridge Worker Zoom") { name = "bridgeWorkerZoom", value = output.zoom };
                 zoomField.RegisterValueChangedCallback(OnZoomChanged);
                 foldout.Add(zoomField);
-                refreshConnectedDisplaysButton = new Button(RequestConnectedDisplayRefresh)
-                {
-                    name = "refreshConnectedDisplays",
-                    text = "Refresh Connected Displays"
-                };
-                foldout.Add(refreshConnectedDisplaysButton);
-                connectedDisplaysStatus = new Label { name = "connectedDisplaysStatus" };
-                connectedDisplaysStatus.style.whiteSpace = WhiteSpace.Normal;
-                foldout.Add(connectedDisplaysStatus);
             }
             if (session != null)
             {
@@ -116,66 +82,8 @@ namespace ViewWeave.Editor
 
         void RequestConnectedDisplayRefresh()
         {
-            if (output == null) return;
-            if (!BridgeEditorPreview.TryRequestDisplayRefresh(output, out string error)) SetActionStatus(error);
+            if (!BridgeEditorDisplayDiscovery.TryRefresh(rig, out string error)) SetActionStatus(error);
             RefreshConnectedDisplays();
-        }
-
-        void RefreshConnectedDisplays()
-        {
-            if (output == null) return;
-            if (refreshConnectedDisplaysButton != null)
-                refreshConnectedDisplaysButton.SetEnabled(!BridgeDisplayDiscovery.IsBusy &&
-                    output.State != BridgeWorkerQuiltOutput.WorkerState.Connecting &&
-                    output.State != BridgeWorkerQuiltOutput.WorkerState.Closing &&
-                    output.State != BridgeWorkerQuiltOutput.WorkerState.Fault);
-            if (connectedDisplaysStatus == null) return;
-            BridgeDisplaySnapshot snapshot = output.CurrentConfigurationDisplaySnapshot;
-            bool snapshotBelongsToAnotherConfiguration = false;
-            if (snapshot == null)
-            {
-                snapshot = BridgeDisplayDiscovery.Snapshot;
-                snapshotBelongsToAnotherConfiguration = snapshot != null;
-            }
-            string refreshStatus = output.DisplayRefreshStatus ?? string.Empty;
-            if (ReferenceEquals(snapshot, lastRenderedDisplaySnapshot) && refreshStatus == lastRenderedDisplayStatus &&
-                lastRenderedDisplayText != null)
-            {
-                if (connectedDisplaysStatus.text != lastRenderedDisplayText) connectedDisplaysStatus.text = lastRenderedDisplayText;
-                return;
-            }
-            if (snapshot == null)
-            {
-                lastRenderedDisplayText = string.IsNullOrEmpty(refreshStatus)
-                    ? "No display snapshot is available. Refresh to query connected displays and calibration."
-                    : refreshStatus;
-                connectedDisplaysStatus.text = lastRenderedDisplayText;
-                lastRenderedDisplaySnapshot = snapshot;
-                lastRenderedDisplayStatus = refreshStatus;
-                return;
-            }
-            var lines = new List<string>
-            {
-                snapshotBelongsToAnotherConfiguration
-                    ? "Global metadata snapshot for display discovery only; it is not bound to this Rig and cannot be used as its calibration. Refresh this Rig to bind a snapshot."
-                    : string.IsNullOrEmpty(refreshStatus)
-                        ? "Last connected display refresh generation: " + snapshot.Generation.ToString(System.Globalization.CultureInfo.InvariantCulture)
-                        : refreshStatus
-            };
-            for (int i = 0; i < snapshot.Displays.Count; ++i)
-            {
-                BridgeDisplayProfile profile = snapshot.Displays[i];
-                string calibration = profile.HasPhysicalCalibration
-                    ? profile.PhysicalWidthMillimeters.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + " x " +
-                      profile.PhysicalHeightMillimeters.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + " mm at " +
-                      profile.CalibrationDpi.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + " DPI"
-                    : "physical calibration unavailable";
-                lines.Add(profile.ToString() + "; " + calibration);
-            }
-            lastRenderedDisplayText = string.Join("\n", lines);
-            connectedDisplaysStatus.text = lastRenderedDisplayText;
-            lastRenderedDisplaySnapshot = snapshot;
-            lastRenderedDisplayStatus = refreshStatus;
         }
 
         void OnZoomChanged(ChangeEvent<float> evt)
@@ -193,81 +101,6 @@ namespace ViewWeave.Editor
             EditorUtility.SetDirty(output);
             PrefabUtility.RecordPrefabInstancePropertyModifications(output);
             SetActionStatus("Bridge Worker Zoom updated.");
-        }
-
-        void OnCalibrationSnapshotPublished(long requestToken, BridgeDisplaySnapshot snapshot, string requestError)
-        {
-            if (!pendingCalibrationCopy) return;
-            if (requestToken != pendingCopyRequestToken)
-            {
-                CancelPendingCalibrationCopy();
-                return;
-            }
-            QuiltRenderer expectedRenderer = pendingCopyRenderer;
-            ViewWeaveRig expectedRig = pendingCopyRig;
-            BridgeWorkerQuiltOutput expectedOutput = pendingCopyOutput;
-            BridgeWorkerQuiltOutput expectedRequestOutput = pendingCopyRequestOutput;
-            ViewWeaveBridgeSession expectedSession = pendingCopySession;
-            QuiltCameraFraming expectedFraming = pendingCopyFraming;
-            uint expectedOrdinal = pendingCopyOrdinal;
-            float expectedZoom = pendingCopyZoom;
-            string expectedSessionRuntimePath = pendingCopySessionRuntimePath;
-            string expectedSessionApplicationName = pendingCopySessionApplicationName;
-            string expectedOutputRuntimePath = pendingCopyOutputRuntimePath;
-            string expectedOutputApplicationName = pendingCopyOutputApplicationName;
-            uint expectedOutputOrdinal = pendingCopyOutputOrdinal;
-            CancelPendingCalibrationCopy();
-
-            if (!string.IsNullOrEmpty(requestError))
-            {
-                SetPhysicalStatus("Connected calibration was not copied: " + requestError);
-                return;
-            }
-            if (snapshot == null || rigProvider == null || rigProvider() != expectedRig || rig != expectedRig ||
-                renderer != expectedRenderer || output != expectedOutput || session != expectedSession ||
-                expectedRequestOutput == null || expectedRequestOutput.LatestDisplayRefreshToken != requestToken ||
-                expectedRequestOutput.ConnectedDisplaySnapshot != snapshot ||
-                expectedRequestOutput.CurrentConfigurationDisplaySnapshot != snapshot ||
-                !BridgeEditorPreview.CanApplyDisplaySnapshotToRig(expectedRig) ||
-                EditorApplication.isPlayingOrWillChangePlaymode || expectedRenderer == null || expectedOutput == null ||
-                !expectedRenderer.TryGetFraming(out QuiltCameraFraming current) || current != expectedFraming ||
-                expectedOutput.zoom != expectedZoom || (expectedSession != null && expectedSession.displayOrdinal != expectedOrdinal) ||
-                (expectedSession != null && (!string.Equals(expectedSession.runtimePath ?? string.Empty, expectedSessionRuntimePath ?? string.Empty, StringComparison.Ordinal) ||
-                                             !string.Equals(expectedSession.applicationName ?? string.Empty, expectedSessionApplicationName ?? string.Empty, StringComparison.Ordinal))) ||
-                !string.Equals(expectedOutput.runtimePath ?? string.Empty, expectedOutputRuntimePath ?? string.Empty, StringComparison.Ordinal) ||
-                !string.Equals(expectedOutput.applicationName ?? string.Empty, expectedOutputApplicationName ?? string.Empty, StringComparison.Ordinal) ||
-                expectedOutput.displayOrdinal != expectedOutputOrdinal ||
-                !snapshot.TryGetDisplay(expectedOrdinal, out BridgeDisplayProfile profile) || !profile.HasPhysicalCalibration)
-            {
-                SetPhysicalStatus("Connected calibration was not copied because the Rig changed, the query was stale, or valid calibration was unavailable.");
-                return;
-            }
-
-            bool copied = CommitFraming(new QuiltCameraFraming(expectedFraming.VerticalFieldOfView, expectedFraming.FocusDistance, expectedFraming.PhysicalFramingEnabled,
-                profile.PhysicalWidthMillimeters, profile.PhysicalHeightMillimeters, expectedFraming.UnitsPerMeter),
-                "Copy Connected Display Size");
-            if (!copied) SetPhysicalStatus("Connected calibration was found but could not be applied under the current renderer owner policy.");
-        }
-
-        void CancelPendingCalibrationCopy()
-        {
-            if (pendingCalibrationCopy && pendingCopyRequestOutput != null)
-                pendingCopyRequestOutput.ConnectedDisplayRefreshCompleted -= OnCalibrationSnapshotPublished;
-            pendingCalibrationCopy = false;
-            pendingCopyRenderer = null;
-            pendingCopyRig = null;
-            pendingCopyOutput = null;
-            pendingCopyRequestOutput = null;
-            pendingCopySession = null;
-            pendingCopyFraming = default;
-            pendingCopyOrdinal = 0;
-            pendingCopyZoom = 0f;
-            pendingCopyRequestToken = 0;
-            pendingCopySessionRuntimePath = string.Empty;
-            pendingCopySessionApplicationName = string.Empty;
-            pendingCopyOutputRuntimePath = string.Empty;
-            pendingCopyOutputApplicationName = string.Empty;
-            pendingCopyOutputOrdinal = 0;
         }
 
         void OnQualityChangedWindows(ChangeEvent<Enum> evt)
@@ -442,38 +275,6 @@ namespace ViewWeave.Editor
         void ShowSessionError(string message)
         {
             if (sessionError != null) sessionError.text = string.IsNullOrEmpty(message) ? string.Empty : "Session error: " + message;
-        }
-
-        void RequestWindowsConnectedCalibration(QuiltCameraFraming framing)
-        {
-            if (output == null)
-            {
-                SetPhysicalStatus("No valid display calibration is cached. Configure a Bridge runtime, then use Refresh Connected Displays.");
-                return;
-            }
-            pendingCalibrationCopy = true;
-            pendingCopyRenderer = renderer;
-            pendingCopyRig = rig;
-            pendingCopyOutput = output;
-            pendingCopySession = session;
-            pendingCopyFraming = framing;
-            pendingCopyOrdinal = session == null ? output.displayOrdinal : session.displayOrdinal;
-            pendingCopyZoom = output.zoom;
-            pendingCopySessionRuntimePath = session == null ? string.Empty : session.runtimePath;
-            pendingCopySessionApplicationName = session == null ? string.Empty : session.applicationName;
-            pendingCopyOutputRuntimePath = output.runtimePath ?? string.Empty;
-            pendingCopyOutputApplicationName = output.applicationName ?? string.Empty;
-            pendingCopyOutputOrdinal = output.displayOrdinal;
-            if (!BridgeEditorPreview.TryRequestDisplayRefresh(output, out BridgeWorkerQuiltOutput requestOutput, out string error))
-            {
-                CancelPendingCalibrationCopy();
-                SetPhysicalStatus("Connected calibration was not copied: " + error);
-                return;
-            }
-            pendingCopyRequestOutput = requestOutput;
-            pendingCopyRequestToken = requestOutput.LatestDisplayRefreshToken;
-            requestOutput.ConnectedDisplayRefreshCompleted += OnCalibrationSnapshotPublished;
-            SetPhysicalStatus("Refreshing Bridge metadata. Calibration will be copied only if this Rig and its framing remain unchanged.");
         }
 
         void BuildWindowsQuality(Foldout foldout)

@@ -117,7 +117,7 @@ namespace ViewWeave
         void OnDestroy() { StopOutput(); }
         void Update()
         {
-            if (pendingStart && Application.isPlaying && !IsClosing && PendingRetirementCount == 0)
+            if (pendingStart && Application.isPlaying && !IsClosing && PendingRetirementCount == 0 && !BridgeDisplayDiscovery.IsBusy)
             { pendingStart = false; StartOutput(); }
             PumpStatus();
         }
@@ -186,6 +186,11 @@ namespace ViewWeave
         bool StartOutputCore(bool editorPreview)
         {
             if (IsRunning) return true;
+            if (BridgeDisplayDiscovery.IsBusy)
+            {
+                LastError = "Bridge device discovery is still closing; wait before starting output";
+                return false;
+            }
             if (IsClosing)
             {
                 string failure = BridgeMetalRetirementRecord.Failure(closingSession);

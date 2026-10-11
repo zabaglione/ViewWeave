@@ -1,5 +1,6 @@
 using System;
 using UnityEditor;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace ViewWeave.Editor
@@ -8,6 +9,53 @@ namespace ViewWeave.Editor
     internal sealed partial class ViewWeaveRigInspectorUI
     {
         EnumField subpixelModeField;
+        HelpBox displayDiscoveryStatus;
+        Button refreshConnectedDisplaysButton;
+        Label connectedDisplaysStatus;
+
+        void BuildDisplayDiscoverySection()
+        {
+            Foldout foldout = AddFoldout("Looking Glass Display", true);
+            displayDiscoveryStatus = new HelpBox("Reading Bridge device geometry", HelpBoxMessageType.Info) { name = "displayDiscoveryStatus" };
+            foldout.Add(displayDiscoveryStatus);
+            connectedDisplaysStatus = new Label { name = "connectedDisplaysStatus" };
+            connectedDisplaysStatus.style.whiteSpace = WhiteSpace.Normal;
+            foldout.Add(connectedDisplaysStatus);
+            refreshConnectedDisplaysButton = new Button(RequestConnectedDisplayRefresh)
+            { name = "refreshConnectedDisplays", text = "Refresh Connected Displays" };
+            foldout.Add(refreshConnectedDisplaysButton);
+            foldout.Add(new HelpBox("Device geometry is acquired automatically when the scene opens, without output or Preview. If you connect a display later, press Refresh Connected Displays. The last successful geometry is retained when disconnected.", HelpBoxMessageType.Info));
+        }
+
+        void RefreshConnectedDisplays()
+        {
+            if (displayDiscoveryStatus != null) displayDiscoveryStatus.text = BridgeEditorDisplayDiscovery.GetStatus(rig);
+            bool canRefresh = !BridgeDisplayDiscovery.IsBusy && !playModeTransitioning;
+            if (metalOutput != null)
+                canRefresh &= !EditorApplication.isPlayingOrWillChangePlaymode && !metalOutput.IsRunning && !metalOutput.IsClosing &&
+                    !BridgeMetalEditorPreview.IsActive && !BridgeMetalEditorPreview.IsStopping;
+            else if (output != null)
+                canRefresh &= output.State != BridgeWorkerQuiltOutput.WorkerState.Connecting &&
+                    output.State != BridgeWorkerQuiltOutput.WorkerState.Closing && output.State != BridgeWorkerQuiltOutput.WorkerState.Fault;
+            else canRefresh = false;
+            refreshConnectedDisplaysButton?.SetEnabled(canRefresh);
+            if (connectedDisplaysStatus == null) return;
+            if (QuiltDisplaySettingsResolver.TryResolve(renderer, out _, out QuiltEditorDisplayProfile profile, out _) &&
+                (profile.source == QuiltDisplaySettingsSource.BridgeSession ||
+                 profile.source == QuiltDisplaySettingsSource.DevicePreview ||
+                 profile.source == QuiltDisplaySettingsSource.ConnectedDisplaySnapshot ||
+                 profile.source == QuiltDisplaySettingsSource.LastRecognizedDisplay))
+            {
+                if (profile.isConnected && displayDiscoveryStatus != null && !BridgeEditorDisplayDiscovery.HasCurrentRequest(rig))
+                    displayDiscoveryStatus.text = "Bridge device geometry acquired from the active output";
+                string dimensions = profile.hasPhysicalCalibration
+                    ? "; aperture " + profile.widthMillimeters.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + " x " +
+                      profile.heightMillimeters.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + " mm" : "; physical calibration unavailable";
+                connectedDisplaysStatus.text = "Last successful Bridge geometry: aspect " + profile.aspect.ToString("0.####", System.Globalization.CultureInfo.InvariantCulture) + dimensions +
+                    (profile.isConnected ? "; active output" : "; retained metadata, no active output connection");
+            }
+            else connectedDisplaysStatus.text = "No Bridge geometry is available. Connect a Looking Glass display and press Refresh Connected Displays.";
+        }
 
         void InitializeOutputUI()
         {
@@ -96,14 +144,6 @@ namespace ViewWeave.Editor
             if (metalOutput == null) BridgeEditorPreview.RequestRefresh();
             else BridgeMetalEditorPreview.RequestRefresh();
             previewContainer?.MarkDirtyRepaint();
-        }
-
-        bool CanRequestConnectedCalibration() => metalOutput == null && CanRequestWindowsConnectedCalibration();
-
-        void RequestConnectedCalibration(QuiltCameraFraming framing)
-        {
-            if (metalOutput != null) SetPhysicalStatus("Connect Metal output in Play mode to obtain the display's physical calibration.");
-            else RequestWindowsConnectedCalibration(framing);
         }
 
         Button BuildPlaybackButton()
