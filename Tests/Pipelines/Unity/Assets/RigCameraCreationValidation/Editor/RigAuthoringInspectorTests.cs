@@ -294,8 +294,8 @@ namespace ViewWeave.RigCameraCreationValidation
             }
         }
 
-        [Test]
-        public void RigQualityProfileRemainsEditableWhenSessionIsAttached()
+        [UnityTest]
+        public IEnumerator RigQualityProfileRemainsEditableWhenSessionIsAttached()
         {
             GameObject rigObject = new GameObject("Profile With Session Rig");
             UnityEditor.Editor editor = null;
@@ -303,12 +303,43 @@ namespace ViewWeave.RigCameraCreationValidation
             try
             {
                 ViewWeaveRig rig = rigObject.AddComponent<ViewWeaveRig>();
-                rigObject.AddComponent<ViewWeaveBridgeSession>();
+                ViewWeaveBridgeSession session = rigObject.AddComponent<ViewWeaveBridgeSession>();
                 editor = UnityEditor.Editor.CreateEditor(rig, typeof(ViewWeaveRigInspector));
                 VisualElement root = editor.CreateInspectorGUI();
                 window = ScriptableObject.CreateInstance<InspectorTestHostWindow>();
                 window.Show();
                 window.rootVisualElement.Add(root);
+
+                BridgeWorkerQuiltOutput output = rigObject.GetComponent<BridgeWorkerQuiltOutput>();
+                bool imageGuardReady = false;
+                bool nativeModuleLoaded = false;
+                string imageGuardError = string.Empty;
+                int shutdownPending = -1;
+                double readinessDeadline = EditorApplication.timeSinceStartup + 10.0;
+                while (EditorApplication.timeSinceStartup <= readinessDeadline)
+                {
+                    imageGuardReady = TryValidateGlobalCalls(out nativeModuleLoaded, out imageGuardError);
+                    shutdownPending = BridgeWorkerQuiltOutput.ShutdownPendingCount;
+                    if (imageGuardReady && shutdownPending == 0) break;
+                    yield return null;
+                }
+
+                if (!imageGuardReady || shutdownPending != 0)
+                {
+                    EnumField pendingField = root.Q<EnumField>("subpixelMode");
+                    string tooltip = pendingField == null ? string.Empty : pendingField.tooltip;
+                    string diagnostic = "Timed out waiting for native image validation and shutdown admission; " +
+                        "guardReady=" + imageGuardReady + ", moduleLoaded=" + nativeModuleLoaded +
+                        ", pending=" + shutdownPending + ", guardError=" + SafeAscii(imageGuardError) +
+                        ", tooltip=" + SafeAscii(tooltip) + ", workerState=" + (output == null ? "missing" : output.State.ToString()) +
+                        ", workerError=" + SafeAscii(output == null ? string.Empty : output.LastError) +
+                        ", sessionState=" + session.State;
+                    Debug.LogError(diagnostic);
+                    Assert.Fail(diagnostic);
+                }
+
+                object inspectorView = GetField<object>(editor, "view");
+                Invoke(inspectorView, "Rebuild");
 
                 PropertyField profileField = root.Q<PropertyField>("rigQualityProfile");
                 Assert.That(profileField, Is.Not.Null);
@@ -321,7 +352,6 @@ namespace ViewWeave.RigCameraCreationValidation
                 Assert.That(subpixelMode, Is.Not.Null, "Windows Session must expose the shared subpixel setting");
                 Assert.That(subpixelMode.panel, Is.Not.Null);
                 Assert.That(subpixelMode.enabledInHierarchy, Is.True);
-                var session = rigObject.GetComponent<ViewWeaveBridgeSession>();
                 Assert.That(session.CanChangeSubpixelMode(out string reason), Is.True, reason);
                 Assert.That(subpixelMode.value, Is.EqualTo(BridgeSubpixelMode.Automatic));
 
@@ -349,7 +379,6 @@ namespace ViewWeave.RigCameraCreationValidation
                 Assert.That(session.SubpixelMode, Is.EqualTo(BridgeSubpixelMode.CalibratedCells));
                 Assert.That(new SerializedObject(session).FindProperty("subpixelMode").intValue,
                     Is.EqualTo((int)BridgeSubpixelMode.CalibratedCells));
-                object inspectorView = GetField<object>(editor, "view");
                 Invoke(inspectorView, "Rebuild");
                 subpixelMode = root.Q<EnumField>("subpixelMode");
                 Assert.That(subpixelMode, Is.Not.Null, "Rebuild should recreate the subpixel field");
@@ -1095,6 +1124,29 @@ namespace ViewWeave.RigCameraCreationValidation
             FieldInfo field = target.GetType().GetField(name, InstancePrivate);
             Assert.That(field, Is.Not.Null, "Expected private field " + name);
             return (T)field.GetValue(target);
+        }
+
+        static bool TryValidateGlobalCalls(out bool moduleLoaded, out string error)
+        {
+            Assembly bridgeAssembly = typeof(ViewWeaveBridgeSession).Assembly;
+            Type guardType = bridgeAssembly.GetType("ViewWeave.BridgeNativeImageGuard", true);
+            Type identityType = bridgeAssembly.GetType("ViewWeave.BridgeNativeModuleIdentity", true);
+            MethodInfo method = guardType.GetMethod("TryValidateGlobalCalls", BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.That(method, Is.Not.Null, "Expected native image guard admission check");
+            object[] arguments = { false, Activator.CreateInstance(identityType), string.Empty };
+            bool ready = (bool)method.Invoke(null, arguments);
+            moduleLoaded = (bool)arguments[0];
+            error = (string)arguments[2];
+            return ready;
+        }
+
+        static string SafeAscii(string value)
+        {
+            if (string.IsNullOrEmpty(value)) return string.Empty;
+            char[] chars = value.ToCharArray();
+            for (int i = 0; i < chars.Length; i++)
+                if (chars[i] > 0x7f) chars[i] = '?';
+            return new string(chars);
         }
 
         static void AssertInspectorLock(Type inspectorType, Object component, bool expected, string message)

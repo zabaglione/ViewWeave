@@ -1,0 +1,408 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-11",
+  "record": "Windows latest Native integration, selected Unity checks, and URP/HDRP sample cold VerifyOnly checks",
+  "sourceBasis": {
+    "commit": "bb5f5ac405f01124334f2c800b6ca3dda9aa47fe",
+    "parent": "64803f6d221965deb56f59b50510a19fe71d3f6e",
+    "sourceState": "The production DLL was built from HEAD bb5f5ac405f01124334f2c800b6ca3dda9aa47fe, whose parent is 64803f6 and includes the upstream Native/common/bridge_metadata.cpp change. At Native build time, the only tracked source working-tree modification was Native/tests/metadata_test.cpp; it adds test-only assertions and is not linked into the DLL. Later Unity validation used the recorded test-fixture working-tree revision below.",
+    "testOnlyWorkingTree": {
+      "path": "Native/tests/metadata_test.cpp",
+      "sha256": "2371FB4B2FF13C0ACCD973DEFEA3BAE7CBC945F35DD9FBB50D884705A40BDC7B",
+      "linkedIntoProductionDll": false
+    },
+    "validationFixtureWorkingTree": {
+      "path": "Tests/Pipelines/Unity/Assets/RigCameraCreationValidation/Editor/RigAuthoringInspectorTests.cs",
+      "sha256": "D0D8CCBE8C3B1E5AE15EFD1AB411E89F25E826E3939DF5D0135CF85801480EDC",
+      "scope": "The EditMode fixture now waits boundedly for native admission and shutdown readiness, then refreshes the UI. No fake owner registration or production guard bypass was added.",
+      "currentPostRunDiagnosticOnlySha256": "834B6A3692A10EF7B43853A0DB2B9BF49B35BEE8FBC67416F9D56AE4EF6BDE78",
+      "postRunChange": "After the successful 48/48 run, only ASCII diagnostic text was adjusted; Unity was not rerun for that diagnostic-only change."
+    },
+    "validationFixturePostValidationUpdate": {
+      "path": "Tests/Pipelines/Unity/Assets/RigCameraCreationValidation/Editor/RigAuthoringInspectorTests.cs",
+      "sha256": "834B6A3692A10EF7B43853A0DB2B9BF49B35BEE8FBC67416F9D56AE4EF6BDE78",
+      "scope": "After the successful 48/48 run, only timeout diagnostic strings from guard error, tooltip, and worker error were sanitized to ASCII. The test was not rerun; the successful-run fingerprint above remains authoritative."
+    }
+  },
+  "artifact": {
+    "path": "Native/build-worker-release-vs/Release/lookingglass_bridge_shim.dll",
+    "bytes": 302080,
+    "sha256": "CEE089B1779752DAB4FFABDFFC44B879A0E4D09414C9A85F7590C8D9A9DDCF4D",
+    "supersedes": {
+      "sha256": "C864A363AC441C77497D4302FF25CB48FA2D6EA194B6FB8A73BAE49DC522FEE2",
+      "sizeBytes": 302080,
+      "sourceBaseCommit": "e777b34763b25e1673e5dc0188c812cda69cbcc0",
+      "classification": "Previous C864 artifact retained in provenance history; not retroactively relabeled as this build."
+    },
+    "build": {
+      "generator": "Visual Studio 17 2022",
+      "platform": "x64",
+      "configuration": "Release",
+      "compiler": "MSVC 19.44.35217.0",
+      "windowsSdk": "10.0.26100.0",
+      "fxcVersion": "10.0.26100.4654",
+      "fxcSha256": "8E4FE2D57067AAB105B793AE7B4380E824A8A852D65B69B3B00BBF99054EC169"
+    }
+  },
+  "releaseCTest": {
+    "passed": 19,
+    "failed": 0,
+    "skipped": 0,
+    "total": 19,
+    "log": "Native/build-worker-release-vs/Testing/Temporary/LastTest.log",
+    "logSha256": "306333F0C602BBAE077E0EF423F6466B191C9D7E2C51C6791A4CFF1B22AD7501",
+    "initialSandboxAttempt": {
+      "passed": 18,
+      "failed": 1,
+      "failedTest": "lookingglass_bridge_subpixel_metadata_test",
+      "reason": "WinHTTP loopback returned error 12029 in sandbox; full suite was rerun with local loopback access and passed 19/19."
+    },
+    "successfulRetry": "A full Release CTest rerun with workspace-local loopback access passed 19/19."
+  },
+  "metadataErrorCases": [
+    "four required Symbols missing independently return -1",
+    "null result returns -1",
+    "three per-display SDK queries may write partial callback outputs then return false; each returns -4 and leaves caller result unchanged",
+    "valid display metadata remains successful after failures are cleared"
+  ],
+  "notTested": [
+    "The injected get_displays false return codes -2 and -3 were not exercised.",
+    "The Native build and CTest subsection contains no Unity Editor, PlayMode, device, Player, or optical execution; selected Unity integration runs are separately recorded under unityValidation.",
+    "Sample scene rendering, Native SDK initialization, Player behavior, and physical optical output were not established by VerifyOnly cold-load runs."
+  ],
+  "distributionSync": {
+    "dllCopies": {
+      "package": {
+        "path": "Packages/com.zabaglione.lookingglass.viewweave.bridge/Plugins/x86_64/lookingglass_bridge_shim.dll",
+        "bytes": 302080,
+        "sha256": "CEE089B1779752DAB4FFABDFFC44B879A0E4D09414C9A85F7590C8D9A9DDCF4D"
+      },
+      "urp": {
+        "path": "Distribution/urp/ViewWeave/Bridge/Plugins/x86_64/lookingglass_bridge_shim.dll",
+        "bytes": 302080,
+        "sha256": "CEE089B1779752DAB4FFABDFFC44B879A0E4D09414C9A85F7590C8D9A9DDCF4D"
+      },
+      "hdrp": {
+        "path": "Distribution/hdrp/ViewWeave/Bridge/Plugins/x86_64/lookingglass_bridge_shim.dll",
+        "bytes": 302080,
+        "sha256": "CEE089B1779752DAB4FFABDFFC44B879A0E4D09414C9A85F7590C8D9A9DDCF4D"
+      }
+    },
+    "provenanceCopiesSha256": {
+      "Packages/com.zabaglione.lookingglass.viewweave.bridge/Plugins/native-provenance.json": "1167D2F0106976EE61B555F5B7D709EE884CFBA2AD85172849AFE3CC9578D787",
+      "Distribution/urp/ViewWeave/Bridge/Plugins/native-provenance.json": "35F26486EB26D0AF8F1E371B03B4F97F0B2BE9B3CB323CBABEA61AB5D3D6D8C9",
+      "Distribution/hdrp/ViewWeave/Bridge/Plugins/native-provenance.json": "35F26486EB26D0AF8F1E371B03B4F97F0B2BE9B3CB323CBABEA61AB5D3D6D8C9"
+    },
+    "synchronized": true,
+    "buildTimeProvenanceCopiesSha256": {
+      "Packages/com.zabaglione.lookingglass.viewweave.bridge/Plugins/native-provenance.json": "58B7D0E40A9E0B392542E9CE3F87BC54A2D099B1F479FCA5AE0971648EC2CED1",
+      "Distribution/urp/ViewWeave/Bridge/Plugins/native-provenance.json": "58B7D0E40A9E0B392542E9CE3F87BC54A2D099B1F479FCA5AE0971648EC2CED1",
+      "Distribution/hdrp/ViewWeave/Bridge/Plugins/native-provenance.json": "58B7D0E40A9E0B392542E9CE3F87BC54A2D099B1F479FCA5AE0971648EC2CED1"
+    },
+    "provenanceCopiesByteIdentical": false,
+    "currentWindowsRuntimeValidationEqualAcrossCopies": true,
+    "provenanceAsRunBeforeSampleColdVerifySha256": {
+      "package": "C16629105EF484731736D497601E241E9CE86F2763C441225687F1E814CF22F1",
+      "urp": "C4214D01F14647F7D481D11B79AF9E16C45374157C22B93D4028D3DB9C7466A3",
+      "hdrp": "C4214D01F14647F7D481D11B79AF9E16C45374157C22B93D4028D3DB9C7466A3"
+    }
+  },
+  "currentWindowsWorkerSource": {
+    "sha256ByPath": {
+      "Packages/com.zabaglione.lookingglass.viewweave.bridge/Runtime/Platforms/Windows/BridgeWorkerQuiltOutput.cs": "F2F2F9A786372DCDFCED01148DFFE3F659801F061BB2CC571248968D4603E7D6",
+      "Distribution/urp/ViewWeave/Bridge/Runtime/Platforms/Windows/BridgeWorkerQuiltOutput.cs": "F2F2F9A786372DCDFCED01148DFFE3F659801F061BB2CC571248968D4603E7D6",
+      "Distribution/hdrp/ViewWeave/Bridge/Runtime/Platforms/Windows/BridgeWorkerQuiltOutput.cs": "F2F2F9A786372DCDFCED01148DFFE3F659801F061BB2CC571248968D4603E7D6"
+    },
+    "allCopiesEqual": true,
+    "features": [
+      "RequiresReconnect admission guard",
+      "no-flip CopyQuiltToTransferTexture helper"
+    ],
+    "runtimeValidation": "Selected CEE runs are recorded under unityValidation; this does not establish a complete pipeline/API/mode matrix. Earlier DA851 source and C864 artifact evidence remains historical."
+  },
+  "historicalEvidence": {
+    "previousOrientationRecord": "docs/validation/windows-quilt-orientation-20261011.json",
+    "previousSampleRecord": "docs/validation/windows-sample-refresh-20261011.json",
+    "previousArtifactSha256": "C864A363AC441C77497D4302FF25CB48FA2D6EA194B6FB8A73BAE49DC522FEE2",
+    "reuseAsCurrentEvidence": false
+  },
+  "unityValidation": {
+    "status": "Selected Windows Unity checks passed, including separate URP and HDRP local Distribution VerifyOnly cold-load checks.",
+    "currentArtifactSha256": "CEE089B1779752DAB4FFABDFFC44B879A0E4D09414C9A85F7590C8D9A9DDCF4D",
+    "observedRuns": [
+      {
+        "suite": "EditMode UI and discovery initial run",
+        "revision": "bb5f5ac",
+        "graphicsApi": "D3D11",
+        "total": 48,
+        "passed": 47,
+        "failed": 1,
+        "skipped": 0,
+        "cliExitCode": 8,
+        "editorNaturalExitObserved": true,
+        "settingsDiffCount": 0,
+        "failedCase": "RigQualityProfileRemainsEditableWhenSessionIsAttached",
+        "evidenceDir": ".local/windows-quilt-orientation-20261011/latest-integration-64803f6/editmode-authoring-discovery-64803f6-d3d11",
+        "interpretation": "Retained as an initial failure. A separate corrected fixture run passed 48/48. An owner-registration expected-log from another test was not established as this failure cause."
+      },
+      {
+        "suite": "EditMode UI and discovery corrected rerun",
+        "revision": "bb5f5ac",
+        "graphicsApi": "D3D11",
+        "total": 48,
+        "passed": 48,
+        "failed": 0,
+        "skipped": 0,
+        "cliExitCode": 0,
+        "editorNaturalExitObserved": true,
+        "settingsDiffCount": 0,
+        "evidenceDir": ".local/windows-quilt-orientation-20261011/latest-integration-64803f6/editmode-authoring-discovery-64803f6-admissionwait-reflect",
+        "testFilter": "ViewWeave.BridgeEditorPreviewValidation.BridgeAuthoringDiscoveryTests;ViewWeave.RigCameraCreationValidation.RigAuthoringInspectorTests",
+        "fixtureSourceSha256": "D0D8CCBE8C3B1E5AE15EFD1AB411E89F25E826E3939DF5D0135CF85801480EDC",
+        "interpretation": "A bounded wait for Native admission/pending readiness and UI refresh allowed the existing assertions to run. No fake owner registration or production guard bypass."
+      },
+      {
+        "suite": "BridgeDisplayDiscoveryTests plus pending admission",
+        "revision": "bb5f5ac",
+        "graphicsApi": "D3D12",
+        "total": 21,
+        "passed": 21,
+        "failed": 0,
+        "skipped": 0,
+        "cliExitCode": 0,
+        "editorNaturalExitObserved": true,
+        "settingsDiffCount": 0,
+        "evidenceDir": ".local/windows-quilt-orientation-20261011/latest-integration-64803f6/playmode-discovery-admission-64803f6-d3d12",
+        "runtimeScope": "Fake discovery/admission only; actual Native SDK initialization was not performed."
+      },
+      {
+        "suite": "URP actual Quilt producer orientation and transfer copy",
+        "revision": "bb5f5ac",
+        "graphicsApi": "D3D12",
+        "pipeline": "URP",
+        "requestedMsaaSamples": 4,
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "cliExitCode": 0,
+        "editorNaturalExitObserved": true,
+        "settingsDiffCount": 0,
+        "evidenceDir": ".local/windows-quilt-orientation-20261011/latest-integration-64803f6/producer-urp-d3d12-msaa4-integration-64803f6",
+        "testFilter": "ViewWeave.QuiltOrientationValidation.QuiltOrientationDiagnosticTests.UrpRequestCapturesActualQuiltAndBothTransferOrientations",
+        "sourceBytesMatchNoFlipCandidate": true,
+        "physicalPanelOrientationProven": false
+      },
+      {
+        "suite": "Native WARP orientation oracle",
+        "revision": "bb5f5ac",
+        "device": "D3D11 WARP",
+        "executionCount": 9,
+        "productionCopyModes": 3,
+        "noFlipCandidateModes": 3,
+        "oldFlipNegativeControlModes": 3,
+        "productionCopyByteMatchesNoFlip": true,
+        "oldFlipNegativeControlOppositeSentinel": true,
+        "evidenceDir": ".local/windows-quilt-orientation-20261011/latest-integration-64803f6/producer-urp-d3d12-msaa4-integration-64803f6/native-oracle",
+        "physicalPanelOrientationProven": false
+      },
+      {
+        "suite": "CEE actual-device Bridge Editor Preview-to-Play",
+        "revision": "bb5f5ac",
+        "pipeline": "URP",
+        "graphicsApi": "D3D12",
+        "subpixelMode": "Automatic",
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "cliExitCode": 0,
+        "editorNaturalExitObserved": true,
+        "graphicsDevice": "NVIDIA GeForce RTX 3090 Ti",
+        "loadedModulePathAndHashMatched": true,
+        "nativeLoadInitializeDisplayCountOne": true,
+        "pendingZero": true,
+        "uninitializeSucceeded": true,
+        "crashEvents": 0,
+        "settingsRestored": true,
+        "evidenceDir": ".local/windows-quilt-orientation-20261011/latest-integration-64803f6/device-urp-d3d12-automatic-64803f6-filterfix",
+        "interpretation": "One specified current-CEE device route, not a complete pipeline/API/mode matrix or physical optical assessment."
+      }
+    ],
+    "excludedAttempts": [
+      {
+        "suite": "device filter selection initial attempt",
+        "selectedTestCount": 0,
+        "xmlReportedPassed": true,
+        "cliExitCode": 0,
+        "classification": "Invalid filter attempt; not counted as a successful test."
+      },
+      {
+        "suite": "EditMode admission-wait initial startup",
+        "cliExitCode": 6,
+        "testResult": "No valid test result recorded",
+        "classification": "Failed setup attempt; not counted."
+      }
+    ],
+    "pendingRuns": [],
+    "physicalOpticalValidation": false,
+    "sampleColdLoadRuns": {
+      "scope": "Local file UPM VerifyOnly cold-load checks, separate from device lifecycle counts. No sample rendering or SDK session initialization is claimed.",
+      "artifactSha256": "CEE089B1779752DAB4FFABDFFC44B879A0E4D09414C9A85F7590C8D9A9DDCF4D",
+      "finalSummary": ".local/windows-quilt-orientation-20261011/latest-integration-64803f6/sample-refresh-current-CEE/final-summary.json",
+      "finalSummarySha256": "2591F8868C01055E4B47F77CBE1AE21BA11DC0200A82F995BDF028C9A7BECADD",
+      "urp": {
+        "project": "E:/URPSample_6.6.41f1",
+        "graphicsApi": "Direct3D 12 level 12.2",
+        "gpu": "NVIDIA GeForce RTX 3090 Ti",
+        "editorPid": 95704,
+        "operation": "VerifyOnly",
+        "clientAddIssued": false,
+        "resolvedSource": "Local",
+        "resolvedPath": "E:/LookingGlassSDK/Distribution/urp",
+        "naturalExit": true,
+        "exitCode": 0,
+        "verifyPassMarker": true,
+        "viewWeaveSourceFilesCompared": 248,
+        "mismatches": 0,
+        "loadedNativePathAndHashMatched": true,
+        "moduleCount": 1,
+        "nativeDllSha256": "CEE089B1779752DAB4FFABDFFC44B879A0E4D09414C9A85F7590C8D9A9DDCF4D",
+        "pending": 0,
+        "nativeTraceFileCreated": false,
+        "initialization": "Not observed: no native trace file was emitted. Do not infer automatic discovery behavior.",
+        "manifestPreserved": true,
+        "targetLockVerified": true,
+        "targetLockDependenciesMatchDistribution": true,
+        "unrelatedLockEntriesUnchanged": true,
+        "assetsProjectSettingsAdded": 0,
+        "assetsProjectSettingsChanged": 0,
+        "assetsProjectSettingsMissing": 0,
+        "temporaryHelperRemoved": true,
+        "helperSourceSha256": "A47722AEBF1E87042B9C85A9684595E5B13A721DE471A4B88CC345C984441979",
+        "packageProvenanceAsRunSha256": "C16629105EF484731736D497601E241E9CE86F2763C441225687F1E814CF22F1",
+        "distributionProvenanceAsRunSha256": "C4214D01F14647F7D481D11B79AF9E16C45374157C22B93D4028D3DB9C7466A3",
+        "evidencePath": ".local/windows-quilt-orientation-20261011/latest-integration-64803f6/sample-refresh-current-CEE-verifyonly-fix/urp-verify-only-current-cee-rerun/process-summary.json"
+      },
+      "hdrp": {
+        "project": "E:/My project (34)",
+        "graphicsApi": "Direct3D 12 level 12.2",
+        "gpu": "NVIDIA GeForce RTX 3090 Ti",
+        "editorPid": 90480,
+        "operation": "VerifyOnly",
+        "clientAddIssued": false,
+        "resolvedSource": "Local",
+        "resolvedPath": "E:/LookingGlassSDK/Distribution/hdrp",
+        "naturalExit": true,
+        "exitCode": 0,
+        "verifyPassMarker": true,
+        "viewWeaveSourceFilesCompared": 255,
+        "mismatches": 0,
+        "loadedNativePathAndHashMatched": true,
+        "moduleCount": 1,
+        "nativeDllSha256": "CEE089B1779752DAB4FFABDFFC44B879A0E4D09414C9A85F7590C8D9A9DDCF4D",
+        "pending": 0,
+        "nativeTraceFileCreated": false,
+        "initialization": "Not observed: no native trace file was emitted. Do not infer automatic discovery behavior.",
+        "manifestPreserved": true,
+        "targetLockVerified": true,
+        "targetLockDependenciesMatchDistribution": true,
+        "unrelatedLockEntriesUnchanged": true,
+        "assetsProjectSettingsAdded": 0,
+        "assetsProjectSettingsChanged": 0,
+        "assetsProjectSettingsMissing": 0,
+        "temporaryHelperRemoved": true,
+        "helperSourceSha256": "5D444E7FC9A40A57660EA4E336437075EF38E393165523BCB33D68FACA80D197",
+        "packageProvenanceAsRunSha256": "C16629105EF484731736D497601E241E9CE86F2763C441225687F1E814CF22F1",
+        "distributionProvenanceAsRunSha256": "C4214D01F14647F7D481D11B79AF9E16C45374157C22B93D4028D3DB9C7466A3",
+        "evidencePath": ".local/windows-quilt-orientation-20261011/latest-integration-64803f6/sample-refresh-current-CEE/hdrp-verify-only-current-cee/process-summary.json"
+      },
+      "excludedAttemptHistory": [
+        {
+          "kind": "urp",
+          "run": ".local/windows-quilt-orientation-20261011/latest-integration-64803f6/sample-refresh-current-CEE/urp-verify-only-current-cee",
+          "editorPid": 95044,
+          "helperSourceSha256": "5D444E7FC9A40A57660EA4E336437075EF38E393165523BCB33D68FACA80D197",
+          "classification": "Excluded from final no-Client.Add proof",
+          "reason": "A compile/domain-reload cycle was observed with the pre-fix helper. Its resume path could reach Client.Add; invocation was not established. The fresh-baseline rerun used the corrected VerifyOnly resume gate."
+        }
+      ],
+      "postRunProvenanceMetadataOnlyUpdate": {
+        "packageSha256": "1CC712AC08ACEA025DE5388627E3FBB4D5C96EBD09D90DB92277EB5102E9C4C4",
+        "urpSha256": "248682D681BC880988A3B37D7E827B53EA11100FDA6D10AC7290F1DCD8B2A59A",
+        "hdrpSha256": "248682D681BC880988A3B37D7E827B53EA11100FDA6D10AC7290F1DCD8B2A59A",
+        "asRunProvenanceUnchanged": true,
+        "productionDllOrManagedSourceChanged": false
+      },
+      "notEstablished": [
+        "Native SDK initialization/session",
+        "sample scene rendering/device output",
+        "Player",
+        "physical optical output"
+      ]
+    }
+  },
+  "evidence": {
+    "nativeBuildManifest": ".local/windows-quilt-orientation-20261011/latest-integration-64803f6/native-build/build-manifest.json",
+    "nativeLastTestLog": "Native/build-worker-release-vs/Testing/Temporary/LastTest.log",
+    "nativeLastTestLogSha256": "306333F0C602BBAE077E0EF423F6466B191C9D7E2C51C6791A4CFF1B22AD7501"
+  },
+  "currentWindowsRuntimeValidation": {
+    "status": "Selected Windows Editor/device checks and URP/HDRP local Distribution VerifyOnly cold-load checks passed; this is not a complete pipeline/API/mode matrix.",
+    "artifactSha256": "CEE089B1779752DAB4FFABDFFC44B879A0E4D09414C9A85F7590C8D9A9DDCF4D",
+    "editorDeviceConditionsPassed": 1,
+    "editorDeviceConditionsTotal": 1,
+    "deviceRun": {
+      "suite": "CEE actual-device Bridge Editor Preview-to-Play",
+      "revision": "bb5f5ac",
+      "pipeline": "URP",
+      "graphicsApi": "D3D12",
+      "subpixelMode": "Automatic",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "cliExitCode": 0,
+      "editorNaturalExitObserved": true,
+      "graphicsDevice": "NVIDIA GeForce RTX 3090 Ti",
+      "loadedModulePathAndHashMatched": true,
+      "nativeLoadInitializeDisplayCountOne": true,
+      "pendingZero": true,
+      "uninitializeSucceeded": true,
+      "crashEvents": 0,
+      "settingsRestored": true,
+      "evidenceDir": ".local/windows-quilt-orientation-20261011/latest-integration-64803f6/device-urp-d3d12-automatic-64803f6-filterfix",
+      "interpretation": "One specified current-CEE device route, not a complete pipeline/API/mode matrix or physical optical assessment."
+    },
+    "limitations": [
+      "Windows Player",
+      "URP/HDRP full API and subpixel mode matrix",
+      "physical optical output/image quality",
+      "Native SDK initialization was not observed during sample VerifyOnly checks.",
+      "Sample scene rendering, Player behavior, and physical optical output."
+    ],
+    "provenanceCopiesSha256": {
+      "Packages/com.zabaglione.lookingglass.viewweave.bridge/Plugins/native-provenance.json": "1CC712AC08ACEA025DE5388627E3FBB4D5C96EBD09D90DB92277EB5102E9C4C4",
+      "Distribution/urp/ViewWeave/Bridge/Plugins/native-provenance.json": "248682D681BC880988A3B37D7E827B53EA11100FDA6D10AC7290F1DCD8B2A59A",
+      "Distribution/hdrp/ViewWeave/Bridge/Plugins/native-provenance.json": "248682D681BC880988A3B37D7E827B53EA11100FDA6D10AC7290F1DCD8B2A59A"
+    },
+    "buildTimeProvenanceSha256": "58B7D0E40A9E0B392542E9CE3F87BC54A2D099B1F479FCA5AE0971648EC2CED1"
+  },
+  "provenanceSampleUpdateDelta": {
+    "change": "After sample checks, runtime-validation evidence was added and the stale pending statement removed. The metadata-only update did not change the production DLL or managed source; each sample retains its exact as-run provenance fingerprint.",
+    "asRunFingerprintsPreserved": true,
+    "evidence": ".local/windows-quilt-orientation-20261011/latest-integration-64803f6/sample-refresh-current-CEE/final-summary.json",
+    "coldLoadChecksAreSeparateFromDeviceConditionCount": true,
+    "sampleInitializationOrOutputClaimed": false,
+    "intermediateMetadataOnlyHashes": {
+      "package": "1167D2F0106976EE61B555F5B7D709EE884CFBA2AD85172849AFE3CC9578D787",
+      "urp": "35F26486EB26D0AF8F1E371B03B4F97F0B2BE9B3CB323CBABEA61AB5D3D6D8C9",
+      "hdrp": "35F26486EB26D0AF8F1E371B03B4F97F0B2BE9B3CB323CBABEA61AB5D3D6D8C9"
+    },
+    "finalMetadataHashes": {
+      "package": "1CC712AC08ACEA025DE5388627E3FBB4D5C96EBD09D90DB92277EB5102E9C4C4",
+      "urp": "248682D681BC880988A3B37D7E827B53EA11100FDA6D10AC7290F1DCD8B2A59A",
+      "hdrp": "248682D681BC880988A3B37D7E827B53EA11100FDA6D10AC7290F1DCD8B2A59A"
+    }
+  }
+}

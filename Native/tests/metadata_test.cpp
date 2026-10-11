@@ -23,6 +23,7 @@ constexpr std::array<SyntheticDisplay, 3> displays{{
 }};
 int declaredCount = static_cast<int>(displays.size()), returnedCount = static_cast<int>(displays.size());
 bool calibrationSucceeds = true, calibrationThrows = false;
+bool dimensionsFails = false, viewconeFails = false, quiltFails = false;
 float calibrationDpiOverride = 0.0f;
 unsigned long lastCalibrationDisplayId = 0;
 void Check(bool condition, const char* label) {
@@ -47,18 +48,18 @@ bool Displays(int* count, unsigned long* ids) {
 bool Dimensions(unsigned long id, unsigned long* w, unsigned long* h) {
     const SyntheticDisplay* display = FindDisplay(id);
     if (!display) return false;
-    *w = display->width; *h = display->height; return true;
+    *w = display->width; *h = display->height; return !dimensionsFails;
 }
 bool Viewcone(unsigned long id, float* value) {
     const SyntheticDisplay* display = FindDisplay(id);
     if (!display) return false;
-    *value = display->viewcone; return true;
+    *value = display->viewcone; return !viewconeFails;
 }
 bool Quilt(unsigned long id, float* aspect, int* width, int* height, int* columns, int* rows) {
     const SyntheticDisplay* display = FindDisplay(id);
     if (!display) return false;
     *aspect = display->aspect; *width = display->quiltWidth; *height = display->quiltHeight;
-    *columns = display->columns; *rows = display->rows; return true;
+    *columns = display->columns; *rows = display->rows; return !quiltFails;
 }
 bool Calibration(unsigned long id, float*, float*, float*, int* width, int* height, float* dpi,
     float*, int*, float*, float*, int*, int* cells, lkg::metadata::CalibrationSubpixelCell*) {
@@ -78,6 +79,34 @@ int main() {
     Check(lkg::metadata::ReadVersion({}, version, sizeof(version)) == -1, "missing version symbol");
     uint32_t count = 0;
     Check(lkg::metadata::ReadDisplayCount(api, &count) == 0 && count == displays.size(), "display count");
+
+    const LkgBridgeDisplayInfo sentinel{9001, 9002, 9003, 1.25f, 2.5f, 9004, 9005, 9006, 9007};
+    auto unchanged = [&](const LkgBridgeDisplayInfo& value, const char* label) {
+        Check(value.index == sentinel.index && value.width == sentinel.width && value.height == sentinel.height &&
+            value.aspect == sentinel.aspect && value.viewcone == sentinel.viewcone &&
+            value.quilt_width == sentinel.quilt_width && value.quilt_height == sentinel.quilt_height &&
+            value.quilt_columns == sentinel.quilt_columns && value.quilt_rows == sentinel.quilt_rows, label);
+    };
+    Check(lkg::metadata::ReadDisplay(api, 0, nullptr) == -1, "null display result");
+    for (int missing = 0; missing != 4; ++missing) {
+        lkg::metadata::Symbols incomplete = api;
+        if (missing == 0) incomplete.displays = nullptr;
+        if (missing == 1) incomplete.dimensions = nullptr;
+        if (missing == 2) incomplete.viewcone = nullptr;
+        if (missing == 3) incomplete.defaultQuilt = nullptr;
+        LkgBridgeDisplayInfo result = sentinel;
+        Check(lkg::metadata::ReadDisplay(incomplete, 0, &result) == -1, "missing display query symbol");
+        unchanged(result, "missing symbol leaves display result unchanged");
+    }
+    for (int failure = 0; failure != 3; ++failure) {
+        dimensionsFails = failure == 0;
+        viewconeFails = failure == 1;
+        quiltFails = failure == 2;
+        LkgBridgeDisplayInfo result = sentinel;
+        Check(lkg::metadata::ReadDisplay(api, 0, &result) == -4, "SDK metadata query failure");
+        unchanged(result, "failed SDK query leaves display result unchanged");
+    }
+    dimensionsFails = viewconeFails = quiltFails = false;
     for (uint32_t ordinal = 0; ordinal < displays.size(); ++ordinal) {
         const SyntheticDisplay& expected = displays[ordinal];
         LkgBridgeDisplayInfo display{};

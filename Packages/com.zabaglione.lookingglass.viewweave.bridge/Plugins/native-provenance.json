@@ -1,67 +1,58 @@
 {
   "artifact": "lookingglass_bridge_shim.dll",
-  "artifactBuildCMakeListsSha256": "3BCDEB35718E326B186AC3463CFA1E538785B788162ED2E5EAD2157AB034DCBF",
-  "artifactSha256": "C864A363AC441C77497D4302FF25CB48FA2D6EA194B6FB8A73BAE49DC522FEE2",
+  "artifactBuildCMakeListsSha256": "4B594BA5E153A99D2297E94425A5C54C8425D1A329C06160242D719078169F05",
+  "artifactSha256": "CEE089B1779752DAB4FFABDFFC44B879A0E4D09414C9A85F7590C8D9A9DDCF4D",
   "artifactSizeBytes": 302080,
-  "buildDirectory": ".local/windows-subpixel-native-20261011/build",
+  "buildDirectory": "Native/build-worker-release-vs/Release/lookingglass_bridge_shim.dll",
   "ciValidation": "Historical CI for commit 054fffeb817ac8daae6ff68ed567ec7e69fe4798: workflow run 37705337066 and PR run 37705340768 succeeded with 5/5 jobs each. The jobs covered static checks, Linux portable/unsupported ABI, Windows transport, Windows fake regressions with Unity API v7, and the macOS ARM64 shim build/link plus native contract tests. These runs predate the current uncommitted final-shutdown source and do not validate or replace the current locally built Windows v8 DLL. No Unity runtime, official Bridge SDK load, physical display, or Metal consumer lifetime validation was performed.",
-  "compilerVersion": null,
+  "compilerVersion": "19.44.35217.0",
   "compilerVersionNote": "Exact cl.exe version was not retained; current Windows build records MSBuild 17.14.23+b0019275e.",
   "configuration": "Release",
   "currentArtifactValidation": {
-    "artifactSha256": "C864A363AC441C77497D4302FF25CB48FA2D6EA194B6FB8A73BAE49DC522FEE2",
+    "artifactSha256": "CEE089B1779752DAB4FFABDFFC44B879A0E4D09414C9A85F7590C8D9A9DDCF4D",
     "artifactSizeBytes": 302080,
-    "buildDirectory": ".local/windows-subpixel-native-20261011/build",
-    "hardwareValidation": "The Native presenter executable passed 25 WARP pixel-oracle cases and 6 calibration boundaries; that WARP run did not use a physical display or official Bridge runtime. Separately, 12 Windows Editor device fixture conditions passed under the current package artifact; see currentWindowsRuntimeValidation.",
+    "buildDirectory": "Native/build-worker-release-vs/Release/lookingglass_bridge_shim.dll",
+    "hardwareValidation": "The registered manual subpixel presenter CTest ran its test-only WARP presenter coverage. This is not a calibrated panel, official Bridge SDK session, or optical test.",
     "nativeTestsPassed": 19,
     "nativeTestsTotal": 19,
-    "sourceBaseCommit": "e777b34763b25e1673e5dc0188c812cda69cbcc0",
-    "testEvidencePath": ".local/windows-subpixel-native-20261011/build/Testing/Temporary/LastTest.log",
+    "sourceBaseCommit": "bb5f5ac405f01124334f2c800b6ca3dda9aa47fe",
+    "testEvidencePath": "Native/build-worker-release-vs/Testing/Temporary/LastTest.log",
     "transportOnlyTestsPassed": null,
     "transportOnlyTestsTotal": null,
-    "unityEditorDeviceConditionsPassed": 12,
-    "unityEditorDeviceConditionsTotal": 12,
-    "unityEditorEvidencePath": ".local/windows-subpixel-validation-20261011/final-summary.json"
+    "unityEditorDeviceConditionsPassed": 0,
+    "unityEditorDeviceConditionsTotal": 0,
+    "unityEditorEvidencePath": null,
+    "unityEditorRuntimePending": true
   },
-  "currentCMakeListsSha256": "3BCDEB35718E326B186AC3463CFA1E538785B788162ED2E5EAD2157AB034DCBF",
+  "currentCMakeListsSha256": "4B594BA5E153A99D2297E94425A5C54C8425D1A329C06160242D719078169F05",
   "currentWindowsReleaseBuild": {
-    "artifactSha256": "C864A363AC441C77497D4302FF25CB48FA2D6EA194B6FB8A73BAE49DC522FEE2",
+    "artifactSha256": "CEE089B1779752DAB4FFABDFFC44B879A0E4D09414C9A85F7590C8D9A9DDCF4D",
     "artifactSizeBytes": 302080,
-    "buildCommand": "cmake --build .local/windows-subpixel-native-20261011/build --config Release --parallel 8",
-    "buildDirectory": ".local/windows-subpixel-native-20261011/build",
+    "dllSha256": "CEE089B1779752DAB4FFABDFFC44B879A0E4D09414C9A85F7590C8D9A9DDCF4D",
+    "buildCommand": "cmake -S Native -B Native/build-worker-release-vs; cmake --build Native/build-worker-release-vs --config Release --parallel",
+    "buildDirectory": "Native/build-worker-release-vs/Release/lookingglass_bridge_shim.dll",
     "compiler": "MSVC via Visual Studio 17 2022 Build Tools",
-    "compilerVersion": null,
-    "compilerVersionNote": "Exact cl.exe version was not retained; MSBuild 17.14.23+b0019275e is recorded.",
+    "compilerVersion": "19.44.35217.0",
+    "compilerVersionNote": "CMake CXX compiler metadata records cl.exe 19.44.35217.0.",
     "configuration": "Release",
-    "dllSha256": "C864A363AC441C77497D4302FF25CB48FA2D6EA194B6FB8A73BAE49DC522FEE2",
-    "generatedAt": "2026-10-11T03:28:02Z",
-    "generatedEmbeddedShaderHeaderSha256": {
-      ".local/windows-subpixel-native-20261011/build/lookingglass_bridge_shim_manual_subpixel_shaders/manual_subpixel_presenter_pixel_shader.h": "4101973B56B9624791803222BB9898522FAC4ABA8C5DF0D0C9FFC033FE3404A4",
-      ".local/windows-subpixel-native-20261011/build/lookingglass_bridge_shim_manual_subpixel_shaders/manual_subpixel_presenter_vertex_shader.h": "A150E8E54D911F14DF53A0C3D1A46F82E74550FC980CBFC9E6C1A5AF9A7B7F22",
-      ".local/windows-subpixel-native-20261011/build/lookingglass_bridge_shim_stable_sdk_input_shaders/stable_sdk_input_d3d11_pixel_shader.h": "A452E8EE98B3ABE9DACE4A73778BBBF7EF4EDE0FA76ECA23453753D365994035",
-      ".local/windows-subpixel-native-20261011/build/lookingglass_bridge_shim_stable_sdk_input_shaders/stable_sdk_input_d3d11_vertex_shader.h": "C59BEBE17EF89273BC3441875D8B26828CD3EA61D7581F7A0619E93CF76C6E93"
-    },
     "generator": "Visual Studio 17 2022",
-    "localCTest": {
-      "d3d12HardwareSkipMessages": 0,
-      "elapsedSeconds": 17.42,
-      "evidencePath": ".local/windows-subpixel-native-20261011/build/Testing/Temporary/LastTest.log",
-      "failed": 0,
-      "note": "All 19 registered Release CTests passed. The worker transport executable completed without a D3D12 adapter skip message. Presenter pixel-oracle WARP coverage is a separate executable result, not additional CTest entries.",
-      "passed": 19,
-      "presenterCalibrationBoundaryChecks": 6,
-      "presenterGpuOracleCases": 25,
-      "presenterGpuOracleEvidencePath": ".local/windows-subpixel-native-20261011/artifacts/presenter-warp-20261011",
-      "total": 19
-    },
     "msbuildVersion": "17.14.23+b0019275e",
+    "windowsSdkVersion": "10.0.26100.0",
+    "targetWindowsVersion": "10.0.26200.0",
+    "shaderCompiler": "Windows SDK FXC 10.0.26100.0, file version 10.0.26100.4654",
+    "unityPluginApi": "6000.6.4f1",
+    "unityPluginApiPath": "C:/Program Files/Unity/Hub/Editor/6000.6.4f1/Editor/Data/PluginAPI",
+    "targetArchitecture": "x64",
+    "generatedAt": "2026-10-11T09:41:36+00:00",
+    "sourceBaseCommit": "bb5f5ac405f01124334f2c800b6ca3dda9aa47fe",
+    "sourceState": "Windows x64 Release shim rebuilt from repository HEAD bb5f5ac405f01124334f2c800b6ca3dda9aa47fe; this commit includes the upstream Native/common/bridge_metadata.cpp error-path change. Exact production-source fingerprints are recorded in currentWindowsReleaseBuild.nativeSourceHashes and the local build manifest. The only working-tree source edit at build time was Native/tests/metadata_test.cpp test coverage; it is test-only and is not linked into the production DLL.",
     "nativeSourceHashes": {
-      "Native/CMakeLists.txt": "3BCDEB35718E326B186AC3463CFA1E538785B788162ED2E5EAD2157AB034DCBF",
+      "Native/CMakeLists.txt": "4B594BA5E153A99D2297E94425A5C54C8425D1A329C06160242D719078169F05",
       "Native/bridge_d3d12_internal.h": "6B06A4792E547BDAE65EE91908CB565ED5FA1B89AD5C6E7A6EE627D6933FE154",
       "Native/bridge_shim.h": "86C0AE009031C6894A0FEDC18AE38C80AE8D2A920A0D2FA10F60A046E474013D",
       "Native/bridge_worker_common.h": "48ACE99B1F5C90842FB2E6B5AE6021AD835891486BC65C3969C2427F5DB96FD4",
       "Native/bridge_worker_transport.h": "7B3466730CBFE4FDFC623C8A5BB9C20814B14CF9E77C06812F006CB68F57219A",
-      "Native/common/bridge_metadata.cpp": "3D0DCDB30963128E79EA7909EECE671CFF1F56D83E9AA04FF23BA5D11E200A7C",
+      "Native/common/bridge_metadata.cpp": "62B52E5D4F22EBA557F92490482FB3409AEFCD5F234501D5F04BC0BBE86B95CF",
       "Native/common/bridge_metadata.h": "A0FBFCFFDE6E5C876B07EEA941ECE9669FA1049A40440EB84C928F5106C90487",
       "Native/common/bridge_worker_common.cpp": "D57B45EA0B65FA2B3BD953853529E5005A629321D035C090C1C3D6C620C9E39B",
       "Native/common/subpixel_calibration.cpp": "41F9E19864A80CD3ADC7833DA634736C810A71BF015FDA24E9F18C726DA1FF88",
@@ -81,34 +72,184 @@
       "Native/platform/windows/stable_sdk_input_d3d11.hlsl": "03A54DB6F092BA48547014B8C15202313850B3CC0D24E5261CDF741F1CBE2DD0",
       "Native/platform/windows/stdio_load_guard.cpp": "1F380F85E84BD2B999F3D95B04863B7DD2AAF140B77232613CD35BE01EF672E2",
       "Native/platform/windows/stdio_load_guard.h": "E6FF25620FB02836979D846A7D0A9A9B281539FDCC30A223DD5917A48C442C9D",
-      "Native/stable_sdk_input_d3d11.cmake": "038658297643D42ED6FB68FDAC24C083FB069609C6C7E066BE5E10ADF5C98A03",
+      "Native/stable_sdk_input_d3d11.cmake": "FA48F3ACAB5B8731AAA1424FA36734AEFE99D08BCE319F3EED8A76EC55F85AB1",
       "Packages/com.zabaglione.lookingglass.viewweave.bridge/Runtime/Common/Resources/ViewWeaveSubpixelSampling.hlsl": "5A0E0B8EA9BEF1E5E44DBE836FDB7B4EC56F0B63015BEB6D7B7E2EFFFF0FC0FD"
     },
-    "packagePath": "Packages/com.zabaglione.lookingglass.viewweave.bridge/Plugins/x86_64/lookingglass_bridge_shim.dll",
+    "nativeTestSourceHashes": {
+      "Native/tests/metadata_test.cpp": "2371FB4B2FF13C0ACCD973DEFEA3BAE7CBC945F35DD9FBB50D884705A40BDC7B"
+    },
     "sharedSubpixelHlslSha256": "5A0E0B8EA9BEF1E5E44DBE836FDB7B4EC56F0B63015BEB6D7B7E2EFFFF0FC0FD",
-    "sourceBaseCommit": "e777b34763b25e1673e5dc0188c812cda69cbcc0",
-    "sourceState": "Windows x64 Release shim built from the shared working tree at source base e777b34763b25e1673e5dc0188c812cda69cbcc0. The exact as-built Native source snapshot is recorded in nativeSourceHashes and .local/windows-subpixel-native-20261011/validation/build-manifest.json. Windows Editor device runtime validation for all 12 declared subpixel mode, pipeline, and graphics API conditions passed against this artifact; Windows Player and optical quality remain unvalidated.",
-    "targetArchitecture": "x64",
-    "unityPluginApi": "6000.6.4f1",
-    "unityPluginApiPath": "C:/Program Files/Unity/Hub/Editor/6000.6.4f1/Editor/Data/PluginAPI",
-    "validationLimits": "Windows Editor evidence is limited to the 12 recorded device fixture conditions and the connected RTX 3090 Ti / Bridge 2.6.3 setup. No Windows Player or human optical-quality review was performed. macOS execution and other display models remain unverified."
+    "generatedEmbeddedShaderHeaderSha256": {
+      "Native/build-worker-release-vs/lookingglass_bridge_shim_manual_subpixel_shaders/manual_subpixel_presenter_pixel_shader.h": "4101973B56B9624791803222BB9898522FAC4ABA8C5DF0D0C9FFC033FE3404A4",
+      "Native/build-worker-release-vs/lookingglass_bridge_shim_manual_subpixel_shaders/manual_subpixel_presenter_vertex_shader.h": "A150E8E54D911F14DF53A0C3D1A46F82E74550FC980CBFC9E6C1A5AF9A7B7F22",
+      "Native/build-worker-release-vs/lookingglass_bridge_shim_stable_sdk_input_shaders/stable_sdk_input_d3d11_pixel_shader.h": "A452E8EE98B3ABE9DACE4A73778BBBF7EF4EDE0FA76ECA23453753D365994035",
+      "Native/build-worker-release-vs/lookingglass_bridge_shim_stable_sdk_input_shaders/stable_sdk_input_d3d11_vertex_shader.h": "C59BEBE17EF89273BC3441875D8B26828CD3EA61D7581F7A0619E93CF76C6E93"
+    },
+    "localCTest": {
+      "passed": 19,
+      "failed": 0,
+      "skipped": 0,
+      "total": 19,
+      "elapsedSeconds": 17.41,
+      "evidencePath": "Native/build-worker-release-vs/Testing/Temporary/LastTest.log",
+      "evidenceSha256": "306333F0C602BBAE077E0EF423F6466B191C9D7E2C51C6791A4CFF1B22AD7501",
+      "note": "All 19 registered Release CTests passed with zero skips. The new metadata regression assertions are inside the existing lookingglass_metadata_test; no new CTest target was added. The first sandbox run had one WinHTTP loopback 12029 failure; the complete suite was rerun with local loopback access and passed 19/19."
+    },
+    "packagePath": "Packages/com.zabaglione.lookingglass.viewweave.bridge/Plugins/x86_64/lookingglass_bridge_shim.dll",
+    "distributionCopies": {
+      "package": {
+        "path": "Packages/com.zabaglione.lookingglass.viewweave.bridge/Plugins/x86_64/lookingglass_bridge_shim.dll",
+        "bytes": 302080,
+        "sha256": "CEE089B1779752DAB4FFABDFFC44B879A0E4D09414C9A85F7590C8D9A9DDCF4D"
+      },
+      "urp": {
+        "path": "Distribution/urp/ViewWeave/Bridge/Plugins/x86_64/lookingglass_bridge_shim.dll",
+        "bytes": 302080,
+        "sha256": "CEE089B1779752DAB4FFABDFFC44B879A0E4D09414C9A85F7590C8D9A9DDCF4D"
+      },
+      "hdrp": {
+        "path": "Distribution/hdrp/ViewWeave/Bridge/Plugins/x86_64/lookingglass_bridge_shim.dll",
+        "bytes": 302080,
+        "sha256": "CEE089B1779752DAB4FFABDFFC44B879A0E4D09414C9A85F7590C8D9A9DDCF4D"
+      }
+    },
+    "buildManifestPath": ".local/windows-quilt-orientation-20261011/latest-integration-64803f6/native-build/build-manifest.json",
+    "validationLimits": "Selected CEE Unity Editor runtime and actual-device lifecycle results are recorded in currentWindowsRuntimeValidation. No complete pipeline/API/mode matrix, Windows Player, or physical optical validation is claimed."
   },
   "currentWindowsRuntimeValidation": {
-    "artifactSha256": "C864A363AC441C77497D4302FF25CB48FA2D6EA194B6FB8A73BAE49DC522FEE2",
-    "notValidated": [
-      "Windows Player output using this new artifact",
-      "Optical quality across views and display models",
-      "macOS open_v4 source, shared shader, and runtime"
+    "artifactSha256": "CEE089B1779752DAB4FFABDFFC44B879A0E4D09414C9A85F7590C8D9A9DDCF4D",
+    "status": "Selected Windows Unity runtime checks passed; separate URP and HDRP local-file UPM VerifyOnly cold-load checks also passed.",
+    "testedRevision": "bb5f5ac405f01124334f2c800b6ca3dda9aa47fe",
+    "testedWorkingTree": true,
+    "evidenceRecordPath": "docs/validation/windows-latest-integration-20261011.json",
+    "editorDeviceConditionsPassed": 1,
+    "editorDeviceConditionsTotal": 1,
+    "deviceRun": {
+      "pipeline": "URP",
+      "graphicsApi": "D3D12",
+      "subpixelMode": "Automatic",
+      "graphicsDevice": "NVIDIA GeForce RTX 3090 Ti",
+      "testResult": "1 passed, 0 failed, 0 skipped; CLI and natural Editor exit code 0",
+      "loadedModulePathAndSha256Matched": true,
+      "nativeLoadInitializeDisplayCountOne": true,
+      "pendingZero": true,
+      "uninitializeSucceeded": true,
+      "cleanupStatusCount": 0,
+      "settingsRestored": true,
+      "crashOrApplicationEventCount": 0,
+      "evidencePath": ".local/windows-quilt-orientation-20261011/latest-integration-64803f6/device-urp-d3d12-automatic-64803f6-filterfix/summary.json"
+    },
+    "supportingNonDeviceEvidence": [
+      {
+        "scope": "Fake Editor authoring/discovery tests",
+        "graphicsApi": "D3D11",
+        "counts": {
+          "passed": 48,
+          "failed": 0,
+          "skipped": 0
+        },
+        "evidencePath": ".local/windows-quilt-orientation-20261011/latest-integration-64803f6/editmode-authoring-discovery-64803f6-admissionwait-reflect"
+      },
+      {
+        "scope": "Fake PlayMode discovery/admission tests; Native SDK initialization not performed",
+        "graphicsApi": "D3D12",
+        "counts": {
+          "passed": 21,
+          "failed": 0,
+          "skipped": 0
+        },
+        "evidencePath": ".local/windows-quilt-orientation-20261011/latest-integration-64803f6/playmode-discovery-admission-64803f6-d3d12"
+      },
+      {
+        "scope": "URP actual quilt producer and production transfer-copy source-byte comparison",
+        "graphicsApi": "D3D12",
+        "requestedMsaaSamples": 4,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "evidencePath": ".local/windows-quilt-orientation-20261011/latest-integration-64803f6/producer-urp-d3d12-msaa4-integration-64803f6/run-summary.json"
+      },
+      {
+        "scope": "D3D11 WARP offscreen orientation oracle; not physical panel validation",
+        "executionCount": 9,
+        "productionCopyModes": 3,
+        "noFlipCandidateModes": 3,
+        "oldFlipNegativeControlModes": 3,
+        "productionCopyByteMatchesNoFlip": true,
+        "oldFlipNegativeControlOppositeSentinel": true,
+        "evidencePath": ".local/windows-quilt-orientation-20261011/latest-integration-64803f6/producer-urp-d3d12-msaa4-integration-64803f6/native-oracle/native-oracle-results.json"
+      }
     ],
-    "status": "PASS: 12/12 Windows Editor device conditions (URP/HDRP x D3D11/D3D12 x Automatic/ClassicRgb/CalibratedCells), zero skips, with strict PID, loaded package DLL identity, Native cleanup, natural Editor exit, zero crash events, and settings restoration.",
-    "testedRevision": "e777b34763b25e1673e5dc0188c812cda69cbcc0",
-    "testedWorkingTree": "Working tree based on source e777b34763b25e1673e5dc0188c812cda69cbcc0 plus uncommitted Native source, shared shader, Windows/common Managed, and Unity fixture changes. All 12 Windows Editor conditions passed. This is not a Windows Player or optical-quality validation.",
-    "evidenceRecordPath": ".local/windows-subpixel-validation-20261011/final-summary.json",
-    "editorDeviceConditionsPassed": 12,
-    "editorDeviceConditionsTotal": 12
+    "notValidated": [
+      "Windows Player",
+      "URP or HDRP pipeline/API/mode matrix beyond the selected cases above",
+      "physical optical output or image quality"
+    ],
+    "limitations": "The actual-device result validates one URP D3D12 Automatic Preview-to-Play lifecycle route and Native load/display lifecycle. It does not claim optical panel orientation or image quality.",
+    "sampleColdLoadVerification": {
+      "scope": "Separate local-file UPM VerifyOnly cold-load checks; no Client.Add, session initialization, device rendering, or optical assessment.",
+      "nativeArtifactSha256": "CEE089B1779752DAB4FFABDFFC44B879A0E4D09414C9A85F7590C8D9A9DDCF4D",
+      "provenanceAsRunFingerprints": {
+        "packageSha256": "C16629105EF484731736D497601E241E9CE86F2763C441225687F1E814CF22F1",
+        "distributionSha256": "C4214D01F14647F7D481D11B79AF9E16C45374157C22B93D4028D3DB9C7466A3"
+      },
+      "urp": {
+        "operation": "VerifyOnly",
+        "packageSource": "Local file:E:/LookingGlassSDK/Distribution/urp",
+        "unityVersion": "6000.6.4f1",
+        "graphicsApi": "Direct3D 12 level 12.2",
+        "naturalExit": true,
+        "editorExitCode": 0,
+        "passMarkerObserved": true,
+        "sourceFilesCompared": 248,
+        "mismatches": 0,
+        "loadedNativeSha256Matched": true,
+        "nativeModuleCount": 1,
+        "pendingCount": 0,
+        "initialization": "not requested; not observed",
+        "assetsProjectSettingsAddedChangedMissing": 0,
+        "evidencePath": ".local/windows-quilt-orientation-20261011/latest-integration-64803f6/sample-refresh-current-CEE-verifyonly-fix/urp-verify-only-current-cee-rerun/process-summary.json",
+        "helperSourceSha256": "A47722AEBF1E87042B9C85A9684595E5B13A721DE471A4B88CC345C984441979",
+        "editorPid": 95704,
+        "excludedPreviousAttempt": {
+          "evidencePath": ".local/windows-quilt-orientation-20261011/latest-integration-64803f6/sample-refresh-current-CEE/urp-verify-only-current-cee/process-summary.json",
+          "editorPid": 95044,
+          "classification": "Excluded from final no-Client.Add proof",
+          "reason": "A compile/domain-reload cycle was observed with the pre-fix helper; the resume path could reach Client.Add and invocation was not established. The accepted result is a fresh-baseline rerun with the corrected VerifyOnly resume gate."
+        }
+      },
+      "hdrp": {
+        "operation": "VerifyOnly",
+        "packageSource": "Local file:E:/LookingGlassSDK/Distribution/hdrp",
+        "unityVersion": "6000.6.4f1",
+        "graphicsApi": "Direct3D 12 level 12.2",
+        "naturalExit": true,
+        "editorExitCode": 0,
+        "passMarkerObserved": true,
+        "sourceFilesCompared": 255,
+        "mismatches": 0,
+        "loadedNativeSha256Matched": true,
+        "nativeModuleCount": 1,
+        "pendingCount": 0,
+        "initialization": "not requested; not observed",
+        "assetsProjectSettingsAddedChangedMissing": 0,
+        "evidencePath": ".local/windows-quilt-orientation-20261011/latest-integration-64803f6/sample-refresh-current-CEE/hdrp-verify-only-current-cee/process-summary.json",
+        "editorPid": 90480,
+        "helperSourceSha256": "5D444E7FC9A40A57660EA4E336437075EF38E393165523BCB33D68FACA80D197",
+        "excludedPreviousAttempt": null
+      },
+      "notEstablished": [
+        "Official Bridge SDK initialization or session lifecycle in either sample",
+        "Sample rendering or device output",
+        "Windows Player behavior",
+        "Physical optical output or image quality"
+      ]
+    }
   },
   "d3d12HardwareValidation": "Limited Windows Editor evidence is recorded separately under currentWindowsRuntimeValidation; it is not a general hardware, Player, optical-quality, or TAA-pixel guarantee.",
-  "dllSha256": "C864A363AC441C77497D4302FF25CB48FA2D6EA194B6FB8A73BAE49DC522FEE2",
+  "dllSha256": "CEE089B1779752DAB4FFABDFFC44B879A0E4D09414C9A85F7590C8D9A9DDCF4D",
   "freshRuntimeEvidence": [
     {
       "case": "case01-observer-ep-fix1",
@@ -265,7 +406,7 @@
     "unityPluginApi": "C:/Program Files/Unity/Hub/Editor/6000.6.4f1/Editor/Data/PluginAPI",
     "warnings": "MSVC C4297 is emitted by the intentional test exception seam; pinned Unity headers also emit C4819 under the local code page."
   },
-  "generatedAt": "2026-10-11T03:28:02Z",
+  "generatedAt": "2026-10-11T09:41:36+00:00",
   "generator": "Visual Studio 17 2022",
   "historical655FDB898CF7B9F9WindowsReleaseBuild": {
     "artifactSha256": "655FDB898CF7B9F9733A1880828B740B62FB74E0C3ECDF9D825C07794F6388CD",
@@ -654,7 +795,7 @@
     "scope": "Native/tests/metadata_test.cpp was expanded after the packaged DLL was built (and after the recorded CTest run) to add synthetic multi-display metadata coverage. This is test-only source and is not linked into lookingglass_bridge_shim.dll. No claim is made that the recorded CTest run includes this later edit.",
     "verifiedAt": "2026-10-11T01:56:03+09:00"
   },
-  "independentCTest": "Current Windows Native Release CTest passed 19/19. The presenter WARP executable includes 25 pixel-oracle cases and 6 calibration boundary checks (not additional CTest entries). The current Windows Editor runtime record separately covers 12 device conditions; see currentWindowsRuntimeValidation.",
+  "independentCTest": "The latest Windows Native Release CTest passed 19/19 with zero skips. The metadata failure regressions run inside lookingglass_metadata_test. This artifact has no Unity Editor runtime validation yet.",
   "license": "Apache-2.0",
   "licenseScope": "Apache-2.0 applies to original ViewWeave code only; external Unity PluginAPI declarations and the separately installed Bridge runtime have separate terms.",
   "macOSCIBuildArtifact": {
@@ -718,12 +859,12 @@
     "workflowRunUrl": "https://github.com/zabaglione/ViewWeave/actions/runs/37705337066"
   },
   "nativeSourceHashes": {
-    "Native/CMakeLists.txt": "3BCDEB35718E326B186AC3463CFA1E538785B788162ED2E5EAD2157AB034DCBF",
+    "Native/CMakeLists.txt": "4B594BA5E153A99D2297E94425A5C54C8425D1A329C06160242D719078169F05",
     "Native/bridge_d3d12_internal.h": "6B06A4792E547BDAE65EE91908CB565ED5FA1B89AD5C6E7A6EE627D6933FE154",
     "Native/bridge_shim.h": "86C0AE009031C6894A0FEDC18AE38C80AE8D2A920A0D2FA10F60A046E474013D",
     "Native/bridge_worker_common.h": "48ACE99B1F5C90842FB2E6B5AE6021AD835891486BC65C3969C2427F5DB96FD4",
     "Native/bridge_worker_transport.h": "7B3466730CBFE4FDFC623C8A5BB9C20814B14CF9E77C06812F006CB68F57219A",
-    "Native/common/bridge_metadata.cpp": "3D0DCDB30963128E79EA7909EECE671CFF1F56D83E9AA04FF23BA5D11E200A7C",
+    "Native/common/bridge_metadata.cpp": "62B52E5D4F22EBA557F92490482FB3409AEFCD5F234501D5F04BC0BBE86B95CF",
     "Native/common/bridge_metadata.h": "A0FBFCFFDE6E5C876B07EEA941ECE9669FA1049A40440EB84C928F5106C90487",
     "Native/common/bridge_worker_common.cpp": "D57B45EA0B65FA2B3BD953853529E5005A629321D035C090C1C3D6C620C9E39B",
     "Native/common/subpixel_calibration.cpp": "41F9E19864A80CD3ADC7833DA634736C810A71BF015FDA24E9F18C726DA1FF88",
@@ -743,10 +884,10 @@
     "Native/platform/windows/stable_sdk_input_d3d11.hlsl": "03A54DB6F092BA48547014B8C15202313850B3CC0D24E5261CDF741F1CBE2DD0",
     "Native/platform/windows/stdio_load_guard.cpp": "1F380F85E84BD2B999F3D95B04863B7DD2AAF140B77232613CD35BE01EF672E2",
     "Native/platform/windows/stdio_load_guard.h": "E6FF25620FB02836979D846A7D0A9A9B281539FDCC30A223DD5917A48C442C9D",
-    "Native/stable_sdk_input_d3d11.cmake": "038658297643D42ED6FB68FDAC24C083FB069609C6C7E066BE5E10ADF5C98A03",
+    "Native/stable_sdk_input_d3d11.cmake": "FA48F3ACAB5B8731AAA1424FA36734AEFE99D08BCE319F3EED8A76EC55F85AB1",
     "Packages/com.zabaglione.lookingglass.viewweave.bridge/Runtime/Common/Resources/ViewWeaveSubpixelSampling.hlsl": "5A0E0B8EA9BEF1E5E44DBE836FDB7B4EC56F0B63015BEB6D7B7E2EFFFF0FC0FD"
   },
-  "nativeSourceHashesNote": "Exact Native source hashes for the current Windows Release artifact were captured at build time and are stored in currentWindowsReleaseBuild.nativeSourceHashes and .local/windows-subpixel-native-20261011/validation/build-manifest.json.",
+  "nativeSourceHashesNote": "Exact production source hashes for the current Windows Release artifact are in currentWindowsReleaseBuild.nativeSourceHashes and .local/windows-quilt-orientation-20261011/latest-integration-64803f6/native-build/build-manifest.json; the metadata_test.cpp test-only fingerprint is stored separately.",
   "olderCurrentWindowsReleaseBuild": {
     "build": {
       "artifactSha256": "4E5E1FF81C7C1C227D45E5D38E23FB84F1AAB8A8444EF327D639E1AEB619532B",
@@ -1222,9 +1363,9 @@
     "classification": "Separate private comparison candidate with diagnostic build instrumentation; its hardware observations do not validate the official F1B06893 artifact.",
     "sourceProvenance": ".local/current-sample-state/2026-10-09/shared-output-lease/parity-20261010/static-present/source/provenance.json"
   },
-  "sha256": "C864A363AC441C77497D4302FF25CB48FA2D6EA194B6FB8A73BAE49DC522FEE2",
-  "sourceBaseCommit": "e777b34763b25e1673e5dc0188c812cda69cbcc0",
-  "sourceState": "Windows x64 Release shim built from the shared working tree at source base e777b34763b25e1673e5dc0188c812cda69cbcc0. The exact as-built Native source snapshot is recorded in nativeSourceHashes and .local/windows-subpixel-native-20261011/validation/build-manifest.json. Windows Editor device runtime validation for all 12 declared subpixel mode, pipeline, and graphics API conditions passed against this artifact; Windows Player and optical quality remain unvalidated.",
+  "sha256": "CEE089B1779752DAB4FFABDFFC44B879A0E4D09414C9A85F7590C8D9A9DDCF4D",
+  "sourceBaseCommit": "bb5f5ac405f01124334f2c800b6ca3dda9aa47fe",
+  "sourceState": "Windows x64 Release shim rebuilt from repository HEAD bb5f5ac405f01124334f2c800b6ca3dda9aa47fe; this commit includes the upstream Native/common/bridge_metadata.cpp error-path change. Exact production-source fingerprints are recorded in currentWindowsReleaseBuild.nativeSourceHashes and the local build manifest. The only working-tree source edit at build time was Native/tests/metadata_test.cpp test coverage; it is test-only and is not linked into the production DLL.",
   "targetArchitecture": "x64",
   "unityD3D12InterfaceSelection": "Unity 6000.6.4f1 PluginAPI was used. The exact D3D12 interface declaration selection for this build was not separately retained.",
   "unityPluginApiProvenance": {
@@ -1238,7 +1379,7 @@
     "thirdPartyNotice": "../NOTICE.md",
     "verificationLimit": "Individual build header hashes and file-specific notices were not retained. No equivalence to the pinned public NativeRenderingPlugin headers is asserted."
   },
-  "validationLimits": "Historical root-level 15/15 Native and 11/11 transport-only counts belong to earlier checkpoints and remain in historicalLegacyTopLevelFields and detailed history. Current Windows Release CTest is 19/19; WARP presenter coverage is separately 25 pixel-oracle cases and 6 calibration boundaries. Current runtime evidence covers 12 Windows Editor device conditions under the current artifact. No Windows Player, other-device optical, or TAA pixel/accumulation guarantee is implied.",
+  "validationLimits": "The current Windows Release artifact passed 19/19 Native Release CTests with zero skips. Fake Bridge/WARP coverage is not an official Bridge session. Unity Editor runtime, Windows Player, physical device output, and optical quality for this artifact are pending.",
   "historicalLegacyTopLevelFields": {
     "buildDirectory": ".local/windows-unity-crash-20261011/fix-validation/build-vs2022-x64-release",
     "sha256": "4D28B54BC09FFCF0BC2E6F9E645E9A04C6EF59210C79BB784872655DA1837F7A",
@@ -1249,5 +1390,141 @@
     "artifactBuildCMakeListsSha256": null,
     "independentCTest": "Native Release CTest passed 15/15; transport-only CTest passed 11/11. Test evidence is limited to fake Bridge/test-adapter coverage.",
     "validationLimits": "Native Release CTest passed 15/15 and transport-only CTest passed 11/11 using the recorded local build. These tests use test adapters/fake Bridge runtimes; physical output evidence is recorded separately under currentWindowsRuntimeValidation. No Player, other-device optical, or TAA pixel/accumulation guarantee is implied."
+  },
+  "previousCurrentWindowsReleaseBuildBeforeBridgeMetadata64803f6": {
+    "artifactSha256": "C864A363AC441C77497D4302FF25CB48FA2D6EA194B6FB8A73BAE49DC522FEE2",
+    "artifactSizeBytes": 302080,
+    "buildCommand": "cmake --build .local/windows-subpixel-native-20261011/build --config Release --parallel 8",
+    "buildDirectory": ".local/windows-subpixel-native-20261011/build",
+    "compiler": "MSVC via Visual Studio 17 2022 Build Tools",
+    "compilerVersion": null,
+    "compilerVersionNote": "Exact cl.exe version was not retained; MSBuild 17.14.23+b0019275e is recorded.",
+    "configuration": "Release",
+    "dllSha256": "C864A363AC441C77497D4302FF25CB48FA2D6EA194B6FB8A73BAE49DC522FEE2",
+    "generatedAt": "2026-10-11T03:28:02Z",
+    "generatedEmbeddedShaderHeaderSha256": {
+      ".local/windows-subpixel-native-20261011/build/lookingglass_bridge_shim_manual_subpixel_shaders/manual_subpixel_presenter_pixel_shader.h": "4101973B56B9624791803222BB9898522FAC4ABA8C5DF0D0C9FFC033FE3404A4",
+      ".local/windows-subpixel-native-20261011/build/lookingglass_bridge_shim_manual_subpixel_shaders/manual_subpixel_presenter_vertex_shader.h": "A150E8E54D911F14DF53A0C3D1A46F82E74550FC980CBFC9E6C1A5AF9A7B7F22",
+      ".local/windows-subpixel-native-20261011/build/lookingglass_bridge_shim_stable_sdk_input_shaders/stable_sdk_input_d3d11_pixel_shader.h": "A452E8EE98B3ABE9DACE4A73778BBBF7EF4EDE0FA76ECA23453753D365994035",
+      ".local/windows-subpixel-native-20261011/build/lookingglass_bridge_shim_stable_sdk_input_shaders/stable_sdk_input_d3d11_vertex_shader.h": "C59BEBE17EF89273BC3441875D8B26828CD3EA61D7581F7A0619E93CF76C6E93"
+    },
+    "generator": "Visual Studio 17 2022",
+    "localCTest": {
+      "d3d12HardwareSkipMessages": 0,
+      "elapsedSeconds": 17.42,
+      "evidencePath": ".local/windows-subpixel-native-20261011/build/Testing/Temporary/LastTest.log",
+      "failed": 0,
+      "note": "All 19 registered Release CTests passed. The worker transport executable completed without a D3D12 adapter skip message. Presenter pixel-oracle WARP coverage is a separate executable result, not additional CTest entries.",
+      "passed": 19,
+      "presenterCalibrationBoundaryChecks": 6,
+      "presenterGpuOracleCases": 25,
+      "presenterGpuOracleEvidencePath": ".local/windows-subpixel-native-20261011/artifacts/presenter-warp-20261011",
+      "total": 19
+    },
+    "msbuildVersion": "17.14.23+b0019275e",
+    "nativeSourceHashes": {
+      "Native/CMakeLists.txt": "3BCDEB35718E326B186AC3463CFA1E538785B788162ED2E5EAD2157AB034DCBF",
+      "Native/bridge_d3d12_internal.h": "6B06A4792E547BDAE65EE91908CB565ED5FA1B89AD5C6E7A6EE627D6933FE154",
+      "Native/bridge_shim.h": "86C0AE009031C6894A0FEDC18AE38C80AE8D2A920A0D2FA10F60A046E474013D",
+      "Native/bridge_worker_common.h": "48ACE99B1F5C90842FB2E6B5AE6021AD835891486BC65C3969C2427F5DB96FD4",
+      "Native/bridge_worker_transport.h": "7B3466730CBFE4FDFC623C8A5BB9C20814B14CF9E77C06812F006CB68F57219A",
+      "Native/common/bridge_metadata.cpp": "3D0DCDB30963128E79EA7909EECE671CFF1F56D83E9AA04FF23BA5D11E200A7C",
+      "Native/common/bridge_metadata.h": "A0FBFCFFDE6E5C876B07EEA941ECE9669FA1049A40440EB84C928F5106C90487",
+      "Native/common/bridge_worker_common.cpp": "D57B45EA0B65FA2B3BD953853529E5005A629321D035C090C1C3D6C620C9E39B",
+      "Native/common/subpixel_calibration.cpp": "41F9E19864A80CD3ADC7833DA634736C810A71BF015FDA24E9F18C726DA1FF88",
+      "Native/common/subpixel_calibration.h": "4FCCE2FC065D3D7EACA0A860AFF0222B3913C89F370B34F128E55A12D4ED8092",
+      "Native/platform/windows/backends/d3d11_backend.inc": "95044FE8598F080631E306C70785513A44333B93F9CD3D2A317CA9100ED1208C",
+      "Native/platform/windows/backends/d3d11_d3d12_interop.inc": "FDF55A669CE099FA48B95683678ABE7F51592AA1B9E55BF097B90482F7398B28",
+      "Native/platform/windows/backends/d3d12_backend.inc": "60A158CFE6184299DC8046730B62CF93B89F3C2E424731F2C1BD06F5369F7747",
+      "Native/platform/windows/bridge_shim_windows.cpp": "B64D83423E0B286F82B7B47E3EB8D4D2009FDF6B4548DDDF7DDC68B921DCB472",
+      "Native/platform/windows/bridge_subpixel_metadata.cpp": "0CD09CA48EBF4D184D36458E49B0526E299D86993CD2B74D873002517AF102C2",
+      "Native/platform/windows/bridge_subpixel_metadata.h": "F18F6E1F094F30BCB05029D7E351FFF3D041E3F6562A64C1984597CA23CDBD7F",
+      "Native/platform/windows/bridge_worker_transport_windows.cpp": "B7280A1F0A1E27E94AB7EDE6FD8BCDA7BC0E30A99ABC5A2FC7AFEC2C6A615DFE",
+      "Native/platform/windows/manual_subpixel_presenter.cpp": "471F15765850CF2BA87CA31F8EA38A57057EB7B840913D919A745690DC67CC8D",
+      "Native/platform/windows/manual_subpixel_presenter.h": "40C45995FD9E05FAE48E463C886E9CD80051329D731472277678EE6CD3BDDB91",
+      "Native/platform/windows/manual_subpixel_presenter.hlsl": "DF58E339163CD361AE45F639EB75BA522D6E785700C96E695A901BBA015B310B",
+      "Native/platform/windows/stable_sdk_input_d3d11.cpp": "FF1BDCCEFC961168DAD81A9CC18CF8C68232C22CE33CFAC575F0901A2C7BB92F",
+      "Native/platform/windows/stable_sdk_input_d3d11.h": "77EEB054980ED87C70B99CADF909172BB6443942CA72579EC303D79EB17BFCD3",
+      "Native/platform/windows/stable_sdk_input_d3d11.hlsl": "03A54DB6F092BA48547014B8C15202313850B3CC0D24E5261CDF741F1CBE2DD0",
+      "Native/platform/windows/stdio_load_guard.cpp": "1F380F85E84BD2B999F3D95B04863B7DD2AAF140B77232613CD35BE01EF672E2",
+      "Native/platform/windows/stdio_load_guard.h": "E6FF25620FB02836979D846A7D0A9A9B281539FDCC30A223DD5917A48C442C9D",
+      "Native/stable_sdk_input_d3d11.cmake": "038658297643D42ED6FB68FDAC24C083FB069609C6C7E066BE5E10ADF5C98A03",
+      "Packages/com.zabaglione.lookingglass.viewweave.bridge/Runtime/Common/Resources/ViewWeaveSubpixelSampling.hlsl": "5A0E0B8EA9BEF1E5E44DBE836FDB7B4EC56F0B63015BEB6D7B7E2EFFFF0FC0FD"
+    },
+    "packagePath": "Packages/com.zabaglione.lookingglass.viewweave.bridge/Plugins/x86_64/lookingglass_bridge_shim.dll",
+    "sharedSubpixelHlslSha256": "5A0E0B8EA9BEF1E5E44DBE836FDB7B4EC56F0B63015BEB6D7B7E2EFFFF0FC0FD",
+    "sourceBaseCommit": "e777b34763b25e1673e5dc0188c812cda69cbcc0",
+    "sourceState": "Windows x64 Release shim built from the shared working tree at source base e777b34763b25e1673e5dc0188c812cda69cbcc0. The exact as-built Native source snapshot is recorded in nativeSourceHashes and .local/windows-subpixel-native-20261011/validation/build-manifest.json. Windows Editor device runtime validation for all 12 declared subpixel mode, pipeline, and graphics API conditions passed against this artifact; Windows Player and optical quality remain unvalidated.",
+    "targetArchitecture": "x64",
+    "unityPluginApi": "6000.6.4f1",
+    "unityPluginApiPath": "C:/Program Files/Unity/Hub/Editor/6000.6.4f1/Editor/Data/PluginAPI",
+    "validationLimits": "Windows Editor evidence is limited to the 12 recorded device fixture conditions and the connected RTX 3090 Ti / Bridge 2.6.3 setup. No Windows Player or human optical-quality review was performed. macOS execution and other display models remain unverified."
+  },
+  "previousCurrentArtifactValidationBeforeBridgeMetadata64803f6": {
+    "artifactSha256": "C864A363AC441C77497D4302FF25CB48FA2D6EA194B6FB8A73BAE49DC522FEE2",
+    "artifactSizeBytes": 302080,
+    "buildDirectory": ".local/windows-subpixel-native-20261011/build",
+    "hardwareValidation": "The Native presenter executable passed 25 WARP pixel-oracle cases and 6 calibration boundaries; that WARP run did not use a physical display or official Bridge runtime. Separately, 12 Windows Editor device fixture conditions passed under the current package artifact; see currentWindowsRuntimeValidation.",
+    "nativeTestsPassed": 19,
+    "nativeTestsTotal": 19,
+    "sourceBaseCommit": "e777b34763b25e1673e5dc0188c812cda69cbcc0",
+    "testEvidencePath": ".local/windows-subpixel-native-20261011/build/Testing/Temporary/LastTest.log",
+    "transportOnlyTestsPassed": null,
+    "transportOnlyTestsTotal": null,
+    "unityEditorDeviceConditionsPassed": 12,
+    "unityEditorDeviceConditionsTotal": 12,
+    "unityEditorEvidencePath": ".local/windows-subpixel-validation-20261011/final-summary.json"
+  },
+  "historicalC864WindowsRuntimeValidationBeforeBridgeMetadata64803f6": {
+    "artifactSha256": "C864A363AC441C77497D4302FF25CB48FA2D6EA194B6FB8A73BAE49DC522FEE2",
+    "notValidated": [
+      "Windows Player output using this new artifact",
+      "Optical quality across views and display models",
+      "macOS open_v4 source, shared shader, and runtime"
+    ],
+    "status": "PASS: 12/12 Windows Editor device conditions (URP/HDRP x D3D11/D3D12 x Automatic/ClassicRgb/CalibratedCells), zero skips, with strict PID, loaded package DLL identity, Native cleanup, natural Editor exit, zero crash events, and settings restoration.",
+    "testedRevision": "e777b34763b25e1673e5dc0188c812cda69cbcc0",
+    "testedWorkingTree": "Working tree based on source e777b34763b25e1673e5dc0188c812cda69cbcc0 plus uncommitted Native source, shared shader, Windows/common Managed, and Unity fixture changes. All 12 Windows Editor conditions passed. This is not a Windows Player or optical-quality validation.",
+    "evidenceRecordPath": ".local/windows-subpixel-validation-20261011/final-summary.json",
+    "editorDeviceConditionsPassed": 12,
+    "editorDeviceConditionsTotal": 12
+  },
+  "previousTopLevelArtifactIdentityBeforeBridgeMetadata64803f6": {
+    "artifactSha256": "C864A363AC441C77497D4302FF25CB48FA2D6EA194B6FB8A73BAE49DC522FEE2",
+    "artifactSizeBytes": 302080,
+    "sha256": "C864A363AC441C77497D4302FF25CB48FA2D6EA194B6FB8A73BAE49DC522FEE2",
+    "dllSha256": "C864A363AC441C77497D4302FF25CB48FA2D6EA194B6FB8A73BAE49DC522FEE2",
+    "sourceBaseCommit": "e777b34763b25e1673e5dc0188c812cda69cbcc0",
+    "sourceState": "Windows x64 Release shim built from the shared working tree at source base e777b34763b25e1673e5dc0188c812cda69cbcc0. The exact as-built Native source snapshot is recorded in nativeSourceHashes and .local/windows-subpixel-native-20261011/validation/build-manifest.json. Windows Editor device runtime validation for all 12 declared subpixel mode, pipeline, and graphics API conditions passed against this artifact; Windows Player and optical quality remain unvalidated.",
+    "buildDirectory": ".local/windows-subpixel-native-20261011/build",
+    "nativeSourceHashes": {
+      "Native/CMakeLists.txt": "3BCDEB35718E326B186AC3463CFA1E538785B788162ED2E5EAD2157AB034DCBF",
+      "Native/bridge_d3d12_internal.h": "6B06A4792E547BDAE65EE91908CB565ED5FA1B89AD5C6E7A6EE627D6933FE154",
+      "Native/bridge_shim.h": "86C0AE009031C6894A0FEDC18AE38C80AE8D2A920A0D2FA10F60A046E474013D",
+      "Native/bridge_worker_common.h": "48ACE99B1F5C90842FB2E6B5AE6021AD835891486BC65C3969C2427F5DB96FD4",
+      "Native/bridge_worker_transport.h": "7B3466730CBFE4FDFC623C8A5BB9C20814B14CF9E77C06812F006CB68F57219A",
+      "Native/common/bridge_metadata.cpp": "3D0DCDB30963128E79EA7909EECE671CFF1F56D83E9AA04FF23BA5D11E200A7C",
+      "Native/common/bridge_metadata.h": "A0FBFCFFDE6E5C876B07EEA941ECE9669FA1049A40440EB84C928F5106C90487",
+      "Native/common/bridge_worker_common.cpp": "D57B45EA0B65FA2B3BD953853529E5005A629321D035C090C1C3D6C620C9E39B",
+      "Native/common/subpixel_calibration.cpp": "41F9E19864A80CD3ADC7833DA634736C810A71BF015FDA24E9F18C726DA1FF88",
+      "Native/common/subpixel_calibration.h": "4FCCE2FC065D3D7EACA0A860AFF0222B3913C89F370B34F128E55A12D4ED8092",
+      "Native/platform/windows/backends/d3d11_backend.inc": "95044FE8598F080631E306C70785513A44333B93F9CD3D2A317CA9100ED1208C",
+      "Native/platform/windows/backends/d3d11_d3d12_interop.inc": "FDF55A669CE099FA48B95683678ABE7F51592AA1B9E55BF097B90482F7398B28",
+      "Native/platform/windows/backends/d3d12_backend.inc": "60A158CFE6184299DC8046730B62CF93B89F3C2E424731F2C1BD06F5369F7747",
+      "Native/platform/windows/bridge_shim_windows.cpp": "B64D83423E0B286F82B7B47E3EB8D4D2009FDF6B4548DDDF7DDC68B921DCB472",
+      "Native/platform/windows/bridge_subpixel_metadata.cpp": "0CD09CA48EBF4D184D36458E49B0526E299D86993CD2B74D873002517AF102C2",
+      "Native/platform/windows/bridge_subpixel_metadata.h": "F18F6E1F094F30BCB05029D7E351FFF3D041E3F6562A64C1984597CA23CDBD7F",
+      "Native/platform/windows/bridge_worker_transport_windows.cpp": "B7280A1F0A1E27E94AB7EDE6FD8BCDA7BC0E30A99ABC5A2FC7AFEC2C6A615DFE",
+      "Native/platform/windows/manual_subpixel_presenter.cpp": "471F15765850CF2BA87CA31F8EA38A57057EB7B840913D919A745690DC67CC8D",
+      "Native/platform/windows/manual_subpixel_presenter.h": "40C45995FD9E05FAE48E463C886E9CD80051329D731472277678EE6CD3BDDB91",
+      "Native/platform/windows/manual_subpixel_presenter.hlsl": "DF58E339163CD361AE45F639EB75BA522D6E785700C96E695A901BBA015B310B",
+      "Native/platform/windows/stable_sdk_input_d3d11.cpp": "FF1BDCCEFC961168DAD81A9CC18CF8C68232C22CE33CFAC575F0901A2C7BB92F",
+      "Native/platform/windows/stable_sdk_input_d3d11.h": "77EEB054980ED87C70B99CADF909172BB6443942CA72579EC303D79EB17BFCD3",
+      "Native/platform/windows/stable_sdk_input_d3d11.hlsl": "03A54DB6F092BA48547014B8C15202313850B3CC0D24E5261CDF741F1CBE2DD0",
+      "Native/platform/windows/stdio_load_guard.cpp": "1F380F85E84BD2B999F3D95B04863B7DD2AAF140B77232613CD35BE01EF672E2",
+      "Native/platform/windows/stdio_load_guard.h": "E6FF25620FB02836979D846A7D0A9A9B281539FDCC30A223DD5917A48C442C9D",
+      "Native/stable_sdk_input_d3d11.cmake": "038658297643D42ED6FB68FDAC24C083FB069609C6C7E066BE5E10ADF5C98A03",
+      "Packages/com.zabaglione.lookingglass.viewweave.bridge/Runtime/Common/Resources/ViewWeaveSubpixelSampling.hlsl": "5A0E0B8EA9BEF1E5E44DBE836FDB7B4EC56F0B63015BEB6D7B7E2EFFFF0FC0FD"
+    }
   }
 }
