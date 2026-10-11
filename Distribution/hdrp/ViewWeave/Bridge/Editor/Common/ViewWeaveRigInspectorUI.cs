@@ -80,6 +80,8 @@ namespace ViewWeave.Editor
         bool updatingFramingControls;
         bool disposed;
         string framingStatusOverride = string.Empty;
+        string referenceCameraAssignmentError = string.Empty;
+        Camera referenceCameraAtAssignmentError;
 
         public ViewWeaveRigInspectorUI(VisualElement root, Func<ViewWeaveRig> rigProvider,
             Func<UnityEngine.Object> focusTargetProvider, Action<UnityEngine.Object> setFocusTarget)
@@ -93,6 +95,7 @@ namespace ViewWeave.Editor
         public void Rebuild()
         {
             if (disposed) return;
+            ClearReferenceCameraAssignmentError();
             CancelPendingCalibrationCopy();
             structuralMutationFields.Clear();
             transportMutationFields.Clear();
@@ -186,7 +189,7 @@ namespace ViewWeave.Editor
                 allowSceneObjects = true,
                 value = renderer == null ? null : renderer.referenceCamera
             };
-            referenceCameraField.RegisterValueChangedCallback(evt => TryAssignReferenceCamera(evt.newValue as Camera));
+            referenceCameraField.RegisterValueChangedCallback(evt => OnReferenceCameraSelectionChanged(evt.newValue));
             foldout.Add(referenceCameraField);
             referenceCameraWarning = new HelpBox(string.Empty, HelpBoxMessageType.Warning) { name = "referenceCameraWarning" };
             referenceCameraWarning.style.whiteSpace = WhiteSpace.Normal;
@@ -833,16 +836,13 @@ namespace ViewWeave.Editor
             {
                 referenceCameraField?.SetValueWithoutNotify(renderer.referenceCamera);
                 SetPhysicalStatus("Reference Camera was not changed: " + mutationError);
+                SetReferenceCameraAssignmentError("Reference Camera was not changed: " + mutationError);
                 return false;
             }
             if (!TryValidateReferenceCamera(candidate, out string reason))
             {
                 if (referenceCameraField != null) referenceCameraField.SetValueWithoutNotify(renderer == null ? null : renderer.referenceCamera);
-                if (referenceCameraWarning != null)
-                {
-                    referenceCameraWarning.text = "Reference Camera was not changed: " + reason;
-                    referenceCameraWarning.style.display = DisplayStyle.Flex;
-                }
+                SetReferenceCameraAssignmentError("Reference Camera was not changed: " + reason);
                 return false;
             }
 
@@ -855,10 +855,56 @@ namespace ViewWeave.Editor
                 rendererObject?.Update();
                 RequestPreviewRefresh();
             }
+            ClearReferenceCameraAssignmentError();
             if (referenceCameraField != null) referenceCameraField.SetValueWithoutNotify(candidate);
             RebuildFieldOfView();
             RefreshReferenceCameraState();
             return true;
+        }
+
+        void OnReferenceCameraSelectionChanged(UnityEngine.Object selection)
+        {
+            if (selection == null)
+            {
+                TryAssignReferenceCamera(null);
+                return;
+            }
+
+            Camera candidate = selection as Camera;
+            if (candidate == null && selection is GameObject gameObject)
+                candidate = gameObject.GetComponent<Camera>();
+
+            if (candidate == null)
+            {
+                if (referenceCameraField != null)
+                    referenceCameraField.SetValueWithoutNotify(renderer == null ? null : renderer.referenceCamera);
+                SetReferenceCameraAssignmentError("Reference Camera was not changed: Choose a Camera or GameObject with a Camera component on the same GameObject.");
+                return;
+            }
+
+            TryAssignReferenceCamera(candidate);
+        }
+
+        void SetReferenceCameraAssignmentError(string message)
+        {
+            referenceCameraAssignmentError = message ?? string.Empty;
+            referenceCameraAtAssignmentError = renderer == null ? null : renderer.referenceCamera;
+            if (referenceCameraWarning != null)
+            {
+                referenceCameraWarning.text = referenceCameraAssignmentError;
+                referenceCameraWarning.style.display = string.IsNullOrEmpty(referenceCameraAssignmentError) ? DisplayStyle.None : DisplayStyle.Flex;
+            }
+        }
+
+        void ClearReferenceCameraAssignmentError()
+        {
+            referenceCameraAssignmentError = string.Empty;
+            referenceCameraAtAssignmentError = null;
+            if (referenceCameraWarning != null)
+            {
+                referenceCameraWarning.text = string.Empty;
+                referenceCameraWarning.style.display = DisplayStyle.None;
+            }
         }
 
         bool TryValidateReferenceCamera(Camera candidate, out string reason)
@@ -882,6 +928,8 @@ namespace ViewWeave.Editor
         void RefreshReferenceCameraState()
         {
             if (renderer == null) return;
+            if (!string.IsNullOrEmpty(referenceCameraAssignmentError) && renderer.referenceCamera != referenceCameraAtAssignmentError)
+                ClearReferenceCameraAssignmentError();
             if (referenceCameraField != null && referenceCameraField.value != renderer.referenceCamera)
                 referenceCameraField.SetValueWithoutNotify(renderer.referenceCamera);
             bool editable = TryValidateReferenceCamera(renderer.referenceCamera, out string reason);
@@ -889,8 +937,16 @@ namespace ViewWeave.Editor
                 followReferenceFieldOfViewField.SetEnabled(editable && CanAuthor() && renderer.TryCheckMutation(QuiltRendererMutationKind.Structural, out _));
             if (referenceCameraWarning != null)
             {
-                referenceCameraWarning.text = editable ? string.Empty : "Reference Camera is unavailable: " + reason + " Choose a Camera in the loaded Main Stage or the same Prefab Stage.";
-                referenceCameraWarning.style.display = editable ? DisplayStyle.None : DisplayStyle.Flex;
+                if (!string.IsNullOrEmpty(referenceCameraAssignmentError))
+                {
+                    referenceCameraWarning.text = referenceCameraAssignmentError;
+                    referenceCameraWarning.style.display = DisplayStyle.Flex;
+                }
+                else
+                {
+                    referenceCameraWarning.text = editable ? string.Empty : "Reference Camera is unavailable: " + reason + " Choose a Camera in the loaded Main Stage or the same Prefab Stage.";
+                    referenceCameraWarning.style.display = editable ? DisplayStyle.None : DisplayStyle.Flex;
+                }
             }
             if (editable != referenceCameraWasEditable)
             {

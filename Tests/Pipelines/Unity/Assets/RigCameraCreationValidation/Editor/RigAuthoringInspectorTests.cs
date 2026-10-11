@@ -799,6 +799,8 @@ namespace ViewWeave.RigCameraCreationValidation
             Scene previewScene = EditorSceneManager.NewPreviewScene();
             GameObject cameraObject = new GameObject("Foreign Reference Camera");
             UnityEditor.Editor editor = null;
+            InspectorTestHostWindow host = null;
+            VisualElement root = null;
             try
             {
                 ViewWeaveRig rig = rigObject.AddComponent<ViewWeaveRig>();
@@ -806,8 +808,22 @@ namespace ViewWeave.RigCameraCreationValidation
                 Camera foreignCamera = cameraObject.AddComponent<Camera>();
                 SceneManager.MoveGameObjectToScene(cameraObject, previewScene);
                 editor = UnityEditor.Editor.CreateEditor(rig, typeof(ViewWeaveRigInspector));
-                VisualElement root = editor.CreateInspectorGUI();
+                root = editor.CreateInspectorGUI();
+                host = EditorWindow.CreateWindow<InspectorTestHostWindow>();
+                host.Show();
+                host.rootVisualElement.Add(root);
+                ObjectField field = root.Q<ObjectField>("referenceCamera");
                 object view = GetField<object>(editor, "view");
+
+                SendObjectFieldChange(field, null, foreignCamera);
+                Assert.That(renderer.referenceCamera, Is.Null,
+                    "the selection resolver must still reject a Camera from another Preview Stage");
+                Assert.That(root.Q<HelpBox>("referenceCameraWarning").text, Does.Contain("Isolated Preview Scenes are not supported"));
+                Invoke(view, "Refresh", false);
+                Assert.That(renderer.referenceCamera, Is.Null,
+                    "a rejected selection must not replace the existing reference after an inspector refresh");
+                Assert.That(root.Q<HelpBox>("referenceCameraWarning").text, Does.Contain("Isolated Preview Scenes are not supported"),
+                    "refresh must preserve the reason for the rejected selection");
 
                 Assert.That(Invoke(view, "TryAssignReferenceCamera", foreignCamera), Is.EqualTo(false));
                 Assert.That(renderer.referenceCamera, Is.Null, "an unsafe reference must not be assigned from the authoring UI");
@@ -821,11 +837,240 @@ namespace ViewWeave.RigCameraCreationValidation
             }
             finally
             {
+                if (host != null)
+                {
+                    if (root != null) host.rootVisualElement.Remove(root);
+                    host.Close();
+                }
                 if (editor != null) Object.DestroyImmediate(editor);
                 if (cameraObject != null) Object.DestroyImmediate(cameraObject);
                 if (rigObject != null) Object.DestroyImmediate(rigObject);
                 if (previewScene.IsValid() && previewScene.isLoaded) EditorSceneManager.ClosePreviewScene(previewScene);
             }
+        }
+
+        [Test]
+        public void ReferenceCameraObjectFieldResolvesUntaggedGameObjectAndSupportsUndoRedo()
+        {
+            GameObject rigObject = new GameObject("Reference Camera Resolver Rig");
+            GameObject previousCameraObject = new GameObject("Previous Reference Camera");
+            GameObject referenceObject = new GameObject("Untagged Reference Camera");
+            GameObject directCameraObject = new GameObject("Direct Reference Camera");
+            UnityEditor.Editor editor = null;
+            InspectorTestHostWindow host = null;
+            VisualElement root = null;
+            try
+            {
+                ViewWeaveRig rig = rigObject.AddComponent<ViewWeaveRig>();
+                QuiltRenderer renderer = rigObject.GetComponent<QuiltRenderer>();
+                Camera previousCamera = previousCameraObject.AddComponent<Camera>();
+                Camera referenceCamera = referenceObject.AddComponent<Camera>();
+                Camera directCamera = directCameraObject.AddComponent<Camera>();
+                referenceObject.tag = "Untagged";
+                renderer.referenceCamera = previousCamera;
+                editor = UnityEditor.Editor.CreateEditor(rig, typeof(ViewWeaveRigInspector));
+                root = editor.CreateInspectorGUI();
+                host = EditorWindow.CreateWindow<InspectorTestHostWindow>();
+                host.Show();
+                host.rootVisualElement.Add(root);
+                ObjectField field = root.Q<ObjectField>("referenceCamera");
+
+                Assert.That(field, Is.Not.Null);
+                Assert.That(field.objectType, Is.EqualTo(typeof(Camera)), "the picker should remain restricted to Camera objects");
+                Assert.That(field.allowSceneObjects, Is.True);
+
+                Undo.IncrementCurrentGroup();
+                Undo.SetCurrentGroupName("Resolve Reference Camera GameObject");
+                field.value = referenceObject;
+                Undo.FlushUndoRecordObjects();
+                Assert.That(renderer.referenceCamera, Is.SameAs(referenceCamera),
+                    "a tagless GameObject selection must resolve only its same-GameObject Camera component");
+                Assert.That(field.value, Is.SameAs(referenceCamera));
+
+                Undo.PerformUndo();
+                field = root.Q<ObjectField>("referenceCamera");
+                Assert.That(field, Is.Not.Null, "Undo should rebuild the current Reference Camera field");
+                Assert.That(renderer.referenceCamera, Is.SameAs(previousCamera));
+                Assert.That(field.value, Is.SameAs(previousCamera));
+
+                Undo.PerformRedo();
+                field = root.Q<ObjectField>("referenceCamera");
+                Assert.That(field, Is.Not.Null, "Redo should rebuild the current Reference Camera field");
+                Assert.That(renderer.referenceCamera, Is.SameAs(referenceCamera));
+                Assert.That(field.value, Is.SameAs(referenceCamera));
+
+                field.value = directCamera;
+                Assert.That(renderer.referenceCamera, Is.SameAs(directCamera), "a Camera object should pass through unchanged");
+                Assert.That(field.value, Is.SameAs(directCamera));
+            }
+            finally
+            {
+                if (host != null)
+                {
+                    if (root != null) host.rootVisualElement.Remove(root);
+                    host.Close();
+                }
+                if (editor != null) Object.DestroyImmediate(editor);
+                Object.DestroyImmediate(rigObject);
+                Object.DestroyImmediate(previousCameraObject);
+                Object.DestroyImmediate(referenceObject);
+                Object.DestroyImmediate(directCameraObject);
+            }
+        }
+
+        [Test]
+        public void UnresolvableReferenceCameraSelectionsKeepPreviousValueUntilValidOrCleared()
+        {
+            GameObject rigObject = new GameObject("Reference Camera Invalid Selection Rig");
+            GameObject previousObject = new GameObject("Previous Reference Camera");
+            GameObject noCameraObject = new GameObject("No Camera Selection");
+            GameObject childOnlyObject = new GameObject("Child Camera Selection");
+            GameObject childCameraObject = new GameObject("Child Camera Only");
+            GameObject nextObject = new GameObject("Next Reference Camera");
+            UnityEditor.Editor editor = null;
+            InspectorTestHostWindow host = null;
+            VisualElement root = null;
+            try
+            {
+                ViewWeaveRig rig = rigObject.AddComponent<ViewWeaveRig>();
+                QuiltRenderer renderer = rigObject.GetComponent<QuiltRenderer>();
+                Camera previousCamera = previousObject.AddComponent<Camera>();
+                Camera nextCamera = nextObject.AddComponent<Camera>();
+                childCameraObject.transform.SetParent(childOnlyObject.transform);
+                childCameraObject.AddComponent<Camera>();
+                renderer.referenceCamera = previousCamera;
+                editor = UnityEditor.Editor.CreateEditor(rig, typeof(ViewWeaveRigInspector));
+                root = editor.CreateInspectorGUI();
+                host = EditorWindow.CreateWindow<InspectorTestHostWindow>();
+                host.Show();
+                host.rootVisualElement.Add(root);
+                ObjectField field = root.Q<ObjectField>("referenceCamera");
+                object view = GetField<object>(editor, "view");
+                HelpBox warning = root.Q<HelpBox>("referenceCameraWarning");
+
+                SendObjectFieldChange(field, previousCamera, noCameraObject);
+                Assert.That(renderer.referenceCamera, Is.SameAs(previousCamera));
+                Assert.That(field.value, Is.SameAs(previousCamera));
+                Assert.That(warning.text, Does.Contain("Camera component on the same GameObject"));
+                Invoke(view, "Refresh", false);
+                Assert.That(renderer.referenceCamera, Is.SameAs(previousCamera));
+                Assert.That(warning.text, Does.Contain("Camera component on the same GameObject"),
+                    "the assignment warning must remain visible across editor refreshes");
+
+                SendObjectFieldChange(field, previousCamera, childOnlyObject);
+                Assert.That(renderer.referenceCamera, Is.SameAs(previousCamera),
+                    "a Camera on a child GameObject must not resolve the selected parent");
+                Assert.That(field.value, Is.SameAs(previousCamera));
+                Assert.That(warning.text, Does.Contain("Camera component on the same GameObject"));
+
+                field.value = nextCamera;
+                Assert.That(renderer.referenceCamera, Is.SameAs(nextCamera));
+                Assert.That(warning.text, Is.Empty, "a valid assignment must clear the previous warning");
+
+                SendObjectFieldChange(field, nextCamera, noCameraObject);
+                Assert.That(renderer.referenceCamera, Is.SameAs(nextCamera));
+                field.value = null;
+                Assert.That(renderer.referenceCamera, Is.Null, "explicit null must clear the reference camera");
+                Assert.That(field.value, Is.Null);
+                Assert.That(warning.text, Is.Empty, "explicit clearing must clear the previous warning");
+            }
+            finally
+            {
+                if (host != null)
+                {
+                    if (root != null) host.rootVisualElement.Remove(root);
+                    host.Close();
+                }
+                if (editor != null) Object.DestroyImmediate(editor);
+                Object.DestroyImmediate(rigObject);
+                Object.DestroyImmediate(previousObject);
+                Object.DestroyImmediate(noCameraObject);
+                Object.DestroyImmediate(childOnlyObject);
+                Object.DestroyImmediate(childCameraObject);
+                Object.DestroyImmediate(nextObject);
+            }
+        }
+
+        [Test]
+        public void ReferenceCameraObjectFieldPreservesMutationOwnerAndRigCameraRestrictions()
+        {
+            GameObject rigObject = new GameObject("Reference Camera Owner Restriction Rig");
+            GameObject previousObject = new GameObject("Previous Reference Camera");
+            GameObject candidateObject = new GameObject("Candidate Reference Camera");
+            GameObject sourceChildObject = new GameObject("Rig Source Child Camera");
+            UnityEditor.Editor editor = null;
+            InspectorTestHostWindow host = null;
+            VisualElement root = null;
+            Object retentionRecord = null;
+            try
+            {
+                ViewWeaveRig rig = rigObject.AddComponent<ViewWeaveRig>();
+                QuiltRenderer renderer = rigObject.GetComponent<QuiltRenderer>();
+                Camera previousCamera = previousObject.AddComponent<Camera>();
+                Camera candidateCamera = candidateObject.AddComponent<Camera>();
+                Camera childCamera = sourceChildObject.AddComponent<Camera>();
+                sourceChildObject.transform.SetParent(renderer.sourceCamera.transform);
+                renderer.referenceCamera = previousCamera;
+                editor = UnityEditor.Editor.CreateEditor(rig, typeof(ViewWeaveRigInspector));
+                root = editor.CreateInspectorGUI();
+                host = EditorWindow.CreateWindow<InspectorTestHostWindow>();
+                host.Show();
+                host.rootVisualElement.Add(root);
+                ObjectField field = root.Q<ObjectField>("referenceCamera");
+                HelpBox warning = root.Q<HelpBox>("referenceCameraWarning");
+
+                SendObjectFieldChange(field, previousCamera, renderer.sourceCamera);
+                Assert.That(renderer.referenceCamera, Is.SameAs(previousCamera), "the Rig source Camera cannot be its own reference");
+                Assert.That(warning.text, Does.Contain("separate from the Rig source Camera"));
+
+                SendObjectFieldChange(field, previousCamera, childCamera);
+                Assert.That(renderer.referenceCamera, Is.SameAs(previousCamera), "a descendant of the Rig source Camera cannot be its reference");
+                Assert.That(warning.text, Does.Contain("separate from the Rig source Camera"));
+
+                Type retentionType = typeof(BridgeWorkerQuiltOutput).Assembly.GetType(
+                    "ViewWeave.BridgeEditorPreviewRetentionRecord", true);
+                MethodInfo create = retentionType.GetMethod("Create", BindingFlags.Static | BindingFlags.NonPublic);
+                Assert.That(create, Is.Not.Null);
+                retentionRecord = (Object)create.Invoke(null, new object[] { rigObject, renderer });
+                Assert.That(retentionRecord, Is.Not.Null);
+                MethodInfo beginRetention = typeof(QuiltRenderer).GetMethod("BeginEditorPreviewRetention", InstancePrivate);
+                Assert.That(beginRetention, Is.Not.Null);
+                Assert.That(beginRetention.Invoke(renderer, new[] { retentionRecord }), Is.EqualTo(true));
+
+                SendObjectFieldChange(field, previousCamera, candidateCamera);
+                Assert.That(renderer.referenceCamera, Is.SameAs(previousCamera), "an owned renderer must reject camera changes");
+                Assert.That(field.value, Is.SameAs(previousCamera));
+                Assert.That(warning.text, Does.Contain("Reference Camera was not changed"));
+            }
+            finally
+            {
+                if (retentionRecord != null)
+                {
+                    Object.DestroyImmediate(retentionRecord);
+                }
+                if (host != null)
+                {
+                    if (root != null) host.rootVisualElement.Remove(root);
+                    host.Close();
+                }
+                if (editor != null) Object.DestroyImmediate(editor);
+                Object.DestroyImmediate(rigObject);
+                Object.DestroyImmediate(previousObject);
+                Object.DestroyImmediate(candidateObject);
+                Object.DestroyImmediate(sourceChildObject);
+            }
+        }
+
+        static void SendObjectFieldChange(ObjectField field, Object oldValue, Object newValue)
+        {
+            Assert.That(field, Is.Not.Null);
+            ChangeEvent<Object> change = ChangeEvent<Object>.GetPooled(oldValue, newValue);
+            try
+            {
+                change.target = field;
+                field.SendEvent(change);
+            }
+            finally { change.Dispose(); }
         }
 
         static T GetField<T>(object target, string name)
