@@ -1,9 +1,8 @@
-# Attach the stable D3D11 input implementation and compile its shaders with
-# the Windows SDK FXC compiler. Shader bytecode is embedded in generated
-# headers; the runtime DLL has no D3DCompile dependency.
-function(lkg_add_stable_sdk_input TARGET_NAME)
+# Discover FXC consistently, including when a shader-only test target is the
+# first caller and Visual Studio has not populated the Windows SDK environment.
+function(lkg_find_fxc)
   if (NOT WIN32)
-    message(FATAL_ERROR "The stable D3D11 SDK input is available only on Windows")
+    message(FATAL_ERROR "The Windows SDK FXC compiler is available only on Windows")
   endif()
 
   if (LKG_FXC_EXECUTABLE AND NOT EXISTS "${LKG_FXC_EXECUTABLE}")
@@ -51,6 +50,13 @@ function(lkg_add_stable_sdk_input TARGET_NAME)
     message(FATAL_ERROR
       "FXC was not found. Install a Windows SDK containing fxc.exe, set LKG_FXC_EXECUTABLE explicitly, or set WindowsSdkDir.")
   endif()
+endfunction()
+
+# Attach the stable D3D11 input implementation and compile its shaders with
+# the Windows SDK FXC compiler. Shader bytecode is embedded in generated
+# headers; the runtime DLL has no D3DCompile dependency.
+function(lkg_add_stable_sdk_input TARGET_NAME)
+  lkg_find_fxc()
 
   set(shader_source "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/platform/windows/stable_sdk_input_d3d11.hlsl")
   set(shader_output_dir "${CMAKE_CURRENT_BINARY_DIR}/${TARGET_NAME}_stable_sdk_input_shaders")
@@ -98,27 +104,7 @@ function(lkg_add_stable_sdk_input_test TARGET_NAME)
 endfunction()
 
 function(lkg_add_manual_subpixel_presenter_shaders TARGET_NAME)
-  if (NOT WIN32)
-    message(FATAL_ERROR "The manual D3D11 presenter is available only on Windows")
-  endif()
-
-  if (NOT LKG_FXC_EXECUTABLE)
-    set(_lkg_fxc_hints)
-    if (CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION AND DEFINED ENV{WindowsSdkDir})
-      list(APPEND _lkg_fxc_hints
-        "$ENV{WindowsSdkDir}/bin/${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION}/x64"
-        "$ENV{WindowsSdkDir}/bin/${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION}/x86")
-    endif()
-    if (DEFINED ENV{WindowsSdkDir} AND DEFINED ENV{WindowsSDKVersion})
-      list(APPEND _lkg_fxc_hints
-        "$ENV{WindowsSdkDir}/bin/$ENV{WindowsSDKVersion}/x64"
-        "$ENV{WindowsSdkDir}/bin/$ENV{WindowsSDKVersion}/x86")
-    endif()
-    find_program(LKG_FXC_EXECUTABLE NAMES fxc.exe fxc HINTS ${_lkg_fxc_hints})
-  endif()
-  if (NOT LKG_FXC_EXECUTABLE)
-    message(FATAL_ERROR "FXC was not found for the manual subpixel presenter")
-  endif()
+  lkg_find_fxc()
 
   set(shader_source "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/platform/windows/manual_subpixel_presenter.hlsl")
   set(shared_shader "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/../Packages/com.zabaglione.lookingglass.viewweave.bridge/Runtime/Common/Resources/ViewWeaveSubpixelSampling.hlsl")
