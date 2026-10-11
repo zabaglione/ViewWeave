@@ -37,6 +37,8 @@ namespace ViewWeave.SamplePlayerValidation.Editor
         {
             var output = Argument("-buildOutput");
             if (string.IsNullOrEmpty(output)) throw new InvalidOperationException("-buildOutput is required");
+            var graphicsApi = ParseGraphicsApi(Argument("-buildGraphicsApi") ?? "d3d11");
+            bool development = ParseDevelopment(Argument("-buildDevelopment") ?? "true");
             var oldGraphics = GraphicsSettings.defaultRenderPipeline;
             var oldQuality = QualitySettings.renderPipeline;
             var oldColor = PlayerSettings.colorSpace;
@@ -74,13 +76,13 @@ namespace ViewWeave.SamplePlayerValidation.Editor
                 PlayerSettings.graphicsJobs = false;
                 PlayerSettings.runInBackground = true;
                 PlayerSettings.SetUseDefaultGraphicsAPIs(BuildTarget.StandaloneWindows64, false);
-                PlayerSettings.SetGraphicsAPIs(BuildTarget.StandaloneWindows64, new[] { GraphicsDeviceType.Direct3D11 });
+                PlayerSettings.SetGraphicsAPIs(BuildTarget.StandaloneWindows64, new[] { graphicsApi });
                 var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
                 {
                     scenes = new[] { ScenePath },
                     locationPathName = Path.GetFullPath(output),
                     target = BuildTarget.StandaloneWindows64,
-                    options = BuildOptions.Development
+                    options = development ? BuildOptions.Development : BuildOptions.None
                 });
                 if (report.summary.result != BuildResult.Succeeded) throw new InvalidOperationException("Sample Player build failed: " + report.summary.result);
             }
@@ -176,8 +178,33 @@ namespace ViewWeave.SamplePlayerValidation.Editor
         static string Argument(string key)
         {
             var args = Environment.GetCommandLineArgs();
-            for (int i = 0; i + 1 < args.Length; ++i) if (args[i] == key) return args[i + 1];
+            string prefix = key + "=";
+            for (int i = 0; i < args.Length; ++i)
+            {
+                if (args[i].StartsWith(prefix, StringComparison.Ordinal)) return args[i].Substring(prefix.Length);
+                if (args[i] != key) continue;
+                if (i + 1 >= args.Length || args[i + 1].StartsWith("-", StringComparison.Ordinal))
+                    throw new ArgumentException(key + " requires a value");
+                return args[i + 1];
+            }
             return null;
+        }
+
+        static GraphicsDeviceType ParseGraphicsApi(string value)
+        {
+            switch (value.ToLowerInvariant())
+            {
+                case "d3d11": return GraphicsDeviceType.Direct3D11;
+                case "d3d12": return GraphicsDeviceType.Direct3D12;
+                default: throw new ArgumentException("-buildGraphicsApi must be d3d11 or d3d12");
+            }
+        }
+
+        static bool ParseDevelopment(string value)
+        {
+            if (string.Equals(value, "true", StringComparison.OrdinalIgnoreCase)) return true;
+            if (string.Equals(value, "false", StringComparison.OrdinalIgnoreCase)) return false;
+            throw new ArgumentException("-buildDevelopment must be true or false");
         }
     }
 }

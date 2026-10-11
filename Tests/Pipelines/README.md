@@ -25,7 +25,8 @@ The main PlayMode test classes are:
 | `VfxGraphicsCompatibilityTests` | URP/HDRP VFX compatibility matrix |
 | `HdrpVfxPrimingValidationTests` | Diagnostics for HDRP same-camera priming |
 | `HdrpTransientVolumePreparationTests` | HDRP isolated histories, shared GPU exposure, resource limits, and lifecycle |
-| `UrpTaaPlatformTests` | URP Quilt TAA on Metal, including four-view history accumulation, separate per-view targets, and view-history lifecycle cases |
+| `UrpTaaPlatformTests` | URP Quilt TAA on Metal and supported Windows D3D11/D3D12 Editor configurations, including per-view history and lifecycle cases |
+| `WindowsHdrpEffectPixelTests` | Explicit Windows-only HDRP effect pixel characterization for D3D11/D3D12; diagnostic suite, not a default full-suite gate |
 
 To run the same PlayMode suite from the CLI, use this command from the repository root:
 
@@ -34,6 +35,16 @@ unity test "$PWD/Tests/Pipelines/Unity" --editor-version 6000.6.4f1 --mode PlayM
 ```
 
 A result XML with a test count of 0 is not a successful run. For the result breakdown, known VFX failures, and D3D12 coverage boundaries, see [docs/windows-validation.md](../../docs/windows-validation.md).
+
+### Windows HDRP effect characterization
+
+The Windows-only HDRP fixture is marked NUnit `Explicit`; the ordinary full suite does not execute it. Run this diagnostic fixture explicitly on the Unity Editor with Direct3D 11 or Direct3D 12. Its cases are `ViewWeave.GraphicsCompatibility.WindowsHdrpEffectPixelTests.FxaaChangesDiagonalEdgePixels`, `ViewWeave.GraphicsCompatibility.WindowsHdrpEffectPixelTests.SmaaChangesDiagonalEdgePixels`, `ViewWeave.GraphicsCompatibility.WindowsHdrpEffectPixelTests.TaaAdvancesIndependentViewHistoriesAndChangesPixels`, `ViewWeave.GraphicsCompatibility.WindowsHdrpEffectPixelTests.MotionBlurChangesMovingObjectPixels`, `ViewWeave.GraphicsCompatibility.WindowsHdrpEffectPixelTests.SsrChangesScreenSpaceReflectionPixels`, `ViewWeave.GraphicsCompatibility.WindowsHdrpEffectPixelTests.SsgiChangesIndirectReceiverPixels`, `ViewWeave.GraphicsCompatibility.WindowsHdrpEffectPixelTests.VolumetricFogChangesScatteringPixels`, and `ViewWeave.GraphicsCompatibility.WindowsHdrpEffectPixelTests.VolumetricCloudsChangeSkyPixels`. Run one API per Editor invocation, for example:
+
+```powershell
+unity test "$PWD/Tests/Pipelines/Unity" --editor-version 6000.6.4f1 --mode PlayMode --filter ViewWeave.GraphicsCompatibility.WindowsHdrpEffectPixelTests --output "$PWD/.local/hdrp-effects/results.xml" --timeout 1200 -- -force-d3d12
+```
+
+To run a single case, use its fully qualified test name as the filter, for example `--filter ViewWeave.GraphicsCompatibility.WindowsHdrpEffectPixelTests.FxaaChangesDiagonalEdgePixels`. This is an effect-characterization fixture, not a general HDRP guarantee. Explicit tests reported as skipped or not run are not passes; current results include failed effect pixel gates and must be read from the [dated Windows feature record](../../docs/windows-current-feature-validation-20261011.md). Do not interpret a fixture failure as product incompatibility or report the full fixture as passing.
 
 ## Player Validation Using Generated Scenes
 
@@ -58,7 +69,7 @@ To create a generated scene and build a Player, pass the Editor method arguments
 unity run "$PWD/Tests/Pipelines/Unity" --editor-version 6000.6.4f1 -- -executeMethod ViewWeave.SamplePlayerValidation.Editor.SamplePlayerValidationBuilder.BuildUrp -buildOutput "$PWD/.local/player/SampleUrp.exe"
 ```
 
-This method temporarily creates `Assets/SamplePlayerValidationGenerated/SamplePlayerValidation.unity`, sets Direct3D11, Linear, and Run In Background, and builds the Player. The built Player requires the Bridge runtime to start.
+The builder accepts `-buildGraphicsApi d3d11` or `-buildGraphicsApi d3d12`, and `-buildDevelopment true` or `-buildDevelopment false`; omitted values default to D3D11 Development. For example, add `-buildGraphicsApi d3d12 -buildDevelopment false` to build a D3D12 Release sample. Unknown values fail the build method. The builder temporarily creates `Assets/SamplePlayerValidationGenerated/SamplePlayerValidation.unity`, sets the requested graphics API, Linear color space, and Run In Background, then restores its settings. The built Player requires the Bridge runtime to start. Current Windows Player evidence and its narrow scope are in the [dated feature record](../../docs/windows-current-feature-validation-20261011.md).
 
 ## macOS Metal History, Exposure, and URP TAA Validation
 

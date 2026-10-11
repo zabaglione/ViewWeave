@@ -25,7 +25,8 @@ Build Settingsには固定sceneを登録していません。PlayModeテスト�
 | `VfxGraphicsCompatibilityTests` | URP/HDRP VFX compatibility matrix |
 | `HdrpVfxPrimingValidationTests` | HDRP same-camera primingの診断 |
 | `HdrpTransientVolumePreparationTests` | HDRPの視点別履歴、共通GPU露出、リソース制限、停止時の解放 |
-| `UrpTaaPlatformTests` | Metal上のURP Quilt TAA。4視点のhistory蓄積、view別target、view historyのlifecycleなどを確認 |
+| `UrpTaaPlatformTests` | Metalおよび対応Windows D3D11/D3D12 Editor上のURP Quilt TAA。view別historyとlifecycleを確認 |
+| `WindowsHdrpEffectPixelTests` | 明示実行するWindows D3D11/D3D12専用HDRP effect画素characterization。既定full suiteのgateではなく診断用 |
 
 CLIで同じPlayMode suiteを実行する場合は、repository rootから次を使います。
 
@@ -34,6 +35,16 @@ unity test "$PWD/Tests/Pipelines/Unity" --editor-version 6000.6.4f1 --mode PlayM
 ```
 
 結果XMLのtest countが0の場合は成功扱いにしません。結果の内訳、既知のVFX未通過条件、D3D12の対象範囲は[docs/windows-validation.md](../../docs/windows-validation.md)を参照してください。
+
+### Windows HDRP effect characterization
+
+Windows専用HDRP fixtureにはNUnit `Explicit`を付けているため、通常のfull suiteでは実行されません。Unity EditorのDirect3D 11またはDirect3D 12で明示実行する診断fixtureです。caseは`ViewWeave.GraphicsCompatibility.WindowsHdrpEffectPixelTests.FxaaChangesDiagonalEdgePixels`、`ViewWeave.GraphicsCompatibility.WindowsHdrpEffectPixelTests.SmaaChangesDiagonalEdgePixels`、`ViewWeave.GraphicsCompatibility.WindowsHdrpEffectPixelTests.TaaAdvancesIndependentViewHistoriesAndChangesPixels`、`ViewWeave.GraphicsCompatibility.WindowsHdrpEffectPixelTests.MotionBlurChangesMovingObjectPixels`、`ViewWeave.GraphicsCompatibility.WindowsHdrpEffectPixelTests.SsrChangesScreenSpaceReflectionPixels`、`ViewWeave.GraphicsCompatibility.WindowsHdrpEffectPixelTests.SsgiChangesIndirectReceiverPixels`、`ViewWeave.GraphicsCompatibility.WindowsHdrpEffectPixelTests.VolumetricFogChangesScatteringPixels`、`ViewWeave.GraphicsCompatibility.WindowsHdrpEffectPixelTests.VolumetricCloudsChangeSkyPixels`です。APIごとにEditor invocationを分け、例として次を実行します。
+
+```powershell
+unity test "$PWD/Tests/Pipelines/Unity" --editor-version 6000.6.4f1 --mode PlayMode --filter ViewWeave.GraphicsCompatibility.WindowsHdrpEffectPixelTests --output "$PWD/.local/hdrp-effects/results.xml" --timeout 1200 -- -force-d3d12
+```
+
+個別caseは完全修飾名をfilterに指定します。例: `--filter ViewWeave.GraphicsCompatibility.WindowsHdrpEffectPixelTests.FxaaChangesDiagonalEdgePixels`。これはeffect characterisation用fixtureであり、HDRP一般の保証ではありません。Explicit testのskipや未実行はPASSではありません。現在の結果にはeffect画素gateの失敗が含まれるため、[Windows日付付きfeature record](../../docs/windows-current-feature-validation-20261011.md)でrunごとの結果と境界を確認してください。fixture失敗を製品非対応の証明にしたり、全case成功と報告したりしません。
 
 ## generated sceneを使うPlayer validation
 
@@ -55,10 +66,10 @@ Bridge demoの視点番号検証は`ViewWeave.BridgeWorkerValidation.Editor.Brid
 generated sceneを作ってPlayerをBuildする場合は、Unity CLIからEditor methodへ引数を渡します。例えばURP sample Playerは次のように実行します。
 
 ```powershell
-unity run "$PWD/Tests/Pipelines/Unity" --editor-version 6000.6.4f1 -- -executeMethod ViewWeave.SamplePlayerValidation.Editor.SamplePlayerValidationBuilder.BuildUrp -buildOutput "$PWD/.local/player/SampleUrp.exe"
+unity run "$PWD/Tests/Pipelines/Unity" --editor-version 6000.6.4f1 -- -executeMethod ViewWeave.SamplePlayerValidation.Editor.SamplePlayerValidationBuilder.BuildUrp -buildOutput "$PWD/.local/player/SampleUrp.exe" -buildGraphicsApi d3d11 -buildDevelopment true
 ```
 
-このmethodは`Assets/SamplePlayerValidationGenerated/SamplePlayerValidation.unity`を一時作成し、Direct3D11、Linear、Run In Backgroundを設定してPlayerをBuildします。Build後のPlayer起動にはBridge runtimeが必要です。
+builderは`-buildGraphicsApi d3d11` / `d3d12`と`-buildDevelopment true` / `false`を受け付けます。省略時はD3D11 Developmentです。例えばD3D12 Releaseでは`-buildGraphicsApi d3d12 -buildDevelopment false`を渡します。不明な値はbuild methodが失敗します。builderは`Assets/SamplePlayerValidationGenerated/SamplePlayerValidation.unity`を一時作成し、指定API、Linear、Run In BackgroundでPlayerをBuildした後に設定を復元します。Build後のPlayer起動にはBridge runtimeが必要です。現在のWindows Player結果と限定範囲は[日付付きfeature record](../../docs/windows-current-feature-validation-20261011.md)を参照してください。
 
 ## macOS Metalの履歴・露出・URP TAA試験
 

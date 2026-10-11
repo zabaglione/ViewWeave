@@ -20,7 +20,7 @@ namespace ViewWeave.GraphicsCompatibility
         [UnityTest]
         public IEnumerator QuiltTaaHasIndependentAccumulatingHistoriesAndChangedPixels()
         {
-            RequireMetalEditor();
+            RequireSupportedDesktopEditor();
             Fixture fixture = null;
             Texture2D temporal = null, control = null;
             try
@@ -88,7 +88,7 @@ namespace ViewWeave.GraphicsCompatibility
         [UnityTest]
         public IEnumerator QuiltHistoryPoolPrunesResizesRestartsAndRejectsInvalidTaa()
         {
-            RequireMetalEditor(); Fixture fixture = null;
+            RequireSupportedDesktopEditor(); Fixture fixture = null;
             try
             {
                 fixture = new Fixture(); fixture.Setup(); yield return null; yield return null;
@@ -116,7 +116,35 @@ namespace ViewWeave.GraphicsCompatibility
                 Assert.IsFalse(fixture.SettingsData.renderPostProcessing, "The SDK silently rewrote authored settings");
                 fixture.SettingsData.renderPostProcessing = true;
                 fixture.Quilt.sourceCamera.allowDynamicResolution = true;
-                Assert.Throws<System.NotSupportedException>(() => fixture.Quilt.RenderQuilt());
+                Debug.Log("DynamicResolutionReject requested=true effective=" +
+                    fixture.Quilt.sourceCamera.allowDynamicResolution.ToString().ToLowerInvariant() +
+                    " graphicsApi=" + SystemInfo.graphicsDeviceType +
+                    " sourceAA=" + fixture.CameraData.antialiasing +
+                    " referenceAA=" + fixture.SettingsData.antialiasing);
+                if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.Direct3D11 &&
+                    !fixture.Quilt.sourceCamera.allowDynamicResolution)
+                {
+                    Assert.AreEqual(GraphicsDeviceType.Direct3D11, SystemInfo.graphicsDeviceType);
+                    Assert.AreEqual(AntialiasingMode.TemporalAntiAliasing, fixture.CameraData.antialiasing);
+                    Assert.AreEqual(AntialiasingMode.TemporalAntiAliasing, fixture.SettingsData.antialiasing);
+                    long revisionBeforeUnsupportedDynamicResolution = fixture.Quilt.QuiltRevision;
+                    fixture.Quilt.RenderQuilt();
+                    Assert.Greater(fixture.Quilt.QuiltRevision, revisionBeforeUnsupportedDynamicResolution,
+                        "The D3D11 quilt should render when Unity does not enable dynamic resolution.");
+                    Assert.AreEqual(2, fixture.Guard.HistoryCameraCount,
+                        "The D3D11 fallback should retain both isolated TAA view histories.");
+                    Assert.AreEqual(AntialiasingMode.TemporalAntiAliasing, fixture.CameraData.antialiasing);
+                    Assert.AreEqual(AntialiasingMode.TemporalAntiAliasing, fixture.SettingsData.antialiasing);
+                    Debug.Log("DynamicResolutionReject unsupported=true graphicsApi=Direct3D11 requested=true effective=false " +
+                        "result=rendered historyCameraCount=" + fixture.Guard.HistoryCameraCount +
+                        " quiltRevision=" + fixture.Quilt.QuiltRevision);
+                }
+                else
+                {
+                    Assert.IsTrue(fixture.Quilt.sourceCamera.allowDynamicResolution,
+                        "Unity must enable dynamic resolution before the unsupported-feature rejection assertion.");
+                    Assert.Throws<System.NotSupportedException>(() => fixture.Quilt.RenderQuilt());
+                }
                 fixture.Quilt.sourceCamera.allowDynamicResolution = false;
                 fixture.StopObservations();
                 fixture.Guard.renderingMode = UrpQuiltRenderingMode.SharedCameraCompatibility;
@@ -135,7 +163,7 @@ namespace ViewWeave.GraphicsCompatibility
         [UnityTest]
         public IEnumerator QuiltCopiesScriptedVolumesWithoutSharingOrRewritingReferenceState()
         {
-            RequireMetalEditor(); Fixture fixture = null; VolumeStack authored = null;
+            RequireSupportedDesktopEditor(); Fixture fixture = null; VolumeStack authored = null;
             try
             {
                 fixture = new Fixture(); fixture.Setup(); yield return null; yield return null;
@@ -201,7 +229,7 @@ namespace ViewWeave.GraphicsCompatibility
         [UnityTest]
         public IEnumerator QuiltMsaaFollowsEffectiveRendererAndSourcePermission()
         {
-            RequireMetalEditor();
+            RequireSupportedDesktopEditor();
             foreach (bool sourceDeferred in new[] { true, false })
             {
                 Fixture fixture = null;
@@ -255,7 +283,7 @@ namespace ViewWeave.GraphicsCompatibility
         [UnityTest]
         public IEnumerator ScriptedPipelineSettingReleasesPrivateStacksAcrossRestarts()
         {
-            RequireMetalEditor(); Fixture fixture = null; VolumeStack authored = null;
+            RequireSupportedDesktopEditor(); Fixture fixture = null; VolumeStack authored = null;
             try
             {
                 fixture = new Fixture(); fixture.Setup(); yield return null; yield return null;
@@ -293,9 +321,9 @@ namespace ViewWeave.GraphicsCompatibility
         }
 
         [UnityTest]
-        public IEnumerator DisabledCameraRenderAdvancesTemporalHistoryOnMetal()
+        public IEnumerator DisabledCameraRenderAdvancesTemporalHistoryOnSupportedDesktopApis()
         {
-            RequireMetalEditor();
+            RequireSupportedDesktopEditor();
             Fixture fixture = null;
             Texture2D temporal = null, control = null;
             try
@@ -335,9 +363,9 @@ namespace ViewWeave.GraphicsCompatibility
         }
 
         [UnityTest]
-        public IEnumerator TemporalAntiAliasingUsesProjectionJitterAndChangesMetalPixels()
+        public IEnumerator TemporalAntiAliasingUsesProjectionJitterAndChangesPixelsOnSupportedDesktopApis()
         {
-            RequireMetalEditor();
+            RequireSupportedDesktopEditor();
             Fixture fixture = null;
             Texture2D temporalImage = null;
             Texture2D controlImage = null;
@@ -377,7 +405,7 @@ namespace ViewWeave.GraphicsCompatibility
         [UnityTest]
         public IEnumerator QuiltGuardTemporarilyDisablesAndRestoresTemporalAntiAliasing()
         {
-            RequireMetalEditor();
+            RequireSupportedDesktopEditor();
             Fixture fixture = null;
             try
             {
@@ -402,12 +430,15 @@ namespace ViewWeave.GraphicsCompatibility
             }
         }
 
-        static void RequireMetalEditor()
+        static void RequireSupportedDesktopEditor()
         {
-            if (Application.platform != RuntimePlatform.OSXEditor)
-                Assert.Ignore("This platform test requires the macOS Unity Editor.");
-            if (SystemInfo.graphicsDeviceType != GraphicsDeviceType.Metal)
-                Assert.Ignore("This platform test requires the Metal graphics device.");
+            bool macMetal = Application.platform == RuntimePlatform.OSXEditor &&
+                SystemInfo.graphicsDeviceType == GraphicsDeviceType.Metal;
+            bool windowsD3D = Application.platform == RuntimePlatform.WindowsEditor &&
+                (SystemInfo.graphicsDeviceType == GraphicsDeviceType.Direct3D11 ||
+                 SystemInfo.graphicsDeviceType == GraphicsDeviceType.Direct3D12);
+            if (!macMetal && !windowsD3D)
+                Assert.Ignore("This test requires macOS Metal or Windows Direct3D 11/12 in the Unity Editor.");
         }
 
         static void AssertLitContent(Texture2D image, string label)

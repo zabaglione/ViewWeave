@@ -4,6 +4,7 @@ using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEditor.UIElements;
@@ -1858,6 +1859,17 @@ namespace ViewWeave.BridgeEditorPreviewValidation
         [UnityTest]
         public IEnumerator DevicePreviewStopsBeforePlayAndRuntimeSessionRendersWhenExplicitlyEnabled()
         {
+            return RunDevicePreviewStopsBeforePlayAndRuntimeSessionRendersWhenExplicitlyEnabled(false);
+        }
+
+        [UnityTest]
+        public IEnumerator HdrpDevicePreviewStopsBeforePlayAndRuntimeSessionRendersWhenExplicitlyEnabled()
+        {
+            return RunDevicePreviewStopsBeforePlayAndRuntimeSessionRendersWhenExplicitlyEnabled(true);
+        }
+
+        static IEnumerator RunDevicePreviewStopsBeforePlayAndRuntimeSessionRendersWhenExplicitlyEnabled(bool hdrp)
+        {
             if (Environment.GetEnvironmentVariable("VIEWWEAVE_EDITOR_PREVIEW_DEVICE_TEST") != "1")
                 Assert.Ignore("Set VIEWWEAVE_EDITOR_PREVIEW_DEVICE_TEST=1 only for the owned isolated project with Bridge and a connected display.");
             if (SessionState.GetBool(DevicePlayTransitionStatePrefix + "captured", false) ||
@@ -1877,7 +1889,7 @@ namespace ViewWeave.BridgeEditorPreviewValidation
             bool previewAttempted = false;
             bool crossedPlayMode = false;
             SessionState.SetBool(DevicePlayTransitionExitingEditModeObservedKey, false);
-            var fixture = new Fixture(false);
+            var fixture = new Fixture(hdrp);
             BridgeWorkerQuiltOutput sourceOutput = null;
             ViewWeaveBridgeSession session = null;
             Action<BridgeDisplaySnapshot> onSnapshot = null;
@@ -1885,6 +1897,22 @@ namespace ViewWeave.BridgeEditorPreviewValidation
             {
                 string pipelineAssetDirectory = CreateOwnedDeviceTransitionAssetFolder();
                 fixture.Setup(pipelineAssetDirectory);
+                RenderPipelineAsset activePipeline = GraphicsSettings.currentRenderPipeline;
+                string activePipelineType = activePipeline == null ? "null" : activePipeline.GetType().FullName;
+                Debug.Log("EDITOR_PREVIEW_DEVICE requestedPipeline=" + (hdrp ? "HDRP" : "URP") +
+                    ", activePipelineType=" + activePipelineType);
+                if (hdrp)
+                    Assert.IsInstanceOf<HDRenderPipelineAsset>(activePipeline,
+                        "The active pipeline must be HDRP for the HDRP device-transition fixture.");
+                else
+                    Assert.IsInstanceOf<UniversalRenderPipelineAsset>(activePipeline,
+                        "The active pipeline must be URP for the URP device-transition fixture.");
+                string expectedPipelinePath = Path.Combine(pipelineAssetDirectory, "Pipeline.asset").Replace('\\', '/');
+                string actualPipelinePath = AssetDatabase.GetAssetPath(activePipeline);
+                Assert.AreEqual(expectedPipelinePath, actualPipelinePath,
+                    "The selected render pipeline must be the persistent asset owned by this device-transition fixture.");
+                SessionState.SetString(DevicePlayTransitionStatePrefix + "fixturePipelinePath", actualPipelinePath);
+                SessionState.SetString(DevicePlayTransitionStatePrefix + "fixturePipelineType", activePipelineType);
                 CaptureDeviceTransitionPipelineSettings(
                     fixture.PreviousDefaultPipeline,
                     fixture.PreviousQualityPipeline,
@@ -1983,6 +2011,25 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                 EditorApplication.playModeStateChanged -= CaptureDeviceTransitionExitingEditMode;
                 crossedPlayMode = true;
                 Assert.IsTrue(Application.isPlaying, "Unity must enter Play mode for the device transition check.");
+                RenderPipelineAsset playPipeline = GraphicsSettings.currentRenderPipeline;
+                Assert.IsNotNull(playPipeline, "The fixture render pipeline asset must remain selected after entering Play Mode.");
+                string expectedPlayPipelinePath = SessionState.GetString(DevicePlayTransitionStatePrefix + "fixturePipelinePath", string.Empty);
+                string actualPlayPipelinePath = AssetDatabase.GetAssetPath(playPipeline);
+                Assert.IsNotEmpty(expectedPlayPipelinePath, "The fixture pipeline asset path must survive the Play Mode transition.");
+                Assert.AreEqual(expectedPlayPipelinePath, actualPlayPipelinePath,
+                    "The same persistent render pipeline asset must remain selected after entering Play Mode.");
+                string expectedPlayPipelineType = SessionState.GetString(DevicePlayTransitionStatePrefix + "fixturePipelineType", string.Empty);
+                string actualPlayPipelineType = playPipeline.GetType().FullName;
+                Assert.AreEqual(expectedPlayPipelineType, actualPlayPipelineType,
+                    "The render pipeline type must remain unchanged after entering Play Mode.");
+                if (hdrp)
+                    Assert.IsInstanceOf<HDRenderPipelineAsset>(playPipeline,
+                        "The active pipeline must remain HDRP after entering Play Mode.");
+                else
+                    Assert.IsInstanceOf<UniversalRenderPipelineAsset>(playPipeline,
+                        "The active pipeline must remain URP after entering Play Mode.");
+                Debug.Log("EDITOR_PREVIEW_DEVICE_PLAY activePipelineType=" + actualPlayPipelineType +
+                    ", assetPath=" + ToAscii(actualPlayPipelinePath));
                 ViewWeaveRig reloadedRig = FindSceneRig(DevicePlayTransitionRigName);
                 Assert.IsNotNull(reloadedRig,
                     "Exactly one uniquely named device-transition Rig must survive the Editor scene reload. " + DescribeMatchingSceneObjects(DevicePlayTransitionRigName));
@@ -2141,6 +2188,8 @@ namespace ViewWeave.BridgeEditorPreviewValidation
             DestroyTransientAsset<UniversalRenderPipelineAsset>(DevicePlayTransitionPipelineName);
             DestroyTransientAsset<UniversalRendererData>(DevicePlayTransitionRendererDataName);
             DeleteOwnedDeviceTransitionAssetFolder();
+            SessionState.SetString(DevicePlayTransitionStatePrefix + "fixturePipelinePath", string.Empty);
+            SessionState.SetString(DevicePlayTransitionStatePrefix + "fixturePipelineType", string.Empty);
             SessionState.SetBool(DevicePlayTransitionStatePrefix + "cleanupDone", true);
             Debug.Log("EDITOR_PREVIEW_DEVICE_PLAY fixtureCleanup=true");
         }
@@ -2960,22 +3009,109 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                         ", error=" + (Read("error") as string ?? string.Empty);
                 }
 
+                object nativeItems = GetStatic("nativeItems");
+                int nativeItemsLength = nativeItems is Array items ? items.Length : -1;
+                string diagnosticProbe = "notRun";
+                if (identityValid && !validationPending && nativeHandle is IntPtr diagnosticHandle &&
+                    diagnosticHandle != IntPtr.Zero && nativeStatus != null)
+                    diagnosticProbe = ReadBoundedNativeDiagnosticProbe(nativeType,
+                        nativeType.GetProperty("Adapter", staticPrivate).GetValue(null), diagnosticHandle, requiredCount);
+
                 double elapsed = startedAt == 0.0 ? 0.0 : Time.realtimeSinceStartupAsDouble - startedAt;
                 object candidate = GetStatic("candidateSnapshot");
-                return "kind=" + GetStatic("requestKind") +
+                return "currentThreadId=" + Thread.CurrentThread.ManagedThreadId +
+                    ", mainThreadId=" + GetStatic("mainThreadId") +
+                    ", tickInProgress=" + GetStatic("tickInProgress") +
+                    ", editorTime=" + EditorApplication.timeSinceStartup.ToString("F3", System.Globalization.CultureInfo.InvariantCulture) +
+                    ", frame=" + Time.frameCount +
+                    ", lastTickEditorEpoch=" + GetStatic("lastTickEditorEpoch") +
+                    ", lastTickFrame=" + GetStatic("lastTickFrame") +
+                    ", nativeItemsLength=" + nativeItemsLength +
+                    ", kind=" + GetStatic("requestKind") +
+                    ", requestedGeneration=" + GetStatic("requestedGeneration") +
+                    ", requestCancelled=" + GetStatic("requestCancelled") +
+                    ", requestTimedOut=" + GetStatic("requestTimedOut") +
+                    ", cleanupValidationPaused=" + GetStatic("cleanupValidationPaused") +
                     ", candidate=" + (candidate != null) +
                     ", closeRequested=" + GetStatic("closeRequested") +
                     ", elapsed=" + elapsed.ToString("F2", System.Globalization.CultureInfo.InvariantCulture) +
-                    ", epoch=" + GetStatic("lastTickEditorEpoch") +
                     ", validationPending=" + validationPending +
                     ", identityValid=" + identityValid +
                     ", identityError=" + identityError +
                     ", recoveryPending=" + GetStatic("recoveryPending") +
-                    ", " + nativeState;
+                    ", status=" + GetStatic("status") +
+                    ", lastError=" + GetStatic("lastError") +
+                    ", " + nativeState +
+                    ", " + diagnosticProbe;
             }
             catch (Exception exception)
             {
                 return "diagnosticException=" + exception.GetType().Name;
+            }
+        }
+
+        static string ReadBoundedNativeDiagnosticProbe(Type nativeType, object adapter, IntPtr handle, uint requiredCount)
+        {
+            const uint maximumDiagnosticItems = 256;
+            uint capacity = Math.Min(requiredCount, maximumDiagnosticItems);
+            if (capacity == 0) return "diagnosticProbe=notProductionCallHistory, capacity=0, required=0, result=notRun";
+
+            try
+            {
+                const BindingFlags staticPrivate = BindingFlags.Static | BindingFlags.NonPublic;
+                Type statusType = nativeType.GetNestedType("SnapshotStatusV1", BindingFlags.NonPublic);
+                Type itemType = nativeType.GetNestedType("SnapshotItemV1", BindingFlags.NonPublic);
+                if (statusType == null || itemType == null || adapter == null)
+                    return "diagnosticProbe=notProductionCallHistory, result=reflectionTypesMissing";
+
+                object probeStatus = Activator.CreateInstance(statusType);
+                statusType.GetField("structSize").SetValue(probeStatus, (uint)Marshal.SizeOf(statusType));
+                statusType.GetField("version").SetValue(probeStatus, 1u);
+                statusType.GetField("error").SetValue(probeStatus, string.Empty);
+
+                Array probeItems = Array.CreateInstance(itemType, (int)capacity);
+                for (int i = 0; i < probeItems.Length; i++)
+                {
+                    object probeItem = Activator.CreateInstance(itemType);
+                    itemType.GetField("structSize").SetValue(probeItem, (uint)Marshal.SizeOf(itemType));
+                    itemType.GetField("version").SetValue(probeItem, 1u);
+                    probeItems.SetValue(probeItem, i);
+                }
+
+                MethodInfo getSnapshot = adapter.GetType().GetMethod("GetDisplaySnapshot");
+                if (getSnapshot == null)
+                    return "diagnosticProbe=notProductionCallHistory, capacity=" + capacity + ", result=methodMissing";
+                object[] args = { handle, probeStatus, probeItems, capacity, 0u };
+                int result = (int)getSnapshot.Invoke(adapter, args);
+                probeStatus = args[1];
+                uint probeRequired = (uint)args[4];
+                object ReadStatus(string name) => statusType.GetField(name).GetValue(probeStatus);
+
+                var ordinals = new System.Collections.Generic.List<string>();
+                int reportedItems = result == 0
+                    ? Math.Min(probeItems.Length, (int)Math.Min(probeRequired, (uint)probeItems.Length))
+                    : 0;
+                var profileIds = new System.Collections.Generic.List<string>();
+                for (int i = 0; i < reportedItems; i++)
+                {
+                    object item = probeItems.GetValue(i);
+                    ordinals.Add(itemType.GetField("displayOrdinal").GetValue(item).ToString());
+                    object profile = itemType.GetField("profile").GetValue(item);
+                    profileIds.Add(profile.GetType().GetField("index").GetValue(profile).ToString());
+                }
+
+                return "diagnosticProbe=notProductionCallHistory, capacity=" + capacity +
+                    ", result=" + result + ", required=" + probeRequired +
+                    ", generation=" + ReadStatus("snapshotGeneration") +
+                    ", state=" + ReadStatus("state") + ", pending=" + ReadStatus("pending") +
+                    ", itemCount=" + ReadStatus("itemCount") +
+                    ", ordinals=" + string.Join("/", ordinals) +
+                    ", profileIds=" + string.Join("/", profileIds);
+            }
+            catch (Exception exception)
+            {
+                return "diagnosticProbe=notProductionCallHistory, capacity=" + capacity +
+                    ", result=exception-" + exception.GetType().Name;
             }
         }
 
@@ -3069,9 +3205,18 @@ namespace ViewWeave.BridgeEditorPreviewValidation
             {
                 previousDefault = GraphicsSettings.defaultRenderPipeline;
                 previousQuality = QualitySettings.renderPipeline;
+                if (!string.IsNullOrEmpty(persistentUrpAssetDirectory) &&
+                    (!AssetDatabase.IsValidFolder(persistentUrpAssetDirectory) ||
+                     !persistentUrpAssetDirectory.StartsWith(DevicePlayTransitionAssetFolderPrefix, StringComparison.Ordinal)))
+                    throw new InvalidOperationException("Persistent render-pipeline assets require the test-owned device-transition folder.");
                 if (hdrp)
                 {
                     pipeline = ScriptableObject.CreateInstance<HDRenderPipelineAsset>();
+                    if (!string.IsNullOrEmpty(persistentUrpAssetDirectory))
+                    {
+                        AssetDatabase.CreateAsset(pipeline, persistentUrpAssetDirectory + "/Pipeline.asset");
+                        AssetDatabase.SaveAssets();
+                    }
                 }
                 else
                 {
@@ -3082,9 +3227,6 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                     }
                     else
                     {
-                        if (!AssetDatabase.IsValidFolder(persistentUrpAssetDirectory) ||
-                            !persistentUrpAssetDirectory.StartsWith(DevicePlayTransitionAssetFolderPrefix, StringComparison.Ordinal))
-                            throw new InvalidOperationException("Persistent URP assets require the test-owned device-transition folder.");
                         urpRendererData = ScriptableObject.CreateInstance<UniversalRendererData>();
                         AssetDatabase.CreateAsset(urpRendererData, persistentUrpAssetDirectory + "/RendererData.asset");
                         urpPipeline = UniversalRenderPipelineAsset.Create(urpRendererData);

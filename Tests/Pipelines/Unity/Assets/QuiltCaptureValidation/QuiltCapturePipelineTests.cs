@@ -422,10 +422,12 @@ namespace ViewWeave.QuiltCaptureValidation
                 fixture.Setup();
                 fixture.Renderer.autoRender = true;
                 fixture.Renderer.ResetAutoRenderError();
+                Time.timeScale = 1f;
+                yield return WaitForAutomaticQuiltReadiness(fixture);
+                fixture.Renderer.ResetAutoRenderError();
                 QuiltRecorder recorder = fixture.CameraObject.AddComponent<QuiltRecorder>();
                 recorder.Renderer = fixture.Renderer;
                 Time.captureDeltaTime = 0f;
-                Time.timeScale = 1f;
                 recorder.StartRecordingWithAudio(outputRoot, 30, 5);
                 for (int wait = 0; wait < 120 && recorder.CompletedFrameCount < 1 && recorder.IsRecording; ++wait) yield return null;
                 Assert.AreEqual(1, recorder.CompletedFrameCount, recorder.ErrorMessage);
@@ -587,10 +589,12 @@ namespace ViewWeave.QuiltCaptureValidation
                 source.Play();
                 fixture.Renderer.autoRender = true;
                 fixture.Renderer.ResetAutoRenderError();
+                Time.timeScale = 1f;
+                yield return WaitForAutomaticQuiltReadiness(fixture);
+                fixture.Renderer.ResetAutoRenderError();
                 QuiltRecorder recorder = fixture.CameraObject.AddComponent<QuiltRecorder>();
                 recorder.Renderer = fixture.Renderer;
                 Time.captureDeltaTime = 0f;
-                Time.timeScale = 1f;
                 recorder.StartRecordingWithAudio(outputRoot, 30, 4);
                 for (int wait = 0; wait < 120 && recorder.CompletedFrameCount < 1 && recorder.IsRecording; ++wait) yield return null;
                 Assert.AreEqual(1, recorder.CompletedFrameCount, "the first quilt/audio pair commits together: " + recorder.ErrorMessage);
@@ -653,6 +657,108 @@ namespace ViewWeave.QuiltCaptureValidation
                 try { if (Directory.Exists(outputRoot)) Directory.Delete(outputRoot, true); }
                 catch { }
             }
+        }
+
+        static IEnumerator WaitForAutomaticQuiltReadiness(Fixture fixture)
+        {
+            QuiltRenderer renderer = fixture.Renderer;
+            long startRevision = renderer.QuiltRevision;
+            int startFrame = Time.frameCount;
+            double startTime = Time.realtimeSinceStartupAsDouble;
+            double initializationDeadline = startTime + 60.0;
+            while (Time.realtimeSinceStartupAsDouble < initializationDeadline &&
+                   (!renderer.HasRenderedQuilt || renderer.QuiltRevision <= startRevision))
+            {
+                if (!string.IsNullOrEmpty(renderer.LastAutoRenderError)) break;
+                yield return null;
+            }
+
+            long initialRevision = renderer.QuiltRevision;
+            int initialFrame = Time.frameCount;
+            double initialElapsed = Time.realtimeSinceStartupAsDouble - startTime;
+            bool initialCompleted = renderer.HasRenderedQuilt && initialRevision > startRevision;
+            bool initialWithinDeadline = initialElapsed <= 60.0;
+            bool initialEditorUpdating = EditorApplication.isUpdating;
+            bool initialEditorCompiling = EditorApplication.isCompiling;
+            string initialError = renderer.LastAutoRenderError ?? string.Empty;
+            if (!initialCompleted || !initialWithinDeadline || !string.IsNullOrEmpty(initialError))
+            {
+                string initializationContext = "initialCompleted=" + initialCompleted.ToString().ToLowerInvariant() +
+                    " initialWithinDeadline=" + initialWithinDeadline.ToString().ToLowerInvariant() +
+                    " initialFrame=" + initialFrame.ToString(CultureInfo.InvariantCulture) +
+                    " startFrame=" + startFrame.ToString(CultureInfo.InvariantCulture) +
+                    " startRevision=" + startRevision.ToString(CultureInfo.InvariantCulture) +
+                    " initialRevision=" + initialRevision.ToString(CultureInfo.InvariantCulture) +
+                    " elapsedSeconds=" + initialElapsed.ToString("F3", CultureInfo.InvariantCulture) +
+                    " editorUpdating=" + initialEditorUpdating.ToString().ToLowerInvariant() +
+                    " editorCompiling=" + initialEditorCompiling.ToString().ToLowerInvariant() +
+                    " lastAutoRenderError=" + SanitizeAscii(initialError);
+                string initializationPath = Path.Combine(Path.GetTempPath(), "ViewWeaveAudioAutoRenderInitialization_" + Guid.NewGuid().ToString("N") + ".txt");
+                File.WriteAllText(initializationPath, initializationContext + "\n", System.Text.Encoding.ASCII);
+                Assert.IsTrue(initialCompleted && initialWithinDeadline, "Audio readiness initialization did not complete within 60 seconds; diagnostic=" + initializationPath + " " + initializationContext);
+                Assert.IsTrue(string.IsNullOrEmpty(initialError), "Automatic quilt rendering reported an initialization error; diagnostic=" + initializationPath + " " + initializationContext);
+            }
+
+            long previousRevision = initialRevision;
+            int consecutiveRevisionChanges = 0;
+            int steadyStartFrame = Time.frameCount;
+            double steadyStartTime = Time.realtimeSinceStartupAsDouble;
+            double deadline = steadyStartTime + 10.0;
+            string lastError = string.Empty;
+            while (Time.realtimeSinceStartupAsDouble < deadline)
+            {
+                yield return null;
+                if (Time.realtimeSinceStartupAsDouble > deadline) break;
+                long revision = renderer.QuiltRevision;
+                consecutiveRevisionChanges = revision == previousRevision + 1 ? consecutiveRevisionChanges + 1 : 0;
+                previousRevision = revision;
+                lastError = renderer.LastAutoRenderError ?? string.Empty;
+                if (!string.IsNullOrEmpty(lastError)) break;
+                if (consecutiveRevisionChanges >= 2 && renderer.HasRenderedQuilt) break;
+            }
+
+            string pipeline = GraphicsSettings.currentRenderPipeline == null
+                ? "BuiltIn"
+                : GraphicsSettings.currentRenderPipeline.GetType().FullName;
+            double steadyElapsed = Time.realtimeSinceStartupAsDouble - steadyStartTime;
+            bool steadyWithinDeadline = steadyElapsed <= 10.0;
+            bool ready = steadyWithinDeadline && consecutiveRevisionChanges >= 2 && renderer.HasRenderedQuilt && string.IsNullOrEmpty(lastError);
+            string diagnostic = "result=" + (ready ? "ready" : "failed") + "\n" +
+                "initialCompleted=" + initialCompleted.ToString().ToLowerInvariant() + "\n" +
+                "initialWithinDeadline=" + initialWithinDeadline.ToString().ToLowerInvariant() + "\n" +
+                "initialFrame=" + initialFrame.ToString(CultureInfo.InvariantCulture) + "\n" +
+                "initialRevision=" + initialRevision.ToString(CultureInfo.InvariantCulture) + "\n" +
+                "initialElapsedSeconds=" + initialElapsed.ToString("F3", CultureInfo.InvariantCulture) + "\n" +
+                "initialEditorUpdating=" + initialEditorUpdating.ToString().ToLowerInvariant() + "\n" +
+                "initialEditorCompiling=" + initialEditorCompiling.ToString().ToLowerInvariant() + "\n" +
+                "steadyStartFrame=" + steadyStartFrame.ToString(CultureInfo.InvariantCulture) + "\n" +
+                "steadyElapsedSeconds=" + steadyElapsed.ToString("F3", CultureInfo.InvariantCulture) + "\n" +
+                "steadyWithinDeadline=" + steadyWithinDeadline.ToString().ToLowerInvariant() + "\n" +
+                "steadyEditorUpdating=" + EditorApplication.isUpdating.ToString().ToLowerInvariant() + "\n" +
+                "steadyEditorCompiling=" + EditorApplication.isCompiling.ToString().ToLowerInvariant() + "\n" +
+                "frame=" + Time.frameCount.ToString(CultureInfo.InvariantCulture) + "\n" +
+                "startRevision=" + startRevision.ToString(CultureInfo.InvariantCulture) + "\n" +
+                "endRevision=" + renderer.QuiltRevision.ToString(CultureInfo.InvariantCulture) + "\n" +
+                "consecutiveRevisionChanges=" + consecutiveRevisionChanges.ToString(CultureInfo.InvariantCulture) + "\n" +
+                "hasRenderedQuilt=" + renderer.HasRenderedQuilt.ToString().ToLowerInvariant() + "\n" +
+                "pipeline=" + SanitizeAscii(pipeline) + "\n" +
+                "lastAutoRenderError=" + SanitizeAscii(lastError) + "\n";
+            string diagnosticPath = Path.Combine(Path.GetTempPath(), "ViewWeaveAudioAutoRenderReadiness_" + Guid.NewGuid().ToString("N") + ".txt");
+            File.WriteAllText(diagnosticPath, diagnostic, System.Text.Encoding.ASCII);
+            string context = "diagnostic=" + diagnosticPath + " " + diagnostic.Replace("\n", " ");
+            Assert.IsTrue(steadyWithinDeadline, "Audio recording automatic quilt readiness exceeded its 10 second steady-state deadline; " + context);
+            Assert.GreaterOrEqual(consecutiveRevisionChanges, 2, "Audio recording requires two consecutive automatic quilt revisions before startup; " + context);
+            Assert.IsTrue(renderer.HasRenderedQuilt, "Audio recording requires a rendered quilt before startup; " + context);
+            Assert.IsTrue(string.IsNullOrEmpty(lastError), "Automatic quilt rendering reported an error before audio recording; " + context);
+        }
+
+        static string SanitizeAscii(string value)
+        {
+            if (string.IsNullOrEmpty(value)) return string.Empty;
+            char[] chars = value.ToCharArray();
+            for (int i = 0; i < chars.Length; ++i)
+                if (chars[i] < 0x20 || chars[i] > 0x7e) chars[i] = '?';
+            return new string(chars);
         }
 
         IEnumerator RunReferenceCameraSync(bool hdrp)
@@ -834,6 +940,15 @@ namespace ViewWeave.QuiltCaptureValidation
                 fixture.Setup();
                 yield return null;
                 yield return null;
+
+                float warmupStarted = Time.realtimeSinceStartup;
+                while (!fixture.Renderer.HasRenderedQuilt && Time.realtimeSinceStartup - warmupStarted < 10f)
+                {
+                    fixture.Renderer.RenderQuilt();
+                    if (!fixture.Renderer.HasRenderedQuilt) yield return null;
+                }
+                Assert.IsTrue(fixture.Renderer.HasRenderedQuilt,
+                    "pipeline output must be ready before completion-listener assertions begin");
 
                 int notifications = 0;
                 bool callbackObservedRestoredCamera = false;

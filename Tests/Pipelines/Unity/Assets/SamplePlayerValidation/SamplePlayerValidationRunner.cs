@@ -60,8 +60,11 @@ namespace ViewWeave.SamplePlayerValidation
 
         IEnumerator Run()
         {
-            if (Application.platform != RuntimePlatform.WindowsPlayer || Application.isEditor || !Debug.isDebugBuild || !SystemInfo.graphicsMultiThreaded || SystemInfo.graphicsDeviceType != GraphicsDeviceType.Direct3D11)
-                throw new InvalidOperationException("Windows Development Player with D3D11 graphicsMultiThreaded is required");
+            bool supportedGraphicsApi = SystemInfo.graphicsDeviceType == GraphicsDeviceType.Direct3D11 ||
+                SystemInfo.graphicsDeviceType == GraphicsDeviceType.Direct3D12;
+            if (Application.platform != RuntimePlatform.WindowsPlayer || Application.isEditor ||
+                !SystemInfo.graphicsMultiThreaded || !supportedGraphicsApi)
+                throw new InvalidOperationException("Windows Player with graphicsMultiThreaded and D3D11/D3D12 is required");
             if (!string.IsNullOrEmpty(argumentError)) throw new ArgumentException(argumentError);
             if (requiredDraws < 1) throw new ArgumentException("requiredDraws must be positive");
             var activePipeline = GraphicsSettings.currentRenderPipeline;
