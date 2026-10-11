@@ -950,6 +950,7 @@ namespace ViewWeave.BridgeSessionValidation
             {
                 sourceRenderer.useRenderRequests = false;
                 sourceGuard.adaptUnsupportedEffects = false;
+                sourceGuard.exposureMode = HdrpQuiltExposureMode.ManualFixed;
                 sourceGuard.fallbackFixedExposure = false;
                 sourceGuard.fallbackFixedExposureEV = 6f;
                 sourceOutput.zoom = 2.25f;
@@ -961,9 +962,14 @@ namespace ViewWeave.BridgeSessionValidation
 
                 Assert.IsFalse(destinationRenderer.useRenderRequests);
                 Assert.IsFalse(destinationGuard.adaptUnsupportedEffects);
+                Assert.AreEqual(HdrpQuiltExposureMode.ManualFixed, destinationGuard.exposureMode);
                 Assert.IsFalse(destinationGuard.fallbackFixedExposure);
                 Assert.AreEqual(6f, destinationGuard.fallbackFixedExposureEV);
                 Assert.AreEqual(2.25f, destinationOutput.zoom);
+
+                sourceGuard.exposureMode = HdrpQuiltExposureMode.FollowScene;
+                copy.Invoke(null, new object[] { sourceRenderer, sourceGuard, destinationRenderer, destinationGuard, sourceOutput, destinationOutput });
+                Assert.AreEqual(HdrpQuiltExposureMode.FollowScene, destinationGuard.exposureMode);
             }
             finally
             {

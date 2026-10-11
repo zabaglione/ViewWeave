@@ -45,7 +45,7 @@ namespace ViewWeave.Editor
             foldout.Add(metalStatus);
             metalError = new HelpBox(string.Empty, HelpBoxMessageType.Error) { name = "outputError" };
             foldout.Add(metalError);
-            foldout.Add(new HelpBox("Use Preview for Edit Mode display, or Start Output in Play mode. Connected calibration is available during device preview or output.", HelpBoxMessageType.Info));
+            foldout.Add(new HelpBox("Use Preview for Edit Mode display, or Start Output in Play mode. Geometry from the last successful Bridge API result is retained after stopping. Starting device output reads fresh calibration from Bridge.", HelpBoxMessageType.Info));
         }
 
         void OnMetalQualityChanged(ChangeEvent<Enum> evt)

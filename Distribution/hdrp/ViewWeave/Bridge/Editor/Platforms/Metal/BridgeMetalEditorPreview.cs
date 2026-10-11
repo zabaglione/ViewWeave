@@ -13,6 +13,8 @@ namespace ViewWeave.Editor
         static BridgeMetalQuiltOutput output;
         static BridgeMetalQuiltOutput configuredOutput;
         static BridgeSubpixelMode subpixelModeAtStart;
+        static string runtimePathAtStart, applicationNameAtStart;
+        static uint displayOrdinalAtStart;
         static QuiltEditorResourceRecord resources;
         static IDisposable owner;
         static readonly object OwnerToken = new object();
@@ -77,8 +79,13 @@ namespace ViewWeave.Editor
                 {
                     BridgeMetalQuiltOutput configured = rig.GetComponent<BridgeMetalQuiltOutput>();
                     if (configured == null) throw new InvalidOperationException("A Metal output component is required for device preview.");
+                    if (!BridgeDisplayGeometryStore.TryConfiguration(renderer, out MonoBehaviour selected, out _, out _, out _) || selected != configured)
+                        throw new InvalidOperationException("Device preview requires a selected or sole attached Metal output.");
                     configuredOutput = configured;
                     subpixelModeAtStart = configured.SubpixelMode;
+                    runtimePathAtStart = configured.runtimePath;
+                    applicationNameAtStart = configured.applicationName;
+                    displayOrdinalAtStart = configured.displayOrdinal;
                     output = producer.gameObject.AddComponent<BridgeMetalQuiltOutput>();
                     output.rig = producer;
                     output.runtimePath = configured.runtimePath;
@@ -90,6 +97,9 @@ namespace ViewWeave.Editor
                 }
                 owner = QuiltRendererMutationPolicy.RegisterOwner(renderer, OwnerToken, BlockMutation, out error);
                 if (owner == null) throw new InvalidOperationException(error);
+                if (device)
+                    BridgeDisplayMetadata.Publish(rig, configuredOutput, configuredOutput.runtimePath,
+                        configuredOutput.applicationName, configuredOutput.displayOrdinal, output.Profile);
                 nextRender = 0;
                 Status = device ? "Looking Glass preview running" : "Local preview running";
                 LastError = string.Empty;
@@ -168,8 +178,11 @@ namespace ViewWeave.Editor
                 { Stop(); return; }
                 if (output != null)
                 {
-                    if (configuredOutput == null || configuredOutput.SubpixelMode != subpixelModeAtStart)
-                        throw new InvalidOperationException("Subpixel processing changed during device preview. Close preview before changing it.");
+                    if (configuredOutput == null || configuredOutput.SubpixelMode != subpixelModeAtStart ||
+                        configuredOutput.runtimePath != runtimePathAtStart || configuredOutput.applicationName != applicationNameAtStart ||
+                        configuredOutput.displayOrdinal != displayOrdinalAtStart ||
+                        !BridgeDisplayGeometryStore.TryConfiguration(target.Renderer, out MonoBehaviour selected, out _, out _, out _) || selected != configuredOutput)
+                        throw new InvalidOperationException("Bridge configuration changed during device preview. Close preview before changing it.");
                     output.PumpStatus();
                     if (!output.IsRunning) throw new InvalidOperationException(output.LastError);
                 }

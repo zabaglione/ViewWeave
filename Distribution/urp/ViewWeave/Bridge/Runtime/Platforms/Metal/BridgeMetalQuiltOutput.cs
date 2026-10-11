@@ -48,6 +48,8 @@ namespace ViewWeave
         IntPtr renderEvent;
         bool pendingStart, snapshotCaptured, stopRequested;
         QuiltQualityProfile originalProfile;
+        string activeRuntimePath, activeApplicationName;
+        uint activeDisplayOrdinal;
         MonoBehaviour originalOutput;
         bool originalAutoRender;
         IDisposable mutationOwner;
@@ -124,6 +126,8 @@ namespace ViewWeave
         {
             if (stopRequested) { stopRequested = false; StopOutput(); }
             if (session == 0) return;
+            if (!ConfigurationMatchesActiveDisplay)
+            { Fail("Bridge runtime, application or display selection changed during Metal output. Stop output before changing it."); return; }
             if (subpixelMode != activeSubpixelMode)
             { subpixelMode = activeSubpixelMode; Fail("Subpixel processing cannot change while Metal output is active. Stop output before changing it."); return; }
             if (Native.lkg_metal_display_status(session, out status) != 0 || status.error != 0)
@@ -275,12 +279,29 @@ namespace ViewWeave
                 if (renderEvent == IntPtr.Zero) return Fail("Metal render event is unavailable");
                 status = default;
                 if (!rig.SetAutoRenderForBridgeOwner(!editorPreview, this, out error)) return Fail(error);
+                activeRuntimePath = runtimePath ?? string.Empty;
+                activeApplicationName = applicationName ?? string.Empty;
+                activeDisplayOrdinal = displayOrdinal;
                 LastError = string.Empty;
+                if (!editorPreview)
+                    BridgeDisplayMetadata.Publish(rig, this, runtimePath, applicationName, displayOrdinal, Profile);
                 return true;
             }
             catch (DllNotFoundException) { return Fail("Native macOS Bridge shim is missing; build the macOS plugin first"); }
             catch (EntryPointNotFoundException) { return Fail("Native macOS Bridge shim does not contain Metal display API v4; update the plugin and restart Unity"); }
             catch (Exception exception) { return Fail(exception.Message); }
+        }
+
+        bool ConfigurationMatchesActiveDisplay => activeRuntimePath == (runtimePath ?? string.Empty) &&
+            activeApplicationName == (applicationName ?? string.Empty) && activeDisplayOrdinal == displayOrdinal;
+
+        internal bool TryGetCurrentDisplayProfile(QuiltRenderer renderer, out BridgeDisplayProfile profile)
+        {
+            profile = default;
+            if (!IsRunning || !ConfigurationMatchesActiveDisplay || rig == null || rig.Renderer != renderer ||
+                !rig.HasOutputBinding(this) || !Profile.IsValid) return false;
+            profile = Profile;
+            return true;
         }
 
         public void Submit(RenderTexture quiltTexture, QuiltLayout layout)

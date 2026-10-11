@@ -1574,8 +1574,8 @@ namespace ViewWeave.BridgeEditorPreviewValidation
 
                 Assert.IsTrue(QuiltDisplaySettingsResolver.TryResolve(fixture.Rig.Renderer, out QuiltSettings beforeSettings,
                     out QuiltEditorDisplayProfile beforeDisplay, out string beforeError), beforeError);
-                Assert.AreEqual(QuiltDisplaySettingsSource.ConnectedDisplaySnapshot, beforeDisplay.source,
-                    "The Edit Mode gizmo should resolve the just-refreshed connected display profile before Play.");
+                Assert.AreEqual(QuiltDisplaySettingsSource.LastRecognizedDisplay, beforeDisplay.source,
+                    "The Edit Mode gizmo should resolve the common last-recognized Bridge profile before Play.");
                 Assert.AreEqual(QuiltViewRenderMode.Half, fixture.Rig.Renderer.viewRenderMode);
                 Assert.IsFalse(fixture.Rig.Renderer.physicalFraming.enabled);
                 ViewWeaveBridgeSession sourceSessionReference = session;
@@ -1686,7 +1686,7 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                 bool resolvedAfterStop = QuiltDisplaySettingsResolver.TryResolve(editRig.Renderer, out _,
                     out QuiltEditorDisplayProfile afterDisplay, out string afterError);
                 bool connectedProfileRetained = resolvedAfterStop &&
-                    afterDisplay.source == QuiltDisplaySettingsSource.ConnectedDisplaySnapshot &&
+                    afterDisplay.source == QuiltDisplaySettingsSource.LastRecognizedDisplay && !afterDisplay.isConnected &&
                     Mathf.Abs(beforeDisplay.aspect - afterDisplay.aspect) <= 0.0001f;
                 Debug.Log("EDITOR_PREVIEW_REFRESH_PROFILE beforeAspect=" + beforeDisplay.aspect.ToString("R", System.Globalization.CultureInfo.InvariantCulture) +
                     ", beforeSource=" + beforeDisplay.source + ", afterResolved=" + resolvedAfterStop +
@@ -1736,7 +1736,8 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                 Assert.AreEqual(0, BridgeEditorPreviewRetention.PendingCount);
                 Assert.IsFalse(BridgeDisplayDiscovery.IsBusy);
                 Assert.IsTrue(refreshedProfileResolved, ToAscii(refreshedError));
-                Assert.AreEqual(QuiltDisplaySettingsSource.ConnectedDisplaySnapshot, refreshedDisplay.source);
+                Assert.AreEqual(QuiltDisplaySettingsSource.LastRecognizedDisplay, refreshedDisplay.source);
+                Assert.IsFalse(refreshedDisplay.isConnected, "Retained metadata must not claim an active output connection.");
                 Assert.AreEqual(secondDisplay.Aspect, refreshedDisplay.aspect, 0.0001f);
                 Assert.IsTrue(resolvedAfterStop, "The Scene View display profile should resolve after toolbar Stop. " + ToAscii(afterError));
                 Assert.IsTrue(connectedProfileRetained,
@@ -2915,6 +2916,7 @@ namespace ViewWeave.BridgeEditorPreviewValidation
             try
             {
                 fixture.Setup();
+                if (hdrp) fixture.SetLocalPreviewFallbackExposure(0f);
                 previewUi = new ViewWeaveRigInspectorUI(previewRoot, () => fixture.Rig, () => null, _ => { });
                 previewUi.Rebuild();
                 QuiltRenderer sourceRenderer = fixture.Rig.Renderer;
@@ -2925,7 +2927,33 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                 sourceRenderer.physicalFraming.visibleApertureHeightMillimeters = 450f;
                 sourceRenderer.physicalFraming.unitsPerMeter = 1f;
                 sourceRenderer.settings.fieldOfView = 60f;
-                fixture.RenderSourceControl();
+                double sourceReadyStartedAt = EditorApplication.timeSinceStartup;
+                double sourceReadyDeadline = sourceReadyStartedAt + (hdrp ? 15.0 : 0.0);
+                int sourceControlAttempts = 0;
+                bool sourceControlVisible = false;
+                string sourceControlPixels = "not-rendered";
+                do
+                {
+                    sourceControlAttempts++;
+                    bool sourceControlPixelsVisible = fixture.RenderSourceControl(out sourceControlPixels);
+                    double sourceReadyElapsed = EditorApplication.timeSinceStartup - sourceReadyStartedAt;
+                    sourceControlVisible = sourceControlPixelsVisible && (!hdrp ||
+                        EditorApplication.timeSinceStartup <= sourceReadyDeadline);
+                    Debug.Log("EDITOR_PREVIEW_GPU source_control_attempt pipeline=" + (hdrp ? "HDRP" : "URP") +
+                        ", attempt=" + sourceControlAttempts + ", camera=" +
+                        PreviewApi.DescribeCamera("source", sourceRenderer.sourceCamera, fixture.TargetObject) +
+                        ", exposure=" + fixture.DescribeSourceExposure() + ", elapsedSeconds=" +
+                        sourceReadyElapsed.ToString("F2", System.Globalization.CultureInfo.InvariantCulture) +
+                        ", withinDeadline=" + (!hdrp || EditorApplication.timeSinceStartup <= sourceReadyDeadline) +
+                        ", " + sourceControlPixels);
+                    if (sourceControlVisible) break;
+                    if (!hdrp || EditorApplication.timeSinceStartup >= sourceReadyDeadline) break;
+                    yield return null;
+                } while (EditorApplication.timeSinceStartup < sourceReadyDeadline);
+                Assert.IsTrue(sourceControlVisible, "The source Rig control should render green target pixels within the bounded " +
+                    (hdrp ? "HDRP" : "URP") + " readiness window. attempts=" + sourceControlAttempts + ", camera=" +
+                    PreviewApi.DescribeCamera("source", sourceRenderer.sourceCamera, fixture.TargetObject) +
+                    ", exposure=" + fixture.DescribeSourceExposure() + ", " + sourceControlPixels);
                 AssertPhysicalSnapshot(sourceRenderer.LatestSnapshot, 800f / 450f, 60f, 0.45f,
                     "The source renderer should use the configured physical aperture without mutating its base settings.");
                 Assert.AreEqual(storedAspect, sourceRenderer.settings.viewAspect, 0.0001f);
@@ -2940,6 +2968,20 @@ namespace ViewWeave.BridgeEditorPreviewValidation
 
                 yield return WaitFor(() => PreviewApi.IsActive && IsCreated(PreviewApi.Texture),
                     "Local Editor preview did not produce a created quilt texture.");
+                if (hdrp)
+                {
+                    HdrpQuiltCamera producerGuard = PreviewApi.ProducerRenderer != null
+                        ? PreviewApi.ProducerRenderer.GetComponent<HdrpQuiltCamera>() : null;
+                    Debug.Log("EDITOR_PREVIEW_GPU hdrp_producer_exposure guard=" + (producerGuard != null) +
+                        ", mode=" + (producerGuard == null ? "unavailable" : producerGuard.exposureMode.ToString()) +
+                        ", fallbackEV=" + (producerGuard == null ? "unavailable" : producerGuard.fallbackFixedExposureEV.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+                    Assert.IsNotNull(producerGuard, "The HDRP preview producer should own its copied HDRP camera guard.");
+                    Assert.AreEqual(HdrpQuiltExposureMode.ManualFixed, producerGuard.exposureMode,
+                        "The hidden preview producer should retain the source fixture exposure mode.");
+                    Assert.AreEqual(0f, producerGuard.fallbackFixedExposureEV, 0.0001f,
+                        "The hidden preview producer should retain the source fixture fixed EV.");
+                    yield return WaitForHdrpPreviewSnapshotReady(() => PreviewApi.ProducerRenderer);
+                }
                 RenderTexture first = PreviewApi.Texture;
                 QuiltRenderer producerRenderer = PreviewApi.ProducerRenderer;
                 Assert.IsNotNull(producerRenderer);
@@ -3076,6 +3118,34 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                 yield return null;
             }
             Assert.Fail(failureMessage);
+        }
+
+        static IEnumerator WaitForHdrpPreviewSnapshotReady(Func<QuiltRenderer> getProducer)
+        {
+            const int maximumFrames = 180;
+            for (int frame = 0; frame < maximumFrames; frame++)
+            {
+                QuiltRenderer producer = getProducer();
+                if (producer != null)
+                {
+                    QuiltRenderSnapshot snapshot = producer.LatestSnapshot;
+                    if (snapshot.IsValid && producer.HasRenderedQuilt && snapshot.Revision > 0)
+                    {
+                        Debug.Log("EDITOR_PREVIEW_GPU hdrp_producer_ready frames=" + frame + ", valid=true, hasRenderedQuilt=true" +
+                            ", revision=" + snapshot.Revision + ", renderStatus=" + producer.LastRenderStatus);
+                        yield break;
+                    }
+                }
+                yield return null;
+            }
+
+            QuiltRenderer finalProducer = getProducer();
+            QuiltRenderSnapshot finalSnapshot = finalProducer == null ? default : finalProducer.LatestSnapshot;
+            Assert.Fail("HDRP local preview producer did not publish a rendered snapshot within " + maximumFrames +
+                " frames. producer=" + (finalProducer != null) + ", valid=" + finalSnapshot.IsValid +
+                ", hasRenderedQuilt=" + (finalProducer != null && finalProducer.HasRenderedQuilt) +
+                ", revision=" + finalSnapshot.Revision + ", renderStatus=" +
+                (finalProducer == null ? "unavailable" : finalProducer.LastRenderStatus));
         }
 
         static string ReadDiscoveryDiagnostic()
@@ -3420,16 +3490,31 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                 rigObject.SetActive(true);
             }
 
-            internal void RenderSourceControl()
+            internal bool RenderSourceControl(out string summary)
             {
                 QuiltRenderer sourceRenderer = rig.Renderer;
                 sourceRenderer.useRenderRequests = true;
                 sourceRenderer.RenderQuilt();
-                string summary;
-                bool visible = HasGreenTargetPixels(sourceRenderer.QuiltTexture, out summary);
-                Debug.Log("EDITOR_PREVIEW_GPU source_control pipeline=" + (hdrp ? "HDRP" : "URP") + ", " + summary +
-                    ", camera=" + PreviewApi.DescribeCamera("source", sourceRenderer.sourceCamera, targetObject));
-                Assert.IsTrue(visible, "The source Rig control should render green target pixels. " + summary);
+                return HasGreenTargetPixels(sourceRenderer.QuiltTexture, out summary);
+            }
+
+            internal string DescribeSourceExposure()
+            {
+                if (!hdrp) return "not-applicable";
+                HdrpQuiltCamera guard = rig != null ? rig.GetComponent<HdrpQuiltCamera>() : null;
+                return guard == null ? "guard=missing" : "fallbackEnabled=" + guard.fallbackFixedExposure +
+                    ", fallbackFixedExposureEV=" + guard.fallbackFixedExposureEV.ToString("F2", System.Globalization.CultureInfo.InvariantCulture) +
+                    ", exposureMode=" + guard.exposureMode;
+            }
+
+            internal void SetLocalPreviewFallbackExposure(float exposureEV)
+            {
+                if (!hdrp) throw new InvalidOperationException("The HDRP exposure override is only valid for the HDRP local preview fixture.");
+                HdrpQuiltCamera guard = rig != null ? rig.GetComponent<HdrpQuiltCamera>() : null;
+                if (guard == null) throw new InvalidOperationException("The HDRP local preview fixture has no owned HDRP camera guard.");
+                guard.exposureMode = HdrpQuiltExposureMode.ManualFixed;
+                guard.fallbackFixedExposure = true;
+                guard.fallbackFixedExposureEV = exposureEV;
             }
 
             internal void SetOwnedPipelineNames(string pipelineName, string rendererDataName)
