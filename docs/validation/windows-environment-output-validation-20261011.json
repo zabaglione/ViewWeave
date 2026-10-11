@@ -1,0 +1,932 @@
+{
+  "schemaVersion": 1,
+  "hashFieldSemantics": {
+    "inputSourceDigestSha256": "The inputsSha256 source digest recorded inside inputs-manifest.json; it is not the SHA-256 of the manifest file.",
+    "inputManifestFileSha256": "The SHA-256 of the inputs-manifest.json file itself, when present."
+  },
+  "date": "2026-10-11",
+  "record": "Selected Windows environment and output path checks",
+  "sourceBasis": {
+    "revision": "d34a30aa509d2202d07cf2d7070c0f202f6ce0de",
+    "unityVersion": "6000.6.4f1",
+    "gpu": "NVIDIA GeForce RTX 3090 Ti",
+    "dllSha256": "CEE089B1779752DAB4FFABDFFC44B879A0E4D09414C9A85F7590C8D9A9DDCF4D",
+    "dllBytes": 302080,
+    "testOnlySources": "Production package/runtime basis is revision d34a30a. Unity harnesses and runners were test-only working-tree inputs at execution time; run-specific source/tool hashes are recorded below or in the linked raw manifests. Current post-run edits must not be attributed retroactively."
+  },
+  "status": "Partial: selected HDRP device/orientation, URP/HDRP Release device Player, URP D3D11 Development and HDRP D3D12 Release drawing-only Players, both Quick Start checks, and current D3D11 Editor geometry passed; broader optical/API/mode coverage remains unverified. A separate manual Editor GUI close crash was observed; its cause is undetermined and it is not the automated retry 7 result.",
+  "completedRuns": {
+    "hdrpDevicePreviewToPlay": {
+      "pipeline": "HDRP",
+      "graphicsApi": "Direct3D 12",
+      "mode": "Automatic",
+      "unityMode": "EditMode device opt-in",
+      "filter": "ViewWeave.BridgeEditorPreviewValidation.BridgeEditorPreviewGpuTests.HdrpDevicePreviewStopsBeforePlayAndRuntimeSessionRendersWhenExplicitlyEnabled",
+      "counts": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0
+      },
+      "cliExitCode": 0,
+      "editorNaturalExit": true,
+      "native": {
+        "modulePathAndHashMatch": true,
+        "load": true,
+        "initialize": true,
+        "displayCount": 1,
+        "pending": 0,
+        "uninitialize": true,
+        "backend": "NativeD3D11"
+      },
+      "mutationGate": "ClassicRgb change rejected while Preview and runtime session owned the Rig; Automatic remained selected.",
+      "settings": {
+        "generatedFilesChangedDuringRun": 3,
+        "runOwnedRestoreCompleted": true,
+        "cleanAfterCleanup": true
+      },
+      "crashEvents": 0,
+      "pidCrosscheck": {
+        "originalSummaryValue": false,
+        "supplementVerified": true,
+        "editorPid": 23292,
+        "nativeTracePids": [
+          23292
+        ],
+        "editorLogPids": [
+          23292
+        ]
+      },
+      "evidenceDir": ".local/windows-environment-output-validation-20261011/device-hdrp-d3d12-automatic-d34a30a",
+      "summary": ".local/windows-environment-output-validation-20261011/device-hdrp-d3d12-automatic-d34a30a/summary.json",
+      "pidSupplement": ".local/windows-environment-output-validation-20261011/device-hdrp-d3d12-automatic-d34a30a/pid-crosscheck-supplement.json",
+      "testXml": ".local/windows-environment-output-validation-20261011/device-hdrp-d3d12-automatic-d34a30a/test-results.xml",
+      "limits": [
+        "This case does not validate ClassicRgb or CalibratedCells output.",
+        "This case does not establish other API/mode combinations, Player output, or optical quality."
+      ]
+    },
+    "hdrpProducerOrientation": {
+      "pipeline": "HDRP",
+      "graphicsApi": "Direct3D 12",
+      "msaaSamples": 1,
+      "unityMode": "PlayMode",
+      "filter": "ViewWeave.QuiltOrientationValidation.QuiltOrientationDiagnosticTests.HdrpRequestCapturesActualQuiltAndBothTransferOrientations",
+      "counts": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0
+      },
+      "cliExitCode": 0,
+      "editorNaturalExit": true,
+      "settingsDiff": [],
+      "input": {
+        "width": 320,
+        "height": 160,
+        "columns": 4,
+        "rows": 2,
+        "views": 8,
+        "effectiveViewMsaa": 1
+      },
+      "productionCopyMatchesNoFlip": true,
+      "sourceHashes": {
+        "Tests/Pipelines/Unity/Assets/QuiltOrientationValidation/QuiltOrientationDiagnosticTests.cs": "422e430854b8609317cfc9d313f2da3ebb1240dde9fdd0217f5fb6ceceee317e",
+        "Tests/Pipelines/Unity/Assets/QuiltOrientationValidation/QuiltOrientationDiagnostic.shader": "1140880a9f3cdad133f9df556db90621ddd3dfadc08220287490bd09963c5c01",
+        "Tests/Pipelines/Unity/Assets/QuiltOrientationValidation/ViewWeave.QuiltOrientationValidation.Tests.asmdef": "82924766e83513d0fb03f69176e522217721619308f53d188a3cfc888c9ad62d"
+      },
+      "evidenceDir": ".local/windows-environment-output-validation-20261011/orientation-hdrp-d3d12-msaa1-d34a30a",
+      "runSummary": ".local/windows-environment-output-validation-20261011/orientation-hdrp-d3d12-msaa1-d34a30a/run-summary.json",
+      "testXml": ".local/windows-environment-output-validation-20261011/orientation-hdrp-d3d12-msaa1-d34a30a/test-results.xml",
+      "limits": [
+        "Raw producer and offscreen output orientation do not establish physical panel scanout.",
+        "This is not a device or optical-quality test."
+      ]
+    },
+    "nativeWarpOrientationOracle": {
+      "device": "D3D11 WARP",
+      "runs": 9,
+      "candidates": [
+        "transfer-production-copy",
+        "transfer-no-flip",
+        "transfer-current-flip"
+      ],
+      "modes": [
+        "Automatic",
+        "Classic RGB",
+        "Calibrated Cells"
+      ],
+      "calibratedCellsSyntheticFixture": {
+        "rgbXyOffsetsNonzero": true,
+        "cellCount": 4,
+        "pattern": 3,
+        "hdrpRawProducerInput": true,
+        "claims": "Shader rendering and orientation only; no exact per-cell expected-pixel, device-table, physical scanout, or optical-quality validation."
+      },
+      "productionCopyAndNoFlipDifferingChannelsPerMode": 0,
+      "currentFlipOrientation": "top-blue-bottom-red",
+      "noFlipOrientation": "top-red-bottom-blue",
+      "currentFlipVsNoFlipDifferingChannelsPerMode": 189,
+      "canvas": "Offscreen 9x7 using synthetic calibration",
+      "results": ".local/windows-environment-output-validation-20261011/native-oracle-hdrp-d3d12-msaa1-d34a30a/native-oracle-results.json",
+      "limits": [
+        "Synthetic calibration; not physical display or optical validation."
+      ]
+    },
+    "urpReleaseDevicePlayer": {
+      "pipeline": "URP",
+      "graphicsApi": "Direct3D 12",
+      "buildKind": "Release",
+      "development": false,
+      "isEditor": false,
+      "unityVersion": "6000.6.4f1",
+      "gpu": "NVIDIA GeForce RTX 3090 Ti",
+      "counts": {
+        "submissions": 127,
+        "completed": 126,
+        "nativeViews": 48
+      },
+      "allTilesNonBlankAndColor": true,
+      "viewDifference": true,
+      "movementChanged": true,
+      "native": {
+        "modulePathAndHashMatch": true,
+        "dllSha256": "CEE089B1779752DAB4FFABDFFC44B879A0E4D09414C9A85F7590C8D9A9DDCF4D",
+        "dllBytes": 302080,
+        "load": true,
+        "initialize": true,
+        "displayCount": 1,
+        "pending": 0,
+        "uninitialize": true
+      },
+      "editorNaturalExit": true,
+      "playerNaturalExit": true,
+      "exitCode": 0,
+      "crashEvents": 0,
+      "assetsAndProjectSettingsRestored": true,
+      "evidenceDir": ".local/windows-environment-output-validation-20261011/player-urp-d3d12-release-complete-monitor",
+      "excludedAttempts": [
+        {
+          "evidenceDir": ".local/windows-environment-output-validation-20261011/player-urp-d3d12-release",
+          "reason": "The no-quit attempt was interrupted before a completed Player result.",
+          "countedAsPass": false
+        },
+        {
+          "evidenceDir": ".local/windows-environment-output-validation-20261011/player-urp-d3d12-release-natural-exit",
+          "reason": "The monitor exited before Player completion and the runner summary was absent.",
+          "countedAsPass": false
+        }
+      ],
+      "limits": [
+        "This is a device-output sample Player run, not the drawing-only Player path.",
+        "Player TAA, other graphics APIs/modes, and optical quality are not established."
+      ]
+    },
+    "hdrpReleaseDevicePlayer": {
+      "pipeline": "HDRP",
+      "graphicsApi": "Direct3D 12",
+      "buildKind": "Release",
+      "development": false,
+      "isEditor": false,
+      "unityVersion": "6000.6.4f1",
+      "gpu": "NVIDIA GeForce RTX 3090 Ti",
+      "counts": {
+        "submissions": 124,
+        "completed": 124,
+        "nativeViews": 48
+      },
+      "allTilesNonBlankAndColor": true,
+      "viewDifference": true,
+      "movementChanged": true,
+      "native": {
+        "modulePathAndHashMatch": true,
+        "dllSha256": "CEE089B1779752DAB4FFABDFFC44B879A0E4D09414C9A85F7590C8D9A9DDCF4D",
+        "dllBytes": 302080,
+        "load": true,
+        "initialize": true,
+        "displayCount": 1,
+        "pending": 0,
+        "uninitialize": true
+      },
+      "playerPid": 82792,
+      "playerNaturalExit": true,
+      "exitCode": 0,
+      "crashEvents": 0,
+      "assetsProjectSettingsAndPipelineGlobalSettingsRestored": true,
+      "evidenceDir": ".local/windows-environment-output-validation-20261011/player-hdrp-d3d12-release-runtime-recheck1",
+      "excludedAttempt": {
+        "evidenceDir": ".local/windows-environment-output-validation-20261011/player-hdrp-d3d12-release",
+        "reason": "The first runtime summary had naturalExit=false and no exit code; it is preserved and not counted as a pass.",
+        "countedAsPass": false
+      },
+      "limits": [
+        "This is a device-output sample Player run, not the drawing-only Player path.",
+        "Player TAA, other graphics APIs/modes, and optical quality are not established."
+      ],
+      "asRunTools": {
+        "runnerPath": "Tests/Pipelines/Unity/Tools/Run-WindowsSamplePlayerValidation.ps1",
+        "runnerSha256": "E1D462F1C347BF94C530DE64D6765C8DFF45B964CA5939C0A45E3970BD765137"
+      }
+    },
+    "urpDevelopmentDrawingOnlyPlayer": {
+      "pipeline": "URP",
+      "graphicsApi": "Direct3D 11",
+      "buildKind": "Development",
+      "development": true,
+      "isEditor": false,
+      "unityVersion": "6000.6.4f1",
+      "gpu": "NVIDIA GeForce RTX 3090 Ti",
+      "counts": {
+        "totalCases": 6,
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0
+      },
+      "caseMatrix": [
+        {
+          "grdEnabled": false,
+          "views": 1,
+          "passed": true
+        },
+        {
+          "grdEnabled": false,
+          "views": 8,
+          "passed": true
+        },
+        {
+          "grdEnabled": false,
+          "views": 48,
+          "passed": true
+        },
+        {
+          "grdEnabled": true,
+          "views": 1,
+          "passed": true,
+          "grdRenderers": 75,
+          "visibleInstances": 75
+        },
+        {
+          "grdEnabled": true,
+          "views": 8,
+          "passed": true,
+          "grdRenderers": 75,
+          "visibleInstances": 600
+        },
+        {
+          "grdEnabled": true,
+          "views": 48,
+          "passed": true,
+          "grdRenderers": 75,
+          "visibleInstances": 3600
+        }
+      ],
+      "lifecycle": {
+        "ok": true,
+        "startedCount": 74,
+        "disabledCount": 74,
+        "restartedCount": 75,
+        "autoStoppedCount": 75
+      },
+      "playerPid": 80168,
+      "playerNaturalExit": true,
+      "exitCode": 0,
+      "crashEvents": 0,
+      "cleanupBaselinesMatch": true,
+      "buildGuid": "9d3ed527a8e04ea396f6d04010b45bb4",
+      "evidenceDir": ".local/windows-environment-output-validation-20261011/player-urp-d3d11-development-render-only",
+      "sourceHashes": {
+        "Assets/PlayerValidation/Editor/PlayerValidationBuilder.cs": "712699F5B9277C64763985F4BA9721076AC810D254125C6B888082498FAFAA41",
+        "Assets/PlayerValidation/PlayerValidationRunner.cs": "7C6E8F0E2617A31944E0FA67AB7FDC5974281432DE88B6DB55DA9004305F0DFD",
+        "Assets/PlayerValidation/PlayerValidationOutput.cs": "33DEC08AD76AE3E91FD5017E4A6EAAB73BC3BCDD5BE4867D29BB4B09F1335A0D",
+        "Assets/PlayerValidation/Editor/ViewWeave.PlayerValidation.Editor.asmdef": "85115E6238A68785A6FF9C3ED2CC9BD216898822C0D7E17FA99427FA7DE5E864",
+        "Assets/PlayerValidation/ViewWeave.PlayerValidation.Runtime.asmdef": "833ABA8047D11BFAD46F7EF053CECF8A7C82D4FAFD30241DE8815D41C93233C9"
+      },
+      "limits": [
+        "No Bridge SDK initialize or device output was used.",
+        "This is a rendering/lifecycle check, not a performance comparison."
+      ]
+    },
+    "urpQuickStartImportAndEditor": {
+      "pipeline": "URP",
+      "graphicsApi": "Direct3D 12",
+      "unityVersion": "6000.6.4f1",
+      "gpu": "NVIDIA GeForce RTX 3090 Ti",
+      "sourceRecordsMatched": {
+        "matched": 24,
+        "total": 24
+      },
+      "editorViewsRendered": 12,
+      "geometryStatus": {
+        "source": "LastRecognizedDisplay",
+        "successfulManagedNativeSnapshotCallback": true,
+        "physicalCalibration": true,
+        "apertureMillimeters": {
+          "width": 344.650177,
+          "height": 193.865723
+        },
+        "aspect": 1.77778,
+        "viewConeDegrees": 50,
+        "automaticSceneOpenAndExplicitRefreshAgree": true
+      },
+      "native": {
+        "moduleSha256": "CEE089B1779752DAB4FFABDFFC44B879A0E4D09414C9A85F7590C8D9A9DDCF4D",
+        "moduleBytes": 302080,
+        "load": true,
+        "initialize": true,
+        "uninitialize": true,
+        "metadataRequestEventObserved": false
+      },
+      "outputSubmissionEnabled": false,
+      "previewSessionIdle": true,
+      "naturalExit": true,
+      "exitCode": 0,
+      "crashEvents": 0,
+      "cleanupBaselineRestored": true,
+      "evidenceDir": ".local/windows-environment-output-validation-20261011/quickstart-urp-20261011-203110",
+      "excludedAttempt": {
+        "reason": "The initial attempt failed before import due to a Unity 6 PackageInfo type ambiguity; the corrected run is recorded separately.",
+        "countedAsPass": false
+      },
+      "limits": [
+        "The Native trace has no display-count event; no Native request-call count is claimed.",
+        "Focus/near/far bounds, Gizmo appearance, hotplug, and general GUI interaction are not established.",
+        "Bridge device output, other pipelines/APIs, and optical quality are not established."
+      ],
+      "helperSha256": "BF86EFFAC34C9C9CE284B41D0CF007B59CEB85621A6CB938EDACD81376D6C9EA",
+      "asRunTools": {
+        "helperPath": "Tests/Pipelines/Unity/Tools/WindowsQuickStartValidation/QuickStartValidationRunner.cs",
+        "helperSha256": "BF86EFFAC34C9C9CE284B41D0CF007B59CEB85621A6CB938EDACD81376D6C9EA",
+        "runnerPath": "Tests/Pipelines/Unity/Tools/Run-WindowsQuickStartValidation.ps1",
+        "runnerSha256": "4F45642CC3E13EB02434A2411153094B699BE0B6F4A9E3F06B6234FFB9D6DD83"
+      }
+    },
+    "hdrpQuickStartImportAndEditor": {
+      "pipeline": "HDRP",
+      "graphicsApi": "Direct3D 12",
+      "unityVersion": "6000.6.4f1",
+      "gpu": "NVIDIA GeForce RTX 3090 Ti",
+      "sourceRecordsMatched": {
+        "matched": 26,
+        "total": 26
+      },
+      "editorViewsRendered": 12,
+      "geometryStatus": {
+        "source": "LastRecognizedDisplay",
+        "successfulManagedNativeSnapshotCallback": true,
+        "physicalCalibration": true,
+        "apertureMillimeters": {
+          "width": 344.650177,
+          "height": 193.865723
+        },
+        "aspect": 1.77778,
+        "viewConeDegrees": 50,
+        "automaticSceneOpenAndExplicitRefreshAgree": true
+      },
+      "native": {
+        "moduleSha256": "CEE089B1779752DAB4FFABDFFC44B879A0E4D09414C9A85F7590C8D9A9DDCF4D",
+        "moduleBytes": 302080,
+        "load": true,
+        "initialize": true,
+        "uninitialize": true,
+        "pending": 0,
+        "metadataRequestEventObserved": false
+      },
+      "outputSubmissionEnabled": false,
+      "previewActive": false,
+      "sessionState": "Closed/Idle",
+      "naturalExit": true,
+      "exitCode": 0,
+      "crashEvents": 0,
+      "cleanupBaselineRestored": true,
+      "evidenceDir": ".local/windows-environment-output-validation-20261011/quickstart-hdrp-20261011-203230",
+      "limits": [
+        "The Native trace has no display-count event; no Native request-call count is claimed.",
+        "Focus/near/far bounds, Gizmo appearance, Bridge device output, and optical quality are not established."
+      ],
+      "helperSha256": "BF86EFFAC34C9C9CE284B41D0CF007B59CEB85621A6CB938EDACD81376D6C9EA",
+      "asRunTools": {
+        "helperPath": "Tests/Pipelines/Unity/Tools/WindowsQuickStartValidation/QuickStartValidationRunner.cs",
+        "helperSha256": "BF86EFFAC34C9C9CE284B41D0CF007B59CEB85621A6CB938EDACD81376D6C9EA",
+        "runnerPath": "Tests/Pipelines/Unity/Tools/Run-WindowsQuickStartValidation.ps1",
+        "runnerSha256": "4F45642CC3E13EB02434A2411153094B699BE0B6F4A9E3F06B6234FFB9D6DD83"
+      }
+    },
+    "d3d11EditorGeometryFixture": {
+      "graphicsApi": "Direct3D 11",
+      "unityMode": "EditMode",
+      "filter": "ViewWeave.BridgeEditorPreviewValidation.BridgeDisplayGeometryTests",
+      "counts": {
+        "total": 15,
+        "passed": 15,
+        "failed": 0,
+        "skipped": 0
+      },
+      "unityVersion": "6000.6.4f1",
+      "editorNaturalExit": true,
+      "cliExitCode": 0,
+      "crashEvents": 0,
+      "settingsAndAssetsRestored": true,
+      "evidenceDir": ".local/windows-environment-output-validation-20261011/geometry-current-d3d11-retry1",
+      "sourceHashes": {
+        "Assets/BridgeSessionValidation/Editor/BridgeDisplayGeometryTests.cs": "4F8A488A5AA4BC213E1DDFBCCF978F9AB20EC86B09D15B622085D9C92D8A0124",
+        "Packages/com.zabaglione.lookingglass.viewweave.bridge/Editor/Common/BridgeDisplayGeometryStore.cs": "2F852135DF5BA93840809314936F86AC72AA8BD7650CD30D1978479A6DAB2672",
+        "Packages/com.zabaglione.lookingglass.viewweave.bridge/Editor/Common/BridgeEditorDisplaySettings.cs": "D5E57201DCD5E5A2149AA9C628DEC42FD009F3AB98D43F31C5F2B78B9AFD5595",
+        "Packages/com.zabaglione.lookingglass.viewweave.bridge/Editor/Common/BridgeEditorDisplayDiscovery.cs": "BA240658CD3AFD3FEC9719D298CCE64BB2B77C14AECB0FD09DE09B5300032B55"
+      },
+      "coverage": [
+        "Geometry retention and replacement/invalid-result behavior",
+        "Selection/output isolation and temporary transport restoration",
+        "Snapshot ordering, Local Preview settings, ownership isolation, and calibration action gates"
+      ],
+      "limits": [
+        "Common Editor/store/resolver fixture; not URP/HDRP device output.",
+        "Does not validate SceneView Gizmo appearance or panel optics."
+      ]
+    },
+    "hdrpD3d12ReleaseDrawingOnlyPlayerRetry8": {
+      "pipeline": "HDRP",
+      "graphicsApi": "Direct3D 12",
+      "buildKind": "Release",
+      "unityVersion": "6000.6.4f1",
+      "mode": "Standalone render-only; no Bridge device output/session fixture",
+      "counts": {
+        "playerRuns": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0
+      },
+      "build": {
+        "processId": 45680,
+        "naturalExit": true,
+        "exitCode": 0
+      },
+      "player": {
+        "processId": 96880,
+        "naturalExit": true,
+        "exitCode": 0,
+        "actualRenderViews": 4,
+        "allColorAndViewGatesPassed": true,
+        "beforeTileNonBlank": [3493, 3575, 3600, 3683],
+        "beforeTileRed": [2574, 2652, 2683, 2754],
+        "beforeTileGreen": [860, 866, 866, 875],
+        "beforeInterViewChanges": [289, 247, 290],
+        "afterTileNonBlank": [3503, 3600, 3690, 3763],
+        "afterTileRed": [2429, 2486, 2542, 2566],
+        "afterTileGreen": [832, 860, 866, 875],
+        "afterInterViewChanges": [293, 275, 279],
+        "changedPixels": 10568,
+        "movementDelta": 0.524309,
+        "applicationCrashEvents": 0
+      },
+      "controlledRenderingSetup": {
+        "privateCustomUserHistory0StackMatches": "4/4 views: Fixed EV 4, Bloom 0, Fog disabled, VisualEnvironment sky/cloud disabled, indirect diffuse 0, Neutral tonemapping",
+        "light": "Directional, Lux, intensity 10 held through 11 runtime stages",
+        "controlsChangedTogether": true,
+        "doesNotIdentifyWhichControlWasNecessary": true
+      },
+      "native": {
+        "moduleSha256": "CEE089B1779752DAB4FFABDFFC44B879A0E4D09414C9A85F7590C8D9A9DDCF4D",
+        "moduleBytes": 302080,
+        "traceObserved": false,
+        "initializationClaim": "Not observed; absence of trace is not evidence that initialization did not occur. No Bridge output/session was part of this fixture."
+      },
+      "cleanup": {
+        "assetsAndProjectSettingsRestored": true,
+        "helpersRemoved": true,
+        "ownedProcessesRemaining": 0
+      },
+      "path": ".local/windows-render-only-player-hdrp-d3d12-20261011-retry8",
+      "inputSourceDigestSha256": "CA27666523DB35712EF88D73B842D39A3C8E8705785905FB5D6002BF51BC4EE7",
+      "inputManifestFileSha256": "0E1546DAE316DB41FCD2C2CE40BB6D9A88B936E1F383373F91F3019B6498875B",
+      "asRunHarnessSourceHashes": {
+        "builder": "72DD19AE5202B06D40542FA7DC21B9B71D3B0588FD2CE3373997F71D9AE9F9B1",
+        "runtime": "0F99C62B3ADF7B19CBAF2048509E96AEC8DCA59580AAAA6353CB9B96A32227E2",
+        "runner": "C6D5000E2314C178B56E96351C8DA3BC9541451A6B34B998A74D8536EFD1FF2E"
+      },
+      "limits": [
+        "Controlled HDRP Volume and lighting setup; the combined controls do not establish which one was necessary.",
+        "Rendering-only evidence; does not validate Bridge device output/session or physical optical quality."
+      ]
+    }
+  },
+  "pendingRuns": [],
+  "historicalEvidence": {
+    "windowsD3d11EditModeDiscoveryAndInspector": {
+      "revision": "bb5f5ac",
+      "counts": {
+        "total": 48,
+        "passed": 48,
+        "failed": 0,
+        "skipped": 0
+      },
+      "caseGroups": {
+        "authoringDiscovery": 23,
+        "inspector": 25
+      },
+      "editorNaturalExit": true,
+      "settingsClean": true,
+      "evidenceDir": ".local/windows-quilt-orientation-20261011/latest-integration-64803f6/editmode-authoring-discovery-64803f6-admissionwait-reflect",
+      "limits": [
+        "The discovery fixture and related production Editor sources match the later d34 source tree.",
+        "The inspector fixture had a subsequent diagnostic-only edit and its run summary has no source hash; this is evidence for the recorded run basis."
+      ]
+    },
+    "windowsD3d11Geometry": {
+      "revision": "1a2fb7d",
+      "counts": {
+        "total": 15,
+        "passed": 15,
+        "failed": 0,
+        "skipped": 0
+      },
+      "editorNaturalExit": true,
+      "settingsClean": true,
+      "evidenceDir": ".local/windows-display-geometry-integration-20261011/geometry-editmode-d3d11",
+      "limits": [
+        "The run summary has no source fingerprints and the fixture/store were introduced after this revision, so it is historical and is not current geometry verification."
+      ]
+    }
+  },
+  "notEstablished": [
+    "Other graphics API and subpixel mode combinations",
+    "Physical panel scanout orientation",
+    "Optical image quality"
+  ],
+  "observedIncidents": [
+    {
+      "kind": "ManualEditorGuiCloseCrash",
+      "project": "E:\\My project (34)",
+      "editor": {
+        "processId": 101536,
+        "graphicsApi": "Direct3D 12",
+        "batchMode": false,
+        "processCreationTimeLocal": "2026-10-11 21:42:27.824",
+        "editorLogStartLocal": "2026-10-11 21:42:28"
+      },
+      "werEvents": [
+        {
+          "localTime": "2026-10-11 21:44:08",
+          "exceptionCode": "0xc0000005"
+        },
+        {
+          "localTime": "2026-10-11 21:44:18",
+          "exceptionCode": "0xc000041d"
+        }
+      ],
+      "sanitizedStack": "dup_nolock -> dup -> RedirectStdout -> Application::Terminate -> ContainerWndProc",
+      "loadedComponents": "Native HDRP Distribution module and SDK 2.6.3",
+      "recoveryWarningCode": -1,
+      "cause": "Undetermined; read-only investigation is ongoing.",
+      "userReportedDeviceOutput": true,
+      "unverifiedHypothesis": "The user suspected overlap between the manual Editor's device output and automated background validation.",
+      "notMeasured": [
+        "Overlap with validation processes other than retry 7",
+        "Bridge SDK initialize/uninitialize state",
+        "SDK/service residual state",
+        "Process CRT standard-handle state"
+      ],
+      "relatedRecord": "docs/windows-stdout-crash-20261011.md",
+      "relationshipNote": "The stack resembles a previously investigated stdout/shutdown fault family, but similarity does not establish that Bridge caused this incident. The current shim's first-load handle snapshot/restore protection does not establish handle state during this observation.",
+      "separateFrom": {
+        "path": ".local/windows-render-only-player-hdrp-d3d12-20261011-retry7",
+        "playerProcessId": 76728,
+        "startLocal": "2026-10-11 21:42:00.315",
+        "endLocal": "2026-10-11 21:42:11.247",
+        "manualEditorCreatedLocal": "2026-10-11 21:42:27.824",
+        "overlapped": false,
+        "naturalExit": true,
+        "exitCode": 0
+      },
+      "scopeNote": "A single manual GUI close observation. It is not a failure of the selected automated fixture and does not establish a general Editor shutdown failure.",
+      "reproduced": false
+    }
+  ],
+  "failedAttempts": [
+    {
+      "pipeline": "HDRP",
+      "graphicsApi": "Direct3D 12",
+      "buildKind": "Release",
+      "path": ".local/windows-render-only-player-hdrp-d3d12-20261011",
+      "stage": "Launch preparation",
+      "testsRun": 0,
+      "reason": "PowerShell 5 did not support Path.GetRelativePath; no Player test was executed. Cleanup was confirmed.",
+      "countedAsPass": false
+    },
+    {
+      "pipeline": "HDRP",
+      "graphicsApi": "Direct3D 12",
+      "buildKind": "Release",
+      "path": ".local/windows-render-only-player-hdrp-d3d12-20261011-retry1",
+      "stage": "Launch preparation",
+      "testsRun": 0,
+      "reason": "PowerShell 5 launch argument API failure before test execution. Cleanup was confirmed.",
+      "inputSourceDigestSha256": "36F6209E08497E8B674B1D6A1E2FBCF75721746D0D9F9F881AC7D0824FEADC23",
+      "countedAsPass": false
+    },
+    {
+      "pipeline": "HDRP",
+      "graphicsApi": "Direct3D 12",
+      "buildKind": "Release",
+      "path": ".local/windows-render-only-player-hdrp-d3d12-20261011-retry2",
+      "stage": "Player rendering",
+      "naturalExit": true,
+      "exitCode": 0,
+      "cleanupPassed": true,
+      "renderGatePassed": false,
+      "beforeCapture": {
+        "tileCount": 4,
+        "redSamplesPerTile": 0,
+        "greenSamplesPerTile": 0,
+        "distinctQuantizedColorsPerTile": 7,
+        "viewDifference": false,
+        "movementReached": false,
+        "readinessElapsedMilliseconds": 11687.2265625
+      },
+      "error": "InvalidOperationException: Every before-capture tile must contain both red and green evidence.",
+      "countedAsPass": false,
+      "inputSourceDigestSha256": "3E5779E16F889558D4B689AB0D439A75A628BE05600AA12D9A607D886AED990C",
+      "asRunHarnessSourceHashes": {
+        "builder": "803CFF2B61583EE5BCC37292020FC5239C001815B9AA9B9CD3451C12EFF2A47C",
+        "runtime": "A6C3672FD8B0CD576B258A50F5EDD758F24001B79AD865FD12D90AE3D7EDFC7A",
+        "runner": "9CC1343D8EE64B3DB904C57B639DD63DF3308FFCC6B67A9ED4BBDFD083B8EC7E"
+      }
+    },
+    {
+      "pipeline": "HDRP",
+      "graphicsApi": "Direct3D 12",
+      "buildKind": "Release",
+      "path": ".local/windows-render-only-player-hdrp-d3d12-20261011-retry3",
+      "stage": "Player rendering",
+      "naturalExit": true,
+      "exitCode": 0,
+      "cleanupPassed": true,
+      "renderGatePassed": false,
+      "beforeCapture": {
+        "tileCount": 4,
+        "redSamplesPerTile": 0,
+        "greenSamplesPerTile": 0,
+        "meanRgbApprox": [
+          254,
+          247,
+          220
+        ],
+        "distinctQuantizedColorsPerTile": 7,
+        "viewDifference": false,
+        "movementReached": false,
+        "readinessElapsedMilliseconds": 2002.0379638671875
+      },
+      "inputSourceDigestSha256": "7F783673E9D73056940E6F00B4FE649022E10D54F0B6ABD5ADB67DC9BBED9363",
+      "error": "InvalidOperationException: Every before-capture tile must contain both red and green evidence.",
+      "countedAsPass": false,
+      "asRunHarnessSourceHashes": {
+        "builder": "157CE47C6A26BC6054D33C015EF81B8F1BA32A815279AD8B0511E6D7FC770D35",
+        "runtime": "0DEBD53BE28DB3B9797F1CACB57A066A305535FE9DA14A9050A9593430B509E2",
+        "runner": "9CC1343D8EE64B3DB904C57B639DD63DF3308FFCC6B67A9ED4BBDFD083B8EC7E"
+      }
+    },
+    {
+      "pipeline": "HDRP",
+      "graphicsApi": "Direct3D 12",
+      "buildKind": "Release",
+      "path": ".local/windows-render-only-player-hdrp-d3d12-20261011-retry4",
+      "stage": "CIM preflight",
+      "testsRun": 0,
+      "reason": "The initial CIM preflight was denied. A separately recorded Editor build attempt followed and is listed independently; neither reached a Player test case.",
+      "countedAsPass": false,
+      "followedByEditorBuildAttempt": true,
+      "preflightAccessDenied": true
+    },
+    {
+      "pipeline": "HDRP",
+      "graphicsApi": "Direct3D 12",
+      "buildKind": "Release",
+      "path": ".local/windows-render-only-player-hdrp-d3d12-20261011-retry4",
+      "stage": "Editor build startup",
+      "editorPid": 105696,
+      "naturalExit": true,
+      "exitCode": -536870911,
+      "playerBuilt": false,
+      "testsRun": 0,
+      "cleanupPassed": true,
+      "error": "The Editor exited during BuildReportRestService/HttpListener startup; logs also show WMI and license IPC access errors.",
+      "buildSummary": ".local/windows-render-only-player-hdrp-d3d12-20261011-retry4/build-summary.json",
+      "cleanupSummary": ".local/windows-render-only-player-hdrp-d3d12-20261011-retry4/cleanup-summary.json",
+      "countedAsPass": false
+    },
+    {
+      "pipeline": "HDRP",
+      "graphicsApi": "Direct3D 12",
+      "buildKind": "Release",
+      "path": ".local/windows-render-only-player-hdrp-d3d12-20261011-retry5",
+      "stage": "Player rendering",
+      "naturalExit": true,
+      "exitCode": 0,
+      "cleanupPassed": true,
+      "renderGatePassed": false,
+      "runtimeSummaryPath": ".local/windows-render-only-player-hdrp-d3d12-20261011-retry5/player-evidence/summary.json",
+      "inputSourceDigestSha256": "9C79A1205BD5328D2BAA117A04A8009C5050176FA03D70ACC2D0BCB115E433A6",
+      "asRunHarnessSourceHashes": {
+        "builder": "157CE47C6A26BC6054D33C015EF81B8F1BA32A815279AD8B0511E6D7FC770D35",
+        "runtime": "5198CD6D94FCC2F5FDB0AE1EA92AFC6CB69568DAB762DD745978904EBC30334C",
+        "runner": "444E84DE7A3C8BF344F62ECA4B1796F8890215729A04EE79755CB83436C135A1"
+      },
+      "directStandardRequest": {
+        "width": 256,
+        "height": 256,
+        "nonBlank": 65536,
+        "redSamples": 38246,
+        "greenSamples": 5155,
+        "averageRgb": [
+          116,
+          81,
+          36
+        ]
+      },
+      "quiltReadback": {
+        "width": 512,
+        "height": 512,
+        "tiles": 4,
+        "eachTileNonBlank": 65536,
+        "redSamplesPerTile": 0,
+        "greenSamplesPerTile": 0,
+        "averageRgbPerTileApprox": [
+          [
+            254,
+            247,
+            220
+          ],
+          [
+            254,
+            247,
+            221
+          ],
+          [
+            254,
+            247,
+            221
+          ],
+          [
+            254,
+            247,
+            222
+          ]
+        ],
+        "distinctQuantizedColorsPerTile": 7,
+        "viewDifference": false,
+        "movementReached": false
+      },
+      "effectiveGlobalVolumeStack": {
+        "exposure": "Fixed EV 0",
+        "fogEnabled": false,
+        "visualEnvironmentSkyType": 0,
+        "bloomIntensity": 0
+      },
+      "nativeTrace": "trace_file_not_created; initialization was not observed, which does not establish that initialization did not occur.",
+      "reason": "The direct StandardRequest image contained red and green evidence, while the Quilt readback failed the tile-color/view-difference gate. No root cause is established.",
+      "countedAsPass": false
+    },
+    {
+      "pipeline": "HDRP",
+      "graphicsApi": "Direct3D 12",
+      "buildKind": "Release",
+      "path": ".local/windows-render-only-player-hdrp-d3d12-20261011-retry6",
+      "stage": "Player rendering",
+      "naturalExit": true,
+      "exitCode": 0,
+      "cleanupPassed": true,
+      "renderGatePassed": false,
+      "inputSourceDigestSha256": "0136ED60C1C71B10C6C3490EC1BFD685B69448B508C1A11EE77D5DB7FC4E282E",
+      "asRunHarnessSourceHashes": {
+        "builder": "D20B564D8B020D5E001ADF7EB2CCA39E7FF5756D28C8D698647CBEBF59463C10",
+        "runtime": "95908245C1BCB8644BEBA9CA17FF102A877C2E5063325FD8A70680BEFFC941D0",
+        "runner": "66DB96C06138375D3DA1C1362992DE3D52562C2B5893EDD5F8A51AE8932EBA8A"
+      },
+      "directStandardRequest": {
+        "width": 256,
+        "height": 256,
+        "nonBlank": 3778,
+        "redSamples": 0,
+        "greenSamples": 0,
+        "averageRgb": [
+          14,
+          13,
+          11
+        ]
+      },
+      "quiltReadback": {
+        "width": 512,
+        "height": 512,
+        "tiles": 4,
+        "eachTileNonBlankRange": [
+          3696,
+          3872
+        ],
+        "redSamplesPerTile": 0,
+        "greenSamplesPerTile": 0,
+        "averageRgbPerTileApprox": [
+          [
+            14,
+            14,
+            14
+          ],
+          [
+            14,
+            14,
+            14
+          ],
+          [
+            14,
+            14,
+            14
+          ],
+          [
+            15,
+            14,
+            14
+          ]
+        ],
+        "distinctQuantizedColorsPerTileRange": [
+          5,
+          6
+        ],
+        "viewDifference": true,
+        "movementReached": false
+      },
+      "perViewPreCopyDiagnostics": {
+        "capturedAt": "readiness stage, not the same final before/after evaluation frame",
+        "capturedViews": 4,
+        "captureSucceeded": true,
+        "hdrpVolumeStackExposure": "Fixed EV 4",
+        "bloomIntensity": 0,
+        "fogEnabled": false,
+        "customUserHistoryChannelReadOnly": true
+      },
+      "nativeTrace": "No trace file was created; initialization was not observed, without proving it did not occur.",
+      "reason": "The before-capture image failed its red/green threshold. Quilt views differed, but color and movement gates did not pass.",
+      "countedAsPass": false
+    },
+    {
+      "pipeline": "HDRP",
+      "graphicsApi": "Direct3D 12",
+      "buildKind": "Release",
+      "path": ".local/windows-render-only-player-hdrp-d3d12-20261011-retry7",
+      "stage": "Player rendering",
+      "naturalExit": true,
+      "exitCode": 0,
+      "cleanupPassed": true,
+      "renderGatePassed": false,
+      "inputSourceDigestSha256": "A649CC9FF7CFF6EF97A93FAF24A9C0EA80A660E38942B2ECA9B42F2E3B4FCBC5",
+      "asRunHarnessSourceHashes": {
+        "builder": "A5EE7B718ED1273F54E6B8874C722596FCB5A54D65D6B0994F0AFB8ACBCFCF77",
+        "runtime": "B54F57EC88129A3185773BEC880A3C4E59747D6E6698A7BBE1D175B1085044A1",
+        "runner": "958EDA06B429B327703AD82BC4ED5284620810717B544106985B3E99D2984001"
+      },
+      "fixtureLightControl": {
+        "lightType": "Directional",
+        "lightUnit": "Lux",
+        "intensity": 10,
+        "verifiedStages": 8,
+        "verifiedThrough": "after-quilt-before-capture"
+      },
+      "directStandardRequest": {
+        "width": 256,
+        "height": 256,
+        "nonBlank": 3778,
+        "redSamples": 0,
+        "greenSamples": 0,
+        "averageRgb": [
+          14,
+          13,
+          11
+        ]
+      },
+      "quiltReadback": {
+        "width": 512,
+        "height": 512,
+        "tiles": 4,
+        "tileNonBlank": [
+          3696,
+          3773,
+          3797,
+          3872
+        ],
+        "redSamplesPerTile": 0,
+        "greenSamplesPerTile": 0,
+        "viewDifferenceCounts": [
+          383,
+          349,
+          401
+        ],
+        "distinctQuantizedColors": [
+          6,
+          7,
+          7,
+          7
+        ],
+        "movementReached": false
+      },
+      "reason": "The explicit directional-light control remained at 10 lux through the recorded stages, but the direct image and Quilt tiles still failed the red/green color gate. The before-image assertion stopped evaluation before the movement-after gate.",
+      "countedAsPass": false
+    }
+  ]
+}
