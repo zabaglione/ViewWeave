@@ -54,6 +54,13 @@
   <p>このページは対応表の照合履歴、検証範囲、詳細な根拠を保管します。現在の判定は<a href="../../ja/unity-feature-platform-matrix.html">対応状況の表</a>を参照してください。</p>
 
 
+  <section id="quick-start-play-2026-10-14">
+    <h2>Quick StartのPlay自動開始（2026年10月14日）</h2>
+    <p>検証コード基準は<code>5a3dd3f64d67161486e46ec335e4d2f4160ee3e3</code>＋実行時に未commitだったURP/HDRP Sample sceneの初期値変更です。両出力のstartOnEnableをONにし、新規Rigと揃えました。runtime／shader／native sourceとhelperは変更していません。個別hashは構造化結果を参照してください。</p>
+    <p>macOS Metal・Unity 6000.6.4f1・URP/HDRP 17.6.0・Editor・Domain Reload無効／Scene Reload有効で、旧SampleのPlay時idleを再現。修正後はPreview→Playで手動操作なしの出力開始、フレーム・Animator進行、利用者OFF設定の保持、停止後pending 0を確認しました。HDRPではreflection system重複警告1件が残ります。新たなWindows実行、Quick Start Player、光学品質、frame rate保証は含みません。現在の対応表へ該当4列を反映しました。</p>
+    <p><a href="../quick-start-play-startup-validation-20261014.md">詳細report</a> · <a href="../../validation/quick-start-play-startup-20261014.json">構造化結果・source hash</a></p>
+  </section>
+
   <section id="macos-latest-2026-10-14">
     <h2>macOS最新版の再評価（2026年10月14日）</h2>
     <p>検証コード基準は<code>c4de573c4435f0105e62f6125f8d4fedd78786b3</code>。Core／URP製品sourceの追加変更はなく、検証時のfixture・文書は未commitでした。Windows記録の「未commit」は当該run時点の状態を保持しています。今回pullされたHDR実装はcommit c4de573へ取り込まれ、当時記録されたCore／format provider／URP cameraのhashと一致します。公開release済みとは記載しません。</p>

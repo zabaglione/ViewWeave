@@ -2,7 +2,7 @@
 
 # 対応環境と制限
 
-ViewWeaveは、Unity **6000.6.4f1**、**URP/HDRP 17.6**向けの実験的な開発版です。[利用するパイプラインのパッケージ](../../README.ja.md)を一つ導入してください。機器への出力には公式Looking Glass Bridge runtimeと接続displayが必要です。
+ViewWeaveは、Unity **6000.6.4f1**、**URP/HDRP 17.6**向けの実験的なv0.1.0リリースです。[利用するパイプラインのパッケージ](../../README.ja.md)を一つ導入してください。機器への出力には公式Looking Glass Bridge runtimeと接続displayが必要です。
 
 | 環境 | 出力経路 | 導入手順 |
 | --- | --- | --- |

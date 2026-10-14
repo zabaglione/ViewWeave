@@ -2,12 +2,19 @@
 
 > Audience: ViewWeave developers and release contributors. This is a change record; dated test results apply only to the conditions stated. For current support and setup, see [Compatibility](docs/compatibility.md) and [Getting started](docs/getting-started.md). Browse the [Technical Guide](docs/technical-guide.md) or [User Guide](docs/user-guide.md).
 
-## Unreleased
+## v0.1.0 — 2026-10-14
+
+First experimental release. Install the [URP or HDRP package](README.md) pinned to `v0.1.0`; see [Compatibility](docs/compatibility.md) for tested conditions and known limits.
+
+- Quick Start URP/HDRP now share the menu-created Rig's automatic Play output default. Both startup flags are saved on, while the platform helper preserves user-disabled settings. macOS Metal Editor checks reproduced the old idle output and verified automatic frames/Animator progression, Preview-to-Play cleanup, and manual opt-out in both pipelines. Windows startup execution and Quick Start Players were not rerun. See the [startup validation](docs/development/quick-start-play-startup-validation-20261014.md).
+- User docs were shortened and development records moved under `docs/development`. Evidence copies retain results while replacing machine-specific path roots; historical Git contents were not rewritten. The README has a background-blurred presentation photo.
+
+### Included implementation and earlier validation
 
 - URP Quilt output now keeps a persistent Camera and temporal history per rendered logical view, follows Reference Camera TAA settings, and renders through public `Camera.Render()` so URP can accumulate TAA. Rig > Rendering contains the history mode, resource budget, and camera limit. Unsupported TAA combinations report a diagnostic instead of changing authoring settings; explicit Shared Camera Compatibility retains the earlier behavior.
 - Metal validation of URP Quilt TAA covers independent history textures, real-frame jitter/history progression, TAA-on/off pixel controls, pool resize/pruning/stop/restart, scripted Volume ownership, Edit Mode local preview pause/resume, and rendering-only macOS Development/Release Players. Windows DX11/DX12, new-path Go optical review, and general Native-resolution performance remain unverified. See the [URP view-history validation](docs/development/urp-view-history-validation-20261011.md).
 
-This repository is a prototype and is not a formal 0.1 release.
+The following implementation and test records predate this release and retain their original scope.
 
 - HDRP now defaults to persistent per-view histories and central GPU-metered exposure shared across the Quilt. Authored HDRP camera/effect settings are retained; the old appearance-changing adaptations require explicit Shared Camera Compatibility selection. Stopping output and automatic-render failures release the history pool, including exposure warmup resources. Settings remain under Rig > Rendering.
 - The HDRP plant-case lighting was accepted on Looking Glass Go with Unity 6000.6.4f1 / Metal, and GraphicsCompatibility passed 52/52 with zero skips. Four-view macOS rendering-only Development/Release Players passed history, exposure, retirement, and budget checks. At that validation stage, ordinary URP Camera TAA passed Metal jitter/pixel controls and Quilt TAA was disabled; the later URP change is recorded above. New-history Windows execution and macOS Bridge/device Players, individual HDRP temporal-effect pixel correctness, and complete VRAM accounting remain unverified. See the [HDRP view-history validation](docs/development/hdrp-view-history-validation-20261010.md).

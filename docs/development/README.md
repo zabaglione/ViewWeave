@@ -59,6 +59,7 @@ Dated results apply only to their recorded revision, OS/API, pipeline, Editor/Pl
 - [macOS 最新版・Preview遷移・終了診断の再評価（2026-10-14）](macos-preview-shutdown-validation-20261014.md)
 - [macOS終了thread・残留割当stackの切り分け（2026-10-14）](macos-shutdown-stack-validation-20261014.md)
 - [macOS共通サブピクセル契約の再検証（2026-10-11）](macos-unified-subpixel-validation-20261011.md)
+- [Quick Start automatic Play output — 2026-10-14](quick-start-play-startup-validation-20261014.md)
 - [Quick Start Sample validation — 2026-10-10](quick-start-validation-20261010.md)
 - [Reference Camera Inspector validation (2026-10-11)](rig-reference-camera-validation-20261011.md)
 - [URP/HDRPサンプルプロジェクトの更新 — 2026-10-11](sample-project-refresh-20261011.md)

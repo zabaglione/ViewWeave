@@ -49,7 +49,7 @@
 <main>
   <header>
     <h1>現在の対応状況</h1>
-    <p class="meta">最終照合: <time datetime="2026-10-14">2026年10月14日</time>（日本時間） · Unity 6000.6.4f1 · URP / HDRP 17.6.0 · 現行作業版（未リリースの変更を含みます）。詳細なコード基準と検証履歴は<a href="../development/ja/unity-feature-platform-matrix-history.html">作業・検証履歴</a>を参照。</p>
+    <p class="meta">最終照合: <time datetime="2026-10-14">2026年10月14日</time>（日本時間） · Unity 6000.6.4f1 · URP / HDRP 17.6.0 · v0.1.0の構成。詳細なコード基準と検証履歴は<a href="../development/ja/unity-feature-platform-matrix-history.html">作業・検証履歴</a>を参照。</p>
   </header>
 
   <h2>環境と出力経路</h2>
@@ -60,6 +60,7 @@
     <thead><tr><th scope="col">機能・環境</th><th scope="col">Windows<br>URP</th><th scope="col">Windows<br>HDRP</th><th scope="col">macOS<br>URP</th><th scope="col">macOS<br>HDRP</th><th scope="col">利用条件・制限</th></tr></thead>
     <tbody>
 <tr><th scope="row">Quick Startの取り込み<br>Editorでの読み込み・表示</th><td><span class="status ok">限定確認</span><span class="cell-note">D3D12 · Editor</span></td><td><span class="status ok">限定確認</span><span class="cell-note">D3D12 · Editor</span></td><td><span class="status ok">限定確認</span><span class="cell-note">local UPM · Editor / Play</span></td><td><span class="status ok">限定確認</span><span class="cell-note">local UPM · Editor / Play</span></td><td>local packageを取り込み、Editorで表示できます。機器出力や一般的な操作は別途確認が必要です。 <a href="#source-windows-environment-output">[33]</a></td></tr>
+<tr><th scope="row">Quick StartのPlay出力自動開始</th><td><span class="status implemented">実装あり</span><span class="cell-note">初期値ON · 起動実行は未確認</span></td><td><span class="status implemented">実装あり</span><span class="cell-note">初期値ON · 起動実行は未確認</span></td><td><span class="status ok">限定確認</span><span class="cell-note">Metal · Editor · Preview→Play</span></td><td><span class="status ok">限定確認</span><span class="cell-note">Metal · Editor · Preview→Play</span></td><td>新規Rigと同じ自動開始設定です。macOSでフレーム・Animator進行、利用者のOFF設定保持、停止後pending 0を確認。Quick Start Player・光学品質・性能保証は対象外です。以前Importしたコピーは再Importまたは起動設定の変更が必要です。 <a href="#source-quick-play">[49]</a></td></tr>
 <tr><th scope="row">既存サンプルのpackage更新</th><td><span class="status ok">限定確認</span><span class="cell-note">D3D12</span></td><td><span class="status ok">限定確認</span><span class="cell-note">D3D12</span></td><td><span class="status implemented">実装あり</span><span class="cell-note">実行未確認</span></td><td><span class="status implemented">実装あり</span><span class="cell-note">実行未確認</span></td><td>既存サンプルへlocal packageの更新を反映できます。sample sceneの描画やBridge初期化を保証するものではありません。 <a href="#source-windows-latest-integration">[32]</a></td></tr>
 <tr><th scope="row">Windows Worker出力の向き</th><td><span class="status ok">限定確認</span><span class="cell-note">D3D12</span></td><td><span class="status ok">限定確認</span><span class="cell-note">D3D12</span></td><td>Windows Worker経路は対象外</td><td>Windows Worker経路は対象外</td><td>Windows Workerの合成出力向けです。物理画面のscanout方向や光学品質は別途確認が必要です。 <a href="#source-windows-environment-output">[33]</a> <a href="#source-windows-orientation">[31]</a> <a href="#source-windows-latest-integration">[32]</a></td></tr>
 <tr><th scope="row">描画APIと機器出力</th><td>D3D11 / D3D12 · Bridge Worker</td><td>D3D11 / D3D12 · Bridge Worker</td><td>Metal · calibration profile</td><td>Metal · calibration profile</td><td>WindowsはD3D11 / D3D12のBridge Worker、macOSはMetalの校正値出力を使います。Goの指定Preview／Play／Player経路に限り確認しています。光学品質・他機器は個別確認が必要です。 <a href="#source-windows-environment-output">[33]</a> <a href="#source-macos-preview-shutdown">[47]</a></td></tr>
@@ -208,6 +209,7 @@
     <li id="source-macos-current-player"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-macos-current-player">[46] macOS旧Coreでの現行dylib Player検証（2026-10-14）</a></li>
     <li id="source-macos-preview-shutdown"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-macos-preview-shutdown">[47] macOS最新CoreのPlayer／Preview遷移・終了比較（2026-10-14）</a></li>
     <li id="source-macos-shutdown-stacks"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-macos-shutdown-stacks">[48] macOS終了thread・残留割当stackの切り分け（2026-10-14）</a></li>
+    <li id="source-quick-play"><a href="../development/quick-start-play-startup-validation-20261014.md">[49] Quick Start自動開始 — macOS Metal URP/HDRP Editor（2026-10-14）</a> · <a href="../validation/quick-start-play-startup-20261014.json">構造化結果・検証コード基準</a></li>
   </ol>
   <footer>
     <p><a href="../validation/PUBLIC_EVIDENCE.md">公開用証跡のパス・ハッシュの扱い</a></p>

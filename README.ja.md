@@ -6,16 +6,17 @@
 
 ViewWeaveは、通常のURPまたはHDRP sceneを多視点Quiltとして描画し、Looking Glassへ出力する非公式Unity SDKです。カメラ構図、Preview、Capture、出力をまとめて操作するRigを提供します。機器へ出力する場合は、公式Looking Glass Bridge runtimeと対応するdisplayを別途用意してください。
 
-現在は実験的な開発版です。Unity 6000.6.4f1のURPまたはHDRPプロジェクトを使います。利用するパイプラインのpackageを一つ選び、**Package Manager > + > Install package from git URL**から追加してください。
+v0.1.0は実験的なリリースです。Unity 6000.6.4f1のURPまたはHDRPプロジェクトを使います。利用するパイプラインのpackageを一つ選び、**Package Manager > + > Install package from git URL**から追加してください。
 
-- URP: `https://github.com/zabaglione/ViewWeave.git?path=/Distribution/urp#main`
-- HDRP: `https://github.com/zabaglione/ViewWeave.git?path=/Distribution/hdrp#main`
+- URP: `https://github.com/zabaglione/ViewWeave.git?path=/Distribution/urp#v0.1.0`
+- HDRP: `https://github.com/zabaglione/ViewWeave.git?path=/Distribution/hdrp#v0.1.0`
 
 ## Quick Start
 
 1. 上記からURPまたはHDRP packageを追加し、Package Managerの**Samples**から**URP Quick Start**または**HDRP Quick Start**をImportします。
 2. Sample内の`QuickStart.unity`を開きます。
-3. **ViewWeave Bridge Rig**を選び、**Preview > Start Looking Glass Device Preview**を開始します。displayがない場合は**Start Local Edit Mode Preview**を選びます。
+3. 静止画を確認する場合は**ViewWeave Bridge Rig**を選び、**Preview > Start Looking Glass Device Preview**を開始します。displayがない場合は**Start Local Edit Mode Preview**を選びます。
+4. 接続displayでアニメーションを確認する場合は**Play**します。メニューから作成したRigと同じく、出力が自動で始まります。
 
 画像付きの[導入手順](docs/ja/getting-started.md)、日常操作の[ユーザーガイド](docs/ja/user-guide.md)、目的別の[ドキュメント目次](docs/ja/index.md)を用意しています。OS・pipeline・Editor／Player・機器別の確認条件と既知の制限は[対応表](docs/ja/compatibility.md)を参照してください。
 

@@ -18,7 +18,9 @@ Import先は`Assets/Samples/<package表示名>/<version>/<Sample名>/`です。U
 
 ![ImportしたSample内のQuickStartシーン](../images/quick-start/imported-scene.jpg)
 
-Sampleには黒い背景、赤いCube、青いSphere、黄色いCapsule、カメラ、設定済みRigが入っています。Edit Mode Previewは静止画です。アニメーションも確認する場合は**Play**し、Rigの**Bridge > Start Output**をクリックします。Cubeが回転し、Sphereが上下します。Sampleの出力は自動開始しません。終了は**Stop Output**、Playの停止の順に行います。
+Sampleには黒い背景、赤いCube、青いSphere、黄色いCapsule、カメラ、設定済みRigが入っています。Edit Mode Previewは静止画です。接続displayでアニメーションを確認する場合は**Play**します。出力が自動で始まり、Cubeが回転し、Sphereが上下します。Playを止めると出力も終了します。Sampleとメニューから新規作成したRigの起動設定は同じです。
+
+以前ImportしたSampleのコピーは、package更新だけでは変わりません。編集したsceneをバックアップしてから再Importするか、既存Rigの**Bridge > Start Output On Enable**（Metal）／**Start Session On Enable**（Windows）を有効にしてください。この設定をOFFにして手動運用することもでき、その場合は**Bridge > Start Output**で開始します。
 
 ![ImportしたURP SampleのDevice Preview](../images/quick-start/device-preview.jpg)
 
@@ -30,12 +32,12 @@ Sampleには黒い背景、赤いCube、青いSphere、黄色いCapsule、カメ
 
 | パイプライン | Git URL |
 | --- | --- |
-| URP | `https://github.com/zabaglione/ViewWeave.git?path=/Distribution/urp#main` |
-| HDRP | `https://github.com/zabaglione/ViewWeave.git?path=/Distribution/hdrp#main` |
+| URP | `https://github.com/zabaglione/ViewWeave.git?path=/Distribution/urp#v0.1.0` |
+| HDRP | `https://github.com/zabaglione/ViewWeave.git?path=/Distribution/hdrp#v0.1.0` |
 
 配布packageにはCore、Bridge、選択したパイプラインが含まれます。同じプロジェクトに両版を入れないでください。公開されたGitHubリポジトリはGitHub認証なしで取得できます。アクセス制限のあるコピーを使う場合はリポジトリの権限とGit認証が必要です。認証tokenをURLへ埋め込まないでください。
 
-更新後はEditorを正常終了し、再起動してnative pluginを読み込み直します。`#main`は開発版です。revisionを固定する場合はcommit hashやtagを指定します。更新方法とnative pluginが切り替わらない場合の対処は[package更新](../development/bridge-package-update-safety.md)と[更新時のトラブル](../development/native-plugin-update-troubleshooting.md)を参照してください。
+更新後はEditorを正常終了し、再起動してnative pluginを読み込み直します。上のURLは`v0.1.0`に固定しています。`#main`を指定すると開発版を取得します。更新方法とnative pluginが切り替わらない場合の対処は[package更新](../development/bridge-package-update-safety.md)と[更新時のトラブル](../development/native-plugin-update-troubleshooting.md)を参照してください。
 
 ## 自分のシーンを作る：8手順
 
@@ -95,7 +97,7 @@ Playせずに、Rigの**Preview > Start Looking Glass Device Preview**をクリ�
 
 ![Previewの開始ボタンとRenderingの画質設定](../images/quick-start/preview-quality.jpg)
 
-一時停止は**Pause Preview**、再開は**Resume Preview**です。接続と描画資源を解放して終了する場合は**Advanced > Close Preview**を使います。アニメーションを実機へ送るにはPlayし、**Bridge**の出力状態を確認してください。Sampleでは**Start Output**を押します。メニューから新規作成したRigは自動起動が既定で有効です。
+一時停止は**Pause Preview**、再開は**Resume Preview**です。接続と描画資源を解放して終了する場合は**Advanced > Close Preview**を使います。アニメーションを実機へ送るにはPlayし、**Bridge**の出力状態を確認してください。Sampleとメニューから新規作成したRigは、どちらも自動起動が既定で有効です。自動起動をOFFにした場合は**Start Output**で開始します。
 
 ### 8. Renderingで描画品質を調整する
 
@@ -114,7 +116,7 @@ FullからQuarterへ変えると、重いシーンではフレームレートが
 
 ## Playerをbuildする
 
-シーンを保存し、**File > Build Profiles**へ追加します。macOSはMetal、WindowsはDX11またはDX12でビルドします。Sampleは自動起動をオフにしているため、Playerへ表示する場合は、Rigの**Bridge**で**Start Output On Enable**（Metal）または**Start Session On Enable**（Windows）を有効にしてから保存・ビルドしてください。OSを変えたときは、選択された出力側の起動設定とOutput Qualityを再確認します。
+シーンを保存し、**File > Build Profiles**へ追加します。macOSはMetal、WindowsはDX11またはDX12でビルドします。Sampleは自動起動が既定で有効です。保存・ビルド前に、Rigの**Bridge**で**Start Output On Enable**（Metal）または**Start Session On Enable**（Windows）を確認してください。OSを変えたときは、選択された出力側の起動設定とOutput Qualityを再確認します。
 
 これはビルド手順であり、Quick Start SampleのPlayer動作を確認した結果ではありません。限定的なlocal packageのImport・Editor確認は、機器出力やPlayer対応を示すものではありません。OS/APIとSampleごとの条件は、対応表から辿れる機能別対応表を確認してください。公開後の認証なしGit導入は未検証です。ネイティブ署名や実機の制限を含む現在の確認範囲は、[対応表](compatibility.md#現在の開発版の確認範囲)を参照してください。
 

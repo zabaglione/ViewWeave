@@ -1,0 +1,1075 @@
+{
+  "schema": 1,
+  "dateJst": "2026-10-14",
+  "scope": "Quick Start automatic output startup; macOS Metal Editor; not NUnit tests or physical optical acceptance",
+  "codeBasis": {
+    "baseCommit": "5a3dd3f64d67161486e46ec335e4d2f4160ee3e3",
+    "uncommittedDuringRun": true,
+    "changes": "Only both QuickStart.unity scene defaults; explicit current default fields serialized by Unity. No runtime C#/native/shader changes.",
+    "files": {
+      "Packages/com.zabaglione.lookingglass.viewweave.bridge/Samples~/QuickStartURP/QuickStart.unity": {
+        "testedTreeSha256": "52c67f0769c736c04574bcb22f7fca20bd1e94e93853e3f71aa0c4e537346b13",
+        "baselineSha256": "05fce33d84a5eff53806a9d5e936328ed3c10348cdfae0944d95b072de4124dd",
+        "changed": true
+      },
+      "Packages/com.zabaglione.lookingglass.viewweave.bridge/Samples~/QuickStartHDRP/QuickStart.unity": {
+        "testedTreeSha256": "dd15721e63346683c56a81bddb22361c1f453527600bd353e15faef19caa0a13",
+        "baselineSha256": "b321c62240d6ad98f54c53bced6033bc8b18379497ce09911991e1c7e37ac955",
+        "changed": true
+      },
+      "Packages/com.zabaglione.lookingglass.viewweave.bridge/Samples~/QuickStartURP/QuickStartPlatformOutput.cs": {
+        "testedTreeSha256": "9a3451a94be6ffba9ef0a39f6355f66e388d6d095077acbdfc295a7ab3c697da",
+        "baselineSha256": "9a3451a94be6ffba9ef0a39f6355f66e388d6d095077acbdfc295a7ab3c697da",
+        "changed": false
+      },
+      "Packages/com.zabaglione.lookingglass.viewweave.bridge/Samples~/QuickStartHDRP/QuickStartPlatformOutput.cs": {
+        "testedTreeSha256": "79de663fdcdce7ccb177e8d024a9c8f33fd6d28973915ccfeaffebe2000db20b",
+        "baselineSha256": "79de663fdcdce7ccb177e8d024a9c8f33fd6d28973915ccfeaffebe2000db20b",
+        "changed": false
+      },
+      "Packages/com.zabaglione.lookingglass.viewweave.bridge/Editor/Common/ViewWeaveBridgeRigMenu.cs": {
+        "testedTreeSha256": "670b77e12baed5b5c2845f6dfadbadb49fe75985da168774648be97ebc1935bd",
+        "baselineSha256": "670b77e12baed5b5c2845f6dfadbadb49fe75985da168774648be97ebc1935bd",
+        "changed": false
+      },
+      "Packages/com.zabaglione.lookingglass.viewweave.bridge/Plugins/macOS/lookingglass_bridge_shim.dylib": {
+        "testedTreeSha256": "c97856ea3bb910a1456eb044347a18ac8117c140ddd149f8e9ec240600766c5b",
+        "baselineSha256": "c97856ea3bb910a1456eb044347a18ac8117c140ddd149f8e9ec240600766c5b",
+        "changed": false
+      }
+    }
+  },
+  "environment": {
+    "unity": "6000.6.4f1",
+    "macOS": "26.6.2",
+    "macOSBuild": "25G83",
+    "graphicsApi": "Metal",
+    "pipelines": {
+      "URP": "17.6.0",
+      "HDRP": "17.6.0"
+    },
+    "packageVersion": "0.1.0",
+    "packageSource": "local file Distribution/urp or Distribution/hdrp, reimported through Package Manager Samples",
+    "display": "Connected Looking Glass; Bridge geometry acquired; no new physical optical acceptance",
+    "playModeOptions": {
+      "enabled": true,
+      "options": "DisableDomainReload",
+      "sceneReloadEnabled": true
+    },
+    "quality": {
+      "viewDensity": "Quarter",
+      "outputQuality": "Balanced"
+    }
+  },
+  "scenePreparation": "Imported clean baseline Sample, changed both startOnEnable fields to true via live Editor API, saved with EditorSceneManager.SaveScene, copied scene to source and normalized only trailing whitespace. GUIDs unchanged.",
+  "publicRecord": "Selected command result payloads; CLI code and host-local target paths omitted. Original full command hashes/bytes refer to ignored local files, not this public extraction. Legacy anonymous Play results remain strings exactly as returned.",
+  "phases": {
+    "hdrp-fixed-auto-output-1": {
+      "commandSucceeded": true,
+      "evalSucceeded": true,
+      "result": {
+        "play": true,
+        "scene": "QuickStart",
+        "dirty": true,
+        "valid": true,
+        "validationError": null,
+        "autoStart": true,
+        "enabled": true,
+        "running": true,
+        "closing": false,
+        "submitted": 12,
+        "completed": 12,
+        "dropped": 12,
+        "error": "",
+        "quiltWidth": 2046,
+        "quiltHeight": 2046,
+        "previewActive": false,
+        "previewRendered": 33,
+        "previewPresented": 0,
+        "pendingRetirement": 0,
+        "pendingPreview": 0,
+        "missingScripts": 0,
+        "errorShaderOrMaterialCount": 0,
+        "animators": [
+          {
+            "name": "Red Cube (Rotate)",
+            "time": 0.3267169,
+            "position": [
+              -0.48,
+              -0.3,
+              -0.3
+            ],
+            "rotation": [
+              0,
+              117.618088,
+              0
+            ]
+          },
+          {
+            "name": "Blue Sphere (Bounce)",
+            "time": 0.6534338,
+            "position": [
+              0,
+              0.2938227,
+              0
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "rawCommandSha256": "c45652fceedf6f3fad9d5e982c94d0eeabada0fee5bf5889e4239b4c6e5e993d",
+      "rawCommandBytes": 4269
+    },
+    "hdrp-fixed-auto-output-2": {
+      "commandSucceeded": true,
+      "evalSucceeded": true,
+      "result": {
+        "play": true,
+        "scene": "QuickStart",
+        "dirty": true,
+        "valid": true,
+        "validationError": null,
+        "autoStart": true,
+        "enabled": true,
+        "running": true,
+        "closing": false,
+        "submitted": 319,
+        "completed": 318,
+        "dropped": 316,
+        "error": "",
+        "quiltWidth": 2046,
+        "quiltHeight": 2046,
+        "previewActive": false,
+        "previewRendered": 33,
+        "previewPresented": 0,
+        "pendingRetirement": 0,
+        "pendingPreview": 0,
+        "missingScripts": 0,
+        "errorShaderOrMaterialCount": 0,
+        "animators": [
+          {
+            "name": "Red Cube (Rotate)",
+            "time": 7.44021034,
+            "position": [
+              -0.48,
+              -0.3,
+              -0.3
+            ],
+            "rotation": [
+              0,
+              158.475723,
+              0
+            ]
+          },
+          {
+            "name": "Blue Sphere (Bounce)",
+            "time": 14.8804207,
+            "position": [
+              0,
+              0.136058077,
+              0
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "rawCommandSha256": "6670ff0ce2b30b0ea932cd54b4ad26a7755b950b530d67ba1087fe60b6586f14",
+      "rawCommandBytes": 4276
+    },
+    "hdrp-fixed-cleanup": {
+      "commandSucceeded": true,
+      "evalSucceeded": true,
+      "result": {
+        "play": false,
+        "scene": "QuickStart",
+        "dirty": true,
+        "valid": true,
+        "validationError": null,
+        "autoStart": true,
+        "enabled": true,
+        "running": false,
+        "closing": false,
+        "submitted": 0,
+        "completed": 0,
+        "dropped": 0,
+        "error": "",
+        "quiltWidth": 0,
+        "quiltHeight": 0,
+        "previewActive": false,
+        "previewRendered": 33,
+        "previewPresented": 0,
+        "pendingRetirement": 0,
+        "pendingPreview": 0,
+        "missingScripts": 0,
+        "errorShaderOrMaterialCount": 0,
+        "animators": []
+      },
+      "rawCommandSha256": "30f2ac82909b1368320db501e78537c86625d0313cac6492e7e43cbcbc3f665f",
+      "rawCommandBytes": 3668
+    },
+    "hdrp-fixed-preview-running": {
+      "commandSucceeded": true,
+      "evalSucceeded": true,
+      "result": {
+        "play": false,
+        "scene": "QuickStart",
+        "dirty": true,
+        "valid": true,
+        "validationError": null,
+        "autoStart": true,
+        "enabled": true,
+        "running": false,
+        "closing": false,
+        "submitted": 0,
+        "completed": 0,
+        "dropped": 0,
+        "error": "",
+        "quiltWidth": 0,
+        "quiltHeight": 0,
+        "previewActive": true,
+        "previewRendered": 26,
+        "previewPresented": 26,
+        "pendingRetirement": 0,
+        "pendingPreview": 1,
+        "missingScripts": 0,
+        "errorShaderOrMaterialCount": 0,
+        "animators": []
+      },
+      "rawCommandSha256": "eb22e7829476e4ad9f41f57d70906021c647f9e26d002364db929699b30cdab9",
+      "rawCommandBytes": 3668
+    },
+    "hdrp-fixed-preview-start": {
+      "commandSucceeded": true,
+      "evalSucceeded": true,
+      "result": {
+        "started": true,
+        "error": "",
+        "status": "Looking Glass preview running",
+        "rendered": 0,
+        "presented": 0
+      },
+      "rawCommandSha256": "f7f1fc29f7bde01d1338497c671412ad9215cdaf84219b954e75150f14458fbe",
+      "rawCommandBytes": 981
+    },
+    "hdrp-fixed-save": {
+      "commandSucceeded": true,
+      "evalSucceeded": true,
+      "result": {
+        "saved": true,
+        "metalAutoStart": true,
+        "windowsAutoStart": true,
+        "isDirty": false
+      },
+      "rawCommandSha256": "502ba9fdcd49cfb147888db0b019d36c9a15c8bd8397045e2682eeb697e6d7fe",
+      "rawCommandBytes": 2023
+    },
+    "hdrp-original-cleanup": {
+      "commandSucceeded": true,
+      "evalSucceeded": true,
+      "result": {
+        "play": false,
+        "scene": "QuickStart",
+        "dirty": true,
+        "valid": true,
+        "validationError": null,
+        "autoStart": false,
+        "enabled": true,
+        "running": false,
+        "closing": false,
+        "submitted": 0,
+        "completed": 0,
+        "dropped": 0,
+        "error": "",
+        "quiltWidth": 0,
+        "quiltHeight": 0,
+        "previewActive": false,
+        "previewRendered": 10,
+        "previewPresented": 0,
+        "pendingRetirement": 0,
+        "pendingPreview": 0,
+        "missingScripts": 0,
+        "errorShaderOrMaterialCount": 0,
+        "animators": []
+      },
+      "rawCommandSha256": "e34a1364b1a3da09db579d77dcec07007a1e45f119ae52e94a44ea330660826f",
+      "rawCommandBytes": 3669
+    },
+    "hdrp-original-manual-output": {
+      "commandSucceeded": true,
+      "evalSucceeded": true,
+      "result": {
+        "play": true,
+        "scene": "QuickStart",
+        "dirty": true,
+        "valid": true,
+        "validationError": null,
+        "autoStart": false,
+        "enabled": true,
+        "running": true,
+        "closing": false,
+        "submitted": 23,
+        "completed": 22,
+        "dropped": 20,
+        "error": "",
+        "quiltWidth": 2046,
+        "quiltHeight": 2046,
+        "previewActive": false,
+        "previewRendered": 10,
+        "previewPresented": 0,
+        "pendingRetirement": 0,
+        "pendingPreview": 0,
+        "missingScripts": 0,
+        "errorShaderOrMaterialCount": 0,
+        "animators": [
+          {
+            "name": "Red Cube (Rotate)",
+            "time": 46.80263,
+            "position": [
+              -0.48,
+              -0.3,
+              -0.3
+            ],
+            "rotation": [
+              0,
+              288.9473,
+              0
+            ]
+          },
+          {
+            "name": "Blue Sphere (Bounce)",
+            "time": 93.60526,
+            "position": [
+              0,
+              0.3214246,
+              0
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "rawCommandSha256": "a3d1d176b7a4383f076c1b30470c1544f05988a2232da5596861853af7d07c58",
+      "rawCommandBytes": 4266
+    },
+    "hdrp-original-open": {
+      "commandSucceeded": true,
+      "evalSucceeded": true,
+      "result": {
+        "scene": "Assets/Samples/ViewWeave for Looking Glass - HDRP (Unofficial)/0.1.0/HDRP Quick Start/QuickStart.unity",
+        "isDirty": false,
+        "play": false,
+        "api": "Metal",
+        "states": [
+          {
+            "name": "ViewWeave Bridge Rig",
+            "metalEnabled": true,
+            "metalAutoStart": false,
+            "windowsEnabled": false,
+            "windowsAutoStart": false,
+            "output": "BridgeMetalQuiltOutput"
+          }
+        ]
+      },
+      "rawCommandSha256": "6a73747a633dc68434a4d0d23563737b28a1c794cf893e2adbefce2cf63f1f5a",
+      "rawCommandBytes": 1952
+    },
+    "hdrp-original-play-no-output": {
+      "commandSucceeded": true,
+      "evalSucceeded": true,
+      "result": {
+        "play": true,
+        "scene": "QuickStart",
+        "dirty": true,
+        "valid": true,
+        "validationError": null,
+        "autoStart": false,
+        "enabled": true,
+        "running": false,
+        "closing": false,
+        "submitted": 0,
+        "completed": 0,
+        "dropped": 0,
+        "error": "",
+        "quiltWidth": 0,
+        "quiltHeight": 0,
+        "previewActive": false,
+        "previewRendered": 10,
+        "previewPresented": 0,
+        "pendingRetirement": 0,
+        "pendingPreview": 0,
+        "missingScripts": 0,
+        "errorShaderOrMaterialCount": 0,
+        "animators": [
+          {
+            "name": "Red Cube (Rotate)",
+            "time": 39.9517555,
+            "position": [
+              -0.48,
+              -0.3,
+              -0.3
+            ],
+            "rotation": [
+              0,
+              342.631958,
+              0
+            ]
+          },
+          {
+            "name": "Blue Sphere (Bounce)",
+            "time": 79.90351,
+            "position": [
+              0,
+              0.124337047,
+              0
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "rawCommandSha256": "007914aeecd29e0743fc7ebe111010a9383c488f886971e6c75a76bd85d8e8a2",
+      "rawCommandBytes": 4264
+    },
+    "hdrp-original-preview-running": {
+      "commandSucceeded": true,
+      "evalSucceeded": true,
+      "result": {
+        "play": false,
+        "scene": "QuickStart",
+        "dirty": true,
+        "valid": true,
+        "validationError": null,
+        "autoStart": false,
+        "enabled": true,
+        "running": false,
+        "closing": false,
+        "submitted": 0,
+        "completed": 0,
+        "dropped": 0,
+        "error": "",
+        "quiltWidth": 0,
+        "quiltHeight": 0,
+        "previewActive": true,
+        "previewRendered": 10,
+        "previewPresented": 9,
+        "pendingRetirement": 0,
+        "pendingPreview": 1,
+        "missingScripts": 0,
+        "errorShaderOrMaterialCount": 0,
+        "animators": []
+      },
+      "rawCommandSha256": "89abdf45b93b853330a6b09d55ccca2d9b138d52658a42777a7f7437e94d840d",
+      "rawCommandBytes": 3668
+    },
+    "hdrp-original-preview-start": {
+      "commandSucceeded": true,
+      "evalSucceeded": true,
+      "result": {
+        "started": true,
+        "error": "",
+        "status": "Looking Glass preview running",
+        "rendered": 0,
+        "presented": 0
+      },
+      "rawCommandSha256": "f7f1fc29f7bde01d1338497c671412ad9215cdaf84219b954e75150f14458fbe",
+      "rawCommandBytes": 981
+    },
+    "hdrp-user-autostart-off": {
+      "commandSucceeded": true,
+      "evalSucceeded": true,
+      "result": {
+        "play": true,
+        "scene": "QuickStart",
+        "dirty": true,
+        "valid": true,
+        "validationError": null,
+        "autoStart": false,
+        "enabled": true,
+        "running": false,
+        "closing": false,
+        "submitted": 0,
+        "completed": 0,
+        "dropped": 0,
+        "error": "",
+        "quiltWidth": 0,
+        "quiltHeight": 0,
+        "previewActive": false,
+        "previewRendered": 33,
+        "previewPresented": 0,
+        "pendingRetirement": 0,
+        "pendingPreview": 0,
+        "missingScripts": 0,
+        "errorShaderOrMaterialCount": 0,
+        "animators": [
+          {
+            "name": "Red Cube (Rotate)",
+            "time": 1.23602057,
+            "position": [
+              -0.48,
+              -0.3,
+              -0.3
+            ],
+            "rotation": [
+              0,
+              84.9674,
+              0
+            ]
+          },
+          {
+            "name": "Blue Sphere (Bounce)",
+            "time": 2.47204113,
+            "position": [
+              0,
+              0.347742319,
+              0
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "rawCommandSha256": "0870d88176d064d1b358d55deab13a20b5370c3858b94d4eea8a06a8528c33e8",
+      "rawCommandBytes": 4263
+    },
+    "urp-fixed-auto-output-1": {
+      "commandSucceeded": true,
+      "evalSucceeded": true,
+      "result": {
+        "play": true,
+        "scene": "QuickStart",
+        "dirty": true,
+        "valid": true,
+        "validationError": null,
+        "autoStart": true,
+        "enabled": true,
+        "running": true,
+        "closing": false,
+        "submitted": 209,
+        "completed": 208,
+        "dropped": 194,
+        "error": "",
+        "quiltWidth": 2046,
+        "quiltHeight": 2046,
+        "previewActive": false,
+        "previewRendered": 10,
+        "previewPresented": 0,
+        "pendingRetirement": 0,
+        "pendingPreview": 0,
+        "missingScripts": 0,
+        "errorShaderOrMaterialCount": 0,
+        "animators": [
+          {
+            "name": "Red Cube (Rotate)",
+            "time": 1.64959073,
+            "position": [
+              -0.48,
+              -0.3,
+              -0.3
+            ],
+            "rotation": [
+              0,
+              233.852661,
+              0
+            ]
+          },
+          {
+            "name": "Blue Sphere (Bounce)",
+            "time": 3.29918146,
+            "position": [
+              0,
+              0.261410266,
+              0
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "rawCommandSha256": "4961830312d44fa320b7f909a817b82c664e451770476882d55a64df29d620af",
+      "rawCommandBytes": 4275
+    },
+    "urp-fixed-auto-output-2": {
+      "commandSucceeded": true,
+      "evalSucceeded": true,
+      "result": {
+        "play": true,
+        "scene": "QuickStart",
+        "dirty": true,
+        "valid": true,
+        "validationError": null,
+        "autoStart": true,
+        "enabled": true,
+        "running": true,
+        "closing": false,
+        "submitted": 1335,
+        "completed": 1334,
+        "dropped": 1219,
+        "error": "",
+        "quiltWidth": 2046,
+        "quiltHeight": 2046,
+        "previewActive": false,
+        "previewRendered": 10,
+        "previewPresented": 0,
+        "pendingRetirement": 0,
+        "pendingPreview": 0,
+        "missingScripts": 0,
+        "errorShaderOrMaterialCount": 0,
+        "animators": [
+          {
+            "name": "Red Cube (Rotate)",
+            "time": 10.3623056,
+            "position": [
+              -0.48,
+              -0.3,
+              -0.3
+            ],
+            "rotation": [
+              0,
+              130.430008,
+              0
+            ]
+          },
+          {
+            "name": "Blue Sphere (Bounce)",
+            "time": 20.7246113,
+            "position": [
+              0,
+              0.243976071,
+              0
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "rawCommandSha256": "ac1f162646770bef3c3e7ac69a50bb2a2bdbc87a5c918ed13d6dae6a6c9a6ad6",
+      "rawCommandBytes": 4278
+    },
+    "urp-fixed-cleanup": {
+      "commandSucceeded": true,
+      "evalSucceeded": true,
+      "result": {
+        "play": false,
+        "scene": "QuickStart",
+        "dirty": true,
+        "valid": true,
+        "validationError": null,
+        "autoStart": true,
+        "enabled": true,
+        "running": false,
+        "closing": false,
+        "submitted": 0,
+        "completed": 0,
+        "dropped": 0,
+        "error": "",
+        "quiltWidth": 0,
+        "quiltHeight": 0,
+        "previewActive": false,
+        "previewRendered": 10,
+        "previewPresented": 0,
+        "pendingRetirement": 0,
+        "pendingPreview": 0,
+        "missingScripts": 0,
+        "errorShaderOrMaterialCount": 0,
+        "animators": []
+      },
+      "rawCommandSha256": "12d1917537e3550053bb06f549900099c93bc7b288b112252e8e9e5f15c7582c",
+      "rawCommandBytes": 3667
+    },
+    "urp-fixed-preview-running": {
+      "commandSucceeded": true,
+      "evalSucceeded": true,
+      "result": {
+        "play": false,
+        "scene": "QuickStart",
+        "dirty": true,
+        "valid": true,
+        "validationError": null,
+        "autoStart": true,
+        "enabled": true,
+        "running": false,
+        "closing": false,
+        "submitted": 0,
+        "completed": 0,
+        "dropped": 0,
+        "error": "",
+        "quiltWidth": 0,
+        "quiltHeight": 0,
+        "previewActive": true,
+        "previewRendered": 9,
+        "previewPresented": 9,
+        "pendingRetirement": 0,
+        "pendingPreview": 1,
+        "missingScripts": 0,
+        "errorShaderOrMaterialCount": 0,
+        "animators": []
+      },
+      "rawCommandSha256": "c9a9c36c9f805e2a1941dd8f1afa25c6ed49e4abfdb26e7d0ac9650943ac10d9",
+      "rawCommandBytes": 3665
+    },
+    "urp-fixed-preview-start": {
+      "commandSucceeded": true,
+      "evalSucceeded": true,
+      "result": {
+        "started": true,
+        "error": "",
+        "status": "Looking Glass preview running",
+        "rendered": 0,
+        "presented": 0
+      },
+      "rawCommandSha256": "70df5fd0725db57664d2deab573731098fae5eafcd99c478d51cdc6df862929e",
+      "rawCommandBytes": 980
+    },
+    "urp-original-manual-output": {
+      "commandSucceeded": true,
+      "evalSucceeded": true,
+      "result": {
+        "play": true,
+        "scene": "QuickStart",
+        "dirty": true,
+        "valid": true,
+        "validationError": null,
+        "autoStart": false,
+        "enabled": true,
+        "running": true,
+        "closing": false,
+        "submitted": 569,
+        "completed": 568,
+        "dropped": 519,
+        "error": "",
+        "quiltWidth": 2046,
+        "quiltHeight": 2046,
+        "previewActive": false,
+        "previewRendered": 47,
+        "previewPresented": 0,
+        "pendingRetirement": 0,
+        "pendingPreview": 0,
+        "missingScripts": 0,
+        "errorShaderOrMaterialCount": 0,
+        "animators": [
+          {
+            "name": "Red Cube (Rotate)",
+            "time": 28.4108257,
+            "position": [
+              -0.48,
+              -0.3,
+              -0.3
+            ],
+            "rotation": [
+              0,
+              147.897263,
+              0
+            ]
+          },
+          {
+            "name": "Blue Sphere (Bounce)",
+            "time": 56.82165,
+            "position": [
+              0,
+              0.172732815,
+              0
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "rawCommandSha256": "baec28edcb0698c2832971ed444c9f36f59396d64205ce7cb45e03b80071a6d0",
+      "rawCommandBytes": 4274
+    },
+    "urp-original-open": {
+      "commandSucceeded": true,
+      "evalSucceeded": true,
+      "result": {
+        "scene": "Assets/Samples/ViewWeave for Looking Glass - URP (Unofficial)/0.1.0/URP Quick Start/QuickStart.unity",
+        "isDirty": false,
+        "play": false,
+        "api": "Metal",
+        "states": [
+          {
+            "name": "ViewWeave Bridge Rig",
+            "metalEnabled": true,
+            "metalAutoStart": false,
+            "windowsEnabled": false,
+            "windowsAutoStart": false,
+            "output": "BridgeMetalQuiltOutput"
+          }
+        ]
+      },
+      "rawCommandSha256": "463c7027409a84e977933545a634d68a333e42c5648f4681cec7889467f81813",
+      "rawCommandBytes": 1947
+    },
+    "urp-original-play-no-output": {
+      "commandSucceeded": true,
+      "evalSucceeded": true,
+      "result": "{ play = True, scene = QuickStart, dirty = True, valid = True, validationError = , autoStart = False, enabled = True, running = False, closing = False, submitted = 0, completed = 0, dropped = 0, error = , quiltWidth = 0, quiltHeight = 0, previewActive = False, previewRendered = 47, previewPresented = 0, pendingRetirement = 0, pendingPreview = 0, missingScripts = 0, errorShaderOrMaterialCount = 0, animators = System.Collections.Generic.List`1[System.Object] }",
+      "rawCommandSha256": "05100fc96dfceba4e0c3c0e2dc35f15207690c0d46ab32d26f27d89d947de281",
+      "rawCommandBytes": 3058
+    },
+    "urp-original-preview-running": {
+      "commandSucceeded": true,
+      "evalSucceeded": true,
+      "result": {
+        "play": false,
+        "scene": "QuickStart",
+        "dirty": true,
+        "valid": true,
+        "validationError": null,
+        "autoStart": false,
+        "enabled": true,
+        "running": false,
+        "closing": false,
+        "submitted": 0,
+        "completed": 0,
+        "dropped": 0,
+        "error": "",
+        "quiltWidth": 0,
+        "quiltHeight": 0,
+        "previewActive": true,
+        "previewRendered": 46,
+        "previewPresented": 46,
+        "pendingRetirement": 0,
+        "pendingPreview": 1,
+        "missingScripts": 0,
+        "errorShaderOrMaterialCount": 0,
+        "animators": []
+      },
+      "rawCommandSha256": "d79f9e5b5a3329b4ca1a140cfa38d44e74c23217e01a85f30e89786ad21f6f6c",
+      "rawCommandBytes": 3232
+    },
+    "urp-original-preview-start": {
+      "commandSucceeded": true,
+      "evalSucceeded": true,
+      "result": {
+        "started": true,
+        "error": "",
+        "status": "Looking Glass preview running",
+        "rendered": 0,
+        "presented": 0
+      },
+      "rawCommandSha256": "70df5fd0725db57664d2deab573731098fae5eafcd99c478d51cdc6df862929e",
+      "rawCommandBytes": 980
+    },
+    "urp-original-stop": {
+      "commandSucceeded": true,
+      "evalSucceeded": true,
+      "result": {
+        "play": false,
+        "scene": "QuickStart",
+        "dirty": true,
+        "valid": true,
+        "validationError": null,
+        "autoStart": false,
+        "enabled": true,
+        "running": false,
+        "closing": false,
+        "submitted": 0,
+        "completed": 0,
+        "dropped": 0,
+        "error": "",
+        "quiltWidth": 0,
+        "quiltHeight": 0,
+        "previewActive": false,
+        "previewRendered": 47,
+        "previewPresented": 0,
+        "pendingRetirement": 0,
+        "pendingPreview": 0,
+        "missingScripts": 0,
+        "errorShaderOrMaterialCount": 0,
+        "animators": []
+      },
+      "rawCommandSha256": "b70448812339c984e81267f078ea4187fb87e0e6e48cc75bc1a6030d24574eab",
+      "rawCommandBytes": 3668
+    },
+    "urp-save-new-defaults": {
+      "commandSucceeded": true,
+      "evalSucceeded": true,
+      "result": {
+        "saved": true,
+        "metalAutoStart": true,
+        "windowsAutoStart": true,
+        "isDirty": false
+      },
+      "rawCommandSha256": "861aecd1cd55f3f5d5fb2ac72aaa52b8c3e353813af864e60c12d219646d3649",
+      "rawCommandBytes": 2020
+    },
+    "urp-user-autostart-off": {
+      "commandSucceeded": true,
+      "evalSucceeded": true,
+      "result": {
+        "play": true,
+        "scene": "QuickStart",
+        "dirty": true,
+        "valid": true,
+        "validationError": null,
+        "autoStart": false,
+        "enabled": true,
+        "running": false,
+        "closing": false,
+        "submitted": 0,
+        "completed": 0,
+        "dropped": 0,
+        "error": "",
+        "quiltWidth": 0,
+        "quiltHeight": 0,
+        "previewActive": false,
+        "previewRendered": 10,
+        "previewPresented": 0,
+        "pendingRetirement": 0,
+        "pendingPreview": 0,
+        "missingScripts": 0,
+        "errorShaderOrMaterialCount": 0,
+        "animators": [
+          {
+            "name": "Red Cube (Rotate)",
+            "time": 4.22131252,
+            "position": [
+              -0.48,
+              -0.3,
+              -0.3
+            ],
+            "rotation": [
+              0,
+              79.67251,
+              0
+            ]
+          },
+          {
+            "name": "Blue Sphere (Bounce)",
+            "time": 8.442625,
+            "position": [
+              0,
+              0.340879828,
+              0
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "rawCommandSha256": "bcaa998905065404f4af5421809b6af5a17983f25040503f32774b98949091da",
+      "rawCommandBytes": 4261
+    }
+  },
+  "console": {
+    "HDRP": {
+      "counts": {
+        "error": 0,
+        "warn": 23,
+        "log": 0
+      },
+      "groundTruth": {
+        "sampledUtc": "2026-10-14T05:21:36.544452Z",
+        "ageMs": 3,
+        "compilationFailed": false,
+        "compiling": false,
+        "consoleErrors": 0,
+        "consoleWarnings": 1,
+        "consoleLogs": 0,
+        "seeded": true
+      }
+    },
+    "URP": {
+      "source": "live CLI observation during URP run; separate command response was not saved",
+      "compilationFailed": false,
+      "consoleErrors": 0,
+      "consoleWarnings": 0,
+      "historicalBufferWarnings": 21
+    },
+    "hdrpWarning": "ScriptableRuntimeReflectionSystemSettings.system is assigned more than once. Only the last instance will be used.",
+    "guiReview": "Both pipelines: actual Game View, Hierarchy, Rig Inspector and Console inspected; no missing scripts, error material, or red Console entry observed."
+  },
+  "restoration": {
+    "urp": {
+      "Assets/Scenes/Garden/GadenScene2.unity": {
+        "beforeSha256": "e739c85d2bc6d71c1dd28486f080c88477426d892addfdbaef934605aa46b9a8",
+        "afterSha256": "e739c85d2bc6d71c1dd28486f080c88477426d892addfdbaef934605aa46b9a8"
+      },
+      "Packages/manifest.json": {
+        "beforeSha256": "cd0b78a964e1d401deaf42ce37bfdde61e84938be69f35eaaf8f689974b7635b",
+        "afterSha256": "cd0b78a964e1d401deaf42ce37bfdde61e84938be69f35eaaf8f689974b7635b"
+      },
+      "Packages/packages-lock.json": {
+        "beforeSha256": "9def1ce93ece33334bb4fdac795f5e006582b52f92d8b5c2c21e1f254edf44af",
+        "afterSha256": "9def1ce93ece33334bb4fdac795f5e006582b52f92d8b5c2c21e1f254edf44af"
+      },
+      "ProjectSettings/EditorSettings.asset": {
+        "beforeSha256": "04b491f38e2330b315ce6655ed5577341da401cdcbf7b188ff6216dd9325596f",
+        "afterSha256": "04b491f38e2330b315ce6655ed5577341da401cdcbf7b188ff6216dd9325596f"
+      },
+      "importedSampleFiles": {
+        "count": 24,
+        "allHashesRestored": true
+      },
+      "sampleRootMetaRestored": true
+    },
+    "hdrp": {
+      "Assets/Scenes/SampleScene.unity": {
+        "beforeSha256": "306bd67b0c95473338e0d3435ec487585ccbbbbe8bed6c4bbaebedb91c4f98f5",
+        "afterSha256": "306bd67b0c95473338e0d3435ec487585ccbbbbe8bed6c4bbaebedb91c4f98f5"
+      },
+      "Packages/manifest.json": {
+        "beforeSha256": "34eb911afc41078904af94ae312045faa5351877e95b292ed4e10ad37567a204",
+        "afterSha256": "34eb911afc41078904af94ae312045faa5351877e95b292ed4e10ad37567a204"
+      },
+      "Packages/packages-lock.json": {
+        "beforeSha256": "7725f48fa85721dd7b56109d9b7d08a73ff3d7153019d1d230d255aabc418ac8",
+        "afterSha256": "7725f48fa85721dd7b56109d9b7d08a73ff3d7153019d1d230d255aabc418ac8"
+      },
+      "ProjectSettings/EditorSettings.asset": {
+        "beforeSha256": "d62211b3e2016f6027ba07241beb2425084865ab567f15806a6ea161ea89673d",
+        "afterSha256": "d62211b3e2016f6027ba07241beb2425084865ab567f15806a6ea161ea89673d"
+      },
+      "importedSampleFiles": {
+        "count": 26,
+        "allHashesRestored": true
+      },
+      "sampleRootMetaRestored": true
+    }
+  },
+  "cleanup": {
+    "bothEditorPlayStopped": true,
+    "metalPendingRetirement": 0,
+    "previewPendingResources": 0,
+    "originalScenesReopenedClean": true,
+    "bothEditorsClosedNormally": true
+  },
+  "limits": [
+    "Windows startup flags saved on but not executed in this run",
+    "Quick Start Player builds not run",
+    "Domain Reload enabled and Scene Reload disabled combinations not newly tested",
+    "No new physical optical acceptance, no output frame-rate guarantee",
+    "Dropped-frame counts are retained and are not treated as successful presentations",
+    "No anonymous Git install while repository remains private",
+    "No claim of exact live native module path identification in these Editor runs"
+  ]
+}

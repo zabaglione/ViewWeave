@@ -14,7 +14,7 @@ This source package supports repository development. End users should install on
 
 Import **URP Quick Start** or **HDRP Quick Start** from the matching distribution package's Package Manager **Samples** tab, open that sample's `QuickStart.unity`, then select **ViewWeave Bridge Rig** and start **Preview > Start Looking Glass Device Preview**. Use **Start Local Edit Mode Preview** to inspect output without a device. Check [Compatibility](../../docs/compatibility.md) before selecting a runtime configuration.
 
-Edit Mode Preview is static. To show the animated sample during Play on a connected display, explicitly choose **Bridge > Start Output**. The sample helper selects the platform output component but does not start it.
+Edit Mode Preview is static. Enter Play to run the animated sample and start device output automatically, matching the menu-created Rig. The helper selects the platform output and preserves the saved startup preference. If you disable automatic startup, use **Bridge > Start Output** manually.
 
 The optional **Windows URP Lit** and **Windows HDRP Lit** samples remain available for their existing Bridge demonstration workflow. For installation and everyday operation, use the repository [README](../../README.md) and [User Guide](../../docs/user-guide.md).
 

@@ -10,7 +10,7 @@ This source package provides the ViewWeave URP adapter for repository developmen
 2. Open `QuickStart.unity` in the imported sample.
 3. Select **ViewWeave Bridge Rig** and start **Preview > Start Looking Glass Device Preview**. To inspect the Quilt without a display, choose **Start Local Edit Mode Preview**.
 
-Edit Mode Preview shows a static scene. For animation on a connected display, enter Play and explicitly choose **Bridge > Start Output**; output does not start automatically.
+Edit Mode Preview shows a static scene. For animation on a connected display, enter Play. The Sample starts output automatically by default, matching a Rig created from the menu. A user-disabled startup option remains respected; use **Bridge > Start Output** for manual control.
 
 macOS uses the separate Metal output route. See [Compatibility](../../docs/compatibility.md) and the [macOS Metal guide](../../docs/macos-metal.md) for current conditions. The optional Windows URP Lit sample remains available as a separate Bridge demonstration.
 

@@ -2,7 +2,7 @@
 
 # Compatibility
 
-ViewWeave is an experimental development version for Unity **6000.6.4f1** and **URP/HDRP 17.6**. Install one [pipeline package](../README.md). Device output requires the official Looking Glass Bridge runtime and a connected display.
+ViewWeave v0.1.0 is an experimental release for Unity **6000.6.4f1** and **URP/HDRP 17.6**. Install one [pipeline package](../README.md). Device output requires the official Looking Glass Bridge runtime and a connected display.
 
 | Environment | Output route | Setup |
 | --- | --- | --- |

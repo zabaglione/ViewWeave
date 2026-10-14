@@ -8,8 +8,8 @@
 
 Use Unity 6000.6.4f1 with a URP or HDRP project. Install one self-contained package from **Package Manager > + > Install package from git URL**:
 
-- URP: `https://github.com/zabaglione/ViewWeave.git?path=/Distribution/urp#main`
-- HDRP: `https://github.com/zabaglione/ViewWeave.git?path=/Distribution/hdrp#main`
+- URP: `https://github.com/zabaglione/ViewWeave.git?path=/Distribution/urp#v0.1.0`
+- HDRP: `https://github.com/zabaglione/ViewWeave.git?path=/Distribution/hdrp#v0.1.0`
 
 Import **URP Quick Start** or **HDRP Quick Start** from the package's **Samples** tab, then open its `QuickStart.unity` scene. The scene contains a configured Rig and animated sample objects.
 
@@ -21,7 +21,7 @@ Select a ViewWeave Rig and use its Inspector or open `Window > ViewWeave > Rig A
 
 The **Focus Target** field is a temporary Editor selection. Assign a scene object, then click **Set Focus From Target Center** to apply its center as the zero-parallax distance. The selected target itself is not saved; the applied focus distance is saved with the scene. For a fuller camera workflow, see [Quilt camera authoring](quilt-authoring.md).
 
-The scene sample is static during Edit Mode Preview. Press **Play** to run its Animator clips and see the Cube rotate and Sphere move. To show that animation on a connected display, explicitly choose **Bridge > Start Output** in the Rig; output does not start automatically. The sample helper selects the platform's output component but does not start it. Stop Play before changing scene content or using edit-time tools that require a stopped Editor.
+The scene sample is static during Edit Mode Preview. Press **Play** to run its Animator clips and see the Cube rotate and Sphere move. Output to a connected display starts automatically by default, matching a Rig created from the menu. To opt out, disable **Bridge > Start Output On Enable** on Metal or **Start Session On Enable** on Windows, then use **Start Output** manually. The sample helper selects the platform output and preserves this preference. Earlier imported copies need reimporting or their startup option enabled; back up edited scenes first. Stop Play before changing scene content or using edit-time tools that require a stopped Editor.
 
 In the Rig's **Bridge** section, use **Start Output** and **Stop Output** to control the regular Play Mode output and check its status. Set a runtime path only when automatic Bridge discovery does not find the installed runtime. This is separate from the Edit Mode device Preview controls. The **Advanced** section contains lower-level options; begin with the other Rig sections for normal use.
 

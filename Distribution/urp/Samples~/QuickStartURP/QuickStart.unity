@@ -627,6 +627,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0c1b3bff2e344f1a85f143b1a27f68cb, type: 3}
   m_Name:
   m_EditorClassIdentifier: ViewWeave.URP::ViewWeave.URP.UrpQuiltCamera
+  renderingMode: 0
+  followReferenceRenderingSettings: 1
+  historyMemoryBudgetMB: 4096
+  maximumHistoryCameras: 256
 --- !u!114 &1950629215
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -684,11 +688,12 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: ViewWeave.Bridge::ViewWeave.BridgeMetalQuiltOutput
   rig: {fileID: 1950629217}
-  startOnEnable: 0
+  startOnEnable: 1
   runtimePath:
   applicationName: ViewWeave
   displayOrdinal: 0
   quality: 1
+  subpixelMode: 0
 --- !u!114 &1950629217
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -712,6 +717,9 @@ MonoBehaviour:
   autoRender: 0
   outputBehaviour: {fileID: 1950629216}
   guardBehaviour: {fileID: 1950629214}
+  editorDisplayIdentity:
+  editorDisplayIdentityOutput: {fileID: 0}
+  editorDisplayIdentityRenderer: {fileID: 0}
 --- !u!114 &1950629218
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -839,11 +847,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e8cdf3cd3265460a8633a892842ed0d6, type: 3}
   m_Name:
   m_EditorClassIdentifier: ViewWeave.Bridge::ViewWeave.ViewWeaveBridgeSession
-  startOnEnable: 0
+  startOnEnable: 1
   runtimePath:
   applicationName: ViewWeave
   displayOrdinal: 0
   quality: 1
+  subpixelMode: 0
 --- !u!114 &1950629223
 MonoBehaviour:
   m_ObjectHideFlags: 0

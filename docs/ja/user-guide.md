@@ -8,8 +8,8 @@
 
 Unity 6000.6.4f1のURPまたはHDRPプロジェクトを使います。**Package Manager > + > Install package from git URL**から、パイプラインに合うpackageを一つ追加してください。
 
-- URP: `https://github.com/zabaglione/ViewWeave.git?path=/Distribution/urp#main`
-- HDRP: `https://github.com/zabaglione/ViewWeave.git?path=/Distribution/hdrp#main`
+- URP: `https://github.com/zabaglione/ViewWeave.git?path=/Distribution/urp#v0.1.0`
+- HDRP: `https://github.com/zabaglione/ViewWeave.git?path=/Distribution/hdrp#v0.1.0`
 
 packageの**Samples**から**URP Quick Start**または**HDRP Quick Start**をImportし、その`QuickStart.unity` sceneを開きます。sceneには設定済みRigとアニメーションするサンプルobjectが含まれます。
 
@@ -23,7 +23,7 @@ Bridge APIで機器情報を正常に取得すると、その縦横比と視野�
 
 **Focus Target**は一時的なEditor選択欄です。scene objectを設定し、**Set Focus From Target Center**をクリックすると、その中心をzero-parallax distanceとして反映します。選択したtarget自体はsceneに保存されませんが、適用したfocus distanceはsceneに保存されます。詳しくは[Quiltカメラの調整](quilt-authoring.md)を参照してください。
 
-Edit Mode PreviewではSampleのsceneは静止しています。**Play**するとAnimatorが動き、Cubeが回転しSphereが上下します。接続displayへアニメーションを出すときはRigの**Bridge > Start Output**を明示的に選びます。出力は自動で開始しません。Sample helperはplatformに対応するoutput componentを選びますが、開始操作は行いません。scene内容の変更や停止中に限られる操作を行う前にPlayを止めてください。
+Edit Mode PreviewではSampleのsceneは静止しています。**Play**するとAnimatorが動き、Cubeが回転しSphereが上下します。接続displayへの出力は、メニューから作成したRigと同じく既定で自動開始します。手動で運用する場合は**Bridge > Start Output On Enable**（Metal）／**Start Session On Enable**（Windows）をOFFにし、**Start Output**で開始します。補助スクリプトはplatformの出力を選び、この起動設定を維持します。以前Importしたコピーは、編集sceneをバックアップして再Importするか、起動設定を有効にしてください。scene内容の変更や停止中に限られる操作を行う前にPlayを止めてください。
 
 Rigの**Bridge**欄では、通常のPlay Mode出力を**Start Output**／**Stop Output**で操作し、statusを確認できます。インストール済みruntimeを自動検出できない場合だけruntime pathを指定します。これはEdit Modeのdevice Previewとは別です。**Advanced**には低レベルの設定があります。通常の利用では他のRig欄から操作してください。
 

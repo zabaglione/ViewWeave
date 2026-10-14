@@ -29,6 +29,7 @@
 
 ## 日付付き記録と証跡
 
+- [Quick StartのPlay出力自動開始（2026-10-14）](../quick-start-play-startup-validation-20261014.md)
 - [英語の全資料目次](../README.md#dated-validation-records): Windows／macOSの個別検証、incident、修正結果。
 - [対応表の作業・検証履歴](unity-feature-platform-matrix-history.html)。
 - [検証証跡](../../validation/): result・XML・画像・実行metadata・manifest。[公開コピーのパスとhashの扱い](../../validation/PUBLIC_EVIDENCE.md)に従い、元の実行時hashと公開コピーのhashを区別しています。
