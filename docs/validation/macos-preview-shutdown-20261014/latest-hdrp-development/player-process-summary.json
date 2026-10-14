@@ -1,0 +1,280 @@
+{
+  "monitorSourceSha256": "c847b8a55dc42c68d11350dc3ab42716bb182c76b27ecd92c206e24113971202",
+  "gates": {
+    "runtimeFresh": true,
+    "pipelineMatches": true,
+    "configurationMatches": true,
+    "playerOnly": true,
+    "metalMatches": true,
+    "unityVersionMatches": true
+  },
+  "pid": 26728,
+  "startedAtUnix": 1791944933.15252,
+  "finishedAtUnix": 1791944979.553134,
+  "exitCode": 0,
+  "timedOut": false,
+  "naturalExit": true,
+  "expectedPluginPath": ".local/macos-current-player-20261014/latest-hdrp-development/PipelineSmoke.app/Contents/PlugIns/ARM64/lookingglass_bridge_shim.dylib",
+  "expectedPluginObserved": true,
+  "runtime": {
+    "passed": true,
+    "development": true,
+    "editor": false,
+    "unityVersion": "6000.6.4f1",
+    "graphicsApi": "Metal",
+    "pipeline": "HDRP",
+    "error": "",
+    "capture": ".local/macos-current-player-20261014/latest-hdrp-development/current.png",
+    "sequence": ".local/macos-current-player-20261014/latest-hdrp-development/ViewWeave_20261014_112929_125_179b6f4152b24d2eaddaecef47babdef",
+    "actualPipeline": "HDRenderPipeline",
+    "shaderPipelineTag": "HDRenderPipeline",
+    "firstCompleted": 60,
+    "restartedCompleted": 30,
+    "recordedFrames": 3,
+    "distinctColors": 1612,
+    "width": 1023,
+    "height": 1020,
+    "views": 66,
+    "pendingRetirement": 0,
+    "cellPatternMode": 0,
+    "subpixelCellCount": 0,
+    "redPixels": 167918,
+    "greenPixels": 107167,
+    "magentaPixels": 0,
+    "activeSubpixelChangeRejected": true,
+    "missingCellsRejected": true,
+    "classicRestartVerified": true,
+    "missingCellsError": "Invalid calibration: Calibrated Cells requires an actual cell table",
+    "restartSubpixelMode": "ClassicRgb",
+    "targets": {
+      "viewFormat": "ARGB32",
+      "viewGraphicsFormat": "R8G8B8A8_SRGB",
+      "resolveGraphicsFormat": "Absent",
+      "quiltGraphicsFormat": "R8G8B8A8_SRGB",
+      "viewSrgb": true,
+      "resolveSrgb": false,
+      "quiltSrgb": true,
+      "resolvePresent": false,
+      "viewSamples": 1,
+      "resolveSamples": 0,
+      "quiltSamples": 1
+    }
+  },
+  "runtimeSha256": "e00c8b80ccf28152ce45736a68b20c9abceea8683b8f872d872d484443cae6f0",
+  "passed": true,
+  "exitDiagnostics": {
+    "threadWarningCount": 5,
+    "memoryLeaksRecords": [
+      {
+        "type": "MemoryLeaks",
+        "version": 2,
+        "phase": "Immediate",
+        "allocatedMemory": 2689598,
+        "memoryLabels": [
+          {
+            "Default": 54543
+          },
+          {
+            "Permanent": 1472
+          },
+          {
+            "NewDelete": 1860790
+          },
+          {
+            "Thread": 8120
+          },
+          {
+            "Manager": 16359
+          },
+          {
+            "VertexData": 8
+          },
+          {
+            "Geometry": 408
+          },
+          {
+            "Texture": 16
+          },
+          {
+            "Shader": 78020
+          },
+          {
+            "Material": 212
+          },
+          {
+            "GfxDevice": 38776
+          },
+          {
+            "GfxThread": 400
+          },
+          {
+            "Animation": 880
+          },
+          {
+            "Audio": 3648
+          },
+          {
+            "FreeType": 8
+          },
+          {
+            "FontEngine": 736
+          },
+          {
+            "Physics": 2000
+          },
+          {
+            "Physics2D": 16
+          },
+          {
+            "Serialization": 16392
+          },
+          {
+            "Input": 43216
+          },
+          {
+            "JobScheduler": 448
+          },
+          {
+            "TextLib": 280
+          },
+          {
+            "Mono": 56
+          },
+          {
+            "ScriptingNativeRuntime": 128
+          },
+          {
+            "BaseObject": 36320
+          },
+          {
+            "Resource": 996
+          },
+          {
+            "Renderer": 2736
+          },
+          {
+            "Transform": 6485
+          },
+          {
+            "File": 4600
+          },
+          {
+            "WebCam": 32
+          },
+          {
+            "Culling": 32
+          },
+          {
+            "Terrain": 11298
+          },
+          {
+            "Wind": 24
+          },
+          {
+            "String": 3097
+          },
+          {
+            "Utility": 318232
+          },
+          {
+            "PoolAlloc": 1536
+          },
+          {
+            "AI": 40
+          },
+          {
+            "TypeTree": 5512
+          },
+          {
+            "ScriptManager": 5696
+          },
+          {
+            "CodeReload": 440
+          },
+          {
+            "RuntimeInitializeOnLoadManager": 64
+          },
+          {
+            "Sprites": 78
+          },
+          {
+            "SpriteAtlas": 120
+          },
+          {
+            "GI": 7200
+          },
+          {
+            "Director": 8248
+          },
+          {
+            "CloudService": 144
+          },
+          {
+            "WebRequest": 520
+          },
+          {
+            "VR": 49402
+          },
+          {
+            "SceneManager": 408
+          },
+          {
+            "Video": 2080
+          },
+          {
+            "LazyScriptCache": 32
+          },
+          {
+            "NativeArray": 648
+          },
+          {
+            "Camera": 1169
+          },
+          {
+            "Secure": 241
+          },
+          {
+            "SerializationCache": 3608
+          },
+          {
+            "APIUpdating": 10320
+          },
+          {
+            "Subsystems": 336
+          },
+          {
+            "VirtualTexturing": 57496
+          },
+          {
+            "Baselib": 16
+          },
+          {
+            "Analytics": 80
+          },
+          {
+            "Hierarchy": 1452
+          },
+          {
+            "UIElements": 40
+          },
+          {
+            "CoreStats": 14536
+          },
+          {
+            "Identifiers": 7152
+          },
+          {
+            "Gui": 40
+          },
+          {
+            "CoreBusinessMetrics": 128
+          },
+          {
+            "AssetReference": 32
+          }
+        ]
+      }
+    ],
+    "logSha256": "9feec1a8a353e1009f2ff35e2bc6650d1df0847cfd21b0d2196d1f41d17f8be4"
+  }
+}

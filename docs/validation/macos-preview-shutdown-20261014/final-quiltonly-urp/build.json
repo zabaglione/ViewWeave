@@ -1,0 +1,9 @@
+{
+  "pipeline": "URP",
+  "activeAsset": "Assets/SamplePlayerValidationGenerated/MetalCurrent/Pipeline.asset",
+  "activePipeline": "UniversalRenderPipeline",
+  "shaderPipelineTag": "UniversalPipeline",
+  "configuredQualityAssets": 6,
+  "preparedInSeparateProcess": true,
+  "succeeded": true
+}

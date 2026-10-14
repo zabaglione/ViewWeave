@@ -1,0 +1,50 @@
+{
+  "case": "unity-only-urp-release",
+  "mode": "UnityOnly",
+  "configuration": "Release",
+  "pid": 29682,
+  "startedAtUnix": 1791945225.1775649,
+  "finishedAtUnix": 1791945232.228881,
+  "exitCode": 0,
+  "naturalExit": true,
+  "playerHeld": false,
+  "executableArchitecture": "arm64",
+  "packagedPlugins": [],
+  "shimObserved": false,
+  "sdkObserved": false,
+  "moduleSnapshotExitCode": 0,
+  "moduleSnapshotPidMatched": true,
+  "dyldTraceObserved": true,
+  "gates": {
+    "moduleSnapshotSucceeded": true,
+    "modeMatches": true,
+    "metalMatches": true,
+    "unityMatches": true,
+    "fresh": true,
+    "player": true,
+    "configuration": true,
+    "runtimePass": true,
+    "naturalExit": true,
+    "noSdkWhenNotRequested": true,
+    "noShimInUnityOnly": true
+  },
+  "runtime": {
+    "passed": true,
+    "editor": false,
+    "development": false,
+    "error": "",
+    "pipeline": "URP",
+    "actualPipeline": "UniversalRenderPipeline",
+    "shaderTag": "UniversalPipeline",
+    "unityVersion": "6000.6.4f1",
+    "graphicsApi": "Metal",
+    "gpu": "Apple M3 Max",
+    "frames": 60
+  },
+  "passed": true,
+  "exitDiagnostics": {
+    "threadWarningCount": 5,
+    "memoryLeaksRecords": [],
+    "logSha256": "0171821a0d510c01b4b4d322bc96ef5650c2a1e2b15f97067f966c87b4e9b300"
+  }
+}

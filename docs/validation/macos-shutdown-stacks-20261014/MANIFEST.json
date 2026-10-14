@@ -1,0 +1,60 @@
+{
+  "files": {
+    "checks.json": {
+      "sha256": "ac7a933c7bd32ad962b97e3674cab738ab832156ffb99813f93552bf87f608b9",
+      "bytes": 1543
+    },
+    "hdrp-device-malloc.json": {
+      "sha256": "cd38bd88bff507cc06cf1c8ffe897638de5c344d4cdd33dab482cfc9f5071538",
+      "bytes": 51382
+    },
+    "hdrp-device-stack-late.json": {
+      "sha256": "a13ac40af9d3d433565502950def4e74928d5afee755e49125a77c010925cd78",
+      "bytes": 134749
+    },
+    "metadata-only-malloc.json": {
+      "sha256": "ee6fd9e9cf119e93d8c72455289c54210a40dc31ce689b7aa1d3e45ac78ea60a",
+      "bytes": 50813
+    },
+    "metadata-only-stack-late.json": {
+      "sha256": "1f0c54c68b228921beeecafed5d85cee60b7133eebbe4be450fdbf3aa7ff010c",
+      "bytes": 131385
+    },
+    "module-identities.json": {
+      "sha256": "721d0d5f650d69335c1583d2381a1e78a0f10a13800c5371ae21ccedcad36421",
+      "bytes": 3350
+    },
+    "quilt-only-malloc.json": {
+      "sha256": "ed1429d27ef5e6372a9b697b69117a9cf8f5b8fe220414b8dce5a15e8732e5dd",
+      "bytes": 49754
+    },
+    "quilt-only-stack.json": {
+      "sha256": "d1a36eb58e3aba7793d4ac6388b48b244e47ef2e239a50adbeeb707e53cee1d8",
+      "bytes": 134322
+    },
+    "unity-only-malloc-default.json": {
+      "sha256": "81859f1a705cc4eaf4a67454fc1502eab338bd58651d24ce792ee262593d6b67",
+      "bytes": 49087
+    },
+    "unity-only-malloc-system.json": {
+      "sha256": "1db8bb2985226e0f34d8dcea23c207f2113aa91ea05fb6ce9f030484f20aaff7",
+      "bytes": 48373
+    },
+    "unity-only-thread-names.json": {
+      "sha256": "49d9101dc1cfabcdffae888dad9fc1ee183991791962012bcb69b7ed6cbe93a2",
+      "bytes": 133186
+    },
+    "urp-device-malloc.json": {
+      "sha256": "37360f5f003c66045b30edc4cd764f80cd8d24ca80f7d3d487452ef84955ed2a",
+      "bytes": 51399
+    },
+    "urp-device-stack-clean.json": {
+      "sha256": "8ecafffd0725d7cc6e1db3be9357897502122e759c9dd49241ad0c67959ab31b",
+      "bytes": 135025
+    }
+  },
+  "excludes": [
+    "Raw logs, app binaries, memory graph contents, ASLR allocation addresses and user paths remain private in .local."
+  ],
+  "structuredResultSha256": "770034ed7f2085da834dea163bd8fa53993d29a35a470d6275c8a8deaedb3d7b"
+}

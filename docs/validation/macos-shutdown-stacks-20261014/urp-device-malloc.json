@@ -1,0 +1,1719 @@
+{
+  "case": "urp-device-malloc",
+  "pid": 63114,
+  "allocator": "default",
+  "runtime": {
+    "passed": true,
+    "development": true,
+    "editor": false,
+    "unityVersion": "6000.6.4f1",
+    "graphicsApi": "Metal",
+    "pipeline": "URP",
+    "error": "",
+    "capture": ".local/macos-current-player-20261014/latest-urp-development/current.png",
+    "sequence": ".local/macos-current-player-20261014/latest-urp-development/ViewWeave_20261014_130007_148_0e32d61ad7dd4be59ff4d7af17090540",
+    "actualPipeline": "UniversalRenderPipeline",
+    "shaderPipelineTag": "UniversalPipeline",
+    "firstCompleted": 60,
+    "restartedCompleted": 30,
+    "recordedFrames": 3,
+    "distinctColors": 15,
+    "width": 1023,
+    "height": 1020,
+    "views": 66,
+    "pendingRetirement": 0,
+    "cellPatternMode": 0,
+    "subpixelCellCount": 0,
+    "redPixels": 152354,
+    "greenPixels": 96813,
+    "magentaPixels": 0,
+    "activeSubpixelChangeRejected": true,
+    "missingCellsRejected": true,
+    "classicRestartVerified": true,
+    "missingCellsError": "Invalid calibration: Calibrated Cells requires an actual cell table",
+    "restartSubpixelMode": "ClassicRgb",
+    "targets": {
+      "viewFormat": "ARGBHalf",
+      "viewGraphicsFormat": "R16G16B16A16_SFloat",
+      "resolveGraphicsFormat": "R8G8B8A8_SRGB",
+      "quiltGraphicsFormat": "R8G8B8A8_SRGB",
+      "viewSrgb": false,
+      "resolveSrgb": true,
+      "quiltSrgb": true,
+      "resolvePresent": true,
+      "viewSamples": 4,
+      "resolveSamples": 1,
+      "quiltSamples": 1
+    }
+  },
+  "leaksToolExitCode": 0,
+  "observedChildExitStatus": null,
+  "runtimePassed": true,
+  "threadWarnings": 4,
+  "immediateReports": [
+    {
+      "type": "MemoryLeaks",
+      "version": 2,
+      "phase": "Immediate",
+      "time": 1791950409183,
+      "processId": 63114,
+      "allocatedMemory": 2536492,
+      "memoryLabels": [
+        {
+          "Default": 54543
+        },
+        {
+          "Permanent": 1472
+        },
+        {
+          "NewDelete": 1707686
+        },
+        {
+          "Thread": 8120
+        },
+        {
+          "Manager": 16359
+        },
+        {
+          "VertexData": 8
+        },
+        {
+          "Geometry": 408
+        },
+        {
+          "Texture": 16
+        },
+        {
+          "Shader": 78020
+        },
+        {
+          "Material": 212
+        },
+        {
+          "GfxDevice": 38776
+        },
+        {
+          "GfxThread": 400
+        },
+        {
+          "Animation": 880
+        },
+        {
+          "Audio": 3648
+        },
+        {
+          "FreeType": 8
+        },
+        {
+          "FontEngine": 736
+        },
+        {
+          "Physics": 2000
+        },
+        {
+          "Physics2D": 16
+        },
+        {
+          "Serialization": 16392
+        },
+        {
+          "Input": 43216
+        },
+        {
+          "JobScheduler": 448
+        },
+        {
+          "TextLib": 280
+        },
+        {
+          "Mono": 56
+        },
+        {
+          "ScriptingNativeRuntime": 128
+        },
+        {
+          "BaseObject": 36320
+        },
+        {
+          "Resource": 996
+        },
+        {
+          "Renderer": 2736
+        },
+        {
+          "Transform": 6485
+        },
+        {
+          "File": 4600
+        },
+        {
+          "WebCam": 32
+        },
+        {
+          "Culling": 32
+        },
+        {
+          "Terrain": 11298
+        },
+        {
+          "Wind": 24
+        },
+        {
+          "String": 3095
+        },
+        {
+          "Utility": 318232
+        },
+        {
+          "PoolAlloc": 1536
+        },
+        {
+          "AI": 40
+        },
+        {
+          "TypeTree": 5512
+        },
+        {
+          "ScriptManager": 5696
+        },
+        {
+          "CodeReload": 440
+        },
+        {
+          "RuntimeInitializeOnLoadManager": 64
+        },
+        {
+          "Sprites": 78
+        },
+        {
+          "SpriteAtlas": 120
+        },
+        {
+          "GI": 7200
+        },
+        {
+          "Director": 8248
+        },
+        {
+          "CloudService": 144
+        },
+        {
+          "WebRequest": 520
+        },
+        {
+          "VR": 49402
+        },
+        {
+          "SceneManager": 408
+        },
+        {
+          "Video": 2080
+        },
+        {
+          "LazyScriptCache": 32
+        },
+        {
+          "NativeArray": 648
+        },
+        {
+          "Camera": 1169
+        },
+        {
+          "Secure": 241
+        },
+        {
+          "SerializationCache": 3608
+        },
+        {
+          "APIUpdating": 10320
+        },
+        {
+          "Subsystems": 336
+        },
+        {
+          "VirtualTexturing": 57496
+        },
+        {
+          "Baselib": 16
+        },
+        {
+          "Analytics": 80
+        },
+        {
+          "Hierarchy": 1452
+        },
+        {
+          "UIElements": 40
+        },
+        {
+          "CoreStats": 14536
+        },
+        {
+          "Identifiers": 7152
+        },
+        {
+          "Gui": 40
+        },
+        {
+          "CoreBusinessMetrics": 128
+        },
+        {
+          "AssetReference": 32
+        }
+      ]
+    }
+  ],
+  "appleLeakedBlocks": 2417,
+  "appleLeakedBytes": 139200,
+  "rawStackGroups": 1330,
+  "distinctSymbolStacks": 1330,
+  "representativeSymbolStacks": 5,
+  "stackGroups": [
+    {
+      "allocationFrames": [
+        {
+          "index": 48,
+          "module": "dyld",
+          "symbol": "start + 6992"
+        },
+        {
+          "index": 47,
+          "module": "UnityPlayer.dylib",
+          "symbol": "PlayerMain(int, char const**) + 1116"
+        },
+        {
+          "index": 46,
+          "module": "com.apple.AppKit",
+          "symbol": "NSApplicationMain + 880"
+        },
+        {
+          "index": 45,
+          "module": "com.apple.AppKit",
+          "symbol": "-[NSApplication run] + 368"
+        },
+        {
+          "index": 44,
+          "module": "com.apple.AppKit",
+          "symbol": "-[NSApplication(NSEventRouting) nextEventMatchingMask:untilDate:inMode:dequeue:] + 72"
+        },
+        {
+          "index": 43,
+          "module": "com.apple.AppKit",
+          "symbol": "-[NSApplication(NSEventRouting) _nextEventMatchingEventMask:untilDate:inMode:dequeue:] + 688"
+        },
+        {
+          "index": 42,
+          "module": "com.apple.AppKit",
+          "symbol": "_DPSNextEvent + 1284"
+        },
+        {
+          "index": 41,
+          "module": "com.apple.HIToolbox",
+          "symbol": "AEProcessAppleEvent + 68"
+        },
+        {
+          "index": 40,
+          "module": "com.apple.AE",
+          "symbol": "aeProcessAppleEvent + 484"
+        },
+        {
+          "index": 39,
+          "module": "com.apple.AE",
+          "symbol": "0x19614c000 + 43148"
+        },
+        {
+          "index": 38,
+          "module": "com.apple.AE",
+          "symbol": "0x19614c000 + 44852"
+        },
+        {
+          "index": 37,
+          "module": "com.apple.Foundation",
+          "symbol": "_NSAppleEventManagerGenericHandler + 80"
+        },
+        {
+          "index": 36,
+          "module": "com.apple.Foundation",
+          "symbol": "-[NSAppleEventManager dispatchRawAppleEvent:withRawReply:handlerRefCon:] + 316"
+        },
+        {
+          "index": 35,
+          "module": "com.apple.AppKit",
+          "symbol": "-[NSApplication(NSAppleEventHandling) _handleCoreEvent:withReplyEvent:] + 488"
+        },
+        {
+          "index": 34,
+          "module": "com.apple.AppKit",
+          "symbol": "-[NSApplication(NSAppleEventHandling) _handleAEOpenEvent:] + 488"
+        },
+        {
+          "index": 33,
+          "module": "com.apple.AppKit",
+          "symbol": "-[NSApplication _sendFinishLaunchingNotification] + 172"
+        },
+        {
+          "index": 32,
+          "module": "com.apple.AppKit",
+          "symbol": "-[NSApplication _postDidFinishNotification] + 308"
+        },
+        {
+          "index": 31,
+          "module": "com.apple.Foundation",
+          "symbol": "-[NSNotificationCenter postNotificationName:object:userInfo:] + 88"
+        },
+        {
+          "index": 30,
+          "module": "com.apple.CoreFoundation",
+          "symbol": "_CFXNotificationPost + 740"
+        },
+        {
+          "index": 29,
+          "module": "com.apple.CoreFoundation",
+          "symbol": "_CFXRegistrationPost + 440"
+        },
+        {
+          "index": 28,
+          "module": "com.apple.CoreFoundation",
+          "symbol": "___CFXRegistrationPost_block_invoke + 92"
+        },
+        {
+          "index": 27,
+          "module": "com.apple.CoreFoundation",
+          "symbol": "__CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 148"
+        },
+        {
+          "index": 26,
+          "module": "UnityPlayer.dylib",
+          "symbol": "-[PlayerAppDelegate applicationDidFinishLaunching:] + 472"
+        },
+        {
+          "index": 25,
+          "module": "UnityPlayer.dylib",
+          "symbol": "-[PlayerAppDelegate continuePlayerSetup] + 48"
+        },
+        {
+          "index": 24,
+          "module": "UnityPlayer.dylib",
+          "symbol": "ContinueSetupUnityPlayer(bool) + 1016"
+        },
+        {
+          "index": 23,
+          "module": "UnityPlayer.dylib",
+          "symbol": "PlayerInitEngineGraphics(bool) + 140"
+        },
+        {
+          "index": 22,
+          "module": "UnityPlayer.dylib",
+          "symbol": "PlayerInitEngineGraphics_LoadManagersAndCallCallbacks() + 68"
+        },
+        {
+          "index": 21,
+          "module": "UnityPlayer.dylib",
+          "symbol": "PlayerLoadGlobalManagers(char const*, char const*, unsigned int) + 316"
+        },
+        {
+          "index": 20,
+          "module": "UnityPlayer.dylib",
+          "symbol": "LoadManager(core::basic_string<char, core::StringStorageDefault<char>> const&, int) + 300"
+        },
+        {
+          "index": 19,
+          "module": "UnityPlayer.dylib",
+          "symbol": "PersistentManager::ReadObject(EntityId, AwakeFromLoadMode) + 532"
+        },
+        {
+          "index": 18,
+          "module": "UnityPlayer.dylib",
+          "symbol": "PersistentManager::LoadAndIntegrateAllPreallocatedObjects(PersistentManager::LockFlags) + 76"
+        },
+        {
+          "index": 17,
+          "module": "UnityPlayer.dylib",
+          "symbol": "PersistentManager::IntegrateAllThreadedObjects() + 168"
+        },
+        {
+          "index": 16,
+          "module": "UnityPlayer.dylib",
+          "symbol": "AwakeFromLoadQueue::PersistentManagerAwakeFromLoad_NoChecks(AwakeFromLoadMode) + 44"
+        },
+        {
+          "index": 15,
+          "module": "UnityPlayer.dylib",
+          "symbol": "AwakeFromLoadQueue::InvokePersistentManagerAwake(AwakeFromLoadQueue::Item*, unsigned int, AwakeFromLoadMode, bool) + 376"
+        },
+        {
+          "index": 14,
+          "module": "UnityPlayer.dylib",
+          "symbol": "MonoManager::AwakeFromLoad(AwakeFromLoadMode) + 20"
+        },
+        {
+          "index": 13,
+          "module": "UnityPlayer.dylib",
+          "symbol": "Scripting::Core::CodeReloadManager::BeginCodeReload(AssemblyLoadReason) + 160"
+        },
+        {
+          "index": 12,
+          "module": "UnityPlayer.dylib",
+          "symbol": "MonoManager::ReloadAssembly(AssemblyLoadReason) + 128"
+        },
+        {
+          "index": 11,
+          "module": "UnityPlayer.dylib",
+          "symbol": "MonoManager::BeginReloadAssembly(bool) + 864"
+        },
+        {
+          "index": 10,
+          "module": "UnityPlayer.dylib",
+          "symbol": "MonoManager::LoadAssemblies(dynamic_bitset) + 796"
+        },
+        {
+          "index": 9,
+          "module": "UnityPlayer.dylib",
+          "symbol": "MonoManager::LoadAssembly(AssemblyInfo const&) + 360"
+        },
+        {
+          "index": 8,
+          "module": "UnityPlayer.dylib",
+          "symbol": "MonoManager::LoadAssemblyInMemoryAndDomain(AssemblyInfo const&, core::basic_string<char, core::StringStorageDefault<char>>&) + 712"
+        },
+        {
+          "index": 7,
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "mono_debug_open_image + 120"
+        },
+        {
+          "index": 6,
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "mono_ppdb_load_file + 492"
+        },
+        {
+          "index": 5,
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "mono_image_open_from_data_internal + 488"
+        },
+        {
+          "index": 4,
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "do_mono_image_load + 316"
+        },
+        {
+          "index": 3,
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "pe_image_load_cli_data + 44"
+        },
+        {
+          "index": 2,
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "mono_image_load_metadata + 1272"
+        },
+        {
+          "index": 1,
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "monoeg_g_calloc + 48"
+        },
+        {
+          "index": 0,
+          "module": "libsystem_malloc.dylib",
+          "symbol": "_malloc_zone_calloc_instrumented_or_legacy + 132 "
+        }
+      ],
+      "groups": [
+        {
+          "description": "ROOT LEAK: <calloc in monoeg_g_calloc>",
+          "instances": 86,
+          "reportedSize": "26.9K"
+        }
+      ]
+    },
+    {
+      "allocationFrames": [
+        {
+          "index": 48,
+          "module": "dyld",
+          "symbol": "start + 6992"
+        },
+        {
+          "index": 47,
+          "module": "UnityPlayer.dylib",
+          "symbol": "PlayerMain(int, char const**) + 1116"
+        },
+        {
+          "index": 46,
+          "module": "com.apple.AppKit",
+          "symbol": "NSApplicationMain + 880"
+        },
+        {
+          "index": 45,
+          "module": "com.apple.AppKit",
+          "symbol": "-[NSApplication run] + 368"
+        },
+        {
+          "index": 44,
+          "module": "com.apple.AppKit",
+          "symbol": "-[NSApplication(NSEventRouting) nextEventMatchingMask:untilDate:inMode:dequeue:] + 72"
+        },
+        {
+          "index": 43,
+          "module": "com.apple.AppKit",
+          "symbol": "-[NSApplication(NSEventRouting) _nextEventMatchingEventMask:untilDate:inMode:dequeue:] + 688"
+        },
+        {
+          "index": 42,
+          "module": "com.apple.AppKit",
+          "symbol": "_DPSNextEvent + 1284"
+        },
+        {
+          "index": 41,
+          "module": "com.apple.HIToolbox",
+          "symbol": "AEProcessAppleEvent + 68"
+        },
+        {
+          "index": 40,
+          "module": "com.apple.AE",
+          "symbol": "aeProcessAppleEvent + 484"
+        },
+        {
+          "index": 39,
+          "module": "com.apple.AE",
+          "symbol": "0x19614c000 + 43148"
+        },
+        {
+          "index": 38,
+          "module": "com.apple.AE",
+          "symbol": "0x19614c000 + 44852"
+        },
+        {
+          "index": 37,
+          "module": "com.apple.Foundation",
+          "symbol": "_NSAppleEventManagerGenericHandler + 80"
+        },
+        {
+          "index": 36,
+          "module": "com.apple.Foundation",
+          "symbol": "-[NSAppleEventManager dispatchRawAppleEvent:withRawReply:handlerRefCon:] + 316"
+        },
+        {
+          "index": 35,
+          "module": "com.apple.AppKit",
+          "symbol": "-[NSApplication(NSAppleEventHandling) _handleCoreEvent:withReplyEvent:] + 488"
+        },
+        {
+          "index": 34,
+          "module": "com.apple.AppKit",
+          "symbol": "-[NSApplication(NSAppleEventHandling) _handleAEOpenEvent:] + 488"
+        },
+        {
+          "index": 33,
+          "module": "com.apple.AppKit",
+          "symbol": "-[NSApplication _sendFinishLaunchingNotification] + 172"
+        },
+        {
+          "index": 32,
+          "module": "com.apple.AppKit",
+          "symbol": "-[NSApplication _postDidFinishNotification] + 308"
+        },
+        {
+          "index": 31,
+          "module": "com.apple.Foundation",
+          "symbol": "-[NSNotificationCenter postNotificationName:object:userInfo:] + 88"
+        },
+        {
+          "index": 30,
+          "module": "com.apple.CoreFoundation",
+          "symbol": "_CFXNotificationPost + 740"
+        },
+        {
+          "index": 29,
+          "module": "com.apple.CoreFoundation",
+          "symbol": "_CFXRegistrationPost + 440"
+        },
+        {
+          "index": 28,
+          "module": "com.apple.CoreFoundation",
+          "symbol": "___CFXRegistrationPost_block_invoke + 92"
+        },
+        {
+          "index": 27,
+          "module": "com.apple.CoreFoundation",
+          "symbol": "__CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 148"
+        },
+        {
+          "index": 26,
+          "module": "UnityPlayer.dylib",
+          "symbol": "-[PlayerAppDelegate applicationDidFinishLaunching:] + 472"
+        },
+        {
+          "index": 25,
+          "module": "UnityPlayer.dylib",
+          "symbol": "-[PlayerAppDelegate continuePlayerSetup] + 48"
+        },
+        {
+          "index": 24,
+          "module": "UnityPlayer.dylib",
+          "symbol": "ContinueSetupUnityPlayer(bool) + 1016"
+        },
+        {
+          "index": 23,
+          "module": "UnityPlayer.dylib",
+          "symbol": "PlayerInitEngineGraphics(bool) + 140"
+        },
+        {
+          "index": 22,
+          "module": "UnityPlayer.dylib",
+          "symbol": "PlayerInitEngineGraphics_LoadManagersAndCallCallbacks() + 68"
+        },
+        {
+          "index": 21,
+          "module": "UnityPlayer.dylib",
+          "symbol": "PlayerLoadGlobalManagers(char const*, char const*, unsigned int) + 316"
+        },
+        {
+          "index": 20,
+          "module": "UnityPlayer.dylib",
+          "symbol": "LoadManager(core::basic_string<char, core::StringStorageDefault<char>> const&, int) + 300"
+        },
+        {
+          "index": 19,
+          "module": "UnityPlayer.dylib",
+          "symbol": "PersistentManager::ReadObject(EntityId, AwakeFromLoadMode) + 532"
+        },
+        {
+          "index": 18,
+          "module": "UnityPlayer.dylib",
+          "symbol": "PersistentManager::LoadAndIntegrateAllPreallocatedObjects(PersistentManager::LockFlags) + 76"
+        },
+        {
+          "index": 17,
+          "module": "UnityPlayer.dylib",
+          "symbol": "PersistentManager::IntegrateAllThreadedObjects() + 168"
+        },
+        {
+          "index": 16,
+          "module": "UnityPlayer.dylib",
+          "symbol": "AwakeFromLoadQueue::PersistentManagerAwakeFromLoad_NoChecks(AwakeFromLoadMode) + 44"
+        },
+        {
+          "index": 15,
+          "module": "UnityPlayer.dylib",
+          "symbol": "AwakeFromLoadQueue::InvokePersistentManagerAwake(AwakeFromLoadQueue::Item*, unsigned int, AwakeFromLoadMode, bool) + 376"
+        },
+        {
+          "index": 14,
+          "module": "UnityPlayer.dylib",
+          "symbol": "MonoManager::AwakeFromLoad(AwakeFromLoadMode) + 20"
+        },
+        {
+          "index": 13,
+          "module": "UnityPlayer.dylib",
+          "symbol": "Scripting::Core::CodeReloadManager::BeginCodeReload(AssemblyLoadReason) + 160"
+        },
+        {
+          "index": 12,
+          "module": "UnityPlayer.dylib",
+          "symbol": "MonoManager::ReloadAssembly(AssemblyLoadReason) + 436"
+        },
+        {
+          "index": 11,
+          "module": "UnityPlayer.dylib",
+          "symbol": "MonoManager::LoadAllAssembliesAndSetupDomain(dynamic_bitset) + 248"
+        },
+        {
+          "index": 10,
+          "module": "UnityPlayer.dylib",
+          "symbol": "MonoManager::LoadAssemblies(dynamic_bitset) + 1104"
+        },
+        {
+          "index": 9,
+          "module": "UnityPlayer.dylib",
+          "symbol": "MonoManager::LoadAssembly(AssemblyInfo const&) + 360"
+        },
+        {
+          "index": 8,
+          "module": "UnityPlayer.dylib",
+          "symbol": "MonoManager::LoadAssemblyInMemoryAndDomain(AssemblyInfo const&, core::basic_string<char, core::StringStorageDefault<char>>&) + 712"
+        },
+        {
+          "index": 7,
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "mono_debug_open_image + 120"
+        },
+        {
+          "index": 6,
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "mono_ppdb_load_file + 492"
+        },
+        {
+          "index": 5,
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "mono_image_open_from_data_internal + 488"
+        },
+        {
+          "index": 4,
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "do_mono_image_load + 316"
+        },
+        {
+          "index": 3,
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "pe_image_load_cli_data + 44"
+        },
+        {
+          "index": 2,
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "mono_image_load_metadata + 1272"
+        },
+        {
+          "index": 1,
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "monoeg_g_calloc + 48"
+        },
+        {
+          "index": 0,
+          "module": "libsystem_malloc.dylib",
+          "symbol": "_malloc_zone_calloc_instrumented_or_legacy + 132 "
+        }
+      ],
+      "groups": [
+        {
+          "description": "ROOT LEAK: <calloc in monoeg_g_calloc>",
+          "instances": 42,
+          "reportedSize": "13.1K"
+        }
+      ]
+    },
+    {
+      "allocationFrames": [
+        {
+          "index": 70,
+          "module": "dyld",
+          "symbol": "start + 6992"
+        },
+        {
+          "index": 69,
+          "module": "UnityPlayer.dylib",
+          "symbol": "PlayerMain(int, char const**) + 1116"
+        },
+        {
+          "index": 68,
+          "module": "com.apple.AppKit",
+          "symbol": "NSApplicationMain + 880"
+        },
+        {
+          "index": 67,
+          "module": "com.apple.AppKit",
+          "symbol": "-[NSApplication run] + 368"
+        },
+        {
+          "index": 66,
+          "module": "com.apple.AppKit",
+          "symbol": "-[NSApplication(NSEventRouting) nextEventMatchingMask:untilDate:inMode:dequeue:] + 72"
+        },
+        {
+          "index": 65,
+          "module": "com.apple.AppKit",
+          "symbol": "-[NSApplication(NSEventRouting) _nextEventMatchingEventMask:untilDate:inMode:dequeue:] + 688"
+        },
+        {
+          "index": 64,
+          "module": "com.apple.AppKit",
+          "symbol": "_DPSNextEvent + 1284"
+        },
+        {
+          "index": 63,
+          "module": "com.apple.HIToolbox",
+          "symbol": "AEProcessAppleEvent + 68"
+        },
+        {
+          "index": 62,
+          "module": "com.apple.AE",
+          "symbol": "aeProcessAppleEvent + 484"
+        },
+        {
+          "index": 61,
+          "module": "com.apple.AE",
+          "symbol": "0x19614c000 + 43148"
+        },
+        {
+          "index": 60,
+          "module": "com.apple.AE",
+          "symbol": "0x19614c000 + 44852"
+        },
+        {
+          "index": 59,
+          "module": "com.apple.Foundation",
+          "symbol": "_NSAppleEventManagerGenericHandler + 80"
+        },
+        {
+          "index": 58,
+          "module": "com.apple.Foundation",
+          "symbol": "-[NSAppleEventManager dispatchRawAppleEvent:withRawReply:handlerRefCon:] + 316"
+        },
+        {
+          "index": 57,
+          "module": "com.apple.AppKit",
+          "symbol": "-[NSApplication(NSAppleEventHandling) _handleCoreEvent:withReplyEvent:] + 488"
+        },
+        {
+          "index": 56,
+          "module": "com.apple.AppKit",
+          "symbol": "-[NSApplication(NSAppleEventHandling) _handleAEOpenEvent:] + 488"
+        },
+        {
+          "index": 55,
+          "module": "com.apple.AppKit",
+          "symbol": "-[NSApplication _sendFinishLaunchingNotification] + 172"
+        },
+        {
+          "index": 54,
+          "module": "com.apple.AppKit",
+          "symbol": "-[NSApplication _postDidFinishNotification] + 308"
+        },
+        {
+          "index": 53,
+          "module": "com.apple.Foundation",
+          "symbol": "-[NSNotificationCenter postNotificationName:object:userInfo:] + 88"
+        },
+        {
+          "index": 52,
+          "module": "com.apple.CoreFoundation",
+          "symbol": "_CFXNotificationPost + 740"
+        },
+        {
+          "index": 51,
+          "module": "com.apple.CoreFoundation",
+          "symbol": "_CFXRegistrationPost + 440"
+        },
+        {
+          "index": 50,
+          "module": "com.apple.CoreFoundation",
+          "symbol": "___CFXRegistrationPost_block_invoke + 92"
+        },
+        {
+          "index": 49,
+          "module": "com.apple.CoreFoundation",
+          "symbol": "__CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 148"
+        },
+        {
+          "index": 48,
+          "module": "UnityPlayer.dylib",
+          "symbol": "-[PlayerAppDelegate applicationDidFinishLaunching:] + 472"
+        },
+        {
+          "index": 47,
+          "module": "UnityPlayer.dylib",
+          "symbol": "-[PlayerAppDelegate continuePlayerSetup] + 48"
+        },
+        {
+          "index": 46,
+          "module": "UnityPlayer.dylib",
+          "symbol": "ContinueSetupUnityPlayer(bool) + 1016"
+        },
+        {
+          "index": 45,
+          "module": "UnityPlayer.dylib",
+          "symbol": "PlayerInitEngineGraphics(bool) + 140"
+        },
+        {
+          "index": 44,
+          "module": "UnityPlayer.dylib",
+          "symbol": "PlayerInitEngineGraphics_LoadManagersAndCallCallbacks() + 68"
+        },
+        {
+          "index": 43,
+          "module": "UnityPlayer.dylib",
+          "symbol": "PlayerLoadGlobalManagers(char const*, char const*, unsigned int) + 316"
+        },
+        {
+          "index": 42,
+          "module": "UnityPlayer.dylib",
+          "symbol": "LoadManager(core::basic_string<char, core::StringStorageDefault<char>> const&, int) + 300"
+        },
+        {
+          "index": 41,
+          "module": "UnityPlayer.dylib",
+          "symbol": "PersistentManager::ReadObject(EntityId, AwakeFromLoadMode) + 532"
+        },
+        {
+          "index": 40,
+          "module": "UnityPlayer.dylib",
+          "symbol": "PersistentManager::LoadAndIntegrateAllPreallocatedObjects(PersistentManager::LockFlags) + 76"
+        },
+        {
+          "index": 39,
+          "module": "UnityPlayer.dylib",
+          "symbol": "PersistentManager::IntegrateAllThreadedObjects() + 168"
+        },
+        {
+          "index": 38,
+          "module": "UnityPlayer.dylib",
+          "symbol": "AwakeFromLoadQueue::PersistentManagerAwakeFromLoad_NoChecks(AwakeFromLoadMode) + 44"
+        },
+        {
+          "index": 37,
+          "module": "UnityPlayer.dylib",
+          "symbol": "AwakeFromLoadQueue::InvokePersistentManagerAwake(AwakeFromLoadQueue::Item*, unsigned int, AwakeFromLoadMode, bool) + 376"
+        },
+        {
+          "index": 36,
+          "module": "UnityPlayer.dylib",
+          "symbol": "MonoManager::AwakeFromLoad(AwakeFromLoadMode) + 20"
+        },
+        {
+          "index": 35,
+          "module": "UnityPlayer.dylib",
+          "symbol": "Scripting::Core::CodeReloadManager::BeginCodeReload(AssemblyLoadReason) + 160"
+        },
+        {
+          "index": 34,
+          "module": "UnityPlayer.dylib",
+          "symbol": "MonoManager::ReloadAssembly(AssemblyLoadReason) + 128"
+        },
+        {
+          "index": 33,
+          "module": "UnityPlayer.dylib",
+          "symbol": "MonoManager::BeginReloadAssembly(bool) + 864"
+        },
+        {
+          "index": 32,
+          "module": "UnityPlayer.dylib",
+          "symbol": "MonoManager::LoadAssemblies(dynamic_bitset) + 1216"
+        },
+        {
+          "index": 31,
+          "module": "UnityPlayer.dylib",
+          "symbol": "Scripting::UnityEngine::ScriptingUtilityProxy::IsManagedCodeWorking(ScriptingExceptionPtr*) + 24"
+        },
+        {
+          "index": 30,
+          "module": "UnityPlayer.dylib",
+          "symbol": "GetCoreScriptingClassesPtr() + 180"
+        },
+        {
+          "index": 29,
+          "module": "UnityPlayer.dylib",
+          "symbol": "InitializeCoreScriptingClasses() + 6192"
+        },
+        {
+          "index": 28,
+          "module": "UnityPlayer.dylib",
+          "symbol": "LoadedAssemblies::GetMonoClassWithAssemblyName(char const*, char const*, char const*) const + 172"
+        },
+        {
+          "index": 27,
+          "module": "UnityPlayer.dylib",
+          "symbol": "scripting_class_from_name_withgenericfix(ScriptingImagePtr, char const*, char const*, char const*) + 1452"
+        },
+        {
+          "index": 26,
+          "module": "UnityPlayer.dylib",
+          "symbol": "ScriptingInvocation::Invoke(ScriptingExceptionPtr*) + 208"
+        },
+        {
+          "index": 25,
+          "module": "UnityPlayer.dylib",
+          "symbol": "scripting_method_invoke(ScriptingMethodPtr, ScriptingInvokeObjectArgument const&, ScriptingArguments&, ScriptingExceptionPtr*) + 92"
+        },
+        {
+          "index": 24,
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "mono_runtime_invoke + 36"
+        },
+        {
+          "index": 23,
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "do_runtime_invoke + 104"
+        },
+        {
+          "index": 22,
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "mono_jit_runtime_invoke + 472"
+        },
+        {
+          "index": 21,
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "mono_jit_compile_method_with_opt + 2396"
+        },
+        {
+          "index": 20,
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "mono_jit_compile_method_inner + 1092"
+        },
+        {
+          "index": 19,
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "mono_runtime_class_init_full + 856"
+        },
+        {
+          "index": 18,
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "do_runtime_invoke + 104"
+        },
+        {
+          "index": 17,
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "mono_jit_runtime_invoke + 1924"
+        },
+        {
+          "index": 16,
+          "module": "???",
+          "symbol": "0x7fffffffffffffff + 9223372042031812537"
+        },
+        {
+          "index": 15,
+          "module": "???",
+          "symbol": "0x7fffffffffffffff + 9223372042031814405"
+        },
+        {
+          "index": 14,
+          "module": "???",
+          "symbol": "0x7fffffffffffffff + 9223372042031815253"
+        },
+        {
+          "index": 13,
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "mono_generic_class_init + 24"
+        },
+        {
+          "index": 12,
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "mono_runtime_class_init_full + 856"
+        },
+        {
+          "index": 11,
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "do_runtime_invoke + 104"
+        },
+        {
+          "index": 10,
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "mono_jit_runtime_invoke + 472"
+        },
+        {
+          "index": 9,
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "mono_jit_compile_method_with_opt + 2396"
+        },
+        {
+          "index": 8,
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "mono_jit_compile_method_inner + 88"
+        },
+        {
+          "index": 7,
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "mini_method_compile + 7636"
+        },
+        {
+          "index": 6,
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "mono_codegen + 1024"
+        },
+        {
+          "index": 5,
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "mono_resolve_patch_target + 380"
+        },
+        {
+          "index": 4,
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "mono_create_rgctx_lazy_fetch_trampoline + 152"
+        },
+        {
+          "index": 3,
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "mono_tramp_info_register_internal + 120"
+        },
+        {
+          "index": 2,
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "monoeg_g_memdup + 36"
+        },
+        {
+          "index": 1,
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "monoeg_malloc + 28"
+        },
+        {
+          "index": 0,
+          "module": "libsystem_malloc.dylib",
+          "symbol": "_malloc_zone_malloc_instrumented_or_legacy + 152 "
+        }
+      ],
+      "groups": [
+        {
+          "description": "ROOT LEAK: <malloc in monoeg_malloc>",
+          "instances": 2,
+          "reportedSize": "96 bytes"
+        }
+      ]
+    },
+    {
+      "allocationFrames": [
+        {
+          "index": 81,
+          "module": "dyld",
+          "symbol": "start + 6992"
+        },
+        {
+          "index": 80,
+          "module": "UnityPlayer.dylib",
+          "symbol": "PlayerMain(int, char const**) + 1116"
+        },
+        {
+          "index": 79,
+          "module": "com.apple.AppKit",
+          "symbol": "NSApplicationMain + 880"
+        },
+        {
+          "index": 78,
+          "module": "com.apple.AppKit",
+          "symbol": "-[NSApplication run] + 368"
+        },
+        {
+          "index": 77,
+          "module": "com.apple.AppKit",
+          "symbol": "-[NSApplication(NSEventRouting) nextEventMatchingMask:untilDate:inMode:dequeue:] + 72"
+        },
+        {
+          "index": 76,
+          "module": "com.apple.AppKit",
+          "symbol": "-[NSApplication(NSEventRouting) _nextEventMatchingEventMask:untilDate:inMode:dequeue:] + 688"
+        },
+        {
+          "index": 75,
+          "module": "com.apple.AppKit",
+          "symbol": "_DPSNextEvent + 1284"
+        },
+        {
+          "index": 74,
+          "module": "com.apple.HIToolbox",
+          "symbol": "AEProcessAppleEvent + 68"
+        },
+        {
+          "index": 73,
+          "module": "com.apple.AE",
+          "symbol": "aeProcessAppleEvent + 484"
+        },
+        {
+          "index": 72,
+          "module": "com.apple.AE",
+          "symbol": "0x19614c000 + 43148"
+        },
+        {
+          "index": 71,
+          "module": "com.apple.AE",
+          "symbol": "0x19614c000 + 44852"
+        },
+        {
+          "index": 70,
+          "module": "com.apple.Foundation",
+          "symbol": "_NSAppleEventManagerGenericHandler + 80"
+        },
+        {
+          "index": 69,
+          "module": "com.apple.Foundation",
+          "symbol": "-[NSAppleEventManager dispatchRawAppleEvent:withRawReply:handlerRefCon:] + 316"
+        },
+        {
+          "index": 68,
+          "module": "com.apple.AppKit",
+          "symbol": "-[NSApplication(NSAppleEventHandling) _handleCoreEvent:withReplyEvent:] + 488"
+        },
+        {
+          "index": 67,
+          "module": "com.apple.AppKit",
+          "symbol": "-[NSApplication(NSAppleEventHandling) _handleAEOpenEvent:] + 488"
+        },
+        {
+          "index": 66,
+          "module": "com.apple.AppKit",
+          "symbol": "-[NSApplication _sendFinishLaunchingNotification] + 172"
+        },
+        {
+          "index": 65,
+          "module": "com.apple.AppKit",
+          "symbol": "-[NSApplication _postDidFinishNotification] + 308"
+        },
+        {
+          "index": 64,
+          "module": "com.apple.Foundation",
+          "symbol": "-[NSNotificationCenter postNotificationName:object:userInfo:] + 88"
+        },
+        {
+          "index": 63,
+          "module": "com.apple.CoreFoundation",
+          "symbol": "_CFXNotificationPost + 740"
+        },
+        {
+          "index": 62,
+          "module": "com.apple.CoreFoundation",
+          "symbol": "_CFXRegistrationPost + 440"
+        },
+        {
+          "index": 61,
+          "module": "com.apple.CoreFoundation",
+          "symbol": "___CFXRegistrationPost_block_invoke + 92"
+        },
+        {
+          "index": 60,
+          "module": "com.apple.CoreFoundation",
+          "symbol": "__CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 148"
+        },
+        {
+          "index": 59,
+          "module": "UnityPlayer.dylib",
+          "symbol": "-[PlayerAppDelegate applicationDidFinishLaunching:] + 472"
+        },
+        {
+          "index": 58,
+          "module": "UnityPlayer.dylib",
+          "symbol": "-[PlayerAppDelegate continuePlayerSetup] + 48"
+        },
+        {
+          "index": 57,
+          "module": "UnityPlayer.dylib",
+          "symbol": "ContinueSetupUnityPlayer(bool) + 1016"
+        },
+        {
+          "index": 56,
+          "module": "UnityPlayer.dylib",
+          "symbol": "PlayerInitEngineGraphics(bool) + 140"
+        },
+        {
+          "index": 55,
+          "module": "UnityPlayer.dylib",
+          "symbol": "PlayerInitEngineGraphics_LoadManagersAndCallCallbacks() + 68"
+        },
+        {
+          "index": 54,
+          "module": "UnityPlayer.dylib",
+          "symbol": "PlayerLoadGlobalManagers(char const*, char const*, unsigned int) + 316"
+        },
+        {
+          "index": 53,
+          "module": "UnityPlayer.dylib",
+          "symbol": "LoadManager(core::basic_string<char, core::StringStorageDefault<char>> const&, int) + 300"
+        },
+        {
+          "index": 52,
+          "module": "UnityPlayer.dylib",
+          "symbol": "PersistentManager::ReadObject(EntityId, AwakeFromLoadMode) + 532"
+        },
+        {
+          "index": 51,
+          "module": "UnityPlayer.dylib",
+          "symbol": "PersistentManager::LoadAndIntegrateAllPreallocatedObjects(PersistentManager::LockFlags) + 76"
+        },
+        {
+          "index": 50,
+          "module": "UnityPlayer.dylib",
+          "symbol": "PersistentManager::IntegrateAllThreadedObjects() + 168"
+        },
+        {
+          "index": 49,
+          "module": "UnityPlayer.dylib",
+          "symbol": "AwakeFromLoadQueue::PersistentManagerAwakeFromLoad_NoChecks(AwakeFromLoadMode) + 44"
+        },
+        {
+          "index": 48,
+          "module": "UnityPlayer.dylib",
+          "symbol": "AwakeFromLoadQueue::InvokePersistentManagerAwake(AwakeFromLoadQueue::Item*, unsigned int, AwakeFromLoadMode, bool) + 376"
+        },
+        {
+          "index": 47,
+          "module": "UnityPlayer.dylib",
+          "symbol": "AudioManager::AwakeFromLoad(AwakeFromLoadMode) + 44"
+        },
+        {
+          "index": 46,
+          "module": "UnityPlayer.dylib",
+          "symbol": "AudioManager::InitFMOD(FMOD_OUTPUTTYPE) + 1084"
+        },
+        {
+          "index": 45,
+          "module": "UnityPlayer.dylib",
+          "symbol": "AudioManager::InitNormal(bool, FMOD_OUTPUTTYPE) + 2316"
+        },
+        {
+          "index": 44,
+          "module": "UnityPlayer.dylib",
+          "symbol": "FMOD::System::init(int, unsigned int, void*) + 64"
+        },
+        {
+          "index": 43,
+          "module": "UnityPlayer.dylib",
+          "symbol": "FMOD::SystemI::init(int, unsigned int, void*) + 596"
+        },
+        {
+          "index": 42,
+          "module": "UnityPlayer.dylib",
+          "symbol": "FMOD::OutputCoreAudio::init(int, unsigned int, int*, int, FMOD_SOUND_FORMAT*, int, int, void*) + 136"
+        },
+        {
+          "index": 41,
+          "module": "com.apple.audio.AudioToolboxCore",
+          "symbol": "AudioComponentFindNext + 104"
+        },
+        {
+          "index": 40,
+          "module": "com.apple.audio.AudioToolboxCore",
+          "symbol": "GlobalComponentPluginMgr() + 124"
+        },
+        {
+          "index": 39,
+          "module": "com.apple.audio.AudioToolboxCore",
+          "symbol": "AudioComponentMgr_RegistrarService::retrieveComponents(bool, bool) + 264"
+        },
+        {
+          "index": 38,
+          "module": "com.apple.CoreFoundation",
+          "symbol": "_CF_forwarding_prep_0 + 96"
+        },
+        {
+          "index": 37,
+          "module": "com.apple.CoreFoundation",
+          "symbol": "___forwarding___ + 1072"
+        },
+        {
+          "index": 36,
+          "module": "com.apple.Foundation",
+          "symbol": "-[NSXPCConnection _sendInvocation:orArguments:count:methodSignature:selector:withProxy:] + 2172"
+        },
+        {
+          "index": 35,
+          "module": "com.apple.Foundation",
+          "symbol": "__88-[NSXPCConnection _sendInvocation:orArguments:count:methodSignature:selector:withProxy:]_block_invoke_3 + 188"
+        },
+        {
+          "index": 34,
+          "module": "com.apple.Foundation",
+          "symbol": "-[NSXPCConnection _decodeAndInvokeReplyBlockWithEvent:sequence:replyInfo:] + 528"
+        },
+        {
+          "index": 33,
+          "module": "com.apple.Foundation",
+          "symbol": "__NSXPCCONNECTION_IS_CALLING_OUT_TO_REPLY_BLOCK__ + 16"
+        },
+        {
+          "index": 32,
+          "module": "com.apple.CoreFoundation",
+          "symbol": "-[NSInvocation invoke] + 424"
+        },
+        {
+          "index": 31,
+          "module": "com.apple.CoreFoundation",
+          "symbol": "__invoking___ + 148"
+        },
+        {
+          "index": 30,
+          "module": "com.apple.audio.AudioToolboxCore",
+          "symbol": "invocation function for block in AudioComponentMgr_RegistrarService::retrieveComponents(bool, bool) + 148"
+        },
+        {
+          "index": 29,
+          "module": "com.apple.audio.AudioToolboxCore",
+          "symbol": "AudioComponentMgr_RegistrarService::mergeServerRegistrations(NSData*, bool, NSData*, NSArray*) + 104"
+        },
+        {
+          "index": 28,
+          "module": "com.apple.audio.AudioToolboxCore",
+          "symbol": "AudioComponentVector::createWithSerializedData(NSData*) + 108"
+        },
+        {
+          "index": 27,
+          "module": "com.apple.Foundation",
+          "symbol": "+[NSKeyedUnarchiver unarchivedObjectOfClass:fromData:error:] + 104"
+        },
+        {
+          "index": 26,
+          "module": "com.apple.Foundation",
+          "symbol": "+[NSKeyedUnarchiver unarchivedObjectOfClasses:fromData:error:] + 100"
+        },
+        {
+          "index": 25,
+          "module": "com.apple.Foundation",
+          "symbol": "-[NSCoder decodeTopLevelObjectOfClasses:forKey:error:] + 124"
+        },
+        {
+          "index": 24,
+          "module": "com.apple.Foundation",
+          "symbol": "-[NSCoder __tryDecodeObjectForKey:error:decodeBlock:] + 96"
+        },
+        {
+          "index": 23,
+          "module": "com.apple.Foundation",
+          "symbol": "-[NSKeyedUnarchiver decodeObjectOfClasses:forKey:] + 376"
+        },
+        {
+          "index": 22,
+          "module": "com.apple.Foundation",
+          "symbol": "-[NSKeyedUnarchiver decodeObjectForKey:] + 216"
+        },
+        {
+          "index": 21,
+          "module": "com.apple.Foundation",
+          "symbol": "_decodeObject + 256"
+        },
+        {
+          "index": 20,
+          "module": "com.apple.Foundation",
+          "symbol": "_decodeObjectBinary + 2676"
+        },
+        {
+          "index": 19,
+          "module": "com.apple.audio.AudioToolboxCore",
+          "symbol": "-[_ACComponentVector initWithCoder:] + 180"
+        },
+        {
+          "index": 18,
+          "module": "com.apple.Foundation",
+          "symbol": "-[NSKeyedUnarchiver decodeObjectOfClasses:forKey:] + 376"
+        },
+        {
+          "index": 17,
+          "module": "com.apple.Foundation",
+          "symbol": "-[NSKeyedUnarchiver decodeObjectForKey:] + 216"
+        },
+        {
+          "index": 16,
+          "module": "com.apple.Foundation",
+          "symbol": "_decodeObject + 256"
+        },
+        {
+          "index": 15,
+          "module": "com.apple.Foundation",
+          "symbol": "_decodeObjectBinary + 2676"
+        },
+        {
+          "index": 14,
+          "module": "com.apple.Foundation",
+          "symbol": "-[NSArray(NSArray) initWithCoder:] + 152"
+        },
+        {
+          "index": 13,
+          "module": "com.apple.Foundation",
+          "symbol": "-[NSKeyedUnarchiver _decodeArrayOfObjectsForKey:] + 1716"
+        },
+        {
+          "index": 12,
+          "module": "com.apple.Foundation",
+          "symbol": "_decodeObjectBinary + 2676"
+        },
+        {
+          "index": 11,
+          "module": "com.apple.audio.AudioToolboxCore",
+          "symbol": "-[_ACComponentWrapper initWithCoder:] + 260"
+        },
+        {
+          "index": 10,
+          "module": "com.apple.Foundation",
+          "symbol": "-[NSKeyedUnarchiver decodeObjectOfClasses:forKey:] + 376"
+        },
+        {
+          "index": 9,
+          "module": "com.apple.Foundation",
+          "symbol": "-[NSKeyedUnarchiver decodeObjectForKey:] + 216"
+        },
+        {
+          "index": 8,
+          "module": "com.apple.Foundation",
+          "symbol": "_decodeObject + 256"
+        },
+        {
+          "index": 7,
+          "module": "com.apple.Foundation",
+          "symbol": "_decodeObjectBinary + 544"
+        },
+        {
+          "index": 6,
+          "module": "com.apple.CoreFoundation",
+          "symbol": "__CFBinaryPlistCreateObject + 44"
+        },
+        {
+          "index": 5,
+          "module": "com.apple.CoreFoundation",
+          "symbol": "__CFBinaryPlistCreateObjectFiltered + 960"
+        },
+        {
+          "index": 4,
+          "module": "com.apple.CoreFoundation",
+          "symbol": "____CFBinaryPlistCreateObjectFiltered_block_invoke + 168"
+        },
+        {
+          "index": 3,
+          "module": "com.apple.CoreFoundation",
+          "symbol": "__CFStringCreateImmutableFunnel3 + 2100"
+        },
+        {
+          "index": 2,
+          "module": "com.apple.CoreFoundation",
+          "symbol": "_CFRuntimeCreateInstance + 496"
+        },
+        {
+          "index": 1,
+          "module": "libsystem_malloc.dylib",
+          "symbol": "_malloc_zone_calloc + 64"
+        },
+        {
+          "index": 0,
+          "module": "libsystem_malloc.dylib",
+          "symbol": "_malloc_zone_calloc_instrumented_or_legacy + 132 "
+        }
+      ],
+      "groups": [
+        {
+          "description": "ROOT LEAK: <CFString>",
+          "instances": 137,
+          "reportedSize": "8.50K"
+        }
+      ]
+    },
+    {
+      "allocationFrames": [
+        {
+          "index": 12,
+          "module": "libsystem_pthread.dylib",
+          "symbol": "start_wqthread + 8"
+        },
+        {
+          "index": 11,
+          "module": "libsystem_pthread.dylib",
+          "symbol": "_pthread_wqthread + 232"
+        },
+        {
+          "index": 10,
+          "module": "libdispatch.dylib",
+          "symbol": "_dispatch_worker_thread2 + 184"
+        },
+        {
+          "index": 9,
+          "module": "libdispatch.dylib",
+          "symbol": "_dispatch_root_queue_drain + 708"
+        },
+        {
+          "index": 8,
+          "module": "libdispatch.dylib",
+          "symbol": "<deduplicated_symbol> + 28"
+        },
+        {
+          "index": 7,
+          "module": "libdispatch.dylib",
+          "symbol": "_dispatch_client_callout + 16"
+        },
+        {
+          "index": 6,
+          "module": "libdispatch.dylib",
+          "symbol": "_dispatch_call_block_and_release + 32"
+        },
+        {
+          "index": 5,
+          "module": "com.apple.AppIntents",
+          "symbol": "__52-[LNProcessInstanceRegistryClient makeXPCConnection]_block_invoke.16 + 52"
+        },
+        {
+          "index": 4,
+          "module": "com.apple.AppIntents",
+          "symbol": "-[LNProcessInstanceRegistryClient makeXPCConnection] + 68"
+        },
+        {
+          "index": 3,
+          "module": "com.apple.LinkServices",
+          "symbol": "+[NSXPCConnection(ApplicationService) ln_applicationServiceWithError:] + 84"
+        },
+        {
+          "index": 2,
+          "module": "libobjc.A.dylib",
+          "symbol": "_objc_rootAllocWithZone + 52"
+        },
+        {
+          "index": 1,
+          "module": "libsystem_malloc.dylib",
+          "symbol": "_calloc + 88"
+        },
+        {
+          "index": 0,
+          "module": "libsystem_malloc.dylib",
+          "symbol": "_malloc_zone_calloc_instrumented_or_legacy + 132 "
+        }
+      ],
+      "groups": [
+        {
+          "description": "ROOT CYCLE: <NSXPCConnection>",
+          "instances": 3,
+          "reportedSize": "18.4K"
+        }
+      ]
+    }
+  ],
+  "liveModulesAtGraph": [
+    {
+      "module": "UnityPlayer.dylib",
+      "uuid": "BE07B931-A7A0-335B-BFDE-6D9331DBD96F",
+      "path": "/Users/*/Documents/*/PipelineSmoke.app/Contents/Frameworks/UnityPlayer.dylib"
+    },
+    {
+      "module": "libmonobdwgc-2.0.dylib",
+      "uuid": "542F91E5-B702-33BE-86C6-5B39012524EA",
+      "path": "/Users/*/Documents/*/PipelineSmoke.app/Contents/Frameworks/libmonobdwgc-2.0.dylib"
+    },
+    {
+      "module": "lookingglass_bridge_shim.dylib",
+      "uuid": "FCDDC56E-5838-3052-89FF-1C2FAC5B9795",
+      "path": "/Users/*/Documents/*/PipelineSmoke.app/Contents/PlugIns/ARM64/lookingglass_bridge_shim.dylib"
+    },
+    {
+      "module": "libbridge_inproc.dylib",
+      "uuid": "92E836C4-C91B-35AA-9E6C-C7D50EE880D4",
+      "path": "/Applications/Looking Glass Bridge 2.6.3.app/Contents/MacOS/libbridge_inproc.dylib"
+    }
+  ],
+  "vendorModuleNames": [
+    "libSDL2.dylib",
+    "libavcodec.58.dylib",
+    "libavdevice.58.dylib",
+    "libavfilter.7.dylib",
+    "libavformat.58.dylib",
+    "libavresample.4.dylib",
+    "libavutil.56.dylib",
+    "libbridge_inproc.dylib",
+    "libcrypto.3.dylib",
+    "libcurl.dylib",
+    "libfreeimage.dylib",
+    "libhidapi.dylib",
+    "libkvazaar.7.dylib",
+    "libmbedcrypto.dylib",
+    "libmbedtls.dylib",
+    "libmbedx509.dylib",
+    "libnng.dylib",
+    "libogg.0.dylib",
+    "libopus.0.dylib",
+    "libsentry.dylib",
+    "libsnappy.1.dylib",
+    "libsnappy.dylib",
+    "libssl.3.dylib",
+    "libswresample.3.dylib",
+    "libswscale.5.dylib",
+    "libturbojpeg.dylib",
+    "libvorbis.0.dylib",
+    "libvorbisenc.2.dylib",
+    "libvpx.7.dylib"
+  ],
+  "namedShimOrVendorAllocationFrameCount": 0,
+  "rawHashes": {
+    "exit.memgraph": "5f64b86a3f80206535a29346b4db431c1228dd087541710ce461cf80d28aa924",
+    "leaks-analysis.txt": "c17af8bcf4ab829e955ff0e9de2f1a9536f11c8a5eaf08a71ce81b14291c43ce",
+    "malloc-history.txt": "17d6e343167b690943f0a9223d5408513472b4db624d7400bbaac55900416bbe",
+    "player.log": "3cc334ba185a9bf242994d654cd2943e560e41431afa845f914fbbf8d0937583",
+    "stderr.log": "60ef71bbd0f3dac1f19d2376a72e49c99208834b956d3c0093bf488847d413d4",
+    "runtime.json": "5ef00888bab0c15348fd5fa6af139c035262c90f8bb1bef975770617ed262ab3"
+  },
+  "limits": [
+    "All raw stack groups were scanned for module attribution; only selected representative allocation stacks are exported. Full logs remain private.",
+    "Apple leaks finds unreferenced malloc blocks, including cycles; allocator pooling and reachable retained allocations are not comprehensively covered.",
+    "No named shim/vendor allocation frame is not proof of no ViewWeave leak; managed JIT, unknown symbols, Metal and suballocations remain outside this attribution.",
+    "MallocStackLogging was requested; leaks atExit enabled its lite logging mode.",
+    "Graph export tool exit 0 does not prove child exit 0 or zero leaks. Analysis exits 1 when leaks are found.",
+    "System allocator changes the allocation route; its totals are not directly comparable with ordinary allocator totals.",
+    "Unity Immediate and Apple leakedBytes are separate observations."
+  ]
+}

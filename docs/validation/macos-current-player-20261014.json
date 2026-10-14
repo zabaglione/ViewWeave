@@ -1,0 +1,761 @@
+{
+  "formatVersion": 1,
+  "verifiedOn": "2026-10-14",
+  "timezone": "Asia/Tokyo",
+  "sourceRevision": "11312b8c6cf824d9a7ac7c8940e95cee742fa076",
+  "productionSourceWorkingTreeChanges": false,
+  "testFixtureWorkingTreeChanges": false,
+  "preexistingLocalDocChanges": true,
+  "environment": {
+    "osVersion": "26.6.2",
+    "architecture": "arm64",
+    "graphics": [
+      {
+        "gpu": "Apple M3 Max",
+        "displays": [
+          {
+            "spdisplays_mirror": "spdisplays_off",
+            "spdisplays_main": "spdisplays_yes",
+            "spdisplays_display_type": "spdisplays_built-in-liquid-retina-xdr"
+          },
+          {
+            "spdisplays_resolution": "1440 x 2560 @ 60.00Hz",
+            "spdisplays_rotation": "spdisplays_supported",
+            "spdisplays_mirror": "spdisplays_off"
+          }
+        ]
+      }
+    ],
+    "unityVersion": "6000.6.4f1",
+    "expectedBridgeVersion": "2.6.3"
+  },
+  "packagedNativeArtifacts": [
+    {
+      "path": "Packages/com.zabaglione.lookingglass.viewweave.bridge/Plugins/macOS/lookingglass_bridge_shim.dylib",
+      "sha256": "c97856ea3bb910a1456eb044347a18ac8117c140ddd149f8e9ec240600766c5b",
+      "bytes": 160016
+    },
+    {
+      "path": "Distribution/urp/ViewWeave/Bridge/Plugins/macOS/lookingglass_bridge_shim.dylib",
+      "sha256": "c97856ea3bb910a1456eb044347a18ac8117c140ddd149f8e9ec240600766c5b",
+      "bytes": 160016
+    },
+    {
+      "path": "Distribution/hdrp/ViewWeave/Bridge/Plugins/macOS/lookingglass_bridge_shim.dylib",
+      "sha256": "c97856ea3bb910a1456eb044347a18ac8117c140ddd149f8e9ec240600766c5b",
+      "bytes": 160016
+    }
+  ],
+  "fixtureConditions": {
+    "quality": "Preview",
+    "quiltWidth": 1023,
+    "quiltHeight": 1020,
+    "columns": 11,
+    "rows": 6,
+    "views": 66,
+    "calibration": "Native SDK tableless mode 0",
+    "cellCount": 0,
+    "colorSpace": "Linear",
+    "urpConfiguredMsaa": 4,
+    "hdrpAuthoredExposure": "Fixed EV 0",
+    "objects": "Unlit red cube and green sphere",
+    "initialSubpixelMode": "Automatic",
+    "restartSubpixelMode": "ClassicRgb",
+    "physicalPanelResolution": "1440x2560",
+    "opticalProof": false,
+    "taaExplicitlyEnabled": false,
+    "playerPlaybackOutputTested": false
+  },
+  "players": [
+    {
+      "case": "urp-development",
+      "pipeline": "URP",
+      "configuration": "Development",
+      "passed": true,
+      "buildEditorPid": 69337,
+      "buildCliExitCode": 0,
+      "playerPid": 70162,
+      "playerExitCode": 0,
+      "naturalExit": true,
+      "timedOut": false,
+      "startedAtUnix": 1791940861.5886238,
+      "finishedAtUnix": 1791940868.617413,
+      "acceptanceGates": {
+        "runtimeFresh": true,
+        "pipelineMatches": true,
+        "configurationMatches": true,
+        "playerOnly": true,
+        "metalMatches": true,
+        "unityVersionMatches": true,
+        "actualPipelineMatches": true,
+        "shaderTagMatches": true,
+        "runtimePass": true,
+        "normalExit": true,
+        "embeddedPluginHashMatches": true,
+        "expectedModuleLoaded": true,
+        "gpuRetirementZero": true,
+        "initialCompletions": true,
+        "restartCompletions": true,
+        "recordingFrames": true,
+        "activeSubpixelMutationRejected": true,
+        "missingCellsRejected": true,
+        "classicRestartVerified": true,
+        "nonblankColorGate": true
+      },
+      "playerArchitecture": "arm64",
+      "pluginArchitecture": "arm64",
+      "embeddedPlugin": {
+        "path": ".local/macos-current-player-20261014/urp-development/PipelineSmoke.app/Contents/PlugIns/ARM64/lookingglass_bridge_shim.dylib",
+        "sha256": "c97856ea3bb910a1456eb044347a18ac8117c140ddd149f8e9ec240600766c5b",
+        "bytes": 160016,
+        "loadedImageObserved": true
+      },
+      "loadedSdk": {
+        "appVersion": "2.6.3",
+        "file": "libbridge_inproc.dylib",
+        "sha256": "3eff8aa52532e1da0a0162a05645d22d63d0997e9ca44e162be087701f0dc1d8"
+      },
+      "fixtureSourceSha256": {
+        "Tests/Pipelines/Unity/Assets/MetalCurrentValidation/Editor/MetalCurrentValidationBuilder.cs": "4b122bd1b3e14f14635a70ce823aa09b5012cb9771fab7c290c999a258faa1fb",
+        "Tests/Pipelines/Unity/Assets/MetalCurrentValidation/MetalCurrentValidationRunner.cs": "d74ae20ae0dad70f999bca9688c5f51bfbf036136fca498ef00329c1963b78b5"
+      },
+      "monitorSourceSha256": "2b4f8c7cbd6ffd9595d331159d1b35007f5e150aa64fa32e4d8e959edabcb393",
+      "runtime": {
+        "passed": true,
+        "development": true,
+        "editor": false,
+        "unityVersion": "6000.6.4f1",
+        "graphicsApi": "Metal",
+        "pipeline": "URP",
+        "error": "",
+        "capture": ".local/macos-current-player-20261014/urp-development/current.png",
+        "sequence": ".local/macos-current-player-20261014/urp-development/ViewWeave_20261014_102106_694_5dac95677a3245ad97a0fda793dc2617",
+        "actualPipeline": "UniversalRenderPipeline",
+        "shaderPipelineTag": "UniversalPipeline",
+        "firstCompleted": 60,
+        "restartedCompleted": 31,
+        "recordedFrames": 3,
+        "distinctColors": 15,
+        "width": 1023,
+        "height": 1020,
+        "views": 66,
+        "pendingRetirement": 0,
+        "cellPatternMode": 0,
+        "subpixelCellCount": 0,
+        "redPixels": 152354,
+        "greenPixels": 96813,
+        "magentaPixels": 0,
+        "activeSubpixelChangeRejected": true,
+        "missingCellsRejected": true,
+        "classicRestartVerified": true,
+        "missingCellsError": "Invalid calibration: Calibrated Cells requires an actual cell table",
+        "restartSubpixelMode": "ClassicRgb"
+      },
+      "shutdownDiagnostics": {
+        "threadFinalizeWarnings": 5,
+        "memoryLeaksRecords": [
+          {
+            "phase": "Immediate",
+            "allocatedMemory": 2388930
+          }
+        ],
+        "causeEstablished": false
+      },
+      "evidence": [
+        {
+          "path": ".local/macos-current-player-20261014/urp-development/prepare.log",
+          "sha256": "51cf7ce52750d16a86ef7bf42ae317cdefd2385210c9d103e0a2766e5604fc46"
+        },
+        {
+          "path": ".local/macos-current-player-20261014/urp-development/build.log",
+          "sha256": "452140df0522f3fca07ad0dd06467b1c0cd6906ba0fce0485f2f97b3258cad56"
+        },
+        {
+          "path": ".local/macos-current-player-20261014/urp-development/build.json",
+          "sha256": "490699e40fc03f12349d6cb95e3042cb6f76a8c66ba317dd7db01c08fd10e915"
+        },
+        {
+          "path": ".local/macos-current-player-20261014/urp-development/build-process-summary.json",
+          "sha256": "7cf9d3e0a32e4cf4e9e5b16294752bb8417b7bf09a89655cd28a9dd4957c754f"
+        },
+        {
+          "path": ".local/macos-current-player-20261014/urp-development/runtime.json",
+          "sha256": "05a4a3b6d2beed5e9e4df9003ffba6b0ba4046d39f2a43aafef81a5178c32897"
+        },
+        {
+          "path": ".local/macos-current-player-20261014/urp-development/player.log",
+          "sha256": "39d075ed5325d883f1ac34a2e59d19c37dc9df21f9aa19c476c255560fab216c"
+        },
+        {
+          "path": ".local/macos-current-player-20261014/urp-development/player-process-summary.json",
+          "sha256": "6005371cf614d0944602c55d44ab5f721eb887cefed961b692ec14fdc8fed4d9"
+        },
+        {
+          "path": ".local/macos-current-player-20261014/urp-development/loaded-files.log",
+          "sha256": "88130c046a1d333cf67046cdad974719f6958af4a4b4c22c956bf84a4debdde1"
+        },
+        {
+          "path": ".local/macos-current-player-20261014/urp-development/current.png",
+          "sha256": "ae293b00aada68185630fe211c6e71064ba76e0845b84231692ce9780f42e95b"
+        },
+        {
+          "path": ".local/macos-current-player-20261014/urp-development/central.png",
+          "sha256": "0ca86d95c3164ce9e2b1693be52b36388b78a43961f603758fe469d62e499d09"
+        },
+        {
+          "path": ".local/macos-current-player-20261014/urp-development/classic.png",
+          "sha256": "ae293b00aada68185630fe211c6e71064ba76e0845b84231692ce9780f42e95b"
+        },
+        {
+          "path": ".local/macos-current-player-20261014/urp-development/current.json",
+          "sha256": "9092e2744ceeb0737d251afde0b6604edcb4efb16d733dcbafbf639aaae7c323"
+        }
+      ],
+      "captureLayout": {
+        "width": 1023,
+        "height": 1020,
+        "columns": 11,
+        "rows": 6,
+        "views": 66,
+        "viewRenderMode": "Full",
+        "lastRenderedViewCount": 66,
+        "usedRect": {
+          "x": 0,
+          "y": 0,
+          "width": 1023,
+          "height": 1020
+        }
+      }
+    },
+    {
+      "case": "urp-release",
+      "pipeline": "URP",
+      "configuration": "Release",
+      "passed": true,
+      "buildEditorPid": 70556,
+      "buildCliExitCode": 0,
+      "playerPid": 70700,
+      "playerExitCode": 0,
+      "naturalExit": true,
+      "timedOut": false,
+      "startedAtUnix": 1791941007.4819179,
+      "finishedAtUnix": 1791941014.331685,
+      "acceptanceGates": {
+        "runtimeFresh": true,
+        "pipelineMatches": true,
+        "configurationMatches": true,
+        "playerOnly": true,
+        "metalMatches": true,
+        "unityVersionMatches": true,
+        "actualPipelineMatches": true,
+        "shaderTagMatches": true,
+        "runtimePass": true,
+        "normalExit": true,
+        "embeddedPluginHashMatches": true,
+        "expectedModuleLoaded": true,
+        "gpuRetirementZero": true,
+        "initialCompletions": true,
+        "restartCompletions": true,
+        "recordingFrames": true,
+        "activeSubpixelMutationRejected": true,
+        "missingCellsRejected": true,
+        "classicRestartVerified": true,
+        "nonblankColorGate": true
+      },
+      "playerArchitecture": "arm64",
+      "pluginArchitecture": "arm64",
+      "embeddedPlugin": {
+        "path": ".local/macos-current-player-20261014/urp-release/PipelineSmoke.app/Contents/PlugIns/ARM64/lookingglass_bridge_shim.dylib",
+        "sha256": "c97856ea3bb910a1456eb044347a18ac8117c140ddd149f8e9ec240600766c5b",
+        "bytes": 160016,
+        "loadedImageObserved": true
+      },
+      "loadedSdk": {
+        "appVersion": "2.6.3",
+        "file": "libbridge_inproc.dylib",
+        "sha256": "3eff8aa52532e1da0a0162a05645d22d63d0997e9ca44e162be087701f0dc1d8"
+      },
+      "fixtureSourceSha256": {
+        "Tests/Pipelines/Unity/Assets/MetalCurrentValidation/Editor/MetalCurrentValidationBuilder.cs": "4b122bd1b3e14f14635a70ce823aa09b5012cb9771fab7c290c999a258faa1fb",
+        "Tests/Pipelines/Unity/Assets/MetalCurrentValidation/MetalCurrentValidationRunner.cs": "d74ae20ae0dad70f999bca9688c5f51bfbf036136fca498ef00329c1963b78b5"
+      },
+      "monitorSourceSha256": "2b4f8c7cbd6ffd9595d331159d1b35007f5e150aa64fa32e4d8e959edabcb393",
+      "runtime": {
+        "passed": true,
+        "development": false,
+        "editor": false,
+        "unityVersion": "6000.6.4f1",
+        "graphicsApi": "Metal",
+        "pipeline": "URP",
+        "error": "",
+        "capture": ".local/macos-current-player-20261014/urp-release/current.png",
+        "sequence": ".local/macos-current-player-20261014/urp-release/ViewWeave_20261014_102331_923_8ee2269dcab149aa93c401a30fc4fad5",
+        "actualPipeline": "UniversalRenderPipeline",
+        "shaderPipelineTag": "UniversalPipeline",
+        "firstCompleted": 60,
+        "restartedCompleted": 30,
+        "recordedFrames": 3,
+        "distinctColors": 15,
+        "width": 1023,
+        "height": 1020,
+        "views": 66,
+        "pendingRetirement": 0,
+        "cellPatternMode": 0,
+        "subpixelCellCount": 0,
+        "redPixels": 152354,
+        "greenPixels": 96813,
+        "magentaPixels": 0,
+        "activeSubpixelChangeRejected": true,
+        "missingCellsRejected": true,
+        "classicRestartVerified": true,
+        "missingCellsError": "Invalid calibration: Calibrated Cells requires an actual cell table",
+        "restartSubpixelMode": "ClassicRgb"
+      },
+      "shutdownDiagnostics": {
+        "threadFinalizeWarnings": 5,
+        "memoryLeaksRecords": [],
+        "causeEstablished": false
+      },
+      "evidence": [
+        {
+          "path": ".local/macos-current-player-20261014/urp-release/prepare.log",
+          "sha256": "e7eeab841ad9aa3e3e2c7b06a0f7cbb7ad46fd5969f1d656e7500c24b1769c8f"
+        },
+        {
+          "path": ".local/macos-current-player-20261014/urp-release/build.log",
+          "sha256": "ffef911a1577731b885fb7bd7e767972a2e0f6b9cfb016098716bc91bf26554a"
+        },
+        {
+          "path": ".local/macos-current-player-20261014/urp-release/build.json",
+          "sha256": "490699e40fc03f12349d6cb95e3042cb6f76a8c66ba317dd7db01c08fd10e915"
+        },
+        {
+          "path": ".local/macos-current-player-20261014/urp-release/build-process-summary.json",
+          "sha256": "bdbe0f5e3960531e7af85235c04d7462b7845ff8eaa38ce65f911f3a31940e13"
+        },
+        {
+          "path": ".local/macos-current-player-20261014/urp-release/runtime.json",
+          "sha256": "4b88a273da95334d8e9189c8d3096413f5ed7aa364f079ad594722937077ee3b"
+        },
+        {
+          "path": ".local/macos-current-player-20261014/urp-release/player.log",
+          "sha256": "7d70a925bd4b1d4868e8c55b02f50bff101482bd5c36f218edd649a955338c62"
+        },
+        {
+          "path": ".local/macos-current-player-20261014/urp-release/player-process-summary.json",
+          "sha256": "d93ca9ea756ae908dca56294a15eed4f61a73841c880b7d3a38d9e31b1ed568f"
+        },
+        {
+          "path": ".local/macos-current-player-20261014/urp-release/loaded-files.log",
+          "sha256": "b0181bc4db1610ba1181f856ee7b4e760ca46776c06453cab2dff90a442a245f"
+        },
+        {
+          "path": ".local/macos-current-player-20261014/urp-release/current.png",
+          "sha256": "ae293b00aada68185630fe211c6e71064ba76e0845b84231692ce9780f42e95b"
+        },
+        {
+          "path": ".local/macos-current-player-20261014/urp-release/central.png",
+          "sha256": "0ca86d95c3164ce9e2b1693be52b36388b78a43961f603758fe469d62e499d09"
+        },
+        {
+          "path": ".local/macos-current-player-20261014/urp-release/classic.png",
+          "sha256": "ae293b00aada68185630fe211c6e71064ba76e0845b84231692ce9780f42e95b"
+        },
+        {
+          "path": ".local/macos-current-player-20261014/urp-release/current.json",
+          "sha256": "8062a34e4fe4da77101c1b664f0f271bf8497dc4c83ae6e0a44fa6a1356efdfc"
+        }
+      ],
+      "captureLayout": {
+        "width": 1023,
+        "height": 1020,
+        "columns": 11,
+        "rows": 6,
+        "views": 66,
+        "viewRenderMode": "Full",
+        "lastRenderedViewCount": 66,
+        "usedRect": {
+          "x": 0,
+          "y": 0,
+          "width": 1023,
+          "height": 1020
+        }
+      }
+    },
+    {
+      "case": "hdrp-development",
+      "pipeline": "HDRP",
+      "configuration": "Development",
+      "passed": true,
+      "buildEditorPid": 70781,
+      "buildCliExitCode": 0,
+      "playerPid": 71085,
+      "playerExitCode": 0,
+      "naturalExit": true,
+      "timedOut": false,
+      "startedAtUnix": 1791941161.6402738,
+      "finishedAtUnix": 1791941208.114623,
+      "acceptanceGates": {
+        "runtimeFresh": true,
+        "pipelineMatches": true,
+        "configurationMatches": true,
+        "playerOnly": true,
+        "metalMatches": true,
+        "unityVersionMatches": true,
+        "actualPipelineMatches": true,
+        "shaderTagMatches": true,
+        "runtimePass": true,
+        "normalExit": true,
+        "embeddedPluginHashMatches": true,
+        "expectedModuleLoaded": true,
+        "gpuRetirementZero": true,
+        "initialCompletions": true,
+        "restartCompletions": true,
+        "recordingFrames": true,
+        "activeSubpixelMutationRejected": true,
+        "missingCellsRejected": true,
+        "classicRestartVerified": true,
+        "nonblankColorGate": true
+      },
+      "playerArchitecture": "arm64",
+      "pluginArchitecture": "arm64",
+      "embeddedPlugin": {
+        "path": ".local/macos-current-player-20261014/hdrp-development/PipelineSmoke.app/Contents/PlugIns/ARM64/lookingglass_bridge_shim.dylib",
+        "sha256": "c97856ea3bb910a1456eb044347a18ac8117c140ddd149f8e9ec240600766c5b",
+        "bytes": 160016,
+        "loadedImageObserved": true
+      },
+      "loadedSdk": {
+        "appVersion": "2.6.3",
+        "file": "libbridge_inproc.dylib",
+        "sha256": "3eff8aa52532e1da0a0162a05645d22d63d0997e9ca44e162be087701f0dc1d8"
+      },
+      "fixtureSourceSha256": {
+        "Tests/Pipelines/Unity/Assets/MetalCurrentValidation/Editor/MetalCurrentValidationBuilder.cs": "4b122bd1b3e14f14635a70ce823aa09b5012cb9771fab7c290c999a258faa1fb",
+        "Tests/Pipelines/Unity/Assets/MetalCurrentValidation/MetalCurrentValidationRunner.cs": "d74ae20ae0dad70f999bca9688c5f51bfbf036136fca498ef00329c1963b78b5"
+      },
+      "monitorSourceSha256": "387e8ba35a96e8a81eb38dece46bb509b46b23f763a3fec8364e3500b4d76905",
+      "runtime": {
+        "passed": true,
+        "development": true,
+        "editor": false,
+        "unityVersion": "6000.6.4f1",
+        "graphicsApi": "Metal",
+        "pipeline": "HDRP",
+        "error": "",
+        "capture": ".local/macos-current-player-20261014/hdrp-development/current.png",
+        "sequence": ".local/macos-current-player-20261014/hdrp-development/ViewWeave_20261014_102637_569_0ee823a52ede4072adec0cbbe8b89046",
+        "actualPipeline": "HDRenderPipeline",
+        "shaderPipelineTag": "HDRenderPipeline",
+        "firstCompleted": 60,
+        "restartedCompleted": 30,
+        "recordedFrames": 3,
+        "distinctColors": 1612,
+        "width": 1023,
+        "height": 1020,
+        "views": 66,
+        "pendingRetirement": 0,
+        "cellPatternMode": 0,
+        "subpixelCellCount": 0,
+        "redPixels": 167918,
+        "greenPixels": 107167,
+        "magentaPixels": 0,
+        "activeSubpixelChangeRejected": true,
+        "missingCellsRejected": true,
+        "classicRestartVerified": true,
+        "missingCellsError": "Invalid calibration: Calibrated Cells requires an actual cell table",
+        "restartSubpixelMode": "ClassicRgb"
+      },
+      "shutdownDiagnostics": {
+        "threadFinalizeWarnings": 5,
+        "memoryLeaksRecords": [
+          {
+            "phase": "Immediate",
+            "allocatedMemory": 2674828
+          }
+        ],
+        "causeEstablished": false
+      },
+      "evidence": [
+        {
+          "path": ".local/macos-current-player-20261014/hdrp-development/prepare.log",
+          "sha256": "be1cbd7378e1f3218538729cf92d938d247107340f85238252ca0af268b3d47c"
+        },
+        {
+          "path": ".local/macos-current-player-20261014/hdrp-development/build.log",
+          "sha256": "31ad724b73b269a19b868eda1c2b4f1ef25f736c025ac33ffeaf3061897a9552"
+        },
+        {
+          "path": ".local/macos-current-player-20261014/hdrp-development/build.json",
+          "sha256": "07afeb7a9c2c2852d72d56f154f58f9a12e10cb77d9320ea4ec10dcdfa7280fe"
+        },
+        {
+          "path": ".local/macos-current-player-20261014/hdrp-development/build-process-summary.json",
+          "sha256": "e43dfeaccb0a1c363d01ff7fdc87a64469eef91c94c9b283ea43cd6ea5aa9589"
+        },
+        {
+          "path": ".local/macos-current-player-20261014/hdrp-development/runtime.json",
+          "sha256": "ab96a49bff60e7697b23f25f97741bdc9e6ab654b396ffcc20c56a15f34fb9ff"
+        },
+        {
+          "path": ".local/macos-current-player-20261014/hdrp-development/player.log",
+          "sha256": "59222b7ea3acfd89ee27d76a01376ea32898d62c250b330e43be0fc0a83f1c7b"
+        },
+        {
+          "path": ".local/macos-current-player-20261014/hdrp-development/player-process-summary.json",
+          "sha256": "5e47eff76fcb03827e135f61393c555d95c03d170a91c0431c34d077b717e22e"
+        },
+        {
+          "path": ".local/macos-current-player-20261014/hdrp-development/loaded-files.log",
+          "sha256": "bb4c3d6f8ff6df4b455c447cc6f7fa7f874b3bcde69014d14a0b9a92839543fe"
+        },
+        {
+          "path": ".local/macos-current-player-20261014/hdrp-development/current.png",
+          "sha256": "07ec1e19d7d26ac5f01915cfae55df95068fb681f240eef7780a859541dba44b"
+        },
+        {
+          "path": ".local/macos-current-player-20261014/hdrp-development/central.png",
+          "sha256": "c5dbf0fcd596c29acfbc48212450693b14dd18662a3f54f5b0ac71d10cadb360"
+        },
+        {
+          "path": ".local/macos-current-player-20261014/hdrp-development/classic.png",
+          "sha256": "07ec1e19d7d26ac5f01915cfae55df95068fb681f240eef7780a859541dba44b"
+        },
+        {
+          "path": ".local/macos-current-player-20261014/hdrp-development/current.json",
+          "sha256": "fc0b830a87fcf2872834c47ed7828b0b8cef759386eecf2ffe0ab490d941869e"
+        }
+      ],
+      "captureLayout": {
+        "width": 1023,
+        "height": 1020,
+        "columns": 11,
+        "rows": 6,
+        "views": 66,
+        "viewRenderMode": "Full",
+        "lastRenderedViewCount": 66,
+        "usedRect": {
+          "x": 0,
+          "y": 0,
+          "width": 1023,
+          "height": 1020
+        }
+      }
+    },
+    {
+      "case": "hdrp-release",
+      "pipeline": "HDRP",
+      "configuration": "Release",
+      "passed": true,
+      "buildEditorPid": 71382,
+      "buildCliExitCode": 0,
+      "playerPid": 71735,
+      "playerExitCode": 0,
+      "naturalExit": true,
+      "timedOut": false,
+      "startedAtUnix": 1791941306.01844,
+      "finishedAtUnix": 1791941336.921709,
+      "acceptanceGates": {
+        "runtimeFresh": true,
+        "pipelineMatches": true,
+        "configurationMatches": true,
+        "playerOnly": true,
+        "metalMatches": true,
+        "unityVersionMatches": true,
+        "actualPipelineMatches": true,
+        "shaderTagMatches": true,
+        "runtimePass": true,
+        "normalExit": true,
+        "embeddedPluginHashMatches": true,
+        "expectedModuleLoaded": true,
+        "gpuRetirementZero": true,
+        "initialCompletions": true,
+        "restartCompletions": true,
+        "recordingFrames": true,
+        "activeSubpixelMutationRejected": true,
+        "missingCellsRejected": true,
+        "classicRestartVerified": true,
+        "nonblankColorGate": true
+      },
+      "playerArchitecture": "arm64",
+      "pluginArchitecture": "arm64",
+      "embeddedPlugin": {
+        "path": ".local/macos-current-player-20261014/hdrp-release/PipelineSmoke.app/Contents/PlugIns/ARM64/lookingglass_bridge_shim.dylib",
+        "sha256": "c97856ea3bb910a1456eb044347a18ac8117c140ddd149f8e9ec240600766c5b",
+        "bytes": 160016,
+        "loadedImageObserved": true
+      },
+      "loadedSdk": {
+        "appVersion": "2.6.3",
+        "file": "libbridge_inproc.dylib",
+        "sha256": "3eff8aa52532e1da0a0162a05645d22d63d0997e9ca44e162be087701f0dc1d8"
+      },
+      "fixtureSourceSha256": {
+        "Tests/Pipelines/Unity/Assets/MetalCurrentValidation/Editor/MetalCurrentValidationBuilder.cs": "4b122bd1b3e14f14635a70ce823aa09b5012cb9771fab7c290c999a258faa1fb",
+        "Tests/Pipelines/Unity/Assets/MetalCurrentValidation/MetalCurrentValidationRunner.cs": "d74ae20ae0dad70f999bca9688c5f51bfbf036136fca498ef00329c1963b78b5"
+      },
+      "monitorSourceSha256": "387e8ba35a96e8a81eb38dece46bb509b46b23f763a3fec8364e3500b4d76905",
+      "runtime": {
+        "passed": true,
+        "development": false,
+        "editor": false,
+        "unityVersion": "6000.6.4f1",
+        "graphicsApi": "Metal",
+        "pipeline": "HDRP",
+        "error": "",
+        "capture": ".local/macos-current-player-20261014/hdrp-release/current.png",
+        "sequence": ".local/macos-current-player-20261014/hdrp-release/ViewWeave_20261014_102846_002_fb20e4efbf9d4e9fbf3d38fdb527c906",
+        "actualPipeline": "HDRenderPipeline",
+        "shaderPipelineTag": "HDRenderPipeline",
+        "firstCompleted": 60,
+        "restartedCompleted": 30,
+        "recordedFrames": 3,
+        "distinctColors": 1612,
+        "width": 1023,
+        "height": 1020,
+        "views": 66,
+        "pendingRetirement": 0,
+        "cellPatternMode": 0,
+        "subpixelCellCount": 0,
+        "redPixels": 167918,
+        "greenPixels": 107167,
+        "magentaPixels": 0,
+        "activeSubpixelChangeRejected": true,
+        "missingCellsRejected": true,
+        "classicRestartVerified": true,
+        "missingCellsError": "Invalid calibration: Calibrated Cells requires an actual cell table",
+        "restartSubpixelMode": "ClassicRgb"
+      },
+      "shutdownDiagnostics": {
+        "threadFinalizeWarnings": 5,
+        "memoryLeaksRecords": [],
+        "causeEstablished": false
+      },
+      "evidence": [
+        {
+          "path": ".local/macos-current-player-20261014/hdrp-release/prepare.log",
+          "sha256": "97839157c83d5019c083e77ee2b186274c6745cf9be52b271afd087247681ff2"
+        },
+        {
+          "path": ".local/macos-current-player-20261014/hdrp-release/build.log",
+          "sha256": "b32401534fb9726bc612a5a0a7aa7eff3397f436ee39124068dd8c6a42498dcf"
+        },
+        {
+          "path": ".local/macos-current-player-20261014/hdrp-release/build.json",
+          "sha256": "07afeb7a9c2c2852d72d56f154f58f9a12e10cb77d9320ea4ec10dcdfa7280fe"
+        },
+        {
+          "path": ".local/macos-current-player-20261014/hdrp-release/build-process-summary.json",
+          "sha256": "4799f1d037afc71201c9c4e047a046d46c699e11e6c5848cae45028018732f6c"
+        },
+        {
+          "path": ".local/macos-current-player-20261014/hdrp-release/runtime.json",
+          "sha256": "ea0ef353ce3338e162784d08e67f93033a3baddc82f2a67be782970c5c7e564a"
+        },
+        {
+          "path": ".local/macos-current-player-20261014/hdrp-release/player.log",
+          "sha256": "39f673ab14b64dc433b2e483276f359926829701f6655877c86161994c1614fd"
+        },
+        {
+          "path": ".local/macos-current-player-20261014/hdrp-release/player-process-summary.json",
+          "sha256": "9770cea31ef56bd80761b0946b8f0f1dbfcb58bb6cda2e8b0f94b30bba12551e"
+        },
+        {
+          "path": ".local/macos-current-player-20261014/hdrp-release/loaded-files.log",
+          "sha256": "367dd3763e26c03628b69384879cc40c348b1fef8777b2c10c6310cb0158c608"
+        },
+        {
+          "path": ".local/macos-current-player-20261014/hdrp-release/current.png",
+          "sha256": "07ec1e19d7d26ac5f01915cfae55df95068fb681f240eef7780a859541dba44b"
+        },
+        {
+          "path": ".local/macos-current-player-20261014/hdrp-release/central.png",
+          "sha256": "c5dbf0fcd596c29acfbc48212450693b14dd18662a3f54f5b0ac71d10cadb360"
+        },
+        {
+          "path": ".local/macos-current-player-20261014/hdrp-release/classic.png",
+          "sha256": "07ec1e19d7d26ac5f01915cfae55df95068fb681f240eef7780a859541dba44b"
+        },
+        {
+          "path": ".local/macos-current-player-20261014/hdrp-release/current.json",
+          "sha256": "1b7e1302ea7467dc6a33a9dd7d2e2b2557c3a4d0474f3ce8300ea7b1ee66aa68"
+        }
+      ],
+      "captureLayout": {
+        "width": 1023,
+        "height": 1020,
+        "columns": 11,
+        "rows": 6,
+        "views": 66,
+        "viewRenderMode": "Full",
+        "lastRenderedViewCount": 66,
+        "usedRect": {
+          "x": 0,
+          "y": 0,
+          "width": 1023,
+          "height": 1020
+        }
+      }
+    }
+  ],
+  "passed": 4,
+  "failed": 0,
+  "skipped": 0,
+  "cleanup": {
+    "passed": true,
+    "baselineFilesMatched": 334,
+    "projectAssetsSettingsPackagesRestored": true,
+    "manifestPath": ".local/macos-current-player-20261014/baseline-manifest.json",
+    "manifestSha256": "b41590d9508ee545e12ede1ff2081da84768d40e69ede103f4a11bc296e29780",
+    "summaryPath": ".local/macos-current-player-20261014/cleanup-summary.json",
+    "summarySha256": "2e17275868c28d4c3598c576703968f5243b917241b28d9b36f1378c01b92f9b"
+  },
+  "historicalShutdownDiagnostics": [
+    {
+      "case": "urp-development",
+      "record": "docs/macos-unified-subpixel-validation-20261011.md",
+      "artifactPrefix": "f2539810",
+      "playerLogPath": ".local/macos-unified-20261011/urp-development/player.log",
+      "playerLogSha256": "8caab4119753be13298414c5f0e38abc7c4cb73b431fa4fcdc5ae1e833262cb5",
+      "threadFinalizeWarnings": 5,
+      "memoryLeaksRecords": [
+        {
+          "phase": "Immediate",
+          "allocatedMemory": 2488004
+        }
+      ]
+    },
+    {
+      "case": "hdrp-development",
+      "record": "docs/macos-unified-subpixel-validation-20261011.md",
+      "artifactPrefix": "f2539810",
+      "playerLogPath": ".local/macos-unified-20261011/hdrp-development/player.log",
+      "playerLogSha256": "72d9b322fb35585691abcd2c66cedb62f9fb86b9c60b4c91d097b6849c9b15c6",
+      "threadFinalizeWarnings": 5,
+      "memoryLeaksRecords": [
+        {
+          "phase": "Immediate",
+          "allocatedMemory": 2672018
+        }
+      ]
+    }
+  ],
+  "scopeLimits": [
+    "Completion means Native Metal presenter GPU command completion, not physical scanout or optical proof.",
+    "No new Editor Preview/Preview-to-Play, per-effect pixel, GRD, hotplug, multiple-device, Intel, soak, window-close, or forced-exit validation.",
+    "Thread finalize warnings appeared in all four cases; MemoryLeaks Immediate diagnostics appeared in Development cases. Cause and general memory-release correctness are unestablished."
+  ],
+  "checkpoints": {
+    "firstUrpDevelopmentReadOnlyReview": "complete; freshness/configuration acceptance gates integrated; shutdown diagnostics retained.",
+    "finalReadOnlyReview": "complete; material report decode-scope and matrix capture/recording findings integrated. Product fixes and Player rerun not required by review."
+  },
+  "captureCoverage": {
+    "scopeBasis": "Successful fixture assertions and recorded fixture source; no extra image-decoding test was added.",
+    "currentAndClassicQuiltDecodedAndPixelChecked": true,
+    "centralViewPngSaved": true,
+    "centralViewDecodedAndPixelCompared": false,
+    "recordingManifestCountPngHeadersAndSidecarsChecked": true,
+    "allRecordingFramesImageDecoded": false,
+    "playerPlaybackOutputVerified": false
+  }
+}

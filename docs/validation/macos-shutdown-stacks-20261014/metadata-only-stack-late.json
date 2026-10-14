@@ -1,0 +1,4264 @@
+{
+  "case": "metadata-only-stack-late",
+  "summary": {
+    "case": "metadata-only-stack-late",
+    "pid": 63859,
+    "attachGate": "runtime",
+    "attachGatePassed": true,
+    "lldbExitCode": 0,
+    "observedChildExitStatus": 0,
+    "playerNaturalExitZero": true,
+    "held": false,
+    "serializedRuntimeRestored": true,
+    "threadWarningsInLog": 5,
+    "capturedWarnings": 10,
+    "capturedMemoryReports": 3,
+    "eventKinds": {
+      "thread-warning": 10,
+      "memory-leaks-report": 3,
+      "cleanup-entry": 2,
+      "threads-before-cleanup": 1,
+      "thread-cleanup-entry": 70
+    },
+    "runtime": {
+      "passed": true,
+      "editor": false,
+      "development": true,
+      "cleanupProven": true,
+      "error": "",
+      "mode": "MetadataOnly",
+      "pipeline": "URP",
+      "unityVersion": "6000.6.4f1",
+      "graphicsApi": "Metal",
+      "actualPipeline": "",
+      "shaderTag": "",
+      "targets": {
+        "viewFormat": "",
+        "viewGraphicsFormat": "",
+        "resolveGraphicsFormat": "",
+        "quiltGraphicsFormat": "",
+        "viewSrgb": false,
+        "resolveSrgb": false,
+        "quiltSrgb": false,
+        "resolvePresent": false,
+        "viewSamples": 0,
+        "resolveSamples": 0,
+        "quiltSamples": 0
+      },
+      "renderedQuilts": 0,
+      "views": 0,
+      "baselineCameras": 0,
+      "peakCameras": 0,
+      "remainingCameras": 0,
+      "redPixels": 0,
+      "greenPixels": 0,
+      "magentaPixels": 0,
+      "metadataDisplays": 1,
+      "metadataCleanupFinished": true,
+      "metadataEnded": true
+    },
+    "started": 1791950567.795701,
+    "finished": 1791950579.581772,
+    "limitation": "Debugger attached after SDK initialization gate; no startup breakpoint or allocation stack coverage."
+  },
+  "warningIoEvents": 10,
+  "distinctWarnings": [
+    {
+      "lastSetThreadName": null,
+      "kind": "thread-warning",
+      "pid": 63859,
+      "tid": 39553618,
+      "threadName": "tid_27d0f",
+      "message": "Thread 0x16f4ff000 may have been prematurely finalized",
+      "time": 1791950575.354452,
+      "frames": [
+        {
+          "module": "libsystem_kernel.dylib",
+          "symbol": "__write_nocancel",
+          "fileAddress": "0x1804bfbdc"
+        },
+        {
+          "module": "libsystem_c.dylib",
+          "symbol": "__swrite",
+          "fileAddress": "0x1803bdba4"
+        },
+        {
+          "module": "libsystem_c.dylib",
+          "symbol": "_swrite",
+          "fileAddress": "0x18039f264"
+        },
+        {
+          "module": "libsystem_c.dylib",
+          "symbol": "__sflush",
+          "fileAddress": "0x18039d304"
+        },
+        {
+          "module": "libsystem_c.dylib",
+          "symbol": "fflush",
+          "fileAddress": "0x18039d1a4"
+        },
+        {
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "mono_log_write_logfile",
+          "fileAddress": "0x202740"
+        },
+        {
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "monoeg_g_logv_nofree",
+          "fileAddress": "0x21d3d0"
+        },
+        {
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "monoeg_g_log",
+          "fileAddress": "0x21d420"
+        },
+        {
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "mono_hazard_pointer_get",
+          "fileAddress": "0x20e1f8"
+        },
+        {
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "unregister_thread",
+          "fileAddress": "0x21158c"
+        },
+        {
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "thread_info_key_dtor",
+          "fileAddress": "0x211cec"
+        },
+        {
+          "module": "libsystem_pthread.dylib",
+          "symbol": "_pthread_tsd_cleanup",
+          "fileAddress": "0x1804fd67c"
+        },
+        {
+          "module": "libsystem_pthread.dylib",
+          "symbol": "_pthread_exit",
+          "fileAddress": "0x180500334"
+        },
+        {
+          "module": "libsystem_pthread.dylib",
+          "symbol": "_pthread_start",
+          "fileAddress": "0x1804ffc64"
+        }
+      ],
+      "preCleanupThread": {
+        "tid": 39553618,
+        "name": "tid_27d0f",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Semaphore::WaitForSignal(int)",
+            "fileAddress": "0x12fb90"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "PreloadManager::Run()",
+            "fileAddress": "0x188e000"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "PreloadManager::Run(void*)",
+            "fileAddress": "0x188df74"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      "roleByPreCleanupStack": "PreloadManager",
+      "precedingThreadCleanup": {
+        "lastSetThreadName": null,
+        "kind": "thread-cleanup-entry",
+        "pid": 63859,
+        "tid": 39553618,
+        "threadName": "tid_27d0f",
+        "message": "MemoryManager::ThreadCleanup()",
+        "time": 1791950575.303831,
+        "frames": [
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "MemoryManager::ThreadCleanup()",
+            "fileAddress": "0x2219b40"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d65c"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      }
+    },
+    {
+      "lastSetThreadName": null,
+      "kind": "thread-warning",
+      "pid": 63859,
+      "tid": 39553486,
+      "threadName": "tid_cb03",
+      "message": "Thread 0x16de47000 may have been prematurely finalized",
+      "time": 1791950576.0098891,
+      "frames": [
+        {
+          "module": "libsystem_kernel.dylib",
+          "symbol": "__write_nocancel",
+          "fileAddress": "0x1804bfbdc"
+        },
+        {
+          "module": "libsystem_c.dylib",
+          "symbol": "__swrite",
+          "fileAddress": "0x1803bdba4"
+        },
+        {
+          "module": "libsystem_c.dylib",
+          "symbol": "_swrite",
+          "fileAddress": "0x18039f264"
+        },
+        {
+          "module": "libsystem_c.dylib",
+          "symbol": "__sflush",
+          "fileAddress": "0x18039d304"
+        },
+        {
+          "module": "libsystem_c.dylib",
+          "symbol": "fflush",
+          "fileAddress": "0x18039d1a4"
+        },
+        {
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "mono_log_write_logfile",
+          "fileAddress": "0x202740"
+        },
+        {
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "monoeg_g_logv_nofree",
+          "fileAddress": "0x21d3d0"
+        },
+        {
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "monoeg_g_log",
+          "fileAddress": "0x21d420"
+        },
+        {
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "mono_hazard_pointer_get",
+          "fileAddress": "0x20e1f8"
+        },
+        {
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "unregister_thread",
+          "fileAddress": "0x21158c"
+        },
+        {
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "thread_info_key_dtor",
+          "fileAddress": "0x211cec"
+        },
+        {
+          "module": "libsystem_pthread.dylib",
+          "symbol": "_pthread_tsd_cleanup",
+          "fileAddress": "0x1804fd67c"
+        },
+        {
+          "module": "libsystem_pthread.dylib",
+          "symbol": "_pthread_exit",
+          "fileAddress": "0x180500334"
+        },
+        {
+          "module": "libsystem_pthread.dylib",
+          "symbol": "_pthread_start",
+          "fileAddress": "0x1804ffc64"
+        }
+      ],
+      "preCleanupThread": {
+        "tid": 39553486,
+        "name": "tid_cb03",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "lane_guts(ujob_control_t*, ujob_lane_t*, int, int, ujob_dependency_chain const*)",
+            "fileAddress": "0x2189ab0"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "worker_thread_routine(void*)",
+            "fileAddress": "0x218ae58"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      "roleByPreCleanupStack": "Unity job worker",
+      "precedingThreadCleanup": {
+        "lastSetThreadName": null,
+        "kind": "thread-cleanup-entry",
+        "pid": 63859,
+        "tid": 39553486,
+        "threadName": "tid_cb03",
+        "message": "MemoryManager::ThreadCleanup()",
+        "time": 1791950575.9529312,
+        "frames": [
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "MemoryManager::ThreadCleanup()",
+            "fileAddress": "0x2219b40"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d65c"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      }
+    },
+    {
+      "lastSetThreadName": null,
+      "kind": "thread-warning",
+      "pid": 63859,
+      "tid": 39553487,
+      "threadName": "tid_e103",
+      "message": "Thread 0x16ded3000 may have been prematurely finalized",
+      "time": 1791950576.058453,
+      "frames": [
+        {
+          "module": "libsystem_kernel.dylib",
+          "symbol": "__write_nocancel",
+          "fileAddress": "0x1804bfbdc"
+        },
+        {
+          "module": "libsystem_c.dylib",
+          "symbol": "__swrite",
+          "fileAddress": "0x1803bdba4"
+        },
+        {
+          "module": "libsystem_c.dylib",
+          "symbol": "_swrite",
+          "fileAddress": "0x18039f264"
+        },
+        {
+          "module": "libsystem_c.dylib",
+          "symbol": "__sflush",
+          "fileAddress": "0x18039d304"
+        },
+        {
+          "module": "libsystem_c.dylib",
+          "symbol": "fflush",
+          "fileAddress": "0x18039d1a4"
+        },
+        {
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "mono_log_write_logfile",
+          "fileAddress": "0x202740"
+        },
+        {
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "monoeg_g_logv_nofree",
+          "fileAddress": "0x21d3d0"
+        },
+        {
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "monoeg_g_log",
+          "fileAddress": "0x21d420"
+        },
+        {
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "mono_hazard_pointer_get",
+          "fileAddress": "0x20e1f8"
+        },
+        {
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "unregister_thread",
+          "fileAddress": "0x21158c"
+        },
+        {
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "thread_info_key_dtor",
+          "fileAddress": "0x211cec"
+        },
+        {
+          "module": "libsystem_pthread.dylib",
+          "symbol": "_pthread_tsd_cleanup",
+          "fileAddress": "0x1804fd67c"
+        },
+        {
+          "module": "libsystem_pthread.dylib",
+          "symbol": "_pthread_exit",
+          "fileAddress": "0x180500334"
+        },
+        {
+          "module": "libsystem_pthread.dylib",
+          "symbol": "_pthread_start",
+          "fileAddress": "0x1804ffc64"
+        }
+      ],
+      "preCleanupThread": {
+        "tid": 39553487,
+        "name": "tid_e103",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "lane_guts(ujob_control_t*, ujob_lane_t*, int, int, ujob_dependency_chain const*)",
+            "fileAddress": "0x2189ab0"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "worker_thread_routine(void*)",
+            "fileAddress": "0x218ae58"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      "roleByPreCleanupStack": "Unity job worker",
+      "precedingThreadCleanup": {
+        "lastSetThreadName": null,
+        "kind": "thread-cleanup-entry",
+        "pid": 63859,
+        "tid": 39553487,
+        "threadName": "tid_e103",
+        "message": "MemoryManager::ThreadCleanup()",
+        "time": 1791950575.953321,
+        "frames": [
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "MemoryManager::ThreadCleanup()",
+            "fileAddress": "0x2219b40"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d65c"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      }
+    },
+    {
+      "lastSetThreadName": null,
+      "kind": "thread-warning",
+      "pid": 63859,
+      "tid": 39553488,
+      "threadName": "tid_e003",
+      "message": "Thread 0x16df5f000 may have been prematurely finalized",
+      "time": 1791950576.087986,
+      "frames": [
+        {
+          "module": "libsystem_kernel.dylib",
+          "symbol": "__write_nocancel",
+          "fileAddress": "0x1804bfbdc"
+        },
+        {
+          "module": "libsystem_c.dylib",
+          "symbol": "__swrite",
+          "fileAddress": "0x1803bdba4"
+        },
+        {
+          "module": "libsystem_c.dylib",
+          "symbol": "_swrite",
+          "fileAddress": "0x18039f264"
+        },
+        {
+          "module": "libsystem_c.dylib",
+          "symbol": "__sflush",
+          "fileAddress": "0x18039d304"
+        },
+        {
+          "module": "libsystem_c.dylib",
+          "symbol": "fflush",
+          "fileAddress": "0x18039d1a4"
+        },
+        {
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "mono_log_write_logfile",
+          "fileAddress": "0x202740"
+        },
+        {
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "monoeg_g_logv_nofree",
+          "fileAddress": "0x21d3d0"
+        },
+        {
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "monoeg_g_log",
+          "fileAddress": "0x21d420"
+        },
+        {
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "mono_hazard_pointer_get",
+          "fileAddress": "0x20e1f8"
+        },
+        {
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "unregister_thread",
+          "fileAddress": "0x21158c"
+        },
+        {
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "thread_info_key_dtor",
+          "fileAddress": "0x211cec"
+        },
+        {
+          "module": "libsystem_pthread.dylib",
+          "symbol": "_pthread_tsd_cleanup",
+          "fileAddress": "0x1804fd67c"
+        },
+        {
+          "module": "libsystem_pthread.dylib",
+          "symbol": "_pthread_exit",
+          "fileAddress": "0x180500334"
+        },
+        {
+          "module": "libsystem_pthread.dylib",
+          "symbol": "_pthread_start",
+          "fileAddress": "0x1804ffc64"
+        }
+      ],
+      "preCleanupThread": {
+        "tid": 39553488,
+        "name": "tid_e003",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "lane_guts(ujob_control_t*, ujob_lane_t*, int, int, ujob_dependency_chain const*)",
+            "fileAddress": "0x2189ab0"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "worker_thread_routine(void*)",
+            "fileAddress": "0x218ae58"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      "roleByPreCleanupStack": "Unity job worker",
+      "precedingThreadCleanup": {
+        "lastSetThreadName": null,
+        "kind": "thread-cleanup-entry",
+        "pid": 63859,
+        "tid": 39553488,
+        "threadName": "tid_e003",
+        "message": "MemoryManager::ThreadCleanup()",
+        "time": 1791950575.953643,
+        "frames": [
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "MemoryManager::ThreadCleanup()",
+            "fileAddress": "0x2219b40"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d65c"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      }
+    },
+    {
+      "lastSetThreadName": null,
+      "kind": "thread-warning",
+      "pid": 63859,
+      "tid": 39553489,
+      "threadName": "tid_df03",
+      "message": "Thread 0x16dfeb000 may have been prematurely finalized",
+      "time": 1791950576.1165938,
+      "frames": [
+        {
+          "module": "libsystem_kernel.dylib",
+          "symbol": "__write_nocancel",
+          "fileAddress": "0x1804bfbdc"
+        },
+        {
+          "module": "libsystem_c.dylib",
+          "symbol": "__swrite",
+          "fileAddress": "0x1803bdba4"
+        },
+        {
+          "module": "libsystem_c.dylib",
+          "symbol": "_swrite",
+          "fileAddress": "0x18039f264"
+        },
+        {
+          "module": "libsystem_c.dylib",
+          "symbol": "__sflush",
+          "fileAddress": "0x18039d304"
+        },
+        {
+          "module": "libsystem_c.dylib",
+          "symbol": "fflush",
+          "fileAddress": "0x18039d1a4"
+        },
+        {
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "mono_log_write_logfile",
+          "fileAddress": "0x202740"
+        },
+        {
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "monoeg_g_logv_nofree",
+          "fileAddress": "0x21d3d0"
+        },
+        {
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "monoeg_g_log",
+          "fileAddress": "0x21d420"
+        },
+        {
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "mono_hazard_pointer_get",
+          "fileAddress": "0x20e1f8"
+        },
+        {
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "unregister_thread",
+          "fileAddress": "0x21158c"
+        },
+        {
+          "module": "libmonobdwgc-2.0.dylib",
+          "symbol": "thread_info_key_dtor",
+          "fileAddress": "0x211cec"
+        },
+        {
+          "module": "libsystem_pthread.dylib",
+          "symbol": "_pthread_tsd_cleanup",
+          "fileAddress": "0x1804fd67c"
+        },
+        {
+          "module": "libsystem_pthread.dylib",
+          "symbol": "_pthread_exit",
+          "fileAddress": "0x180500334"
+        },
+        {
+          "module": "libsystem_pthread.dylib",
+          "symbol": "_pthread_start",
+          "fileAddress": "0x1804ffc64"
+        }
+      ],
+      "preCleanupThread": {
+        "tid": 39553489,
+        "name": "tid_df03",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "lane_guts(ujob_control_t*, ujob_lane_t*, int, int, ujob_dependency_chain const*)",
+            "fileAddress": "0x2189ab0"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "worker_thread_routine(void*)",
+            "fileAddress": "0x218ae58"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      "roleByPreCleanupStack": "Unity job worker",
+      "precedingThreadCleanup": {
+        "lastSetThreadName": null,
+        "kind": "thread-cleanup-entry",
+        "pid": 63859,
+        "tid": 39553489,
+        "threadName": "tid_df03",
+        "message": "MemoryManager::ThreadCleanup()",
+        "time": 1791950575.970645,
+        "frames": [
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "MemoryManager::ThreadCleanup()",
+            "fileAddress": "0x2219b40"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d65c"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      }
+    }
+  ],
+  "memoryIoEvents": 3,
+  "distinctMemoryReports": [
+    {
+      "record": {
+        "type": "MemoryLeaks",
+        "version": 2,
+        "phase": "Immediate",
+        "time": 1791950579482,
+        "processId": 63859,
+        "allocatedMemory": 2471848,
+        "memoryLabels": [
+          {
+            "Default": 54543
+          },
+          {
+            "Permanent": 1472
+          },
+          {
+            "NewDelete": 1643050
+          },
+          {
+            "Thread": 8120
+          },
+          {
+            "Manager": 16359
+          },
+          {
+            "VertexData": 8
+          },
+          {
+            "Geometry": 408
+          },
+          {
+            "Texture": 16
+          },
+          {
+            "Shader": 78020
+          },
+          {
+            "Material": 212
+          },
+          {
+            "GfxDevice": 38776
+          },
+          {
+            "GfxThread": 400
+          },
+          {
+            "Animation": 880
+          },
+          {
+            "Audio": 3648
+          },
+          {
+            "FreeType": 8
+          },
+          {
+            "FontEngine": 736
+          },
+          {
+            "Physics": 2000
+          },
+          {
+            "Physics2D": 16
+          },
+          {
+            "Serialization": 16392
+          },
+          {
+            "Input": 43216
+          },
+          {
+            "JobScheduler": 448
+          },
+          {
+            "TextLib": 280
+          },
+          {
+            "Mono": 56
+          },
+          {
+            "ScriptingNativeRuntime": 128
+          },
+          {
+            "BaseObject": 36320
+          },
+          {
+            "Resource": 996
+          },
+          {
+            "Renderer": 2736
+          },
+          {
+            "Transform": 6485
+          },
+          {
+            "File": 4600
+          },
+          {
+            "WebCam": 32
+          },
+          {
+            "Culling": 32
+          },
+          {
+            "Terrain": 11298
+          },
+          {
+            "Wind": 24
+          },
+          {
+            "String": 3087
+          },
+          {
+            "Utility": 318232
+          },
+          {
+            "PoolAlloc": 1536
+          },
+          {
+            "AI": 40
+          },
+          {
+            "TypeTree": 5512
+          },
+          {
+            "ScriptManager": 5696
+          },
+          {
+            "CodeReload": 440
+          },
+          {
+            "RuntimeInitializeOnLoadManager": 64
+          },
+          {
+            "Sprites": 78
+          },
+          {
+            "SpriteAtlas": 120
+          },
+          {
+            "GI": 7200
+          },
+          {
+            "Director": 8248
+          },
+          {
+            "CloudService": 144
+          },
+          {
+            "WebRequest": 520
+          },
+          {
+            "VR": 49402
+          },
+          {
+            "SceneManager": 408
+          },
+          {
+            "Video": 2080
+          },
+          {
+            "LazyScriptCache": 32
+          },
+          {
+            "NativeArray": 648
+          },
+          {
+            "Camera": 1169
+          },
+          {
+            "Secure": 241
+          },
+          {
+            "SerializationCache": 3608
+          },
+          {
+            "APIUpdating": 10320
+          },
+          {
+            "Subsystems": 336
+          },
+          {
+            "VirtualTexturing": 57496
+          },
+          {
+            "Baselib": 16
+          },
+          {
+            "Analytics": 80
+          },
+          {
+            "Hierarchy": 1452
+          },
+          {
+            "UIElements": 40
+          },
+          {
+            "CoreStats": 14536
+          },
+          {
+            "Identifiers": 7152
+          },
+          {
+            "Gui": 40
+          },
+          {
+            "CoreBusinessMetrics": 128
+          },
+          {
+            "AssetReference": 32
+          }
+        ]
+      },
+      "emissionStack": [
+        {
+          "module": "libsystem_c.dylib",
+          "symbol": "fputs",
+          "fileAddress": "0x1803b8d58"
+        },
+        {
+          "module": "UnityPlayer.dylib",
+          "symbol": "UnifiedTextOutput(LogType, char const*, int, bool)",
+          "fileAddress": "0x225ed44"
+        },
+        {
+          "module": "UnityPlayer.dylib",
+          "symbol": "printf_consolev(LogType, char const*, char*, bool, LineEndInfoHint)",
+          "fileAddress": "0x225eba0"
+        },
+        {
+          "module": "UnityPlayer.dylib",
+          "symbol": "printf_console_type",
+          "fileAddress": "0x225edd8"
+        },
+        {
+          "module": "UnityPlayer.dylib",
+          "symbol": "DebugStringToFilePostprocessedStacktrace(DebugStringToFileData const&)",
+          "fileAddress": "0x225f658"
+        },
+        {
+          "module": "UnityPlayer.dylib",
+          "symbol": "DebugStringToFile(DebugStringToFileData const&)",
+          "fileAddress": "0x225fb78"
+        },
+        {
+          "module": "UnityPlayer.dylib",
+          "symbol": "RuntimeCleanup()::$_0::__invoke(unsigned long long, core::vector<std::__1::pair<MemLabelIdentifier, unsigned long>, core::allocator<std::__1::pair<MemLabelIdentifier, unsigned long>, 0ul>>&, char const*, int)",
+          "fileAddress": "0x185ff7c"
+        },
+        {
+          "module": "UnityPlayer.dylib",
+          "symbol": "MemoryProfiler::ReportAllocatedMemory(void (*)(unsigned long long, core::vector<std::__1::pair<MemLabelIdentifier, unsigned long>, core::allocator<std::__1::pair<MemLabelIdentifier, unsigned long>, 0ul>>&, char const*, int)) const",
+          "fileAddress": "0x2239620"
+        },
+        {
+          "module": "UnityPlayer.dylib",
+          "symbol": "RuntimeCleanup()",
+          "fileAddress": "0x185b600"
+        },
+        {
+          "module": "UnityPlayer.dylib",
+          "symbol": "DoQuit(bool)",
+          "fileAddress": "0x10e1cf8"
+        },
+        {
+          "module": "UnityPlayer.dylib",
+          "symbol": "-[PlayerAppDelegate UpdatePlayer]",
+          "fileAddress": "0x10e4a48"
+        },
+        {
+          "module": "UnityPlayer.dylib",
+          "symbol": "-[PlayerAppDelegate TimerTick]",
+          "fileAddress": "0x10e4258"
+        },
+        {
+          "module": "Foundation",
+          "symbol": "__NSFireTimer",
+          "fileAddress": "0x181e42ed0"
+        },
+        {
+          "module": "CoreFoundation",
+          "symbol": "__CFRUNLOOP_IS_CALLING_OUT_TO_A_TIMER_CALLBACK_FUNCTION__",
+          "fileAddress": "0x1805d6348"
+        },
+        {
+          "module": "CoreFoundation",
+          "symbol": "__CFRunLoopDoTimer",
+          "fileAddress": "0x1805d6040"
+        },
+        {
+          "module": "CoreFoundation",
+          "symbol": "__CFRunLoopDoTimers",
+          "fileAddress": "0x1805d5bb8"
+        },
+        {
+          "module": "CoreFoundation",
+          "symbol": "__CFRunLoopRun",
+          "fileAddress": "0x1805bbc68"
+        },
+        {
+          "module": "CoreFoundation",
+          "symbol": "_CFRunLoopRunSpecificWithOptions",
+          "fileAddress": "0x18068e264"
+        },
+        {
+          "module": "HIToolbox",
+          "symbol": "RunCurrentEventLoopInMode",
+          "fileAddress": "0x18d3a7560"
+        },
+        {
+          "module": "HIToolbox",
+          "symbol": "ReceiveNextEventCommon",
+          "fileAddress": "0x18d3aa8bc"
+        },
+        {
+          "module": "HIToolbox",
+          "symbol": "_BlockUntilNextEventMatchingListInMode",
+          "fileAddress": "0x18d53414c"
+        },
+        {
+          "module": "AppKit",
+          "symbol": "_DPSBlockUntilNextEventMatchingListInMode",
+          "fileAddress": "0x18509e3d0"
+        },
+        {
+          "module": "AppKit",
+          "symbol": "_DPSNextEvent",
+          "fileAddress": "0x1849f2084"
+        },
+        {
+          "module": "AppKit",
+          "symbol": "-[NSApplication(NSEventRouting) _nextEventMatchingEventMask:untilDate:inMode:dequeue:]",
+          "fileAddress": "0x18558796c"
+        },
+        {
+          "module": "AppKit",
+          "symbol": "-[NSApplication(NSEventRouting) nextEventMatchingMask:untilDate:inMode:dequeue:]",
+          "fileAddress": "0x185587678"
+        },
+        {
+          "module": "AppKit",
+          "symbol": "-[NSApplication run]",
+          "fileAddress": "0x1849e513c"
+        },
+        {
+          "module": "AppKit",
+          "symbol": "NSApplicationMain",
+          "fileAddress": "0x1849bd7b0"
+        },
+        {
+          "module": "UnityPlayer.dylib",
+          "symbol": "PlayerMain(int, char const**)",
+          "fileAddress": "0x10e3d08"
+        },
+        {
+          "module": "dyld",
+          "symbol": "start",
+          "fileAddress": "0x1801344e4"
+        }
+      ]
+    }
+  ],
+  "cleanupSnapshot": {
+    "kind": "threads-before-cleanup",
+    "pid": 63859,
+    "time": 1791950575.23345,
+    "modules": [
+      {
+        "module": "lookingglass_bridge_shim.dylib",
+        "uuid": "FCDDC56E-5838-3052-89FF-1C2FAC5B9795",
+        "path": ".local/macos-preview-shutdown-20261014/final-metadataonly-urp/Control.app/Contents/PlugIns/ARM64/lookingglass_bridge_shim.dylib"
+      },
+      {
+        "module": "libmonobdwgc-2.0.dylib",
+        "uuid": "542F91E5-B702-33BE-86C6-5B39012524EA",
+        "path": ".local/macos-preview-shutdown-20261014/final-metadataonly-urp/Control.app/Contents/Frameworks/libmonobdwgc-2.0.dylib"
+      },
+      {
+        "module": "libbridge_inproc.dylib",
+        "uuid": "92E836C4-C91B-35AA-9E6C-C7D50EE880D4",
+        "path": "/Applications/Looking Glass Bridge 2.6.3.app/Contents/MacOS/libbridge_inproc.dylib"
+      },
+      {
+        "module": "UnityPlayer.dylib",
+        "uuid": "BE07B931-A7A0-335B-BFDE-6D9331DBD96F",
+        "path": ".local/macos-preview-shutdown-20261014/final-metadataonly-urp/Control.app/Contents/Frameworks/UnityPlayer.dylib"
+      }
+    ],
+    "threads": [
+      {
+        "tid": 39553405,
+        "name": "tid_103",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "PlayerCleanup(bool)",
+            "fileAddress": "0x185b1b8"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "DoQuit(bool)",
+            "fileAddress": "0x10e1cc4"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "-[PlayerAppDelegate UpdatePlayer]",
+            "fileAddress": "0x10e4a48"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "-[PlayerAppDelegate TimerTick]",
+            "fileAddress": "0x10e4258"
+          },
+          {
+            "module": "Foundation",
+            "symbol": "__NSFireTimer",
+            "fileAddress": "0x181e42ed0"
+          },
+          {
+            "module": "CoreFoundation",
+            "symbol": "__CFRUNLOOP_IS_CALLING_OUT_TO_A_TIMER_CALLBACK_FUNCTION__",
+            "fileAddress": "0x1805d6348"
+          },
+          {
+            "module": "CoreFoundation",
+            "symbol": "__CFRunLoopDoTimer",
+            "fileAddress": "0x1805d6040"
+          },
+          {
+            "module": "CoreFoundation",
+            "symbol": "__CFRunLoopDoTimers",
+            "fileAddress": "0x1805d5bb8"
+          },
+          {
+            "module": "CoreFoundation",
+            "symbol": "__CFRunLoopRun",
+            "fileAddress": "0x1805bbc68"
+          },
+          {
+            "module": "CoreFoundation",
+            "symbol": "_CFRunLoopRunSpecificWithOptions",
+            "fileAddress": "0x18068e264"
+          },
+          {
+            "module": "HIToolbox",
+            "symbol": "RunCurrentEventLoopInMode",
+            "fileAddress": "0x18d3a7560"
+          },
+          {
+            "module": "HIToolbox",
+            "symbol": "ReceiveNextEventCommon",
+            "fileAddress": "0x18d3aa8bc"
+          },
+          {
+            "module": "HIToolbox",
+            "symbol": "_BlockUntilNextEventMatchingListInMode",
+            "fileAddress": "0x18d53414c"
+          },
+          {
+            "module": "AppKit",
+            "symbol": "_DPSBlockUntilNextEventMatchingListInMode",
+            "fileAddress": "0x18509e3d0"
+          },
+          {
+            "module": "AppKit",
+            "symbol": "_DPSNextEvent",
+            "fileAddress": "0x1849f2084"
+          },
+          {
+            "module": "AppKit",
+            "symbol": "-[NSApplication(NSEventRouting) _nextEventMatchingEventMask:untilDate:inMode:dequeue:]",
+            "fileAddress": "0x18558796c"
+          },
+          {
+            "module": "AppKit",
+            "symbol": "-[NSApplication(NSEventRouting) nextEventMatchingMask:untilDate:inMode:dequeue:]",
+            "fileAddress": "0x185587678"
+          },
+          {
+            "module": "AppKit",
+            "symbol": "-[NSApplication run]",
+            "fileAddress": "0x1849e513c"
+          },
+          {
+            "module": "AppKit",
+            "symbol": "NSApplicationMain",
+            "fileAddress": "0x1849bd7b0"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "PlayerMain(int, char const**)",
+            "fileAddress": "0x10e3d08"
+          }
+        ]
+      },
+      {
+        "tid": 39553407,
+        "name": "Profiler.Dispatcher",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Semaphore::WaitForSignal(int)",
+            "fileAddress": "0x12fb90"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "profiling::Dispatcher::Run()",
+            "fileAddress": "0x18c4d2c"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "profiling::Dispatcher::ThreadFunc(void*)",
+            "fileAddress": "0x18c4438"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553408,
+        "name": null,
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "__workq_kernreturn",
+            "fileAddress": "0x1804bd9f0"
+          }
+        ]
+      },
+      {
+        "tid": 39553409,
+        "name": null,
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "__workq_kernreturn",
+            "fileAddress": "0x1804bd9f0"
+          }
+        ]
+      },
+      {
+        "tid": 39553410,
+        "name": "AssetGarbageCollectorHelper",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "AGCThread::Run()",
+            "fileAddress": "0x1852a04"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "AGCThread::RunThread(void*)",
+            "fileAddress": "0x185fca4"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553411,
+        "name": "AssetGarbageCollectorHelper",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "AGCThread::Run()",
+            "fileAddress": "0x1852a04"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "AGCThread::RunThread(void*)",
+            "fileAddress": "0x185fca4"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553412,
+        "name": "AssetGarbageCollectorHelper",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "AGCThread::Run()",
+            "fileAddress": "0x1852a04"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "AGCThread::RunThread(void*)",
+            "fileAddress": "0x185fca4"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553413,
+        "name": "AssetGarbageCollectorHelper",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "AGCThread::Run()",
+            "fileAddress": "0x1852a04"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "AGCThread::RunThread(void*)",
+            "fileAddress": "0x185fca4"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553414,
+        "name": "AssetGarbageCollectorHelper",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "AGCThread::Run()",
+            "fileAddress": "0x1852a04"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "AGCThread::RunThread(void*)",
+            "fileAddress": "0x185fca4"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553415,
+        "name": "AssetGarbageCollectorHelper",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "AGCThread::Run()",
+            "fileAddress": "0x1852a04"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "AGCThread::RunThread(void*)",
+            "fileAddress": "0x185fca4"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553416,
+        "name": "AssetGarbageCollectorHelper",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "AGCThread::Run()",
+            "fileAddress": "0x1852a04"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "AGCThread::RunThread(void*)",
+            "fileAddress": "0x185fca4"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553417,
+        "name": "AssetGarbageCollectorHelper",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "AGCThread::Run()",
+            "fileAddress": "0x1852a04"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "AGCThread::RunThread(void*)",
+            "fileAddress": "0x185fca4"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553418,
+        "name": "AssetGarbageCollectorHelper",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "AGCThread::Run()",
+            "fileAddress": "0x1852a04"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "AGCThread::RunThread(void*)",
+            "fileAddress": "0x185fca4"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553419,
+        "name": "AssetGarbageCollectorHelper",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "AGCThread::Run()",
+            "fileAddress": "0x1852a04"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "AGCThread::RunThread(void*)",
+            "fileAddress": "0x185fca4"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553420,
+        "name": "AssetGarbageCollectorHelper",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "AGCThread::Run()",
+            "fileAddress": "0x1852a04"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "AGCThread::RunThread(void*)",
+            "fileAddress": "0x185fca4"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553421,
+        "name": "AssetGarbageCollectorHelper",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "AGCThread::Run()",
+            "fileAddress": "0x1852a04"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "AGCThread::RunThread(void*)",
+            "fileAddress": "0x185fca4"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553422,
+        "name": "AssetGarbageCollectorHelper",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "AGCThread::Run()",
+            "fileAddress": "0x1852a04"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "AGCThread::RunThread(void*)",
+            "fileAddress": "0x185fca4"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553423,
+        "name": "AssetGarbageCollectorHelper",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "AGCThread::Run()",
+            "fileAddress": "0x1852a04"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "AGCThread::RunThread(void*)",
+            "fileAddress": "0x185fca4"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553424,
+        "name": "AssetGarbageCollectorHelper",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "AGCThread::Run()",
+            "fileAddress": "0x1852a04"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "AGCThread::RunThread(void*)",
+            "fileAddress": "0x185fca4"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553425,
+        "name": null,
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "__workq_kernreturn",
+            "fileAddress": "0x1804bd9f0"
+          }
+        ]
+      },
+      {
+        "tid": 39553449,
+        "name": "com.apple.NSEventThread",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "mach_msg2_trap",
+            "fileAddress": "0x1804bbc34"
+          },
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "mach_msg2_internal",
+            "fileAddress": "0x1804ce5a4"
+          },
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "mach_msg_overwrite",
+            "fileAddress": "0x1804c49c0"
+          },
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "mach_msg",
+            "fileAddress": "0x1804bbfc0"
+          },
+          {
+            "module": "CoreFoundation",
+            "symbol": "__CFRunLoopServiceMachPort",
+            "fileAddress": "0x1805bd108"
+          },
+          {
+            "module": "CoreFoundation",
+            "symbol": "__CFRunLoopRun",
+            "fileAddress": "0x1805bb9f4"
+          },
+          {
+            "module": "CoreFoundation",
+            "symbol": "_CFRunLoopRunSpecificWithOptions",
+            "fileAddress": "0x18068e264"
+          },
+          {
+            "module": "AppKit",
+            "symbol": "_NSEventThread",
+            "fileAddress": "0x184b13cac"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553469,
+        "name": "Finalizer",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libmonobdwgc-2.0.dylib",
+            "symbol": "finalizer_thread",
+            "fileAddress": "0x1f3434"
+          },
+          {
+            "module": "libmonobdwgc-2.0.dylib",
+            "symbol": "start_wrapper_internal",
+            "fileAddress": "0x1ba834"
+          },
+          {
+            "module": "libmonobdwgc-2.0.dylib",
+            "symbol": "start_wrapper",
+            "fileAddress": "0x1ba6e0"
+          },
+          {
+            "module": "libmonobdwgc-2.0.dylib",
+            "symbol": "GC_inner_start_routine",
+            "fileAddress": "0x239dd8"
+          },
+          {
+            "module": "libmonobdwgc-2.0.dylib",
+            "symbol": "GC_start_routine",
+            "fileAddress": "0x239d60"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553485,
+        "name": "Job.Worker 0",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "lane_guts(ujob_control_t*, ujob_lane_t*, int, int, ujob_dependency_chain const*)",
+            "fileAddress": "0x2189ab0"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "worker_thread_routine(void*)",
+            "fileAddress": "0x218ae58"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553486,
+        "name": "tid_cb03",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "lane_guts(ujob_control_t*, ujob_lane_t*, int, int, ujob_dependency_chain const*)",
+            "fileAddress": "0x2189ab0"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "worker_thread_routine(void*)",
+            "fileAddress": "0x218ae58"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553487,
+        "name": "tid_e103",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "lane_guts(ujob_control_t*, ujob_lane_t*, int, int, ujob_dependency_chain const*)",
+            "fileAddress": "0x2189ab0"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "worker_thread_routine(void*)",
+            "fileAddress": "0x218ae58"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553488,
+        "name": "tid_e003",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "lane_guts(ujob_control_t*, ujob_lane_t*, int, int, ujob_dependency_chain const*)",
+            "fileAddress": "0x2189ab0"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "worker_thread_routine(void*)",
+            "fileAddress": "0x218ae58"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553489,
+        "name": "tid_df03",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "lane_guts(ujob_control_t*, ujob_lane_t*, int, int, ujob_dependency_chain const*)",
+            "fileAddress": "0x2189ab0"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "worker_thread_routine(void*)",
+            "fileAddress": "0x218ae58"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553490,
+        "name": "Job.Worker 5",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "lane_guts(ujob_control_t*, ujob_lane_t*, int, int, ujob_dependency_chain const*)",
+            "fileAddress": "0x2189ab0"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "worker_thread_routine(void*)",
+            "fileAddress": "0x218ae58"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553491,
+        "name": "Job.Worker 6",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "lane_guts(ujob_control_t*, ujob_lane_t*, int, int, ujob_dependency_chain const*)",
+            "fileAddress": "0x2189ab0"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "worker_thread_routine(void*)",
+            "fileAddress": "0x218ae58"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553492,
+        "name": "Job.Worker 7",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "lane_guts(ujob_control_t*, ujob_lane_t*, int, int, ujob_dependency_chain const*)",
+            "fileAddress": "0x2189ab0"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "worker_thread_routine(void*)",
+            "fileAddress": "0x218ae58"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553493,
+        "name": "Job.Worker 8",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "lane_guts(ujob_control_t*, ujob_lane_t*, int, int, ujob_dependency_chain const*)",
+            "fileAddress": "0x2189ab0"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "worker_thread_routine(void*)",
+            "fileAddress": "0x218ae58"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553494,
+        "name": "Job.Worker 9",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "lane_guts(ujob_control_t*, ujob_lane_t*, int, int, ujob_dependency_chain const*)",
+            "fileAddress": "0x2189ab0"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "worker_thread_routine(void*)",
+            "fileAddress": "0x218ae58"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553495,
+        "name": "Job.Worker 10",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "lane_guts(ujob_control_t*, ujob_lane_t*, int, int, ujob_dependency_chain const*)",
+            "fileAddress": "0x2189ab0"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "worker_thread_routine(void*)",
+            "fileAddress": "0x218ae58"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553496,
+        "name": "Job.Worker 11",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "lane_guts(ujob_control_t*, ujob_lane_t*, int, int, ujob_dependency_chain const*)",
+            "fileAddress": "0x2189ab0"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "worker_thread_routine(void*)",
+            "fileAddress": "0x218ae58"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553497,
+        "name": "Job.Worker 12",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "lane_guts(ujob_control_t*, ujob_lane_t*, int, int, ujob_dependency_chain const*)",
+            "fileAddress": "0x2189ab0"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "worker_thread_routine(void*)",
+            "fileAddress": "0x218ae58"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553498,
+        "name": "Job.Worker 13",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "lane_guts(ujob_control_t*, ujob_lane_t*, int, int, ujob_dependency_chain const*)",
+            "fileAddress": "0x2189ab0"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "worker_thread_routine(void*)",
+            "fileAddress": "0x218ae58"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553499,
+        "name": "Job.Worker 14",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "lane_guts(ujob_control_t*, ujob_lane_t*, int, int, ujob_dependency_chain const*)",
+            "fileAddress": "0x2189ab0"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "worker_thread_routine(void*)",
+            "fileAddress": "0x218ae58"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553500,
+        "name": "Background Job.Worker 0",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "lane_guts(ujob_control_t*, ujob_lane_t*, int, int, ujob_dependency_chain const*)",
+            "fileAddress": "0x2189ab0"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "worker_thread_routine(void*)",
+            "fileAddress": "0x218ae58"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553501,
+        "name": "Background Job.Worker 1",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "lane_guts(ujob_control_t*, ujob_lane_t*, int, int, ujob_dependency_chain const*)",
+            "fileAddress": "0x2189ab0"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "worker_thread_routine(void*)",
+            "fileAddress": "0x218ae58"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553502,
+        "name": "Background Job.Worker 2",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "lane_guts(ujob_control_t*, ujob_lane_t*, int, int, ujob_dependency_chain const*)",
+            "fileAddress": "0x2189ab0"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "worker_thread_routine(void*)",
+            "fileAddress": "0x218ae58"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553503,
+        "name": "Background Job.Worker 3",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "lane_guts(ujob_control_t*, ujob_lane_t*, int, int, ujob_dependency_chain const*)",
+            "fileAddress": "0x2189ab0"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "worker_thread_routine(void*)",
+            "fileAddress": "0x218ae58"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553504,
+        "name": "Background Job.Worker 4",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "lane_guts(ujob_control_t*, ujob_lane_t*, int, int, ujob_dependency_chain const*)",
+            "fileAddress": "0x2189ab0"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "worker_thread_routine(void*)",
+            "fileAddress": "0x218ae58"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553505,
+        "name": "Background Job.Worker 5",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "lane_guts(ujob_control_t*, ujob_lane_t*, int, int, ujob_dependency_chain const*)",
+            "fileAddress": "0x2189ab0"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "worker_thread_routine(void*)",
+            "fileAddress": "0x218ae58"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553507,
+        "name": "Background Job.Worker 6",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "lane_guts(ujob_control_t*, ujob_lane_t*, int, int, ujob_dependency_chain const*)",
+            "fileAddress": "0x2189ab0"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "worker_thread_routine(void*)",
+            "fileAddress": "0x218ae58"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553508,
+        "name": "Background Job.Worker 7",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "lane_guts(ujob_control_t*, ujob_lane_t*, int, int, ujob_dependency_chain const*)",
+            "fileAddress": "0x2189ab0"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "worker_thread_routine(void*)",
+            "fileAddress": "0x218ae58"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553509,
+        "name": "Background Job.Worker 8",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "lane_guts(ujob_control_t*, ujob_lane_t*, int, int, ujob_dependency_chain const*)",
+            "fileAddress": "0x2189ab0"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "worker_thread_routine(void*)",
+            "fileAddress": "0x218ae58"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553510,
+        "name": "Background Job.Worker 9",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "lane_guts(ujob_control_t*, ujob_lane_t*, int, int, ujob_dependency_chain const*)",
+            "fileAddress": "0x2189ab0"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "worker_thread_routine(void*)",
+            "fileAddress": "0x218ae58"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553511,
+        "name": "Background Job.Worker 10",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "lane_guts(ujob_control_t*, ujob_lane_t*, int, int, ujob_dependency_chain const*)",
+            "fileAddress": "0x2189ab0"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "worker_thread_routine(void*)",
+            "fileAddress": "0x218ae58"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553512,
+        "name": "Background Job.Worker 11",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "lane_guts(ujob_control_t*, ujob_lane_t*, int, int, ujob_dependency_chain const*)",
+            "fileAddress": "0x2189ab0"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "worker_thread_routine(void*)",
+            "fileAddress": "0x218ae58"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553513,
+        "name": "Background Job.Worker 12",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "lane_guts(ujob_control_t*, ujob_lane_t*, int, int, ujob_dependency_chain const*)",
+            "fileAddress": "0x2189ab0"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "worker_thread_routine(void*)",
+            "fileAddress": "0x218ae58"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553514,
+        "name": "Background Job.Worker 13",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "lane_guts(ujob_control_t*, ujob_lane_t*, int, int, ujob_dependency_chain const*)",
+            "fileAddress": "0x2189ab0"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "worker_thread_routine(void*)",
+            "fileAddress": "0x218ae58"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553515,
+        "name": "Background Job.Worker 14",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "lane_guts(ujob_control_t*, ujob_lane_t*, int, int, ujob_dependency_chain const*)",
+            "fileAddress": "0x2189ab0"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "worker_thread_routine(void*)",
+            "fileAddress": "0x218ae58"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553516,
+        "name": "Background Job.Worker 15",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "lane_guts(ujob_control_t*, ujob_lane_t*, int, int, ujob_dependency_chain const*)",
+            "fileAddress": "0x2189ab0"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "worker_thread_routine(void*)",
+            "fileAddress": "0x218ae58"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553517,
+        "name": "BatchDeleteObjects",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Semaphore::WaitForSignal(int)",
+            "fileAddress": "0x12fb90"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "ThreadedStreamBuffer::HandleOutOfBufferToReadFrom(ThreadedStreamBuffer::DataOffsets)",
+            "fileAddress": "0x1a45234"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "BatchDeleteStep2Threaded(void*)",
+            "fileAddress": "0x17fdc88"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553518,
+        "name": "Loading.AsyncRead",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Semaphore::WaitForSignal(int)",
+            "fileAddress": "0x12fb90"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "AsyncReadManagerThreaded::ThreadEntry()",
+            "fileAddress": "0x14f7eb8"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "AsyncReadManagerThreaded::StaticThreadEntry(void*)",
+            "fileAddress": "0x14f7608"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553523,
+        "name": "OSX HID Input",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "mach_msg2_trap",
+            "fileAddress": "0x1804bbc34"
+          },
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "mach_msg2_internal",
+            "fileAddress": "0x1804ce5a4"
+          },
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "mach_msg_overwrite",
+            "fileAddress": "0x1804c49c0"
+          },
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "mach_msg",
+            "fileAddress": "0x1804bbfc0"
+          },
+          {
+            "module": "CoreFoundation",
+            "symbol": "__CFRunLoopServiceMachPort",
+            "fileAddress": "0x1805bd108"
+          },
+          {
+            "module": "CoreFoundation",
+            "symbol": "__CFRunLoopRun",
+            "fileAddress": "0x1805bb9f4"
+          },
+          {
+            "module": "CoreFoundation",
+            "symbol": "_CFRunLoopRunSpecificWithOptions",
+            "fileAddress": "0x18068e264"
+          },
+          {
+            "module": "CoreFoundation",
+            "symbol": "CFRunLoopRun",
+            "fileAddress": "0x180631b24"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "HIDDeviceThreadOSX(void*)",
+            "fileAddress": "0x10f45a4"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553524,
+        "name": "CVDisplayLink",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "__psynch_cvwait",
+            "fileAddress": "0x1804bf50c"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_cond_wait",
+            "fileAddress": "0x180500154"
+          },
+          {
+            "module": "CoreVideo",
+            "symbol": "CVDisplayLink::waitUntil(unsigned long long)",
+            "fileAddress": "0x18aec2b44"
+          },
+          {
+            "module": "CoreVideo",
+            "symbol": "CVDisplayLink::runIOThread()",
+            "fileAddress": "0x18aec1c2c"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553525,
+        "name": "UnityGfxDeviceWorker",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "MetalHeap::SwapBuffers(bool)",
+            "fileAddress": "0x113e478"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "GfxDeviceMetal::SwapBuffers()",
+            "fileAddress": "0x1121538"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "metal::PrepareEndFrame()",
+            "fileAddress": "0x1110b88"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "GfxDeviceMetal::PresentFrame()",
+            "fileAddress": "0x1121a20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "GfxDeviceWorker::RunCommand(ThreadedStreamBuffer&)",
+            "fileAddress": "0x20ef620"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "GfxDeviceWorkerAutoreleasePoolProxy",
+            "fileAddress": "0x1124548"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "GfxDeviceWorker::RunExt(ThreadedStreamBuffer&)",
+            "fileAddress": "0x20e6bcc"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "GfxDeviceWorker::Run()",
+            "fileAddress": "0x20e6980"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "GfxDeviceWorker::RunGfxDeviceWorker(void*)",
+            "fileAddress": "0x20e65f0"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553526,
+        "name": "caulk.messenger.shared:17",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "caulk",
+            "symbol": "caulk::semaphore::timed_wait(double)",
+            "fileAddress": "0x18ce4fe00"
+          },
+          {
+            "module": "caulk",
+            "symbol": "caulk::concurrent::details::worker_thread::run()",
+            "fileAddress": "0x18ce4fcac"
+          },
+          {
+            "module": "caulk",
+            "symbol": "void* caulk::thread_proxy<std::__1::tuple<caulk::thread::attributes, void (caulk::concurrent::details::worker_thread::*)(), std::__1::tuple<caulk::concurrent::details::worker_thread*>>>(void*)",
+            "fileAddress": "0x18ce4f94c"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553527,
+        "name": "caulk.messenger.shared:high",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "caulk",
+            "symbol": "caulk::semaphore::timed_wait(double)",
+            "fileAddress": "0x18ce4fe00"
+          },
+          {
+            "module": "caulk",
+            "symbol": "caulk::concurrent::details::worker_thread::run()",
+            "fileAddress": "0x18ce4fcac"
+          },
+          {
+            "module": "caulk",
+            "symbol": "void* caulk::thread_proxy<std::__1::tuple<caulk::thread::attributes, void (caulk::concurrent::details::worker_thread::*)(), std::__1::tuple<caulk::concurrent::details::worker_thread*>>>(void*)",
+            "fileAddress": "0x18ce4f94c"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553571,
+        "name": "caulk::deferred_logger",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "caulk",
+            "symbol": "caulk::semaphore::timed_wait(double)",
+            "fileAddress": "0x18ce4fe00"
+          },
+          {
+            "module": "caulk",
+            "symbol": "caulk::concurrent::details::worker_thread::run()",
+            "fileAddress": "0x18ce4fcac"
+          },
+          {
+            "module": "caulk",
+            "symbol": "void* caulk::thread_proxy<std::__1::tuple<caulk::thread::attributes, void (caulk::concurrent::details::worker_thread::*)(), std::__1::tuple<caulk::concurrent::details::worker_thread*>>>(void*)",
+            "fileAddress": "0x18ce4f94c"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553573,
+        "name": "Audio Mixer Thread",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_signal_trap",
+            "fileAddress": "0x1804bbbbc"
+          },
+          {
+            "module": "caulk",
+            "symbol": "caulk::mach::semaphore::wait_signal_or_error(caulk::mach::semaphore&)",
+            "fileAddress": "0x18ce6d2c8"
+          },
+          {
+            "module": "CoreAudio",
+            "symbol": "HALC_ProxyIOContext::IOWorkLoop()",
+            "fileAddress": "0x183851994"
+          },
+          {
+            "module": "CoreAudio",
+            "symbol": "invocation function for block in HALC_ProxyIOContext::HALC_ProxyIOContext(unsigned int, unsigned int)",
+            "fileAddress": "0x18384ffa0"
+          },
+          {
+            "module": "CoreAudio",
+            "symbol": "HALC_IOThread::Entry(void*)",
+            "fileAddress": "0x183a0e000"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553606,
+        "name": "Audio Stream Thread",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "__semwait_signal",
+            "fileAddress": "0x1804bf308"
+          },
+          {
+            "module": "libsystem_c.dylib",
+            "symbol": "nanosleep",
+            "fileAddress": "0x18039acc0"
+          },
+          {
+            "module": "libsystem_c.dylib",
+            "symbol": "usleep",
+            "fileAddress": "0x18039abd8"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "FMOD_OS_Time_Sleep(unsigned int)",
+            "fileAddress": "0x25e5354"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "FMOD::Thread::callback(void*)",
+            "fileAddress": "0x25ae9e8"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553616,
+        "name": null,
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "__workq_kernreturn",
+            "fileAddress": "0x1804bd9f0"
+          }
+        ]
+      },
+      {
+        "tid": 39553618,
+        "name": "tid_27d0f",
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": "libsystem_kernel.dylib",
+            "symbol": "semaphore_wait_trap",
+            "fileAddress": "0x1804bbbb0"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_sema4_wait",
+            "fileAddress": "0x180345490"
+          },
+          {
+            "module": "libdispatch.dylib",
+            "symbol": "_dispatch_semaphore_wait_slow",
+            "fileAddress": "0x180345b20"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "UnityClassic::Baselib_SystemSemaphore_Acquire(UnityClassic::Baselib_SystemSemaphore_Handle)",
+            "fileAddress": "0x2265588"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Semaphore::WaitForSignal(int)",
+            "fileAddress": "0x12fb90"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "PreloadManager::Run()",
+            "fileAddress": "0x188e000"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "PreloadManager::Run(void*)",
+            "fileAddress": "0x188df74"
+          },
+          {
+            "module": "UnityPlayer.dylib",
+            "symbol": "Thread::RunThreadWrapper(void*)",
+            "fileAddress": "0x223d5a0"
+          },
+          {
+            "module": "libsystem_pthread.dylib",
+            "symbol": "_pthread_start",
+            "fileAddress": "0x1804ffc58"
+          }
+        ]
+      },
+      {
+        "tid": 39553864,
+        "name": null,
+        "lastSetThreadName": null,
+        "frames": [
+          {
+            "module": null,
+            "symbol": null,
+            "fileAddress": "0x0"
+          }
+        ]
+      }
+    ]
+  },
+  "rawHashes": {
+    "stacks.jsonl": "b7de8be06fce1a3e206f774fec6452aa3d304ee6a05c2097e6e6ebbdfdc44fec",
+    "player.log": "04374721813518bf876df593280dc3e7c69390f4d946b306da7896fe1bd5aaa5",
+    "lldb.log": "852783dfd1cffd9053069b2f69505f9ef6b6a6c712940d7e563140524ad57975",
+    "runtime.json": "31c6a9bbc938666031b28a7d28418e04c3f4ac575b116704f33e6d9a5fb91b2c"
+  },
+  "breakpoints": {
+    "resolvedAtSetup": [
+      [
+        "NAME_BREAKPOINT",
+        "1"
+      ],
+      [
+        "ENTRY_BREAKPOINT",
+        "PlayerCleanup(bool) 1"
+      ],
+      [
+        "ENTRY_BREAKPOINT",
+        "CleanupEngine() 1"
+      ],
+      [
+        "ENTRY_BREAKPOINT",
+        "MemoryManager::ThreadCleanup() 1"
+      ],
+      [
+        "ENTRY_BREAKPOINT",
+        "MemoryManager::EndLeakGuardAndReportSummary() 1"
+      ],
+      [
+        "LATE_IO_BREAKPOINT",
+        "fwrite 1"
+      ],
+      [
+        "LATE_IO_BREAKPOINT",
+        "fputs 1"
+      ],
+      [
+        "LATE_IO_BREAKPOINT",
+        "fprintf 1"
+      ],
+      [
+        "LATE_IO_BREAKPOINT",
+        "vfprintf 1"
+      ],
+      [
+        "LATE_IO_BREAKPOINT",
+        "vfprintf_l 1"
+      ],
+      [
+        "LATE_IO_BREAKPOINT",
+        "write 1"
+      ],
+      [
+        "LATE_IO_BREAKPOINT",
+        "write$NOCANCEL 1"
+      ],
+      [
+        "LATE_IO_BREAKPOINT",
+        "__write_nocancel 1"
+      ]
+    ],
+    "endLeakGuardHitCount": 0
+  },
+  "limits": [
+    "MemoryLeaks emissionStack is a report site, not allocation generation.",
+    "Role uses observed pre-cleanup stack for the same native thread ID. POSIX warning pointer is not the native numeric ID.",
+    "On-disk Mono identity is in module-identities.json; live UUIDs are retained when captured in cleanup snapshot."
+  ]
+}

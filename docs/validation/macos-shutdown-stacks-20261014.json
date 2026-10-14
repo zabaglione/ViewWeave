@@ -1,0 +1,2735 @@
+{
+  "formatVersion": 1,
+  "verifiedOn": "2026-10-14",
+  "timezone": "Asia/Tokyo",
+  "sourceRevision": "c4de573c4435f0105e62f6125f8d4fedd78786b3",
+  "productionSourceWorkingTreeChanges": false,
+  "productionSourceHashes": {
+    "Packages/com.zabaglione.lookingglass.viewweave.core/Runtime/QuiltRenderer.cs": "8dc2f11769425d22c123acfe49c59b742c2cf548a2f956d845f4895a2e4a9bbe",
+    "Packages/com.zabaglione.lookingglass.viewweave.core/Runtime/IQuiltViewTextureFormatProvider.cs": "99182903a82ca89e818ca03770ac9eaa18ff5cb861d0624dbc3b43912ec0fc11",
+    "Packages/com.zabaglione.lookingglass.viewweave.core/Runtime/QuiltHistoryResourceBudget.cs": "da8ed0f0204e763031123473e40f65b39cd397262db16425d869b29501953529",
+    "Packages/com.zabaglione.lookingglass.viewweave.urp/Runtime/UrpQuiltCamera.cs": "864c024ca951e6eb07c6fdf09ef4bdab8762acb2e536ac619aa097f639113cbb",
+    "Packages/com.zabaglione.lookingglass.viewweave.urp/Runtime/UrpViewHistoryRenderer.cs": "eed54060e298fa37cafd9832b4185fc1b3b0649b3be17daeed95e48a36659e78"
+  },
+  "fixtureChangesThisStackInvestigation": false,
+  "previousFixtureWorkingTreeChanges": true,
+  "evidenceKind": "Instrumented custom Player diagnostics; not NUnit or Windows runtime results.",
+  "environment": {
+    "unity": "6000.6.4f1",
+    "urpHdrp": "17.6.0",
+    "os": "26.6.2",
+    "architecture": "arm64",
+    "graphicsApi": "Metal",
+    "gpu": "Apple M3 Max",
+    "bridge": "2.6.3",
+    "device": "Go; one device client at a time"
+  },
+  "fixtureHashes": {
+    "Tests/Pipelines/Unity/Assets/MetalCurrentValidation/MetalCurrentValidationRunner.cs": "c5e607509d33b57021caf0c54f99d44c9984b6748a9a53524db9d00a74e0c6ea",
+    "Tests/Pipelines/Unity/Assets/MetalCurrentValidation/ShutdownControlRunner.cs": "503eb046d18d3ce561d97e0e60841696c07f9eb84bdbac0df1e337462af0c069",
+    "Tests/Pipelines/Unity/Tools/ShutdownBaseline/UnityShutdownBaselineRunner.cs": "273a6e8fe1f3d13f75afee7edba93ca010c6d4746dc04229d730596f0bad8514"
+  },
+  "warningStackCases": [
+    {
+      "case": "unity-only-thread-names",
+      "pid": 52790,
+      "naturalExitZero": true,
+      "runtimePassed": true,
+      "uniqueWarnings": 5,
+      "warningRoles": {
+        "PreloadManager": 1,
+        "Unity job worker": 4
+      },
+      "uniqueMemoryReports": [
+        {
+          "type": "MemoryLeaks",
+          "version": 2,
+          "phase": "Immediate",
+          "time": 1791947555224,
+          "processId": 52790,
+          "allocatedMemory": 1882440,
+          "memoryLabels": [
+            {
+              "Default": 54543
+            },
+            {
+              "Permanent": 1472
+            },
+            {
+              "NewDelete": 1053631
+            },
+            {
+              "Thread": 8120
+            },
+            {
+              "Manager": 16359
+            },
+            {
+              "VertexData": 8
+            },
+            {
+              "Geometry": 408
+            },
+            {
+              "Texture": 16
+            },
+            {
+              "Shader": 78020
+            },
+            {
+              "Material": 212
+            },
+            {
+              "GfxDevice": 38776
+            },
+            {
+              "GfxThread": 400
+            },
+            {
+              "Animation": 880
+            },
+            {
+              "Audio": 3648
+            },
+            {
+              "FreeType": 8
+            },
+            {
+              "FontEngine": 736
+            },
+            {
+              "Physics": 2000
+            },
+            {
+              "Physics2D": 16
+            },
+            {
+              "Serialization": 16392
+            },
+            {
+              "Input": 43216
+            },
+            {
+              "JobScheduler": 448
+            },
+            {
+              "TextLib": 280
+            },
+            {
+              "Mono": 56
+            },
+            {
+              "ScriptingNativeRuntime": 128
+            },
+            {
+              "BaseObject": 36320
+            },
+            {
+              "Resource": 996
+            },
+            {
+              "Renderer": 2736
+            },
+            {
+              "Transform": 6485
+            },
+            {
+              "File": 4600
+            },
+            {
+              "WebCam": 32
+            },
+            {
+              "Culling": 32
+            },
+            {
+              "Terrain": 11298
+            },
+            {
+              "Wind": 24
+            },
+            {
+              "String": 3098
+            },
+            {
+              "Utility": 318232
+            },
+            {
+              "PoolAlloc": 1536
+            },
+            {
+              "AI": 40
+            },
+            {
+              "TypeTree": 5512
+            },
+            {
+              "ScriptManager": 5696
+            },
+            {
+              "CodeReload": 440
+            },
+            {
+              "RuntimeInitializeOnLoadManager": 64
+            },
+            {
+              "Sprites": 78
+            },
+            {
+              "SpriteAtlas": 120
+            },
+            {
+              "GI": 7200
+            },
+            {
+              "Director": 8248
+            },
+            {
+              "CloudService": 144
+            },
+            {
+              "WebRequest": 520
+            },
+            {
+              "VR": 49402
+            },
+            {
+              "SceneManager": 408
+            },
+            {
+              "Video": 2080
+            },
+            {
+              "LazyScriptCache": 32
+            },
+            {
+              "NativeArray": 648
+            },
+            {
+              "Camera": 1169
+            },
+            {
+              "Secure": 241
+            },
+            {
+              "SerializationCache": 3608
+            },
+            {
+              "APIUpdating": 10320
+            },
+            {
+              "Subsystems": 336
+            },
+            {
+              "VirtualTexturing": 57496
+            },
+            {
+              "Baselib": 16
+            },
+            {
+              "Analytics": 80
+            },
+            {
+              "Hierarchy": 1452
+            },
+            {
+              "UIElements": 40
+            },
+            {
+              "CoreStats": 14536
+            },
+            {
+              "Identifiers": 7152
+            },
+            {
+              "Gui": 40
+            },
+            {
+              "CoreBusinessMetrics": 128
+            },
+            {
+              "AssetReference": 32
+            }
+          ]
+        }
+      ],
+      "evidence": "unity-only-thread-names.json"
+    },
+    {
+      "case": "urp-device-stack-clean",
+      "pid": 57466,
+      "naturalExitZero": true,
+      "runtimePassed": true,
+      "uniqueWarnings": 5,
+      "warningRoles": {
+        "PreloadManager": 1,
+        "Unity job worker": 4
+      },
+      "uniqueMemoryReports": [
+        {
+          "type": "MemoryLeaks",
+          "version": 2,
+          "phase": "Immediate",
+          "time": 1791948602710,
+          "processId": 57466,
+          "allocatedMemory": 2534469,
+          "memoryLabels": [
+            {
+              "Default": 54543
+            },
+            {
+              "Permanent": 1472
+            },
+            {
+              "NewDelete": 1705662
+            },
+            {
+              "Thread": 8120
+            },
+            {
+              "Manager": 16359
+            },
+            {
+              "VertexData": 8
+            },
+            {
+              "Geometry": 408
+            },
+            {
+              "Texture": 16
+            },
+            {
+              "Shader": 78020
+            },
+            {
+              "Material": 212
+            },
+            {
+              "GfxDevice": 38776
+            },
+            {
+              "GfxThread": 400
+            },
+            {
+              "Animation": 880
+            },
+            {
+              "Audio": 3648
+            },
+            {
+              "FreeType": 8
+            },
+            {
+              "FontEngine": 736
+            },
+            {
+              "Physics": 2000
+            },
+            {
+              "Physics2D": 16
+            },
+            {
+              "Serialization": 16392
+            },
+            {
+              "Input": 43216
+            },
+            {
+              "JobScheduler": 448
+            },
+            {
+              "TextLib": 280
+            },
+            {
+              "Mono": 56
+            },
+            {
+              "ScriptingNativeRuntime": 128
+            },
+            {
+              "BaseObject": 36320
+            },
+            {
+              "Resource": 996
+            },
+            {
+              "Renderer": 2736
+            },
+            {
+              "Transform": 6485
+            },
+            {
+              "File": 4600
+            },
+            {
+              "WebCam": 32
+            },
+            {
+              "Culling": 32
+            },
+            {
+              "Terrain": 11298
+            },
+            {
+              "Wind": 24
+            },
+            {
+              "String": 3096
+            },
+            {
+              "Utility": 318232
+            },
+            {
+              "PoolAlloc": 1536
+            },
+            {
+              "AI": 40
+            },
+            {
+              "TypeTree": 5512
+            },
+            {
+              "ScriptManager": 5696
+            },
+            {
+              "CodeReload": 440
+            },
+            {
+              "RuntimeInitializeOnLoadManager": 64
+            },
+            {
+              "Sprites": 78
+            },
+            {
+              "SpriteAtlas": 120
+            },
+            {
+              "GI": 7200
+            },
+            {
+              "Director": 8248
+            },
+            {
+              "CloudService": 144
+            },
+            {
+              "WebRequest": 520
+            },
+            {
+              "VR": 49402
+            },
+            {
+              "SceneManager": 408
+            },
+            {
+              "Video": 2080
+            },
+            {
+              "LazyScriptCache": 32
+            },
+            {
+              "NativeArray": 648
+            },
+            {
+              "Camera": 1169
+            },
+            {
+              "Secure": 241
+            },
+            {
+              "SerializationCache": 3608
+            },
+            {
+              "APIUpdating": 10320
+            },
+            {
+              "Subsystems": 336
+            },
+            {
+              "VirtualTexturing": 57496
+            },
+            {
+              "Baselib": 16
+            },
+            {
+              "Analytics": 80
+            },
+            {
+              "Hierarchy": 1452
+            },
+            {
+              "UIElements": 40
+            },
+            {
+              "CoreStats": 14536
+            },
+            {
+              "Identifiers": 7152
+            },
+            {
+              "Gui": 40
+            },
+            {
+              "CoreBusinessMetrics": 128
+            },
+            {
+              "AssetReference": 32
+            }
+          ]
+        }
+      ],
+      "evidence": "urp-device-stack-clean.json"
+    },
+    {
+      "case": "quilt-only-stack",
+      "pid": 61900,
+      "naturalExitZero": true,
+      "runtimePassed": true,
+      "uniqueWarnings": 5,
+      "warningRoles": {
+        "PreloadManager": 1,
+        "Unity job worker": 4
+      },
+      "uniqueMemoryReports": [
+        {
+          "type": "MemoryLeaks",
+          "version": 2,
+          "phase": "Immediate",
+          "time": 1791950117840,
+          "processId": 61900,
+          "allocatedMemory": 1923800,
+          "memoryLabels": [
+            {
+              "Default": 54543
+            },
+            {
+              "Permanent": 1472
+            },
+            {
+              "NewDelete": 1095007
+            },
+            {
+              "Thread": 8120
+            },
+            {
+              "Manager": 16359
+            },
+            {
+              "VertexData": 8
+            },
+            {
+              "Geometry": 408
+            },
+            {
+              "Texture": 16
+            },
+            {
+              "Shader": 78020
+            },
+            {
+              "Material": 212
+            },
+            {
+              "GfxDevice": 38776
+            },
+            {
+              "GfxThread": 400
+            },
+            {
+              "Animation": 880
+            },
+            {
+              "Audio": 3648
+            },
+            {
+              "FreeType": 8
+            },
+            {
+              "FontEngine": 736
+            },
+            {
+              "Physics": 2000
+            },
+            {
+              "Physics2D": 16
+            },
+            {
+              "Serialization": 16392
+            },
+            {
+              "Input": 43216
+            },
+            {
+              "JobScheduler": 448
+            },
+            {
+              "TextLib": 280
+            },
+            {
+              "Mono": 56
+            },
+            {
+              "ScriptingNativeRuntime": 128
+            },
+            {
+              "BaseObject": 36320
+            },
+            {
+              "Resource": 996
+            },
+            {
+              "Renderer": 2736
+            },
+            {
+              "Transform": 6485
+            },
+            {
+              "File": 4600
+            },
+            {
+              "WebCam": 32
+            },
+            {
+              "Culling": 32
+            },
+            {
+              "Terrain": 11298
+            },
+            {
+              "Wind": 24
+            },
+            {
+              "String": 3082
+            },
+            {
+              "Utility": 318232
+            },
+            {
+              "PoolAlloc": 1536
+            },
+            {
+              "AI": 40
+            },
+            {
+              "TypeTree": 5512
+            },
+            {
+              "ScriptManager": 5696
+            },
+            {
+              "CodeReload": 440
+            },
+            {
+              "RuntimeInitializeOnLoadManager": 64
+            },
+            {
+              "Sprites": 78
+            },
+            {
+              "SpriteAtlas": 120
+            },
+            {
+              "GI": 7200
+            },
+            {
+              "Director": 8248
+            },
+            {
+              "CloudService": 144
+            },
+            {
+              "WebRequest": 520
+            },
+            {
+              "VR": 49402
+            },
+            {
+              "SceneManager": 408
+            },
+            {
+              "Video": 2080
+            },
+            {
+              "LazyScriptCache": 32
+            },
+            {
+              "NativeArray": 648
+            },
+            {
+              "Camera": 1169
+            },
+            {
+              "Secure": 241
+            },
+            {
+              "SerializationCache": 3608
+            },
+            {
+              "APIUpdating": 10320
+            },
+            {
+              "Subsystems": 336
+            },
+            {
+              "VirtualTexturing": 57496
+            },
+            {
+              "Baselib": 16
+            },
+            {
+              "Analytics": 80
+            },
+            {
+              "Hierarchy": 1452
+            },
+            {
+              "UIElements": 40
+            },
+            {
+              "CoreStats": 14536
+            },
+            {
+              "Identifiers": 7152
+            },
+            {
+              "Gui": 40
+            },
+            {
+              "CoreBusinessMetrics": 128
+            },
+            {
+              "AssetReference": 32
+            }
+          ]
+        }
+      ],
+      "evidence": "quilt-only-stack.json"
+    },
+    {
+      "case": "metadata-only-stack-late",
+      "pid": 63859,
+      "naturalExitZero": true,
+      "runtimePassed": true,
+      "uniqueWarnings": 5,
+      "warningRoles": {
+        "PreloadManager": 1,
+        "Unity job worker": 4
+      },
+      "uniqueMemoryReports": [
+        {
+          "type": "MemoryLeaks",
+          "version": 2,
+          "phase": "Immediate",
+          "time": 1791950579482,
+          "processId": 63859,
+          "allocatedMemory": 2471848,
+          "memoryLabels": [
+            {
+              "Default": 54543
+            },
+            {
+              "Permanent": 1472
+            },
+            {
+              "NewDelete": 1643050
+            },
+            {
+              "Thread": 8120
+            },
+            {
+              "Manager": 16359
+            },
+            {
+              "VertexData": 8
+            },
+            {
+              "Geometry": 408
+            },
+            {
+              "Texture": 16
+            },
+            {
+              "Shader": 78020
+            },
+            {
+              "Material": 212
+            },
+            {
+              "GfxDevice": 38776
+            },
+            {
+              "GfxThread": 400
+            },
+            {
+              "Animation": 880
+            },
+            {
+              "Audio": 3648
+            },
+            {
+              "FreeType": 8
+            },
+            {
+              "FontEngine": 736
+            },
+            {
+              "Physics": 2000
+            },
+            {
+              "Physics2D": 16
+            },
+            {
+              "Serialization": 16392
+            },
+            {
+              "Input": 43216
+            },
+            {
+              "JobScheduler": 448
+            },
+            {
+              "TextLib": 280
+            },
+            {
+              "Mono": 56
+            },
+            {
+              "ScriptingNativeRuntime": 128
+            },
+            {
+              "BaseObject": 36320
+            },
+            {
+              "Resource": 996
+            },
+            {
+              "Renderer": 2736
+            },
+            {
+              "Transform": 6485
+            },
+            {
+              "File": 4600
+            },
+            {
+              "WebCam": 32
+            },
+            {
+              "Culling": 32
+            },
+            {
+              "Terrain": 11298
+            },
+            {
+              "Wind": 24
+            },
+            {
+              "String": 3087
+            },
+            {
+              "Utility": 318232
+            },
+            {
+              "PoolAlloc": 1536
+            },
+            {
+              "AI": 40
+            },
+            {
+              "TypeTree": 5512
+            },
+            {
+              "ScriptManager": 5696
+            },
+            {
+              "CodeReload": 440
+            },
+            {
+              "RuntimeInitializeOnLoadManager": 64
+            },
+            {
+              "Sprites": 78
+            },
+            {
+              "SpriteAtlas": 120
+            },
+            {
+              "GI": 7200
+            },
+            {
+              "Director": 8248
+            },
+            {
+              "CloudService": 144
+            },
+            {
+              "WebRequest": 520
+            },
+            {
+              "VR": 49402
+            },
+            {
+              "SceneManager": 408
+            },
+            {
+              "Video": 2080
+            },
+            {
+              "LazyScriptCache": 32
+            },
+            {
+              "NativeArray": 648
+            },
+            {
+              "Camera": 1169
+            },
+            {
+              "Secure": 241
+            },
+            {
+              "SerializationCache": 3608
+            },
+            {
+              "APIUpdating": 10320
+            },
+            {
+              "Subsystems": 336
+            },
+            {
+              "VirtualTexturing": 57496
+            },
+            {
+              "Baselib": 16
+            },
+            {
+              "Analytics": 80
+            },
+            {
+              "Hierarchy": 1452
+            },
+            {
+              "UIElements": 40
+            },
+            {
+              "CoreStats": 14536
+            },
+            {
+              "Identifiers": 7152
+            },
+            {
+              "Gui": 40
+            },
+            {
+              "CoreBusinessMetrics": 128
+            },
+            {
+              "AssetReference": 32
+            }
+          ]
+        }
+      ],
+      "evidence": "metadata-only-stack-late.json"
+    },
+    {
+      "case": "hdrp-device-stack-late",
+      "pid": 64228,
+      "naturalExitZero": true,
+      "runtimePassed": true,
+      "uniqueWarnings": 5,
+      "warningRoles": {
+        "PreloadManager": 1,
+        "Unity job worker": 4
+      },
+      "uniqueMemoryReports": [
+        {
+          "type": "MemoryLeaks",
+          "version": 2,
+          "phase": "Immediate",
+          "time": 1791950651029,
+          "processId": 64228,
+          "allocatedMemory": 2693954,
+          "memoryLabels": [
+            {
+              "Default": 54543
+            },
+            {
+              "Permanent": 1472
+            },
+            {
+              "NewDelete": 1865146
+            },
+            {
+              "Thread": 8120
+            },
+            {
+              "Manager": 16359
+            },
+            {
+              "VertexData": 8
+            },
+            {
+              "Geometry": 408
+            },
+            {
+              "Texture": 16
+            },
+            {
+              "Shader": 78020
+            },
+            {
+              "Material": 212
+            },
+            {
+              "GfxDevice": 38776
+            },
+            {
+              "GfxThread": 400
+            },
+            {
+              "Animation": 880
+            },
+            {
+              "Audio": 3648
+            },
+            {
+              "FreeType": 8
+            },
+            {
+              "FontEngine": 736
+            },
+            {
+              "Physics": 2000
+            },
+            {
+              "Physics2D": 16
+            },
+            {
+              "Serialization": 16392
+            },
+            {
+              "Input": 43216
+            },
+            {
+              "JobScheduler": 448
+            },
+            {
+              "TextLib": 280
+            },
+            {
+              "Mono": 56
+            },
+            {
+              "ScriptingNativeRuntime": 128
+            },
+            {
+              "BaseObject": 36320
+            },
+            {
+              "Resource": 996
+            },
+            {
+              "Renderer": 2736
+            },
+            {
+              "Transform": 6485
+            },
+            {
+              "File": 4600
+            },
+            {
+              "WebCam": 32
+            },
+            {
+              "Culling": 32
+            },
+            {
+              "Terrain": 11298
+            },
+            {
+              "Wind": 24
+            },
+            {
+              "String": 3097
+            },
+            {
+              "Utility": 318232
+            },
+            {
+              "PoolAlloc": 1536
+            },
+            {
+              "AI": 40
+            },
+            {
+              "TypeTree": 5512
+            },
+            {
+              "ScriptManager": 5696
+            },
+            {
+              "CodeReload": 440
+            },
+            {
+              "RuntimeInitializeOnLoadManager": 64
+            },
+            {
+              "Sprites": 78
+            },
+            {
+              "SpriteAtlas": 120
+            },
+            {
+              "GI": 7200
+            },
+            {
+              "Director": 8248
+            },
+            {
+              "CloudService": 144
+            },
+            {
+              "WebRequest": 520
+            },
+            {
+              "VR": 49402
+            },
+            {
+              "SceneManager": 408
+            },
+            {
+              "Video": 2080
+            },
+            {
+              "LazyScriptCache": 32
+            },
+            {
+              "NativeArray": 648
+            },
+            {
+              "Camera": 1169
+            },
+            {
+              "Secure": 241
+            },
+            {
+              "SerializationCache": 3608
+            },
+            {
+              "APIUpdating": 10320
+            },
+            {
+              "Subsystems": 336
+            },
+            {
+              "VirtualTexturing": 57496
+            },
+            {
+              "Baselib": 16
+            },
+            {
+              "Analytics": 80
+            },
+            {
+              "Hierarchy": 1452
+            },
+            {
+              "UIElements": 40
+            },
+            {
+              "CoreStats": 14536
+            },
+            {
+              "Identifiers": 7152
+            },
+            {
+              "Gui": 40
+            },
+            {
+              "CoreBusinessMetrics": 128
+            },
+            {
+              "AssetReference": 32
+            }
+          ]
+        }
+      ],
+      "evidence": "hdrp-device-stack-late.json"
+    }
+  ],
+  "allocationStackCases": [
+    {
+      "case": "unity-only-malloc-default",
+      "pid": 52749,
+      "allocator": "default",
+      "leaksToolExitCode": 0,
+      "observedChildExitStatus": null,
+      "runtimePassed": true,
+      "threadWarnings": 4,
+      "immediateReports": [
+        {
+          "type": "MemoryLeaks",
+          "version": 2,
+          "phase": "Immediate",
+          "time": 1791947490337,
+          "processId": 52749,
+          "allocatedMemory": 1882359,
+          "memoryLabels": [
+            {
+              "Default": 54543
+            },
+            {
+              "Permanent": 1472
+            },
+            {
+              "NewDelete": 1053551
+            },
+            {
+              "Thread": 8120
+            },
+            {
+              "Manager": 16359
+            },
+            {
+              "VertexData": 8
+            },
+            {
+              "Geometry": 408
+            },
+            {
+              "Texture": 16
+            },
+            {
+              "Shader": 78020
+            },
+            {
+              "Material": 212
+            },
+            {
+              "GfxDevice": 38776
+            },
+            {
+              "GfxThread": 400
+            },
+            {
+              "Animation": 880
+            },
+            {
+              "Audio": 3648
+            },
+            {
+              "FreeType": 8
+            },
+            {
+              "FontEngine": 736
+            },
+            {
+              "Physics": 2000
+            },
+            {
+              "Physics2D": 16
+            },
+            {
+              "Serialization": 16392
+            },
+            {
+              "Input": 43216
+            },
+            {
+              "JobScheduler": 448
+            },
+            {
+              "TextLib": 280
+            },
+            {
+              "Mono": 56
+            },
+            {
+              "ScriptingNativeRuntime": 128
+            },
+            {
+              "BaseObject": 36320
+            },
+            {
+              "Resource": 996
+            },
+            {
+              "Renderer": 2736
+            },
+            {
+              "Transform": 6485
+            },
+            {
+              "File": 4600
+            },
+            {
+              "WebCam": 32
+            },
+            {
+              "Culling": 32
+            },
+            {
+              "Terrain": 11298
+            },
+            {
+              "Wind": 24
+            },
+            {
+              "String": 3097
+            },
+            {
+              "Utility": 318232
+            },
+            {
+              "PoolAlloc": 1536
+            },
+            {
+              "AI": 40
+            },
+            {
+              "TypeTree": 5512
+            },
+            {
+              "ScriptManager": 5696
+            },
+            {
+              "CodeReload": 440
+            },
+            {
+              "RuntimeInitializeOnLoadManager": 64
+            },
+            {
+              "Sprites": 78
+            },
+            {
+              "SpriteAtlas": 120
+            },
+            {
+              "GI": 7200
+            },
+            {
+              "Director": 8248
+            },
+            {
+              "CloudService": 144
+            },
+            {
+              "WebRequest": 520
+            },
+            {
+              "VR": 49402
+            },
+            {
+              "SceneManager": 408
+            },
+            {
+              "Video": 2080
+            },
+            {
+              "LazyScriptCache": 32
+            },
+            {
+              "NativeArray": 648
+            },
+            {
+              "Camera": 1169
+            },
+            {
+              "Secure": 241
+            },
+            {
+              "SerializationCache": 3608
+            },
+            {
+              "APIUpdating": 10320
+            },
+            {
+              "Subsystems": 336
+            },
+            {
+              "VirtualTexturing": 57496
+            },
+            {
+              "Baselib": 16
+            },
+            {
+              "Analytics": 80
+            },
+            {
+              "Hierarchy": 1452
+            },
+            {
+              "UIElements": 40
+            },
+            {
+              "CoreStats": 14536
+            },
+            {
+              "Identifiers": 7152
+            },
+            {
+              "Gui": 40
+            },
+            {
+              "CoreBusinessMetrics": 128
+            },
+            {
+              "AssetReference": 32
+            }
+          ]
+        }
+      ],
+      "appleLeakedBlocks": 2221,
+      "appleLeakedBytes": 129440,
+      "rawStackGroups": 1164,
+      "distinctSymbolStacks": 1164,
+      "representativeSymbolStacks": 5,
+      "liveModulesAtGraph": [
+        {
+          "module": "UnityPlayer.dylib",
+          "uuid": "BE07B931-A7A0-335B-BFDE-6D9331DBD96F",
+          "path": "/Users/*/Documents/*/Baseline.app/Contents/Frameworks/UnityPlayer.dylib"
+        },
+        {
+          "module": "libmonobdwgc-2.0.dylib",
+          "uuid": "542F91E5-B702-33BE-86C6-5B39012524EA",
+          "path": "/Users/*/Documents/*/Baseline.app/Contents/Frameworks/libmonobdwgc-2.0.dylib"
+        }
+      ],
+      "namedShimOrVendorAllocationFrameCount": 0
+    },
+    {
+      "case": "unity-only-malloc-system",
+      "pid": 56262,
+      "allocator": "system",
+      "leaksToolExitCode": 0,
+      "observedChildExitStatus": null,
+      "runtimePassed": true,
+      "threadWarnings": 4,
+      "immediateReports": [
+        {
+          "type": "MemoryLeaks",
+          "version": 2,
+          "phase": "Immediate",
+          "time": 1791948407756,
+          "processId": 56262,
+          "allocatedMemory": 1882407,
+          "memoryLabels": [
+            {
+              "Default": 54543
+            },
+            {
+              "Permanent": 1472
+            },
+            {
+              "NewDelete": 1053599
+            },
+            {
+              "Thread": 8120
+            },
+            {
+              "Manager": 16359
+            },
+            {
+              "VertexData": 8
+            },
+            {
+              "Geometry": 408
+            },
+            {
+              "Texture": 16
+            },
+            {
+              "Shader": 78020
+            },
+            {
+              "Material": 212
+            },
+            {
+              "GfxDevice": 38776
+            },
+            {
+              "GfxThread": 400
+            },
+            {
+              "Animation": 880
+            },
+            {
+              "Audio": 3648
+            },
+            {
+              "FreeType": 8
+            },
+            {
+              "FontEngine": 736
+            },
+            {
+              "Physics": 2000
+            },
+            {
+              "Physics2D": 16
+            },
+            {
+              "Serialization": 16392
+            },
+            {
+              "Input": 43216
+            },
+            {
+              "JobScheduler": 448
+            },
+            {
+              "TextLib": 280
+            },
+            {
+              "Mono": 56
+            },
+            {
+              "ScriptingNativeRuntime": 128
+            },
+            {
+              "BaseObject": 36320
+            },
+            {
+              "Resource": 996
+            },
+            {
+              "Renderer": 2736
+            },
+            {
+              "Transform": 6485
+            },
+            {
+              "File": 4600
+            },
+            {
+              "WebCam": 32
+            },
+            {
+              "Culling": 32
+            },
+            {
+              "Terrain": 11298
+            },
+            {
+              "Wind": 24
+            },
+            {
+              "String": 3097
+            },
+            {
+              "Utility": 318232
+            },
+            {
+              "PoolAlloc": 1536
+            },
+            {
+              "AI": 40
+            },
+            {
+              "TypeTree": 5512
+            },
+            {
+              "ScriptManager": 5696
+            },
+            {
+              "CodeReload": 440
+            },
+            {
+              "RuntimeInitializeOnLoadManager": 64
+            },
+            {
+              "Sprites": 78
+            },
+            {
+              "SpriteAtlas": 120
+            },
+            {
+              "GI": 7200
+            },
+            {
+              "Director": 8248
+            },
+            {
+              "CloudService": 144
+            },
+            {
+              "WebRequest": 520
+            },
+            {
+              "VR": 49402
+            },
+            {
+              "SceneManager": 408
+            },
+            {
+              "Video": 2080
+            },
+            {
+              "LazyScriptCache": 32
+            },
+            {
+              "NativeArray": 648
+            },
+            {
+              "Camera": 1169
+            },
+            {
+              "Secure": 241
+            },
+            {
+              "SerializationCache": 3608
+            },
+            {
+              "APIUpdating": 10320
+            },
+            {
+              "Subsystems": 336
+            },
+            {
+              "VirtualTexturing": 57496
+            },
+            {
+              "Baselib": 16
+            },
+            {
+              "Analytics": 80
+            },
+            {
+              "Hierarchy": 1452
+            },
+            {
+              "UIElements": 40
+            },
+            {
+              "CoreStats": 14536
+            },
+            {
+              "Identifiers": 7152
+            },
+            {
+              "Gui": 40
+            },
+            {
+              "CoreBusinessMetrics": 128
+            },
+            {
+              "AssetReference": 32
+            }
+          ]
+        }
+      ],
+      "appleLeakedBlocks": 1854,
+      "appleLeakedBytes": 122992,
+      "rawStackGroups": 1194,
+      "distinctSymbolStacks": 1194,
+      "representativeSymbolStacks": 8,
+      "liveModulesAtGraph": [
+        {
+          "module": "UnityPlayer.dylib",
+          "uuid": "BE07B931-A7A0-335B-BFDE-6D9331DBD96F",
+          "path": "/Users/*/Documents/*/Baseline.app/Contents/Frameworks/UnityPlayer.dylib"
+        },
+        {
+          "module": "libmonobdwgc-2.0.dylib",
+          "uuid": "542F91E5-B702-33BE-86C6-5B39012524EA",
+          "path": "/Users/*/Documents/*/Baseline.app/Contents/Frameworks/libmonobdwgc-2.0.dylib"
+        }
+      ],
+      "namedShimOrVendorAllocationFrameCount": 0
+    },
+    {
+      "case": "urp-device-malloc",
+      "pid": 63114,
+      "allocator": "default",
+      "leaksToolExitCode": 0,
+      "observedChildExitStatus": null,
+      "runtimePassed": true,
+      "threadWarnings": 4,
+      "immediateReports": [
+        {
+          "type": "MemoryLeaks",
+          "version": 2,
+          "phase": "Immediate",
+          "time": 1791950409183,
+          "processId": 63114,
+          "allocatedMemory": 2536492,
+          "memoryLabels": [
+            {
+              "Default": 54543
+            },
+            {
+              "Permanent": 1472
+            },
+            {
+              "NewDelete": 1707686
+            },
+            {
+              "Thread": 8120
+            },
+            {
+              "Manager": 16359
+            },
+            {
+              "VertexData": 8
+            },
+            {
+              "Geometry": 408
+            },
+            {
+              "Texture": 16
+            },
+            {
+              "Shader": 78020
+            },
+            {
+              "Material": 212
+            },
+            {
+              "GfxDevice": 38776
+            },
+            {
+              "GfxThread": 400
+            },
+            {
+              "Animation": 880
+            },
+            {
+              "Audio": 3648
+            },
+            {
+              "FreeType": 8
+            },
+            {
+              "FontEngine": 736
+            },
+            {
+              "Physics": 2000
+            },
+            {
+              "Physics2D": 16
+            },
+            {
+              "Serialization": 16392
+            },
+            {
+              "Input": 43216
+            },
+            {
+              "JobScheduler": 448
+            },
+            {
+              "TextLib": 280
+            },
+            {
+              "Mono": 56
+            },
+            {
+              "ScriptingNativeRuntime": 128
+            },
+            {
+              "BaseObject": 36320
+            },
+            {
+              "Resource": 996
+            },
+            {
+              "Renderer": 2736
+            },
+            {
+              "Transform": 6485
+            },
+            {
+              "File": 4600
+            },
+            {
+              "WebCam": 32
+            },
+            {
+              "Culling": 32
+            },
+            {
+              "Terrain": 11298
+            },
+            {
+              "Wind": 24
+            },
+            {
+              "String": 3095
+            },
+            {
+              "Utility": 318232
+            },
+            {
+              "PoolAlloc": 1536
+            },
+            {
+              "AI": 40
+            },
+            {
+              "TypeTree": 5512
+            },
+            {
+              "ScriptManager": 5696
+            },
+            {
+              "CodeReload": 440
+            },
+            {
+              "RuntimeInitializeOnLoadManager": 64
+            },
+            {
+              "Sprites": 78
+            },
+            {
+              "SpriteAtlas": 120
+            },
+            {
+              "GI": 7200
+            },
+            {
+              "Director": 8248
+            },
+            {
+              "CloudService": 144
+            },
+            {
+              "WebRequest": 520
+            },
+            {
+              "VR": 49402
+            },
+            {
+              "SceneManager": 408
+            },
+            {
+              "Video": 2080
+            },
+            {
+              "LazyScriptCache": 32
+            },
+            {
+              "NativeArray": 648
+            },
+            {
+              "Camera": 1169
+            },
+            {
+              "Secure": 241
+            },
+            {
+              "SerializationCache": 3608
+            },
+            {
+              "APIUpdating": 10320
+            },
+            {
+              "Subsystems": 336
+            },
+            {
+              "VirtualTexturing": 57496
+            },
+            {
+              "Baselib": 16
+            },
+            {
+              "Analytics": 80
+            },
+            {
+              "Hierarchy": 1452
+            },
+            {
+              "UIElements": 40
+            },
+            {
+              "CoreStats": 14536
+            },
+            {
+              "Identifiers": 7152
+            },
+            {
+              "Gui": 40
+            },
+            {
+              "CoreBusinessMetrics": 128
+            },
+            {
+              "AssetReference": 32
+            }
+          ]
+        }
+      ],
+      "appleLeakedBlocks": 2417,
+      "appleLeakedBytes": 139200,
+      "rawStackGroups": 1330,
+      "distinctSymbolStacks": 1330,
+      "representativeSymbolStacks": 5,
+      "liveModulesAtGraph": [
+        {
+          "module": "UnityPlayer.dylib",
+          "uuid": "BE07B931-A7A0-335B-BFDE-6D9331DBD96F",
+          "path": "/Users/*/Documents/*/PipelineSmoke.app/Contents/Frameworks/UnityPlayer.dylib"
+        },
+        {
+          "module": "libmonobdwgc-2.0.dylib",
+          "uuid": "542F91E5-B702-33BE-86C6-5B39012524EA",
+          "path": "/Users/*/Documents/*/PipelineSmoke.app/Contents/Frameworks/libmonobdwgc-2.0.dylib"
+        },
+        {
+          "module": "lookingglass_bridge_shim.dylib",
+          "uuid": "FCDDC56E-5838-3052-89FF-1C2FAC5B9795",
+          "path": "/Users/*/Documents/*/PipelineSmoke.app/Contents/PlugIns/ARM64/lookingglass_bridge_shim.dylib"
+        },
+        {
+          "module": "libbridge_inproc.dylib",
+          "uuid": "92E836C4-C91B-35AA-9E6C-C7D50EE880D4",
+          "path": "/Applications/Looking Glass Bridge 2.6.3.app/Contents/MacOS/libbridge_inproc.dylib"
+        }
+      ],
+      "namedShimOrVendorAllocationFrameCount": 0
+    },
+    {
+      "case": "hdrp-device-malloc",
+      "pid": 63146,
+      "allocator": "default",
+      "leaksToolExitCode": 0,
+      "observedChildExitStatus": null,
+      "runtimePassed": true,
+      "threadWarnings": 4,
+      "immediateReports": [
+        {
+          "type": "MemoryLeaks",
+          "version": 2,
+          "phase": "Immediate",
+          "time": 1791950439302,
+          "processId": 63146,
+          "allocatedMemory": 2689498,
+          "memoryLabels": [
+            {
+              "Default": 54543
+            },
+            {
+              "Permanent": 1472
+            },
+            {
+              "NewDelete": 1860690
+            },
+            {
+              "Thread": 8120
+            },
+            {
+              "Manager": 16359
+            },
+            {
+              "VertexData": 8
+            },
+            {
+              "Geometry": 408
+            },
+            {
+              "Texture": 16
+            },
+            {
+              "Shader": 78020
+            },
+            {
+              "Material": 212
+            },
+            {
+              "GfxDevice": 38776
+            },
+            {
+              "GfxThread": 400
+            },
+            {
+              "Animation": 880
+            },
+            {
+              "Audio": 3648
+            },
+            {
+              "FreeType": 8
+            },
+            {
+              "FontEngine": 736
+            },
+            {
+              "Physics": 2000
+            },
+            {
+              "Physics2D": 16
+            },
+            {
+              "Serialization": 16392
+            },
+            {
+              "Input": 43216
+            },
+            {
+              "JobScheduler": 448
+            },
+            {
+              "TextLib": 280
+            },
+            {
+              "Mono": 56
+            },
+            {
+              "ScriptingNativeRuntime": 128
+            },
+            {
+              "BaseObject": 36320
+            },
+            {
+              "Resource": 996
+            },
+            {
+              "Renderer": 2736
+            },
+            {
+              "Transform": 6485
+            },
+            {
+              "File": 4600
+            },
+            {
+              "WebCam": 32
+            },
+            {
+              "Culling": 32
+            },
+            {
+              "Terrain": 11298
+            },
+            {
+              "Wind": 24
+            },
+            {
+              "String": 3097
+            },
+            {
+              "Utility": 318232
+            },
+            {
+              "PoolAlloc": 1536
+            },
+            {
+              "AI": 40
+            },
+            {
+              "TypeTree": 5512
+            },
+            {
+              "ScriptManager": 5696
+            },
+            {
+              "CodeReload": 440
+            },
+            {
+              "RuntimeInitializeOnLoadManager": 64
+            },
+            {
+              "Sprites": 78
+            },
+            {
+              "SpriteAtlas": 120
+            },
+            {
+              "GI": 7200
+            },
+            {
+              "Director": 8248
+            },
+            {
+              "CloudService": 144
+            },
+            {
+              "WebRequest": 520
+            },
+            {
+              "VR": 49402
+            },
+            {
+              "SceneManager": 408
+            },
+            {
+              "Video": 2080
+            },
+            {
+              "LazyScriptCache": 32
+            },
+            {
+              "NativeArray": 648
+            },
+            {
+              "Camera": 1169
+            },
+            {
+              "Secure": 241
+            },
+            {
+              "SerializationCache": 3608
+            },
+            {
+              "APIUpdating": 10320
+            },
+            {
+              "Subsystems": 336
+            },
+            {
+              "VirtualTexturing": 57496
+            },
+            {
+              "Baselib": 16
+            },
+            {
+              "Analytics": 80
+            },
+            {
+              "Hierarchy": 1452
+            },
+            {
+              "UIElements": 40
+            },
+            {
+              "CoreStats": 14536
+            },
+            {
+              "Identifiers": 7152
+            },
+            {
+              "Gui": 40
+            },
+            {
+              "CoreBusinessMetrics": 128
+            },
+            {
+              "AssetReference": 32
+            }
+          ]
+        }
+      ],
+      "appleLeakedBlocks": 1927,
+      "appleLeakedBytes": 201408,
+      "rawStackGroups": 926,
+      "distinctSymbolStacks": 926,
+      "representativeSymbolStacks": 5,
+      "liveModulesAtGraph": [
+        {
+          "module": "UnityPlayer.dylib",
+          "uuid": "BE07B931-A7A0-335B-BFDE-6D9331DBD96F",
+          "path": "/Users/*/Documents/*/PipelineSmoke.app/Contents/Frameworks/UnityPlayer.dylib"
+        },
+        {
+          "module": "libmonobdwgc-2.0.dylib",
+          "uuid": "542F91E5-B702-33BE-86C6-5B39012524EA",
+          "path": "/Users/*/Documents/*/PipelineSmoke.app/Contents/Frameworks/libmonobdwgc-2.0.dylib"
+        },
+        {
+          "module": "lookingglass_bridge_shim.dylib",
+          "uuid": "FCDDC56E-5838-3052-89FF-1C2FAC5B9795",
+          "path": "/Users/*/Documents/*/PipelineSmoke.app/Contents/PlugIns/ARM64/lookingglass_bridge_shim.dylib"
+        },
+        {
+          "module": "libbridge_inproc.dylib",
+          "uuid": "92E836C4-C91B-35AA-9E6C-C7D50EE880D4",
+          "path": "/Applications/Looking Glass Bridge 2.6.3.app/Contents/MacOS/libbridge_inproc.dylib"
+        }
+      ],
+      "namedShimOrVendorAllocationFrameCount": 0
+    },
+    {
+      "case": "metadata-only-malloc",
+      "pid": 63265,
+      "allocator": "default",
+      "leaksToolExitCode": 0,
+      "observedChildExitStatus": null,
+      "runtimePassed": true,
+      "threadWarnings": 3,
+      "immediateReports": [
+        {
+          "type": "MemoryLeaks",
+          "version": 2,
+          "phase": "Immediate",
+          "time": 1791950455190,
+          "processId": 63265,
+          "allocatedMemory": 2471704,
+          "memoryLabels": [
+            {
+              "Default": 54543
+            },
+            {
+              "Permanent": 1472
+            },
+            {
+              "NewDelete": 1642906
+            },
+            {
+              "Thread": 8120
+            },
+            {
+              "Manager": 16359
+            },
+            {
+              "VertexData": 8
+            },
+            {
+              "Geometry": 408
+            },
+            {
+              "Texture": 16
+            },
+            {
+              "Shader": 78020
+            },
+            {
+              "Material": 212
+            },
+            {
+              "GfxDevice": 38776
+            },
+            {
+              "GfxThread": 400
+            },
+            {
+              "Animation": 880
+            },
+            {
+              "Audio": 3648
+            },
+            {
+              "FreeType": 8
+            },
+            {
+              "FontEngine": 736
+            },
+            {
+              "Physics": 2000
+            },
+            {
+              "Physics2D": 16
+            },
+            {
+              "Serialization": 16392
+            },
+            {
+              "Input": 43216
+            },
+            {
+              "JobScheduler": 448
+            },
+            {
+              "TextLib": 280
+            },
+            {
+              "Mono": 56
+            },
+            {
+              "ScriptingNativeRuntime": 128
+            },
+            {
+              "BaseObject": 36320
+            },
+            {
+              "Resource": 996
+            },
+            {
+              "Renderer": 2736
+            },
+            {
+              "Transform": 6485
+            },
+            {
+              "File": 4600
+            },
+            {
+              "WebCam": 32
+            },
+            {
+              "Culling": 32
+            },
+            {
+              "Terrain": 11298
+            },
+            {
+              "Wind": 24
+            },
+            {
+              "String": 3087
+            },
+            {
+              "Utility": 318232
+            },
+            {
+              "PoolAlloc": 1536
+            },
+            {
+              "AI": 40
+            },
+            {
+              "TypeTree": 5512
+            },
+            {
+              "ScriptManager": 5696
+            },
+            {
+              "CodeReload": 440
+            },
+            {
+              "RuntimeInitializeOnLoadManager": 64
+            },
+            {
+              "Sprites": 78
+            },
+            {
+              "SpriteAtlas": 120
+            },
+            {
+              "GI": 7200
+            },
+            {
+              "Director": 8248
+            },
+            {
+              "CloudService": 144
+            },
+            {
+              "WebRequest": 520
+            },
+            {
+              "VR": 49402
+            },
+            {
+              "SceneManager": 408
+            },
+            {
+              "Video": 2080
+            },
+            {
+              "LazyScriptCache": 32
+            },
+            {
+              "NativeArray": 648
+            },
+            {
+              "Camera": 1169
+            },
+            {
+              "Secure": 241
+            },
+            {
+              "SerializationCache": 3608
+            },
+            {
+              "APIUpdating": 10320
+            },
+            {
+              "Subsystems": 336
+            },
+            {
+              "VirtualTexturing": 57496
+            },
+            {
+              "Baselib": 16
+            },
+            {
+              "Analytics": 80
+            },
+            {
+              "Hierarchy": 1452
+            },
+            {
+              "UIElements": 40
+            },
+            {
+              "CoreStats": 14536
+            },
+            {
+              "Identifiers": 7152
+            },
+            {
+              "Gui": 40
+            },
+            {
+              "CoreBusinessMetrics": 128
+            },
+            {
+              "AssetReference": 32
+            }
+          ]
+        }
+      ],
+      "appleLeakedBlocks": 2280,
+      "appleLeakedBytes": 134768,
+      "rawStackGroups": 1208,
+      "distinctSymbolStacks": 1208,
+      "representativeSymbolStacks": 5,
+      "liveModulesAtGraph": [
+        {
+          "module": "UnityPlayer.dylib",
+          "uuid": "BE07B931-A7A0-335B-BFDE-6D9331DBD96F",
+          "path": "/Users/*/Documents/*/Control.app/Contents/Frameworks/UnityPlayer.dylib"
+        },
+        {
+          "module": "libmonobdwgc-2.0.dylib",
+          "uuid": "542F91E5-B702-33BE-86C6-5B39012524EA",
+          "path": "/Users/*/Documents/*/Control.app/Contents/Frameworks/libmonobdwgc-2.0.dylib"
+        },
+        {
+          "module": "lookingglass_bridge_shim.dylib",
+          "uuid": "FCDDC56E-5838-3052-89FF-1C2FAC5B9795",
+          "path": "/Users/*/Documents/*/Control.app/Contents/PlugIns/ARM64/lookingglass_bridge_shim.dylib"
+        },
+        {
+          "module": "libbridge_inproc.dylib",
+          "uuid": "92E836C4-C91B-35AA-9E6C-C7D50EE880D4",
+          "path": "/Applications/Looking Glass Bridge 2.6.3.app/Contents/MacOS/libbridge_inproc.dylib"
+        }
+      ],
+      "namedShimOrVendorAllocationFrameCount": 0
+    },
+    {
+      "case": "quilt-only-malloc",
+      "pid": 63377,
+      "allocator": "default",
+      "leaksToolExitCode": 0,
+      "observedChildExitStatus": null,
+      "runtimePassed": true,
+      "threadWarnings": 4,
+      "immediateReports": [
+        {
+          "type": "MemoryLeaks",
+          "version": 2,
+          "phase": "Immediate",
+          "time": 1791950470116,
+          "processId": 63377,
+          "allocatedMemory": 1923703,
+          "memoryLabels": [
+            {
+              "Default": 54543
+            },
+            {
+              "Permanent": 1472
+            },
+            {
+              "NewDelete": 1094911
+            },
+            {
+              "Thread": 8120
+            },
+            {
+              "Manager": 16359
+            },
+            {
+              "VertexData": 8
+            },
+            {
+              "Geometry": 408
+            },
+            {
+              "Texture": 16
+            },
+            {
+              "Shader": 78020
+            },
+            {
+              "Material": 212
+            },
+            {
+              "GfxDevice": 38776
+            },
+            {
+              "GfxThread": 400
+            },
+            {
+              "Animation": 880
+            },
+            {
+              "Audio": 3648
+            },
+            {
+              "FreeType": 8
+            },
+            {
+              "FontEngine": 736
+            },
+            {
+              "Physics": 2000
+            },
+            {
+              "Physics2D": 16
+            },
+            {
+              "Serialization": 16392
+            },
+            {
+              "Input": 43216
+            },
+            {
+              "JobScheduler": 448
+            },
+            {
+              "TextLib": 280
+            },
+            {
+              "Mono": 56
+            },
+            {
+              "ScriptingNativeRuntime": 128
+            },
+            {
+              "BaseObject": 36320
+            },
+            {
+              "Resource": 996
+            },
+            {
+              "Renderer": 2736
+            },
+            {
+              "Transform": 6485
+            },
+            {
+              "File": 4600
+            },
+            {
+              "WebCam": 32
+            },
+            {
+              "Culling": 32
+            },
+            {
+              "Terrain": 11298
+            },
+            {
+              "Wind": 24
+            },
+            {
+              "String": 3081
+            },
+            {
+              "Utility": 318232
+            },
+            {
+              "PoolAlloc": 1536
+            },
+            {
+              "AI": 40
+            },
+            {
+              "TypeTree": 5512
+            },
+            {
+              "ScriptManager": 5696
+            },
+            {
+              "CodeReload": 440
+            },
+            {
+              "RuntimeInitializeOnLoadManager": 64
+            },
+            {
+              "Sprites": 78
+            },
+            {
+              "SpriteAtlas": 120
+            },
+            {
+              "GI": 7200
+            },
+            {
+              "Director": 8248
+            },
+            {
+              "CloudService": 144
+            },
+            {
+              "WebRequest": 520
+            },
+            {
+              "VR": 49402
+            },
+            {
+              "SceneManager": 408
+            },
+            {
+              "Video": 2080
+            },
+            {
+              "LazyScriptCache": 32
+            },
+            {
+              "NativeArray": 648
+            },
+            {
+              "Camera": 1169
+            },
+            {
+              "Secure": 241
+            },
+            {
+              "SerializationCache": 3608
+            },
+            {
+              "APIUpdating": 10320
+            },
+            {
+              "Subsystems": 336
+            },
+            {
+              "VirtualTexturing": 57496
+            },
+            {
+              "Baselib": 16
+            },
+            {
+              "Analytics": 80
+            },
+            {
+              "Hierarchy": 1452
+            },
+            {
+              "UIElements": 40
+            },
+            {
+              "CoreStats": 14536
+            },
+            {
+              "Identifiers": 7152
+            },
+            {
+              "Gui": 40
+            },
+            {
+              "CoreBusinessMetrics": 128
+            },
+            {
+              "AssetReference": 32
+            }
+          ]
+        }
+      ],
+      "appleLeakedBlocks": 2276,
+      "appleLeakedBytes": 134272,
+      "rawStackGroups": 1199,
+      "distinctSymbolStacks": 1199,
+      "representativeSymbolStacks": 5,
+      "liveModulesAtGraph": [
+        {
+          "module": "UnityPlayer.dylib",
+          "uuid": "BE07B931-A7A0-335B-BFDE-6D9331DBD96F",
+          "path": "/Users/*/Documents/*/Control.app/Contents/Frameworks/UnityPlayer.dylib"
+        },
+        {
+          "module": "libmonobdwgc-2.0.dylib",
+          "uuid": "542F91E5-B702-33BE-86C6-5B39012524EA",
+          "path": "/Users/*/Documents/*/Control.app/Contents/Frameworks/libmonobdwgc-2.0.dylib"
+        }
+      ],
+      "namedShimOrVendorAllocationFrameCount": 0
+    }
+  ],
+  "excludedOrSupersededAcquisitions": [
+    {
+      "case": "hdrp-device-stack",
+      "held": false,
+      "naturalExitZero": false,
+      "runtimePassed": true,
+      "capturedWarningEvents": 0,
+      "limitation": "Debugger wrapper timed out; child proceeded after UI inspection and exited before reattach. No shutdown stacks or observed exit code from this run. Startup wait sampled in vendor calibration fopen.",
+      "summarySha256": "8aea7147ac1e732e063a92c519ce99dceda7a69f1fbab3ec435693f8e4fb7b3b"
+    },
+    {
+      "case": "metadata-only-stack",
+      "held": false,
+      "naturalExitZero": false,
+      "runtimePassed": false,
+      "capturedWarningEvents": 0,
+      "limitation": "Metadata query and cleanup deadlines failed under launch-time LLDB. SIGTERM requested; debugger stopped on it and ended without observed natural exit. No Quilt/device GPU output. No warning or allocation stack acquired.",
+      "summarySha256": "f0a04a81ac2a654bc62410f249c6937a5ecbd7f67eb0d9a3ad696afcacdc5d89"
+    },
+    {
+      "case": "pilot",
+      "held": null,
+      "naturalExitZero": null,
+      "runtimePassed": null,
+      "capturedWarningEvents": null,
+      "limitation": "Superseded diagnostic acquisition or debugger setup/CPU-probe failure; not included in final stack gates.",
+      "summarySha256": "3b03a2236d2c73b5ba342a9e09f6f3b739d2ca99e6c3370ecdb57f8659b5b1f8"
+    },
+    {
+      "case": "unity-only-stack",
+      "held": false,
+      "naturalExitZero": true,
+      "runtimePassed": true,
+      "capturedWarningEvents": 0,
+      "limitation": "Superseded diagnostic acquisition or debugger setup/CPU-probe failure; not included in final stack gates.",
+      "summarySha256": "73843a0c553b40148fd6bfd03263326533ccd0a5a769fb059bba5c8c641eb8ae"
+    },
+    {
+      "case": "unity-only-stack-retry",
+      "held": false,
+      "naturalExitZero": true,
+      "runtimePassed": true,
+      "capturedWarningEvents": 10,
+      "limitation": "Superseded diagnostic acquisition or debugger setup/CPU-probe failure; not included in final stack gates.",
+      "summarySha256": "bb9c3f00326ec13a99c317f0b3aeca2100ac35f4501e80b472e634685ad3f784"
+    },
+    {
+      "case": "urp-device-stack",
+      "held": false,
+      "naturalExitZero": false,
+      "runtimePassed": null,
+      "capturedWarningEvents": 0,
+      "limitation": "Superseded diagnostic acquisition or debugger setup/CPU-probe failure; not included in final stack gates.",
+      "summarySha256": "59c30071ef3a4929030ab93a7ede99398c4888d30602f8bc82cceb474f5d0ad2"
+    },
+    {
+      "case": "urp-device-stack-final",
+      "held": false,
+      "naturalExitZero": false,
+      "runtimePassed": null,
+      "capturedWarningEvents": 0,
+      "limitation": "Superseded diagnostic acquisition or debugger setup/CPU-probe failure; not included in final stack gates.",
+      "summarySha256": "c1e4932bc5e106018e140425dee0b146421d2a48733ad648ff0fb7ca7cddfea2"
+    },
+    {
+      "case": "urp-device-stack-mach-policy",
+      "held": false,
+      "naturalExitZero": false,
+      "runtimePassed": false,
+      "capturedWarningEvents": 10,
+      "limitation": "Superseded diagnostic acquisition or debugger setup/CPU-probe failure; not included in final stack gates.",
+      "summarySha256": "88fb2b06afee5af0d59d306c0031cdf460b3918c673fe25540f8100d378b1d12"
+    },
+    {
+      "case": "urp-device-stack-retry",
+      "held": false,
+      "naturalExitZero": false,
+      "runtimePassed": null,
+      "capturedWarningEvents": 0,
+      "limitation": "Superseded diagnostic acquisition or debugger setup/CPU-probe failure; not included in final stack gates.",
+      "summarySha256": "e5d2cd7722544d3dcea7831781502c4b26e7ccbadad0025880e27f5746b9f5c5"
+    }
+  ],
+  "productFixApplied": false,
+  "diagnosticScriptsPrivateRawRoot": ".local/macos-shutdown-stacks-20261014",
+  "scriptHashesAtExport": {
+    "run_lldb.py": "51f5c7a30561661c962a4b8cf537e0e6383f3c59b35509962399e5a6956e8e8c",
+    "run_remaining.py": "d5356f72890bb9159ab816c0922b34641dd703218359add9b5008866fca22475",
+    "run_next.py": "8e90e9045f7a51065b5ae524abe4a63b6bfc661d3981f4f33bb3e005d95818a5",
+    "export_evidence.py": "133326bd350635a2db759bd03ceba647fe1df55abaad0bc58be9ec5bbacda862",
+    "run_leaks.py": "9f927a3e7ae140b0fcaf8a04915eb54b69b954c9e0f0773f28648fd324a474f9",
+    "lldb_capture.py": "bcdf2edd8f1b3162368d553df62b0a32c70e260c1480265212fa2b8b2ef77fae",
+    "run_malloc_next.py": "23624dba21e99075023abcf9cc998657de03a13cdf81226f104398f7b4e60823",
+    "run_late_attach.py": "1f25593ef111dc575affaddeb838c796ebc78d69f5f97b8b5cfee11e158a0da4"
+  },
+  "scriptProvenanceLimit": "Observer module UUID collection was added after earlier launch cases. Script hashes describe final private scripts, not a preserved per-run source version. Commands and captured raw event hashes are retained.",
+  "scopeLimits": [
+    "Mono warning emission path and pre-cleanup Unity thread roles identified; exact shipped Mono source revision and harmlessness not established.",
+    "Some OS-detected residual allocation generation stacks acquired; full Unity Immediate label ownership remains unestablished.",
+    "No ViewWeave-owned defective allocation/free pair established, so no speculative production patch.",
+    "Windows crash linkage unestablished; no Windows execution in this investigation.",
+    "Launch-time LLDB metadata timeout is excluded; matching flags without LLDB and late attach passed.",
+    "Release, Editor shutdown, long duration, other hardware and optical quality not added to this diagnostic coverage."
+  ]
+}

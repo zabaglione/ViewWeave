@@ -1,0 +1,17 @@
+{
+  "noViewWeaveManifest": true,
+  "noViewWeaveLock": true,
+  "manifestSha256": "f615c9a72766b39c7b3a44fc6f7bff534feb9137b78cd27670ea231826a29453",
+  "lockSha256": "9e312281b860fa27b9b122709de0064baedf2fc2fae478128b5388840871d30a",
+  "scripts": {
+    "Assets/UnityShutdownBaselineRunner.cs": "273a6e8fe1f3d13f75afee7edba93ca010c6d4746dc04229d730596f0bad8514",
+    "Assets/Editor/UnityShutdownBaselineBuilder.cs": "5a0f6363f36dcdc39b72dbd964824103158adee4eebc051e9f65a90471f0b897"
+  },
+  "resolvedPipelines": {
+    "com.unity.render-pipelines.core": "17.6.0",
+    "com.unity.render-pipelines.high-definition": "17.6.0",
+    "com.unity.render-pipelines.high-definition-config": "17.6.0",
+    "com.unity.render-pipelines.universal": "17.6.0",
+    "com.unity.render-pipelines.universal-config": "17.6.0"
+  }
+}

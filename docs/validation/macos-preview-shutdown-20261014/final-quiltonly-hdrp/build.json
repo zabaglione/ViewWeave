@@ -1,0 +1,9 @@
+{
+  "pipeline": "HDRP",
+  "activeAsset": "Assets/SamplePlayerValidationGenerated/MetalCurrent/Pipeline.asset",
+  "activePipeline": "HDRenderPipeline",
+  "shaderPipelineTag": "HDRenderPipeline",
+  "configuredQualityAssets": 6,
+  "preparedInSeparateProcess": true,
+  "succeeded": true
+}

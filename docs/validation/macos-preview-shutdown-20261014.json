@@ -1,0 +1,2692 @@
+{
+  "sourceRevision": "c4de573c4435f0105e62f6125f8d4fedd78786b3",
+  "incomingNativeOrBridgeChanges": [],
+  "productionSourceHashes": {
+    "Packages/com.zabaglione.lookingglass.viewweave.core/Runtime/QuiltRenderer.cs": "8dc2f11769425d22c123acfe49c59b742c2cf548a2f956d845f4895a2e4a9bbe",
+    "Packages/com.zabaglione.lookingglass.viewweave.core/Runtime/IQuiltViewTextureFormatProvider.cs": "99182903a82ca89e818ca03770ac9eaa18ff5cb861d0624dbc3b43912ec0fc11",
+    "Packages/com.zabaglione.lookingglass.viewweave.core/Runtime/QuiltHistoryResourceBudget.cs": "da8ed0f0204e763031123473e40f65b39cd397262db16425d869b29501953529",
+    "Packages/com.zabaglione.lookingglass.viewweave.urp/Runtime/UrpQuiltCamera.cs": "864c024ca951e6eb07c6fdf09ef4bdab8762acb2e536ac619aa097f639113cbb",
+    "Packages/com.zabaglione.lookingglass.viewweave.urp/Runtime/UrpViewHistoryRenderer.cs": "eed54060e298fa37cafd9832b4185fc1b3b0649b3be17daeed95e48a36659e78"
+  },
+  "formatVersion": 1,
+  "verifiedOn": "2026-10-14",
+  "timezone": "Asia/Tokyo",
+  "productionSourceWorkingTreeChanges": false,
+  "testFixtureWorkingTreeChanges": true,
+  "evidenceKind": "custom validation fixtures; not NUnit suite totals",
+  "environment": {
+    "unityVersion": "6000.6.4f1",
+    "pipelineVersion": "17.6.0",
+    "osVersion": "26.6.2",
+    "architecture": "arm64",
+    "gpu": "Apple M3 Max",
+    "bridgeVersion": "2.6.3",
+    "device": "Go; one output client at a time",
+    "quality": "Preview; 1023x1020; 11x6; 66 views; Linear"
+  },
+  "playerRuns": [
+    {
+      "monitorSourceSha256": "c847b8a55dc42c68d11350dc3ab42716bb182c76b27ecd92c206e24113971202",
+      "gates": {
+        "runtimeFresh": true,
+        "pipelineMatches": true,
+        "configurationMatches": true,
+        "playerOnly": true,
+        "metalMatches": true,
+        "unityVersionMatches": true
+      },
+      "pid": 25728,
+      "startedAtUnix": 1791944791.089812,
+      "finishedAtUnix": 1791944798.1516821,
+      "exitCode": 0,
+      "timedOut": false,
+      "naturalExit": true,
+      "expectedPluginPath": ".local/macos-current-player-20261014/latest-urp-development/PipelineSmoke.app/Contents/PlugIns/ARM64/lookingglass_bridge_shim.dylib",
+      "expectedPluginObserved": true,
+      "runtime": {
+        "passed": true,
+        "development": true,
+        "editor": false,
+        "unityVersion": "6000.6.4f1",
+        "graphicsApi": "Metal",
+        "pipeline": "URP",
+        "error": "",
+        "capture": ".local/macos-current-player-20261014/latest-urp-development/current.png",
+        "sequence": ".local/macos-current-player-20261014/latest-urp-development/ViewWeave_20261014_112636_282_31e2240f928d440697d2c0b40414d359",
+        "actualPipeline": "UniversalRenderPipeline",
+        "shaderPipelineTag": "UniversalPipeline",
+        "firstCompleted": 60,
+        "restartedCompleted": 30,
+        "recordedFrames": 3,
+        "distinctColors": 15,
+        "width": 1023,
+        "height": 1020,
+        "views": 66,
+        "pendingRetirement": 0,
+        "cellPatternMode": 0,
+        "subpixelCellCount": 0,
+        "redPixels": 152354,
+        "greenPixels": 96813,
+        "magentaPixels": 0,
+        "activeSubpixelChangeRejected": true,
+        "missingCellsRejected": true,
+        "classicRestartVerified": true,
+        "missingCellsError": "Invalid calibration: Calibrated Cells requires an actual cell table",
+        "restartSubpixelMode": "ClassicRgb",
+        "targets": {
+          "viewFormat": "ARGBHalf",
+          "viewGraphicsFormat": "R16G16B16A16_SFloat",
+          "resolveGraphicsFormat": "R8G8B8A8_SRGB",
+          "quiltGraphicsFormat": "R8G8B8A8_SRGB",
+          "viewSrgb": false,
+          "resolveSrgb": true,
+          "quiltSrgb": true,
+          "resolvePresent": true,
+          "viewSamples": 4,
+          "resolveSamples": 1,
+          "quiltSamples": 1
+        }
+      },
+      "runtimeSha256": "657f597e19b12cd7b1b413785363da1ea683b81a863f383fa2dac24d3591f1f9",
+      "passed": true,
+      "exitDiagnostics": {
+        "threadWarningCount": 5,
+        "memoryLeaksRecords": [
+          {
+            "type": "MemoryLeaks",
+            "version": 2,
+            "phase": "Immediate",
+            "allocatedMemory": 2529744,
+            "memoryLabels": [
+              {
+                "Default": 54543
+              },
+              {
+                "Permanent": 1472
+              },
+              {
+                "NewDelete": 1700938
+              },
+              {
+                "Thread": 8120
+              },
+              {
+                "Manager": 16359
+              },
+              {
+                "VertexData": 8
+              },
+              {
+                "Geometry": 408
+              },
+              {
+                "Texture": 16
+              },
+              {
+                "Shader": 78020
+              },
+              {
+                "Material": 212
+              },
+              {
+                "GfxDevice": 38776
+              },
+              {
+                "GfxThread": 400
+              },
+              {
+                "Animation": 880
+              },
+              {
+                "Audio": 3648
+              },
+              {
+                "FreeType": 8
+              },
+              {
+                "FontEngine": 736
+              },
+              {
+                "Physics": 2000
+              },
+              {
+                "Physics2D": 16
+              },
+              {
+                "Serialization": 16392
+              },
+              {
+                "Input": 43216
+              },
+              {
+                "JobScheduler": 448
+              },
+              {
+                "TextLib": 280
+              },
+              {
+                "Mono": 56
+              },
+              {
+                "ScriptingNativeRuntime": 128
+              },
+              {
+                "BaseObject": 36320
+              },
+              {
+                "Resource": 996
+              },
+              {
+                "Renderer": 2736
+              },
+              {
+                "Transform": 6485
+              },
+              {
+                "File": 4600
+              },
+              {
+                "WebCam": 32
+              },
+              {
+                "Culling": 32
+              },
+              {
+                "Terrain": 11298
+              },
+              {
+                "Wind": 24
+              },
+              {
+                "String": 3095
+              },
+              {
+                "Utility": 318232
+              },
+              {
+                "PoolAlloc": 1536
+              },
+              {
+                "AI": 40
+              },
+              {
+                "TypeTree": 5512
+              },
+              {
+                "ScriptManager": 5696
+              },
+              {
+                "CodeReload": 440
+              },
+              {
+                "RuntimeInitializeOnLoadManager": 64
+              },
+              {
+                "Sprites": 78
+              },
+              {
+                "SpriteAtlas": 120
+              },
+              {
+                "GI": 7200
+              },
+              {
+                "Director": 8248
+              },
+              {
+                "CloudService": 144
+              },
+              {
+                "WebRequest": 520
+              },
+              {
+                "VR": 49402
+              },
+              {
+                "SceneManager": 408
+              },
+              {
+                "Video": 2080
+              },
+              {
+                "LazyScriptCache": 32
+              },
+              {
+                "NativeArray": 648
+              },
+              {
+                "Camera": 1169
+              },
+              {
+                "Secure": 241
+              },
+              {
+                "SerializationCache": 3608
+              },
+              {
+                "APIUpdating": 10320
+              },
+              {
+                "Subsystems": 336
+              },
+              {
+                "VirtualTexturing": 57496
+              },
+              {
+                "Baselib": 16
+              },
+              {
+                "Analytics": 80
+              },
+              {
+                "Hierarchy": 1452
+              },
+              {
+                "UIElements": 40
+              },
+              {
+                "CoreStats": 14536
+              },
+              {
+                "Identifiers": 7152
+              },
+              {
+                "Gui": 40
+              },
+              {
+                "CoreBusinessMetrics": 128
+              },
+              {
+                "AssetReference": 32
+              }
+            ]
+          }
+        ],
+        "logSha256": "5224bbb383e4eec637fcef191c2c3b255cb54bf72339c89674be7f85eae98703"
+      },
+      "build": {
+        "pipeline": "URP",
+        "configuration": "Development",
+        "sourceRevision": "c4de573c4435f0105e62f6125f8d4fedd78786b3",
+        "prepareCliExitCode": 0,
+        "buildCliExitCode": 0,
+        "buildEditorPid": null,
+        "executable": ".local/macos-current-player-20261014/latest-urp-development/PipelineSmoke.app/Contents/MacOS/PipelineSmoke",
+        "executableArchitecture": "arm64",
+        "pluginPath": ".local/macos-current-player-20261014/latest-urp-development/PipelineSmoke.app/Contents/PlugIns/ARM64/lookingglass_bridge_shim.dylib",
+        "pluginSha256": "c97856ea3bb910a1456eb044347a18ac8117c140ddd149f8e9ec240600766c5b",
+        "sourcePluginSha256": "c97856ea3bb910a1456eb044347a18ac8117c140ddd149f8e9ec240600766c5b",
+        "pluginMatchesSource": true,
+        "pluginArchitecture": "arm64",
+        "fixtureSourceSha256": {
+          "Tests/Pipelines/Unity/Assets/MetalCurrentValidation/Editor/MetalCurrentValidationBuilder.cs": "4b122bd1b3e14f14635a70ce823aa09b5012cb9771fab7c290c999a258faa1fb",
+          "Tests/Pipelines/Unity/Assets/MetalCurrentValidation/MetalCurrentValidationRunner.cs": "c5e607509d33b57021caf0c54f99d44c9984b6748a9a53524db9d00a74e0c6ea"
+        },
+        "buildEvidence": {
+          "pipeline": "URP",
+          "activeAsset": "Assets/SamplePlayerValidationGenerated/MetalCurrent/Pipeline.asset",
+          "activePipeline": "UniversalRenderPipeline",
+          "shaderPipelineTag": "UniversalPipeline",
+          "configuredQualityAssets": 6,
+          "preparedInSeparateProcess": true,
+          "succeeded": true
+        }
+      },
+      "recordingPngHeaders": [
+        {
+          "file": "frame_000000_qs11x6a0.5625.png",
+          "width": 1023,
+          "height": 1020,
+          "sha256": "ae293b00aada68185630fe211c6e71064ba76e0845b84231692ce9780f42e95b"
+        },
+        {
+          "file": "frame_000001_qs11x6a0.5625.png",
+          "width": 1023,
+          "height": 1020,
+          "sha256": "ae293b00aada68185630fe211c6e71064ba76e0845b84231692ce9780f42e95b"
+        },
+        {
+          "file": "frame_000002_qs11x6a0.5625.png",
+          "width": 1023,
+          "height": 1020,
+          "sha256": "ae293b00aada68185630fe211c6e71064ba76e0845b84231692ce9780f42e95b"
+        }
+      ],
+      "recordingFramesDecodedForImageGate": 0,
+      "stillFramesDecodedForImageGate": [
+        "current.png",
+        "classic.png"
+      ]
+    },
+    {
+      "monitorSourceSha256": "c847b8a55dc42c68d11350dc3ab42716bb182c76b27ecd92c206e24113971202",
+      "gates": {
+        "runtimeFresh": true,
+        "pipelineMatches": true,
+        "configurationMatches": true,
+        "playerOnly": true,
+        "metalMatches": true,
+        "unityVersionMatches": true
+      },
+      "pid": 26020,
+      "startedAtUnix": 1791944829.250323,
+      "finishedAtUnix": 1791944836.16089,
+      "exitCode": 0,
+      "timedOut": false,
+      "naturalExit": true,
+      "expectedPluginPath": ".local/macos-current-player-20261014/latest-urp-release/PipelineSmoke.app/Contents/PlugIns/ARM64/lookingglass_bridge_shim.dylib",
+      "expectedPluginObserved": true,
+      "runtime": {
+        "passed": true,
+        "development": false,
+        "editor": false,
+        "unityVersion": "6000.6.4f1",
+        "graphicsApi": "Metal",
+        "pipeline": "URP",
+        "error": "",
+        "capture": ".local/macos-current-player-20261014/latest-urp-release/current.png",
+        "sequence": ".local/macos-current-player-20261014/latest-urp-release/ViewWeave_20261014_112713_749_41ed349a49c042dc9cf6141f3ceb43ee",
+        "actualPipeline": "UniversalRenderPipeline",
+        "shaderPipelineTag": "UniversalPipeline",
+        "firstCompleted": 60,
+        "restartedCompleted": 30,
+        "recordedFrames": 3,
+        "distinctColors": 15,
+        "width": 1023,
+        "height": 1020,
+        "views": 66,
+        "pendingRetirement": 0,
+        "cellPatternMode": 0,
+        "subpixelCellCount": 0,
+        "redPixels": 152354,
+        "greenPixels": 96813,
+        "magentaPixels": 0,
+        "activeSubpixelChangeRejected": true,
+        "missingCellsRejected": true,
+        "classicRestartVerified": true,
+        "missingCellsError": "Invalid calibration: Calibrated Cells requires an actual cell table",
+        "restartSubpixelMode": "ClassicRgb",
+        "targets": {
+          "viewFormat": "ARGBHalf",
+          "viewGraphicsFormat": "R16G16B16A16_SFloat",
+          "resolveGraphicsFormat": "R8G8B8A8_SRGB",
+          "quiltGraphicsFormat": "R8G8B8A8_SRGB",
+          "viewSrgb": false,
+          "resolveSrgb": true,
+          "quiltSrgb": true,
+          "resolvePresent": true,
+          "viewSamples": 4,
+          "resolveSamples": 1,
+          "quiltSamples": 1
+        }
+      },
+      "runtimeSha256": "d5f24270507de90aa18137d45a7a63711b88f25281e731a668d86a009a4ab692",
+      "passed": true,
+      "exitDiagnostics": {
+        "threadWarningCount": 5,
+        "memoryLeaksRecords": [],
+        "logSha256": "24338bf5220a6182936a5b66b7d0a77b20c678b8ff36f20939613e1660624659"
+      },
+      "build": {
+        "pipeline": "URP",
+        "configuration": "Release",
+        "sourceRevision": "c4de573c4435f0105e62f6125f8d4fedd78786b3",
+        "prepareCliExitCode": 0,
+        "buildCliExitCode": 0,
+        "buildEditorPid": null,
+        "executable": ".local/macos-current-player-20261014/latest-urp-release/PipelineSmoke.app/Contents/MacOS/PipelineSmoke",
+        "executableArchitecture": "arm64",
+        "pluginPath": ".local/macos-current-player-20261014/latest-urp-release/PipelineSmoke.app/Contents/PlugIns/ARM64/lookingglass_bridge_shim.dylib",
+        "pluginSha256": "c97856ea3bb910a1456eb044347a18ac8117c140ddd149f8e9ec240600766c5b",
+        "sourcePluginSha256": "c97856ea3bb910a1456eb044347a18ac8117c140ddd149f8e9ec240600766c5b",
+        "pluginMatchesSource": true,
+        "pluginArchitecture": "arm64",
+        "fixtureSourceSha256": {
+          "Tests/Pipelines/Unity/Assets/MetalCurrentValidation/Editor/MetalCurrentValidationBuilder.cs": "4b122bd1b3e14f14635a70ce823aa09b5012cb9771fab7c290c999a258faa1fb",
+          "Tests/Pipelines/Unity/Assets/MetalCurrentValidation/MetalCurrentValidationRunner.cs": "c5e607509d33b57021caf0c54f99d44c9984b6748a9a53524db9d00a74e0c6ea"
+        },
+        "buildEvidence": {
+          "pipeline": "URP",
+          "activeAsset": "Assets/SamplePlayerValidationGenerated/MetalCurrent/Pipeline.asset",
+          "activePipeline": "UniversalRenderPipeline",
+          "shaderPipelineTag": "UniversalPipeline",
+          "configuredQualityAssets": 6,
+          "preparedInSeparateProcess": true,
+          "succeeded": true
+        }
+      },
+      "recordingPngHeaders": [
+        {
+          "file": "frame_000000_qs11x6a0.5625.png",
+          "width": 1023,
+          "height": 1020,
+          "sha256": "ae293b00aada68185630fe211c6e71064ba76e0845b84231692ce9780f42e95b"
+        },
+        {
+          "file": "frame_000001_qs11x6a0.5625.png",
+          "width": 1023,
+          "height": 1020,
+          "sha256": "ae293b00aada68185630fe211c6e71064ba76e0845b84231692ce9780f42e95b"
+        },
+        {
+          "file": "frame_000002_qs11x6a0.5625.png",
+          "width": 1023,
+          "height": 1020,
+          "sha256": "ae293b00aada68185630fe211c6e71064ba76e0845b84231692ce9780f42e95b"
+        }
+      ],
+      "recordingFramesDecodedForImageGate": 0,
+      "stillFramesDecodedForImageGate": [
+        "current.png",
+        "classic.png"
+      ]
+    },
+    {
+      "monitorSourceSha256": "c847b8a55dc42c68d11350dc3ab42716bb182c76b27ecd92c206e24113971202",
+      "gates": {
+        "runtimeFresh": true,
+        "pipelineMatches": true,
+        "configurationMatches": true,
+        "playerOnly": true,
+        "metalMatches": true,
+        "unityVersionMatches": true
+      },
+      "pid": 26728,
+      "startedAtUnix": 1791944933.15252,
+      "finishedAtUnix": 1791944979.553134,
+      "exitCode": 0,
+      "timedOut": false,
+      "naturalExit": true,
+      "expectedPluginPath": ".local/macos-current-player-20261014/latest-hdrp-development/PipelineSmoke.app/Contents/PlugIns/ARM64/lookingglass_bridge_shim.dylib",
+      "expectedPluginObserved": true,
+      "runtime": {
+        "passed": true,
+        "development": true,
+        "editor": false,
+        "unityVersion": "6000.6.4f1",
+        "graphicsApi": "Metal",
+        "pipeline": "HDRP",
+        "error": "",
+        "capture": ".local/macos-current-player-20261014/latest-hdrp-development/current.png",
+        "sequence": ".local/macos-current-player-20261014/latest-hdrp-development/ViewWeave_20261014_112929_125_179b6f4152b24d2eaddaecef47babdef",
+        "actualPipeline": "HDRenderPipeline",
+        "shaderPipelineTag": "HDRenderPipeline",
+        "firstCompleted": 60,
+        "restartedCompleted": 30,
+        "recordedFrames": 3,
+        "distinctColors": 1612,
+        "width": 1023,
+        "height": 1020,
+        "views": 66,
+        "pendingRetirement": 0,
+        "cellPatternMode": 0,
+        "subpixelCellCount": 0,
+        "redPixels": 167918,
+        "greenPixels": 107167,
+        "magentaPixels": 0,
+        "activeSubpixelChangeRejected": true,
+        "missingCellsRejected": true,
+        "classicRestartVerified": true,
+        "missingCellsError": "Invalid calibration: Calibrated Cells requires an actual cell table",
+        "restartSubpixelMode": "ClassicRgb",
+        "targets": {
+          "viewFormat": "ARGB32",
+          "viewGraphicsFormat": "R8G8B8A8_SRGB",
+          "resolveGraphicsFormat": "Absent",
+          "quiltGraphicsFormat": "R8G8B8A8_SRGB",
+          "viewSrgb": true,
+          "resolveSrgb": false,
+          "quiltSrgb": true,
+          "resolvePresent": false,
+          "viewSamples": 1,
+          "resolveSamples": 0,
+          "quiltSamples": 1
+        }
+      },
+      "runtimeSha256": "e00c8b80ccf28152ce45736a68b20c9abceea8683b8f872d872d484443cae6f0",
+      "passed": true,
+      "exitDiagnostics": {
+        "threadWarningCount": 5,
+        "memoryLeaksRecords": [
+          {
+            "type": "MemoryLeaks",
+            "version": 2,
+            "phase": "Immediate",
+            "allocatedMemory": 2689598,
+            "memoryLabels": [
+              {
+                "Default": 54543
+              },
+              {
+                "Permanent": 1472
+              },
+              {
+                "NewDelete": 1860790
+              },
+              {
+                "Thread": 8120
+              },
+              {
+                "Manager": 16359
+              },
+              {
+                "VertexData": 8
+              },
+              {
+                "Geometry": 408
+              },
+              {
+                "Texture": 16
+              },
+              {
+                "Shader": 78020
+              },
+              {
+                "Material": 212
+              },
+              {
+                "GfxDevice": 38776
+              },
+              {
+                "GfxThread": 400
+              },
+              {
+                "Animation": 880
+              },
+              {
+                "Audio": 3648
+              },
+              {
+                "FreeType": 8
+              },
+              {
+                "FontEngine": 736
+              },
+              {
+                "Physics": 2000
+              },
+              {
+                "Physics2D": 16
+              },
+              {
+                "Serialization": 16392
+              },
+              {
+                "Input": 43216
+              },
+              {
+                "JobScheduler": 448
+              },
+              {
+                "TextLib": 280
+              },
+              {
+                "Mono": 56
+              },
+              {
+                "ScriptingNativeRuntime": 128
+              },
+              {
+                "BaseObject": 36320
+              },
+              {
+                "Resource": 996
+              },
+              {
+                "Renderer": 2736
+              },
+              {
+                "Transform": 6485
+              },
+              {
+                "File": 4600
+              },
+              {
+                "WebCam": 32
+              },
+              {
+                "Culling": 32
+              },
+              {
+                "Terrain": 11298
+              },
+              {
+                "Wind": 24
+              },
+              {
+                "String": 3097
+              },
+              {
+                "Utility": 318232
+              },
+              {
+                "PoolAlloc": 1536
+              },
+              {
+                "AI": 40
+              },
+              {
+                "TypeTree": 5512
+              },
+              {
+                "ScriptManager": 5696
+              },
+              {
+                "CodeReload": 440
+              },
+              {
+                "RuntimeInitializeOnLoadManager": 64
+              },
+              {
+                "Sprites": 78
+              },
+              {
+                "SpriteAtlas": 120
+              },
+              {
+                "GI": 7200
+              },
+              {
+                "Director": 8248
+              },
+              {
+                "CloudService": 144
+              },
+              {
+                "WebRequest": 520
+              },
+              {
+                "VR": 49402
+              },
+              {
+                "SceneManager": 408
+              },
+              {
+                "Video": 2080
+              },
+              {
+                "LazyScriptCache": 32
+              },
+              {
+                "NativeArray": 648
+              },
+              {
+                "Camera": 1169
+              },
+              {
+                "Secure": 241
+              },
+              {
+                "SerializationCache": 3608
+              },
+              {
+                "APIUpdating": 10320
+              },
+              {
+                "Subsystems": 336
+              },
+              {
+                "VirtualTexturing": 57496
+              },
+              {
+                "Baselib": 16
+              },
+              {
+                "Analytics": 80
+              },
+              {
+                "Hierarchy": 1452
+              },
+              {
+                "UIElements": 40
+              },
+              {
+                "CoreStats": 14536
+              },
+              {
+                "Identifiers": 7152
+              },
+              {
+                "Gui": 40
+              },
+              {
+                "CoreBusinessMetrics": 128
+              },
+              {
+                "AssetReference": 32
+              }
+            ]
+          }
+        ],
+        "logSha256": "9feec1a8a353e1009f2ff35e2bc6650d1df0847cfd21b0d2196d1f41d17f8be4"
+      },
+      "build": {
+        "pipeline": "HDRP",
+        "configuration": "Development",
+        "sourceRevision": "c4de573c4435f0105e62f6125f8d4fedd78786b3",
+        "prepareCliExitCode": 0,
+        "buildCliExitCode": 0,
+        "buildEditorPid": null,
+        "executable": ".local/macos-current-player-20261014/latest-hdrp-development/PipelineSmoke.app/Contents/MacOS/PipelineSmoke",
+        "executableArchitecture": "arm64",
+        "pluginPath": ".local/macos-current-player-20261014/latest-hdrp-development/PipelineSmoke.app/Contents/PlugIns/ARM64/lookingglass_bridge_shim.dylib",
+        "pluginSha256": "c97856ea3bb910a1456eb044347a18ac8117c140ddd149f8e9ec240600766c5b",
+        "sourcePluginSha256": "c97856ea3bb910a1456eb044347a18ac8117c140ddd149f8e9ec240600766c5b",
+        "pluginMatchesSource": true,
+        "pluginArchitecture": "arm64",
+        "fixtureSourceSha256": {
+          "Tests/Pipelines/Unity/Assets/MetalCurrentValidation/Editor/MetalCurrentValidationBuilder.cs": "4b122bd1b3e14f14635a70ce823aa09b5012cb9771fab7c290c999a258faa1fb",
+          "Tests/Pipelines/Unity/Assets/MetalCurrentValidation/MetalCurrentValidationRunner.cs": "c5e607509d33b57021caf0c54f99d44c9984b6748a9a53524db9d00a74e0c6ea"
+        },
+        "buildEvidence": {
+          "pipeline": "HDRP",
+          "activeAsset": "Assets/SamplePlayerValidationGenerated/MetalCurrent/Pipeline.asset",
+          "activePipeline": "HDRenderPipeline",
+          "shaderPipelineTag": "HDRenderPipeline",
+          "configuredQualityAssets": 6,
+          "preparedInSeparateProcess": true,
+          "succeeded": true
+        }
+      },
+      "recordingPngHeaders": [
+        {
+          "file": "frame_000000_qs11x6a0.5625.png",
+          "width": 1023,
+          "height": 1020,
+          "sha256": "07ec1e19d7d26ac5f01915cfae55df95068fb681f240eef7780a859541dba44b"
+        },
+        {
+          "file": "frame_000001_qs11x6a0.5625.png",
+          "width": 1023,
+          "height": 1020,
+          "sha256": "07ec1e19d7d26ac5f01915cfae55df95068fb681f240eef7780a859541dba44b"
+        },
+        {
+          "file": "frame_000002_qs11x6a0.5625.png",
+          "width": 1023,
+          "height": 1020,
+          "sha256": "07ec1e19d7d26ac5f01915cfae55df95068fb681f240eef7780a859541dba44b"
+        }
+      ],
+      "recordingFramesDecodedForImageGate": 0,
+      "stillFramesDecodedForImageGate": [
+        "current.png",
+        "classic.png"
+      ]
+    },
+    {
+      "monitorSourceSha256": "c847b8a55dc42c68d11350dc3ab42716bb182c76b27ecd92c206e24113971202",
+      "gates": {
+        "runtimeFresh": true,
+        "pipelineMatches": true,
+        "configurationMatches": true,
+        "playerOnly": true,
+        "metalMatches": true,
+        "unityVersionMatches": true
+      },
+      "pid": 27191,
+      "startedAtUnix": 1791945007.901302,
+      "finishedAtUnix": 1791945053.7881432,
+      "exitCode": 0,
+      "timedOut": false,
+      "naturalExit": true,
+      "expectedPluginPath": ".local/macos-current-player-20261014/latest-hdrp-release/PipelineSmoke.app/Contents/PlugIns/ARM64/lookingglass_bridge_shim.dylib",
+      "expectedPluginObserved": true,
+      "runtime": {
+        "passed": true,
+        "development": false,
+        "editor": false,
+        "unityVersion": "6000.6.4f1",
+        "graphicsApi": "Metal",
+        "pipeline": "HDRP",
+        "error": "",
+        "capture": ".local/macos-current-player-20261014/latest-hdrp-release/current.png",
+        "sequence": ".local/macos-current-player-20261014/latest-hdrp-release/ViewWeave_20261014_113042_879_d4a6739b3ea64cc59b0fc6955d69e54f",
+        "actualPipeline": "HDRenderPipeline",
+        "shaderPipelineTag": "HDRenderPipeline",
+        "firstCompleted": 60,
+        "restartedCompleted": 30,
+        "recordedFrames": 3,
+        "distinctColors": 1612,
+        "width": 1023,
+        "height": 1020,
+        "views": 66,
+        "pendingRetirement": 0,
+        "cellPatternMode": 0,
+        "subpixelCellCount": 0,
+        "redPixels": 167918,
+        "greenPixels": 107167,
+        "magentaPixels": 0,
+        "activeSubpixelChangeRejected": true,
+        "missingCellsRejected": true,
+        "classicRestartVerified": true,
+        "missingCellsError": "Invalid calibration: Calibrated Cells requires an actual cell table",
+        "restartSubpixelMode": "ClassicRgb",
+        "targets": {
+          "viewFormat": "ARGB32",
+          "viewGraphicsFormat": "R8G8B8A8_SRGB",
+          "resolveGraphicsFormat": "Absent",
+          "quiltGraphicsFormat": "R8G8B8A8_SRGB",
+          "viewSrgb": true,
+          "resolveSrgb": false,
+          "quiltSrgb": true,
+          "resolvePresent": false,
+          "viewSamples": 1,
+          "resolveSamples": 0,
+          "quiltSamples": 1
+        }
+      },
+      "runtimeSha256": "adddc21955af6c57e610ca76880179063df17c4c15b33e9a2fcc6bc39daf5816",
+      "passed": true,
+      "exitDiagnostics": {
+        "threadWarningCount": 5,
+        "memoryLeaksRecords": [],
+        "logSha256": "f51c8ab86eed05bcfc8b980e5e956e27190e1faf6b6e44a465ad6e4c3c63c187"
+      },
+      "build": {
+        "pipeline": "HDRP",
+        "configuration": "Release",
+        "sourceRevision": "c4de573c4435f0105e62f6125f8d4fedd78786b3",
+        "prepareCliExitCode": 0,
+        "buildCliExitCode": 0,
+        "buildEditorPid": null,
+        "executable": ".local/macos-current-player-20261014/latest-hdrp-release/PipelineSmoke.app/Contents/MacOS/PipelineSmoke",
+        "executableArchitecture": "arm64",
+        "pluginPath": ".local/macos-current-player-20261014/latest-hdrp-release/PipelineSmoke.app/Contents/PlugIns/ARM64/lookingglass_bridge_shim.dylib",
+        "pluginSha256": "c97856ea3bb910a1456eb044347a18ac8117c140ddd149f8e9ec240600766c5b",
+        "sourcePluginSha256": "c97856ea3bb910a1456eb044347a18ac8117c140ddd149f8e9ec240600766c5b",
+        "pluginMatchesSource": true,
+        "pluginArchitecture": "arm64",
+        "fixtureSourceSha256": {
+          "Tests/Pipelines/Unity/Assets/MetalCurrentValidation/Editor/MetalCurrentValidationBuilder.cs": "4b122bd1b3e14f14635a70ce823aa09b5012cb9771fab7c290c999a258faa1fb",
+          "Tests/Pipelines/Unity/Assets/MetalCurrentValidation/MetalCurrentValidationRunner.cs": "c5e607509d33b57021caf0c54f99d44c9984b6748a9a53524db9d00a74e0c6ea"
+        },
+        "buildEvidence": {
+          "pipeline": "HDRP",
+          "activeAsset": "Assets/SamplePlayerValidationGenerated/MetalCurrent/Pipeline.asset",
+          "activePipeline": "HDRenderPipeline",
+          "shaderPipelineTag": "HDRenderPipeline",
+          "configuredQualityAssets": 6,
+          "preparedInSeparateProcess": true,
+          "succeeded": true
+        }
+      },
+      "recordingPngHeaders": [
+        {
+          "file": "frame_000000_qs11x6a0.5625.png",
+          "width": 1023,
+          "height": 1020,
+          "sha256": "07ec1e19d7d26ac5f01915cfae55df95068fb681f240eef7780a859541dba44b"
+        },
+        {
+          "file": "frame_000001_qs11x6a0.5625.png",
+          "width": 1023,
+          "height": 1020,
+          "sha256": "07ec1e19d7d26ac5f01915cfae55df95068fb681f240eef7780a859541dba44b"
+        },
+        {
+          "file": "frame_000002_qs11x6a0.5625.png",
+          "width": 1023,
+          "height": 1020,
+          "sha256": "07ec1e19d7d26ac5f01915cfae55df95068fb681f240eef7780a859541dba44b"
+        }
+      ],
+      "recordingFramesDecodedForImageGate": 0,
+      "stillFramesDecodedForImageGate": [
+        "current.png",
+        "classic.png"
+      ]
+    }
+  ],
+  "transitionRuns": [
+    {
+      "case": "final-urp-reload",
+      "pipeline": "URP",
+      "domainReloadDisabled": false,
+      "startedAtUnix": 1791945241.952838,
+      "finishedAtUnix": 1791945278.658784,
+      "cliExitCode": 0,
+      "naturalExit": true,
+      "editorHeld": false,
+      "fixtureSourceSha256": "013c8a00795a3e131fd3ee772290f217fdd83054b128a60b57ab2f782e4caa00",
+      "packagedNativeSha256": "c97856ea3bb910a1456eb044347a18ac8117c140ddd149f8e9ec240600766c5b",
+      "expectedModuleObserved": false,
+      "sceneBeforeSha256": "96a56349779fd677215eff77cc92696e81d7ffe4539ca7fb024ec261856344f2",
+      "sceneAfterSha256": "96a56349779fd677215eff77cc92696e81d7ffe4539ca7fb024ec261856344f2",
+      "report": {
+        "passed": true,
+        "domainReloadDisabled": false,
+        "error": "",
+        "cleanupError": "",
+        "pipeline": "URP",
+        "actualPipeline": "UniversalRenderPipeline",
+        "shaderTag": "UniversalPipeline",
+        "unityVersion": "6000.6.4f1",
+        "graphicsApi": "Metal",
+        "gpu": "Apple M3 Max",
+        "cleanupProven": true,
+        "exitRequested": true,
+        "pid": 29765,
+        "requestedCycles": 2,
+        "reloadCount": 2,
+        "pendingResources": 0,
+        "pendingRetirement": 0,
+        "cycles": [
+          {
+            "index": 1,
+            "previewFrames": 18,
+            "previewRendered": 18,
+            "playFrames": 30,
+            "pendingResources": 0,
+            "pendingRetirement": 0,
+            "paused": true,
+            "resumed": true,
+            "previewActiveAtPlayRequest": true,
+            "previewStoppedInPlay": true,
+            "returnedToEdit": true,
+            "sourceProfileRestored": true,
+            "sourceProfileUnchangedBeforePlay": true,
+            "profileRestoredInPlay": true,
+            "settingsRestoredInPlay": true,
+            "hiddenProducersBeforePlay": 1,
+            "hiddenProducersInPlay": 0,
+            "reloadsBeforePlay": 1,
+            "reloadsInPlay": 2,
+            "redPixels": 152354,
+            "greenPixels": 96813,
+            "magentaPixels": 0,
+            "targets": {
+              "viewFormat": "ARGBHalf",
+              "viewGraphicsFormat": "R16G16B16A16_SFloat",
+              "resolveGraphicsFormat": "R8G8B8A8_SRGB",
+              "quiltGraphicsFormat": "R8G8B8A8_SRGB",
+              "viewSrgb": false,
+              "resolveSrgb": true,
+              "quiltSrgb": true,
+              "resolvePresent": true,
+              "viewSamples": 4,
+              "resolveSamples": 1,
+              "quiltSamples": 1
+            }
+          },
+          {
+            "index": 2,
+            "previewFrames": 18,
+            "previewRendered": 18,
+            "playFrames": 30,
+            "pendingResources": 0,
+            "pendingRetirement": 0,
+            "paused": true,
+            "resumed": true,
+            "previewActiveAtPlayRequest": true,
+            "previewStoppedInPlay": true,
+            "returnedToEdit": true,
+            "sourceProfileRestored": true,
+            "sourceProfileUnchangedBeforePlay": true,
+            "profileRestoredInPlay": true,
+            "settingsRestoredInPlay": true,
+            "hiddenProducersBeforePlay": 1,
+            "hiddenProducersInPlay": 0,
+            "reloadsBeforePlay": 2,
+            "reloadsInPlay": 3,
+            "redPixels": 152354,
+            "greenPixels": 96813,
+            "magentaPixels": 0,
+            "targets": {
+              "viewFormat": "ARGBHalf",
+              "viewGraphicsFormat": "R16G16B16A16_SFloat",
+              "resolveGraphicsFormat": "R8G8B8A8_SRGB",
+              "quiltGraphicsFormat": "R8G8B8A8_SRGB",
+              "viewSrgb": false,
+              "resolveSrgb": true,
+              "quiltSrgb": true,
+              "resolvePresent": true,
+              "viewSamples": 4,
+              "resolveSamples": 1,
+              "quiltSamples": 1
+            }
+          }
+        ]
+      },
+      "passed": true,
+      "exitDiagnostics": {
+        "threadWarningCount": 20,
+        "memoryLeaksRecords": [],
+        "logSha256": "d6177dfa330cb53ba2d4c97da4fda2a3770bc352920e98786a530f0edd4f4f35"
+      }
+    },
+    {
+      "case": "final-urp-no-reload",
+      "pipeline": "URP",
+      "domainReloadDisabled": true,
+      "startedAtUnix": 1791945278.694601,
+      "finishedAtUnix": 1791945300.084942,
+      "cliExitCode": 0,
+      "naturalExit": true,
+      "editorHeld": false,
+      "fixtureSourceSha256": "013c8a00795a3e131fd3ee772290f217fdd83054b128a60b57ab2f782e4caa00",
+      "packagedNativeSha256": "c97856ea3bb910a1456eb044347a18ac8117c140ddd149f8e9ec240600766c5b",
+      "expectedModuleObserved": false,
+      "sceneBeforeSha256": "96a56349779fd677215eff77cc92696e81d7ffe4539ca7fb024ec261856344f2",
+      "sceneAfterSha256": "96a56349779fd677215eff77cc92696e81d7ffe4539ca7fb024ec261856344f2",
+      "report": {
+        "passed": true,
+        "domainReloadDisabled": true,
+        "error": "",
+        "cleanupError": "",
+        "pipeline": "URP",
+        "actualPipeline": "UniversalRenderPipeline",
+        "shaderTag": "UniversalPipeline",
+        "unityVersion": "6000.6.4f1",
+        "graphicsApi": "Metal",
+        "gpu": "Apple M3 Max",
+        "cleanupProven": true,
+        "exitRequested": true,
+        "pid": 29906,
+        "requestedCycles": 2,
+        "reloadCount": 0,
+        "pendingResources": 0,
+        "pendingRetirement": 0,
+        "cycles": [
+          {
+            "index": 1,
+            "previewFrames": 18,
+            "previewRendered": 18,
+            "playFrames": 30,
+            "pendingResources": 0,
+            "pendingRetirement": 0,
+            "paused": true,
+            "resumed": true,
+            "previewActiveAtPlayRequest": true,
+            "previewStoppedInPlay": true,
+            "returnedToEdit": true,
+            "sourceProfileRestored": true,
+            "sourceProfileUnchangedBeforePlay": true,
+            "profileRestoredInPlay": true,
+            "settingsRestoredInPlay": true,
+            "hiddenProducersBeforePlay": 1,
+            "hiddenProducersInPlay": 0,
+            "reloadsBeforePlay": 1,
+            "reloadsInPlay": 1,
+            "redPixels": 152354,
+            "greenPixels": 96813,
+            "magentaPixels": 0,
+            "targets": {
+              "viewFormat": "ARGBHalf",
+              "viewGraphicsFormat": "R16G16B16A16_SFloat",
+              "resolveGraphicsFormat": "R8G8B8A8_SRGB",
+              "quiltGraphicsFormat": "R8G8B8A8_SRGB",
+              "viewSrgb": false,
+              "resolveSrgb": true,
+              "quiltSrgb": true,
+              "resolvePresent": true,
+              "viewSamples": 4,
+              "resolveSamples": 1,
+              "quiltSamples": 1
+            }
+          },
+          {
+            "index": 2,
+            "previewFrames": 18,
+            "previewRendered": 18,
+            "playFrames": 30,
+            "pendingResources": 0,
+            "pendingRetirement": 0,
+            "paused": true,
+            "resumed": true,
+            "previewActiveAtPlayRequest": true,
+            "previewStoppedInPlay": true,
+            "returnedToEdit": true,
+            "sourceProfileRestored": true,
+            "sourceProfileUnchangedBeforePlay": true,
+            "profileRestoredInPlay": true,
+            "settingsRestoredInPlay": true,
+            "hiddenProducersBeforePlay": 1,
+            "hiddenProducersInPlay": 0,
+            "reloadsBeforePlay": 1,
+            "reloadsInPlay": 1,
+            "redPixels": 152354,
+            "greenPixels": 96813,
+            "magentaPixels": 0,
+            "targets": {
+              "viewFormat": "ARGBHalf",
+              "viewGraphicsFormat": "R16G16B16A16_SFloat",
+              "resolveGraphicsFormat": "R8G8B8A8_SRGB",
+              "quiltGraphicsFormat": "R8G8B8A8_SRGB",
+              "viewSrgb": false,
+              "resolveSrgb": true,
+              "quiltSrgb": true,
+              "resolvePresent": true,
+              "viewSamples": 4,
+              "resolveSamples": 1,
+              "quiltSamples": 1
+            }
+          }
+        ]
+      },
+      "passed": true,
+      "exitDiagnostics": {
+        "threadWarningCount": 20,
+        "memoryLeaksRecords": [],
+        "logSha256": "aa2aa0d4e9c2e5a62bc81afd3154cfd8546b54a4355f8b1d7c8a57c1199e6ff7"
+      }
+    },
+    {
+      "case": "final-hdrp-reload",
+      "pipeline": "HDRP",
+      "domainReloadDisabled": false,
+      "startedAtUnix": 1791945308.764732,
+      "finishedAtUnix": 1791945357.707099,
+      "cliExitCode": 0,
+      "naturalExit": true,
+      "editorHeld": false,
+      "fixtureSourceSha256": "013c8a00795a3e131fd3ee772290f217fdd83054b128a60b57ab2f782e4caa00",
+      "packagedNativeSha256": "c97856ea3bb910a1456eb044347a18ac8117c140ddd149f8e9ec240600766c5b",
+      "expectedModuleObserved": false,
+      "sceneBeforeSha256": "2c1c2860a6722746f598e0a25d6e7fff242b6ce6fae3ee135ec4d3632a4c1428",
+      "sceneAfterSha256": "2c1c2860a6722746f598e0a25d6e7fff242b6ce6fae3ee135ec4d3632a4c1428",
+      "report": {
+        "passed": true,
+        "domainReloadDisabled": false,
+        "error": "",
+        "cleanupError": "",
+        "pipeline": "HDRP",
+        "actualPipeline": "HDRenderPipeline",
+        "shaderTag": "HDRenderPipeline",
+        "unityVersion": "6000.6.4f1",
+        "graphicsApi": "Metal",
+        "gpu": "Apple M3 Max",
+        "cleanupProven": true,
+        "exitRequested": true,
+        "pid": 30007,
+        "requestedCycles": 2,
+        "reloadCount": 2,
+        "pendingResources": 0,
+        "pendingRetirement": 0,
+        "cycles": [
+          {
+            "index": 1,
+            "previewFrames": 18,
+            "previewRendered": 18,
+            "playFrames": 30,
+            "pendingResources": 0,
+            "pendingRetirement": 0,
+            "paused": true,
+            "resumed": true,
+            "previewActiveAtPlayRequest": true,
+            "previewStoppedInPlay": true,
+            "returnedToEdit": true,
+            "sourceProfileRestored": true,
+            "sourceProfileUnchangedBeforePlay": true,
+            "profileRestoredInPlay": true,
+            "settingsRestoredInPlay": true,
+            "hiddenProducersBeforePlay": 1,
+            "hiddenProducersInPlay": 0,
+            "reloadsBeforePlay": 1,
+            "reloadsInPlay": 2,
+            "redPixels": 167982,
+            "greenPixels": 106817,
+            "magentaPixels": 0,
+            "targets": {
+              "viewFormat": "ARGB32",
+              "viewGraphicsFormat": "R8G8B8A8_SRGB",
+              "resolveGraphicsFormat": "Absent",
+              "quiltGraphicsFormat": "R8G8B8A8_SRGB",
+              "viewSrgb": true,
+              "resolveSrgb": false,
+              "quiltSrgb": true,
+              "resolvePresent": false,
+              "viewSamples": 1,
+              "resolveSamples": 0,
+              "quiltSamples": 1
+            }
+          },
+          {
+            "index": 2,
+            "previewFrames": 18,
+            "previewRendered": 18,
+            "playFrames": 30,
+            "pendingResources": 0,
+            "pendingRetirement": 0,
+            "paused": true,
+            "resumed": true,
+            "previewActiveAtPlayRequest": true,
+            "previewStoppedInPlay": true,
+            "returnedToEdit": true,
+            "sourceProfileRestored": true,
+            "sourceProfileUnchangedBeforePlay": true,
+            "profileRestoredInPlay": true,
+            "settingsRestoredInPlay": true,
+            "hiddenProducersBeforePlay": 1,
+            "hiddenProducersInPlay": 0,
+            "reloadsBeforePlay": 2,
+            "reloadsInPlay": 3,
+            "redPixels": 167982,
+            "greenPixels": 106817,
+            "magentaPixels": 0,
+            "targets": {
+              "viewFormat": "ARGB32",
+              "viewGraphicsFormat": "R8G8B8A8_SRGB",
+              "resolveGraphicsFormat": "Absent",
+              "quiltGraphicsFormat": "R8G8B8A8_SRGB",
+              "viewSrgb": true,
+              "resolveSrgb": false,
+              "quiltSrgb": true,
+              "resolvePresent": false,
+              "viewSamples": 1,
+              "resolveSamples": 0,
+              "quiltSamples": 1
+            }
+          }
+        ]
+      },
+      "passed": true,
+      "exitDiagnostics": {
+        "threadWarningCount": 20,
+        "memoryLeaksRecords": [],
+        "logSha256": "acf5efe7e6946ce6318e77ecd579c13a0433330fce92879ac186c0f6f831ef99"
+      }
+    },
+    {
+      "case": "final-hdrp-no-reload",
+      "pipeline": "HDRP",
+      "domainReloadDisabled": true,
+      "startedAtUnix": 1791945357.742215,
+      "finishedAtUnix": 1791945391.3838432,
+      "cliExitCode": 0,
+      "naturalExit": true,
+      "editorHeld": false,
+      "fixtureSourceSha256": "013c8a00795a3e131fd3ee772290f217fdd83054b128a60b57ab2f782e4caa00",
+      "packagedNativeSha256": "c97856ea3bb910a1456eb044347a18ac8117c140ddd149f8e9ec240600766c5b",
+      "expectedModuleObserved": false,
+      "sceneBeforeSha256": "2c1c2860a6722746f598e0a25d6e7fff242b6ce6fae3ee135ec4d3632a4c1428",
+      "sceneAfterSha256": "2c1c2860a6722746f598e0a25d6e7fff242b6ce6fae3ee135ec4d3632a4c1428",
+      "report": {
+        "passed": true,
+        "domainReloadDisabled": true,
+        "error": "",
+        "cleanupError": "",
+        "pipeline": "HDRP",
+        "actualPipeline": "HDRenderPipeline",
+        "shaderTag": "HDRenderPipeline",
+        "unityVersion": "6000.6.4f1",
+        "graphicsApi": "Metal",
+        "gpu": "Apple M3 Max",
+        "cleanupProven": true,
+        "exitRequested": true,
+        "pid": 30134,
+        "requestedCycles": 2,
+        "reloadCount": 0,
+        "pendingResources": 0,
+        "pendingRetirement": 0,
+        "cycles": [
+          {
+            "index": 1,
+            "previewFrames": 18,
+            "previewRendered": 18,
+            "playFrames": 30,
+            "pendingResources": 0,
+            "pendingRetirement": 0,
+            "paused": true,
+            "resumed": true,
+            "previewActiveAtPlayRequest": true,
+            "previewStoppedInPlay": true,
+            "returnedToEdit": true,
+            "sourceProfileRestored": true,
+            "sourceProfileUnchangedBeforePlay": true,
+            "profileRestoredInPlay": true,
+            "settingsRestoredInPlay": true,
+            "hiddenProducersBeforePlay": 1,
+            "hiddenProducersInPlay": 0,
+            "reloadsBeforePlay": 1,
+            "reloadsInPlay": 1,
+            "redPixels": 167982,
+            "greenPixels": 106817,
+            "magentaPixels": 0,
+            "targets": {
+              "viewFormat": "ARGB32",
+              "viewGraphicsFormat": "R8G8B8A8_SRGB",
+              "resolveGraphicsFormat": "Absent",
+              "quiltGraphicsFormat": "R8G8B8A8_SRGB",
+              "viewSrgb": true,
+              "resolveSrgb": false,
+              "quiltSrgb": true,
+              "resolvePresent": false,
+              "viewSamples": 1,
+              "resolveSamples": 0,
+              "quiltSamples": 1
+            }
+          },
+          {
+            "index": 2,
+            "previewFrames": 18,
+            "previewRendered": 18,
+            "playFrames": 30,
+            "pendingResources": 0,
+            "pendingRetirement": 0,
+            "paused": true,
+            "resumed": true,
+            "previewActiveAtPlayRequest": true,
+            "previewStoppedInPlay": true,
+            "returnedToEdit": true,
+            "sourceProfileRestored": true,
+            "sourceProfileUnchangedBeforePlay": true,
+            "profileRestoredInPlay": true,
+            "settingsRestoredInPlay": true,
+            "hiddenProducersBeforePlay": 1,
+            "hiddenProducersInPlay": 0,
+            "reloadsBeforePlay": 1,
+            "reloadsInPlay": 1,
+            "redPixels": 167982,
+            "greenPixels": 106817,
+            "magentaPixels": 0,
+            "targets": {
+              "viewFormat": "ARGB32",
+              "viewGraphicsFormat": "R8G8B8A8_SRGB",
+              "resolveGraphicsFormat": "Absent",
+              "quiltGraphicsFormat": "R8G8B8A8_SRGB",
+              "viewSrgb": true,
+              "resolveSrgb": false,
+              "quiltSrgb": true,
+              "resolvePresent": false,
+              "viewSamples": 1,
+              "resolveSamples": 0,
+              "quiltSamples": 1
+            }
+          }
+        ]
+      },
+      "passed": true,
+      "exitDiagnostics": {
+        "threadWarningCount": 20,
+        "memoryLeaksRecords": [],
+        "logSha256": "ba59cd39dd10f1557e983cf88c3771f386316887d1d487fce07bd8c788413ea3"
+      }
+    }
+  ],
+  "shutdownControls": [
+    {
+      "case": "unity-only-urp-development",
+      "mode": "UnityOnly",
+      "configuration": "Development",
+      "pid": 29675,
+      "startedAtUnix": 1791945218.481751,
+      "finishedAtUnix": 1791945225.1217039,
+      "exitCode": 0,
+      "naturalExit": true,
+      "playerHeld": false,
+      "executableArchitecture": "arm64",
+      "packagedPlugins": [],
+      "shimObserved": false,
+      "sdkObserved": false,
+      "moduleSnapshotExitCode": 0,
+      "moduleSnapshotPidMatched": true,
+      "dyldTraceObserved": true,
+      "gates": {
+        "moduleSnapshotSucceeded": true,
+        "modeMatches": true,
+        "metalMatches": true,
+        "unityMatches": true,
+        "fresh": true,
+        "player": true,
+        "configuration": true,
+        "runtimePass": true,
+        "naturalExit": true,
+        "noSdkWhenNotRequested": true,
+        "noShimInUnityOnly": true
+      },
+      "runtime": {
+        "passed": true,
+        "editor": false,
+        "development": true,
+        "error": "",
+        "pipeline": "URP",
+        "actualPipeline": "UniversalRenderPipeline",
+        "shaderTag": "UniversalPipeline",
+        "unityVersion": "6000.6.4f1",
+        "graphicsApi": "Metal",
+        "gpu": "Apple M3 Max",
+        "frames": 60
+      },
+      "passed": true,
+      "exitDiagnostics": {
+        "threadWarningCount": 6,
+        "memoryLeaksRecords": [
+          {
+            "type": "MemoryLeaks",
+            "version": 2,
+            "phase": "Immediate",
+            "allocatedMemory": 1882391,
+            "memoryLabels": [
+              {
+                "Default": 54543
+              },
+              {
+                "Permanent": 1472
+              },
+              {
+                "NewDelete": 1053583
+              },
+              {
+                "Thread": 8120
+              },
+              {
+                "Manager": 16359
+              },
+              {
+                "VertexData": 8
+              },
+              {
+                "Geometry": 408
+              },
+              {
+                "Texture": 16
+              },
+              {
+                "Shader": 78020
+              },
+              {
+                "Material": 212
+              },
+              {
+                "GfxDevice": 38776
+              },
+              {
+                "GfxThread": 400
+              },
+              {
+                "Animation": 880
+              },
+              {
+                "Audio": 3648
+              },
+              {
+                "FreeType": 8
+              },
+              {
+                "FontEngine": 736
+              },
+              {
+                "Physics": 2000
+              },
+              {
+                "Physics2D": 16
+              },
+              {
+                "Serialization": 16392
+              },
+              {
+                "Input": 43216
+              },
+              {
+                "JobScheduler": 448
+              },
+              {
+                "TextLib": 280
+              },
+              {
+                "Mono": 56
+              },
+              {
+                "ScriptingNativeRuntime": 128
+              },
+              {
+                "BaseObject": 36320
+              },
+              {
+                "Resource": 996
+              },
+              {
+                "Renderer": 2736
+              },
+              {
+                "Transform": 6485
+              },
+              {
+                "File": 4600
+              },
+              {
+                "WebCam": 32
+              },
+              {
+                "Culling": 32
+              },
+              {
+                "Terrain": 11298
+              },
+              {
+                "Wind": 24
+              },
+              {
+                "String": 3097
+              },
+              {
+                "Utility": 318232
+              },
+              {
+                "PoolAlloc": 1536
+              },
+              {
+                "AI": 40
+              },
+              {
+                "TypeTree": 5512
+              },
+              {
+                "ScriptManager": 5696
+              },
+              {
+                "CodeReload": 440
+              },
+              {
+                "RuntimeInitializeOnLoadManager": 64
+              },
+              {
+                "Sprites": 78
+              },
+              {
+                "SpriteAtlas": 120
+              },
+              {
+                "GI": 7200
+              },
+              {
+                "Director": 8248
+              },
+              {
+                "CloudService": 144
+              },
+              {
+                "WebRequest": 520
+              },
+              {
+                "VR": 49402
+              },
+              {
+                "SceneManager": 408
+              },
+              {
+                "Video": 2080
+              },
+              {
+                "LazyScriptCache": 32
+              },
+              {
+                "NativeArray": 648
+              },
+              {
+                "Camera": 1169
+              },
+              {
+                "Secure": 241
+              },
+              {
+                "SerializationCache": 3608
+              },
+              {
+                "APIUpdating": 10320
+              },
+              {
+                "Subsystems": 336
+              },
+              {
+                "VirtualTexturing": 57496
+              },
+              {
+                "Baselib": 16
+              },
+              {
+                "Analytics": 80
+              },
+              {
+                "Hierarchy": 1452
+              },
+              {
+                "UIElements": 40
+              },
+              {
+                "CoreStats": 14536
+              },
+              {
+                "Identifiers": 7152
+              },
+              {
+                "Gui": 40
+              },
+              {
+                "CoreBusinessMetrics": 128
+              },
+              {
+                "AssetReference": 32
+              }
+            ]
+          }
+        ],
+        "logSha256": "ec38b2ed2c07b15d5b8de360a04b09de70a7a852f7f2e10aadcec53c2fcd0412"
+      },
+      "sourceBasis": "isolated Unity project prepared from 11312b8, same Unity/pipeline versions; no ViewWeave packages",
+      "noNativeEvidenceScope": "no packaged shim, no ViewWeave source/packages, successful single-PID module snapshot and observed dyld load trace; not a claim based on empty lsof output"
+    },
+    {
+      "case": "unity-only-urp-release",
+      "mode": "UnityOnly",
+      "configuration": "Release",
+      "pid": 29682,
+      "startedAtUnix": 1791945225.1775649,
+      "finishedAtUnix": 1791945232.228881,
+      "exitCode": 0,
+      "naturalExit": true,
+      "playerHeld": false,
+      "executableArchitecture": "arm64",
+      "packagedPlugins": [],
+      "shimObserved": false,
+      "sdkObserved": false,
+      "moduleSnapshotExitCode": 0,
+      "moduleSnapshotPidMatched": true,
+      "dyldTraceObserved": true,
+      "gates": {
+        "moduleSnapshotSucceeded": true,
+        "modeMatches": true,
+        "metalMatches": true,
+        "unityMatches": true,
+        "fresh": true,
+        "player": true,
+        "configuration": true,
+        "runtimePass": true,
+        "naturalExit": true,
+        "noSdkWhenNotRequested": true,
+        "noShimInUnityOnly": true
+      },
+      "runtime": {
+        "passed": true,
+        "editor": false,
+        "development": false,
+        "error": "",
+        "pipeline": "URP",
+        "actualPipeline": "UniversalRenderPipeline",
+        "shaderTag": "UniversalPipeline",
+        "unityVersion": "6000.6.4f1",
+        "graphicsApi": "Metal",
+        "gpu": "Apple M3 Max",
+        "frames": 60
+      },
+      "passed": true,
+      "exitDiagnostics": {
+        "threadWarningCount": 5,
+        "memoryLeaksRecords": [],
+        "logSha256": "0171821a0d510c01b4b4d322bc96ef5650c2a1e2b15f97067f966c87b4e9b300"
+      },
+      "sourceBasis": "isolated Unity project prepared from 11312b8, same Unity/pipeline versions; no ViewWeave packages",
+      "noNativeEvidenceScope": "no packaged shim, no ViewWeave source/packages, successful single-PID module snapshot and observed dyld load trace; not a claim based on empty lsof output"
+    },
+    {
+      "case": "final-quiltonly-urp",
+      "mode": "QuiltOnly",
+      "configuration": "Development",
+      "pid": 37135,
+      "startedAtUnix": 1791945430.948503,
+      "finishedAtUnix": 1791945439.1144419,
+      "exitCode": 0,
+      "naturalExit": true,
+      "playerHeld": false,
+      "executableArchitecture": "arm64",
+      "packagedPlugins": [
+        {
+          "path": ".local/macos-preview-shutdown-20261014/final-quiltonly-urp/Control.app/Contents/PlugIns/ARM64/lookingglass_bridge_shim.dylib",
+          "sha256": "c97856ea3bb910a1456eb044347a18ac8117c140ddd149f8e9ec240600766c5b"
+        }
+      ],
+      "shimObserved": false,
+      "sdkObserved": false,
+      "moduleSnapshotExitCode": 0,
+      "moduleSnapshotPidMatched": true,
+      "dyldTraceObserved": true,
+      "gates": {
+        "moduleSnapshotSucceeded": true,
+        "modeMatches": true,
+        "metalMatches": true,
+        "unityMatches": true,
+        "fresh": true,
+        "player": true,
+        "configuration": true,
+        "runtimePass": true,
+        "naturalExit": true,
+        "noSdkWhenNotRequested": true,
+        "noShimInUnityOnly": true
+      },
+      "runtime": {
+        "passed": true,
+        "editor": false,
+        "development": true,
+        "cleanupProven": true,
+        "error": "",
+        "mode": "QuiltOnly",
+        "pipeline": "URP",
+        "unityVersion": "6000.6.4f1",
+        "graphicsApi": "Metal",
+        "actualPipeline": "UniversalRenderPipeline",
+        "shaderTag": "UniversalPipeline",
+        "targets": {
+          "viewFormat": "ARGBHalf",
+          "viewGraphicsFormat": "R16G16B16A16_SFloat",
+          "resolveGraphicsFormat": "R8G8B8A8_SRGB",
+          "quiltGraphicsFormat": "R8G8B8A8_SRGB",
+          "viewSrgb": false,
+          "resolveSrgb": true,
+          "quiltSrgb": true,
+          "resolvePresent": true,
+          "viewSamples": 4,
+          "resolveSamples": 1,
+          "quiltSamples": 1
+        },
+        "renderedQuilts": 60,
+        "views": 66,
+        "baselineCameras": 2,
+        "peakCameras": 68,
+        "remainingCameras": 2,
+        "redPixels": 152354,
+        "greenPixels": 96813,
+        "magentaPixels": 0,
+        "metadataDisplays": 0,
+        "metadataCleanupFinished": false,
+        "metadataEnded": false
+      },
+      "passed": true,
+      "exitDiagnostics": {
+        "threadWarningCount": 5,
+        "memoryLeaksRecords": [
+          {
+            "type": "MemoryLeaks",
+            "version": 2,
+            "phase": "Immediate",
+            "allocatedMemory": 1923079,
+            "memoryLabels": [
+              {
+                "Default": 54543
+              },
+              {
+                "Permanent": 1472
+              },
+              {
+                "NewDelete": 1094287
+              },
+              {
+                "Thread": 8120
+              },
+              {
+                "Manager": 16359
+              },
+              {
+                "VertexData": 8
+              },
+              {
+                "Geometry": 408
+              },
+              {
+                "Texture": 16
+              },
+              {
+                "Shader": 78020
+              },
+              {
+                "Material": 212
+              },
+              {
+                "GfxDevice": 38776
+              },
+              {
+                "GfxThread": 400
+              },
+              {
+                "Animation": 880
+              },
+              {
+                "Audio": 3648
+              },
+              {
+                "FreeType": 8
+              },
+              {
+                "FontEngine": 736
+              },
+              {
+                "Physics": 2000
+              },
+              {
+                "Physics2D": 16
+              },
+              {
+                "Serialization": 16392
+              },
+              {
+                "Input": 43216
+              },
+              {
+                "JobScheduler": 448
+              },
+              {
+                "TextLib": 280
+              },
+              {
+                "Mono": 56
+              },
+              {
+                "ScriptingNativeRuntime": 128
+              },
+              {
+                "BaseObject": 36320
+              },
+              {
+                "Resource": 996
+              },
+              {
+                "Renderer": 2736
+              },
+              {
+                "Transform": 6485
+              },
+              {
+                "File": 4600
+              },
+              {
+                "WebCam": 32
+              },
+              {
+                "Culling": 32
+              },
+              {
+                "Terrain": 11298
+              },
+              {
+                "Wind": 24
+              },
+              {
+                "String": 3081
+              },
+              {
+                "Utility": 318232
+              },
+              {
+                "PoolAlloc": 1536
+              },
+              {
+                "AI": 40
+              },
+              {
+                "TypeTree": 5512
+              },
+              {
+                "ScriptManager": 5696
+              },
+              {
+                "CodeReload": 440
+              },
+              {
+                "RuntimeInitializeOnLoadManager": 64
+              },
+              {
+                "Sprites": 78
+              },
+              {
+                "SpriteAtlas": 120
+              },
+              {
+                "GI": 7200
+              },
+              {
+                "Director": 8248
+              },
+              {
+                "CloudService": 144
+              },
+              {
+                "WebRequest": 520
+              },
+              {
+                "VR": 49402
+              },
+              {
+                "SceneManager": 408
+              },
+              {
+                "Video": 2080
+              },
+              {
+                "LazyScriptCache": 32
+              },
+              {
+                "NativeArray": 648
+              },
+              {
+                "Camera": 1169
+              },
+              {
+                "Secure": 241
+              },
+              {
+                "SerializationCache": 3608
+              },
+              {
+                "APIUpdating": 10320
+              },
+              {
+                "Subsystems": 336
+              },
+              {
+                "VirtualTexturing": 57496
+              },
+              {
+                "Baselib": 16
+              },
+              {
+                "Analytics": 80
+              },
+              {
+                "Hierarchy": 1452
+              },
+              {
+                "UIElements": 40
+              },
+              {
+                "CoreStats": 14536
+              },
+              {
+                "Identifiers": 7152
+              },
+              {
+                "Gui": 40
+              },
+              {
+                "CoreBusinessMetrics": 128
+              },
+              {
+                "AssetReference": 32
+              }
+            ]
+          }
+        ],
+        "logSha256": "b2f90506cddf0364934fb39187009d25cb5a3fa0b7dd14bad586e6cb2049fdbe"
+      },
+      "sourceBasis": "c4de573c4435f0105e62f6125f8d4fedd78786b3"
+    },
+    {
+      "case": "final-quiltonly-hdrp",
+      "mode": "QuiltOnly",
+      "configuration": "Development",
+      "pid": 37331,
+      "startedAtUnix": 1791945470.6612322,
+      "finishedAtUnix": 1791945483.735408,
+      "exitCode": 0,
+      "naturalExit": true,
+      "playerHeld": false,
+      "executableArchitecture": "arm64",
+      "packagedPlugins": [
+        {
+          "path": ".local/macos-preview-shutdown-20261014/final-quiltonly-hdrp/Control.app/Contents/PlugIns/ARM64/lookingglass_bridge_shim.dylib",
+          "sha256": "c97856ea3bb910a1456eb044347a18ac8117c140ddd149f8e9ec240600766c5b"
+        }
+      ],
+      "shimObserved": false,
+      "sdkObserved": false,
+      "moduleSnapshotExitCode": 0,
+      "moduleSnapshotPidMatched": true,
+      "dyldTraceObserved": true,
+      "gates": {
+        "moduleSnapshotSucceeded": true,
+        "modeMatches": true,
+        "metalMatches": true,
+        "unityMatches": true,
+        "fresh": true,
+        "player": true,
+        "configuration": true,
+        "runtimePass": true,
+        "naturalExit": true,
+        "noSdkWhenNotRequested": true,
+        "noShimInUnityOnly": true
+      },
+      "runtime": {
+        "passed": true,
+        "editor": false,
+        "development": true,
+        "cleanupProven": true,
+        "error": "",
+        "mode": "QuiltOnly",
+        "pipeline": "HDRP",
+        "unityVersion": "6000.6.4f1",
+        "graphicsApi": "Metal",
+        "actualPipeline": "HDRenderPipeline",
+        "shaderTag": "HDRenderPipeline",
+        "targets": {
+          "viewFormat": "ARGB32",
+          "viewGraphicsFormat": "R8G8B8A8_SRGB",
+          "resolveGraphicsFormat": "Absent",
+          "quiltGraphicsFormat": "R8G8B8A8_SRGB",
+          "viewSrgb": true,
+          "resolveSrgb": false,
+          "quiltSrgb": true,
+          "resolvePresent": false,
+          "viewSamples": 1,
+          "resolveSamples": 0,
+          "quiltSamples": 1
+        },
+        "renderedQuilts": 60,
+        "views": 66,
+        "baselineCameras": 2,
+        "peakCameras": 68,
+        "remainingCameras": 2,
+        "redPixels": 167918,
+        "greenPixels": 107167,
+        "magentaPixels": 0,
+        "metadataDisplays": 0,
+        "metadataCleanupFinished": false,
+        "metadataEnded": false
+      },
+      "passed": true,
+      "exitDiagnostics": {
+        "threadWarningCount": 5,
+        "memoryLeaksRecords": [
+          {
+            "type": "MemoryLeaks",
+            "version": 2,
+            "phase": "Immediate",
+            "allocatedMemory": 2084165,
+            "memoryLabels": [
+              {
+                "Default": 54543
+              },
+              {
+                "Permanent": 1472
+              },
+              {
+                "NewDelete": 1255371
+              },
+              {
+                "Thread": 8120
+              },
+              {
+                "Manager": 16359
+              },
+              {
+                "VertexData": 8
+              },
+              {
+                "Geometry": 408
+              },
+              {
+                "Texture": 16
+              },
+              {
+                "Shader": 78020
+              },
+              {
+                "Material": 212
+              },
+              {
+                "GfxDevice": 38776
+              },
+              {
+                "GfxThread": 400
+              },
+              {
+                "Animation": 880
+              },
+              {
+                "Audio": 3648
+              },
+              {
+                "FreeType": 8
+              },
+              {
+                "FontEngine": 736
+              },
+              {
+                "Physics": 2000
+              },
+              {
+                "Physics2D": 16
+              },
+              {
+                "Serialization": 16392
+              },
+              {
+                "Input": 43216
+              },
+              {
+                "JobScheduler": 448
+              },
+              {
+                "TextLib": 280
+              },
+              {
+                "Mono": 56
+              },
+              {
+                "ScriptingNativeRuntime": 128
+              },
+              {
+                "BaseObject": 36320
+              },
+              {
+                "Resource": 996
+              },
+              {
+                "Renderer": 2736
+              },
+              {
+                "Transform": 6485
+              },
+              {
+                "File": 4600
+              },
+              {
+                "WebCam": 32
+              },
+              {
+                "Culling": 32
+              },
+              {
+                "Terrain": 11298
+              },
+              {
+                "Wind": 24
+              },
+              {
+                "String": 3083
+              },
+              {
+                "Utility": 318232
+              },
+              {
+                "PoolAlloc": 1536
+              },
+              {
+                "AI": 40
+              },
+              {
+                "TypeTree": 5512
+              },
+              {
+                "ScriptManager": 5696
+              },
+              {
+                "CodeReload": 440
+              },
+              {
+                "RuntimeInitializeOnLoadManager": 64
+              },
+              {
+                "Sprites": 78
+              },
+              {
+                "SpriteAtlas": 120
+              },
+              {
+                "GI": 7200
+              },
+              {
+                "Director": 8248
+              },
+              {
+                "CloudService": 144
+              },
+              {
+                "WebRequest": 520
+              },
+              {
+                "VR": 49402
+              },
+              {
+                "SceneManager": 408
+              },
+              {
+                "Video": 2080
+              },
+              {
+                "LazyScriptCache": 32
+              },
+              {
+                "NativeArray": 648
+              },
+              {
+                "Camera": 1169
+              },
+              {
+                "Secure": 241
+              },
+              {
+                "SerializationCache": 3608
+              },
+              {
+                "APIUpdating": 10320
+              },
+              {
+                "Subsystems": 336
+              },
+              {
+                "VirtualTexturing": 57496
+              },
+              {
+                "Baselib": 16
+              },
+              {
+                "Analytics": 80
+              },
+              {
+                "Hierarchy": 1452
+              },
+              {
+                "UIElements": 40
+              },
+              {
+                "CoreStats": 14536
+              },
+              {
+                "Identifiers": 7152
+              },
+              {
+                "Gui": 40
+              },
+              {
+                "CoreBusinessMetrics": 128
+              },
+              {
+                "AssetReference": 32
+              }
+            ]
+          }
+        ],
+        "logSha256": "45565dcd2e64a525022300cbb626e66293d66e20819709394b3a7b005d41d5c4"
+      },
+      "sourceBasis": "c4de573c4435f0105e62f6125f8d4fedd78786b3"
+    },
+    {
+      "case": "final-metadataonly-urp",
+      "mode": "MetadataOnly",
+      "configuration": "Development",
+      "pid": 44195,
+      "startedAtUnix": 1791945515.119167,
+      "finishedAtUnix": 1791945523.717216,
+      "exitCode": 0,
+      "naturalExit": true,
+      "playerHeld": false,
+      "executableArchitecture": "arm64",
+      "packagedPlugins": [
+        {
+          "path": ".local/macos-preview-shutdown-20261014/final-metadataonly-urp/Control.app/Contents/PlugIns/ARM64/lookingglass_bridge_shim.dylib",
+          "sha256": "c97856ea3bb910a1456eb044347a18ac8117c140ddd149f8e9ec240600766c5b"
+        }
+      ],
+      "shimObserved": true,
+      "sdkObserved": true,
+      "moduleSnapshotExitCode": 0,
+      "moduleSnapshotPidMatched": true,
+      "dyldTraceObserved": true,
+      "gates": {
+        "moduleSnapshotSucceeded": true,
+        "modeMatches": true,
+        "metalMatches": true,
+        "unityMatches": true,
+        "fresh": true,
+        "player": true,
+        "configuration": true,
+        "runtimePass": true,
+        "naturalExit": true,
+        "noSdkWhenNotRequested": true,
+        "noShimInUnityOnly": true
+      },
+      "runtime": {
+        "passed": true,
+        "editor": false,
+        "development": true,
+        "cleanupProven": true,
+        "error": "",
+        "mode": "MetadataOnly",
+        "pipeline": "URP",
+        "unityVersion": "6000.6.4f1",
+        "graphicsApi": "Metal",
+        "actualPipeline": "",
+        "shaderTag": "",
+        "targets": {
+          "viewFormat": "",
+          "viewGraphicsFormat": "",
+          "resolveGraphicsFormat": "",
+          "quiltGraphicsFormat": "",
+          "viewSrgb": false,
+          "resolveSrgb": false,
+          "quiltSrgb": false,
+          "resolvePresent": false,
+          "viewSamples": 0,
+          "resolveSamples": 0,
+          "quiltSamples": 0
+        },
+        "renderedQuilts": 0,
+        "views": 0,
+        "baselineCameras": 0,
+        "peakCameras": 0,
+        "remainingCameras": 0,
+        "redPixels": 0,
+        "greenPixels": 0,
+        "magentaPixels": 0,
+        "metadataDisplays": 1,
+        "metadataCleanupFinished": true,
+        "metadataEnded": true
+      },
+      "passed": true,
+      "exitDiagnostics": {
+        "threadWarningCount": 5,
+        "memoryLeaksRecords": [
+          {
+            "type": "MemoryLeaks",
+            "version": 2,
+            "phase": "Immediate",
+            "allocatedMemory": 2474636,
+            "memoryLabels": [
+              {
+                "Default": 54543
+              },
+              {
+                "Permanent": 1472
+              },
+              {
+                "NewDelete": 1645838
+              },
+              {
+                "Thread": 8120
+              },
+              {
+                "Manager": 16359
+              },
+              {
+                "VertexData": 8
+              },
+              {
+                "Geometry": 408
+              },
+              {
+                "Texture": 16
+              },
+              {
+                "Shader": 78020
+              },
+              {
+                "Material": 212
+              },
+              {
+                "GfxDevice": 38776
+              },
+              {
+                "GfxThread": 400
+              },
+              {
+                "Animation": 880
+              },
+              {
+                "Audio": 3648
+              },
+              {
+                "FreeType": 8
+              },
+              {
+                "FontEngine": 736
+              },
+              {
+                "Physics": 2000
+              },
+              {
+                "Physics2D": 16
+              },
+              {
+                "Serialization": 16392
+              },
+              {
+                "Input": 43216
+              },
+              {
+                "JobScheduler": 448
+              },
+              {
+                "TextLib": 280
+              },
+              {
+                "Mono": 56
+              },
+              {
+                "ScriptingNativeRuntime": 128
+              },
+              {
+                "BaseObject": 36320
+              },
+              {
+                "Resource": 996
+              },
+              {
+                "Renderer": 2736
+              },
+              {
+                "Transform": 6485
+              },
+              {
+                "File": 4600
+              },
+              {
+                "WebCam": 32
+              },
+              {
+                "Culling": 32
+              },
+              {
+                "Terrain": 11298
+              },
+              {
+                "Wind": 24
+              },
+              {
+                "String": 3087
+              },
+              {
+                "Utility": 318232
+              },
+              {
+                "PoolAlloc": 1536
+              },
+              {
+                "AI": 40
+              },
+              {
+                "TypeTree": 5512
+              },
+              {
+                "ScriptManager": 5696
+              },
+              {
+                "CodeReload": 440
+              },
+              {
+                "RuntimeInitializeOnLoadManager": 64
+              },
+              {
+                "Sprites": 78
+              },
+              {
+                "SpriteAtlas": 120
+              },
+              {
+                "GI": 7200
+              },
+              {
+                "Director": 8248
+              },
+              {
+                "CloudService": 144
+              },
+              {
+                "WebRequest": 520
+              },
+              {
+                "VR": 49402
+              },
+              {
+                "SceneManager": 408
+              },
+              {
+                "Video": 2080
+              },
+              {
+                "LazyScriptCache": 32
+              },
+              {
+                "NativeArray": 648
+              },
+              {
+                "Camera": 1169
+              },
+              {
+                "Secure": 241
+              },
+              {
+                "SerializationCache": 3608
+              },
+              {
+                "APIUpdating": 10320
+              },
+              {
+                "Subsystems": 336
+              },
+              {
+                "VirtualTexturing": 57496
+              },
+              {
+                "Baselib": 16
+              },
+              {
+                "Analytics": 80
+              },
+              {
+                "Hierarchy": 1452
+              },
+              {
+                "UIElements": 40
+              },
+              {
+                "CoreStats": 14536
+              },
+              {
+                "Identifiers": 7152
+              },
+              {
+                "Gui": 40
+              },
+              {
+                "CoreBusinessMetrics": 128
+              },
+              {
+                "AssetReference": 32
+              }
+            ]
+          }
+        ],
+        "logSha256": "db195b6abe0bf894a4080024033598574ebf7db607b43cff26bc7185eb1df737"
+      },
+      "sourceBasis": "c4de573c4435f0105e62f6125f8d4fedd78786b3"
+    }
+  ],
+  "nativeArtifacts": [
+    {
+      "path": "Packages/com.zabaglione.lookingglass.viewweave.bridge/Plugins/macOS/lookingglass_bridge_shim.dylib",
+      "sha256": "c97856ea3bb910a1456eb044347a18ac8117c140ddd149f8e9ec240600766c5b",
+      "bytes": 160016
+    },
+    {
+      "path": "Distribution/urp/ViewWeave/Bridge/Plugins/macOS/lookingglass_bridge_shim.dylib",
+      "sha256": "c97856ea3bb910a1456eb044347a18ac8117c140ddd149f8e9ec240600766c5b",
+      "bytes": 160016
+    },
+    {
+      "path": "Distribution/hdrp/ViewWeave/Bridge/Plugins/macOS/lookingglass_bridge_shim.dylib",
+      "sha256": "c97856ea3bb910a1456eb044347a18ac8117c140ddd149f8e9ec240600766c5b",
+      "bytes": 160016
+    }
+  ],
+  "fixtureSourceHashes": {
+    "Tests/Pipelines/Unity/Assets/MetalCurrentValidation/MetalRenderTargetValidation.cs": "56621fcaac529235a3985139873dbd37add33e1aaf00e207c26e39923e6fb465",
+    "Tests/Pipelines/Unity/Assets/MetalCurrentValidation/BridgeGeometryAwakeProbe.cs": "e583befe0e89c0f3488a49c5820d3d476fd3c0e89cf6e884c96b7408fa1aabde",
+    "Tests/Pipelines/Unity/Assets/MetalCurrentValidation/ShutdownControlRunner.cs": "503eb046d18d3ce561d97e0e60841696c07f9eb84bdbac0df1e337462af0c069",
+    "Tests/Pipelines/Unity/Assets/MetalCurrentValidation/MetalCurrentValidationRunner.cs": "c5e607509d33b57021caf0c54f99d44c9984b6748a9a53524db9d00a74e0c6ea",
+    "Tests/Pipelines/Unity/Assets/MetalCurrentValidation/Editor/MetalCurrentEditorValidation.cs": "f9b324472581d448850f7c298fa0ace8ffee472493737b8793366b5c710b5b3a",
+    "Tests/Pipelines/Unity/Assets/MetalCurrentValidation/Editor/MetalPreviewTransitionValidation.cs": "013c8a00795a3e131fd3ee772290f217fdd83054b128a60b57ab2f782e4caa00",
+    "Tests/Pipelines/Unity/Assets/MetalCurrentValidation/Editor/BridgeDisplayGeometryValidation.cs": "2332de37cc1625cc3219905d22cafc6d8f8330e88aa8326f7741d7b33b739d4b",
+    "Tests/Pipelines/Unity/Assets/MetalCurrentValidation/Editor/ShutdownControlBuilder.cs": "f03ee856cf942dc135c97a4d9a812126a7ae575cf0354dc204d53459fc81a6f7",
+    "Tests/Pipelines/Unity/Assets/MetalCurrentValidation/Editor/MetalCurrentValidationBuilder.cs": "4b122bd1b3e14f14635a70ce823aa09b5012cb9771fab7c290c999a258faa1fb"
+  },
+  "notEstablished": [
+    "optical accuracy or HDR pixel retention above 1.0",
+    "all VFX/Lit/material/post-processing compatibility after render-target change",
+    "TAA, all view counts/profiles, long-duration stability",
+    "active device output during Editor close",
+    "zero memory leaks or allocation ownership",
+    "Windows crash reproduction or shared root cause",
+    "live Editor module identity in the four final transitions"
+  ],
+  "excludedAttempts": [
+    {
+      "run": "urp-reload-compile-failure",
+      "reason": "fixture referenced internal API; compile failed; zero execution"
+    },
+    {
+      "run": "urp-reload",
+      "reason": "fixture hidden-producer filter too strict; failed before Play"
+    },
+    {
+      "run": "urp-reload-retry1",
+      "reason": "older subset fixture before restore/reload/cleanup gate improvements"
+    },
+    {
+      "run": "11312b8 final four transitions",
+      "reason": "older production Core source; not latest implementation evidence"
+    },
+    {
+      "run": "latest first four transitions",
+      "reason": "assertions passed but target metadata not saved; final four supersede these for HDR-target evidence"
+    }
+  ],
+  "cleanup": {
+    "baselineRevision": "c4de573c4435f0105e62f6125f8d4fedd78786b3",
+    "baselineFiles": 342,
+    "restoredRunOwnedFiles": [
+      "Assets/UniversalRenderPipelineGlobalSettings.asset",
+      "Assets/SamplePlayerValidationGenerated/MetalCurrent/Validation.unity",
+      "Assets/SamplePlayerValidationGenerated/MetalCurrent/Volume.asset.meta",
+      "Assets/SamplePlayerValidationGenerated/MetalCurrent/Volume.asset",
+      "Assets/SamplePlayerValidationGenerated/MetalCurrent/Object0.mat",
+      "Assets/SamplePlayerValidationGenerated/MetalCurrent/Object1.mat",
+      "Assets/SamplePlayerValidationGenerated/MetalCurrent/Pipeline.asset",
+      "ProjectSettings/ProjectSettings.asset",
+      "ProjectSettings/GraphicsSettings.asset",
+      "ProjectSettings/QualitySettings.asset"
+    ],
+    "removedRunOwnedFiles": [
+      "Assets/SamplePlayerValidationGenerated/MetalCurrent/Renderer.asset.meta",
+      "Assets/SamplePlayerValidationGenerated/MetalCurrent/Renderer.asset",
+      "ProjectSettings/URPProjectSettings.asset",
+      "ProjectSettings/PackageManagerSettings.asset"
+    ],
+    "intentionalFixtureChangesPreserved": true,
+    "allOtherBaselineFilesMatched": true,
+    "editorAndPlayerProcessesActive": false
+  },
+  "vendorRuntime": {
+    "file": "libbridge_inproc.dylib",
+    "sha256": "3eff8aa52532e1da0a0162a05645d22d63d0997e9ca44e162be087701f0dc1d8",
+    "bytes": 55564992,
+    "observedInLatestPlayerAndMetadataControl": true
+  },
+  "hashScopes": {
+    "runtimeSha256": "private raw runtime before path sanitization",
+    "sharedFiles": "docs/validation/macos-preview-shutdown-20261014/MANIFEST.json; shared JSON paths were sanitized"
+  },
+  "review": {
+    "role": "astra_reviewer",
+    "finalCheckpoint": "complete",
+    "materialFindingsRemaining": 0
+  }
+}

@@ -1,0 +1,260 @@
+{
+  "case": "unity-only-urp-development",
+  "mode": "UnityOnly",
+  "configuration": "Development",
+  "pid": 29675,
+  "startedAtUnix": 1791945218.481751,
+  "finishedAtUnix": 1791945225.1217039,
+  "exitCode": 0,
+  "naturalExit": true,
+  "playerHeld": false,
+  "executableArchitecture": "arm64",
+  "packagedPlugins": [],
+  "shimObserved": false,
+  "sdkObserved": false,
+  "moduleSnapshotExitCode": 0,
+  "moduleSnapshotPidMatched": true,
+  "dyldTraceObserved": true,
+  "gates": {
+    "moduleSnapshotSucceeded": true,
+    "modeMatches": true,
+    "metalMatches": true,
+    "unityMatches": true,
+    "fresh": true,
+    "player": true,
+    "configuration": true,
+    "runtimePass": true,
+    "naturalExit": true,
+    "noSdkWhenNotRequested": true,
+    "noShimInUnityOnly": true
+  },
+  "runtime": {
+    "passed": true,
+    "editor": false,
+    "development": true,
+    "error": "",
+    "pipeline": "URP",
+    "actualPipeline": "UniversalRenderPipeline",
+    "shaderTag": "UniversalPipeline",
+    "unityVersion": "6000.6.4f1",
+    "graphicsApi": "Metal",
+    "gpu": "Apple M3 Max",
+    "frames": 60
+  },
+  "passed": true,
+  "exitDiagnostics": {
+    "threadWarningCount": 6,
+    "memoryLeaksRecords": [
+      {
+        "type": "MemoryLeaks",
+        "version": 2,
+        "phase": "Immediate",
+        "allocatedMemory": 1882391,
+        "memoryLabels": [
+          {
+            "Default": 54543
+          },
+          {
+            "Permanent": 1472
+          },
+          {
+            "NewDelete": 1053583
+          },
+          {
+            "Thread": 8120
+          },
+          {
+            "Manager": 16359
+          },
+          {
+            "VertexData": 8
+          },
+          {
+            "Geometry": 408
+          },
+          {
+            "Texture": 16
+          },
+          {
+            "Shader": 78020
+          },
+          {
+            "Material": 212
+          },
+          {
+            "GfxDevice": 38776
+          },
+          {
+            "GfxThread": 400
+          },
+          {
+            "Animation": 880
+          },
+          {
+            "Audio": 3648
+          },
+          {
+            "FreeType": 8
+          },
+          {
+            "FontEngine": 736
+          },
+          {
+            "Physics": 2000
+          },
+          {
+            "Physics2D": 16
+          },
+          {
+            "Serialization": 16392
+          },
+          {
+            "Input": 43216
+          },
+          {
+            "JobScheduler": 448
+          },
+          {
+            "TextLib": 280
+          },
+          {
+            "Mono": 56
+          },
+          {
+            "ScriptingNativeRuntime": 128
+          },
+          {
+            "BaseObject": 36320
+          },
+          {
+            "Resource": 996
+          },
+          {
+            "Renderer": 2736
+          },
+          {
+            "Transform": 6485
+          },
+          {
+            "File": 4600
+          },
+          {
+            "WebCam": 32
+          },
+          {
+            "Culling": 32
+          },
+          {
+            "Terrain": 11298
+          },
+          {
+            "Wind": 24
+          },
+          {
+            "String": 3097
+          },
+          {
+            "Utility": 318232
+          },
+          {
+            "PoolAlloc": 1536
+          },
+          {
+            "AI": 40
+          },
+          {
+            "TypeTree": 5512
+          },
+          {
+            "ScriptManager": 5696
+          },
+          {
+            "CodeReload": 440
+          },
+          {
+            "RuntimeInitializeOnLoadManager": 64
+          },
+          {
+            "Sprites": 78
+          },
+          {
+            "SpriteAtlas": 120
+          },
+          {
+            "GI": 7200
+          },
+          {
+            "Director": 8248
+          },
+          {
+            "CloudService": 144
+          },
+          {
+            "WebRequest": 520
+          },
+          {
+            "VR": 49402
+          },
+          {
+            "SceneManager": 408
+          },
+          {
+            "Video": 2080
+          },
+          {
+            "LazyScriptCache": 32
+          },
+          {
+            "NativeArray": 648
+          },
+          {
+            "Camera": 1169
+          },
+          {
+            "Secure": 241
+          },
+          {
+            "SerializationCache": 3608
+          },
+          {
+            "APIUpdating": 10320
+          },
+          {
+            "Subsystems": 336
+          },
+          {
+            "VirtualTexturing": 57496
+          },
+          {
+            "Baselib": 16
+          },
+          {
+            "Analytics": 80
+          },
+          {
+            "Hierarchy": 1452
+          },
+          {
+            "UIElements": 40
+          },
+          {
+            "CoreStats": 14536
+          },
+          {
+            "Identifiers": 7152
+          },
+          {
+            "Gui": 40
+          },
+          {
+            "CoreBusinessMetrics": 128
+          },
+          {
+            "AssetReference": 32
+          }
+        ]
+      }
+    ],
+    "logSha256": "ec38b2ed2c07b15d5b8de360a04b09de70a7a852f7f2e10aadcec53c2fcd0412"
+  }
+}

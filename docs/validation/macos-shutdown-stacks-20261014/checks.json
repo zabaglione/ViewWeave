@@ -1,0 +1,49 @@
+{
+  "verifiedOn": "2026-10-14",
+  "repositoryValidation": {
+    "command": "python3 tools/validate_repository.py",
+    "exitCode": 0,
+    "result": "PASS errors=0 warnings=0"
+  },
+  "diffWhitespace": {
+    "command": "git diff --check",
+    "exitCode": 0
+  },
+  "supportMatrixHtml": {
+    "currentRows": 64,
+    "historyRows": 64,
+    "sixColumnRowsOrGroupRows": true,
+    "tablesClosed": true,
+    "pageAnchorsAndRelativeTargets": true
+  },
+  "structuredEvidence": {
+    "stackGateCases": 5,
+    "allocationGraphCases": 6,
+    "warningRolesAllCases": {
+      "PreloadManager": 1,
+      "Unity job worker": 4
+    },
+    "warningIoDuplicatesRemoved": true,
+    "memoryIoDuplicatesRemoved": true,
+    "manifestHashVerified": true
+  },
+  "projectBaseline": {
+    "files": 342,
+    "unchangedBaselineFiles": 339,
+    "existingIntentionalFixtureDifferences": [
+      "Assets/MetalCurrentValidation/ShutdownControlRunner.cs",
+      "Assets/MetalCurrentValidation/MetalCurrentValidationRunner.cs",
+      "Assets/MetalCurrentValidation/Editor/MetalPreviewTransitionValidation.cs"
+    ],
+    "newFixtureEditsThisInvestigation": false
+  },
+  "priorPlayerEvidenceRestored": true,
+  "unityOnlyPriorRuntimeRestored": true,
+  "diagnosticProcessesActiveAtFinalCheck": false,
+  "scope": "Repository/HTML/evidence checks, not additional Unity tests.",
+  "finalReview": {
+    "role": "astra_reviewer",
+    "agent": "macos_intake_review",
+    "result": "No material finding; evidence scope, failures, privacy and no speculative production patch reviewed."
+  }
+}

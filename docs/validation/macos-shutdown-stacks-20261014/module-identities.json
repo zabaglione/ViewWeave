@@ -1,0 +1,96 @@
+{
+  "unity-only": [
+    {
+      "module": "UnityPlayer.dylib",
+      "sha256": "d607996852ac441605d12da5ad4c1af5dfb4de545ad0fc5a975ce624d4a91936",
+      "bytes": 116555264,
+      "uuid": "UUID: BE07B931-A7A0-335B-BFDE-6D9331DBD96F (arm64)"
+    },
+    {
+      "module": "libmonobdwgc-2.0.dylib",
+      "sha256": "198c12d2b1a2d00e9c4a7ffc40760d0d1eb880bf1290d647406f48799a16f988",
+      "bytes": 4731776,
+      "uuid": "UUID: 542F91E5-B702-33BE-86C6-5B39012524EA (arm64)"
+    }
+  ],
+  "urp-device": [
+    {
+      "module": "UnityPlayer.dylib",
+      "sha256": "d607996852ac441605d12da5ad4c1af5dfb4de545ad0fc5a975ce624d4a91936",
+      "bytes": 116555264,
+      "uuid": "UUID: BE07B931-A7A0-335B-BFDE-6D9331DBD96F (arm64)"
+    },
+    {
+      "module": "libmonobdwgc-2.0.dylib",
+      "sha256": "198c12d2b1a2d00e9c4a7ffc40760d0d1eb880bf1290d647406f48799a16f988",
+      "bytes": 4731776,
+      "uuid": "UUID: 542F91E5-B702-33BE-86C6-5B39012524EA (arm64)"
+    },
+    {
+      "module": "lookingglass_bridge_shim.dylib",
+      "sha256": "c97856ea3bb910a1456eb044347a18ac8117c140ddd149f8e9ec240600766c5b",
+      "bytes": 160016,
+      "uuid": "UUID: FCDDC56E-5838-3052-89FF-1C2FAC5B9795 (arm64)"
+    }
+  ],
+  "hdrp-device": [
+    {
+      "module": "UnityPlayer.dylib",
+      "sha256": "d607996852ac441605d12da5ad4c1af5dfb4de545ad0fc5a975ce624d4a91936",
+      "bytes": 116555264,
+      "uuid": "UUID: BE07B931-A7A0-335B-BFDE-6D9331DBD96F (arm64)"
+    },
+    {
+      "module": "libmonobdwgc-2.0.dylib",
+      "sha256": "198c12d2b1a2d00e9c4a7ffc40760d0d1eb880bf1290d647406f48799a16f988",
+      "bytes": 4731776,
+      "uuid": "UUID: 542F91E5-B702-33BE-86C6-5B39012524EA (arm64)"
+    },
+    {
+      "module": "lookingglass_bridge_shim.dylib",
+      "sha256": "c97856ea3bb910a1456eb044347a18ac8117c140ddd149f8e9ec240600766c5b",
+      "bytes": 160016,
+      "uuid": "UUID: FCDDC56E-5838-3052-89FF-1C2FAC5B9795 (arm64)"
+    }
+  ],
+  "quilt-only": [
+    {
+      "module": "UnityPlayer.dylib",
+      "sha256": "d607996852ac441605d12da5ad4c1af5dfb4de545ad0fc5a975ce624d4a91936",
+      "bytes": 116555264,
+      "uuid": "UUID: BE07B931-A7A0-335B-BFDE-6D9331DBD96F (arm64)"
+    },
+    {
+      "module": "libmonobdwgc-2.0.dylib",
+      "sha256": "198c12d2b1a2d00e9c4a7ffc40760d0d1eb880bf1290d647406f48799a16f988",
+      "bytes": 4731776,
+      "uuid": "UUID: 542F91E5-B702-33BE-86C6-5B39012524EA (arm64)"
+    },
+    {
+      "module": "lookingglass_bridge_shim.dylib",
+      "sha256": "c97856ea3bb910a1456eb044347a18ac8117c140ddd149f8e9ec240600766c5b",
+      "bytes": 160016,
+      "uuid": "UUID: FCDDC56E-5838-3052-89FF-1C2FAC5B9795 (arm64)"
+    }
+  ],
+  "metadata-only": [
+    {
+      "module": "UnityPlayer.dylib",
+      "sha256": "d607996852ac441605d12da5ad4c1af5dfb4de545ad0fc5a975ce624d4a91936",
+      "bytes": 116555264,
+      "uuid": "UUID: BE07B931-A7A0-335B-BFDE-6D9331DBD96F (arm64)"
+    },
+    {
+      "module": "libmonobdwgc-2.0.dylib",
+      "sha256": "198c12d2b1a2d00e9c4a7ffc40760d0d1eb880bf1290d647406f48799a16f988",
+      "bytes": 4731776,
+      "uuid": "UUID: 542F91E5-B702-33BE-86C6-5B39012524EA (arm64)"
+    },
+    {
+      "module": "lookingglass_bridge_shim.dylib",
+      "sha256": "c97856ea3bb910a1456eb044347a18ac8117c140ddd149f8e9ec240600766c5b",
+      "bytes": 160016,
+      "uuid": "UUID: FCDDC56E-5838-3052-89FF-1C2FAC5B9795 (arm64)"
+    }
+  ]
+}

@@ -1,0 +1,362 @@
+[
+  {
+    "path": "cleanup.json",
+    "bytes": 1175,
+    "sha256": "12082a67eac8c1ba9d2ed7b28581325d92527c7267cb12cf4b3573a8d2945482"
+  },
+  {
+    "path": "final-hdrp-no-reload/fixture-as-run.cs",
+    "bytes": 17266,
+    "sha256": "013c8a00795a3e131fd3ee772290f217fdd83054b128a60b57ab2f782e4caa00"
+  },
+  {
+    "path": "final-hdrp-no-reload/preview-1.png",
+    "bytes": 238863,
+    "sha256": "e126dad7380d5820df199ac3271de4c7b381ded8470261c7906ad1fd85111200"
+  },
+  {
+    "path": "final-hdrp-no-reload/preview-2.png",
+    "bytes": 238863,
+    "sha256": "e126dad7380d5820df199ac3271de4c7b381ded8470261c7906ad1fd85111200"
+  },
+  {
+    "path": "final-hdrp-no-reload/process-summary.json",
+    "bytes": 3652,
+    "sha256": "fd5244beea2d5d42bde4ecc018a9938a4841efd3f4a8c7712fc25898afb9d228"
+  },
+  {
+    "path": "final-hdrp-no-reload/transition.json",
+    "bytes": 2623,
+    "sha256": "e992c60afd1c463b3a1697a13f0b6eb77f0a827069306b205da23c32145fc126"
+  },
+  {
+    "path": "final-hdrp-reload/fixture-as-run.cs",
+    "bytes": 17266,
+    "sha256": "013c8a00795a3e131fd3ee772290f217fdd83054b128a60b57ab2f782e4caa00"
+  },
+  {
+    "path": "final-hdrp-reload/preview-1.png",
+    "bytes": 238863,
+    "sha256": "e126dad7380d5820df199ac3271de4c7b381ded8470261c7906ad1fd85111200"
+  },
+  {
+    "path": "final-hdrp-reload/preview-2.png",
+    "bytes": 238863,
+    "sha256": "e126dad7380d5820df199ac3271de4c7b381ded8470261c7906ad1fd85111200"
+  },
+  {
+    "path": "final-hdrp-reload/process-summary.json",
+    "bytes": 3650,
+    "sha256": "1eed42e350788e9a6d1efb64f1bd874e558bafab92caee6a295d38b16d4c49b8"
+  },
+  {
+    "path": "final-hdrp-reload/transition.json",
+    "bytes": 2624,
+    "sha256": "50779759d2a46e5c50242eceb19df250cc8bbde9da179060bcbcba95ef5165bf"
+  },
+  {
+    "path": "final-metadataonly-urp/build.json",
+    "bytes": 292,
+    "sha256": "f2b6b150bc3aa731bdeba8d960c21350fa7d6d84a5c0eaeb27cb44482a109bb8"
+  },
+  {
+    "path": "final-metadataonly-urp/process-summary.json",
+    "bytes": 5927,
+    "sha256": "18f56483ad2acd9b6e90d64c0cc1e705b1ac082ad7b111ce4c89ff7fd2ebd371"
+  },
+  {
+    "path": "final-metadataonly-urp/runtime.json",
+    "bytes": 809,
+    "sha256": "6d766f84d4a01e1df889e3a4802062c89be7a61a73fee175e65612f988b5e40c"
+  },
+  {
+    "path": "final-quiltonly-hdrp/build.json",
+    "bytes": 285,
+    "sha256": "3507f44f697b8e1df748d633251795268078010bab08d1e512796ed3f9aa8cd6"
+  },
+  {
+    "path": "final-quiltonly-hdrp/process-summary.json",
+    "bytes": 6004,
+    "sha256": "50ce3770f2f1d6d21a64a37f7b99635171137536ac6cd9e019e4b18edebfea3d"
+  },
+  {
+    "path": "final-quiltonly-hdrp/quilt.png",
+    "bytes": 234402,
+    "sha256": "07ec1e19d7d26ac5f01915cfae55df95068fb681f240eef7780a859541dba44b"
+  },
+  {
+    "path": "final-quiltonly-hdrp/runtime.json",
+    "bytes": 890,
+    "sha256": "7f66f693286773f688c59497b9a6f96ccdefa933c8c5af1d0aabac332986ba66"
+  },
+  {
+    "path": "final-quiltonly-urp/build.json",
+    "bytes": 292,
+    "sha256": "f2b6b150bc3aa731bdeba8d960c21350fa7d6d84a5c0eaeb27cb44482a109bb8"
+  },
+  {
+    "path": "final-quiltonly-urp/process-summary.json",
+    "bytes": 6022,
+    "sha256": "18d9e3e00a43b6abe0bc509f13ff3d24d75ebee358f875d35c56ba60e8d74335"
+  },
+  {
+    "path": "final-quiltonly-urp/quilt.png",
+    "bytes": 38834,
+    "sha256": "ae293b00aada68185630fe211c6e71064ba76e0845b84231692ce9780f42e95b"
+  },
+  {
+    "path": "final-quiltonly-urp/runtime.json",
+    "bytes": 910,
+    "sha256": "bc0df0781fa17a9f8b9eb0b794b981d69dcc80bfcb81c94748d5f3cdf9c0dcdc"
+  },
+  {
+    "path": "final-urp-no-reload/fixture-as-run.cs",
+    "bytes": 17266,
+    "sha256": "013c8a00795a3e131fd3ee772290f217fdd83054b128a60b57ab2f782e4caa00"
+  },
+  {
+    "path": "final-urp-no-reload/preview-1.png",
+    "bytes": 38834,
+    "sha256": "ae293b00aada68185630fe211c6e71064ba76e0845b84231692ce9780f42e95b"
+  },
+  {
+    "path": "final-urp-no-reload/preview-2.png",
+    "bytes": 38834,
+    "sha256": "ae293b00aada68185630fe211c6e71064ba76e0845b84231692ce9780f42e95b"
+  },
+  {
+    "path": "final-urp-no-reload/process-summary.json",
+    "bytes": 3682,
+    "sha256": "74a4a0b312fe8abda43fcf3bbdd50c55417ea97491c3fbb3ef8c861c27bbc6bf"
+  },
+  {
+    "path": "final-urp-no-reload/transition.json",
+    "bytes": 2656,
+    "sha256": "b5bf956e83bb6f3818d79ace9f1c5dedec0abbeb81f2c28a73e0a560c23dddb8"
+  },
+  {
+    "path": "final-urp-reload/fixture-as-run.cs",
+    "bytes": 17266,
+    "sha256": "013c8a00795a3e131fd3ee772290f217fdd83054b128a60b57ab2f782e4caa00"
+  },
+  {
+    "path": "final-urp-reload/preview-1.png",
+    "bytes": 38834,
+    "sha256": "ae293b00aada68185630fe211c6e71064ba76e0845b84231692ce9780f42e95b"
+  },
+  {
+    "path": "final-urp-reload/preview-2.png",
+    "bytes": 38834,
+    "sha256": "ae293b00aada68185630fe211c6e71064ba76e0845b84231692ce9780f42e95b"
+  },
+  {
+    "path": "final-urp-reload/process-summary.json",
+    "bytes": 3681,
+    "sha256": "cd0045c9c94d187efa803c788d9f3c04785c5df992e37116bb051ee438538c06"
+  },
+  {
+    "path": "final-urp-reload/transition.json",
+    "bytes": 2657,
+    "sha256": "d16bb8cb93c3a0b903f9cc68afad424b645c32ffa4822d1f699d8ed7d8c06c17"
+  },
+  {
+    "path": "latest-hdrp-development/build.json",
+    "bytes": 285,
+    "sha256": "3507f44f697b8e1df748d633251795268078010bab08d1e512796ed3f9aa8cd6"
+  },
+  {
+    "path": "latest-hdrp-development/central.png",
+    "bytes": 4955,
+    "sha256": "c5dbf0fcd596c29acfbc48212450693b14dd18662a3f54f5b0ac71d10cadb360"
+  },
+  {
+    "path": "latest-hdrp-development/classic.png",
+    "bytes": 234402,
+    "sha256": "07ec1e19d7d26ac5f01915cfae55df95068fb681f240eef7780a859541dba44b"
+  },
+  {
+    "path": "latest-hdrp-development/current.png",
+    "bytes": 234402,
+    "sha256": "07ec1e19d7d26ac5f01915cfae55df95068fb681f240eef7780a859541dba44b"
+  },
+  {
+    "path": "latest-hdrp-development/player-process-summary.json",
+    "bytes": 6185,
+    "sha256": "3231505d3cf2cef6e7560781341ba801d95a97878e6dfe6e4bb6f0a890714e54"
+  },
+  {
+    "path": "latest-hdrp-development/runtime.json",
+    "bytes": 1350,
+    "sha256": "24139f8a925a383943a81188263aaf034498f3b82973940f1681fe946a3f37ce"
+  },
+  {
+    "path": "latest-hdrp-release/build.json",
+    "bytes": 285,
+    "sha256": "3507f44f697b8e1df748d633251795268078010bab08d1e512796ed3f9aa8cd6"
+  },
+  {
+    "path": "latest-hdrp-release/central.png",
+    "bytes": 4955,
+    "sha256": "c5dbf0fcd596c29acfbc48212450693b14dd18662a3f54f5b0ac71d10cadb360"
+  },
+  {
+    "path": "latest-hdrp-release/classic.png",
+    "bytes": 234402,
+    "sha256": "07ec1e19d7d26ac5f01915cfae55df95068fb681f240eef7780a859541dba44b"
+  },
+  {
+    "path": "latest-hdrp-release/current.png",
+    "bytes": 234402,
+    "sha256": "07ec1e19d7d26ac5f01915cfae55df95068fb681f240eef7780a859541dba44b"
+  },
+  {
+    "path": "latest-hdrp-release/player-process-summary.json",
+    "bytes": 2349,
+    "sha256": "14a7970fea1795678681cb006ef94563b35ad123953595b76015633c594e4b9b"
+  },
+  {
+    "path": "latest-hdrp-release/runtime.json",
+    "bytes": 1343,
+    "sha256": "b5e6e72f0526e68f5c129c9f879882263e6e98662b07b60dba9f756ab5903cb8"
+  },
+  {
+    "path": "latest-urp-development/build.json",
+    "bytes": 292,
+    "sha256": "f2b6b150bc3aa731bdeba8d960c21350fa7d6d84a5c0eaeb27cb44482a109bb8"
+  },
+  {
+    "path": "latest-urp-development/central.png",
+    "bytes": 1237,
+    "sha256": "0ca86d95c3164ce9e2b1693be52b36388b78a43961f603758fe469d62e499d09"
+  },
+  {
+    "path": "latest-urp-development/classic.png",
+    "bytes": 38834,
+    "sha256": "ae293b00aada68185630fe211c6e71064ba76e0845b84231692ce9780f42e95b"
+  },
+  {
+    "path": "latest-urp-development/current.png",
+    "bytes": 38834,
+    "sha256": "ae293b00aada68185630fe211c6e71064ba76e0845b84231692ce9780f42e95b"
+  },
+  {
+    "path": "latest-urp-development/player-process-summary.json",
+    "bytes": 6202,
+    "sha256": "775f92ee9da0d0c3e1c9e6137ffe9c0228f228b0dc9f450abb76f44348d69055"
+  },
+  {
+    "path": "latest-urp-development/runtime.json",
+    "bytes": 1366,
+    "sha256": "98e54a2e1c92dd128eaeb9767b2dce2e916f6f4a40d66338fa9f0af6cfeb7a27"
+  },
+  {
+    "path": "latest-urp-release/build.json",
+    "bytes": 292,
+    "sha256": "f2b6b150bc3aa731bdeba8d960c21350fa7d6d84a5c0eaeb27cb44482a109bb8"
+  },
+  {
+    "path": "latest-urp-release/central.png",
+    "bytes": 1237,
+    "sha256": "0ca86d95c3164ce9e2b1693be52b36388b78a43961f603758fe469d62e499d09"
+  },
+  {
+    "path": "latest-urp-release/classic.png",
+    "bytes": 38834,
+    "sha256": "ae293b00aada68185630fe211c6e71064ba76e0845b84231692ce9780f42e95b"
+  },
+  {
+    "path": "latest-urp-release/current.png",
+    "bytes": 38834,
+    "sha256": "ae293b00aada68185630fe211c6e71064ba76e0845b84231692ce9780f42e95b"
+  },
+  {
+    "path": "latest-urp-release/player-process-summary.json",
+    "bytes": 2362,
+    "sha256": "eea35cc85b20d5e690ec8bd26d2669c18a77146ae1de8fe20dd6c3381711f54d"
+  },
+  {
+    "path": "latest-urp-release/runtime.json",
+    "bytes": 1359,
+    "sha256": "cccde758d623120685fd0d33d9df48b760c8178b59beb804599a9b163516f6b1"
+  },
+  {
+    "path": "source-snapshots/Tests/Pipelines/Unity/Assets/MetalCurrentValidation/BridgeGeometryAwakeProbe.cs",
+    "bytes": 486,
+    "sha256": "e583befe0e89c0f3488a49c5820d3d476fd3c0e89cf6e884c96b7408fa1aabde"
+  },
+  {
+    "path": "source-snapshots/Tests/Pipelines/Unity/Assets/MetalCurrentValidation/Editor/BridgeDisplayGeometryValidation.cs",
+    "bytes": 14737,
+    "sha256": "2332de37cc1625cc3219905d22cafc6d8f8330e88aa8326f7741d7b33b739d4b"
+  },
+  {
+    "path": "source-snapshots/Tests/Pipelines/Unity/Assets/MetalCurrentValidation/Editor/MetalCurrentEditorValidation.cs",
+    "bytes": 11172,
+    "sha256": "f9b324472581d448850f7c298fa0ace8ffee472493737b8793366b5c710b5b3a"
+  },
+  {
+    "path": "source-snapshots/Tests/Pipelines/Unity/Assets/MetalCurrentValidation/Editor/MetalCurrentValidationBuilder.cs",
+    "bytes": 11772,
+    "sha256": "4b122bd1b3e14f14635a70ce823aa09b5012cb9771fab7c290c999a258faa1fb"
+  },
+  {
+    "path": "source-snapshots/Tests/Pipelines/Unity/Assets/MetalCurrentValidation/Editor/MetalPreviewTransitionValidation.cs",
+    "bytes": 17266,
+    "sha256": "013c8a00795a3e131fd3ee772290f217fdd83054b128a60b57ab2f782e4caa00"
+  },
+  {
+    "path": "source-snapshots/Tests/Pipelines/Unity/Assets/MetalCurrentValidation/Editor/ShutdownControlBuilder.cs",
+    "bytes": 1779,
+    "sha256": "f03ee856cf942dc135c97a4d9a812126a7ae575cf0354dc204d53459fc81a6f7"
+  },
+  {
+    "path": "source-snapshots/Tests/Pipelines/Unity/Assets/MetalCurrentValidation/MetalCurrentValidationRunner.cs",
+    "bytes": 10359,
+    "sha256": "c5e607509d33b57021caf0c54f99d44c9984b6748a9a53524db9d00a74e0c6ea"
+  },
+  {
+    "path": "source-snapshots/Tests/Pipelines/Unity/Assets/MetalCurrentValidation/MetalRenderTargetValidation.cs",
+    "bytes": 2455,
+    "sha256": "56621fcaac529235a3985139873dbd37add33e1aaf00e207c26e39923e6fb465"
+  },
+  {
+    "path": "source-snapshots/Tests/Pipelines/Unity/Assets/MetalCurrentValidation/ShutdownControlRunner.cs",
+    "bytes": 9496,
+    "sha256": "503eb046d18d3ce561d97e0e60841696c07f9eb84bdbac0df1e337462af0c069"
+  },
+  {
+    "path": "source-snapshots/Tests/Pipelines/Unity/Tools/ShutdownBaseline/UnityShutdownBaselineBuilder.cs",
+    "bytes": 7507,
+    "sha256": "5a0f6363f36dcdc39b72dbd964824103158adee4eebc051e9f65a90471f0b897"
+  },
+  {
+    "path": "source-snapshots/Tests/Pipelines/Unity/Tools/ShutdownBaseline/UnityShutdownBaselineRunner.cs",
+    "bytes": 2338,
+    "sha256": "273a6e8fe1f3d13f75afee7edba93ca010c6d4746dc04229d730596f0bad8514"
+  },
+  {
+    "path": "unity-only-isolation.json",
+    "bytes": 806,
+    "sha256": "e147f0505c5e94dca86c54a35e224967e315eda85c770e05f6948f1eb3c56bc4"
+  },
+  {
+    "path": "unity-only-urp-development/process-summary.json",
+    "bytes": 5112,
+    "sha256": "c3a42af57b6f44acb3a787115ab114b5829e517a3682cf0d727e24dc21cf67ab"
+  },
+  {
+    "path": "unity-only-urp-development/runtime.json",
+    "bytes": 281,
+    "sha256": "874cf71c0157f83c51ac2d34b493e31bcd499f976cd9ccffa4706295ae7474bd"
+  },
+  {
+    "path": "unity-only-urp-release/process-summary.json",
+    "bytes": 1278,
+    "sha256": "d7fcb191c8c68f111f643c8b12b56417b27474c7cd4029347106ec9c2a4bca61"
+  },
+  {
+    "path": "unity-only-urp-release/runtime.json",
+    "bytes": 282,
+    "sha256": "ed3827661e765f78e427846b9413b4f2650d2d95fdcf724a34f2e563a4a73f68"
+  }
+]

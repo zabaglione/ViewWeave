@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "editor": false,
+  "development": true,
+  "error": "",
+  "pipeline": "URP",
+  "actualPipeline": "UniversalRenderPipeline",
+  "shaderTag": "UniversalPipeline",
+  "unityVersion": "6000.6.4f1",
+  "graphicsApi": "Metal",
+  "gpu": "Apple M3 Max",
+  "frames": 60
+}

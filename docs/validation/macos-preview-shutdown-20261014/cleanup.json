@@ -1,0 +1,25 @@
+{
+  "baselineRevision": "c4de573c4435f0105e62f6125f8d4fedd78786b3",
+  "baselineFiles": 342,
+  "restoredRunOwnedFiles": [
+    "Assets/UniversalRenderPipelineGlobalSettings.asset",
+    "Assets/SamplePlayerValidationGenerated/MetalCurrent/Validation.unity",
+    "Assets/SamplePlayerValidationGenerated/MetalCurrent/Volume.asset.meta",
+    "Assets/SamplePlayerValidationGenerated/MetalCurrent/Volume.asset",
+    "Assets/SamplePlayerValidationGenerated/MetalCurrent/Object0.mat",
+    "Assets/SamplePlayerValidationGenerated/MetalCurrent/Object1.mat",
+    "Assets/SamplePlayerValidationGenerated/MetalCurrent/Pipeline.asset",
+    "ProjectSettings/ProjectSettings.asset",
+    "ProjectSettings/GraphicsSettings.asset",
+    "ProjectSettings/QualitySettings.asset"
+  ],
+  "removedRunOwnedFiles": [
+    "Assets/SamplePlayerValidationGenerated/MetalCurrent/Renderer.asset.meta",
+    "Assets/SamplePlayerValidationGenerated/MetalCurrent/Renderer.asset",
+    "ProjectSettings/URPProjectSettings.asset",
+    "ProjectSettings/PackageManagerSettings.asset"
+  ],
+  "intentionalFixtureChangesPreserved": true,
+  "allOtherBaselineFilesMatched": true,
+  "editorAndPlayerProcessesActive": false
+}

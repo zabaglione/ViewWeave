@@ -28,6 +28,7 @@ public sealed class MetalCurrentValidationRunner : MonoBehaviour
         public int redPixels, greenPixels, magentaPixels;
         public bool activeSubpixelChangeRejected, missingCellsRejected, classicRestartVerified;
         public string missingCellsError, restartSubpixelMode;
+        public MetalRenderTargetValidation.Evidence targets;
     }
 
     IEnumerator Start()
@@ -90,6 +91,7 @@ public sealed class MetalCurrentValidationRunner : MonoBehaviour
             Result.shaderPipelineTag == (pipelineName == "HDRP" ? "HDRenderPipeline" : "UniversalPipeline"),
             "Actual render pipeline or shader tag differs from the requested fixture.");
         var renderer = output.rig.Renderer;
+        Result.targets = MetalRenderTargetValidation.Capture(pipelineName);
         Result.width = renderer.LatestSnapshot.Layout.QuiltWidth;
         Result.height = renderer.LatestSnapshot.Layout.QuiltHeight;
         Result.views = renderer.LatestSnapshot.Layout.ViewCount;
