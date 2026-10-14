@@ -1,0 +1,1 @@
+Startup preflight counters in the earlier captured preflight file were multiplied by 1024 even though the source values were already bytes. That raw file is preserved; use the later corrected host-resource-followup snapshot instead.

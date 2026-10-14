@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "record": "Root read-only GPU/process sampling for isolated URP VFX memory fixture run2",
+  "scope": "Startup and partial-run samples only. This was not a hard-stop monitor and did not capture an instantaneous peak or samples aligned to memory-fixture observation frames.",
+  "source": "Root read-only Windows CIM sampling",
+  "pid": 69572,
+  "watchStartedUtc": "2026-10-12T16:30:51.4507997Z",
+  "endedUtc": "2026-10-12T16:32:21.7923755Z",
+  "configuredDelayMilliseconds": 1000,
+  "sampleCount": 11,
+  "editorStillRunningAtWatchEnd": true,
+  "gpuCounterNames": [
+    "pid_69572_luid_0x00000000_0x0000EE36_phys_0"
+  ],
+  "gpuRowValueOrder": [
+    "DedicatedUsage",
+    "SharedUsage",
+    "TotalCommitted"
+  ],
+  "samples": [
+    { "utc": "2026-10-12T16:32:10.2290909Z", "privateBytes": 720506880, "workingSetBytes": 548896768, "gpu": [[9744384, 880640, 13705216]] },
+    { "utc": "2026-10-12T16:32:11.2946423Z", "privateBytes": 911659008, "workingSetBytes": 675545088, "gpu": [[10735616, 1929216, 16662528]] },
+    { "utc": "2026-10-12T16:32:12.3345606Z", "privateBytes": 948002816, "workingSetBytes": 692318208, "gpu": [[10735616, 1929216, 16662528]] },
+    { "utc": "2026-10-12T16:32:13.3966790Z", "privateBytes": 1073078272, "workingSetBytes": 807059456, "gpu": [[10735616, 1929216, 16662528]] },
+    { "utc": "2026-10-12T16:32:14.4405593Z", "privateBytes": 1080758272, "workingSetBytes": 819105792, "gpu": [[10735616, 1929216, 16662528]] },
+    { "utc": "2026-10-12T16:32:15.5184247Z", "privateBytes": 1306890240, "workingSetBytes": 1013821440, "gpu": [[33779712, 27992064, 67108864]] },
+    { "utc": "2026-10-12T16:32:16.5722829Z", "privateBytes": 1304068096, "workingSetBytes": 1012654080, "gpu": [[33779712, 27992064, 67108864]] },
+    { "utc": "2026-10-12T16:32:17.6107697Z", "privateBytes": 1402298368, "workingSetBytes": 1092952064, "gpu": [[64593920, 46346240, 117104640]] },
+    { "utc": "2026-10-12T16:32:18.6548239Z", "privateBytes": 1385693184, "workingSetBytes": 1081528320, "gpu": [[64593920, 46346240, 117104640]] },
+    { "utc": "2026-10-12T16:32:19.6991764Z", "privateBytes": 1448075264, "workingSetBytes": 1100013568, "gpu": [[64593920, 46346240, 117104640]] },
+    { "utc": "2026-10-12T16:32:20.7710477Z", "privateBytes": 1473753088, "workingSetBytes": 1128898560, "gpu": [[67653632, 46346240, 120164352]] }
+  ],
+  "limits": [
+    "Startup/partial-run samples only; watch ended before Editor test completion.",
+    "No instantaneous peak or measurement-frame alignment was captured.",
+    "Not a fixture hard-stop monitor."
+  ]
+}

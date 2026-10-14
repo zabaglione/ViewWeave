@@ -1,0 +1,167 @@
+{
+  "status": "inconclusive",
+  "verdict": {
+    "scope": "current SDK/API restriction, not a universal or principle-level impossibility claim",
+    "basis": "Current Unity 6000.6.4f1 / URP 17.6 / VFX Graph 17.6 public API probe observed paused simulation reset on both allowInstancing setter transitions; no public safe runtime batch-capacity control or public per-view TAA history swap path was confirmed.",
+    "sdkChanged": false,
+    "sdkReleased": false,
+    "status": "no-production-auto-instancing-switch"
+  },
+  "attempts": [
+    {
+      "nunitXml": false,
+      "runId": "20261013T235409936Z",
+      "failure": "StrictMode PropertyNotFoundException",
+      "editorExitCode": null,
+      "classification": "prelaunch-runner-failure",
+      "drainComplete": false
+    },
+    {
+      "nunitXml": true,
+      "runId": "20261013T235838052Z",
+      "failure": "XML contained zero tests after metadata line-ending/import issue",
+      "editorExitCode": 0,
+      "classification": "zero-test-result",
+      "drainComplete": true
+    },
+    {
+      "nunitXml": true,
+      "runId": "20261014T000358816Z",
+      "failure": "Legacy Process-based baseline read did not succeed; individual counter values and exception type were not saved",
+      "editorExitCode": 2,
+      "classification": "memory-baseline-setup-failure",
+      "drainComplete": true
+    },
+    {
+      "nunitXml": false,
+      "runId": "20261014T001050485Z",
+      "failure": "clone-test-file-conflict",
+      "editorExitCode": null,
+      "classification": "prelaunch-clone-file-conflict",
+      "drainComplete": false
+    },
+    {
+      "nunitXml": true,
+      "runId": "20261014T001156656Z",
+      "failure": "simulation reset and pixel retention gates failed; raw continuation comparison has mismatched time baselines",
+      "editorExitCode": 2,
+      "classification": "actual-probe-nunit-failed",
+      "drainComplete": true
+    }
+  ],
+  "createdLocalDate": "2026-10-14",
+  "schema": "viewweave-windows-urp-vfx-instancing-policy-probe-v1",
+  "artifacts": {
+    "archiveManifest": "validation/windows-urp-vfx-sdk-memory-policy-20261014/MANIFEST.json",
+    "archive": "validation/windows-urp-vfx-sdk-memory-policy-20261014/",
+    "report": "windows-urp-vfx-sdk-memory-policy-20261014.md",
+    "archiveManifestSha256": "b0ae8f87253e14dd011cc0929a75dd43c546f85c3b9934752e8560672e420c2f"
+  },
+  "observations": {
+    "rawGates": {
+      "sourceAssetUnchanged": true,
+      "sceneNotSaved": true,
+      "falseSetterPixelsMatchPause": false,
+      "pauseRetentionGate": false,
+      "trueSetterPixelsMatchPause": false,
+      "quiltTextureReleased": true,
+      "memoryGuardNotReached": true,
+      "noUnityErrors": true,
+      "historyReleased": true,
+      "componentSettingsRestored": true,
+      "unpausedContinuationGate": false,
+      "cleanupPassed": true
+    },
+    "interpretation": {
+      "overallProbePass": false,
+      "rawContinuationGateUsable": false,
+      "cacheMechanismProven": false,
+      "rawContinuationReason": "Baseline compared pre-setter time 0.05 with resumed time 0.03333334; later samples show simulation/revision progress, so raw false gate is not evidence of no resume.",
+      "setterTransitionResetObserved": true
+    },
+    "memory": {
+      "scope": "process-global Unity Editor counters, not physical VRAM",
+      "graphicsPeakGrowthBytes": 34890100,
+      "workingSetBaselineBytes": 1515892736,
+      "observerLimitBytes": 536870912,
+      "sampleCount": 52,
+      "limitReached": false,
+      "privateBaselineBytes": 1920315392,
+      "privatePeakGrowthBytes": 65536,
+      "graphicsBaselineBytes": 252567916
+    },
+    "trueSetter": {
+      "resumedVfxTime": 0.03333334,
+      "simulationResetObserved": true,
+      "resumedRevisionTo": 44,
+      "resumedRevisionFrom": 35
+    },
+    "batchApi": {
+      "warmTotalCapacity": 49,
+      "warmMaxCapacity": 49,
+      "afterTrueMaxCapacity": 49,
+      "afterFalseMaxCapacity": 1,
+      "afterTrueInactiveBatches": 1,
+      "afterFalseTotalCapacity": 50,
+      "afterTrueTotalCapacity": 50,
+      "warmGpuBytes": 21345076,
+      "afterFalseInactiveBatches": 1,
+      "afterFalseGpuBytes": 21782696
+    },
+    "setup": {
+      "pausedAlive": 391,
+      "capacity": 1600,
+      "warmupFrame": 32,
+      "pausedVfxTime": 0.05,
+      "asset": "SampleTexture2D",
+      "grid": "40x40",
+      "warmupRevision": 19
+    },
+    "falseSetter": {
+      "nextFrameSpawnCount": 1600,
+      "frame36Alive": 391,
+      "immediateAlive": 0,
+      "state": "Finished",
+      "immediateVfxTime": 0
+    }
+  },
+  "probe": {
+    "nunit": {
+      "skipped": 0,
+      "total": 1,
+      "failed": 1,
+      "passed": 0
+    },
+    "rawClassification": "inconclusive",
+    "runId": "20261014T001156656Z",
+    "drainComplete": true,
+    "cleanupPassed": true,
+    "cloneResidualProcessCount": 0,
+    "inputNativeProofSha256": "B7D337BD34226D44D4468DF0A5F98554714FA964B6CF6646E929FC8C1A998209",
+    "nativeResultSha256": "4547207BC2793FB23DDAB722B928C308DE5921CF10175C2B05BB01986877CBC4",
+    "sourceSha256": "F8E59E50AAAB0BC11700A3C7AC1E7B362507009F5996B6374F9C30215E4185F8",
+    "rawXmlSha256": "C0FFBAF84B3DE7EECF2C624444CB7BFF09058DE76FAA2FD3D8E3A747431047C1",
+    "unityExitCode": 2,
+    "sceneSaved": false,
+    "timeout": false,
+    "rawStatus": "not-passed",
+    "testCase": "ViewWeave.SceneComparison.Tests.AllowInstancingRuntimeTransitionProbe.MeasuresPublicAllowInstancingTransitionsWithoutReinitializingTheVfx",
+    "sourceAssetUnchanged": true,
+    "runnerSha256": "0D9AF775C959EB6FC8B76C467A570A06A8BC3411ADCDA621E78ADA537DCBAE48"
+  },
+  "environment": {
+    "viewCount": 1,
+    "unityEditor": "6000.6.4f1",
+    "renderPipeline": "URP 17.6.0",
+    "workingTreeDirty": true,
+    "graphicsApi": "Direct3D12",
+    "taa": false,
+    "vfxGraph": "17.6.0",
+    "testHost": "isolated clone Editor PlayMode",
+    "gpu": "NVIDIA GeForce RTX 3090 Ti",
+    "bridgeOrDeviceOutput": false,
+    "sdkHistoryBudgetMb": 4096,
+    "os": "Windows",
+    "repositoryHead": "11312b8c6cf824d9a7ac7c8940e95cee742fa076"
+  }
+}

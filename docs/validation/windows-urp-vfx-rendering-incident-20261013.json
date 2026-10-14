@@ -1,0 +1,364 @@
+{
+  "schemaVersion": 1,
+  "record": "Windows URP VFX rendering mismatch and Editor shutdown crash user observation",
+  "dateLocal": "2026-10-13",
+  "status": "observed-user-incident-with-bounded-probes-unresolved",
+  "sourceBasis": {
+    "revision": "11312b8c6cf824d9a7ac7c8940e95cee742fa076",
+    "uncommittedDiagnosticRuntimeChangesPresent": true,
+    "uncommittedChangesReleased": false,
+    "userProjectReadForIncidentEvidence": true,
+    "userProjectModified": false,
+    "sdkSourceModifiedForIncident": false,
+    "unityOrGpuTestRunForThisIncident": true,
+    "lookingGlassBridgeControlled": false,
+    "deviceOutputControlledOrCaptured": false,
+    "productionFixClaimed": false,
+    "testOnlyPairedViewProbeHelpersUsed": true,
+    "physicalLookingGlassDeviceUsedInProbes": false,
+    "originalGraphAssetsHashUnchanged": true
+  },
+  "environment": {
+    "operatingSystem": "Windows",
+    "unityVersion": "6000.6.4f1",
+    "graphicsApi": "Direct3D12",
+    "pipeline": "URP",
+    "project": "E:/URPSample_6.6.41f1",
+    "vfxGraphVersion": "17.6.0",
+    "renderPipelinePackageVersion": "17.6.0",
+    "editorProcessId": 106676,
+    "editorReachedReadyBeforeShutdown": true,
+    "editorLog": {
+      "relativePath": "Logs/Editor.log",
+      "lineCount": 1175,
+      "lastWriteUtc": "2026-10-13T01:06:38.9876111Z",
+      "fullLogCopied": false,
+      "selectedSafeLines": [
+        823,
+        824,
+        859,
+        904,
+        905,
+        906,
+        919,
+        920,
+        921,
+        1133,
+        1134,
+        1135,
+        1136
+      ],
+      "safeExtractPath": "windows-urp-vfx-rendering-incident-20261013/log-extract.txt"
+    },
+    "crashDump": {
+      "sourceRelativePath": "Crash_2026-10-13_010639250/crash.dmp",
+      "copied": false,
+      "sizeBytes": 695017,
+      "sha256": "D71D829D04522D51CE3785A2590E84F2DCD61E3C32BF2981554581B99C3B2DFE",
+      "exceptionCode": "0xC0000005",
+      "exceptionType": "access violation write",
+      "exceptionThreadId": 60696,
+      "instruction": "Unity.dll+0x44383df",
+      "projectLogShutdownStack": [
+        "dup_nolock",
+        "dup",
+        "RedirectStdout",
+        "Application::Terminate"
+      ],
+      "sameAddressAndExceptionTypeAsEarlierShutdownSignature": true,
+      "commonRootCauseEstablished": false,
+      "exceptionWriteTarget": "0x11f0"
+    }
+  },
+  "userObservations": {
+    "playGameGreenMultiStripsGpuEventsLamps": true,
+    "lookingGlassOutputForThoseLampsRed": true,
+    "rotationAngleCoinsRotateAndBecomePeriodicallyBrightInGame": true,
+    "userReportsSeparateHdrpSampleDisplays": true,
+    "quarterPreviewWasSmooth": true,
+    "observationsSynchronizedToSameFrameAndSettings": false,
+    "suppliedImagesProveLookingGlassOutput": false,
+    "outputQualityChangedFromPreviewToBalancedInPlay": true,
+    "quarterViewModeSelected": true,
+    "configuredHistoryBudgetChangedByUser": false,
+    "rotationAnglePeriodicBrightnessVisibleOnLookingGlass": false,
+    "unityEditorCrashedOnQuitAfterBudgetException": true
+  },
+  "budgetDiagnostic": {
+    "exception": "InsufficientMemoryException: URP History Resource Budget exceeded",
+    "observedGraphicsGrowthMegabytes": 6083,
+    "estimatedTextureGrowthMegabytes": 54,
+    "budgetMegabytes": 4096,
+    "graphicsBaselineRawBytes": 3533831142,
+    "previousGraphicsSampleRawBytes": 3622796354,
+    "currentGraphicsSampleRawBytes": 9913100354,
+    "currentMinusPreviousRawBytes": 6290304000,
+    "peakGraphicsGrowthRawBytes": 6379269212,
+    "lastEstimatedTextureGrowthRawBytes": 56950784,
+    "peakEstimatedTextureGrowthRawBytes": 56950784,
+    "texturesSampledAtLoggedCall": false,
+    "graphicsCounterScope": "Process-global graphics-driver counter; not physical VRAM or VFX-only allocation.",
+    "textureEstimateScope": "Observed RenderTexture objects; not VFX-only or planned quilt allocation.",
+    "peakValuesMayComeFromDifferentSamples": true,
+    "context": {
+      "frame": 113,
+      "mode": "Play",
+      "phase": "before_view",
+      "logicalView": 0,
+      "completedViews": 0,
+      "requestedViews": 12,
+      "historyCameras": 12,
+      "tileWidth": 480,
+      "tileHeight": 360,
+      "layoutViews": 48,
+      "effectiveAntialiasing": "TemporalAntiAliasing"
+    },
+    "physicalVramPeakKnown": false,
+    "guardExceptionCausedCrashEstablished": false,
+    "reportedMegabyteUnit": "MiB; diagnostic bytes are divided by 1048576 for displayed MB values."
+  },
+  "shaderBindingWarnings": [
+    {
+      "line": 823,
+      "shader": "Hidden/VFX/MultiStripGPUEvents/Jacks/Jack Meshes",
+      "requiredBuffer": "attributeBuffer",
+      "result": "draw skipped",
+      "cameraPathIdentified": false,
+      "srvIndex": 0
+    },
+    {
+      "line": 824,
+      "shader": "Hidden/VFX/StripGPUEvent/Mushroom Cap/Mushroom Mesh",
+      "requiredBuffer": "attributeBuffer",
+      "result": "draw skipped",
+      "cameraPathIdentified": false,
+      "srvIndex": 0
+    }
+  ],
+  "vfxSourceInspection": {
+    "multiStripsGpuEvents": {
+      "simulationCharacterization": "GPU collision/event-driven",
+      "usesCSharpVfxOutputEvents": false,
+      "greenQuadAttributeBufferIndex": 4,
+      "jacksAttributeBufferIndex": 0,
+      "redLampAttributeBufferIndex": 1,
+      "gpuEventFailureEstablished": false,
+      "greenQuadFailureEstablished": false,
+      "bufferIndexMappingEvidence": "separate CPU descriptor/source inventory, not incident Editor log"
+    },
+    "rotationAngle": {
+      "output": "VFXURPLitMeshOutput",
+      "surface": "Opaque",
+      "useEmissive": false,
+      "rotationAndGradientSetupPresent": true,
+      "specularReflectionAsBrightnessCause": "candidate-unconfirmed"
+    },
+    "controlledScenePilotsCoverTheseGraphs": false
+  },
+  "pipelineSourceComparison": {
+    "urpQuiltSubmission": "manual Camera.Render()",
+    "hdrpQuiltSubmission": "StandardRequest",
+    "normalUrpScriptableRendererPreparationFound": true,
+    "submissionDifferenceCausedIncident": false,
+    "methodSwapChangesTaaOrHistorySemantics": true,
+    "causalityEstablished": false
+  },
+  "results": {
+    "incidentReproduced": false,
+    "rootCauseEstablished": false,
+    "priorSceneComparisonPassesApplyToThisIncident": false,
+    "generalVfxCompatibilityClaimed": false,
+    "playerOrOpticalQualityTested": false,
+    "newControlledProbeCount": 2,
+    "newBoundedProbePassedCount": 1,
+    "greenProbeStatus": "inconclusive",
+    "coinProbeStatus": "bounded-observation-passed",
+    "userReportedLookingGlassMismatchReproduced": false,
+    "sourceWarningsAttributedToQuiltCamera": false,
+    "budgetExceptionCrashCausality": "unknown",
+    "preActivationSetupFailures": 3,
+    "boundaries": "The user report uses Preview/Play, TAA, PP and a 12-view device quilt; probes used a single paired view with AA and PP off, without physical device output.",
+    "unityEditorLaunchCount": 6,
+    "activatedProbeRunCount": 3,
+    "distinctProbeTargetCount": 2,
+    "nunitCaseCountFromFiveRunXmlFiles": 5,
+    "nunitPassCount": 1,
+    "nunitFailureCount": 2,
+    "nunitInconclusiveCount": 2,
+    "compileFailureWithoutXmlCount": 1,
+    "setupFailuresBeforeActivation": 2
+  },
+  "artifacts": {
+    "report": "../windows-urp-vfx-rendering-incident-20261013.md",
+    "safeLogExtract": "windows-urp-vfx-rendering-incident-20261013/log-extract.txt",
+    "portableProbeArchive": "windows-urp-vfx-rendering-incident-20261013/probes",
+    "probeSourceHashes": {
+      "runner": "7A14D3DE791CC26EE4BB511A3C0CEBE83BE812196FAD75C3760A0A3C3BE5CCAC",
+      "final20sGreen": "59D4AB04EB598BD564AD12E11757A92B385926E5045DDF35D5FAD69DA0DACE4D",
+      "sharedAndCloneOriginal": "7407D04524D9CE4FF0847EFD9CF529CBCD761A7EC6BC11E699337350B1C7C98D"
+    }
+  },
+  "focusedPairedViewProbes": {
+    "priorActivatedGreen6s": {
+      "measurementDeadlineSeconds": 6,
+      "archive": "windows-urp-vfx-rendering-incident-20261013/probes/vfxvisual-green-20261013T014646239Z",
+      "nunit": {
+        "total": 1,
+        "skipped": 0,
+        "failed": 0,
+        "inconclusive": 1,
+        "passed": 0
+      },
+      "xmlSha256": "1B26F1D37CC17E85555C731351487BDFA23AAB8ADC61867542D257C24391DC98",
+      "editorProcessId": 34512,
+      "status": "inconclusive",
+      "timeout": false,
+      "resultInterpretation": "Stopped before the actual GPU-event particle burst; not evidence that simulation failed.",
+      "strictGreenPixelsQuilt": 0,
+      "editorExitCode": 2,
+      "strictGreenPixelsNormal": 0,
+      "residualEditorProcess": false,
+      "firstNonzeroParticleObservationNotReachedByDeadline": true,
+      "originalGraphAssetHashUnchanged": true
+    },
+    "userTaa12ViewDeviceScenarioReproduced": false,
+    "coin": {
+      "originalGraphAssetUnchanged": true,
+      "timeout": false,
+      "upperCoinHighlightVisibleInBoth": true,
+      "editorProcessId": 29364,
+      "startedUtc": "2026-10-13T01:49:32.1204276Z",
+      "interpretation": "One-view central-camera comparison with AA and post-processing off; does not reproduce user TAA/12-view/device brightness report.",
+      "particles": 3,
+      "maxPixelDifferenceNormalVsQuilt": 1,
+      "normalAndQuiltLuminanceRangesOverlap": true,
+      "observationSeconds": 6.0109,
+      "imagePairs": 210,
+      "sourceSha256": "7407D04524D9CE4FF0847EFD9CF529CBCD761A7EC6BC11E699337350B1C7C98D",
+      "editorExitCode": 0,
+      "xmlSha256": "CAEDBE68D3EF721346D7AA81DAB6D09B2E728D0E9194E6E09A13D3BFF0C842F5",
+      "xmlAndEvidence": "windows-urp-vfx-rendering-incident-20261013/probes/vfxvisual-coin-20261013T014931658Z",
+      "endedUtc": "2026-10-13T01:50:15.7905158Z",
+      "nunit": {
+        "inconclusive": 0,
+        "passed": 1,
+        "failed": 0,
+        "total": 1,
+        "skipped": 0
+      },
+      "status": "bounded-observation-passed",
+      "sampledLuminanceRange": [
+        104,
+        108
+      ],
+      "normalGoldColorRange": [
+        4034,
+        8831
+      ],
+      "quiltGoldColorRange": [
+        4028,
+        8836
+      ],
+      "originalGraphAssetHashUnchanged": true,
+      "rawGraphicsPeakDeltaBytes": 10535288,
+      "privateBytesPeakDeltaBytes": 184020992
+    },
+    "setupFailuresAddedToPassCount": false,
+    "theseAreNotProductFailures": true,
+    "preActivationFailures": [
+      {
+        "status": "setup-failure-before-VFX-activation",
+        "exitCode": 1,
+        "failure": "CS0103 originalReferenceTarget missing; no XML",
+        "run": "compile-attempt",
+        "editorProcessId": 51872
+      },
+      {
+        "status": "setup-failure-before-VFX-activation",
+        "exitCode": 2,
+        "failure": "fixture GUID typo and inactive-effects lookup; no VFX activation",
+        "run": "fixture-setup",
+        "editorProcessId": 118544
+      },
+      {
+        "status": "setup-failure-before-VFX-activation",
+        "exitCode": 2,
+        "failure": "fixture binder mismatch during load-prepared-scene; VFX activation not reached",
+        "run": "VFX-binder-setup",
+        "editorProcessId": 29628
+      }
+    ],
+    "finalGreen20s": {
+      "editorExitCode": 2,
+      "startedUtc": "2026-10-13T01:55:50.9656342Z",
+      "privateBytesDelta": 44240896,
+      "missingSrvWarnings": 0,
+      "allVfxDisabledAfterProbe": true,
+      "greenLightMaximumParticles": 16,
+      "sourceSha256": "59D4AB04EB598BD564AD12E11757A92B385926E5045DDF35D5FAD69DA0DACE4D",
+      "historyCamerasAfterCleanup": 0,
+      "nunit": {
+        "inconclusive": 1,
+        "passed": 0,
+        "failed": 0,
+        "total": 1,
+        "skipped": 0
+      },
+      "rawGraphicsDeltaBytes": 4181760,
+      "endedUtc": "2026-10-13T01:56:51.5344239Z",
+      "xmlAndEvidence": "windows-urp-vfx-rendering-incident-20261013/probes/vfxvisual-green-20261013T015550471Z",
+      "strictGreenPixelsNormal": 0,
+      "cableNonzeroSamples": 701,
+      "timeout": false,
+      "editorProcessId": 44420,
+      "resultInterpretation": "GPU event particles generated; strict display color gate inconclusive, not an event-chain failure or pass.",
+      "frameSamples": 763,
+      "errors": 0,
+      "strictGreenPixelsQuilt": 0,
+      "xmlSha256": "9A2C64990E6C3973F8FA9C29F93EC1962D6E7CEC1B45D0F416E2ED4AE8A6DDF3",
+      "ownedRenderTexturesReleased": true,
+      "greenLightNonzeroSamples": 521,
+      "status": "inconclusive",
+      "finalParticleCounts": {
+        "Cables": 19540,
+        "Green": 7,
+        "LightSoundOff": 16,
+        "Jacks": 320
+      },
+      "strictGreenClassifier": "G >= 45 && G > R + 24 && G > B + 24",
+      "strictGreenPixelsNotDetectedIsNotEventSimulationFailure": true,
+      "cableOutputVisibleInPairedImages": true,
+      "originalGraphAssetHashUnchanged": true,
+      "firstNonzeroGreenLightsAliveFrame": 144,
+      "firstNonzeroGreenLightsAliveElapsedSeconds": 8.7308
+    },
+    "sceneAssetsUnmodified": true,
+    "environment": {
+      "antialiasing": "off",
+      "testMode": "Unity Editor PlayMode",
+      "tileSize": "480x360",
+      "physicalDeviceOutput": false,
+      "graphicsApi": "Direct3D12",
+      "runnerSha256": "7A14D3DE791CC26EE4BB511A3C0CEBE83BE812196FAD75C3760A0A3C3BE5CCAC",
+      "cameraSetup": "one normal camera plus one quilt camera",
+      "originalVfxGraphAssetsModified": false,
+      "postProcessing": false,
+      "sourceSha256": "7407D04524D9CE4FF0847EFD9CF529CBCD761A7EC6BC11E699337350B1C7C98D",
+      "quiltViews": 1
+    }
+  },
+  "osSampler": {
+    "samplePeriodRequestedMilliseconds": 500,
+    "validSamples": 50,
+    "finalGreenEditorProcessId": 44420,
+    "interpretation": "PID/creation-time scoped point samples; maxima are not original incident VRAM peaks and not frame-aligned.",
+    "firstUtc": "2026-10-13T01:55:54.558Z",
+    "maxima": {
+      "sharedBytes": 226471936,
+      "committedBytes": 928550912,
+      "privateBytes": 3001864192,
+      "workingSetBytes": 2165956608
+    },
+    "lastUtc": "2026-10-13T01:56:50.774Z"
+  }
+}

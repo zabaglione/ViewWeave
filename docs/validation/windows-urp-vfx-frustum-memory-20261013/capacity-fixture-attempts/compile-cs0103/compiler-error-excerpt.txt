@@ -1,0 +1,4 @@
+Unity compilation excerpt (ASCII, selected diagnostic only)
+Assets\Editor\FrustumMetadataProbe\SampleTextureCapacityFixture.cs(189,56): error CS0103: The name 'Ascii' does not exist in the current context
+
+The Unity Editor exited with code 1 before NUnit XML was produced. Full Editor logs are excluded.

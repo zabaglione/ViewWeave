@@ -1,0 +1,182 @@
+{
+  "schema": "viewweave-coin-neighbor-derived-evidence-v1",
+  "classification": "derived validation only; raw watcher and supervisor summaries remain unchanged",
+  "derivedObservationGatePassed": true,
+  "rawSupervisorStatus": "watcher_observation_incomplete_editor_exited_zero",
+  "rawWatcherStatus": "bounded_observation_finished",
+  "rawSupervisorWatcherEvidencePassed": false,
+  "supervisorSchemaReconciliation": {
+    "fieldExpectedBySupervisor": "skinSourcePrefabHashUnchanged",
+    "fieldPresentInWatcher": false,
+    "actualWatcherFields": [
+      "skinSourcePrefabSha256Before",
+      "skinSourcePrefabSha256After",
+      "skinSourcePrefabHashMatchesAppliedState"
+    ],
+    "beforeEqualsAfter": true,
+    "afterMatchesAppliedState": true,
+    "conclusion": "Raw watcherEvidencePassed remains false in the original supervisor summary because the supervisor looked for a field absent from the watcher schema. Derived validation compares before/after hashes and applied-state match directly."
+  },
+  "runDirectory": ".local\\windows-urp-vfx-original-remedy-20261013\\run-20261013T194309822Z",
+  "supervisorSummaryPath": ".local\\windows-urp-vfx-original-remedy-20261013\\supervised-20261013T194307843Z\\supervisor-summary.json",
+  "watcherSummaryPath": ".local\\windows-urp-vfx-original-remedy-20261013\\run-20261013T194309822Z\\run-summary.json",
+  "batchLogPath": ".local\\windows-urp-vfx-original-remedy-20261013\\run-20261013T194309822Z\\vfx-batch-sweep.jsonl",
+  "hashes": {
+    "supervisor": "DEE0DF6C5EFDE9BC80289583B5513C7ADC0E4F0A6A2161E080D8537A1DC1201F",
+    "watcherSummary": "DAC2B837783837071114BA1442981FD90B00295B5F063FB60E1397CF29A39373",
+    "batchLog": "5880EB4BA56C4686D9BE3AEBB4937C6757F885DFC0785E4BBE8AFB270FB348B9",
+    "watcherTemplate": "8398F72F53BD981225593F07B0DC99A05EBB20005BDE071A9EC87F49A5645CA1",
+    "watcherRunner": "7EE037ABE68EB8E4538261FEABE85169CD446D60D44D4BB3BBC83784AC04DBA3",
+    "coinSupervisor": "41FDD7DB805015E4563EFDA3A0EB306A4B7C24005BDCDE4500E109332F02DE16"
+  },
+  "applyProofs": {
+    "texture": {
+      "path": ".local\\windows-urp-vfx-original-remedy-20261013\\URP\\ApplyRuns\\GraphBootApply-20261013T142115514Z\\apply-result.json",
+      "sha256": "57FE58E5E8A9D4DB1B5A94DA43D441EDA69A21067A7F825EC7855D5DFD249BA1",
+      "schema": "viewweave-original-prefab-graph-reference-apply-v1",
+      "status": "applied",
+      "passGate": true,
+      "guid": "1d49c3213be77a24493c6d2c87bde98d",
+      "assetSha256": "EF29E6CD2361E92BAE2E0CC1937F75ED8A44A5B2ACA1AEFA614F918B5371F097"
+    },
+    "skin": {
+      "path": ".local\\windows-urp-vfx-original-remedy-20261013\\URP\\ApplyRuns\\GraphBootApply-20261013T172353517Z\\apply-result.json",
+      "sha256": "69CD0D913843CB28DF0F8DA305DB93F39B9161776DE93F8E01430800B1E84508",
+      "schema": "viewweave-original-skinnedmesh-prefab-graph-reference-apply-v1",
+      "status": "applied",
+      "passGate": true,
+      "guid": "fbfdfe9cef026f544b0015b4c14f8b65",
+      "assetSha256": "9F6C0B7764A0CF32F01BAC5A87D3CD114AFC995A7086C52A19F634BE29E00222",
+      "sourcePrefabBefore": "61FE39002BCF1CADCD7FEA78B0521EF2F9287F40B375F5C17DBF7D698EEFC6C1",
+      "sourcePrefabAfter": "26F19A0CCB7008DA1ADFEE3696B42B0400822C6A3987ADAE263FBDCF3F3624C5"
+    }
+  },
+  "camera": {
+    "cameraMotionMode": "coin_neighbor_sweep",
+    "readyWindowCompleted": true,
+    "centerHoldGate": true,
+    "centerHoldElapsedSeconds": 0.531,
+    "centerHoldVisibleRevisions": 18,
+    "centerHoldEligibleSpanSeconds": 0.501,
+    "leftNeighborEligibleRevisions": 317,
+    "rightNeighborEligibleRevisions": 215,
+    "coinCenterReturnEligibleRevisions": 101,
+    "leftExcursionReached": true,
+    "rightExcursionReached": true,
+    "yawMinimumDegrees": -51.964,
+    "yawMaximumDegrees": 51.906,
+    "coinNeighborRootMappingGate": true,
+    "coinNeighborYawTargetsGate": true,
+    "coinNeighborVisibilityGate": true,
+    "cameraMotionGate": true,
+    "sweepRevisionSamples": 1011,
+    "sweepEligibleSamples": 405,
+    "restored": true
+  },
+  "graphics": {
+    "rawGraphicsBaselineBytes": 1225270134,
+    "rawGraphicsPeakBytes": 4765982658,
+    "rawGraphicsPeakGrowthBytes": 3540712524,
+    "rawGraphicsStopBytes": 4026531840,
+    "privatePrePlayBaselineBytes": 3780022272,
+    "privatePhaseBaselineBytes": 3797229568,
+    "privatePeakBytes": 6817058816,
+    "privatePhaseGrowthBytes": 3019829248,
+    "privatePrePlayGrowthBytes": 3037036544,
+    "privateStopBytes": 4294967296,
+    "sdkHistoryBudgetMutated": false,
+    "sdkErrorAbsent": true,
+    "growthStopsTriggered": false
+  },
+  "collision": {
+    "requiredDerivedGatePassed": true,
+    "assetGuid": "fdd4e278b167d3f41a9bfeabcdb3ff21",
+    "sourceGraphSha256": "D12815212B21A7C9F20C3DE7A635AA3800BD80DC7DC0FC6904C965F25FBBE3BD",
+    "prefabSha256Before": "1C5C5415C9720C6CD290C1EA8C199221F131567F1D96D346AD7BFA1EB82E83A6",
+    "prefabSha256After": "1C5C5415C9720C6CD290C1EA8C199221F131567F1D96D346AD7BFA1EB82E83A6",
+    "prefabMetaSha256Before": "7B1E67E76996B089A2C2AA0A76932F897E9F0D2C0C2FBDF5328401FA8B1C2BA5",
+    "prefabMetaSha256After": "7B1E67E76996B089A2C2AA0A76932F897E9F0D2C0C2FBDF5328401FA8B1C2BA5",
+    "allowInstancingFalse": true,
+    "componentFlagsMatch": true,
+    "readyStart": {
+      "event": "batch_info",
+      "snapshot": "ready_start",
+      "guid": "fdd4e278b167d3f41a9bfeabcdb3ff21",
+      "asset": "CollisionAdvanced",
+      "path": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/VFX/CollisionAdvanced.vfx",
+      "components": "1",
+      "allowInstancing": "False",
+      "componentFlagsMatch": "True",
+      "infoType": "UnityEngine.VFX.VFXBatchedEffectInfo",
+      "totalGPUSizeInBytes": "8428820",
+      "totalCPUSizeInBytes": "2056",
+      "activeBatchCount": "1",
+      "inactiveBatchCount": "0",
+      "activeInstanceCount": "1",
+      "unbatchedInstanceCount": "1",
+      "totalInstanceCapacity": "1",
+      "maxInstancePerBatchCapacity": "1",
+      "error": ""
+    },
+    "readyEnd": {
+      "event": "batch_info",
+      "snapshot": "ready_end",
+      "guid": "fdd4e278b167d3f41a9bfeabcdb3ff21",
+      "asset": "CollisionAdvanced",
+      "path": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/VFX/CollisionAdvanced.vfx",
+      "components": "1",
+      "allowInstancing": "False",
+      "componentFlagsMatch": "True",
+      "infoType": "UnityEngine.VFX.VFXBatchedEffectInfo",
+      "totalGPUSizeInBytes": "335020820",
+      "totalCPUSizeInBytes": "2056",
+      "activeBatchCount": "1",
+      "inactiveBatchCount": "0",
+      "activeInstanceCount": "1",
+      "unbatchedInstanceCount": "1",
+      "totalInstanceCapacity": "1",
+      "maxInstancePerBatchCapacity": "1",
+      "error": ""
+    },
+    "gpuBytesScope": "VFXBatchedEffectInfo asset aggregate, not process allocation or physical VRAM"
+  },
+  "sourceProtection": {
+    "protectedGatePassed": true,
+    "allTextureSkinSceneAndSourceHashesUnchanged": true,
+    "collisionApplyJsonPath": ".local/original-remedy/URP/CollisionApplyRuns/CollisionComponentOptOut-20261013T192213985Z/apply-result.json",
+    "collisionApplyJsonSha256": "FC7336415C8CE96B774C48260760BDEF4D33261977978910D591E46AB0EF66E1",
+    "collisionApplyStatus": "applied",
+    "collisionApplyPassGate": true
+  },
+  "process": {
+    "nativeWaitResult": 0,
+    "nativeExitCode": 0,
+    "exactProjectCountAfter": 0,
+    "bridgeStillPresent": true,
+    "exitEvidenceIdentityPassed": true,
+    "watcherEvidenceIdentityPassed": true
+  },
+  "requiredSubgates": {
+    "coinObservation": true,
+    "sourceHashes": true,
+    "nativeExit": true,
+    "textureAndSkinProofs": true,
+    "collisionBatchAndPrefab": true,
+    "protectedHashes": true,
+    "schemaReconciliation": true,
+    "postRunProtectedSnapshot": true
+  },
+  "postRunProtectedSnapshot": {
+    "path": ".local\\windows-urp-vfx-original-remedy-20261013\\run-20261013T194309822Z\\post-run-protected-snapshot.json",
+    "sha256": "D3C0E54C572E99213E734C3FA3419B3C3294EF261818DE792C2C9EA72705637C",
+    "capturedUtc": "2026-10-13T19:49:07.9408875Z",
+    "scope": "read-only post-run filesystem hashes; not a Unity runtime snapshot",
+    "allListedProtectedHashesMatchRecordedExpected": true
+  },
+  "currentSupervisorCorrection": {
+    "path": ".local/windows-urp-vfx-original-remedy-20261013/Run-OriginalCoinNeighborSupervised.ps1",
+    "sha256": "676059254B7EF99BAD3D9DF7CB4E5845EE259168321B66F871C81EF26959A806",
+    "scope": "current-context source only; not the as-run supervisor",
+    "predicate": "requires both source prefab SHA fields to be 64 hex, equal to each other, equal to the applied skin sourcePrefabSha256After, and skinSourcePrefabHashMatchesAppliedState=true"
+  }
+}

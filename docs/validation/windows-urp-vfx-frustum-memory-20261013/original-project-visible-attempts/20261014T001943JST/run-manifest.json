@@ -1,0 +1,210 @@
+{
+  "schema": "viewweave-original-vfx-visible-attempt-v1",
+  "localRunDate": "2026-10-14 JST",
+  "rawTimestampUtc": "2026-10-13T15:19:43.723Z",
+  "originalProjectPath": "E:\\URPSample_6.6.41f1",
+  "unityVersion": "6000.6.4f1",
+  "unityCliVersion": "1.0.0-beta.13",
+  "editorPid": 103012,
+  "bridgePid": 29956,
+  "graphicsApi": "not recorded in this run summary",
+  "profile": "Balanced Quarter; profile 1920x1080, 8x6, 48 views; Ready output 3840x2160, 8x6, 48 views; 12 history cameras",
+  "runStatus": "bounded_observation_incomplete",
+  "nunit": "not applicable",
+  "normalWarmup": {
+    "normalPhasePrivateBaselineBytes": 4038828032,
+    "rawRangeBytes": 92672,
+    "sampleSpanSeconds": 0.2647316,
+    "stableSamples": 3,
+    "rawBaselineBytes": 1500788062
+  },
+  "session": {
+    "rightExcursionReached": false,
+    "aliveCount": 0,
+    "sessionError": false,
+    "lastObservedRevision": 59,
+    "rootGuid": "3a08a8ebfe6ab4642b6f075038bdc1c3",
+    "boundsVisibleAtSample": true,
+    "layerVisibleAtSample": true,
+    "viewCameraSweepSamples": 1,
+    "yawDegrees": -15.0,
+    "historyCameraAaStartGate": true,
+    "batchSweepEndGate": false,
+    "baseGuid": "7837c49e89b12db43b2a59edba6bff6b",
+    "visibleAtSample": false,
+    "anchorSource": "SamplesShowcase.samplesPrefabs",
+    "historyCamerasStart": 12,
+    "targetBatch": {
+      "activeInstanceCount": 1,
+      "capacity": 1,
+      "activeBatchCount": 1,
+      "maxBatchCapacity": 1,
+      "gpuBytes": 76802420,
+      "allowInstancing": true,
+      "cpuBytes": 2056,
+      "error": "",
+      "components": 1,
+      "unbatchedInstanceCount": 1
+    },
+    "submissions": 60,
+    "batchSweepStartGate": true,
+    "sdkLastAutoError": false,
+    "completed": 58,
+    "anchorResolutionFailures": 0,
+    "targetGraphGuid": "1d49c3213be77a24493c6d2c87bde98d",
+    "visibilityEligibleSamples": 0,
+    "historyCameraAaEndGate": false,
+    "sampleIndex": 17,
+    "presentAccepted": 58
+  },
+  "memory": {
+    "privateGuardTriggered": true,
+    "rawGraphicsGrowthBytes": 3107055744,
+    "privatePeakBytes": 7184629760,
+    "privateBaselineBytes": 4038828032,
+    "rawGraphicsPeakBytes": 4607843806,
+    "rawGrowthLimitBytes": 3221225472,
+    "privateGrowthLimitBytes": 2147483648,
+    "rawGraphicsBaselineBytes": 1500788062,
+    "measurementStopsAreObservedThresholds": true,
+    "privateGrowthBytes": 3145801728,
+    "notPhysicalVram": true
+  },
+  "cleanup": {
+    "watcherInternalResidualInventory": null,
+    "sceneHashUnchanged": true,
+    "historyCamerasZero": true,
+    "watcherEvidencePassed": false,
+    "pendingZero": true,
+    "profileAndCameraRestored": true,
+    "sceneSaveCalled": false,
+    "workerClosed": true,
+    "treatmentGraphHashUnchanged": true,
+    "sessionIdle": true,
+    "watcherInternalProjectCountAfter": 2,
+    "exitHelperReportedNativeCode": null,
+    "sourceGraphHashUnchanged": true,
+    "playStopped": true,
+    "outerSupervisorProjectResidual": 0,
+    "bridgeStillRunning": true,
+    "nativeEditorExitCode": 0
+  },
+  "interpretation": "This attempt reached actual native output but stopped at the external process-private growth guard before the visibility gate. One revision sample had bounds and layer visible but no live particles. It is not a visible-render pass, memory safety pass, SDK budget exception reproduction, physical VRAM result, or root-cause finding.",
+  "preflightErrorHandling": "The initial startup preflight commit figures were multiplied by 1024; preserve that file and use the corrected follow-up resource snapshot with the note.",
+  "files": [
+    {
+      "path": "run-summary.json",
+      "bytes": 15230,
+      "sha256": "F274747FADBEACD1299D35D589B9A5643021F954910BAB734FF28CF8AF8E47D4",
+      "sourcePath": ".local\\windows-urp-vfx-original-remedy-20261013\\run-20261013T151943723Z\\run-summary.json"
+    },
+    {
+      "path": "watcher.jsonl",
+      "bytes": 54552,
+      "sha256": "55D885F028A0253C80354F26625A0EB6FC02745C4E5228D2D72EADA0D4FB7819",
+      "sourcePath": ".local\\windows-urp-vfx-original-remedy-20261013\\run-20261013T151943723Z\\watcher.jsonl"
+    },
+    {
+      "path": "process-memory.jsonl",
+      "bytes": 5006,
+      "sha256": "585F2AB30F269959A849B34CBCF06D32818CAEFFDD6AF3226C137B8B04401059",
+      "sourcePath": ".local\\windows-urp-vfx-original-remedy-20261013\\run-20261013T151943723Z\\process-memory.jsonl"
+    },
+    {
+      "path": "vfx-batch-sweep.jsonl",
+      "bytes": 15897,
+      "sha256": "7998E4AF46D03E18424FF3E1B173599CC770BFFFBDB97C90A0C0170FF26A3FC8",
+      "sourcePath": ".local\\windows-urp-vfx-original-remedy-20261013\\run-20261013T151943723Z\\vfx-batch-sweep.jsonl"
+    },
+    {
+      "path": "normal-phase-baseline.txt",
+      "bytes": 45,
+      "sha256": "ECDD6B422778675A8EF4FB621111D0B5DDC18D717B3B2F9B998646DBD7A23D12",
+      "sourcePath": ".local\\windows-urp-vfx-original-remedy-20261013\\run-20261013T151943723Z\\normal-phase-baseline.txt"
+    },
+    {
+      "path": "stop.flag",
+      "bytes": 54,
+      "sha256": "D1E8C0237D4F6BF5DB4F47DC7D8BD41FC671B375C8F32FC754DA2A4ADB4ADC0B",
+      "sourcePath": ".local\\windows-urp-vfx-original-remedy-20261013\\run-20261013T151943723Z\\stop.flag"
+    },
+    {
+      "path": "as-run/LiveGraphRemedyWatchTemplate.cs",
+      "bytes": 74494,
+      "sha256": "EDACB0BD626023267D85701904548FB8688B0A67DC8FD7DE2C1C74AC083088B7",
+      "sourcePath": ".local\\windows-urp-vfx-original-remedy-20261013\\run-20261013T151943723Z\\LiveGraphRemedyWatchTemplate.cs"
+    },
+    {
+      "path": "as-run/LivePlayWatch.cs",
+      "bytes": 74897,
+      "sha256": "353FCC2F628036D1CBA20A51B020B817E7BEE7E4CD0293534C7B555E41083115",
+      "sourcePath": ".local\\windows-urp-vfx-original-remedy-20261013\\run-20261013T151943723Z\\LivePlayWatch.cs"
+    },
+    {
+      "path": "as-run/Run-BoundedOriginalGraphRemedyProbe.ps1",
+      "bytes": 57185,
+      "sha256": "63CE3858C6FBED329E8A93B6EFE229316E14FD74050A9187F290FA9688061CB1",
+      "sourcePath": ".local\\windows-urp-vfx-original-remedy-20261013\\run-20261013T151943723Z\\Run-BoundedOriginalGraphRemedyProbe.ps1"
+    },
+    {
+      "path": "as-run/original-apply-result.json",
+      "bytes": 3797,
+      "sha256": "57FE58E5E8A9D4DB1B5A94DA43D441EDA69A21067A7F825EC7855D5DFD249BA1",
+      "sourcePath": ".local\\windows-urp-vfx-original-remedy-20261013\\run-20261013T151943723Z\\original-apply-result.json"
+    },
+    {
+      "path": "exit/exit-helper-summary.json",
+      "bytes": 2150,
+      "sha256": "E2DB093002146094FCD7197CF0CFABCEC5EE2D3F6428F5711ED51A42A07FF56D",
+      "sourcePath": ".local\\windows-urp-vfx-original-remedy-20261013\\exit-observations\\20261013T152001810Z\\summary.json"
+    },
+    {
+      "path": "exit/asrun-exit-runner.ps1",
+      "bytes": 15524,
+      "sha256": "D25CA1E623387B79DE2DD8C6BC346EDCB500435D3DF60B8BA826380F827CB6C2",
+      "sourcePath": ".local\\windows-urp-vfx-original-remedy-20261013\\exit-observations\\20261013T152001810Z\\asrun-exit-runner.ps1"
+    },
+    {
+      "path": "exit/asrun-exit-eval-template.cs.txt",
+      "bytes": 4666,
+      "sha256": "B4623996AC39DD29BDB4A1AD74BEC667F0B518E0A54B8256AED6562DBA82AC6D",
+      "sourcePath": ".local\\windows-urp-vfx-original-remedy-20261013\\exit-observations\\20261013T152001810Z\\asrun-exit-eval-template.cs.txt"
+    },
+    {
+      "path": "exit/exit-scheduled.txt",
+      "bytes": 17,
+      "sha256": "DD1FF401B70524B1D2D2EEEF9B54DF1D0EA56EE1D890DF3BA6D51D4279E4879D",
+      "sourcePath": ".local\\windows-urp-vfx-original-remedy-20261013\\exit-observations\\20261013T152001810Z\\exit-scheduled.txt"
+    },
+    {
+      "path": "startup/startup.json",
+      "bytes": 1673,
+      "sha256": "C4991079AAE7ACB9F47DE1AB9FAA82098A2B35FD300716BC8C76FC7A42B38C50",
+      "sourcePath": ".local\\windows-urp-vfx-original-remedy-20261013\\gui-ready-20261013T153223103Z\\startup.json"
+    },
+    {
+      "path": "startup/host-resource-followup.json",
+      "bytes": 1032,
+      "sha256": "1443A272CFB834612A34C8F0B3D41A4AB7A0627282F5EC5B3B4633E0C7F3160C",
+      "sourcePath": ".local\\windows-urp-vfx-original-remedy-20261013\\gui-ready-20261013T153223103Z\\host-resource-followup.json"
+    },
+    {
+      "path": "startup/preflight-as-captured.json",
+      "bytes": 2083,
+      "sha256": "D938B61BCD5181FA56E0F6C40076FAB33A1C9FE3F5F1AFABC718E3CD86475906",
+      "sourcePath": ".local\\windows-urp-vfx-original-remedy-20261013\\preflight-20261013T153010142Z\\preflight.json"
+    },
+    {
+      "path": "supervisor-observation.json",
+      "bytes": 2229,
+      "sha256": "0E6AEE624E184D55D00155FB1BB7B8BBA46CE944C84A73EC8688CE5A18922FFE",
+      "sourcePath": "Derived from captured supervisor stdout; no raw args or logs"
+    },
+    {
+      "path": "startup/preflight-unit-note.txt",
+      "bytes": 323,
+      "sha256": "CC141B07D6DD0E694EBA2DCCBBF17FC83615C90FA00E698D8FD0466A761E7FE1",
+      "sourcePath": "Derived explanatory note"
+    }
+  ]
+}

@@ -1,0 +1,146 @@
+{
+  "status": "bounded-observation-passed",
+  "probe": "Coin",
+  "testFilter": "ViewWeave.SceneComparison.Tests.HdrPostProcessProbeTests.ObserveRotationAngleOnOriginalSceneWithPostProcessing",
+  "testPlatform": "PlayMode",
+  "expectedTestCount": 1,
+  "graphicsApi": "D3D12",
+  "projectPath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\UnityProject",
+  "unityExecutable": "C:/Program Files/Unity/Hub/Editor/6000.6.4f1/Editor/Unity.exe",
+  "probeSourcePath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\Shared\\HdrPostProcessProbeTests.cs",
+  "probeSourceSha256": "B901F4C16102F2A9BE228CFC4D5BF28D812E88FAC2A57B6F095E18857A06C7AC",
+  "probeSourceBytes": 95485,
+  "startedUtc": "2026-10-13T04:54:00.3661879Z",
+  "startedProcessCreationUtc": "2026-10-13T04:54:00.3661879Z",
+  "endedUtc": "2026-10-13T04:54:21.7574777Z",
+  "editorProcessId": 35604,
+  "editorExitCode": 0,
+  "timeout": false,
+  "timeoutSeconds": 150,
+  "timeoutKillAttempted": false,
+  "timeoutKillErrorType": null,
+  "startErrorType": null,
+  "stdoutAndStderrDrained": true,
+  "processInventoryAvailableBefore": true,
+  "matchingBefore": null,
+  "processInventoryAvailableAfter": true,
+  "matchingAfter": null,
+  "processObjectStillRunning": false,
+  "xmlPath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\ResultsPhaseB\\hdrpp-coin-20261013T045400127Z.xml",
+  "xmlBytes": 4610,
+  "xmlSha256": "1435818CC82CF05A766D9192770D1731E4F2F05D0AA01C4979AA20F2E2771B6A",
+  "xmlParseErrorType": null,
+  "nunit": {
+    "total": 1,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "inconclusive": 0,
+    "result": "Passed",
+    "testCaseFullNames": [
+      "ViewWeave.SceneComparison.Tests.HdrPostProcessProbeTests.ObserveRotationAngleOnOriginalSceneWithPostProcessing"
+    ]
+  },
+  "exactTestCaseGate": true,
+  "editorLogPath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\ResultsPhaseB\\hdrpp-coin-20261013T045400127Z-editor.log",
+  "editorLogShared": false,
+  "evidenceDirectory": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\UnityProject\\TestResults\\hdrpp-coin-20261013T045400127Z",
+  "evidenceFiles": [
+    {
+      "name": "camera-target-descriptors.txt",
+      "bytes": 842,
+      "sha256": "E8B762DB9D62F06DA19203F7D9B14F8A41BED3B035AD87B8552EB0DBADBFFD89"
+    },
+    {
+      "name": "coin-min-float-metadata.txt",
+      "bytes": 200,
+      "sha256": "05E62310EF1962F1249FA03283A8CAC9E2CF9238D5C789D30B0AFD656407ED32"
+    },
+    {
+      "name": "coin-min-normal-float-peak.bin",
+      "bytes": 2764800,
+      "sha256": "3D6DC6E95298C6BEEA8CE0DD79E505790F908724BC65DF63575CA2FA48ED937C"
+    },
+    {
+      "name": "coin-min-quilt-paired-float-peak.bin",
+      "bytes": 2764800,
+      "sha256": "D11F53F35B0DE2725BB18F913ACE75BBD842D9929336B9E9CD57177D5D2390B0"
+    },
+    {
+      "name": "first-normal.png",
+      "bytes": 159331,
+      "sha256": "441E3DA4EA8EBDA79F0F9141B325578287A6835AC5EB9AABE2B255E86AB4F892"
+    },
+    {
+      "name": "first-quilt.png",
+      "bytes": 211768,
+      "sha256": "AEB17BD116DD8A5B4E40A4FD9368346FA8726FA2A99E9FD4FCD53D1FBBF819E7"
+    },
+    {
+      "name": "frames.csv",
+      "bytes": 27629,
+      "sha256": "FB5E6FE898274E860B0C46769AFB9292FA0008BFE7A49423D83DEBF812306642"
+    },
+    {
+      "name": "hdr-float-metadata.txt",
+      "bytes": 463,
+      "sha256": "9550509BADD9C53998237925B55B57F00A70ED1DAF47CFC5F8A14429417836FF"
+    },
+    {
+      "name": "hdr-float-normal.bin",
+      "bytes": 2764800,
+      "sha256": "3D6DC6E95298C6BEEA8CE0DD79E505790F908724BC65DF63575CA2FA48ED937C"
+    },
+    {
+      "name": "hdr-float-quilt.bin",
+      "bytes": 2764800,
+      "sha256": "D11F53F35B0DE2725BB18F913ACE75BBD842D9929336B9E9CD57177D5D2390B0"
+    },
+    {
+      "name": "normal-gold-peak-normal.png",
+      "bytes": 181104,
+      "sha256": "1DDBDE75C048C621980FA7780D4F3F942F7DF9AEC6C1F7B305D54595267AC1A1"
+    },
+    {
+      "name": "normal-gold-peak-quilt.png",
+      "bytes": 199127,
+      "sha256": "61503FADF448DF6BDDB2104F2DAE030638278014408CDDD0C320FA232FD7AF46"
+    },
+    {
+      "name": "normal-luma-max-normal.png",
+      "bytes": 181104,
+      "sha256": "1DDBDE75C048C621980FA7780D4F3F942F7DF9AEC6C1F7B305D54595267AC1A1"
+    },
+    {
+      "name": "normal-luma-max-quilt.png",
+      "bytes": 199127,
+      "sha256": "61503FADF448DF6BDDB2104F2DAE030638278014408CDDD0C320FA232FD7AF46"
+    },
+    {
+      "name": "normal-luma-min-normal.png",
+      "bytes": 148200,
+      "sha256": "379FCA8232B02CF9EA35D56A38761D2018D09A2AA15C5AD162FB4F8A0838A00D"
+    },
+    {
+      "name": "normal-luma-min-quilt.png",
+      "bytes": 211637,
+      "sha256": "EB68412D65A255791AADF7B04F2BE2BABC430925BB8625A601506E59A1330EC4"
+    },
+    {
+      "name": "observations.txt",
+      "bytes": 5867,
+      "sha256": "D785819A91EA7E8D3085F7FE2BA1537418A0B1BFC24B89B2EFC25F0215098D31"
+    },
+    {
+      "name": "quilt-gold-peak-normal.png",
+      "bytes": 181104,
+      "sha256": "1DDBDE75C048C621980FA7780D4F3F942F7DF9AEC6C1F7B305D54595267AC1A1"
+    },
+    {
+      "name": "quilt-gold-peak-quilt.png",
+      "bytes": 199127,
+      "sha256": "61503FADF448DF6BDDB2104F2DAE030638278014408CDDD0C320FA232FD7AF46"
+    }
+  ],
+  "boundedObservationGate": true
+}

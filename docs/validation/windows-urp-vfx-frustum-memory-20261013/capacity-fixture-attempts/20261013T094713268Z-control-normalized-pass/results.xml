@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Passed" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-13 09:47:24Z" end-time="2026-10-13 09:47:34Z" duration="10.1262827">
+  <test-suite type="TestSuite" id="1000" name="URPSample_6.6.41f1" fullname="URPSample_6.6.41f1" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-13 09:47:24Z" end-time="2026-10-13 09:47:34Z" duration="10.126283" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1013" name="ViewWeave.FrustumMetadata.Editor.Tests.dll" fullname="E:/LookingGlassSDK/.local/windows-vfx-scene-comparison-20261013/URP/UnityProject/Library/ScriptAssemblies/ViewWeave.FrustumMetadata.Editor.Tests.dll" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-13 09:47:24Z" end-time="2026-10-13 09:47:34Z" duration="10.115376" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="79612" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1014" name="ViewWeave" fullname="ViewWeave" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-13 09:47:24Z" end-time="2026-10-13 09:47:34Z" duration="10.114663" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1015" name="SceneComparison" fullname="ViewWeave.SceneComparison" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-13 09:47:24Z" end-time="2026-10-13 09:47:34Z" duration="10.114333" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1016" name="Tests" fullname="ViewWeave.SceneComparison.Tests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-13 09:47:24Z" end-time="2026-10-13 09:47:34Z" duration="10.113984" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1011" name="SampleTextureCapacityFixture" fullname="ViewWeave.SceneComparison.Tests.SampleTextureCapacityFixture" classname="ViewWeave.SceneComparison.Tests.SampleTextureCapacityFixture" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-10-13 09:47:24Z" end-time="2026-10-13 09:47:34Z" duration="10.112564" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1012" name="CreatesAutoAndCustomCapacityOnlyClonesAndDescribesCompiledAssets" fullname="ViewWeave.SceneComparison.Tests.SampleTextureCapacityFixture.CreatesAutoAndCustomCapacityOnlyClonesAndDescribesCompiledAssets" methodname="CreatesAutoAndCustomCapacityOnlyClonesAndDescribesCompiledAssets" classname="ViewWeave.SceneComparison.Tests.SampleTextureCapacityFixture" runstate="Runnable" seed="2145061339" result="Passed" start-time="2026-10-13 09:47:24Z" end-time="2026-10-13 09:47:34Z" duration="10.098464" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Remove 1 linked context(s) that could not be deserialized from Update Particle of type UnityEditor.VFX.VFXBasicUpdate
+Remove 1 child(ren) that couldnt be deserialized from  of type UnityEditor.VFX.VFXGraph
+Remove 1 owners that couldnt be deserialized from  of type UnityEditor.VFX.VFXDataParticle
+Remove 1 linked context(s) that could not be deserialized from Update Particle of type UnityEditor.VFX.VFXBasicUpdate
+Remove 1 child(ren) that couldnt be deserialized from  of type UnityEditor.VFX.VFXGraph
+Remove 1 owners that couldnt be deserialized from  of type UnityEditor.VFX.VFXDataParticle
+Remove 1 linked context(s) that could not be deserialized from Update Particle of type UnityEditor.VFX.VFXBasicUpdate
+Remove 1 child(ren) that couldnt be deserialized from  of type UnityEditor.VFX.VFXGraph
+Remove 1 owners that couldnt be deserialized from  of type UnityEditor.VFX.VFXDataParticle
+Remove 1 linked context(s) that could not be deserialized from Update Particle of type UnityEditor.VFX.VFXBasicUpdate
+Remove 1 child(ren) that couldnt be deserialized from  of type UnityEditor.VFX.VFXGraph
+Remove 1 owners that couldnt be deserialized from  of type UnityEditor.VFX.VFXDataParticle
+Remove 1 linked context(s) that could not be deserialized from Update Particle of type UnityEditor.VFX.VFXBasicUpdate
+Remove 1 child(ren) that couldnt be deserialized from  of type UnityEditor.VFX.VFXGraph
+Remove 1 owners that couldnt be deserialized from  of type UnityEditor.VFX.VFXDataParticle
+Remove 1 linked context(s) that could not be deserialized from Update Particle of type UnityEditor.VFX.VFXBasicUpdate
+Remove 1 child(ren) that couldnt be deserialized from  of type UnityEditor.VFX.VFXGraph
+Remove 1 owners that couldnt be deserialized from  of type UnityEditor.VFX.VFXDataParticle
+Remove 1 child(ren) that couldnt be deserialized from  of type UnityEditor.VFX.VFXGraph
+Remove 1 linked context(s) that could not be deserialized from Update Particle of type UnityEditor.VFX.VFXBasicUpdate
+Remove 1 owners that couldnt be deserialized from  of type UnityEditor.VFX.VFXDataParticle
+Remove 1 child(ren) that couldnt be deserialized from  of type UnityEditor.VFX.VFXGraph
+Remove 1 linked context(s) that could not be deserialized from Update Particle of type UnityEditor.VFX.VFXBasicUpdate
+Remove 1 owners that couldnt be deserialized from  of type UnityEditor.VFX.VFXDataParticle
+Remove 1 child(ren) that couldnt be deserialized from  of type UnityEditor.VFX.VFXGraph
+Remove 1 linked context(s) that could not be deserialized from Update Particle of type UnityEditor.VFX.VFXBasicUpdate
+Remove 1 owners that couldnt be deserialized from  of type UnityEditor.VFX.VFXDataParticle
+Remove 1 child(ren) that couldnt be deserialized from  of type UnityEditor.VFX.VFXGraph
+Remove 1 linked context(s) that could not be deserialized from Update Particle of type UnityEditor.VFX.VFXBasicUpdate
+Remove 1 owners that couldnt be deserialized from  of type UnityEditor.VFX.VFXDataParticle
+Saving results to: C:/Users/zzaba/AppData/LocalLow/DefaultCompany/URPSample_6_6_41f1\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

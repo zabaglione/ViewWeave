@@ -1,0 +1,21 @@
+Source: E:/URPSample_6.6.41f1/Logs/Editor.log
+Source lines: 1175
+Last write UTC: 2026-10-13T01:06:38.9876111Z
+Unity: 6000.6.4f1
+Process ID: 106676
+Crash dump: Crash_2026-10-13_010639250/crash.dmp (not copied; 695017 bytes; SHA256 D71D829D04522D51CE3785A2590E84F2DCD61E3C32BF2981554581B99C3B2DFE)
+
+[selected source lines]
+823: d3d12: Vertex Shader "Hidden/VFX/MultiStripGPUEvents/Jacks/Jack Meshes" requires a buffer (SRV) "attributeBuffer" at index 0, but none provided. Skipping draw calls to avoid crashing.
+824: d3d12: Vertex Shader "Hidden/VFX/StripGPUEvent/Mushroom Cap/Mushroom Mesh" requires a buffer (SRV) "attributeBuffer" at index 0, but none provided. Skipping draw calls to avoid crashing.
+859: Looking Glass quilt auto render stopped: InsufficientMemoryException: URP History Resource Budget exceeded: observed graphics growth 6083 MB; estimated texture growth 54 MB; budget 4096 MB; graphics baseline raw bytes=3533831142; previous graphics sample raw bytes=3622796354; current graphics sample raw bytes=9913100354; peak graphics growth raw bytes=6379269212; last estimated texture growth raw bytes=56950784; peak estimated texture growth raw bytes=56950784; textures sampled this call=false; peaks are high-water marks and may come from different samples; frame=113; mode=Play. phase=before_view; logical view=0; completed views=0; requested views=12; history cameras=12; tile width=480; tile height=360; layout views=48; per-view effective antialiasing=TemporalAntiAliasing
+904: Input System module state changed to: ShutdownInProgress.
+905: Input Polling Thread exited.
+906: Input System module state changed to: Shutdown.
+919: Cleanup mono
+920: CodeReloadManager destroyed
+921: Crash!!!
+1133: 0x00007FFD1AD283DF (Unity) dup_nolock
+1134: 0x00007FFD1AD283C8 (Unity) dup
+1135: 0x00007FFD1AD27CC0 (Unity) RedirectStdout
+1136: 0x00007FFD18079F42 (Unity) Application::Terminate

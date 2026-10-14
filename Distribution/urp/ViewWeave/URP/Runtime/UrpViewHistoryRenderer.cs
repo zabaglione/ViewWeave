@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Runtime.CompilerServices;
+using System.Text;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -278,7 +280,7 @@ namespace ViewWeave.URP
             {
                 if (disposed || currentCamera != null || camera != GetViewCamera(logicalView))
                     throw new InvalidOperationException("URP view scope does not match its logical view");
-                CheckBudget(false);
+                CheckBudget(false, "before_view", logicalView);
                 var data = camera.GetComponent<UniversalAdditionalCameraData>();
                 if (!Application.isPlaying || data.requiresVolumeFrameworkUpdate)
                 {
@@ -288,7 +290,7 @@ namespace ViewWeave.URP
                 else owner.CopyStack(data.volumeStack, owner.validationStack);
                 ValidateMotionBlur(owner.validationStack, data);
                 currentCamera = camera;
-                return new ViewScope(this);
+                return new ViewScope(this, logicalView);
             }
             public void RenderView(Camera camera, RenderTexture destination)
             {
@@ -305,9 +307,43 @@ namespace ViewWeave.URP
                 }
                 catch { failed = true; throw; }
             }
-            void CheckBudget(bool observeTextures)
+            void CheckBudget(bool observeTextures, string phase, int logicalView)
             {
                 try { owner.resourceBudget.Observe(budget, observeTextures, "URP"); }
+                catch (InsufficientMemoryException exception)
+                {
+                    failed = true;
+                    InsufficientMemoryException contextual = null;
+                    try
+                    {
+                        var context = new StringBuilder(224);
+                        context.Append("; URP view context: phase=").Append(phase)
+                            .Append("; logical view=").Append(logicalView.ToString(CultureInfo.InvariantCulture))
+                            .Append("; completed views=").Append(completedViews.ToString(CultureInfo.InvariantCulture))
+                            .Append("; requested views=").Append(owner.requested.Count.ToString(CultureInfo.InvariantCulture))
+                            .Append("; history cameras=").Append(owner.views.Count.ToString(CultureInfo.InvariantCulture))
+                            .Append("; tile width=").Append(owner.tileWidth.ToString(CultureInfo.InvariantCulture))
+                            .Append("; tile height=").Append(owner.tileHeight.ToString(CultureInfo.InvariantCulture))
+                            .Append("; layout views=").Append(owner.viewCount.ToString(CultureInfo.InvariantCulture));
+                        string effectiveAntialiasing = "unknown";
+                        try
+                        {
+                            Camera viewCamera = owner.GetCamera(logicalView);
+                            UniversalAdditionalCameraData viewData = viewCamera != null
+                                ? viewCamera.GetComponent<UniversalAdditionalCameraData>()
+                                : null;
+                            if (viewData != null) effectiveAntialiasing = viewData.antialiasing.ToString();
+                        }
+                        catch { }
+                        context.Append("; per-view effective antialiasing=").Append(effectiveAntialiasing)
+                            .Append("; frame=").Append(Time.frameCount.ToString(CultureInfo.InvariantCulture))
+                            .Append("; mode=").Append(Application.isPlaying ? "Play" : "Editor");
+                        contextual = new InsufficientMemoryException(exception.Message + context, exception);
+                    }
+                    catch { }
+                    if (contextual != null) throw contextual;
+                    throw;
+                }
                 catch { failed = true; throw; }
             }
             public void Dispose()
@@ -318,13 +354,20 @@ namespace ViewWeave.URP
             }
             sealed class ViewScope : IDisposable
             {
-                readonly Session session; bool disposed;
-                internal ViewScope(Session session) { this.session = session; }
+                readonly Session session;
+                readonly int logicalView;
+                bool disposed;
+                internal ViewScope(Session session, int logicalView)
+                {
+                    this.session = session;
+                    this.logicalView = logicalView;
+                }
                 public void Dispose()
                 {
                     if (disposed) return; disposed = true;
                     session.currentCamera = null; session.completedViews++;
-                    session.CheckBudget(session.owner.observedQuilts < 3 || session.completedViews == session.owner.requested.Count);
+                    session.CheckBudget(session.owner.observedQuilts < 3 || session.completedViews == session.owner.requested.Count,
+                        "after_view", logicalView);
                 }
             }
         }

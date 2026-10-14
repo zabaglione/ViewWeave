@@ -1,0 +1,9 @@
+{
+  "sourceSha256": "6259770089033D89D99FFEC2ED57F765EA70DBD68883DCB86F4EFB87492482AA",
+  "asmdefSha256": "2F08305DC039F11B10C34A42951275A5F73B4B7FA031A978BB5D295C77EE4CE6",
+  "priorRun": "RunTests-20261012T225955890Z-runner.json",
+  "precondition": "inactive renderer false captured; source prefab and serialized state captured before explicitly enabling selected renderer after Play",
+  "cameraFix": "original reference forward side, aimed at target one meter above effect origin",
+  "testFilter": "ViewWeave.SceneComparison.Tests.SelectedScenePilotTests.CollisionSimpleOriginalSceneOneViewAAOff",
+  "expectedCount": 1
+}

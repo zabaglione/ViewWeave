@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Passed" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-13 10:38:44Z" end-time="2026-10-13 10:38:49Z" duration="4.8334829">
+  <test-suite type="TestSuite" id="1035" name="URPSample_6.6.41f1" fullname="URPSample_6.6.41f1" runstate="Runnable" testcasecount="19" result="Passed" start-time="2026-10-13 10:38:44Z" end-time="2026-10-13 10:38:49Z" duration="4.833483" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1066" name="ViewWeave.SceneComparison.Tests.dll" fullname="E:/LookingGlassSDK/.local/windows-vfx-scene-comparison-20261013/URP/UnityProject/Library/ScriptAssemblies/ViewWeave.SceneComparison.Tests.dll" runstate="Runnable" testcasecount="19" result="Passed" start-time="2026-10-13 10:38:44Z" end-time="2026-10-13 10:38:49Z" duration="4.825498" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="79812" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1067" name="ViewWeave" fullname="ViewWeave" runstate="Runnable" testcasecount="19" result="Passed" start-time="2026-10-13 10:38:44Z" end-time="2026-10-13 10:38:49Z" duration="4.824391" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1068" name="SceneComparison" fullname="ViewWeave.SceneComparison" runstate="Runnable" testcasecount="19" result="Passed" start-time="2026-10-13 10:38:44Z" end-time="2026-10-13 10:38:49Z" duration="4.823765" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1069" name="Tests" fullname="ViewWeave.SceneComparison.Tests" runstate="Runnable" testcasecount="19" result="Passed" start-time="2026-10-13 10:38:44Z" end-time="2026-10-13 10:38:49Z" duration="4.823150" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1055" name="SampleTextureNativeProbeTests" fullname="ViewWeave.SceneComparison.Tests.SampleTextureNativeProbeTests" classname="ViewWeave.SceneComparison.Tests.SampleTextureNativeProbeTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-10-13 10:38:44Z" end-time="2026-10-13 10:38:49Z" duration="4.820643" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1056" name="ComparesLowCapacitySampleTextureOnNaturalAutoRender" fullname="ViewWeave.SceneComparison.Tests.SampleTextureNativeProbeTests.ComparesLowCapacitySampleTextureOnNaturalAutoRender" methodname="ComparesLowCapacitySampleTextureOnNaturalAutoRender" classname="ViewWeave.SceneComparison.Tests.SampleTextureNativeProbeTests" runstate="Runnable" seed="2047623459" result="Passed" start-time="2026-10-13 10:38:44Z" end-time="2026-10-13 10:38:49Z" duration="4.809049" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Font Asset [LiberationSansSDF-Fallback] Units Per EM set to 2048. Please commit the newly serialized value.
+Saving results to: C:/Users/zzaba/AppData/LocalLow/DefaultCompany/URPSample_6_6_41f1\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

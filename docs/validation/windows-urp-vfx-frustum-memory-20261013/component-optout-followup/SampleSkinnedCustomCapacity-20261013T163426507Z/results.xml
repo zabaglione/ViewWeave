@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Failed(Child)" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-13 16:34:37Z" end-time="2026-10-13 16:34:41Z" duration="4.2383333">
+  <test-suite type="TestSuite" id="1000" name="URPSample_6.6.41f1" fullname="URPSample_6.6.41f1" runstate="Runnable" testcasecount="8" result="Failed" site="Child" start-time="2026-10-13 16:34:37Z" end-time="2026-10-13 16:34:41Z" duration="4.238333" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <failure>
+      <message><![CDATA[One or more child tests had errors]]></message>
+    </failure>
+    <test-suite type="Assembly" id="1015" name="ViewWeave.FrustumMetadata.Editor.Tests.dll" fullname="E:/LookingGlassSDK/.local/windows-vfx-scene-comparison-20261013/URP/UnityProject/Library/ScriptAssemblies/ViewWeave.FrustumMetadata.Editor.Tests.dll" runstate="Runnable" testcasecount="3" result="Failed" site="Child" start-time="2026-10-13 16:34:37Z" end-time="2026-10-13 16:34:41Z" duration="4.231145" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="121108" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <failure>
+        <message><![CDATA[One or more child tests had errors]]></message>
+      </failure>
+      <test-suite type="TestSuite" id="1016" name="ViewWeave" fullname="ViewWeave" runstate="Runnable" testcasecount="3" result="Failed" site="Child" start-time="2026-10-13 16:34:37Z" end-time="2026-10-13 16:34:41Z" duration="4.230642" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <failure>
+          <message><![CDATA[One or more child tests had errors]]></message>
+        </failure>
+        <test-suite type="TestSuite" id="1017" name="SceneComparison" fullname="ViewWeave.SceneComparison" runstate="Runnable" testcasecount="3" result="Failed" site="Child" start-time="2026-10-13 16:34:37Z" end-time="2026-10-13 16:34:41Z" duration="4.230364" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <failure>
+            <message><![CDATA[One or more child tests had errors]]></message>
+          </failure>
+          <test-suite type="TestSuite" id="1018" name="Tests" fullname="ViewWeave.SceneComparison.Tests" runstate="Runnable" testcasecount="3" result="Failed" site="Child" start-time="2026-10-13 16:34:37Z" end-time="2026-10-13 16:34:41Z" duration="4.229930" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-suite type="TestFixture" id="1011" name="SampleSkinnedCustomCapacityFixture" fullname="ViewWeave.SceneComparison.Tests.SampleSkinnedCustomCapacityFixture" classname="ViewWeave.SceneComparison.Tests.SampleSkinnedCustomCapacityFixture" runstate="Runnable" testcasecount="1" result="Failed" site="Child" start-time="2026-10-13 16:34:37Z" end-time="2026-10-13 16:34:41Z" duration="4.228677" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <failure>
+                <message><![CDATA[One or more child tests had errors]]></message>
+              </failure>
+              <test-case id="1012" name="BuildsSampleSkinnedCustomCapacityOneCloneAndChecksCompiledData" fullname="ViewWeave.SceneComparison.Tests.SampleSkinnedCustomCapacityFixture.BuildsSampleSkinnedCustomCapacityOneCloneAndChecksCompiledData" methodname="BuildsSampleSkinnedCustomCapacityOneCloneAndChecksCompiledData" classname="ViewWeave.SceneComparison.Tests.SampleSkinnedCustomCapacityFixture" runstate="Runnable" seed="38556633" result="Failed" start-time="2026-10-13 16:34:37Z" end-time="2026-10-13 16:34:41Z" duration="4.216725" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[  Control URP-loaded VFX model projection differs from the source graph.
+  String lengths are both 64. Strings differ at index 0.
+  Expected: "1A7794315C10DBA27480004ECC2D9CB4EF79390689D3166821CD6557A32F75B4"
+  But was:  "2DF72772B7692222C9873BC1B12830FEAF5FC1F9CCC9EFEAC417DDE185091ED5"
+  -----------^
+]]></message>
+                  <stack-trace><![CDATA[at ViewWeave.SceneComparison.Tests.SampleSkinnedCustomCapacityFixture.BuildsSampleSkinnedCustomCapacityOneCloneAndChecksCompiledData () [0x00d5f] in E:\LookingGlassSDK\.local\windows-vfx-scene-comparison-20261013\URP\UnityProject\Assets\Editor\FrustumMetadataProbe\SampleSkinnedCustomCapacityFixture.cs:260
+]]></stack-trace>
+                </failure>
+                <output><![CDATA[Remove 1 child(ren) that couldnt be deserialized from  of type UnityEditor.VFX.VFXGraph
+Remove 1 linked context(s) that could not be deserialized from Update Particle of type UnityEditor.VFX.VFXBasicUpdate
+Remove 1 owners that couldnt be deserialized from  of type UnityEditor.VFX.VFXDataParticle
+Remove 1 linked context(s) that could not be deserialized from Update Particle of type UnityEditor.VFX.VFXBasicUpdate
+Remove 1 child(ren) that couldnt be deserialized from  of type UnityEditor.VFX.VFXGraph
+Remove 1 owners that couldnt be deserialized from  of type UnityEditor.VFX.VFXDataParticle
+Assets/FrustumMemorySkinnedCustom/Control/SampleSkinnedMesh.vfx - The source graph was out of date and has been upgraded before compilation - Save the graph to store the changes in the source asset
+Remove 1 linked context(s) that could not be deserialized from Update Particle of type UnityEditor.VFX.VFXBasicUpdate
+Remove 1 child(ren) that couldnt be deserialized from  of type UnityEditor.VFX.VFXGraph
+Remove 1 owners that couldnt be deserialized from  of type UnityEditor.VFX.VFXDataParticle
+Assets/FrustumMemorySkinnedCustom/Control/SampleSkinnedMesh.vfx - The source graph was out of date and has been upgraded before compilation - Save the graph to store the changes in the source asset
+Remove 1 child(ren) that couldnt be deserialized from  of type UnityEditor.VFX.VFXGraph
+Remove 1 linked context(s) that could not be deserialized from Update Particle of type UnityEditor.VFX.VFXBasicUpdate
+Remove 1 owners that couldnt be deserialized from  of type UnityEditor.VFX.VFXDataParticle
+Remove 1 linked slot(s) that couldnt be deserialized from Direction of type UnityEditor.VFX.VFXSlotFloat3
+Remove 1 linked slot(s) that couldnt be deserialized from Direction of type UnityEditor.VFX.VFXSlotFloat3
+Remove 1 linked slot(s) that couldnt be deserialized from Direction of type UnityEditor.VFX.VFXSlotFloat3
+Saving results to: C:/Users/zzaba/AppData/LocalLow/DefaultCompany/URPSample_6_6_41f1\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

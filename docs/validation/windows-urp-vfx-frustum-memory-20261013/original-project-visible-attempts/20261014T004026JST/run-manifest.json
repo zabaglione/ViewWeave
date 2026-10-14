@@ -1,0 +1,282 @@
+{
+  "schema": "viewweave-original-vfx-visible-attempt-v1",
+  "localRunDate": "2026-10-14 JST",
+  "rawTimestampUtc": "2026-10-13T15:40:26.193Z",
+  "originalProjectPath": "E:\\URPSample_6.6.41f1",
+  "unityVersion": "6000.6.4f1",
+  "unityCliVersion": "1.0.0-beta.13",
+  "editorPid": 28196,
+  "bridgePid": 29956,
+  "profile": "Balanced Quarter; 12 history cameras; 8x6/48 profile views; SDK budget 4096 MB unchanged",
+  "runStatus": "bounded_observation_incomplete",
+  "watcherPassed": false,
+  "nativeEditorExitCode": 0,
+  "exactProjectResidual": 0,
+  "bridgeStillRunning": true,
+  "normalWarmup": {
+    "rawPrePlayBaselineBytes": 1498389566,
+    "rawWarmBaselineBytes": 1500263774,
+    "privatePrePlayBaselineBytes": 4047577088,
+    "privateWarmBaselineBytes": 4072161280,
+    "rawSampleCount": 3,
+    "rawRangeBytes": 125440,
+    "spanSeconds": 0.2721695
+  },
+  "ready": {
+    "accepted": true,
+    "profileObserved": true,
+    "readyWindowCompleted": false,
+    "historyAaStart": true,
+    "historyAaEnd": false,
+    "centerHoldStarted": 1,
+    "centerHoldCompleted": 0,
+    "centerHoldRevisions": 0,
+    "cameraSweepRevisions": 0,
+    "visibilityEligibleRevisions": 0,
+    "anchorGate": true,
+    "rightExcursionReached": false,
+    "centerHoldRevisionEventsObserved": 2,
+    "centerHoldVisibleRevisions": 0,
+    "centerHoldRevisionSampleDetails": [
+      {
+        "revision": 61,
+        "elapsedSeconds": 0.026,
+        "alive": 0,
+        "visible": false
+      },
+      {
+        "revision": 62,
+        "elapsedSeconds": 0.07,
+        "alive": 0,
+        "visible": false
+      }
+    ]
+  },
+  "selectedVfx": {
+    "graphGuid": "1d49c3213be77a24493c6d2c87bde98d",
+    "graphSha256": "EF29E6CD2361E92BAE2E0CC1937F75ED8A44A5B2ACA1AEFA614F918B5371F097",
+    "aliveCount": 0,
+    "oneLimitStopSample": {
+      "boundsVisible": true,
+      "layerVisible": true,
+      "yawDegrees": -15,
+      "visible": false
+    },
+    "api": {
+      "components": 1,
+      "allowInstancing": true,
+      "activeBatchCount": 1,
+      "activeInstanceCount": 1,
+      "unbatchedInstanceCount": 1,
+      "capacity": 1,
+      "gpuBytes": 76802420,
+      "cpuBytes": 2056
+    }
+  },
+  "safety": {
+    "rawGrowthLimitBytes": 3221225472,
+    "rawGrowthAtStopBytes": 3236110460,
+    "privateGrowthLimitBytes": 4294967296,
+    "privatePeakBytes": 7184666624,
+    "privateGrowthFromWarmBaselineBytes": 3112505344,
+    "privateGrowthFromPrePlayPeakBytes": 3137089536,
+    "rawIsPhysicalVram": false,
+    "overshootPossible": true,
+    "sdk4096MbBudgetChanged": false,
+    "batchSnapshotCount": 32,
+    "batchApiReportedAggregateGpuBytes": 1770512152,
+    "topGpuAssets": [
+      {
+        "asset": "SampleSkinnedMesh",
+        "guid": "986cf4b6651f46246bdc1e5e7f81b4c2",
+        "gpuBytes": 892109880,
+        "cpuBytes": 2160,
+        "batchCapacity": 14,
+        "unbatched": 0
+      },
+      {
+        "asset": "SampleTexture2D",
+        "guid": "1d49c3213be77a24493c6d2c87bde98d",
+        "gpuBytes": 476162420,
+        "cpuBytes": 2056,
+        "batchCapacity": 1,
+        "unbatched": 1
+      },
+      {
+        "asset": "SampleSDF",
+        "guid": "835e76cc0c1f8e54581052d7c111c058",
+        "gpuBytes": 156268512,
+        "cpuBytes": 2112,
+        "batchCapacity": 8,
+        "unbatched": 0
+      },
+      {
+        "asset": "CollisionAdvanced",
+        "guid": "fdd4e278b167d3f41a9bfeabcdb3ff21",
+        "gpuBytes": 84269768,
+        "cpuBytes": 2128,
+        "batchCapacity": 10,
+        "unbatched": 0
+      },
+      {
+        "asset": "SampleMesh",
+        "guid": "e7595e60b3331314388c1a1de30631b5",
+        "gpuBytes": 42473292,
+        "cpuBytes": 3192,
+        "batchCapacity": 15,
+        "unbatched": 0
+      },
+      {
+        "asset": "MultiStripGPUEvents",
+        "guid": "09e4dfff658c863459dc084250a47a15",
+        "gpuBytes": 28744632,
+        "cpuBytes": 4976,
+        "batchCapacity": 11,
+        "unbatched": 0
+      }
+    ],
+    "rawGraphicsValueAtStopBytes": 4736489434,
+    "rawObserverOvershootBytes": 14884988,
+    "rawGraphicsValueAtReadyLimitBytes": 4736374234,
+    "rawGraphicsAtBatchSnapshotBytes": 4736489434,
+    "rawGrowthAtBatchSnapshotBytes": 3236225660,
+    "rawGrowthAtBatchSnapshotOvershootBytes": 15000188
+  },
+  "cleanup": {
+    "freshCleanupStateGate": true,
+    "playStopped": true,
+    "sessionIdle": true,
+    "workerClosed": true,
+    "pendingZero": true,
+    "historiesZero": true,
+    "profileCameraRestored": true,
+    "sceneSaveCalled": false,
+    "sceneHashUnchanged": true,
+    "sourceGraphHashUnchanged": true,
+    "treatmentGraphHashUnchanged": true,
+    "nativeEditorExitCode": 0,
+    "exactProjectResidual": 0,
+    "bridgeStillPresent": true,
+    "watcherInternalResidual": null,
+    "watcherExactProjectCountAfter": 1,
+    "sdkErrorFlagsFalse": true
+  },
+  "limitation": "Raw-growth observer stopped the ready phase before center hold completed. No camera sweep or visible-render gate; incomplete non-pass. Process-global graphics/API values are not physical VRAM or a per-camera allocation proof.",
+  "files": [
+    {
+      "path": "normal-phase-baseline.txt",
+      "bytes": 44,
+      "sha256": "2ED001378F21984592848F2073E9A83156C79873BA12A4012CE3CB6A7E43193A"
+    },
+    {
+      "path": "original-apply-result.json",
+      "bytes": 3797,
+      "sha256": "57FE58E5E8A9D4DB1B5A94DA43D441EDA69A21067A7F825EC7855D5DFD249BA1"
+    },
+    {
+      "path": "process-memory.jsonl",
+      "bytes": 2983,
+      "sha256": "3BA1AB947A89100481488B8A619E0D001F2EBD1DC5E21B40A6679392FF521DA1"
+    },
+    {
+      "path": "run-manifest.json",
+      "bytes": 8564,
+      "sha256": "605745BD85EF9C6ACABF0C1AB312481576E609F5E3484DBF72EFD79D31113A94"
+    },
+    {
+      "path": "run-summary.json",
+      "bytes": 17085,
+      "sha256": "0777B3F616E6F8796C5BCAB0378E509C7546B3B760881A0D924A5A87799C1732"
+    },
+    {
+      "path": "source-Sample Texture2D.prefab",
+      "bytes": 6509,
+      "sha256": "0BB66828975CFC45F4A4615AA60DF579B5EB1672225FCAABB9DC382AD0C0519B"
+    },
+    {
+      "path": "source-Sample Texture2D.prefab.meta",
+      "bytes": 154,
+      "sha256": "990BDDF81682013565481B1826A717C02CDD32DD3542247A32B4AC4B164E5335"
+    },
+    {
+      "path": "source-SampleTexture2D.vfx",
+      "bytes": 212144,
+      "sha256": "78D34F482963B47E6555E9218389A98A045F614F3F5B300776C78948CFE96556"
+    },
+    {
+      "path": "startup-preflight-unit-note.txt",
+      "bytes": 234,
+      "sha256": "38C6740AC7F1DA17CFD58E85517B2FBF495FF72F5B27D5CA9707262A8F789191"
+    },
+    {
+      "path": "treatment-SampleTexture2D.vfx",
+      "bytes": 191903,
+      "sha256": "EF29E6CD2361E92BAE2E0CC1937F75ED8A44A5B2ACA1AEFA614F918B5371F097"
+    },
+    {
+      "path": "treatment-SampleTexture2D.vfx.meta",
+      "bytes": 328,
+      "sha256": "86D050E5D71E0B5E4C1DCC1F4FFA1CDCB8BB871E3D6079C9C858C4191082D114"
+    },
+    {
+      "path": "vfx-batch-sweep.jsonl",
+      "bytes": 32243,
+      "sha256": "47C08AAFA2EADB1D1D475EDA56027F7FF9270D061A393D19C24F86706B0FE44C"
+    },
+    {
+      "path": "watcher.jsonl",
+      "bytes": 57879,
+      "sha256": "E7ED033858E9043556FD28476F9346AA131ECDB5756331B6D18EC659D5F21AD6"
+    },
+    {
+      "path": "as-run/LiveGraphRemedyWatchTemplate.cs",
+      "bytes": 82627,
+      "sha256": "685D581BD718B078793F340D90FCD4834303B829804FDAF5D4AA8C3F3A59219C"
+    },
+    {
+      "path": "as-run/LivePlayWatch.cs",
+      "bytes": 83030,
+      "sha256": "B701095D19B8639E6B5BA590AE11A38C78FF03A8172557718288FB8045C93F36"
+    },
+    {
+      "path": "as-run/RestoreStartOnEnable.cs",
+      "bytes": 2936,
+      "sha256": "B271CF4B0912BB5BABF4CF8E8C7FA2C3B63B7A26931246BF480734F77A957A15"
+    },
+    {
+      "path": "as-run/Run-BoundedOriginalGraphRemedyProbe.ps1",
+      "bytes": 69378,
+      "sha256": "89536C4C1C7D90D165CE96FC22EAECD994F850514E0F6C34417C654C926E6AF6"
+    },
+    {
+      "path": "exit/asrun-exit-eval-template.cs.txt",
+      "bytes": 4666,
+      "sha256": "B4623996AC39DD29BDB4A1AD74BEC667F0B518E0A54B8256AED6562DBA82AC6D"
+    },
+    {
+      "path": "exit/asrun-exit-runner.ps1",
+      "bytes": 15524,
+      "sha256": "D25CA1E623387B79DE2DD8C6BC346EDCB500435D3DF60B8BA826380F827CB6C2"
+    },
+    {
+      "path": "exit/exit-child-output.txt",
+      "bytes": 2164,
+      "sha256": "2B8BF5CA954E3F0173A1B9FD2BEE7DA37269429BAAC4EE1A5D9C7C454F49527B"
+    },
+    {
+      "path": "exit/exit-helper-summary.json",
+      "bytes": 2150,
+      "sha256": "F1E736EC65BCE0F6325E4190C22AB0AE8E380343E66763B0FF1AE1D18A838D18"
+    },
+    {
+      "path": "exit/exit-scheduled.txt",
+      "bytes": 17,
+      "sha256": "DD1FF401B70524B1D2D2EEEF9B54DF1D0EA56EE1D890DF3BA6D51D4279E4879D"
+    },
+    {
+      "path": "exit/supervisor-summary.json",
+      "bytes": 1999,
+      "sha256": "EBD2F3B0D60596C98E53EBF7C4CC648ED6FC6620B935CE7CF005DC685D105D89"
+    }
+  ]
+}

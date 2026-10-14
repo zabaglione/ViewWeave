@@ -1,0 +1,14 @@
+{
+  "sourcePath": "Tests/Pipelines/Unity/Assets/BridgeSessionValidation/Editor/BridgeEditorPreviewGpuTests.cs",
+  "sha256": "55A89AD09B0AC46E8D917FD525501915E3CB3384972036F9A8C6C68158DEBFF5",
+  "coldStage": "HDRP-only one synchronous RenderSourceControl call with a separate measured 60-second assertion; existing 15-second readiness deadline and green pixel assertion remain unchanged",
+  "sourcePixelsVisible": true,
+  "coldElapsedSeconds": 1.12,
+  "coldGreenDominant": 868,
+  "coldNonBlack": 868,
+  "coldMaxRGB": "79/203/41",
+  "readinessElapsedSeconds": 0.08,
+  "readinessGreenDominant": 868,
+  "readinessNonBlack": 868,
+  "scope": "warmed local Editor preview test; not a cold-start latency guarantee"
+}

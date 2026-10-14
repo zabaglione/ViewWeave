@@ -1,0 +1,1 @@
+observation=0;unityFrame=24;normalFloatPeak=1.00097656;quiltFloatPeak=0.854902;normalPixelsAnyRgbOverOne=22;quiltPixelsAnyRgbOverOne=0;encoding=float32-ieee754-little-endian-rgba;readbackTextureLinear=true

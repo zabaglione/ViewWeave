@@ -1,0 +1,21 @@
+{
+  "name": "ViewWeave.AllowInstancingRuntimeTransition.Tests",
+  "rootNamespace": "ViewWeave.SceneComparison.Tests",
+  "references": [
+    "ViewWeave.Core",
+    "ViewWeave.URP",
+    "Unity.RenderPipelines.Core.Runtime",
+    "Unity.RenderPipelines.Universal.Runtime",
+    "Unity.VisualEffectGraph.Runtime"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": true,
+  "precompiledReferences": ["nunit.framework.dll"],
+  "autoReferenced": false,
+  "defineConstraints": ["UNITY_INCLUDE_TESTS"],
+  "versionDefines": [],
+  "optionalUnityReferences": ["TestAssemblies"],
+  "noEngineReferences": false
+}

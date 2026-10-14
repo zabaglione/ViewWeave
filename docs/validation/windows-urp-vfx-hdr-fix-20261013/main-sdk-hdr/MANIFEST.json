@@ -1,0 +1,790 @@
+{
+  "schema": "viewweave-main-sdk-hdr-validation-archive-v1",
+  "createdUtc": "2026-10-13T05:08:04.0325419Z",
+  "scope": "Two bounded offscreen Green/Coin PlayMode probes and two main-SDK physical-device probes. D3D12, Unity 6000.6.4f1. No full Editor logs included.",
+  "sourceBasis": {
+    "baseRevision": "11312b8c6cf824d9a7ac7c8940e95cee742fa076",
+    "coreSourceSha256": "8DC2F11769425D22C123ACFE49C59B742C2CF548A2F956D845F4895A2E4A9BBE",
+    "urpSourceSha256": "864C024CA951E6EB07C6FDF09EF4BDAB8762ACB2E536AC619AA097F639113CBB",
+    "deviceHelperSha256": "AFC521F615489468D1F351565366935B37835B061B953DC6F9DBEC6303DE2B7F",
+    "offscreenHelperSha256": "B901F4C16102F2A9BE228CFC4D5BF28D812E88FAC2A57B6F095E18857A06C7AC",
+    "additionalRuntimeProductChangesDuringProbeRuns": false,
+    "hdrRuntimeFixIncluded": true,
+    "implementationCommitted": false
+  },
+  "runs": [
+    {
+      "name": "phase-b-green",
+      "kind": "offscreen",
+      "testCase": "ViewWeave.SceneComparison.Tests.HdrPostProcessProbeTests.ObserveMultiStripGpuEventsOnOriginalSceneWithPostProcessing",
+      "testResult": "Passed",
+      "nunitTotal": 1,
+      "nunitPassed": 1,
+      "nunitFailed": 0,
+      "nunitSkipped": 0,
+      "editorExitCode": 0,
+      "stdoutAndStderrDrained": true,
+      "timeout": false,
+      "xmlPath": "phase-b-green/hdrpp-green-20261013T045303749Z.xml",
+      "xmlSha256": "2DA6709D70588E3692BDBC81DBB92650A1E9861A687E8F8661357BC8A8B80F5F",
+      "probeSourceSha256": "B901F4C16102F2A9BE228CFC4D5BF28D812E88FAC2A57B6F095E18857A06C7AC",
+      "startedUtc": "2026-10-13T04:53:04.0119161Z",
+      "endedUtc": "2026-10-13T04:53:44.1109095Z",
+      "processId": 83756,
+      "physicalResponse": null,
+      "evidenceFiles": [
+        {
+          "path": "phase-b-green/evidence/results.xml",
+          "bytes": 4830,
+          "sha256": "2DA6709D70588E3692BDBC81DBB92650A1E9861A687E8F8661357BC8A8B80F5F"
+        },
+        {
+          "path": "phase-b-green/evidence/runner.json",
+          "bytes": 5815,
+          "sha256": "EF2CBE0DDBD274F1B5676881DFEEBC0DC2D143AF200C5D30CA6F46C73B3A627A"
+        },
+        {
+          "path": "phase-b-green/evidence/camera-target-descriptors.txt",
+          "bytes": 842,
+          "sha256": "A29F7BA92F08E93553E8FBDC57F7117CCC2AC48C019C7DF230B5A069BD12911C"
+        },
+        {
+          "path": "phase-b-green/evidence/first-normal.png",
+          "bytes": 164456,
+          "sha256": "FA39FC9F8BBDA46C619C5AF6B6A8B6D8A5174F0D9C0BBBF47B4ECFE4C07AAB8C"
+        },
+        {
+          "path": "phase-b-green/evidence/first-quilt.png",
+          "bytes": 243097,
+          "sha256": "D56267CCD2E89614392F0F6F231AC123A71C852AF7BE623C32F92AECB9F3EC86"
+        },
+        {
+          "path": "phase-b-green/evidence/frames.csv",
+          "bytes": 119284,
+          "sha256": "874A94A0C5396F719490A93579BFB3DC2EEEB61C8F797C0EE16AB4AD685E064D"
+        },
+        {
+          "path": "phase-b-green/evidence/green-lights-first-alive-normal.bin",
+          "bytes": 2764800,
+          "sha256": "18C9ED56C965F34496187C3AA8FB73EE8978B9FBAB377E898B889B046709859E"
+        },
+        {
+          "path": "phase-b-green/evidence/green-lights-first-alive-quilt.bin",
+          "bytes": 2764800,
+          "sha256": "C878836B714C619F7268CC4C4E4D50FCA815EE28AEA14A9406CA3988E3E7B694"
+        },
+        {
+          "path": "phase-b-green/evidence/green-lights-float-metadata.txt",
+          "bytes": 185,
+          "sha256": "B8BC83441EDFC2DA3A21D996335058D829D2EF23483B7EC08470CA818F2F584F"
+        },
+        {
+          "path": "phase-b-green/evidence/green-lights-peak-alive-normal.bin",
+          "bytes": 2764800,
+          "sha256": "568617819C3AED2907DFAAC5CD4D4530A4F40BD9E45C0FCF61E6963D34717372"
+        },
+        {
+          "path": "phase-b-green/evidence/green-lights-peak-alive-quilt.bin",
+          "bytes": 2764800,
+          "sha256": "D16FD05832D19973208F14C8B5B22AE0AFE4ADF46B993ACFEFF32F7E386E4D8E"
+        },
+        {
+          "path": "phase-b-green/evidence/hdr-float-metadata.txt",
+          "bytes": 462,
+          "sha256": "911D0DBADA9524102500D1DA35E84E2A896E22E81B434DFBBF1F9FDDDB7E30A0"
+        },
+        {
+          "path": "phase-b-green/evidence/hdr-float-normal.bin",
+          "bytes": 2764800,
+          "sha256": "6EC1D3C00A19525FFFCCEA9BEBCF3CADCE970523E9923F9432341AC78C7C4481"
+        },
+        {
+          "path": "phase-b-green/evidence/hdr-float-quilt.bin",
+          "bytes": 2764800,
+          "sha256": "5AA661DE0545B294DCD6567735DB5B3B4B0E7431353FFAD0E9716201DC608040"
+        },
+        {
+          "path": "phase-b-green/evidence/normal-green-peak-normal.png",
+          "bytes": 248410,
+          "sha256": "BF6375042A87863381F4DADEC5B118539FFC290370145D2EBDDBE640971C1F92"
+        },
+        {
+          "path": "phase-b-green/evidence/normal-green-peak-quilt.png",
+          "bytes": 325717,
+          "sha256": "A5D8E06D0CE40FE29733BB08253FD37677545366B49D19F199AC855E5C4B4945"
+        },
+        {
+          "path": "phase-b-green/evidence/normal-luma-max-normal.png",
+          "bytes": 248410,
+          "sha256": "BF6375042A87863381F4DADEC5B118539FFC290370145D2EBDDBE640971C1F92"
+        },
+        {
+          "path": "phase-b-green/evidence/normal-luma-max-quilt.png",
+          "bytes": 325717,
+          "sha256": "A5D8E06D0CE40FE29733BB08253FD37677545366B49D19F199AC855E5C4B4945"
+        },
+        {
+          "path": "phase-b-green/evidence/normal-luma-min-normal.png",
+          "bytes": 166007,
+          "sha256": "2BDA34F87C749CF3F7F23FDC17EED8DACF25D6731543291D5FBB68E1821D23F6"
+        },
+        {
+          "path": "phase-b-green/evidence/normal-luma-min-quilt.png",
+          "bytes": 245726,
+          "sha256": "FD4807599ADA6A77ED78CCB5CF655435C5C3415C081B4AB8DEAB84B1FBFDF12E"
+        },
+        {
+          "path": "phase-b-green/evidence/observations.txt",
+          "bytes": 5891,
+          "sha256": "85CE4068E8CDD148775AB57250DD9069F4751B0A044607C09134ECFF4F312D5A"
+        },
+        {
+          "path": "phase-b-green/evidence/quilt-green-peak-normal.png",
+          "bytes": 249475,
+          "sha256": "0B79120D1E4BA5B7BA6E766F00C560C28E0DAC1F409AA1F57CB6B9FF6C84E10B"
+        },
+        {
+          "path": "phase-b-green/evidence/quilt-green-peak-quilt.png",
+          "bytes": 326283,
+          "sha256": "5B68D11FFF53FFB618D9FF99D9DA92389A929C12B9F8DBE4057825D7D4FA6708"
+        }
+      ],
+      "runnerPath": "phase-b-green/hdrpp-green-20261013T045303749Z-runner.json"
+    },
+    {
+      "name": "phase-b-coin",
+      "kind": "offscreen",
+      "testCase": "ViewWeave.SceneComparison.Tests.HdrPostProcessProbeTests.ObserveRotationAngleOnOriginalSceneWithPostProcessing",
+      "testResult": "Passed",
+      "nunitTotal": 1,
+      "nunitPassed": 1,
+      "nunitFailed": 0,
+      "nunitSkipped": 0,
+      "editorExitCode": 0,
+      "stdoutAndStderrDrained": true,
+      "timeout": false,
+      "xmlPath": "phase-b-coin/hdrpp-coin-20261013T045400127Z.xml",
+      "xmlSha256": "1435818CC82CF05A766D9192770D1731E4F2F05D0AA01C4979AA20F2E2771B6A",
+      "probeSourceSha256": "B901F4C16102F2A9BE228CFC4D5BF28D812E88FAC2A57B6F095E18857A06C7AC",
+      "startedUtc": "2026-10-13T04:54:00.3661879Z",
+      "endedUtc": "2026-10-13T04:54:21.7574777Z",
+      "processId": 35604,
+      "physicalResponse": null,
+      "evidenceFiles": [
+        {
+          "path": "phase-b-coin/evidence/results.xml",
+          "bytes": 4610,
+          "sha256": "1435818CC82CF05A766D9192770D1731E4F2F05D0AA01C4979AA20F2E2771B6A"
+        },
+        {
+          "path": "phase-b-coin/evidence/runner.json",
+          "bytes": 5434,
+          "sha256": "178D894F8AC37E23DFE87D5F99D24B5569583897E6B55202F171D2612CD680A1"
+        },
+        {
+          "path": "phase-b-coin/evidence/camera-target-descriptors.txt",
+          "bytes": 842,
+          "sha256": "E8B762DB9D62F06DA19203F7D9B14F8A41BED3B035AD87B8552EB0DBADBFFD89"
+        },
+        {
+          "path": "phase-b-coin/evidence/coin-min-float-metadata.txt",
+          "bytes": 200,
+          "sha256": "05E62310EF1962F1249FA03283A8CAC9E2CF9238D5C789D30B0AFD656407ED32"
+        },
+        {
+          "path": "phase-b-coin/evidence/coin-min-normal-float-peak.bin",
+          "bytes": 2764800,
+          "sha256": "3D6DC6E95298C6BEEA8CE0DD79E505790F908724BC65DF63575CA2FA48ED937C"
+        },
+        {
+          "path": "phase-b-coin/evidence/coin-min-quilt-paired-float-peak.bin",
+          "bytes": 2764800,
+          "sha256": "D11F53F35B0DE2725BB18F913ACE75BBD842D9929336B9E9CD57177D5D2390B0"
+        },
+        {
+          "path": "phase-b-coin/evidence/first-normal.png",
+          "bytes": 159331,
+          "sha256": "441E3DA4EA8EBDA79F0F9141B325578287A6835AC5EB9AABE2B255E86AB4F892"
+        },
+        {
+          "path": "phase-b-coin/evidence/first-quilt.png",
+          "bytes": 211768,
+          "sha256": "AEB17BD116DD8A5B4E40A4FD9368346FA8726FA2A99E9FD4FCD53D1FBBF819E7"
+        },
+        {
+          "path": "phase-b-coin/evidence/frames.csv",
+          "bytes": 27629,
+          "sha256": "FB5E6FE898274E860B0C46769AFB9292FA0008BFE7A49423D83DEBF812306642"
+        },
+        {
+          "path": "phase-b-coin/evidence/hdr-float-metadata.txt",
+          "bytes": 463,
+          "sha256": "9550509BADD9C53998237925B55B57F00A70ED1DAF47CFC5F8A14429417836FF"
+        },
+        {
+          "path": "phase-b-coin/evidence/hdr-float-normal.bin",
+          "bytes": 2764800,
+          "sha256": "3D6DC6E95298C6BEEA8CE0DD79E505790F908724BC65DF63575CA2FA48ED937C"
+        },
+        {
+          "path": "phase-b-coin/evidence/hdr-float-quilt.bin",
+          "bytes": 2764800,
+          "sha256": "D11F53F35B0DE2725BB18F913ACE75BBD842D9929336B9E9CD57177D5D2390B0"
+        },
+        {
+          "path": "phase-b-coin/evidence/normal-gold-peak-normal.png",
+          "bytes": 181104,
+          "sha256": "1DDBDE75C048C621980FA7780D4F3F942F7DF9AEC6C1F7B305D54595267AC1A1"
+        },
+        {
+          "path": "phase-b-coin/evidence/normal-gold-peak-quilt.png",
+          "bytes": 199127,
+          "sha256": "61503FADF448DF6BDDB2104F2DAE030638278014408CDDD0C320FA232FD7AF46"
+        },
+        {
+          "path": "phase-b-coin/evidence/normal-luma-max-normal.png",
+          "bytes": 181104,
+          "sha256": "1DDBDE75C048C621980FA7780D4F3F942F7DF9AEC6C1F7B305D54595267AC1A1"
+        },
+        {
+          "path": "phase-b-coin/evidence/normal-luma-max-quilt.png",
+          "bytes": 199127,
+          "sha256": "61503FADF448DF6BDDB2104F2DAE030638278014408CDDD0C320FA232FD7AF46"
+        },
+        {
+          "path": "phase-b-coin/evidence/normal-luma-min-normal.png",
+          "bytes": 148200,
+          "sha256": "379FCA8232B02CF9EA35D56A38761D2018D09A2AA15C5AD162FB4F8A0838A00D"
+        },
+        {
+          "path": "phase-b-coin/evidence/normal-luma-min-quilt.png",
+          "bytes": 211637,
+          "sha256": "EB68412D65A255791AADF7B04F2BE2BABC430925BB8625A601506E59A1330EC4"
+        },
+        {
+          "path": "phase-b-coin/evidence/observations.txt",
+          "bytes": 5867,
+          "sha256": "D785819A91EA7E8D3085F7FE2BA1537418A0B1BFC24B89B2EFC25F0215098D31"
+        },
+        {
+          "path": "phase-b-coin/evidence/quilt-gold-peak-normal.png",
+          "bytes": 181104,
+          "sha256": "1DDBDE75C048C621980FA7780D4F3F942F7DF9AEC6C1F7B305D54595267AC1A1"
+        },
+        {
+          "path": "phase-b-coin/evidence/quilt-gold-peak-quilt.png",
+          "bytes": 199127,
+          "sha256": "61503FADF448DF6BDDB2104F2DAE030638278014408CDDD0C320FA232FD7AF46"
+        }
+      ],
+      "runnerPath": "phase-b-coin/hdrpp-coin-20261013T045400127Z-runner.json"
+    },
+    {
+      "name": "main-device-green",
+      "kind": "device",
+      "testCase": "ViewWeave.SceneComparison.Tests.MainSdkHdrDeviceProbeTests.ObserveGreenVfxOnMainSdkAndPhysicalDisplay",
+      "testResult": "Passed",
+      "nunitTotal": 1,
+      "nunitPassed": 1,
+      "nunitFailed": 0,
+      "nunitSkipped": 0,
+      "editorExitCode": 0,
+      "stdoutAndStderrDrained": true,
+      "timeout": false,
+      "xmlPath": "main-device-green/main-device-green-20261013T050127000Z.xml",
+      "xmlSha256": "20E9A5F84B7DDE84DBF90DE1E0554D600F9BC70AF14681A68E8D62032520D05A",
+      "probeSourceSha256": null,
+      "startedUtc": "2026-10-13T05:01:27.2705696Z",
+      "endedUtc": "2026-10-13T05:03:46.2694682Z",
+      "processId": 58216,
+      "physicalResponse": "green-visible",
+      "evidenceFiles": [
+        {
+          "path": "main-device-green/evidence/results.xml",
+          "bytes": 4114,
+          "sha256": "20E9A5F84B7DDE84DBF90DE1E0554D600F9BC70AF14681A68E8D62032520D05A"
+        },
+        {
+          "path": "main-device-green/evidence/runner.json",
+          "bytes": 3354,
+          "sha256": "0F8A52480DDB1541BE644111A9FD2669FCBC7EE2FC88EDD2B3DC710A77D84736"
+        },
+        {
+          "path": "main-device-green/evidence/device-response.json",
+          "bytes": 213,
+          "sha256": "1414FD5F6F0333AE360441B93B34282959E2E02AF6F477C7F16FA01AFBA87616"
+        },
+        {
+          "path": "main-device-green/evidence/progress.json",
+          "bytes": 169,
+          "sha256": "E8AD0E5358883BB007AD6F162626EE480A45584C9717579FF3EFD64784BB1A68"
+        },
+        {
+          "path": "main-device-green/evidence/result.json",
+          "bytes": 1178,
+          "sha256": "A8932B361AE6905E0DE5ACADC7FD1725B3F51E331B45E3AB3B70797F9B9F1DAD"
+        },
+        {
+          "path": "main-device-green/evidence/samples.csv",
+          "bytes": 5077,
+          "sha256": "0152F3273F6E65ED4DE61B7CAEB4D4E356BB28E4C0399F66C24F5504CF929612"
+        },
+        {
+          "path": "main-device-green/evidence/stageReady.json",
+          "bytes": 3828,
+          "sha256": "B7CA8E65F842D0E56E7705C2A348FAF7E23E9A4AE65F6355CF987137ADF2D0AF"
+        }
+      ],
+      "runnerPath": "main-device-green/main-device-green-20261013T050127000Z-runner.json"
+    },
+    {
+      "name": "main-device-coin",
+      "kind": "device",
+      "testCase": "ViewWeave.SceneComparison.Tests.MainSdkHdrDeviceProbeTests.ObserveCoinVfxOnMainSdkAndPhysicalDisplay",
+      "testResult": "Passed",
+      "nunitTotal": 1,
+      "nunitPassed": 1,
+      "nunitFailed": 0,
+      "nunitSkipped": 0,
+      "editorExitCode": 0,
+      "stdoutAndStderrDrained": true,
+      "timeout": false,
+      "xmlPath": "main-device-coin/main-device-green-20261013T050455614Z.xml",
+      "xmlSha256": "963974B554D6C9FB223D9FB258454233660D82E0C7F323C88C87D8742B3395B3",
+      "probeSourceSha256": null,
+      "startedUtc": "2026-10-13T05:04:55.8650456Z",
+      "endedUtc": "2026-10-13T05:06:26.9784642Z",
+      "processId": 109676,
+      "physicalResponse": "coin-flash-visible",
+      "evidenceFiles": [
+        {
+          "path": "main-device-coin/evidence/results.xml",
+          "bytes": 4104,
+          "sha256": "963974B554D6C9FB223D9FB258454233660D82E0C7F323C88C87D8742B3395B3"
+        },
+        {
+          "path": "main-device-coin/evidence/runner.json",
+          "bytes": 3351,
+          "sha256": "28725034920D45F32F9E3314133F8E929DFB5BC2471EB9571166782BF2B8C90F"
+        },
+        {
+          "path": "main-device-coin/evidence/device-response.json",
+          "bytes": 215,
+          "sha256": "E8F137EFDA1D1A5BF0B5D06C789F487FDA289F1ED96BEA675F90F7BFCFDF3189"
+        },
+        {
+          "path": "main-device-coin/evidence/progress.json",
+          "bytes": 169,
+          "sha256": "1B1BD4DCC06239DAED099368D50FDAAE2842D4E99866949373741E3A413F5DDD"
+        },
+        {
+          "path": "main-device-coin/evidence/result.json",
+          "bytes": 1175,
+          "sha256": "DCF49AE8A9335F286F39CA103EB5F794CE9E5FCC5FA3DA607B126A6DD2179F6A"
+        },
+        {
+          "path": "main-device-coin/evidence/samples.csv",
+          "bytes": 3091,
+          "sha256": "87B17B4EDE7A0568303F44C4D86CF950D9892A4BF542E48B931E8F82F507731A"
+        },
+        {
+          "path": "main-device-coin/evidence/stageReady.json",
+          "bytes": 3817,
+          "sha256": "A1CBCB942ED126164C9537AD2E96AAB08425D129EDB7012616F1D6A3159DD266"
+        }
+      ],
+      "runnerPath": "main-device-coin/main-device-green-20261013T050455614Z-runner.json"
+    }
+  ],
+  "notes": [
+    "Offscreen probes and physical device probes are separate test scopes.",
+    "Physical runs used the main SDK package references; user projects were not modified.",
+    "Coin physical as-run runner/XML filenames retain a green prefix due to a runner naming defect; the probe field and NUnit fully-qualified test name identify the Coin case.",
+    "All four current NUnit cases passed and natural Editor exit/drain gates passed. This does not establish the original Preview-to-Play or crash path.",
+    "Editor logs were deliberately excluded."
+  ],
+  "files": [
+    {
+      "path": "package-resolution.json",
+      "bytes": 3349,
+      "sha256": "BADCAD25FD234686ACCC27F6A93ABC1EB7CAAE576BFD8AEDBB24E22A5EF65D6A"
+    },
+    {
+      "path": "main-device-coin/main-device-green-20261013T050455614Z-runner.json",
+      "bytes": 3351,
+      "sha256": "28725034920D45F32F9E3314133F8E929DFB5BC2471EB9571166782BF2B8C90F"
+    },
+    {
+      "path": "main-device-coin/main-device-green-20261013T050455614Z.xml",
+      "bytes": 4104,
+      "sha256": "963974B554D6C9FB223D9FB258454233660D82E0C7F323C88C87D8742B3395B3"
+    },
+    {
+      "path": "main-device-coin/evidence/device-response.json",
+      "bytes": 215,
+      "sha256": "E8F137EFDA1D1A5BF0B5D06C789F487FDA289F1ED96BEA675F90F7BFCFDF3189"
+    },
+    {
+      "path": "main-device-coin/evidence/progress.json",
+      "bytes": 169,
+      "sha256": "1B1BD4DCC06239DAED099368D50FDAAE2842D4E99866949373741E3A413F5DDD"
+    },
+    {
+      "path": "main-device-coin/evidence/result.json",
+      "bytes": 1175,
+      "sha256": "DCF49AE8A9335F286F39CA103EB5F794CE9E5FCC5FA3DA607B126A6DD2179F6A"
+    },
+    {
+      "path": "main-device-coin/evidence/samples.csv",
+      "bytes": 3091,
+      "sha256": "87B17B4EDE7A0568303F44C4D86CF950D9892A4BF542E48B931E8F82F507731A"
+    },
+    {
+      "path": "main-device-coin/evidence/stageReady.json",
+      "bytes": 3817,
+      "sha256": "A1CBCB942ED126164C9537AD2E96AAB08425D129EDB7012616F1D6A3159DD266"
+    },
+    {
+      "path": "main-device-green/main-device-green-20261013T050127000Z-runner.json",
+      "bytes": 3354,
+      "sha256": "0F8A52480DDB1541BE644111A9FD2669FCBC7EE2FC88EDD2B3DC710A77D84736"
+    },
+    {
+      "path": "main-device-green/main-device-green-20261013T050127000Z.xml",
+      "bytes": 4114,
+      "sha256": "20E9A5F84B7DDE84DBF90DE1E0554D600F9BC70AF14681A68E8D62032520D05A"
+    },
+    {
+      "path": "main-device-green/evidence/device-response.json",
+      "bytes": 213,
+      "sha256": "1414FD5F6F0333AE360441B93B34282959E2E02AF6F477C7F16FA01AFBA87616"
+    },
+    {
+      "path": "main-device-green/evidence/progress.json",
+      "bytes": 169,
+      "sha256": "E8AD0E5358883BB007AD6F162626EE480A45584C9717579FF3EFD64784BB1A68"
+    },
+    {
+      "path": "main-device-green/evidence/result.json",
+      "bytes": 1178,
+      "sha256": "A8932B361AE6905E0DE5ACADC7FD1725B3F51E331B45E3AB3B70797F9B9F1DAD"
+    },
+    {
+      "path": "main-device-green/evidence/samples.csv",
+      "bytes": 5077,
+      "sha256": "0152F3273F6E65ED4DE61B7CAEB4D4E356BB28E4C0399F66C24F5504CF929612"
+    },
+    {
+      "path": "main-device-green/evidence/stageReady.json",
+      "bytes": 3828,
+      "sha256": "B7CA8E65F842D0E56E7705C2A348FAF7E23E9A4AE65F6355CF987137ADF2D0AF"
+    },
+    {
+      "path": "phase-b-coin/hdrpp-coin-20261013T045400127Z-runner.json",
+      "bytes": 5434,
+      "sha256": "178D894F8AC37E23DFE87D5F99D24B5569583897E6B55202F171D2612CD680A1"
+    },
+    {
+      "path": "phase-b-coin/hdrpp-coin-20261013T045400127Z.xml",
+      "bytes": 4610,
+      "sha256": "1435818CC82CF05A766D9192770D1731E4F2F05D0AA01C4979AA20F2E2771B6A"
+    },
+    {
+      "path": "phase-b-coin/evidence/camera-target-descriptors.txt",
+      "bytes": 842,
+      "sha256": "E8B762DB9D62F06DA19203F7D9B14F8A41BED3B035AD87B8552EB0DBADBFFD89"
+    },
+    {
+      "path": "phase-b-coin/evidence/coin-min-float-metadata.txt",
+      "bytes": 200,
+      "sha256": "05E62310EF1962F1249FA03283A8CAC9E2CF9238D5C789D30B0AFD656407ED32"
+    },
+    {
+      "path": "phase-b-coin/evidence/coin-min-normal-float-peak.bin",
+      "bytes": 2764800,
+      "sha256": "3D6DC6E95298C6BEEA8CE0DD79E505790F908724BC65DF63575CA2FA48ED937C"
+    },
+    {
+      "path": "phase-b-coin/evidence/coin-min-quilt-paired-float-peak.bin",
+      "bytes": 2764800,
+      "sha256": "D11F53F35B0DE2725BB18F913ACE75BBD842D9929336B9E9CD57177D5D2390B0"
+    },
+    {
+      "path": "phase-b-coin/evidence/first-normal.png",
+      "bytes": 159331,
+      "sha256": "441E3DA4EA8EBDA79F0F9141B325578287A6835AC5EB9AABE2B255E86AB4F892"
+    },
+    {
+      "path": "phase-b-coin/evidence/first-quilt.png",
+      "bytes": 211768,
+      "sha256": "AEB17BD116DD8A5B4E40A4FD9368346FA8726FA2A99E9FD4FCD53D1FBBF819E7"
+    },
+    {
+      "path": "phase-b-coin/evidence/frames.csv",
+      "bytes": 27629,
+      "sha256": "FB5E6FE898274E860B0C46769AFB9292FA0008BFE7A49423D83DEBF812306642"
+    },
+    {
+      "path": "phase-b-coin/evidence/hdr-float-metadata.txt",
+      "bytes": 463,
+      "sha256": "9550509BADD9C53998237925B55B57F00A70ED1DAF47CFC5F8A14429417836FF"
+    },
+    {
+      "path": "phase-b-coin/evidence/hdr-float-normal.bin",
+      "bytes": 2764800,
+      "sha256": "3D6DC6E95298C6BEEA8CE0DD79E505790F908724BC65DF63575CA2FA48ED937C"
+    },
+    {
+      "path": "phase-b-coin/evidence/hdr-float-quilt.bin",
+      "bytes": 2764800,
+      "sha256": "D11F53F35B0DE2725BB18F913ACE75BBD842D9929336B9E9CD57177D5D2390B0"
+    },
+    {
+      "path": "phase-b-coin/evidence/normal-gold-peak-normal.png",
+      "bytes": 181104,
+      "sha256": "1DDBDE75C048C621980FA7780D4F3F942F7DF9AEC6C1F7B305D54595267AC1A1"
+    },
+    {
+      "path": "phase-b-coin/evidence/normal-gold-peak-quilt.png",
+      "bytes": 199127,
+      "sha256": "61503FADF448DF6BDDB2104F2DAE030638278014408CDDD0C320FA232FD7AF46"
+    },
+    {
+      "path": "phase-b-coin/evidence/normal-luma-max-normal.png",
+      "bytes": 181104,
+      "sha256": "1DDBDE75C048C621980FA7780D4F3F942F7DF9AEC6C1F7B305D54595267AC1A1"
+    },
+    {
+      "path": "phase-b-coin/evidence/normal-luma-max-quilt.png",
+      "bytes": 199127,
+      "sha256": "61503FADF448DF6BDDB2104F2DAE030638278014408CDDD0C320FA232FD7AF46"
+    },
+    {
+      "path": "phase-b-coin/evidence/normal-luma-min-normal.png",
+      "bytes": 148200,
+      "sha256": "379FCA8232B02CF9EA35D56A38761D2018D09A2AA15C5AD162FB4F8A0838A00D"
+    },
+    {
+      "path": "phase-b-coin/evidence/normal-luma-min-quilt.png",
+      "bytes": 211637,
+      "sha256": "EB68412D65A255791AADF7B04F2BE2BABC430925BB8625A601506E59A1330EC4"
+    },
+    {
+      "path": "phase-b-coin/evidence/observations.txt",
+      "bytes": 5867,
+      "sha256": "D785819A91EA7E8D3085F7FE2BA1537418A0B1BFC24B89B2EFC25F0215098D31"
+    },
+    {
+      "path": "phase-b-coin/evidence/quilt-gold-peak-normal.png",
+      "bytes": 181104,
+      "sha256": "1DDBDE75C048C621980FA7780D4F3F942F7DF9AEC6C1F7B305D54595267AC1A1"
+    },
+    {
+      "path": "phase-b-coin/evidence/quilt-gold-peak-quilt.png",
+      "bytes": 199127,
+      "sha256": "61503FADF448DF6BDDB2104F2DAE030638278014408CDDD0C320FA232FD7AF46"
+    },
+    {
+      "path": "phase-b-green/hdrpp-green-20261013T045303749Z-runner.json",
+      "bytes": 5815,
+      "sha256": "EF2CBE0DDBD274F1B5676881DFEEBC0DC2D143AF200C5D30CA6F46C73B3A627A"
+    },
+    {
+      "path": "phase-b-green/hdrpp-green-20261013T045303749Z.xml",
+      "bytes": 4830,
+      "sha256": "2DA6709D70588E3692BDBC81DBB92650A1E9861A687E8F8661357BC8A8B80F5F"
+    },
+    {
+      "path": "phase-b-green/evidence/camera-target-descriptors.txt",
+      "bytes": 842,
+      "sha256": "A29F7BA92F08E93553E8FBDC57F7117CCC2AC48C019C7DF230B5A069BD12911C"
+    },
+    {
+      "path": "phase-b-green/evidence/first-normal.png",
+      "bytes": 164456,
+      "sha256": "FA39FC9F8BBDA46C619C5AF6B6A8B6D8A5174F0D9C0BBBF47B4ECFE4C07AAB8C"
+    },
+    {
+      "path": "phase-b-green/evidence/first-quilt.png",
+      "bytes": 243097,
+      "sha256": "D56267CCD2E89614392F0F6F231AC123A71C852AF7BE623C32F92AECB9F3EC86"
+    },
+    {
+      "path": "phase-b-green/evidence/frames.csv",
+      "bytes": 119284,
+      "sha256": "874A94A0C5396F719490A93579BFB3DC2EEEB61C8F797C0EE16AB4AD685E064D"
+    },
+    {
+      "path": "phase-b-green/evidence/green-lights-first-alive-normal.bin",
+      "bytes": 2764800,
+      "sha256": "18C9ED56C965F34496187C3AA8FB73EE8978B9FBAB377E898B889B046709859E"
+    },
+    {
+      "path": "phase-b-green/evidence/green-lights-first-alive-quilt.bin",
+      "bytes": 2764800,
+      "sha256": "C878836B714C619F7268CC4C4E4D50FCA815EE28AEA14A9406CA3988E3E7B694"
+    },
+    {
+      "path": "phase-b-green/evidence/green-lights-float-metadata.txt",
+      "bytes": 185,
+      "sha256": "B8BC83441EDFC2DA3A21D996335058D829D2EF23483B7EC08470CA818F2F584F"
+    },
+    {
+      "path": "phase-b-green/evidence/green-lights-peak-alive-normal.bin",
+      "bytes": 2764800,
+      "sha256": "568617819C3AED2907DFAAC5CD4D4530A4F40BD9E45C0FCF61E6963D34717372"
+    },
+    {
+      "path": "phase-b-green/evidence/green-lights-peak-alive-quilt.bin",
+      "bytes": 2764800,
+      "sha256": "D16FD05832D19973208F14C8B5B22AE0AFE4ADF46B993ACFEFF32F7E386E4D8E"
+    },
+    {
+      "path": "phase-b-green/evidence/hdr-float-metadata.txt",
+      "bytes": 462,
+      "sha256": "911D0DBADA9524102500D1DA35E84E2A896E22E81B434DFBBF1F9FDDDB7E30A0"
+    },
+    {
+      "path": "phase-b-green/evidence/hdr-float-normal.bin",
+      "bytes": 2764800,
+      "sha256": "6EC1D3C00A19525FFFCCEA9BEBCF3CADCE970523E9923F9432341AC78C7C4481"
+    },
+    {
+      "path": "phase-b-green/evidence/hdr-float-quilt.bin",
+      "bytes": 2764800,
+      "sha256": "5AA661DE0545B294DCD6567735DB5B3B4B0E7431353FFAD0E9716201DC608040"
+    },
+    {
+      "path": "phase-b-green/evidence/normal-green-peak-normal.png",
+      "bytes": 248410,
+      "sha256": "BF6375042A87863381F4DADEC5B118539FFC290370145D2EBDDBE640971C1F92"
+    },
+    {
+      "path": "phase-b-green/evidence/normal-green-peak-quilt.png",
+      "bytes": 325717,
+      "sha256": "A5D8E06D0CE40FE29733BB08253FD37677545366B49D19F199AC855E5C4B4945"
+    },
+    {
+      "path": "phase-b-green/evidence/normal-luma-max-normal.png",
+      "bytes": 248410,
+      "sha256": "BF6375042A87863381F4DADEC5B118539FFC290370145D2EBDDBE640971C1F92"
+    },
+    {
+      "path": "phase-b-green/evidence/normal-luma-max-quilt.png",
+      "bytes": 325717,
+      "sha256": "A5D8E06D0CE40FE29733BB08253FD37677545366B49D19F199AC855E5C4B4945"
+    },
+    {
+      "path": "phase-b-green/evidence/normal-luma-min-normal.png",
+      "bytes": 166007,
+      "sha256": "2BDA34F87C749CF3F7F23FDC17EED8DACF25D6731543291D5FBB68E1821D23F6"
+    },
+    {
+      "path": "phase-b-green/evidence/normal-luma-min-quilt.png",
+      "bytes": 245726,
+      "sha256": "FD4807599ADA6A77ED78CCB5CF655435C5C3415C081B4AB8DEAB84B1FBFDF12E"
+    },
+    {
+      "path": "phase-b-green/evidence/observations.txt",
+      "bytes": 5891,
+      "sha256": "85CE4068E8CDD148775AB57250DD9069F4751B0A044607C09134ECFF4F312D5A"
+    },
+    {
+      "path": "phase-b-green/evidence/quilt-green-peak-normal.png",
+      "bytes": 249475,
+      "sha256": "0B79120D1E4BA5B7BA6E766F00C560C28E0DAC1F409AA1F57CB6B9FF6C84E10B"
+    },
+    {
+      "path": "phase-b-green/evidence/quilt-green-peak-quilt.png",
+      "bytes": 326283,
+      "sha256": "5B68D11FFF53FFB618D9FF99D9DA92389A929C12B9F8DBE4057825D7D4FA6708"
+    },
+    {
+      "path": "source/HdrPostProcessProbeTests.cs",
+      "bytes": 95485,
+      "sha256": "B901F4C16102F2A9BE228CFC4D5BF28D812E88FAC2A57B6F095E18857A06C7AC"
+    },
+    {
+      "path": "source/MainSdkHdrDeviceProbeTests.cs",
+      "bytes": 64099,
+      "sha256": "AFC521F615489468D1F351565366935B37835B061B953DC6F9DBEC6303DE2B7F"
+    },
+    {
+      "path": "source/Run-MainSdkHdrDeviceProbe.ps1",
+      "bytes": 9952,
+      "sha256": "0CE2DC586C20568F2F0C0E4793249740DB95DED4A66A75C7DD1EFF95E0ECF628"
+    },
+    {
+      "path": "source/Run-UnityHdrPostProcessProbe.ps1",
+      "bytes": 9874,
+      "sha256": "C58E01AE17420A76D5CE461540702141D9EBD9B14191AF27F42E5C936997EA3A"
+    },
+    {
+      "path": "support-failures/device-green-guard-setup-result.json",
+      "bytes": 1097,
+      "sha256": "9380451D375EC84D8E55BC4819070502659BE1F27EFB6F3EA11B7FD9ABA59666"
+    },
+    {
+      "path": "support-failures/device-green-guard-setup.runner.json",
+      "bytes": 2880,
+      "sha256": "EF4CC26F7C932002352DA2C51A67E478F4C34DA6F20215367E5FA3F4D5A40AB4"
+    },
+    {
+      "path": "support-failures/device-green-guard-setup.xml",
+      "bytes": 5631,
+      "sha256": "119AE767EC6A06CF235FCD19CA941E42825DD8EBACFF5892457BC63808A5722F"
+    },
+    {
+      "path": "support-failures/device-green-helper-path-preflight.json",
+      "bytes": 526,
+      "sha256": "292451D4C4E0358E6F2969B6A5B169421E976046921CC170DB27BCBDB3136C2C"
+    },
+    {
+      "path": "support-failures/main-package-registration.json",
+      "bytes": 3349,
+      "sha256": "BADCAD25FD234686ACCC27F6A93ABC1EB7CAAE576BFD8AEDBB24E22A5EF65D6A"
+    },
+    {
+      "path": "support-failures/main-package-resolution-stage.json",
+      "bytes": 4018,
+      "sha256": "B9E25DEC4B36A1439D24697B2D1CD2424FCAD8C34E365DE62A34C692F98B57ED"
+    },
+    {
+      "path": "support-failures/offscreen-green-compile-failed.runner.json",
+      "bytes": 1951,
+      "sha256": "D3926733D6DC4DC5E7C7E277175A71FF1DB8EB56C93001FF177783EA3C1D006A"
+    }
+  ],
+  "supportFailures": [
+    {
+      "label": "device-green-helper-path-preflight",
+      "status": "setup-failed-before-editor-start",
+      "countsTowardPassedTests": false,
+      "path": "support-failures/device-green-helper-path-preflight.json"
+    },
+    {
+      "label": "device-green-guard-setup",
+      "status": "nunit-failed-before-session-start",
+      "failure": "Guard component was present on the source camera but not bound to the rig; the Bridge session did not start.",
+      "countsTowardPassedTests": false,
+      "runnerPath": "support-failures/device-green-guard-setup.runner.json",
+      "xmlPath": "support-failures/device-green-guard-setup.xml",
+      "resultPath": "support-failures/device-green-guard-setup-result.json"
+    },
+    {
+      "label": "offscreen-green-initial-compile",
+      "status": "editor-exit-1-no-nunit-xml",
+      "failure": "Compile/setup failure before a test result; later fixed with scoped source correction.",
+      "countsTowardPassedTests": false,
+      "runnerPath": "support-failures/offscreen-green-compile-failed.runner.json"
+    },
+    {
+      "label": "main-package-resolution-wrapper",
+      "status": "package-resolution-gate-false",
+      "resolution": "Client API package resolution completed with process exit zero and the test folder was restored, but the wrapper metadata gate was false.",
+      "countsTowardPassedTests": false,
+      "stagePath": "support-failures/main-package-resolution-stage.json",
+      "registrationPath": "support-failures/main-package-registration.json"
+    }
+  ]
+}

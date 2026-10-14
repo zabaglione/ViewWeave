@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Failed(Child)" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-14 00:12:08Z" end-time="2026-10-14 00:12:14Z" duration="5.8974096">
+  <test-suite type="TestSuite" id="1045" name="URPSample_6.6.41f1" fullname="URPSample_6.6.41f1" runstate="Runnable" testcasecount="22" result="Failed" site="Child" start-time="2026-10-14 00:12:08Z" end-time="2026-10-14 00:12:14Z" duration="5.897410" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <failure>
+      <message><![CDATA[One or more child tests had errors]]></message>
+    </failure>
+    <test-suite type="Assembly" id="1051" name="ViewWeave.AllowInstancingRuntimeTransition.Tests.dll" fullname="E:/LookingGlassSDK/.local/windows-vfx-scene-comparison-20261013/URP/UnityProject/Library/ScriptAssemblies/ViewWeave.AllowInstancingRuntimeTransition.Tests.dll" runstate="Runnable" testcasecount="1" result="Failed" site="Child" start-time="2026-10-14 00:12:08Z" end-time="2026-10-14 00:12:14Z" duration="5.890208" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="32916" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <failure>
+        <message><![CDATA[One or more child tests had errors]]></message>
+      </failure>
+      <test-suite type="TestSuite" id="1052" name="ViewWeave" fullname="ViewWeave" runstate="Runnable" testcasecount="1" result="Failed" site="Child" start-time="2026-10-14 00:12:08Z" end-time="2026-10-14 00:12:14Z" duration="5.889649" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <failure>
+          <message><![CDATA[One or more child tests had errors]]></message>
+        </failure>
+        <test-suite type="TestSuite" id="1053" name="SceneComparison" fullname="ViewWeave.SceneComparison" runstate="Runnable" testcasecount="1" result="Failed" site="Child" start-time="2026-10-14 00:12:08Z" end-time="2026-10-14 00:12:14Z" duration="5.889281" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <failure>
+            <message><![CDATA[One or more child tests had errors]]></message>
+          </failure>
+          <test-suite type="TestSuite" id="1054" name="Tests" fullname="ViewWeave.SceneComparison.Tests" runstate="Runnable" testcasecount="1" result="Failed" site="Child" start-time="2026-10-14 00:12:08Z" end-time="2026-10-14 00:12:14Z" duration="5.888893" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-suite type="TestFixture" id="1049" name="AllowInstancingRuntimeTransitionProbe" fullname="ViewWeave.SceneComparison.Tests.AllowInstancingRuntimeTransitionProbe" classname="ViewWeave.SceneComparison.Tests.AllowInstancingRuntimeTransitionProbe" runstate="Runnable" testcasecount="1" result="Failed" site="Child" start-time="2026-10-14 00:12:08Z" end-time="2026-10-14 00:12:14Z" duration="5.887754" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <failure>
+                <message><![CDATA[One or more child tests had errors]]></message>
+              </failure>
+              <test-case id="1050" name="MeasuresPublicAllowInstancingTransitionsWithoutReinitializingTheVfx" fullname="ViewWeave.SceneComparison.Tests.AllowInstancingRuntimeTransitionProbe.MeasuresPublicAllowInstancingTransitionsWithoutReinitializingTheVfx" methodname="MeasuresPublicAllowInstancingTransitionsWithoutReinitializingTheVfx" classname="ViewWeave.SceneComparison.Tests.AllowInstancingRuntimeTransitionProbe" runstate="Runnable" seed="721030403" result="Failed" start-time="2026-10-14 00:12:08Z" end-time="2026-10-14 00:12:14Z" duration="5.877215" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[Runtime transition probe failed: NUnit.Framework.AssertionException:   The VFX did not continue simulation and natural rendering after unpause.??  Expected: True??  But was:  False??]]></message>
+                  <stack-trace><![CDATA[at ViewWeave.SceneComparison.Tests.AllowInstancingRuntimeTransitionProbe+<MeasuresPublicAllowInstancingTransitionsWithoutReinitializingTheVfx>d__53.MoveNext () [0x003de] in E:\LookingGlassSDK\.local\windows-vfx-scene-comparison-20261013\URP\UnityProject\Assets\SceneComparisonTests\AllowInstancingRuntimeTransition\AllowInstancingRuntimeTransitionProbe.cs:230
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__8.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@80f691d4262b\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:52
+]]></stack-trace>
+                </failure>
+                <output><![CDATA[Saving results to: C:/Users/zzaba/AppData/LocalLow/DefaultCompany/URPSample_6_6_41f1\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

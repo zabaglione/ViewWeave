@@ -1,0 +1,108 @@
+{
+  "status": "bounded-observation-passed",
+  "probe": "Coin",
+  "testFilter": "ViewWeave.SceneComparison.Tests.VfxPairedViewProbeTests.ObserveRotationAngleOnOriginalScene",
+  "testPlatform": "PlayMode",
+  "expectedTestCount": 1,
+  "graphicsApi": "D3D12",
+  "projectPath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\UnityProject",
+  "unityExecutable": "C:/Program Files/Unity/Hub/Editor/6000.6.4f1/Editor/Unity.exe",
+  "startedUtc": "2026-10-13T01:49:32.1204276Z",
+  "startedProcessCreationUtc": "2026-10-13T01:49:32.1204276Z",
+  "endedUtc": "2026-10-13T01:50:15.7905158Z",
+  "editorProcessId": 29364,
+  "editorExitCode": 0,
+  "timeout": false,
+  "timeoutSeconds": 150,
+  "timeoutKillAttempted": false,
+  "timeoutKillErrorType": null,
+  "startErrorType": null,
+  "stdoutAndStderrDrained": true,
+  "processInventoryAvailableBefore": true,
+  "matchingBefore": null,
+  "processInventoryAvailableAfter": true,
+  "matchingAfter": null,
+  "processObjectStillRunning": false,
+  "xmlPath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\Results\\vfxvisual-coin-20261013T014931658Z.xml",
+  "xmlBytes": 4437,
+  "xmlSha256": "CAEDBE68D3EF721346D7AA81DAB6D09B2E728D0E9194E6E09A13D3BFF0C842F5",
+  "xmlParseErrorType": null,
+  "nunit": {
+    "total": 1,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "inconclusive": 0,
+    "result": "Passed",
+    "testCaseFullNames": [
+      "ViewWeave.SceneComparison.Tests.VfxPairedViewProbeTests.ObserveRotationAngleOnOriginalScene"
+    ]
+  },
+  "exactTestCaseGate": true,
+  "editorLogPath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\Results\\vfxvisual-coin-20261013T014931658Z-editor.log",
+  "editorLogShared": false,
+  "evidenceDirectory": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\UnityProject\\TestResults\\vfxvisual-coin-20261013T014931658Z",
+  "evidenceFiles": [
+    {
+      "name": "first-normal.png",
+      "bytes": 138470,
+      "sha256": "03D6176FEF46473B4706319DC37B34AD171D543E857B03F66BCAC7C1DA48983B"
+    },
+    {
+      "name": "first-quilt.png",
+      "bytes": 138676,
+      "sha256": "12FBD053068529808B95AE101E6E8FA12879703D9345A8965C6A8B84DDD42944"
+    },
+    {
+      "name": "frames.csv",
+      "bytes": 20020,
+      "sha256": "C3676AC5E5C5D8EC277C36E2DEA26D32EFB8C8E92C1F3653EC5AB994E894F0A1"
+    },
+    {
+      "name": "normal-gold-peak-normal.png",
+      "bytes": 137993,
+      "sha256": "6638903FBDB0A02B9610D5EC1EBB4F165E3196198D01C70B46590AD2FE08AA31"
+    },
+    {
+      "name": "normal-gold-peak-quilt.png",
+      "bytes": 138046,
+      "sha256": "C04CDC270CC224B97090893B2646696035D4C1F8E945A06F1C76090EE38F6D2D"
+    },
+    {
+      "name": "normal-luma-max-normal.png",
+      "bytes": 138470,
+      "sha256": "03D6176FEF46473B4706319DC37B34AD171D543E857B03F66BCAC7C1DA48983B"
+    },
+    {
+      "name": "normal-luma-max-quilt.png",
+      "bytes": 138676,
+      "sha256": "12FBD053068529808B95AE101E6E8FA12879703D9345A8965C6A8B84DDD42944"
+    },
+    {
+      "name": "normal-luma-min-normal.png",
+      "bytes": 137659,
+      "sha256": "7A9EB10BC32D99338D44190E196D1C874EBA71EECC8F0ACC942574A40347702D"
+    },
+    {
+      "name": "normal-luma-min-quilt.png",
+      "bytes": 137654,
+      "sha256": "9C58994CF76ABB3BAB0F9EF16B1B29ACD44E9BEF4B2CC6FB46B9643F1BB7BCD6"
+    },
+    {
+      "name": "observations.txt",
+      "bytes": 2315,
+      "sha256": "536D09B85D89A63FA970C72E81B3D05C788868FED466237D7A9247B4E3FC7C2A"
+    },
+    {
+      "name": "quilt-gold-peak-normal.png",
+      "bytes": 137993,
+      "sha256": "6638903FBDB0A02B9610D5EC1EBB4F165E3196198D01C70B46590AD2FE08AA31"
+    },
+    {
+      "name": "quilt-gold-peak-quilt.png",
+      "bytes": 138046,
+      "sha256": "C04CDC270CC224B97090893B2646696035D4C1F8E945A06F1C76090EE38F6D2D"
+    }
+  ],
+  "boundedObservationGate": true
+}

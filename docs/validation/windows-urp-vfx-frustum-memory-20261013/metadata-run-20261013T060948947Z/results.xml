@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Passed" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-13 06:09:58Z" end-time="2026-10-13 06:09:59Z" duration="0.6377282">
+  <test-suite type="TestSuite" id="1000" name="URPSample_6.6.41f1" fullname="URPSample_6.6.41f1" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-10-13 06:09:58Z" end-time="2026-10-13 06:09:59Z" duration="0.637728" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1011" name="ViewWeave.FrustumMetadata.Editor.Tests.dll" fullname="E:/LookingGlassSDK/.local/windows-vfx-scene-comparison-20261013/URP/UnityProject/Library/ScriptAssemblies/ViewWeave.FrustumMetadata.Editor.Tests.dll" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-10-13 06:09:58Z" end-time="2026-10-13 06:09:59Z" duration="0.630580" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="55448" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1012" name="ViewWeave" fullname="ViewWeave" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-10-13 06:09:58Z" end-time="2026-10-13 06:09:59Z" duration="0.630180" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1013" name="SceneComparison" fullname="ViewWeave.SceneComparison" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-10-13 06:09:58Z" end-time="2026-10-13 06:09:59Z" duration="0.629838" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1014" name="Tests" fullname="ViewWeave.SceneComparison.Tests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-10-13 06:09:58Z" end-time="2026-10-13 06:09:59Z" duration="0.629559" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1009" name="FrustumSceneMetadataProbeTests" fullname="ViewWeave.SceneComparison.Tests.FrustumSceneMetadataProbeTests" classname="ViewWeave.SceneComparison.Tests.FrustumSceneMetadataProbeTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-10-13 06:09:58Z" end-time="2026-10-13 06:09:59Z" duration="0.628551" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1010" name="CapturesSanitizedSceneInstancesAndJoinsExistingGraphDescriptors" fullname="ViewWeave.SceneComparison.Tests.FrustumSceneMetadataProbeTests.CapturesSanitizedSceneInstancesAndJoinsExistingGraphDescriptors" methodname="CapturesSanitizedSceneInstancesAndJoinsExistingGraphDescriptors" classname="ViewWeave.SceneComparison.Tests.FrustumSceneMetadataProbeTests" runstate="Runnable" seed="1952039018" result="Passed" start-time="2026-10-13 06:09:58Z" end-time="2026-10-13 06:09:59Z" duration="0.617072" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Saving results to: C:/Users/zzaba/AppData/LocalLow/DefaultCompany/URPSample_6_6_41f1\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

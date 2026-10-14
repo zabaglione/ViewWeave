@@ -1,0 +1,41 @@
+{
+  "schema": "viewweave-frustum-memory-sandbox-diagnostic-v1",
+  "runId": "73e353dd3e8b45279a9c9afaab29c360",
+  "sourceSummary": "summary.json",
+  "summarySha256": "F218708B556F6F0B08D8A00380923F48DCF5AE39363F9E5CE1819C6154A9FDF1",
+  "rawEditorLogShared": false,
+  "rawEditorLogCopied": false,
+  "safeMarkerCounts": {
+    "engineInitialized": 1,
+    "d3d12Initialized": 3,
+    "compilerError": 0,
+    "runTestsRequested": 1,
+    "nunitResultWritten": 0,
+    "licenseFailure": 5,
+    "permissionDenied": 3,
+    "playMode": 0,
+    "deviceFailure": 0
+  },
+  "safeClassification": [
+    "Unity licensing failure markers were present (5 matches).",
+    "Permission-denied markers were present (3 matches).",
+    "The available markers do not identify a more specific licensing cause."
+  ],
+  "otherSafeLexicalCounts": {
+    "licensingTokenLines": 23,
+    "licensingServiceTokenLines": 13,
+    "permissionDeniedLines": 3
+  },
+  "execution": {
+    "nunitXmlProduced": false,
+    "processId": 122124,
+    "ownedProcessStillRunningAfterStop": false,
+    "timeout": true,
+    "ownedProcessVerifiedBeforeStop": true,
+    "legacyCimResidualCount": null,
+    "postRunLockProbe": "opened-exclusive-and-closed",
+    "stdoutStderrDrained": true,
+    "status": "not-passed"
+  },
+  "interpretation": "Marker counts are regex-derived diagnostic indicators. They do not prove a causal failure phase. Unity licensing/permission diagnostics are the best supported category; no NUnit run result was produced."
+}

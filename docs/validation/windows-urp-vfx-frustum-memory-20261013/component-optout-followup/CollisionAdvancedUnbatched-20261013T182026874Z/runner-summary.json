@@ -1,0 +1,21 @@
+{
+  "fixtureEvidenceInput": null,
+  "nativeEvidenceGate": null,
+  "canonicalFixtureAsmdefSha256": "066C2ED8A4D87AE3507D206122F04D163FC83B4D17044D91C91C7F6994DAEF41",
+  "canonicalFixtureMetaSha256": "5CA482C38DA8E67230DC0A0AAB39ACFAFDFB3E166F5427235B92BF6706328335",
+  "testFilter": "ViewWeave.SceneComparison.Tests.CollisionAdvancedUnbatchedFixture.BuildsIsolatedCollisionAdvancedUnbatchedSceneAndPrefab",
+  "canonicalNativeSourceSha256": "26E3A03BC1559238181A96DFC45D2633BCBCA882D18914E4D02263FD66FE9E33",
+  "outputDrainIncomplete": false,
+  "schema": "viewweave-collision-advanced-unbatched-native-runner-v1",
+  "processResidualCount": 0,
+  "fixtureResult": "fixture-result.json",
+  "canonicalNativeMetaSha256": "6CD6C575D4709FBC75A3152B9E445043AC5A82D288C28E1117D06456D359FF95",
+  "underlyingRunner": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\Results\\RunTests-20261013T182027256Z-runner.json",
+  "nativeResult": null,
+  "canonicalFixtureSourceSha256": "0EBC60C4673AC0B9967446BED725BD32536550DBBF8A8072A1085EB44E736FB8",
+  "mode": "PrepareFixture",
+  "editorExitCode": 0,
+  "status": "runner-passed",
+  "completedUtc": "2026-10-13T18:20:44.4758282Z",
+  "fixtureEvidenceGate": true
+}

@@ -1,0 +1,558 @@
+{
+  "schemaVersion": 1,
+  "record": "Windows URP VFX HDR and Game-to-quilt color root-cause investigation",
+  "dateLocal": "2026-10-13",
+  "status": "phase-c-offscreen-hdr-range-causally-supported-user-device-path-unverified",
+  "sourceBasis": {
+    "revision": "11312b8c6cf824d9a7ac7c8940e95cee742fa076",
+    "preexistingUncommittedDiagnosticChangesPresent": true,
+    "changesReleased": false,
+    "originalUserProjectModified": false,
+    "sdkProductionCodeModifiedForThisReport": false,
+    "phaseAExecuted": true,
+    "physicalDeviceOutputCaptured": false,
+    "phaseBExecuted": true,
+    "phaseCExecuted": true,
+    "phaseCProbeSourceSha256": "8782A8B1B994C5909B655125397305A0341C918AFF203D9530A627754D4A87C7",
+    "phaseCRenderSourceSha256": "92356E442773A7C85E9EFEA7CBAA69B7FAB192A6E8B103B61A9B62DCADD3FF65",
+    "offscreenFixtureCauseSupported": true,
+    "fullUserDevicePathCauseEstablished": false
+  },
+  "environment": {
+    "operatingSystem": "Windows",
+    "unityVersion": "6000.6.4f1",
+    "urpVersion": "17.6.0",
+    "vfxGraphVersion": "17.6.0",
+    "project": "E:/URPSample_6.6.41f1",
+    "graphicsApiForPriorPairedProbes": "Direct3D12"
+  },
+  "userObservation": {
+    "multiStripsGreenLampsGameView": "green",
+    "multiStripsGreenLampsLookingGlass": "red",
+    "cablesMovingOnLookingGlassDuringIssue": true,
+    "coinsRotatingOnLookingGlassDuringIssue": true,
+    "coinPeriodicHighlightStrongInGameButNotLookingGlass": true,
+    "sameFrameAndSameCameraStateCaptured": false,
+    "completeStaleOutputHypothesisPriority": "lower-after-user-confirmed-motion; not disproven for all pipeline stages"
+  },
+  "savedSceneAndAssets": {
+    "greenOutput": {
+      "graphId": 24284,
+      "hdrColor": [
+        35.1144,
+        191.749,
+        0
+      ],
+      "serializedAssetPath": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/VFX/MultiStripGPUEvents.vfx",
+      "serializedLine": 24284
+    },
+    "redOutput": {
+      "graphId": 27062,
+      "hdrColor": [
+        2.99608,
+        0.08146,
+        0
+      ],
+      "blend": "Additive",
+      "serializedAssetPath": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/VFX/MultiStripGPUEvents.vfx",
+      "serializedLine": 27062
+    },
+    "globalVolume": {
+      "prefab": "VFX_SceneTemplate_AbstractBlue_URP",
+      "prefabGuid": "63ef69b6e69aad54ea304569805239cb",
+      "active": true,
+      "global": true,
+      "weight": 1,
+      "priority": 47.95,
+      "sharedProfileGuid": "cced43bec9a2ba34fab82a55f08e509f",
+      "profile": "VFX_URP_Neutral",
+      "bloom": {
+        "active": true,
+        "threshold": 2.5,
+        "intensity": 0.6,
+        "scatter": 0.7
+      },
+      "tonemapping": {
+        "mode": "ACES",
+        "modeValue": 2
+      },
+      "effectiveRuntimeVolumeStackMeasured": true,
+      "runtimeMeasurementPhases": [
+        "Phase B",
+        "Phase C"
+      ],
+      "runtimeContributionPerPixelProven": false
+    },
+    "savedNormalReferenceCamera": {
+      "hdr": true,
+      "postProcessing": true,
+      "taaMode": 3
+    },
+    "multiStripsVfxAssetPath": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/VFX/MultiStripGPUEvents.vfx",
+    "multiStripsVfxAssetSerializedName": "MultiStripGPUEvents",
+    "multiStripsVfxGraphTitle": "Green Lights",
+    "multiStripsGreenNodeLabel": "Green Lights Quad",
+    "sceneGameObjectLabelAndIdentityDistinguishedFromAsset": true
+  },
+  "sourceFindings": {
+    "quiltRendererTargetFormat": {
+      "format": "ARGB32",
+      "file": "Distribution/urp/ViewWeave/Core/Runtime/QuiltRenderer.cs",
+      "lines": [
+        696,
+        717,
+        726
+      ],
+      "observedRuntimeFormat": "R8G8B8A8_SRGB",
+      "savedAllocationEnum": "ARGB32"
+    },
+    "urpCameraTargetFormatSelection": {
+      "file": "UniversalRenderPipelineCore.cs",
+      "targetTextureGraphicsFormatLine": 1537,
+      "descriptorFormatPropagationLine": 1604,
+      "exactRuntimeFormatsObserved": false
+    },
+    "bloomPass": {
+      "sourceFinding": "threshold is converted through GammaToLinearSpace; do not infer a source clamp at or below 1 from the profile or target format",
+      "savedBloomThreshold": 2.5,
+      "orderingRelativeToQuiltRangeClampMeasured": false,
+      "effectiveThresholdAndPipelineOrderingMeasured": false
+    },
+    "hdrpColorBuffer": {
+      "getColorBufferFormatLines": [
+        227,
+        232
+      ],
+      "formatSource": "asset.currentPlatformRenderPipelineSettings.colorBufferFormat, with filteringHalf override",
+      "directlyComparableRuntimeRun": false,
+      "colorBufferCreationLines": [
+        2327,
+        2337
+      ],
+      "postProcessFile": "HDRenderPipeline.PostProcess.cs",
+      "file": "E:/My project (34)/Library/PackageCache/com.unity.render-pipelines.high-definition@d2ce0954bf9d/Runtime/RenderPipeline/HDRenderPipeline.cs",
+      "postProcessGetColorBufferFormatLine": 671,
+      "colorBufferCreationFile": "HDRenderPipeline.RenderGraph.cs",
+      "provesHdrpSuccessCause": false
+    }
+  },
+  "workingHypothesis": {
+    "status": "phase-c-intervention-supports-early-hdr-range-loss-as-offscreen-fixture-cause-full-device-path-unverified",
+    "statement": "In the tested URP Editor fixture, routing quilt rendering through a linear half-float HDR intermediate before final sRGB UNorm conversion causally removed the Green mask mismatch and substantially reduced the selected coin ROI mismatch. This supports early HDR range loss in the off-screen quilt path as the fixture cause; user physical-device transfer remains unmeasured.",
+    "possibleMechanism": "Phase C clone-only intervention preserved HDR range in a temporary R16G16B16A16_SFloat linear intermediate while leaving the final quilt atlas R8G8B8A8_SRGB; the exact production integration and behavior in other settings remain unvalidated.",
+    "supportedBySourceInspectionOnly": false,
+    "provenByRuntimeDescriptorOrColorCapture": true,
+    "alternativeSpecularContributionForCoin": "possible-unconfirmed",
+    "generalStaleOutputHypothesis": "lower-priority-after-user-confirmed-cable-and-coin-motion; not ruled out for partial pipeline state",
+    "inferenceDoesNotAttributeBloomSourceClampBelowOne": true,
+    "supportedByRuntimeDescriptorOrColorCapture": true,
+    "fullUserScenarioReproduced": false,
+    "physicalDevicePathMeasured": false
+  },
+  "priorControlledEvidence": {
+    "sourceReport": "../windows-urp-vfx-rendering-incident-20261013.md",
+    "pairedProbeConditions": {
+      "quiltViews": 1,
+      "antialiasing": "off",
+      "postProcessing": false,
+      "physicalDeviceOutput": false
+    },
+    "multiStrips": {
+      "gpuEventParticlesObserved": true,
+      "strictGreenClassifierNormalPixels": 0,
+      "strictGreenClassifierQuiltPixels": 0,
+      "result": "inconclusive"
+    },
+    "rotationAngle": {
+      "normalVsQuiltMaxPixelDifference": 1,
+      "result": "bounded-observation-passed"
+    },
+    "currentHdrHypothesisTested": false
+  },
+  "phaseA": {
+    "normalCamera": {
+      "postProcessing": false,
+      "hdr": true,
+      "sRGB": false,
+      "graphicsFormat": "R16G16B16A16_SFloat",
+      "formatMeaning": "linear ARGBHalf"
+    },
+    "bothEditorsExitedNaturally": true,
+    "coin": {
+      "privatePeakGrowthBytes": 162488320,
+      "historyCameraCountAfterCleanup": 0,
+      "xmlSha256": "C7822568B1DEFD01CFE0C911EB9739B23A49220EC1868A07FA4CA296887E91C2",
+      "assetSha256BeforeAndAfter": "84FFA22726257445766073C94CE9DBFD09A18E7EE91A7384A2C968FDCCBA8DFF",
+      "rawGraphicsPeakGrowthBytes": 10348920,
+      "editorExitCode": 0,
+      "representativeNormalFloatPeak": 144.375,
+      "nunit": {
+        "inconclusive": 0,
+        "skipped": 0,
+        "failed": 0,
+        "total": 1,
+        "passed": 1
+      },
+      "durationSeconds": 6.0199,
+      "assetGuid": "ccd23b3eb0caff84aab1cd555791352b",
+      "archive": "windows-urp-vfx-rendering-incident-20261013/probes/hdr-target/coin",
+      "coinBrightnessVariedInBothCameraPaths": true,
+      "observations": 127,
+      "runnerSha256": "A0C2A572457181F22FFC2143F942D1AEB92F02674414EBF67A43A34CB8F6BB0C",
+      "minimumQuiltFloatPeak": 1,
+      "minimumNormalFloatPeak": 70.375,
+      "minimumObservationUnityFrame": 73,
+      "representativeQuiltFloatPeak": 1,
+      "ownedTexturesReleased": true,
+      "quiltPixelsAnyRgbOverOneAtRepresentative": 0,
+      "normalPixelsAnyRgbOverOneAtRepresentative": 13747,
+      "editorProcessId": 4644,
+      "normalVsQuiltHighlightMismatchCauseProven": false
+    },
+    "normalTargetRetainedRgbOverOneValues": true,
+    "physicalDeviceOutput": false,
+    "quiltCamera": {
+      "postProcessing": false,
+      "hdr": true,
+      "sRGB": true,
+      "graphicsFormat": "R8G8B8A8_SRGB",
+      "formatMeaning": "UNorm sRGB"
+    },
+    "status": "completed-limited-bounded-evidence",
+    "cameraMatricesMatched": true,
+    "antialiasing": "off",
+    "sourceCameraAndQuiltDifferenceDirectlyObserved": true,
+    "memoryStopMiB": 512,
+    "postProcessingTaaOrMultiViewTested": false,
+    "configuredVolumeComponentsApplied": "not-claimed",
+    "tileHeight": 360,
+    "exactCases": 2,
+    "graphicsApi": "Direct3D12",
+    "volumeStackRuntimeValue": "unavailable",
+    "manifestEntries": 48,
+    "testPlatform": "Unity Editor PlayMode",
+    "sourceSha256": "2E083793F50E6FEAD435740C239EB6E74B1686307D9AAC1DF7C0F3299F956F96",
+    "green": {
+      "peakAliveUnityFrame": 266,
+      "firstAliveUnityFrame": 86,
+      "privatePeakGrowthBytes": 44568576,
+      "normalFloatPeakAllObserved": 843.5,
+      "observations": 714,
+      "historyCameraCountAfterCleanup": 0,
+      "strictLegacyGreenClassifier": "inconclusive",
+      "peakAliveQuiltFloatPeak": 1,
+      "runnerSha256": "159A6DE389B8319E6A0DAE2EAA360947063D9586AE02CC4AC69F190FF083E39F",
+      "nunit": {
+        "inconclusive": 0,
+        "skipped": 0,
+        "failed": 0,
+        "total": 1,
+        "passed": 1
+      },
+      "xmlSha256": "DB61D595BED4EDBC3C74762FB0BADD3C1FE9D674DF3DDE9042A013047EE65E7F",
+      "assetGuid": "09e4dfff658c863459dc084250a47a15",
+      "rawGraphicsPeakGrowthBytes": 4182016,
+      "quiltPixelsAnyRgbOverOneMaxObserved": 0,
+      "greenLightsAliveRows": 592,
+      "normalPixelsAnyRgbOverOneMaxObserved": 24521,
+      "archive": "windows-urp-vfx-rendering-incident-20261013/probes/hdr-target/green",
+      "peakAliveNormalFloatPeak": 133.375,
+      "quiltFloatPeakAllObserved": 1,
+      "durationSeconds": 20.0102,
+      "assetSha256BeforeAndAfter": "AFC8E2CC2F65CDD61EF453A149FFFCD27CCFAB64FE9BB25B9CE064B4F3A5E37D",
+      "ownedTexturesReleased": true,
+      "editorExitCode": 0,
+      "firstAliveNormalFloatPeak": 116.375,
+      "quiltPixelsAnyRgbOverOneAtRepresentative": 0,
+      "editorProcessId": 60640,
+      "firstAliveQuiltFloatPeak": 1,
+      "peakAlive": 16,
+      "normalPixelsAnyRgbOverOneAtRepresentative": 18345,
+      "firstAliveCount": 3
+    },
+    "sdkProductionCodeModified": false,
+    "viewConeDegrees": 0,
+    "bridgeControlled": false,
+    "rawReadback": "RGBAFloat; Texture2D.linear=true; source encoding recorded separately",
+    "additionalInterpretation": "Actual paired target descriptors differed in the isolated fixture; normal linear half-float readbacks contained RGB values above 1 while quilt UNorm sRGB readbacks did not. This supports HDR target/range as a contributor but does not prove that the format alone caused the user-reported display appearance.",
+    "archive": "windows-urp-vfx-rendering-incident-20261013/probes/hdr-target",
+    "tileWidth": 480,
+    "quiltTargetRetainedRgbOverOneValues": false,
+    "rootCauseEstablished": false,
+    "pipeline": "URP",
+    "editorLogsCopied": 0,
+    "targetErrors": 0,
+    "postProcessing": "off",
+    "artifactManifestSha256": "751BF25C0BB4B98B9B08CC59450B3FAFF36DE1010B6B5AE7057E65287ED3D5D4",
+    "unityVersion": "6000.6.4f1",
+    "quiltViews": 1,
+    "physicalDisplayColorProven": false,
+    "userProjectModified": false,
+    "missingSrvWarnings": "none",
+    "bothExactNunitCasesPassed": true
+  },
+  "followUpGates": [
+    "Keep the Phase C HDR-intermediate implementation as a clone-only candidate; do not treat it as a production SDK fix or release.",
+    "If pursuing integration, validate TAA at one view, then Quarter/12-view, then native/device transfer as separate stages and include resource/memory cleanup.",
+    "Do not connect this off-screen rendering cause to the separate budget exception or shutdown crash without direct evidence."
+  ],
+  "artifactLinks": {
+    "report": "../windows-urp-vfx-hdr-rootcause-20261013.md",
+    "priorIncidentReport": "../windows-urp-vfx-rendering-incident-20261013.md",
+    "priorProbeArchive": "windows-urp-vfx-rendering-incident-20261013/probes",
+    "phaseAProbeArchive": "windows-urp-vfx-rendering-incident-20261013/probes/hdr-target",
+    "priorPairedProbeReport": "../windows-urp-vfx-rendering-incident-20261013.md",
+    "phaseCProbeArchive": "windows-urp-vfx-hdr-rootcause-20261013/phase-c",
+    "phaseCAnalysisArchive": "windows-urp-vfx-hdr-rootcause-20261013/analysis",
+    "phaseCAnalysisJson": "windows-urp-vfx-hdr-rootcause-20261013/analysis/analysis.json",
+    "phaseCAnalysisReadme": "windows-urp-vfx-hdr-rootcause-20261013/analysis/README.txt",
+    "phaseCAnalysisScript": "windows-urp-vfx-hdr-rootcause-20261013/analysis/analyze_hdr_probe_pairs.py",
+    "phaseCAnalysisManifest": "windows-urp-vfx-hdr-rootcause-20261013/analysis/manifest.json"
+  },
+  "phaseB": {
+    "status": "completed-limited-bounded-observation",
+    "sourceSha256": "12329CFE66C875C6DCDFF8A978F05748D060208852A1352F7F66574E5F6B57C2",
+    "runnerSha256": "C58E01AE17420A76D5CE461540702141D9EBD9B14191AF27F42E5C936997EA3A",
+    "archive": "windows-urp-vfx-rendering-incident-20261013/probes/hdr-target/phase-b",
+    "manifestEntries": 48,
+    "fullEditorLogsIncluded": false,
+    "environment": {
+      "testPlatform": "Unity Editor PlayMode",
+      "unityVersion": "6000.6.4f1",
+      "graphicsApi": "Direct3D12",
+      "pipeline": "URP 17.6.0",
+      "quiltViews": 1,
+      "tileWidth": 480,
+      "tileHeight": 360,
+      "viewConeDegrees": 0,
+      "cameraMatricesMatched": true,
+      "antialiasing": "off",
+      "hdr": true,
+      "postProcessing": true,
+      "bridgeControlled": false,
+      "physicalDeviceOutput": false,
+      "memoryGuardReached": false
+    },
+    "runtimeVolumeStack": {
+      "observedInAddRenderPasses": true,
+      "validForBothCameraPaths": true,
+      "bloomActive": true,
+      "bloomIntensity": 0.6,
+      "bloomThreshold": 2.5,
+      "bloomScatter": 0.7,
+      "bloomClamp": 65472,
+      "tonemappingActive": true,
+      "tonemappingMode": "ACES",
+      "provesIndividualPostProcessPixelContribution": false
+    },
+    "cameraTargets": {
+      "normal": {
+        "graphicsFormat": "R16G16B16A16_SFloat",
+        "sRGB": false,
+        "hdr": true,
+        "postProcessing": true
+      },
+      "quilt": {
+        "graphicsFormat": "R8G8B8A8_SRGB",
+        "sRGB": true,
+        "hdr": true,
+        "postProcessing": true
+      }
+    },
+    "green": {
+      "testCase": "ObserveMultiStripGpuEventsOnOriginalSceneWithPostProcessing",
+      "editorProcessId": 42980,
+      "editorExitCode": 0,
+      "timeout": false,
+      "nunit": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "inconclusive": 0
+      },
+      "xmlSha256": "96F95F9D9668BC62BCC15EB1029635BA8DAACFCE7EED7D3370D0D40B54600A5B",
+      "observationSeconds": 20.0138,
+      "pairedObservations": 572,
+      "normalGreenMaskPositiveFrameRows": 458,
+      "quiltGreenMaskPositiveFrameRows": 0,
+      "nativeGreenLightsParticlesObserved": true,
+      "normalRepresentativeFloatPeak": 1.00097656,
+      "quiltRepresentativeFloatPeak": 0.854902,
+      "normalRepresentativePixelsAnyRgbOverOne": 1,
+      "quiltRepresentativePixelsAnyRgbOverOne": 0,
+      "assetGuid": "09e4dfff658c863459dc084250a47a15",
+      "assetSha256BeforeAndAfter": "AFC8E2CC2F65CDD61EF453A149FFFCD27CCFAB64FE9BB25B9CE064B4F3A5E37D",
+      "targetErrors": 0,
+      "matchedMissingSrvWarnings": "none",
+      "historyCameraCountAfterCleanup": 0,
+      "ownedTexturesReleased": true,
+      "boundedObservationOnly": true,
+      "physicalDeviceColorProven": false,
+      "rootCauseEstablished": false
+    },
+    "coin": {
+      "testCase": "ObserveRotationAngleOnOriginalSceneWithPostProcessing",
+      "editorProcessId": 26760,
+      "editorExitCode": 0,
+      "timeout": false,
+      "nunit": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "inconclusive": 0
+      },
+      "xmlSha256": "2E33D3D5A4E94BDEFA89CE2400F48CB25C0B592035AFA071B62844ADBDCB6D80",
+      "observationSeconds": 6.0001,
+      "pairedObservations": 132,
+      "normalGoldRange": "4897..13681",
+      "quiltGoldRange": "7485..10370",
+      "normalRepresentativeFloatPeak": 1.00097656,
+      "quiltRepresentativeFloatPeak": 0.854902,
+      "coinFramingScope": "prepared selected effect pose; complete three-coin coverage not asserted",
+      "assetGuid": "ccd23b3eb0caff84aab1cd555791352b",
+      "assetSha256BeforeAndAfter": "84FFA22726257445766073C94CE9DBFD09A18E7EE91A7384A2C968FDCCBA8DFF",
+      "targetErrors": 0,
+      "matchedMissingSrvWarnings": "none",
+      "historyCameraCountAfterCleanup": 0,
+      "ownedTexturesReleased": true,
+      "boundedObservationOnly": true,
+      "fullUserReportedCoinDifferenceReproduced": false
+    },
+    "interpretation": {
+      "greenNormalVsQuiltMaskDifferenceObserved": true,
+      "greenNativeEventGenerationFailure": false,
+      "hdrTargetFormatDifferenceObservedWithPostProcessing": true,
+      "likelyContributor": "normal-half-float-versus-quilt-sRGB-UNorm-target/range path",
+      "exactConversionOrClampStageKnown": false,
+      "deviceTransferTested": false,
+      "sdkProductionCodeChanged": false,
+      "editorCrashReproduced": false,
+      "scopeLimit": "single-view 480x360 clone fixture, AA off, no Looking Glass hardware or native transfer"
+    }
+  },
+  "phaseC": {
+    "status": "completed-limited-bounded-causal-intervention-observation",
+    "archive": "windows-urp-vfx-hdr-rootcause-20261013/phase-c",
+    "manifestEntries": 52,
+    "editorLogsIncluded": false,
+    "candidateOnly": true,
+    "candidateUrpPackageVersion": "0.1.0",
+    "candidateRuntimeRenderSourceSha256": "92356E442773A7C85E9EFEA7CBAA69B7FAB192A6E8B103B61A9B62DCADD3FF65",
+    "probeSourceSha256": "8782A8B1B994C5909B655125397305A0341C918AFF203D9530A627754D4A87C7",
+    "environment": {
+      "testPlatform": "Unity Editor PlayMode",
+      "unityVersion": "6000.6.4f1",
+      "graphicsApi": "Direct3D12",
+      "pipeline": "URP 17.6.0",
+      "quiltViews": 1,
+      "tileWidth": 480,
+      "tileHeight": 360,
+      "viewConeDegrees": 0,
+      "cameraMatricesMatched": true,
+      "antialiasing": "off",
+      "postProcessing": true,
+      "physicalDeviceOutput": false,
+      "nativeTransfer": false,
+      "memoryGuardReached": false
+    },
+    "intervention": {
+      "temporaryQuiltHdrIntermediate": "R16G16B16A16_SFloat",
+      "intermediateEncoding": "linear",
+      "normalCameraTarget": "R16G16B16A16_SFloat",
+      "finalQuiltAtlas": "R8G8B8A8_SRGB",
+      "temporaryIntermediateCountDuringRender": 1,
+      "temporaryIntermediateCountAfterCleanup": 0,
+      "productionSdkChanged": false,
+      "sourceGraphHashesUnchanged": true
+    },
+    "green": {
+      "editorProcessId": 108180,
+      "editorExitCode": 0,
+      "nunit": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "inconclusive": 0
+      },
+      "xmlSha256": "23306ECB0B6928737676F2CC3B02D1936FE0FE112874D8E477E97D050AC503DF",
+      "observationSeconds": 20.0225,
+      "pairedObservations": 587,
+      "greenMaskPositiveRowsNormal": 466,
+      "greenMaskPositiveRowsQuilt": 466,
+      "greenMaskBooleanMismatches": 0,
+      "nativeParticlePositiveObservations": 405,
+      "bothPositiveObservations": 395,
+      "neitherPositiveObservations": 10,
+      "meanImageResidual": 0.00155,
+      "residualP99": 0.019,
+      "residualMaximum": 0.968,
+      "targetErrors": 0,
+      "matchedMissingSrvWarnings": "none",
+      "historyCameraCountAfterCleanup": 0,
+      "ownedTexturesReleased": true,
+      "boundedObservationOnly": true
+    },
+    "coin": {
+      "editorProcessId": 92488,
+      "editorExitCode": 0,
+      "nunit": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "inconclusive": 0
+      },
+      "xmlSha256": "CBCB1960C4DDCE341A066F7C6EF323B59DD6598A4464E6C2850EDB3DB35E079A",
+      "observationSeconds": 6.0093,
+      "pairedObservations": 246,
+      "analysis": "Phase C selected-coin halo ROI union; mean of all RGB samples after inverse sRGB decode",
+      "roi": "bottom-origin y=300..345 and x=145..185 OR x=295..335",
+      "allThreeCoinsFullyFramed": false,
+      "targetErrors": 0,
+      "matchedMissingSrvWarnings": "none",
+      "historyCameraCountAfterCleanup": 0,
+      "ownedTexturesReleased": true,
+      "boundedObservationOnly": true,
+      "roiAnalysisAssumption": "piecewise inverse-sRGB applied to quilt RGB code values using recorded sRGB target/blit setting; not independently colorimeter-calibrated",
+      "phaseBMeanAllRgbSamplesNormal": 0.128388,
+      "phaseBMeanAllRgbSamplesQuiltDecoded": 0.043336,
+      "phaseCMeanAllRgbSamplesNormal": 0.128388,
+      "phaseCMeanAllRgbSamplesQuiltDecoded": 0.128541,
+      "phaseBMeanAbsoluteAllRgbSampleDifference": 0.08505,
+      "phaseCMeanAbsoluteAllRgbSampleDifference": 0.001368,
+      "phaseBNormalMeanAllRgbSamplesTemporalRange": "0.045316..0.611468",
+      "phaseCNormalMeanAllRgbSamplesTemporalRange": "0.044983..0.650797",
+      "phaseCQuiltDecodedMeanAllRgbSamplesTemporalRange": "0.044999..0.650934",
+      "roiSampleStatistic": "mean over all RGB samples across 3600 ROI pixels"
+    },
+    "interpretation": {
+      "offscreenFixtureCauseSupported": "early HDR range loss before final quilt sRGB UNorm conversion",
+      "greenMaskMismatchRemovedInFixture": true,
+      "selectedCoinRoiMismatchSubstantiallyReduced": true,
+      "exactProductionIntegrationValidated": false,
+      "physicalLookingGlassOutputMeasured": false,
+      "nativeTransferTested": false,
+      "generalVfxCompatibilityPass": false,
+      "editorCrashReproduced": false,
+      "memoryGuardReached": false,
+      "fullUserReportedDevicePathResolved": false,
+      "budgetExceptionOrShutdownCrashCausedByThisIssue": "not-established"
+    },
+    "analysisArchive": "windows-urp-vfx-hdr-rootcause-20261013/analysis",
+    "analysis": {
+      "analysisJson": "analysis/analysis.json",
+      "analysisJsonSha256": "990E8F27A2A9465491F6D2CA97177AAD50FDF2F8397798E390C9664D96278D18",
+      "script": "analysis/analyze_hdr_probe_pairs.py",
+      "scriptSha256": "5107897CCBB7ECCBC4CC513969F94E2C56D661D11D090071E5A86A060BF1F87A",
+      "manifest": "analysis/manifest.json",
+      "manifestSha256": "8867852913DB2B40DE5BB55E9C15FC19DB914FC1CD238E7DF6EB1BD0A5D7DD99",
+      "inputCount": 30,
+      "fileCount": 33,
+      "verificationErrors": 0,
+      "method": "read-only offline analysis; inverse-sRGB assumed from recorded target encoding and controlled sRGB blit setting; no independent colorimeter calibration"
+    }
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "capturedUtc": "2026-10-13T04:14:42.9112145Z",
+  "sourcePath": "Tests/Pipelines/Unity/Assets/SrpAdditionalValidation/QuiltRendererMsaaLifecycleTests.cs",
+  "sha256": "DEFDD8FDCAD8637A91A6AC547831FD0EA62562997F0D56FFFC70B86370ABB921",
+  "bytes": 30121,
+  "change": "Fully qualified System.InvalidOperationException without importing System namespace to avoid Object ambiguity."
+}

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Passed" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-13 03:30:19Z" end-time="2026-10-13 03:30:43Z" duration="23.5511408">
+  <test-suite type="TestSuite" id="1026" name="URPSample_6.6.41f1" fullname="URPSample_6.6.41f1" runstate="Runnable" testcasecount="13" result="Passed" start-time="2026-10-13 03:30:19Z" end-time="2026-10-13 03:30:43Z" duration="23.551141" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1048" name="ViewWeave.SceneComparison.Tests.dll" fullname="E:/LookingGlassSDK/.local/windows-vfx-scene-comparison-20261013/URP/UnityProject/Library/ScriptAssemblies/ViewWeave.SceneComparison.Tests.dll" runstate="Runnable" testcasecount="13" result="Passed" start-time="2026-10-13 03:30:19Z" end-time="2026-10-13 03:30:43Z" duration="23.544181" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="108180" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1049" name="ViewWeave" fullname="ViewWeave" runstate="Runnable" testcasecount="13" result="Passed" start-time="2026-10-13 03:30:19Z" end-time="2026-10-13 03:30:43Z" duration="23.543610" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1050" name="SceneComparison" fullname="ViewWeave.SceneComparison" runstate="Runnable" testcasecount="13" result="Passed" start-time="2026-10-13 03:30:19Z" end-time="2026-10-13 03:30:43Z" duration="23.543278" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1051" name="Tests" fullname="ViewWeave.SceneComparison.Tests" runstate="Runnable" testcasecount="13" result="Passed" start-time="2026-10-13 03:30:19Z" end-time="2026-10-13 03:30:43Z" duration="23.542935" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1030" name="HdrIntermediateProbeTests" fullname="ViewWeave.SceneComparison.Tests.HdrIntermediateProbeTests" classname="ViewWeave.SceneComparison.Tests.HdrIntermediateProbeTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-13 03:30:19Z" end-time="2026-10-13 03:30:43Z" duration="23.541460" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1031" name="ObserveMultiStripGpuEventsOnOriginalSceneWithHdrIntermediate" fullname="ViewWeave.SceneComparison.Tests.HdrIntermediateProbeTests.ObserveMultiStripGpuEventsOnOriginalSceneWithHdrIntermediate" methodname="ObserveMultiStripGpuEventsOnOriginalSceneWithHdrIntermediate" classname="ViewWeave.SceneComparison.Tests.HdrIntermediateProbeTests" runstate="Runnable" seed="1586186120" result="Passed" start-time="2026-10-13 03:30:19Z" end-time="2026-10-13 03:30:43Z" duration="23.528098" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Font Asset [LiberationSansSDF-Fallback] Units Per EM set to 2048. Please commit the newly serialized value.
+The referenced script (Unknown) on this Behaviour is missing!
+The referenced script (Unknown) on this Behaviour is missing!
+The referenced script (Unknown) on this Behaviour is missing!
+The referenced script (Unknown) on this Behaviour is missing!
+The referenced script (Unknown) on this Behaviour is missing!
+The referenced script (Unknown) on this Behaviour is missing!
+Remove 1 child(ren) that couldnt be deserialized from  of type UnityEditor.VFX.VFXGraph
+Remove 1 linked context(s) that could not be deserialized from Update Particle Strip of type UnityEditor.VFX.VFXBasicUpdate
+Remove 1 owners that couldnt be deserialized from  of type UnityEditor.VFX.VFXDataParticle
+Saving results to: C:/Users/zzaba/AppData/LocalLow/DefaultCompany/URPSample_6_6_41f1\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

@@ -1,0 +1,66 @@
+{
+  "capturedUtc": "2026-10-13T04:13:15.9553965Z",
+  "baseRevision": "11312b8c6cf824d9a7ac7c8940e95cee742fa076",
+  "files": [
+    {
+      "path": "Packages/com.zabaglione.lookingglass.viewweave.core/Runtime/QuiltRenderer.cs",
+      "sha256": "8DC2F11769425D22C123ACFE49C59B742C2CF548A2F956D845F4895A2E4A9BBE",
+      "bytes": 53410
+    },
+    {
+      "path": "Packages/com.zabaglione.lookingglass.viewweave.core/Runtime/IQuiltViewTextureFormatProvider.cs",
+      "sha256": "99182903A82CA89E818CA03770AC9EAA18FF5CB861D0624DBC3B43912EC0FC11",
+      "bytes": 276
+    },
+    {
+      "path": "Packages/com.zabaglione.lookingglass.viewweave.core/Runtime/IQuiltViewTextureFormatProvider.cs.meta",
+      "sha256": "281FED579F38D87664D6C040F5C7451FA42F0D772EAC39D40D59EEE154D7950B",
+      "bytes": 60
+    },
+    {
+      "path": "Packages/com.zabaglione.lookingglass.viewweave.urp/Runtime/UrpQuiltCamera.cs",
+      "sha256": "864C024CA951E6EB07C6FDF09EF4BDAB8762ACB2E536AC619AA097F639113CBB",
+      "bytes": 6820
+    },
+    {
+      "path": "Tests/Pipelines/Unity/Assets/SrpAdditionalValidation/QuiltRendererMsaaLifecycleTests.cs",
+      "sha256": "C1975FFA50302E88F844DEC3BD27D05A42EF83BEC30B9368269B6A231DCDD59F",
+      "bytes": 30114
+    },
+    {
+      "path": "Tests/Pipelines/Unity/Assets/SrpAdditionalValidation/SrpAdditionalValidationTests.cs",
+      "sha256": "9D6B342281891D784CCF1E3CD859244AC6C72F14CE43FAE614B1CB6DF13C6836",
+      "bytes": 24314
+    },
+    {
+      "path": "Tests/Pipelines/Unity/Assets/GraphicsCompatibility/UrpTaaPlatformTests.cs",
+      "sha256": "C35C8739CC795AFF4AC9CE1CE1D1932DF8B8544022E388AA60902F9943DA0036",
+      "bytes": 47030
+    },
+    {
+      "path": "Tests/Pipelines/Unity/Assets/BridgeSessionValidation/Editor/BridgeEditorPreviewGpuTests.cs",
+      "sha256": "C5DBD4E134106E59D166199588338B0F0F2D07067689265D6ED9DE2AB83FE5C8",
+      "bytes": 258157
+    },
+    {
+      "path": "Tests/Pipelines/Unity/Packages/manifest.json",
+      "sha256": "3F5B8B7DE7E211C9A47123A0C461218828BC9BC3F5E24222BFE2F6302A216F49",
+      "bytes": 976
+    },
+    {
+      "path": "Tests/Pipelines/Unity/Packages/packages-lock.json",
+      "sha256": "8010CD9A420CCC03A1CCF91F08463C95CA35AF54C19A4D1FC3D85F6A57610F5F",
+      "bytes": 8681
+    },
+    {
+      "path": "Tests/Pipelines/Unity/ProjectSettings/ProjectSettings.asset",
+      "sha256": "9A958082508D9B9C0C73308306DE977CA28231AC2EF1DD8E84BDF848B249605C",
+      "bytes": 21485
+    },
+    {
+      "path": ".local/windows-urp-vfx-hdr-fix-20261013/Tools/Run-FocusedSdkTests.ps1",
+      "sha256": "206FE380AFA9053742F1B5B9FE852700B5E1588B9FA63533C818BD8053538ECD",
+      "bytes": 12275
+    }
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "status": "pass",
+  "label": "urp-msaa-effective-permission",
+  "unityVersion": "6000.6.4f1",
+  "projectPath": "E:/LookingGlassSDK/Tests/Pipelines/Unity",
+  "graphicsApiRequested": "D3D12",
+  "testPlatform": "PlayMode",
+  "testFilter": "ViewWeave.GraphicsCompatibility.UrpTaaPlatformTests.QuiltMsaaFollowsEffectiveRendererAndSourcePermission",
+  "expectedFullNames": [
+    "ViewWeave.GraphicsCompatibility.UrpTaaPlatformTests.QuiltMsaaFollowsEffectiveRendererAndSourcePermission"
+  ],
+  "actualFullNames": [
+    "ViewWeave.GraphicsCompatibility.UrpTaaPlatformTests.QuiltMsaaFollowsEffectiveRendererAndSourcePermission"
+  ],
+  "exactFullNameSetMatch": true,
+  "startedUtc": "2026-10-13T04:17:50.1116231Z",
+  "endedUtc": "2026-10-13T04:18:28.9562969Z",
+  "elapsedSeconds": 38.847,
+  "editorProcessId": 87576,
+  "editorStartTimeUtc": "2026-10-13T04:17:50.1116231Z",
+  "editorExitCode": 0,
+  "timeout": false,
+  "timeoutSeconds": 600,
+  "ownedTreeCleanupAttempted": false,
+  "ownedTreeCleanupSucceeded": false,
+  "outputDrainIncomplete": false,
+  "processInventoryAvailableBefore": true,
+  "matchingBefore": null,
+  "processInventoryAvailableAfter": true,
+  "matchingAfter": null,
+  "residualExactProjectProcessCount": 0,
+  "processObjectStillRunning": false,
+  "rawXmlPath": "E:\\LookingGlassSDK\\.local\\windows-urp-vfx-hdr-fix-20261013\\Results\\urp-msaa-effective-permission-20261013T041749513Z.xml",
+  "rawXmlBytes": 4144,
+  "rawXmlSha256": "648555BBC915C6514829B09D1EDB749209A40E00B6E38B463EAB1DE65C4FAC06",
+  "xmlParseErrorType": null,
+  "nunit": {
+    "total": 1,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "inconclusive": 0,
+    "result": "Passed",
+    "caseFullNames": [
+      "ViewWeave.GraphicsCompatibility.UrpTaaPlatformTests.QuiltMsaaFollowsEffectiveRendererAndSourcePermission"
+    ]
+  },
+  "testPassGate": true,
+  "editorLogPath": "E:\\LookingGlassSDK\\.local\\windows-urp-vfx-hdr-fix-20261013\\Results\\urp-msaa-effective-permission-20261013T041749513Z-editor.log",
+  "editorLogShared": false,
+  "standardOutputRedirected": true,
+  "standardErrorRedirected": true,
+  "sourceHashes": {
+    "Packages/com.zabaglione.lookingglass.viewweave.core/Runtime/QuiltRenderer.cs": "8DC2F11769425D22C123ACFE49C59B742C2CF548A2F956D845F4895A2E4A9BBE",
+    "Packages/com.zabaglione.lookingglass.viewweave.core/Runtime/IQuiltViewTextureFormatProvider.cs": "99182903A82CA89E818CA03770AC9EAA18FF5CB861D0624DBC3B43912EC0FC11",
+    "Packages/com.zabaglione.lookingglass.viewweave.urp/Runtime/UrpQuiltCamera.cs": "864C024CA951E6EB07C6FDF09EF4BDAB8762ACB2E536AC619AA097F639113CBB",
+    "Tests/Pipelines/Unity/Packages/manifest.json": "3F5B8B7DE7E211C9A47123A0C461218828BC9BC3F5E24222BFE2F6302A216F49",
+    "Tests/Pipelines/Unity/Packages/packages-lock.json": "8010CD9A420CCC03A1CCF91F08463C95CA35AF54C19A4D1FC3D85F6A57610F5F",
+    "Tests/Pipelines/Unity/Assets/SrpAdditionalValidation/QuiltRendererMsaaLifecycleTests.cs": "DEFDD8FDCAD8637A91A6AC547831FD0EA62562997F0D56FFFC70B86370ABB921",
+    "Tests/Pipelines/Unity/Assets/GraphicsCompatibility/UrpTaaPlatformTests.cs": "C35C8739CC795AFF4AC9CE1CE1D1932DF8B8544022E388AA60902F9943DA0036",
+    "Tests/Pipelines/Unity/Assets/BridgeSessionValidation/Editor/BridgeEditorPreviewGpuTests.cs": "C5DBD4E134106E59D166199588338B0F0F2D07067689265D6ED9DE2AB83FE5C8",
+    "Tests/Pipelines/Unity/Assets/SrpAdditionalValidation/ViewWeave.SrpAdditionalValidation.Tests.asmdef": "1DF394FECFD999313512D4EEF9F0948E033F0EB7CFAEA5F42653A118187BCD4A",
+    "Tests/Pipelines/Unity/Assets/GraphicsCompatibility/ViewWeave.GraphicsCompatibility.Tests.asmdef": "D8D8D58DE9CE926E74D26BAE62D84C8836E83480E7C8D92076C1955059F4391F",
+    "Tests/Pipelines/Unity/Assets/BridgeSessionValidation/Editor/ViewWeave.BridgeEditorPreviewValidation.Editor.Tests.asmdef": "530035B171D0D6F51950B2D7CAA7D855A10F2974E2D168B982D3A1B5BC1DE0BE",
+    "Tests/Pipelines/Unity/ProjectSettings/ProjectSettings.asset": "9A958082508D9B9C0C73308306DE977CA28231AC2EF1DD8E84BDF848B249605C"
+  },
+  "startupExceptionType": null
+}

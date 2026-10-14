@@ -1,0 +1,12 @@
+{
+  "schema": "viewweave-frustum-memory-launch-status-v1",
+  "date": "2026-10-13",
+  "escalatedUnityLaunchAttempts": 2,
+  "status": "auto-review-deadline-before-process-create",
+  "unityProcessCreated": false,
+  "nunitExecuted": false,
+  "xmlProduced": false,
+  "countedAsPass": false,
+  "additionalEditorStatusAndCimQueryAlsoTimedOutBeforeProcessCreate": true,
+  "note": "Parent-reported orchestration status. These blocked invocations are not Unity test runs."
+}

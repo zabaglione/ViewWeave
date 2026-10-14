@@ -1,0 +1,1 @@
+The preflight JSON is preserved as captured. Its Win32_PerfFormattedData_PerfOS_Memory commit counters were multiplied by 1024, although those fields were already bytes; use host-resource-followup.json for the subsequent correctly-unitized snapshot. FreePhysicalMemory was converted from KiB. No raw record was overwritten.

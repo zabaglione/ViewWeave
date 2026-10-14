@@ -1,0 +1,2 @@
+frame,quiltRevision,elapsedSeconds,aliveTotal,systemCount,systemNames,aliveBySystem,normalLuma,quiltLuma,normalGreenPixels,quiltGreenPixels,normalGoldPixels,quiltGoldPixels,pairedChangedPixels,rawGraphicsBytes,privateBytes,workingSetBytes
+22,9,6.6940,16,4,Jacks|Light Sound Off|Cables|Green Lights,0|16|0|0,98,98,0,0,9586,9593,2,950578876,3043688448,2143010816

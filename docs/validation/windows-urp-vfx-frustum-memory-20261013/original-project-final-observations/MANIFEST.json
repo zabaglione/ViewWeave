@@ -1,0 +1,133 @@
+{
+  "schema": "viewweave-original-project-final-observations-archive-v1",
+  "createdUtc": "2026-10-13T20:00:03.0274945Z",
+  "scope": "two bounded original-project runs and final clean editor reopen; raw records copied without modification; current-context supervisor is explicitly not-as-run",
+  "observerLimitsBytes": {
+    "textureRaw": 4026531840,
+    "coinRaw": 4026531840,
+    "private": 4294967296,
+    "sdkHistoryBudget": 4294967296
+  },
+  "files": [
+    {
+      "archivePath": "coin-neighbor/as-run-LiveOriginalCoinNeighborWatchTemplate.cs",
+      "bytes": 97899,
+      "sha256": "8398F72F53BD981225593F07B0DC99A05EBB20005BDE071A9EC87F49A5645CA1"
+    },
+    {
+      "archivePath": "coin-neighbor/as-run-Run-BoundedOriginalCoinNeighborProbe.ps1",
+      "bytes": 87061,
+      "sha256": "7EE037ABE68EB8E4538261FEABE85169CD446D60D44D4BB3BBC83784AC04DBA3"
+    },
+    {
+      "archivePath": "coin-neighbor/collision-apply-result.json",
+      "bytes": 4216,
+      "sha256": "FC7336415C8CE96B774C48260760BDEF4D33261977978910D591E46AB0EF66E1"
+    },
+    {
+      "archivePath": "coin-neighbor/current-context-supervisor-not-as-run.ps1",
+      "bytes": 23430,
+      "sha256": "676059254B7EF99BAD3D9DF7CB4E5845EE259168321B66F871C81EF26959A806"
+    },
+    {
+      "archivePath": "coin-neighbor/derived-coin-neighbor-contract.json",
+      "bytes": 8826,
+      "sha256": "9A0BEAC2A87B04788269613C65F7F6226AF8FA094C555DC7D0C93741478EBD91"
+    },
+    {
+      "archivePath": "coin-neighbor/final-reopen-readiness.json",
+      "bytes": 2968,
+      "sha256": "C6CF63A893A411022C9334C20566AB0258FF727DD7FD6BFDCD2906E1DD5DE32F"
+    },
+    {
+      "archivePath": "coin-neighbor/post-run-process-and-crash-query.json",
+      "bytes": 614,
+      "sha256": "683AB9D9BB8A218351083A9AA56A1B8714A973B79E47E06BE11021EA2EAE49FA"
+    },
+    {
+      "archivePath": "coin-neighbor/post-run-protected-snapshot.json",
+      "bytes": 3916,
+      "sha256": "D3C0E54C572E99213E734C3FA3419B3C3294EF261818DE792C2C9EA72705637C"
+    },
+    {
+      "archivePath": "coin-neighbor/process-memory.jsonl",
+      "bytes": 20745,
+      "sha256": "48FC4AEF209C7D4F2F1102CB374CBE02FE6C07CBB86DA4CAFD6D8FD6CD641B1F"
+    },
+    {
+      "archivePath": "coin-neighbor/readiness.json",
+      "bytes": 2968,
+      "sha256": "C1505ACDA8562B93BB5D25F8A26EA4470A8651E92E34C235262DF00DD0E370E7"
+    },
+    {
+      "archivePath": "coin-neighbor/run-summary.json",
+      "bytes": 63599,
+      "sha256": "DAC2B837783837071114BA1442981FD90B00295B5F063FB60E1397CF29A39373"
+    },
+    {
+      "archivePath": "coin-neighbor/supervisor-summary.json",
+      "bytes": 3527,
+      "sha256": "DEE0DF6C5EFDE9BC80289583B5513C7ADC0E4F0A6A2161E080D8537A1DC1201F"
+    },
+    {
+      "archivePath": "coin-neighbor/vfx-batch-sweep.jsonl",
+      "bytes": 31674,
+      "sha256": "5880EB4BA56C4686D9BE3AEBB4937C6757F885DFC0785E4BBE8AFB270FB348B9"
+    },
+    {
+      "archivePath": "coin-neighbor/watcher.jsonl",
+      "bytes": 2617214,
+      "sha256": "41AB7DA0FD9CB274281945F12D0D3CA7CA0A0878C40C94411701984DA9E9B7A7"
+    },
+    {
+      "archivePath": "texture-center/as-run-LiveGraphRemedyWatchTemplate.cs",
+      "bytes": 82633,
+      "sha256": "622865E45C6EF9B3FA7A143846A39DD3F7908A090573ACE61FB72B8339D13C6C"
+    },
+    {
+      "archivePath": "texture-center/as-run-Run-BoundedOriginalGraphRemedyProbe.ps1",
+      "bytes": 70661,
+      "sha256": "59EEAF062DC5E25F651D19C9FEE9BDB9C30B06DC23B004F4E936183DB3047974"
+    },
+    {
+      "archivePath": "texture-center/nvidia-smi-global-samples.json",
+      "bytes": 3393,
+      "sha256": "6842F3922137FF12649AFCDF67D42B8547249D76E8481E980C1E02117F36309C"
+    },
+    {
+      "archivePath": "texture-center/process-memory.jsonl",
+      "bytes": 21242,
+      "sha256": "AA967BDDB731C886A519B3CC92B4E70C6DB23F0434908E0D8B39961A65A01203"
+    },
+    {
+      "archivePath": "texture-center/run-summary.json",
+      "bytes": 58717,
+      "sha256": "8536919BEEDA52B536B73F0D05494F55B196C145B08C0C4C675E62D6FA88526E"
+    },
+    {
+      "archivePath": "texture-center/skin-apply-result.json",
+      "bytes": 5574,
+      "sha256": "69CD0D913843CB28DF0F8DA305DB93F39B9161776DE93F8E01430800B1E84508"
+    },
+    {
+      "archivePath": "texture-center/supervisor-summary.json",
+      "bytes": 1998,
+      "sha256": "91091A607B3ECA9171BF846848C766ADBD7E1873CE3F3F6A12A44B9428297467"
+    },
+    {
+      "archivePath": "texture-center/texture-apply-result.json",
+      "bytes": 3797,
+      "sha256": "57FE58E5E8A9D4DB1B5A94DA43D441EDA69A21067A7F825EC7855D5DFD249BA1"
+    },
+    {
+      "archivePath": "texture-center/vfx-batch-sweep.jsonl",
+      "bytes": 31672,
+      "sha256": "B8F6212BFE1B6E0A81468B5BA6F3066AB139BAFE5EAD8496180B6D062608E7E4"
+    },
+    {
+      "archivePath": "texture-center/watcher.jsonl",
+      "bytes": 1981236,
+      "sha256": "C220E9356D7532CEFEA47652BF1F202480B1FA3EAC7A89C7CB7BBDBC4DC62497"
+    }
+  ]
+}

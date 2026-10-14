@@ -1,0 +1,245 @@
+{
+  "schemaVersion": 1,
+  "record": "Windows Native mock shutdown and stdio regression tests",
+  "dateLocal": "2026-10-12",
+  "sourceBasis": {
+    "revision": "11312b8c6cf824d9a7ac7c8940e95cee742fa076",
+    "nativeSourceDirectory": "Native",
+    "nativeSourceEditsInWorkingTree": false,
+    "distributionDllCopyPerformed": false,
+    "unityLaunched": false,
+    "lookingGlassBridgeLaunchedOrStopped": false,
+    "vendorRuntimeLoaded": false,
+    "deviceOutputPerformed": false
+  },
+  "build": {
+    "directory": "Native/build-worker-release-vs",
+    "generator": "Visual Studio 17 2022",
+    "architecture": "x64",
+    "configuration": "Release",
+    "buildTesting": true,
+    "transportTestsOnly": false,
+    "unityPluginApiHeaders": "Unity 6000.6.4f1 installed Editor PluginAPI",
+    "cmakeHomeDirectory": "E:/LookingGlassSDK/Native",
+    "sandboxBuildAttempt": "failed Windows SDK registry access",
+    "hostBuild": "passed selected current-source targets"
+  },
+  "sourceHashesSha256": {
+    "Native/CMakeLists.txt": "4B594BA5E153A99D2297E94425A5C54C8425D1A329C06160242D719078169F05",
+    "Native/platform/windows/stdio_load_guard.cpp": "1F380F85E84BD2B999F3D95B04863B7DD2AAF140B77232613CD35BE01EF672E2",
+    "Native/tests/stdio_load_guard_test.cpp": "D7BB2FCFDB4BE37EFE07E1A18C56D7015E9E370F7CD77EE75ADB391EBC8C4C08",
+    "Native/tests/bridge_loader_lifecycle_test.cpp": "FA9E38EAF6B4492F02F2F4F45C0FDB59AEFA3227EA37116AE84EF971D19CAC3B",
+    "Native/tests/bridge_shutdown_contract_test.cpp": "FBA97DAF4CF8427718DB58D8A800BBEC8D31EF7C63EE48CD331D2F9E296F746E",
+    "Native/tests/fake_bridge_shutdown_runtime.cpp": "83292CA0A55120153C734B93829515511837D1E6B3C53C6876C9F3F8F5171516"
+  },
+  "testRun": {
+    "command": "ctest --test-dir Native/build-worker-release-vs -C Release --output-on-failure -j1 -R \"^(lookingglass_stdio_load_guard_test|lookingglass_bridge_loader_lifecycle_test|lookingglass_bridge_shutdown_contract_test|lookingglass_bridge_shutdown_exception_contract_test)$\"",
+    "total": 4,
+    "passed": 4,
+    "failed": 0,
+    "skipped": 0,
+    "elapsedSeconds": 0.81,
+    "tests": [
+      {
+        "name": "lookingglass_stdio_load_guard_test",
+        "result": "passed",
+        "scope": "fake static-CRT module, test shim, and standard-handle preservation"
+      },
+      {
+        "name": "lookingglass_bridge_loader_lifecycle_test",
+        "result": "passed",
+        "scope": "fake-runtime load, initialize, unload, and display metadata"
+      },
+      {
+        "name": "lookingglass_bridge_shutdown_contract_test",
+        "result": "passed",
+        "scope": "fake-runtime shutdown contract"
+      },
+      {
+        "name": "lookingglass_bridge_shutdown_exception_contract_test",
+        "result": "passed",
+        "scope": "fake-runtime uninitialize exception contract"
+      }
+    ],
+    "testResultXmlProduced": false,
+    "rawResultLog": {
+      "path": "Native/build-worker-release-vs/Testing/Temporary/LastTest.log",
+      "bytes": 4901,
+      "sha256": "7CD821A5674C2D484EE7764CE2AB10B4FDEC926542932C17A828FF0C79422BB9",
+      "contentsPrintedOrCopied": true,
+      "asciiArchiveCopy": {
+        "path": "docs/validation/windows-native-mock-shutdown-validation-20261012-LastTest.txt",
+        "bytes": 4901,
+        "sha256": "18F232C993A34429657C92F7F3A68061E2748C29D134ACE8C2DC71A4DB1776DA",
+        "normalization": "Non-ASCII characters replaced with ?; native-only CTest output."
+      }
+    }
+  },
+  "rebuiltExecutableHashesSha256": {
+    "Native/build-worker-release-vs/Release/lookingglass_stdio_load_guard_test.exe": "7B0DBB9DD6BED298E5CDAD6B47107B07342A5D89B9C63708124DBCE577B04214",
+    "Native/build-worker-release-vs/Release/lookingglass_bridge_loader_lifecycle_test.exe": "7B8973952AA3847C85A1048E4BF597F0EB8DC87B5F70AC641A125A62987F9F9D",
+    "Native/build-worker-release-vs/Release/lookingglass_bridge_shutdown_contract_test.exe": "0B8D67D472C6BC0237BBF6D0ADE503BCC153D45BCEFF53A73E85DF23920669A5"
+  },
+  "limitations": [
+    "Passing the mocks does not establish that every production shutdown condition is safe or identify the reported crash cause.",
+    "The failed Unity EditMode attempts and zero NUnit results are documented separately.",
+    "The 19 selected registered cases passed across two CTest invocations (4 + 15), not one unfiltered suite invocation; cases include CPU/synthetic checks, fake interfaces, loopback HTTP, and graphics-oriented fixture cases; runtime backend was not captured, not Looking Glass display output."
+  ],
+  "rebuiltRuntimeHashesSha256": {
+    "Native/build-worker-release-vs/Release/lookingglass_bridge_shim.dll": "CEE089B1779752DAB4FFABDFFC44B879A0E4D09414C9A85F7590C8D9A9DDCF4D",
+    "Native/build-worker-release-vs/Release/lookingglass_bridge_worker_test_shim.dll": "AF54F7B0120BB588AA68C352FD361A46B842A0AF597EE6B06CC38CB00DFAE97A",
+    "Native/build-worker-release-vs/Release/lkg_fake_bridge_shutdown_runtime.dll": "BA1E8E7530FB2435E16E7295582D348F535A9877BC550CA1238BFD7DE426E49A",
+    "Native/build-worker-release-vs/Release/lkg_fake_static_stdio_rebind.dll": "252960F73E7ADD3BB6EB2B1FB0EF10509A9F5C17B14B868496E5780D8D6E3BB9"
+  },
+  "remainingTestRun": {
+    "command": "ctest --test-dir Native/build-worker-release-vs -C Release --output-on-failure -j1 -R \"^(lookingglass_worker_common_test|lookingglass_metadata_test|lookingglass_subpixel_calibration_test|lookingglass_metal_calibration_test|lookingglass_bridge_subpixel_metadata_test|lookingglass_manual_subpixel_presenter_test|lookingglass_worker_transport_test|lookingglass_worker_cleanup_exception_test|lookingglass_worker_host_initialize_failure_test|lookingglass_worker_host_uninitialize_failure_test|lookingglass_persistent_d3d11_device_test|lookingglass_worker_preview_pause_test|lookingglass_worker_preview_lease_test|lookingglass_bridge_static_present_test|lookingglass_stable_sdk_input_d3d11_test)$\"",
+    "registeredCTestCount": 19,
+    "previousRunCount": 4,
+    "total": 15,
+    "passed": 15,
+    "failed": 0,
+    "skipped": 0,
+    "elapsedSeconds": 16.47,
+    "buildCommand": "cmake --build Native/build-worker-release-vs --config Release --target lookingglass_worker_common_test lookingglass_metadata_test lookingglass_subpixel_calibration_test lookingglass_metal_calibration_test lookingglass_bridge_subpixel_metadata_test lookingglass_manual_subpixel_presenter_test lookingglass_worker_transport_test lookingglass_bridge_static_present_test lookingglass_stable_sdk_input_d3d11_test --parallel",
+    "buildExitCode": 0,
+    "builtTargets": [
+      "lookingglass_worker_common_test",
+      "lookingglass_metadata_test",
+      "lookingglass_subpixel_calibration_test",
+      "lookingglass_metal_calibration_test",
+      "lookingglass_bridge_subpixel_metadata_test",
+      "lookingglass_manual_subpixel_presenter_test",
+      "lookingglass_worker_transport_test",
+      "lookingglass_bridge_static_present_test",
+      "lookingglass_stable_sdk_input_d3d11_test"
+    ],
+    "rebuiltExecutableHashesSha256": {
+      "Native/build-worker-release-vs/Release/lookingglass_worker_common_test.exe": "4831143801C753BC04A8ACE22828F149FD9C34AA0C593EE8A807A286145ED506",
+      "Native/build-worker-release-vs/Release/lookingglass_metadata_test.exe": "E2C31302A0DE130903D35339AB355F9E0CAE925E94B27EB76C936FD964DA8F98",
+      "Native/build-worker-release-vs/Release/lookingglass_subpixel_calibration_test.exe": "1586D0FE8E15394884D2C7C405BB8E8B5D39B50BBEFC882C815E8ECEDABAD714",
+      "Native/build-worker-release-vs/Release/lookingglass_metal_calibration_test.exe": "E5CCE38DB833ACC87D1D07302ED05E161D7F6BFF35451BD97F016874ABAA8B14",
+      "Native/build-worker-release-vs/Release/lookingglass_bridge_subpixel_metadata_test.exe": "DB0E60C0D54E1DF645AF2085248B9F8A1873165604BB8C6A471D0BD541106667",
+      "Native/build-worker-release-vs/Release/lookingglass_manual_subpixel_presenter_test.exe": "DBF094FADDEF080DCD2C5D6D54099F869FB4401A93600C2FEFF95C9871C0BCCC",
+      "Native/build-worker-release-vs/Release/lookingglass_worker_transport_test.exe": "A55C261D97AD633267469A9E461DBA9BB2CC650C3CA3CB5CE2CDDFBEAA2BB3A6",
+      "Native/build-worker-release-vs/Release/lookingglass_bridge_static_present_test.exe": "63F226B68BCF89797264CE2F1201973CA37CC89518D2E74C25FAC262A5C6605E",
+      "Native/build-worker-release-vs/Release/lookingglass_stable_sdk_input_d3d11_test.exe": "DD51C31EBEA8395BFB3FD7118CE0D29B3ACC8963BF0F79B4C9AD76F9DF0C23BC"
+    },
+    "tests": [
+      {
+        "name": "lookingglass_worker_common_test",
+        "result": "passed"
+      },
+      {
+        "name": "lookingglass_metadata_test",
+        "result": "passed"
+      },
+      {
+        "name": "lookingglass_subpixel_calibration_test",
+        "result": "passed"
+      },
+      {
+        "name": "lookingglass_metal_calibration_test",
+        "result": "passed"
+      },
+      {
+        "name": "lookingglass_bridge_subpixel_metadata_test",
+        "result": "passed"
+      },
+      {
+        "name": "lookingglass_manual_subpixel_presenter_test",
+        "result": "passed"
+      },
+      {
+        "name": "lookingglass_worker_transport_test",
+        "result": "passed"
+      },
+      {
+        "name": "lookingglass_worker_cleanup_exception_test",
+        "result": "passed"
+      },
+      {
+        "name": "lookingglass_worker_host_initialize_failure_test",
+        "result": "passed"
+      },
+      {
+        "name": "lookingglass_worker_host_uninitialize_failure_test",
+        "result": "passed"
+      },
+      {
+        "name": "lookingglass_persistent_d3d11_device_test",
+        "result": "passed"
+      },
+      {
+        "name": "lookingglass_worker_preview_pause_test",
+        "result": "passed"
+      },
+      {
+        "name": "lookingglass_worker_preview_lease_test",
+        "result": "passed"
+      },
+      {
+        "name": "lookingglass_bridge_static_present_test",
+        "result": "passed"
+      },
+      {
+        "name": "lookingglass_stable_sdk_input_d3d11_test",
+        "result": "passed"
+      }
+    ],
+    "testResultXmlProduced": false,
+    "rawResultLog": {
+      "path": "Native/build-worker-release-vs/Testing/Temporary/LastTest.log",
+      "bytes": 12263,
+      "sha256": "0E493246E2A024FEE4F32C4DDE7AC85E9E46E1DCA4E86D2B73B572939D35ABD9",
+      "contentsPrintedOrCopied": true,
+      "asciiArchiveCopy": {
+        "path": "docs/validation/windows-native-mock-shutdown-validation-20261012-LastTest-remaining15.txt",
+        "bytes": 12263,
+        "sha256": "338992E997C125B380A6B5EA6128F46FF60C3C0846459EFB12508B0068E32D7A",
+        "normalization": "Non-ASCII characters replaced with ?; native-only CTest output."
+      }
+    },
+    "scope": {
+      "cpuAndSyntheticValidation": true,
+      "fakeBridgeRuntimeAndShim": true,
+      "loopbackHttpOnly": true,
+      "vendorBridgeLoaded": false,
+      "LookingGlassBridgeOperated": false,
+      "physicalDeviceOutput": false,
+      "guiServiceOperated": false,
+      "graphicsFixtureSourceIncludesOffscreenPaths": true,
+      "runtimeGraphicsBackendCaptured": false,
+      "fixtureSourcesIncludeOffscreenWARPOrPrivateD3D12": true
+    },
+    "outputReview": {
+      "allSelectedCasesContainExplicitPassMarker": true,
+      "skipMarkerObserved": false,
+      "unsupportedMarkerObserved": false,
+      "noDeviceMarkerObserved": false,
+      "graphicsBackendCapturedFromRuntimeOutput": false,
+      "note": "All selected cases emitted explicit pass markers; no skip, unsupported, or no-device marker was present. The worker transport fixture did not emit its D3D12-no-hardware-adapter skip message. Fixture sources include offscreen WARP/private-D3D12 paths, but the runtime log does not identify the backend.",
+      "workerD3D12NoHardwareSkipMarkerObserved": false
+    },
+    "sourceRevision": "11312b8c6cf824d9a7ac7c8940e95cee742fa076",
+    "nativeSourcesUnchangedSinceRevision": true
+  },
+  "aggregateSelectedCTestResults": {
+    "registeredCount": 19,
+    "executedAcrossSeparateRuns": 19,
+    "passed": 19,
+    "failed": 0,
+    "skipped": 0,
+    "runBreakdown": [
+      {
+        "run": "initial-selected-shutdown-regressions",
+        "total": 4,
+        "passed": 4
+      },
+      {
+        "run": "remaining-current-source-tests",
+        "total": 15,
+        "passed": 15
+      }
+    ]
+  }
+}

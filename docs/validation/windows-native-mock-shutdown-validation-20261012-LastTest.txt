@@ -1,0 +1,74 @@
+Start testing: Oct 12 23:03 ???? (?W????)
+----------------------------------------------------------
+7/19 Testing: lookingglass_stdio_load_guard_test
+7/19 Test: lookingglass_stdio_load_guard_test
+Command: "E:/LookingGlassSDK/Native/build-worker-release-vs/Release/lookingglass_stdio_load_guard_test.exe" "E:/LookingGlassSDK/Native/build-worker-release-vs/Release/lkg_fake_static_stdio_rebind.dll" "E:/LookingGlassSDK/Native/build-worker-release-vs/Release/lookingglass_bridge_shim.dll"
+Directory: E:/LookingGlassSDK/Native/build-worker-release-vs
+"lookingglass_stdio_load_guard_test" start time: Oct 12 23:03 ???? (?W????)
+Output:
+----------------------------------------------------------
+stdio_rebind_guard=passed
+<end of output>
+Test time =   0.12 sec
+----------------------------------------------------------
+Test Passed.
+"lookingglass_stdio_load_guard_test" end time: Oct 12 23:03 ???? (?W????)
+"lookingglass_stdio_load_guard_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+17/19 Testing: lookingglass_bridge_loader_lifecycle_test
+17/19 Test: lookingglass_bridge_loader_lifecycle_test
+Command: "E:/LookingGlassSDK/Native/build-worker-release-vs/Release/lookingglass_bridge_loader_lifecycle_test.exe" "E:/LookingGlassSDK/Native/build-worker-release-vs/Release/lookingglass_bridge_shim.dll" "E:/LookingGlassSDK/Native/build-worker-release-vs/Release/lkg_fake_bridge_runtime.dll" "E:/LookingGlassSDK/Native/build-worker-release-vs/Release/lkg_fake_bridge_other.dll" "E:/LookingGlassSDK/Native/build-worker-release-vs/Release/lkg_fake_bridge_missing.dll"
+Directory: E:/LookingGlassSDK/Native/build-worker-release-vs
+"lookingglass_bridge_loader_lifecycle_test" start time: Oct 12 23:03 ???? (?W????)
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.05 sec
+----------------------------------------------------------
+Test Passed.
+"lookingglass_bridge_loader_lifecycle_test" end time: Oct 12 23:03 ???? (?W????)
+"lookingglass_bridge_loader_lifecycle_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+18/19 Testing: lookingglass_bridge_shutdown_contract_test
+18/19 Test: lookingglass_bridge_shutdown_contract_test
+Command: "E:/LookingGlassSDK/Native/build-worker-release-vs/Release/lookingglass_bridge_shutdown_contract_test.exe" "E:/LookingGlassSDK/Native/build-worker-release-vs/Release/lookingglass_bridge_shim.dll" "E:/LookingGlassSDK/Native/build-worker-release-vs/Release/lkg_fake_bridge_shutdown_runtime.dll" "E:/LookingGlassSDK/Native/build-worker-release-vs/Release/lookingglass_bridge_worker_test_shim.dll"
+Directory: E:/LookingGlassSDK/Native/build-worker-release-vs
+"lookingglass_bridge_shutdown_contract_test" start time: Oct 12 23:03 ???? (?W????)
+Output:
+----------------------------------------------------------
+WARP D3D11 device created, feature level 0xb100
+PASS: native Bridge shutdown case completed
+WARP D3D11 device created, feature level 0xb100
+PASS: native Bridge shutdown case completed
+WARP D3D11 device created, feature level 0xb100
+PASS: native Bridge shutdown case completed
+PASS: native Bridge shutdown contract scenarios completed
+<end of output>
+Test time =   0.47 sec
+----------------------------------------------------------
+Test Passed.
+"lookingglass_bridge_shutdown_contract_test" end time: Oct 12 23:03 ???? (?W????)
+"lookingglass_bridge_shutdown_contract_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+19/19 Testing: lookingglass_bridge_shutdown_exception_contract_test
+19/19 Test: lookingglass_bridge_shutdown_exception_contract_test
+Command: "E:/LookingGlassSDK/Native/build-worker-release-vs/Release/lookingglass_bridge_shutdown_contract_test.exe" "E:/LookingGlassSDK/Native/build-worker-release-vs/Release/lookingglass_bridge_shim.dll" "E:/LookingGlassSDK/Native/build-worker-release-vs/Release/lkg_fake_bridge_shutdown_runtime.dll" "E:/LookingGlassSDK/Native/build-worker-release-vs/Release/lookingglass_bridge_worker_test_shim.dll" "--uninitialize-exception"
+Directory: E:/LookingGlassSDK/Native/build-worker-release-vs
+"lookingglass_bridge_shutdown_exception_contract_test" start time: Oct 12 23:03 ???? (?W????)
+Output:
+----------------------------------------------------------
+WARP D3D11 device created, feature level 0xb100
+PASS: native Bridge shutdown case completed
+PASS: native Bridge shutdown contract scenarios completed
+<end of output>
+Test time =   0.13 sec
+----------------------------------------------------------
+Test Passed.
+"lookingglass_bridge_shutdown_exception_contract_test" end time: Oct 12 23:03 ???? (?W????)
+"lookingglass_bridge_shutdown_exception_contract_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Oct 12 23:03 ???? (?W????)

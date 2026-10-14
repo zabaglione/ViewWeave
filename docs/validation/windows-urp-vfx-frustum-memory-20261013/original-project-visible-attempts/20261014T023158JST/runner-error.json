@@ -1,0 +1,1 @@
+{"status":"runner_failed","exceptionType":"RuntimeException","errorCategory":"OperationStopped","scriptLine":523,"safeMessage":"Post-Play session, scene, or cleanup invariants failed before restoring startOnEnable.","watcherRegistrationAttempted":true,"stopFlagWritten":true,"unityCommandFailure":null,"utc":"2026-10-13T17:32:08.7792018Z"}

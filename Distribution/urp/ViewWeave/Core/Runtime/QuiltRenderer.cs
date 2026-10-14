@@ -665,15 +665,37 @@ namespace ViewWeave
         RenderTexture ResolveViewTexture()
         {
             if (viewTexture == null) throw new InvalidOperationException("view texture is unavailable");
-            if (viewTexture.antiAliasing <= 1) return viewTexture;
-            if (resolveTexture == null || !resolveTexture.IsCreated()) throw new InvalidOperationException("MSAA resolve texture is unavailable");
-            Graphics.Blit(viewTexture, resolveTexture);
+            if (!RequiresViewResolve()) return viewTexture;
+            if (resolveTexture == null || !resolveTexture.IsCreated()) throw new InvalidOperationException("view resolve texture is unavailable");
+            if (resolveTexture.antiAliasing != 1 || resolveTexture.graphicsFormat != quiltTexture.graphicsFormat || resolveTexture.sRGB != quiltTexture.sRGB)
+                throw new InvalidOperationException("view resolve texture is incompatible with the quilt texture");
+            RenderTexture oldActive = RenderTexture.active;
+            bool oldSrgbWrite = GL.sRGBWrite;
+            try
+            {
+                GL.sRGBWrite = QualitySettings.activeColorSpace == ColorSpace.Linear && resolveTexture.sRGB;
+                Graphics.Blit(viewTexture, resolveTexture);
+            }
+            finally
+            {
+                GL.sRGBWrite = oldSrgbWrite;
+                RenderTexture.active = oldActive;
+            }
             return resolveTexture;
+        }
+
+        bool RequiresViewResolve()
+        {
+            return viewTexture.antiAliasing > 1 ||
+                viewTexture.graphicsFormat != quiltTexture.graphicsFormat ||
+                viewTexture.sRGB != quiltTexture.sRGB;
         }
 
         void CopyTile(RectInt tile, RenderTexture source)
         {
             if (!SystemInfo.copyTextureSupport.HasFlag(CopyTextureSupport.Basic)) throw new NotSupportedException("Graphics.CopyTexture is not supported");
+            if (source.antiAliasing != quiltTexture.antiAliasing || source.graphicsFormat != quiltTexture.graphicsFormat || source.sRGB != quiltTexture.sRGB)
+                throw new InvalidOperationException("resolved view texture must match the quilt texture format, color space, and sample count");
             Graphics.CopyTexture(source, 0, 0, 0, 0, tile.width, tile.height, quiltTexture, 0, 0, tile.x, tile.y);
         }
 
@@ -706,32 +728,26 @@ namespace ViewWeave
                 quiltTexture.Create();
                 if (!quiltTexture.IsCreated()) throw new InvalidOperationException("failed to create quilt render texture");
             }
-            int viewSamples = GetRequestedMsaaSamples(sourceCamera, layout);
-            if (viewTexture == null || viewTexture.width != layout.TileWidth || viewTexture.height != layout.TileHeight || viewTexture.antiAliasing != viewSamples)
+            RenderTextureFormat viewFormat = GetRequestedViewTextureFormat(sourceCamera);
+            if (!SystemInfo.SupportsRenderTextureFormat(viewFormat))
+                throw new NotSupportedException("the selected view render texture format is not supported: " + viewFormat);
+            bool viewSrgb = viewFormat == RenderTextureFormat.ARGBHalf ? false : quiltTexture.sRGB;
+            RenderTextureDescriptor viewDescriptor = new RenderTextureDescriptor(layout.TileWidth, layout.TileHeight, viewFormat, 24)
+            {
+                msaaSamples = 1,
+                sRGB = viewSrgb,
+                useMipMap = false,
+                autoGenerateMips = false
+            };
+            int viewSamples = GetRequestedMsaaSamples(sourceCamera, layout, viewFormat, viewSrgb);
+            viewDescriptor.msaaSamples = viewSamples;
+            bool replaceView = viewTexture == null || viewTexture.width != layout.TileWidth || viewTexture.height != layout.TileHeight ||
+                viewTexture.antiAliasing != viewSamples || viewTexture.graphicsFormat != viewDescriptor.graphicsFormat || viewTexture.sRGB != viewDescriptor.sRGB;
+            if (replaceView)
             {
                 AbortPreviewTextureReplacement(viewTexture, "view");
                 ReleaseOwnedTexture(ref viewTexture);
-                RenderTexture created;
-                if (viewSamples <= 1)
-                {
-                    created = new RenderTexture(layout.TileWidth, layout.TileHeight, 24, RenderTextureFormat.ARGB32)
-                    {
-                        name = "ViewWeave.View",
-                        useMipMap = false,
-                        autoGenerateMips = false
-                    };
-                }
-                else
-                {
-                    RenderTextureDescriptor descriptor = new RenderTextureDescriptor(layout.TileWidth, layout.TileHeight, RenderTextureFormat.ARGB32, 24)
-                    {
-                        msaaSamples = viewSamples,
-                        sRGB = quiltTexture != null && quiltTexture.sRGB,
-                        useMipMap = false,
-                        autoGenerateMips = false
-                    };
-                    created = new RenderTexture(descriptor) { name = "ViewWeave.View" };
-                }
+                RenderTexture created = new RenderTexture(viewDescriptor) { name = "ViewWeave.View" };
                 if (!TryTrackEditorPreviewTexture(created))
                 {
                     DisposeTexture(created);
@@ -741,20 +757,21 @@ namespace ViewWeave
                 viewTexture.Create();
                 if (!viewTexture.IsCreated()) throw new InvalidOperationException("failed to create view render texture");
             }
-            if (viewSamples > 1)
+            if (RequiresViewResolve())
             {
-                if (resolveTexture == null || resolveTexture.width != layout.TileWidth || resolveTexture.height != layout.TileHeight || resolveTexture.antiAliasing != 1)
+                RenderTextureDescriptor resolveDescriptor = new RenderTextureDescriptor(layout.TileWidth, layout.TileHeight, RenderTextureFormat.ARGB32, 0)
+                {
+                    msaaSamples = 1,
+                    sRGB = quiltTexture.sRGB,
+                    useMipMap = false,
+                    autoGenerateMips = false
+                };
+                if (resolveTexture == null || resolveTexture.width != layout.TileWidth || resolveTexture.height != layout.TileHeight ||
+                    resolveTexture.antiAliasing != 1 || resolveTexture.graphicsFormat != resolveDescriptor.graphicsFormat || resolveTexture.sRGB != resolveDescriptor.sRGB)
                 {
                     AbortPreviewTextureReplacement(resolveTexture, "resolve");
                     ReleaseOwnedTexture(ref resolveTexture);
-                    RenderTextureDescriptor descriptor = new RenderTextureDescriptor(layout.TileWidth, layout.TileHeight, RenderTextureFormat.ARGB32, 0)
-                    {
-                        msaaSamples = 1,
-                        sRGB = quiltTexture != null && quiltTexture.sRGB,
-                        useMipMap = false,
-                        autoGenerateMips = false
-                    };
-                    RenderTexture created = new RenderTexture(descriptor)
+                    RenderTexture created = new RenderTexture(resolveDescriptor)
                     {
                         name = "ViewWeave.ViewResolve"
                     };
@@ -775,7 +792,16 @@ namespace ViewWeave
             }
         }
 
-        int GetRequestedMsaaSamples(Camera camera, QuiltLayout layout)
+        RenderTextureFormat GetRequestedViewTextureFormat(Camera camera)
+        {
+            IQuiltViewTextureFormatProvider provider = RenderGuard as IQuiltViewTextureFormatProvider;
+            RenderTextureFormat requested = provider == null ? RenderTextureFormat.ARGB32 : provider.GetQuiltViewTextureFormat(camera);
+            if (requested != RenderTextureFormat.ARGB32 && requested != RenderTextureFormat.ARGBHalf)
+                throw new NotSupportedException("view texture format provider requested an unsupported format: " + requested);
+            return requested;
+        }
+
+        int GetRequestedMsaaSamples(Camera camera, QuiltLayout layout, RenderTextureFormat viewFormat, bool viewSrgb)
         {
             if (camera == null || !camera.allowMSAA) return 1;
             IQuiltMsaaProvider provider = RenderGuard as IQuiltMsaaProvider;
@@ -783,10 +809,10 @@ namespace ViewWeave
             int requested = provider is IQuiltMsaaSettingsProvider settingsProvider
                 ? settingsProvider.GetMsaaSampleCount(camera, referenceCamera) : provider.GetMsaaSampleCount(camera);
             if (requested <= 1) return 1;
-            RenderTextureDescriptor probe = new RenderTextureDescriptor(layout.TileWidth, layout.TileHeight, RenderTextureFormat.ARGB32, 24)
+            RenderTextureDescriptor probe = new RenderTextureDescriptor(layout.TileWidth, layout.TileHeight, viewFormat, 24)
             {
                 msaaSamples = requested,
-                sRGB = quiltTexture != null && quiltTexture.sRGB
+                sRGB = viewSrgb
             };
             int supported = SystemInfo.GetRenderTextureSupportedMSAASampleCount(probe);
             return supported == 2 || supported == 4 || supported == 8 ? supported : 1;

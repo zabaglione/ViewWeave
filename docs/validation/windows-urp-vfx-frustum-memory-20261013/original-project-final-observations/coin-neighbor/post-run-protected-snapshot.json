@@ -1,0 +1,77 @@
+{
+  "schema": "viewweave-coin-neighbor-post-run-protected-snapshot-v1",
+  "capturedUtc": "2026-10-13T19:49:07.9408875Z",
+  "projectPath": "E:\\URPSample_6.6.41f1",
+  "runDirectory": ".local/windows-urp-vfx-original-remedy-20261013/run-20261013T194309822Z",
+  "readinessEvidence": {
+    "path": ".local/windows-urp-vfx-original-remedy-20261013/three-ready-20261013T194228405Z/readiness.json",
+    "sha256": "C1505ACDA8562B93BB5D25F8A26EA4470A8651E92E34C235262DF00DD0E370E7"
+  },
+  "collisionApplyEvidence": {
+    "path": ".local/original-remedy/URP/CollisionApplyRuns/CollisionComponentOptOut-20261013T192213985Z/apply-result.json",
+    "sha256": "FC7336415C8CE96B774C48260760BDEF4D33261977978910D591E46AB0EF66E1"
+  },
+  "protectedFiles": [
+    {
+      "path": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/Scenes/URP_VFX_Learning_Templates.unity",
+      "sha256": "909CF2976E91B2B5278A6550BF85739805749E5BFC9010166B8EF6882F9115AC"
+    },
+    {
+      "path": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/Prefabs/VFXG/Sample Texture2D.prefab",
+      "sha256": "0BB66828975CFC45F4A4615AA60DF579B5EB1672225FCAABB9DC382AD0C0519B"
+    },
+    {
+      "path": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/Prefabs/VFXG/Sample Texture2D.prefab.meta",
+      "sha256": "990BDDF81682013565481B1826A717C02CDD32DD3542247A32B4AC4B164E5335"
+    },
+    {
+      "path": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/VFX/SampleTexture2D.vfx",
+      "sha256": "78D34F482963B47E6555E9218389A98A045F614F3F5B300776C78948CFE96556"
+    },
+    {
+      "path": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/VFX/SampleTexture2D.vfx.meta",
+      "sha256": "2F8F5E2C5636A685FFF895C7E8A70545AE88020C5F9F8EC0939D82366B1387F0"
+    },
+    {
+      "path": "Assets/ViewWeave/ValidatedVFXOverrides/SampleTexture2D.vfx",
+      "sha256": "EF29E6CD2361E92BAE2E0CC1937F75ED8A44A5B2ACA1AEFA614F918B5371F097"
+    },
+    {
+      "path": "Assets/ViewWeave/ValidatedVFXOverrides/SampleTexture2D.vfx.meta",
+      "sha256": "86D050E5D71E0B5E4C1DCC1F4FFA1CDCB8BB871E3D6079C9C858C4191082D114"
+    },
+    {
+      "path": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/Prefabs/VFXG/Sample Skinned Mesh.prefab",
+      "sha256": "26F19A0CCB7008DA1ADFEE3696B42B0400822C6A3987ADAE263FBDCF3F3624C5"
+    },
+    {
+      "path": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/Prefabs/VFXG/Sample Skinned Mesh.prefab.meta",
+      "sha256": "2624FC344ACB51C158E2EF87EB38090CAF0F4DEBE65073895A88382A3EB45B3B"
+    },
+    {
+      "path": "Assets/ViewWeave/ValidatedVFXOverrides/SampleSkinnedMesh.vfx",
+      "sha256": "9F6C0B7764A0CF32F01BAC5A87D3CD114AFC995A7086C52A19F634BE29E00222"
+    },
+    {
+      "path": "Assets/ViewWeave/ValidatedVFXOverrides/SampleSkinnedMesh.vfx.meta",
+      "sha256": "950F049AF7BB8A07860CEEC934D27BE6BDFA3962C9476CDE74F8AB3C8C7A9DCF"
+    },
+    {
+      "path": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/Prefabs/VFXG/Collision Advanced.prefab",
+      "sha256": "1C5C5415C9720C6CD290C1EA8C199221F131567F1D96D346AD7BFA1EB82E83A6"
+    },
+    {
+      "path": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/Prefabs/VFXG/Collision Advanced.prefab.meta",
+      "sha256": "7B1E67E76996B089A2C2AA0A76932F897E9F0D2C0C2FBDF5328401FA8B1C2BA5"
+    },
+    {
+      "path": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/VFX/CollisionAdvanced.vfx",
+      "sha256": "D12815212B21A7C9F20C3DE7A635AA3800BD80DC7DC0FC6904C965F25FBBE3BD"
+    },
+    {
+      "path": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/VFX/CollisionAdvanced.vfx.meta",
+      "sha256": "13740095CF834F71BEECE626AAA734903900F3F5F4950A9DC4575F3B7E6905B1"
+    }
+  ],
+  "scope": "read-only post-run filesystem hashes; not a Unity runtime snapshot"
+}

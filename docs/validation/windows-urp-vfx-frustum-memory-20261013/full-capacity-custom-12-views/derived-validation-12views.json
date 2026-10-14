@@ -1,0 +1,65 @@
+{
+  "schema": "viewweave-fullcustom-12view-derived-audit-v1",
+  "status": "evidence-gates-pass-wrapper-false-negative-reconciled",
+  "runId": "SampleTextureFullNative-12views-20261013T114921776Z",
+  "derivedOnly": true,
+  "rawEvidenceModified": false,
+  "rawWrapperStatus": "not-passed",
+  "rawWrapperPassGate": false,
+  "asRunWrapperExpectedHistoryAndRenderCounts": 1,
+  "observedHistoryAndRenderCounts": 12,
+  "asRunWrapperMismatchConfirmed": true,
+  "actualChecks": {
+    "nativeStatusPassed": true,
+    "exactNunitCasePassed": true,
+    "runnerExitClean": true,
+    "viewLayoutAndHistory": true,
+    "revisionsAndTiles": true,
+    "effectiveAANone": true,
+    "noObservedGrowthStop": true,
+    "cleanupAndNoMutation": true,
+    "nullFixtureDerivedPass": true
+  },
+  "test": {
+    "platform": "PlayMode",
+    "graphicsApi": "Direct3D12",
+    "views": 12,
+    "layout": "4x3, 512x288",
+    "tileChangedPixels": [
+      10035,
+      10053,
+      10161,
+      10168,
+      9948,
+      10031,
+      10071,
+      10139,
+      10065,
+      9942,
+      10131,
+      10065
+    ],
+    "historyCameras": 12,
+    "effectiveAAModes": "0:None,1:None,2:None,3:None,4:None,5:None,6:None,7:None,8:None,9:None,10:None,11:None",
+    "growth": {
+      "graphicsBytes": 1615154780,
+      "privateBytes": 1053556736,
+      "graphicsStopBytes": 2147483648,
+      "privateStopBytes": 1073741824,
+      "semantics": "Observed after-allocation stop thresholds; not physical VRAM or hard allocation caps."
+    },
+    "cleanup": true,
+    "sourceAndSceneUnchanged": true,
+    "graphicsDeviceName": "NVIDIA GeForce RTX 3090 Ti"
+  },
+  "evidenceSha256": {
+    "native-result.json": "179F1D01658A6FD68CF0634E4C737229F4999AF894CAF7675C2FB5D072E9F4C6",
+    "runner.json": "E09ABC6BB9CD08E2F8023355E068CCD295A9FEE6BD2391C1111E1AFD15157C39",
+    "summary.json": "4FADACD3F9C0C6C4000D91AA2CD3935C6D9A86D845ECF030881859149E3E48B7",
+    "results.xml": "7C47343AC51E23B295D50D40CD25CACF4099A6550D862D1DE399D051D80371BC",
+    "Run-SampleTextureFullNativeProbe.ps1": "4795223EA5686AB53E44BDB3CEF5EB05E3CF6619D23CC4451F7B5E85585AEF8C",
+    "SampleTextureFullNativeProbeTests.cs": "9F5BF38D85CA67F065AA9734B99BF9E1FEAFE19A710F27ED848CE32819C180B2",
+    "SampleTextureFullNativeProbeTests.cs.meta": "8C59AE6D09540679190EF2EBDA6741EDA682A37A5EF5A0C716403FDAC1ACB292",
+    "full-custom-null-derived-validation.json": "2F32397D8B91E5078C826CFCB792AD67D66926DA8EF2C3C30D3A0242F5276EDA"
+  }
+}

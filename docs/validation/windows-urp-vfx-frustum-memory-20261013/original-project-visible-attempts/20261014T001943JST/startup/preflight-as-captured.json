@@ -1,0 +1,53 @@
+{
+  "schema": "original-vfx-run-preflight-v1",
+  "capturedUtc": "2026-10-13T15:30:12.0497693Z",
+  "originalProjectPath": "E:\\URPSample_6.6.41f1",
+  "unityEditorMatchingProcessCount": 0,
+  "bridgePid": 29956,
+  "bridgeIdentityConfirmed": true,
+  "freePhysicalBytes": 31853985792,
+  "totalPhysicalBytes": 68636729344,
+  "commitLimitBytes": 78255470149632,
+  "committedBytes": 59304660959232,
+  "commitAvailableBytes": 18950809190400,
+  "gpuAdapterMemory": [
+    {
+      "name": "luid_0x00000000_0x00011CE9_phys_0",
+      "totalCommitted": 6258688
+    },
+    {
+      "name": "luid_0x00000000_0x0000EE36_phys_0",
+      "totalCommitted": 4923613184
+    }
+  ],
+  "diskEAvailableBytes": 1257986568192,
+  "inputs": [
+    {
+      "path": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/Scenes/URP_VFX_Learning_Templates.unity",
+      "exists": true,
+      "sha256": "909CF2976E91B2B5278A6550BF85739805749E5BFC9010166B8EF6882F9115AC"
+    },
+    {
+      "path": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/VFX/SampleTexture2D.vfx",
+      "exists": true,
+      "sha256": "78D34F482963B47E6555E9218389A98A045F614F3F5B300776C78948CFE96556"
+    },
+    {
+      "path": "Assets/ViewWeave/ValidatedVFXOverrides/SampleTexture2D.vfx",
+      "exists": true,
+      "sha256": "EF29E6CD2361E92BAE2E0CC1937F75ED8A44A5B2ACA1AEFA614F918B5371F097"
+    },
+    {
+      "path": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/Prefabs/VFXG/Sample Texture2D.prefab",
+      "exists": true,
+      "sha256": "0BB66828975CFC45F4A4615AA60DF579B5EB1672225FCAABB9DC382AD0C0519B"
+    }
+  ],
+  "notes": [
+    "No Editor currently matches the original project.",
+    "Read-only preflight only; no scene, asset, package, or settings writes.",
+    "Unity GUI readiness and live scene state must be rechecked after launch.",
+    "GPU adapter CIM TotalCommitted values are recorded as returned and are not interpreted as process memory.",
+    "Free physical memory is the relevant immediately available host-memory snapshot."
+  ]
+}

@@ -1,0 +1,69 @@
+var initialScenes = UnityEngine.SceneManagement.SceneManager.sceneCount;
+if (initialScenes != 1) return "gate_failed_scene_count=" + initialScenes;
+var initialScene = UnityEditor.SceneManagement.EditorSceneManager.GetActiveScene();
+if (initialScene.path != "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/Scenes/URP_VFX_Learning_Templates.unity") return "gate_failed_scene_path";
+if (UnityEditor.EditorApplication.isPlaying || UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode) return "gate_failed_play";
+if (UnityEditor.EditorApplication.isCompiling || initialScene.isDirty) return "gate_failed_compile_or_dirty";
+var initialRenderers = UnityEngine.Object.FindObjectsByType<ViewWeave.QuiltRenderer>(UnityEngine.FindObjectsInactive.Include);
+if (initialRenderers.Length != 1) return "gate_failed_renderer_count=" + initialRenderers.Length;
+var initialRenderer = initialRenderers[0];
+var initialRig = initialRenderer.GetComponent<ViewWeave.ViewWeaveRig>();
+var initialSession = initialRenderer.GetComponent<ViewWeave.ViewWeaveBridgeSession>();
+var initialOutput = initialRenderer.GetComponent<ViewWeave.BridgeWorkerQuiltOutput>();
+var initialUrp = initialRenderer.sourceCamera == null ? null : initialRenderer.sourceCamera.GetComponent<ViewWeave.URP.UrpQuiltCamera>();
+if (initialRig == null || initialSession == null || initialOutput == null) return "gate_failed_components";
+if (initialRenderer.autoRender || initialRig.AutoRender || initialSession.State != ViewWeave.ViewWeaveBridgeSession.SessionState.Idle || initialOutput.State != ViewWeave.BridgeWorkerQuiltOutput.WorkerState.Closed || ViewWeave.BridgeWorkerQuiltOutput.ShutdownPendingCount != 0) return "gate_failed_bridge_state";
+if (initialUrp == null || initialUrp.HistoryCameraCount != 0) return "gate_failed_history";
+if (initialRenderer.QuiltTexture != null) return "gate_failed_quilt_texture_present";
+if (!string.IsNullOrEmpty(initialRenderer.LastAutoRenderError) || !string.IsNullOrEmpty(initialSession.LastError)) return "gate_failed_error";
+
+string markerPath = "__EXIT_MARKER_PATH__";
+if (System.IO.File.Exists(markerPath)) return "gate_failed_marker_exists";
+System.DateTime deadline = System.DateTime.UtcNow.AddSeconds(2);
+UnityEditor.EditorApplication.CallbackFunction tick = null;
+tick = () =>
+{
+    if (System.DateTime.UtcNow < deadline) return;
+    UnityEditor.EditorApplication.update -= tick;
+    string status = "cancelled";
+    try
+    {
+        var scenes = UnityEngine.SceneManagement.SceneManager.sceneCount;
+        var scene = UnityEditor.SceneManagement.EditorSceneManager.GetActiveScene();
+        var renderers = UnityEngine.Object.FindObjectsByType<ViewWeave.QuiltRenderer>(UnityEngine.FindObjectsInactive.Include);
+        if (scenes != 1 || scene.path != "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/Scenes/URP_VFX_Learning_Templates.unity" || scene.isDirty || UnityEditor.EditorApplication.isPlaying || UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode || UnityEditor.EditorApplication.isCompiling || renderers.Length != 1)
+        {
+            status = "cancelled_live_scene_or_editor_gate";
+        }
+        else
+        {
+            var renderer = renderers[0];
+            var rig = renderer.GetComponent<ViewWeave.ViewWeaveRig>();
+            var session = renderer.GetComponent<ViewWeave.ViewWeaveBridgeSession>();
+            var output = renderer.GetComponent<ViewWeave.BridgeWorkerQuiltOutput>();
+            var urp = renderer.sourceCamera == null ? null : renderer.sourceCamera.GetComponent<ViewWeave.URP.UrpQuiltCamera>();
+            if (rig == null || session == null || output == null || urp == null || renderer.autoRender || rig.AutoRender || session.State != ViewWeave.ViewWeaveBridgeSession.SessionState.Idle || output.State != ViewWeave.BridgeWorkerQuiltOutput.WorkerState.Closed || ViewWeave.BridgeWorkerQuiltOutput.ShutdownPendingCount != 0 || urp.HistoryCameraCount != 0 || renderer.QuiltTexture != null || !string.IsNullOrEmpty(renderer.LastAutoRenderError) || !string.IsNullOrEmpty(session.LastError))
+            {
+                status = "cancelled_live_bridge_or_resource_gate";
+            }
+            else
+            {
+                status = "exit_requested_0";
+            }
+        }
+    }
+    catch
+    {
+        status = "cancelled_live_recheck_exception";
+    }
+    try
+    {
+        System.IO.File.WriteAllText(markerPath, status + "\n", new System.Text.UTF8Encoding(false));
+    }
+    finally
+    {
+        if (status == "exit_requested_0") UnityEditor.EditorApplication.Exit(0);
+    }
+};
+UnityEditor.EditorApplication.update += tick;
+return "exit_scheduled_after_cli_response";

@@ -1,0 +1,79 @@
+{
+  "status": "nunit-and-process-gates-passed",
+  "probe": "Green",
+  "testFilter": "ViewWeave.SceneComparison.Tests.MainSdkHdrDeviceProbeTests.ObserveGreenVfxOnMainSdkAndPhysicalDisplay",
+  "testPlatform": "PlayMode",
+  "expectedTestCount": 1,
+  "graphicsApiRequested": "D3D12",
+  "projectPath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\UnityProject",
+  "unityExecutable": "C:/Program Files/Unity/Hub/Editor/6000.6.4f1/Editor/Unity.exe",
+  "canonicalSourcePath": "E:/LookingGlassSDK/.local/windows-urp-vfx-hdr-fix-20261013/DeviceHelpers/MainSdkHdrDeviceProbeTests.cs",
+  "canonicalSourceSha256": "AFC521F615489468D1F351565366935B37835B061B953DC6F9DBEC6303DE2B7F",
+  "cloneSourcePath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\UnityProject\\Assets\\SceneComparisonTests\\MainSdkHdrDeviceProbeTests.cs",
+  "cloneSourceSha256": "AFC521F615489468D1F351565366935B37835B061B953DC6F9DBEC6303DE2B7F",
+  "startedUtc": "2026-10-13T05:01:27.2705696Z",
+  "endedUtc": "2026-10-13T05:03:46.2694682Z",
+  "editorProcessId": 58216,
+  "editorExitCode": 0,
+  "timeout": false,
+  "timeoutSeconds": 900,
+  "timeoutCleanupAttempted": false,
+  "timeoutCleanupSucceeded": false,
+  "timeoutCleanupErrorType": null,
+  "startErrorType": null,
+  "stdoutAndStderrDrained": true,
+  "processInventoryAvailableBefore": true,
+  "matchingBefore": null,
+  "processInventoryAvailableAfter": true,
+  "matchingAfter": null,
+  "processObjectStillRunning": false,
+  "xmlPath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\ResultsDevice\\main-device-green-20261013T050127000Z.xml",
+  "xmlBytes": 4114,
+  "xmlSha256": "20E9A5F84B7DDE84DBF90DE1E0554D600F9BC70AF14681A68E8D62032520D05A",
+  "xmlParseErrorType": null,
+  "nunit": {
+    "total": 1,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "inconclusive": 0,
+    "result": "Passed",
+    "testCaseFullNames": [
+      "ViewWeave.SceneComparison.Tests.MainSdkHdrDeviceProbeTests.ObserveGreenVfxOnMainSdkAndPhysicalDisplay"
+    ]
+  },
+  "exactTestCaseGate": true,
+  "editorLogPath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\ResultsDevice\\main-device-green-20261013T050127000Z-editor.log",
+  "editorLogShared": false,
+  "evidenceDirectory": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\UnityProject\\TestResults\\main-device-green-20261013T050110Z",
+  "evidenceFiles": [
+    {
+      "name": "device-response.json",
+      "bytes": 213,
+      "sha256": "1414FD5F6F0333AE360441B93B34282959E2E02AF6F477C7F16FA01AFBA87616"
+    },
+    {
+      "name": "progress.json",
+      "bytes": 169,
+      "sha256": "E8AD0E5358883BB007AD6F162626EE480A45584C9717579FF3EFD64784BB1A68"
+    },
+    {
+      "name": "result.json",
+      "bytes": 1178,
+      "sha256": "A8932B361AE6905E0DE5ACADC7FD1725B3F51E331B45E3AB3B70797F9B9F1DAD"
+    },
+    {
+      "name": "samples.csv",
+      "bytes": 5077,
+      "sha256": "0152F3273F6E65ED4DE61B7CAEB4D4E356BB28E4C0399F66C24F5504CF929612"
+    },
+    {
+      "name": "stageReady.json",
+      "bytes": 3828,
+      "sha256": "B7CA8E65F842D0E56E7705C2A348FAF7E23E9A4AE65F6355CF987137ADF2D0AF"
+    }
+  ],
+  "stageReadyExists": true,
+  "deviceResponseExists": true,
+  "boundedRunGate": true
+}

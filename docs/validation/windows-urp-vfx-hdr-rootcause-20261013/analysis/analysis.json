@@ -1,0 +1,899 @@
+{
+  "schemaVersion": 1,
+  "scope": "Read-only paired-output derivations from frozen Phase B and Phase C artifacts.",
+  "environment": {
+    "platform": "Windows",
+    "graphicsApi": "D3D12",
+    "mode": "Unity Play Mode",
+    "views": 1,
+    "aa": "Off",
+    "postProcessing": "On",
+    "hardwareDevice": false,
+    "sdkRuntimeModified": false
+  },
+  "transformAssumptions": {
+    "normalFloat": "R16G16B16A16_SFloat linear target, read back as little-endian float32 RGBA.",
+    "quiltFloat": "R8G8B8A8_SRGB target read back to float32 RGBA grid; values are interpreted as normalized sRGB code values then piecewise inverse-sRGB transformed for derived comparisons.",
+    "coordinateMapping": "Unity raw float RGBA payloads are treated as bottom-row-first for the bottom-origin ROI. PNG inputs are top-row-first and are vertically mapped to that same bottom-origin ROI.",
+    "inverseSrgb": "Per RGB channel: v/12.92 if v<=0.04045; otherwise ((v+0.055)/1.055)^2.4. No clamping or normalization beyond existing RGB8 range.",
+    "corroboration": "Probe recorded sRGB quilt targets and controlled GL.sRGBWrite for the candidate blit. This encoding transform is an analysis assumption, not an independent colorimeter calibration.",
+    "greenMask": "G>5 and G>3*R and B<0.5 on linear float values; descriptive pixel mask only.",
+    "coinHaloRoi": "Bottom-origin 3600 pixels: x=[145,185) or [295,335), y=[300,345)."
+  },
+  "phaseB": {
+    "green": {
+      "paired_float_samples": {
+        "green-lights-first-alive": {
+          "normal": {
+            "mean_all_rgb_samples": 0.0981194090830553,
+            "p99_all_rgb_samples": 0.875,
+            "mean_rgb": [
+              0.12278443339694706,
+              0.09130697656940255,
+              0.08026681728281633
+            ],
+            "p99_rgb": [
+              0.99072265625,
+              0.74462890625,
+              0.767578125
+            ],
+            "max_rgb": [
+              1.0009765625,
+              0.9990234375,
+              0.9990234375
+            ],
+            "green_dominant_pixel_count_g_gt_5_g_gt_3r_b_lt_0_5": 0
+          },
+          "quilt_raw_rgb": {
+            "mean_all_rgb_samples": 0.2207569946629106,
+            "p99_all_rgb_samples": 0.8313726186752319,
+            "mean_rgb": [
+              0.23479497148241435,
+              0.22296143173668598,
+              0.20451458076963144
+            ],
+            "p99_rgb": [
+              0.8431373238563538,
+              0.7725490927696228,
+              0.7882353663444519
+            ],
+            "max_rgb": [
+              0.8549020290374756,
+              0.8431373238563538,
+              0.8392157554626465
+            ],
+            "green_dominant_pixel_count_g_gt_5_g_gt_3r_b_lt_0_5": 0
+          },
+          "quilt_srgb_decoded_linear": {
+            "mean_all_rgb_samples": 0.08238966664925693,
+            "p99_all_rgb_samples": 0.6583749414516458,
+            "mean_rgb": [
+              0.10063533582171938,
+              0.07930807702848172,
+              0.06722558709763991
+            ],
+            "p99_rgb": [
+              0.6795425948454239,
+              0.5583405081022105,
+              0.5840785379604849
+            ],
+            "max_rgb": [
+              0.701102018150765,
+              0.6795425948454239,
+              0.6724432818271362
+            ],
+            "green_dominant_pixel_count_g_gt_5_g_gt_3r_b_lt_0_5": 0
+          },
+          "normal_vs_decoded_quilt_abs_error": {
+            "mean_all_rgb_samples": 0.016689043311677153,
+            "p99_all_rgb_samples": 0.26811785081967454,
+            "max_all_rgb_samples": 0.995130377738007
+          }
+        },
+        "green-lights-peak-alive": {
+          "normal": {
+            "mean_all_rgb_samples": 0.10530527451972442,
+            "p99_all_rgb_samples": 0.92431640625,
+            "mean_rgb": [
+              0.12985150366952575,
+              0.10045236285603433,
+              0.08561195703361321
+            ],
+            "p99_rgb": [
+              0.9921875,
+              0.74755859375,
+              0.77197265625
+            ],
+            "max_rgb": [
+              1.0009765625,
+              0.9990234375,
+              0.9990234375
+            ],
+            "green_dominant_pixel_count_g_gt_5_g_gt_3r_b_lt_0_5": 0
+          },
+          "quilt_raw_rgb": {
+            "mean_all_rgb_samples": 0.22555270877493855,
+            "p99_all_rgb_samples": 0.8352941870689392,
+            "mean_rgb": [
+              0.2392777695809976,
+              0.22877018742236638,
+              0.20861016932145166
+            ],
+            "p99_rgb": [
+              0.847058892250061,
+              0.7803922295570374,
+              0.8156863451004028
+            ],
+            "max_rgb": [
+              0.8588235974311829,
+              0.8431373238563538,
+              0.8392157554626465
+            ],
+            "green_dominant_pixel_count_g_gt_5_g_gt_3r_b_lt_0_5": 0
+          },
+          "quilt_srgb_decoded_linear": {
+            "mean_all_rgb_samples": 0.08668018258745679,
+            "p99_all_rgb_samples": 0.6653874228050042,
+            "mean_rgb": [
+              0.10502092514494163,
+              0.0836809148254009,
+              0.07133870779206293
+            ],
+            "p99_rgb": [
+              0.6866854379866726,
+              0.571124948740643,
+              0.6307572590783719
+            ],
+            "max_rgb": [
+              0.7083759064368484,
+              0.6795425948454239,
+              0.6724432818271362
+            ],
+            "green_dominant_pixel_count_g_gt_5_g_gt_3r_b_lt_0_5": 0
+          },
+          "normal_vs_decoded_quilt_abs_error": {
+            "mean_all_rgb_samples": 0.019394020516825573,
+            "p99_all_rgb_samples": 0.28905273474886645,
+            "max_all_rgb_samples": 0.996106940238007
+          }
+        }
+      },
+      "native_and_visual_frame_counts": {
+        "csv_rows": 572,
+        "native_green_lights_alive_positive_rows": 450,
+        "normal_green_pixel_positive_rows": 460,
+        "quilt_green_pixel_positive_rows": 0,
+        "normal_quilt_visual_presence_identical_rows": 112,
+        "both_visual_positive_rows": 0,
+        "both_visual_zero_rows": 112,
+        "native_positive_and_both_visual_positive_rows": 0,
+        "native_positive_and_both_visual_zero_rows": 17
+      },
+      "native_pair_metadata_path": "docs/validation/windows-urp-vfx-rendering-incident-20261013/probes/hdr-target/phase-b/green/evidence/green-lights-float-metadata.txt"
+    },
+    "coin": {
+      "raw_float_observation_zero_pair": {
+        "normal": {
+          "mean_all_rgb_samples": 0.12564746457761453,
+          "p99_all_rgb_samples": 0.9931640625,
+          "mean_rgb": [
+            0.14310679729131084,
+            0.12897538703141942,
+            0.10486020941011331
+          ],
+          "p99_rgb": [
+            0.99365234375,
+            0.9931640625,
+            0.99169921875
+          ],
+          "max_rgb": [
+            1.0009765625,
+            1.0009765625,
+            1.0009765625
+          ],
+          "green_dominant_pixel_count_g_gt_5_g_gt_3r_b_lt_0_5": 0
+        },
+        "quilt_raw_rgb": {
+          "mean_all_rgb_samples": 0.24537958268674068,
+          "p99_all_rgb_samples": 0.8313726186752319,
+          "mean_rgb": [
+            0.25883688851972964,
+            0.2514873280123235,
+            0.22581453152816888
+          ],
+          "p99_rgb": [
+            0.8431373238563538,
+            0.8274510502815247,
+            0.7882353663444519
+          ],
+          "max_rgb": [
+            0.8549020290374756,
+            0.8431373238563538,
+            0.8196079134941101
+          ],
+          "green_dominant_pixel_count_g_gt_5_g_gt_3r_b_lt_0_5": 0
+        },
+        "quilt_srgb_decoded_linear": {
+          "mean_all_rgb_samples": 0.08658317349143027,
+          "p99_all_rgb_samples": 0.6583749414516458,
+          "mean_rgb": [
+            0.09927803569409173,
+            0.09018847029448651,
+            0.07028301448577202
+          ],
+          "p99_rgb": [
+            0.6795425948454239,
+            0.6514057612376861,
+            0.5840785379604849
+          ],
+          "max_rgb": [
+            0.701102018150765,
+            0.6795425948454239,
+            0.6375969970918908
+          ],
+          "green_dominant_pixel_count_g_gt_5_g_gt_3r_b_lt_0_5": 0
+        },
+        "normal_vs_decoded_quilt_abs_error": {
+          "mean_all_rgb_samples": 0.03910458226820908,
+          "p99_all_rgb_samples": 0.4233960023960104,
+          "max_all_rgb_samples": 0.9498750448360794
+        }
+      },
+      "raw_float_observation_zero_coin_halo_roi": {
+        "pixel_count": 3600,
+        "normal_mean_all_rgb_samples": 0.12838798761367798,
+        "normal_mean_rgb": [
+          0.13851747300889758,
+          0.1296749538845486,
+          0.11697157118055555
+        ],
+        "quilt_encoded_mean_all_rgb_samples": 0.22285985946655273,
+        "quilt_encoded_mean_rgb": [
+          0.2173780083283782,
+          0.22198694094601604,
+          0.2292146097910073
+        ],
+        "quilt_srgb_decoded_linear_mean_all_rgb_samples": 0.043336312370547796,
+        "quilt_srgb_decoded_linear_mean_rgb": [
+          0.04132978859629922,
+          0.04300020302411272,
+          0.04567894549123047
+        ],
+        "normal_vs_quilt_linearized_mean_absolute_error": 0.08505168698745277,
+        "normal_vs_quilt_linearized_p99_absolute_error": 0.27903734561686105
+      },
+      "raw_float_metadata_path": "docs/validation/windows-urp-vfx-rendering-incident-20261013/probes/hdr-target/phase-b/coin/evidence/hdr-float-metadata.txt",
+      "coin_minimum_float_pair": {
+        "normal": {
+          "mean_all_rgb_samples": 0.12564746457761453,
+          "p99_all_rgb_samples": 0.9931640625,
+          "mean_rgb": [
+            0.14310679729131084,
+            0.12897538703141942,
+            0.10486020941011331
+          ],
+          "p99_rgb": [
+            0.99365234375,
+            0.9931640625,
+            0.99169921875
+          ],
+          "max_rgb": [
+            1.0009765625,
+            1.0009765625,
+            1.0009765625
+          ],
+          "green_dominant_pixel_count_g_gt_5_g_gt_3r_b_lt_0_5": 0
+        },
+        "quilt_raw_rgb": {
+          "mean_all_rgb_samples": 0.24537958268674068,
+          "p99_all_rgb_samples": 0.8313726186752319,
+          "mean_rgb": [
+            0.25883688851972964,
+            0.2514873280123235,
+            0.22581453152816888
+          ],
+          "p99_rgb": [
+            0.8431373238563538,
+            0.8274510502815247,
+            0.7882353663444519
+          ],
+          "max_rgb": [
+            0.8549020290374756,
+            0.8431373238563538,
+            0.8196079134941101
+          ],
+          "green_dominant_pixel_count_g_gt_5_g_gt_3r_b_lt_0_5": 0
+        },
+        "quilt_srgb_decoded_linear": {
+          "mean_all_rgb_samples": 0.08658317349143027,
+          "p99_all_rgb_samples": 0.6583749414516458,
+          "mean_rgb": [
+            0.09927803569409173,
+            0.09018847029448651,
+            0.07028301448577202
+          ],
+          "p99_rgb": [
+            0.6795425948454239,
+            0.6514057612376861,
+            0.5840785379604849
+          ],
+          "max_rgb": [
+            0.701102018150765,
+            0.6795425948454239,
+            0.6375969970918908
+          ],
+          "green_dominant_pixel_count_g_gt_5_g_gt_3r_b_lt_0_5": 0
+        },
+        "normal_vs_decoded_quilt_abs_error": {
+          "mean_all_rgb_samples": 0.03910458226820908,
+          "p99_all_rgb_samples": 0.4233960023960104,
+          "max_all_rgb_samples": 0.9498750448360794
+        }
+      },
+      "paired_png_coin_halo_roi": {
+        "normal_luma_min": {
+          "pixel_count": 3600,
+          "normal_mean_all_rgb_samples": 0.045315904139433545,
+          "normal_mean_rgb": [
+            0.044862745098040065,
+            0.045186274509804746,
+            0.045898692810458365
+          ],
+          "quilt_encoded_mean_all_rgb_samples": 0.22288525780682641,
+          "quilt_encoded_mean_rgb": [
+            0.21737690631808163,
+            0.2219989106753792,
+            0.229279956427011
+          ],
+          "quilt_srgb_decoded_linear_mean_all_rgb_samples": 0.043344110084708024,
+          "quilt_srgb_decoded_linear_mean_rgb": [
+            0.04132921238108826,
+            0.04300152182376889,
+            0.045701596049266456
+          ],
+          "normal_vs_quilt_linearized_mean_absolute_error": 0.002418054320934647,
+          "normal_vs_quilt_linearized_p99_absolute_error": 0.007883865277795735
+        },
+        "normal_luma_max": {
+          "pixel_count": 3600,
+          "normal_mean_all_rgb_samples": 0.6114680464778504,
+          "normal_mean_rgb": [
+            0.635961873638339,
+            0.6154934640522889,
+            0.582948801742925
+          ],
+          "quilt_encoded_mean_all_rgb_samples": 0.22284713144517063,
+          "quilt_encoded_mean_rgb": [
+            0.21734749455337557,
+            0.2219782135076233,
+            0.22921568627450564
+          ],
+          "quilt_srgb_decoded_linear_mean_all_rgb_samples": 0.0433293837680787,
+          "quilt_srgb_decoded_linear_mean_rgb": [
+            0.04131754396297313,
+            0.042993861251310314,
+            0.045676746089952404
+          ],
+          "normal_vs_quilt_linearized_mean_absolute_error": 0.5681386627097718,
+          "normal_vs_quilt_linearized_p99_absolute_error": 0.85421847992447
+        },
+        "normal_png_interpretation": "raw RGB8 values divided by 255; no additional transform",
+        "quilt_png_interpretation": "RGB8 values divided by 255 and piecewise inverse-sRGB transformed"
+      }
+    }
+  },
+  "phaseC": {
+    "green": {
+      "paired_float_samples": {
+        "green-lights-first-alive": {
+          "normal": {
+            "mean_all_rgb_samples": 0.10496237402609376,
+            "p99_all_rgb_samples": 0.947265625,
+            "mean_rgb": [
+              0.1330965738474495,
+              0.10060994947329163,
+              0.08118059875754019
+            ],
+            "p99_rgb": [
+              0.99267578125,
+              0.74853515625,
+              0.7646484375
+            ],
+            "max_rgb": [
+              1.0009765625,
+              0.99951171875,
+              0.99951171875
+            ],
+            "green_dominant_pixel_count_g_gt_5_g_gt_3r_b_lt_0_5": 0
+          },
+          "quilt_raw_rgb": {
+            "mean_all_rgb_samples": 0.2406414449310547,
+            "p99_all_rgb_samples": 0.9764706492424011,
+            "mean_rgb": [
+              0.2580492849841162,
+              0.24673408305683955,
+              0.2171409667522083
+            ],
+            "p99_rgb": [
+              0.9960784912109375,
+              0.8784314393997192,
+              0.8901961445808411
+            ],
+            "max_rgb": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "green_dominant_pixel_count_g_gt_5_g_gt_3r_b_lt_0_5": 0
+          },
+          "quilt_srgb_decoded_linear": {
+            "mean_all_rgb_samples": 0.10498882217162109,
+            "p99_all_rgb_samples": 0.9473066712031907,
+            "mean_rgb": [
+              0.1331384486004798,
+              0.10062959435060015,
+              0.08119842356375229
+            ],
+            "p99_rgb": [
+              0.9911022325312134,
+              0.7454043376632601,
+              0.7681512762690987
+            ],
+            "max_rgb": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "green_dominant_pixel_count_g_gt_5_g_gt_3r_b_lt_0_5": 0
+          },
+          "normal_vs_decoded_quilt_abs_error": {
+            "mean_all_rgb_samples": 0.0015528476732581985,
+            "p99_all_rgb_samples": 0.019236671185083938,
+            "max_all_rgb_samples": 0.7456714502094608
+          }
+        },
+        "green-lights-peak-alive": {
+          "normal": {
+            "mean_all_rgb_samples": 0.10767247512775623,
+            "p99_all_rgb_samples": 0.9609375,
+            "mean_rgb": [
+              0.13587231208397835,
+              0.1038085099613225,
+              0.08333660333796784
+            ],
+            "p99_rgb": [
+              0.99267578125,
+              0.74853515625,
+              0.7666015625
+            ],
+            "max_rgb": [
+              1.0009765625,
+              0.9990234375,
+              0.9990234375
+            ],
+            "green_dominant_pixel_count_g_gt_5_g_gt_3r_b_lt_0_5": 0
+          },
+          "quilt_raw_rgb": {
+            "mean_all_rgb_samples": 0.24390851875268216,
+            "p99_all_rgb_samples": 0.9803922176361084,
+            "mean_rgb": [
+              0.26104397468013674,
+              0.2510304930351224,
+              0.2196510885427873
+            ],
+            "p99_rgb": [
+              0.9960784912109375,
+              0.8784314393997192,
+              0.8901961445808411
+            ],
+            "max_rgb": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "green_dominant_pixel_count_g_gt_5_g_gt_3r_b_lt_0_5": 0
+          },
+          "quilt_srgb_decoded_linear": {
+            "mean_all_rgb_samples": 0.10768083703866516,
+            "p99_all_rgb_samples": 0.9559734879176074,
+            "mean_rgb": [
+              0.13588630016952852,
+              0.10381284506705703,
+              0.08334336587937896
+            ],
+            "p99_rgb": [
+              0.9911022325312134,
+              0.7454043376632601,
+              0.7681512762690987
+            ],
+            "max_rgb": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "green_dominant_pixel_count_g_gt_5_g_gt_3r_b_lt_0_5": 0
+          },
+          "normal_vs_decoded_quilt_abs_error": {
+            "mean_all_rgb_samples": 0.0015484368670576013,
+            "p99_all_rgb_samples": 0.01937445948468486,
+            "max_all_rgb_samples": 0.9679772016462802
+          }
+        }
+      },
+      "native_and_visual_frame_counts": {
+        "csv_rows": 587,
+        "native_green_lights_alive_positive_rows": 405,
+        "normal_green_pixel_positive_rows": 466,
+        "quilt_green_pixel_positive_rows": 466,
+        "normal_quilt_visual_presence_identical_rows": 587,
+        "both_visual_positive_rows": 466,
+        "both_visual_zero_rows": 121,
+        "native_positive_and_both_visual_positive_rows": 395,
+        "native_positive_and_both_visual_zero_rows": 10
+      },
+      "native_pair_metadata_path": "docs/validation/windows-urp-vfx-hdr-rootcause-20261013/phase-c/runs/green/evidence/green-lights-float-metadata.txt"
+    },
+    "coin": {
+      "raw_float_observation_zero_pair": {
+        "normal": {
+          "mean_all_rgb_samples": 0.12564746457761453,
+          "p99_all_rgb_samples": 0.9931640625,
+          "mean_rgb": [
+            0.14310679729131084,
+            0.12897538703141942,
+            0.10486020941011331
+          ],
+          "p99_rgb": [
+            0.99365234375,
+            0.9931640625,
+            0.99169921875
+          ],
+          "max_rgb": [
+            1.0009765625,
+            1.0009765625,
+            1.0009765625
+          ],
+          "green_dominant_pixel_count_g_gt_5_g_gt_3r_b_lt_0_5": 0
+        },
+        "quilt_raw_rgb": {
+          "mean_all_rgb_samples": 0.2955907487757231,
+          "p99_all_rgb_samples": 0.9960784912109375,
+          "mean_rgb": [
+            0.3146600584804266,
+            0.3008285849600011,
+            0.27128360288674164
+          ],
+          "p99_rgb": [
+            0.9960784912109375,
+            0.9960784912109375,
+            0.9960784912109375
+          ],
+          "max_rgb": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "green_dominant_pixel_count_g_gt_5_g_gt_3r_b_lt_0_5": 0
+        },
+        "quilt_srgb_decoded_linear": {
+          "mean_all_rgb_samples": 0.1257043871797891,
+          "p99_all_rgb_samples": 0.9911022325312134,
+          "mean_rgb": [
+            0.143155472309211,
+            0.12903800500514823,
+            0.10491968422502979
+          ],
+          "p99_rgb": [
+            0.9911022325312134,
+            0.9911022325312134,
+            0.9911022325312134
+          ],
+          "max_rgb": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "green_dominant_pixel_count_g_gt_5_g_gt_3r_b_lt_0_5": 0
+        },
+        "normal_vs_decoded_quilt_abs_error": {
+          "mean_all_rgb_samples": 0.0011007074261745505,
+          "p99_all_rgb_samples": 0.00789369958239261,
+          "max_all_rgb_samples": 0.028335945217699443
+        }
+      },
+      "raw_float_observation_zero_coin_halo_roi": {
+        "pixel_count": 3600,
+        "normal_mean_all_rgb_samples": 0.12838798761367798,
+        "normal_mean_rgb": [
+          0.13851747300889758,
+          0.1296749538845486,
+          0.11697157118055555
+        ],
+        "quilt_encoded_mean_all_rgb_samples": 0.38313910365104675,
+        "quilt_encoded_mean_rgb": [
+          0.39780503393047384,
+          0.3852876037524806,
+          0.3663246392624246
+        ],
+        "quilt_srgb_decoded_linear_mean_all_rgb_samples": 0.12854120778655817,
+        "quilt_srgb_decoded_linear_mean_rgb": [
+          0.13866038973698236,
+          0.1298530677166844,
+          0.11711016590600622
+        ],
+        "normal_vs_quilt_linearized_mean_absolute_error": 0.0013682603854034366,
+        "normal_vs_quilt_linearized_p99_absolute_error": 0.004888316939129956
+      },
+      "raw_float_metadata_path": "docs/validation/windows-urp-vfx-hdr-rootcause-20261013/phase-c/runs/coin/evidence/hdr-float-metadata.txt",
+      "coin_minimum_float_pair": {
+        "normal": {
+          "mean_all_rgb_samples": 0.12564746457761453,
+          "p99_all_rgb_samples": 0.9931640625,
+          "mean_rgb": [
+            0.14310679729131084,
+            0.12897538703141942,
+            0.10486020941011331
+          ],
+          "p99_rgb": [
+            0.99365234375,
+            0.9931640625,
+            0.99169921875
+          ],
+          "max_rgb": [
+            1.0009765625,
+            1.0009765625,
+            1.0009765625
+          ],
+          "green_dominant_pixel_count_g_gt_5_g_gt_3r_b_lt_0_5": 0
+        },
+        "quilt_raw_rgb": {
+          "mean_all_rgb_samples": 0.2955907487757231,
+          "p99_all_rgb_samples": 0.9960784912109375,
+          "mean_rgb": [
+            0.3146600584804266,
+            0.3008285849600011,
+            0.27128360288674164
+          ],
+          "p99_rgb": [
+            0.9960784912109375,
+            0.9960784912109375,
+            0.9960784912109375
+          ],
+          "max_rgb": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "green_dominant_pixel_count_g_gt_5_g_gt_3r_b_lt_0_5": 0
+        },
+        "quilt_srgb_decoded_linear": {
+          "mean_all_rgb_samples": 0.1257043871797891,
+          "p99_all_rgb_samples": 0.9911022325312134,
+          "mean_rgb": [
+            0.143155472309211,
+            0.12903800500514823,
+            0.10491968422502979
+          ],
+          "p99_rgb": [
+            0.9911022325312134,
+            0.9911022325312134,
+            0.9911022325312134
+          ],
+          "max_rgb": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "green_dominant_pixel_count_g_gt_5_g_gt_3r_b_lt_0_5": 0
+        },
+        "normal_vs_decoded_quilt_abs_error": {
+          "mean_all_rgb_samples": 0.0011007074261745505,
+          "p99_all_rgb_samples": 0.00789369958239261,
+          "max_all_rgb_samples": 0.028335945217699443
+        }
+      },
+      "paired_png_coin_halo_roi": {
+        "normal_luma_min": {
+          "pixel_count": 3600,
+          "normal_mean_all_rgb_samples": 0.04498293391430646,
+          "normal_mean_rgb": [
+            0.044278867102397444,
+            0.044827886710240426,
+            0.045842047930284055
+          ],
+          "quilt_encoded_mean_all_rgb_samples": 0.22748838053740014,
+          "quilt_encoded_mean_rgb": [
+            0.22566666666666382,
+            0.2270762527233082,
+            0.2297222222222179
+          ],
+          "quilt_srgb_decoded_linear_mean_all_rgb_samples": 0.04499850782817224,
+          "quilt_srgb_decoded_linear_mean_rgb": [
+            0.04429089321419554,
+            0.0448437417248399,
+            0.04586088854548076
+          ],
+          "normal_vs_quilt_linearized_mean_absolute_error": 0.0012407139060506788,
+          "normal_vs_quilt_linearized_p99_absolute_error": 0.0038808406045572064
+        },
+        "normal_luma_max": {
+          "pixel_count": 3600,
+          "normal_mean_all_rgb_samples": 0.6507970225127088,
+          "normal_mean_rgb": [
+            0.6751318082788498,
+            0.6548965141612081,
+            0.6223627450980384
+          ],
+          "quilt_encoded_mean_all_rgb_samples": 0.8232156862745099,
+          "quilt_encoded_mean_rgb": [
+            0.837299564270175,
+            0.8256764705882493,
+            0.8066710239651457
+          ],
+          "quilt_srgb_decoded_linear_mean_all_rgb_samples": 0.6509342790660473,
+          "quilt_srgb_decoded_linear_mean_rgb": [
+            0.6753483193463063,
+            0.6549900566765621,
+            0.622464461175276
+          ],
+          "normal_vs_quilt_linearized_mean_absolute_error": 0.0035751239590139866,
+          "normal_vs_quilt_linearized_p99_absolute_error": 0.011116335964482471
+        },
+        "normal_png_interpretation": "raw RGB8 values divided by 255; no additional transform",
+        "quilt_png_interpretation": "RGB8 values divided by 255 and piecewise inverse-sRGB transformed"
+      }
+    }
+  },
+  "inputs": [
+    {
+      "path": "docs/validation/windows-urp-vfx-hdr-rootcause-20261013/phase-c/runs/coin/evidence/coin-min-normal-float-peak.bin",
+      "bytes": 2764800,
+      "sha256": "3D6DC6E95298C6BEEA8CE0DD79E505790F908724BC65DF63575CA2FA48ED937C"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-hdr-rootcause-20261013/phase-c/runs/coin/evidence/coin-min-quilt-paired-float-peak.bin",
+      "bytes": 2764800,
+      "sha256": "D11F53F35B0DE2725BB18F913ACE75BBD842D9929336B9E9CD57177D5D2390B0"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-hdr-rootcause-20261013/phase-c/runs/coin/evidence/hdr-float-metadata.txt",
+      "bytes": 463,
+      "sha256": "9550509BADD9C53998237925B55B57F00A70ED1DAF47CFC5F8A14429417836FF"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-hdr-rootcause-20261013/phase-c/runs/coin/evidence/hdr-float-normal.bin",
+      "bytes": 2764800,
+      "sha256": "3D6DC6E95298C6BEEA8CE0DD79E505790F908724BC65DF63575CA2FA48ED937C"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-hdr-rootcause-20261013/phase-c/runs/coin/evidence/hdr-float-quilt.bin",
+      "bytes": 2764800,
+      "sha256": "D11F53F35B0DE2725BB18F913ACE75BBD842D9929336B9E9CD57177D5D2390B0"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-hdr-rootcause-20261013/phase-c/runs/coin/evidence/normal-luma-max-normal.png",
+      "bytes": 181287,
+      "sha256": "FF847787E4464E98F9B929FA0BB4822753A70D96232A3388B5812CAE7EF3A7FF"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-hdr-rootcause-20261013/phase-c/runs/coin/evidence/normal-luma-max-quilt.png",
+      "bytes": 199066,
+      "sha256": "BC69ED1D804BCADA395E24E4C2A9A6CAEE59D51C83CC6E9E561AACB971DD4EB5"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-hdr-rootcause-20261013/phase-c/runs/coin/evidence/normal-luma-min-normal.png",
+      "bytes": 148200,
+      "sha256": "379FCA8232B02CF9EA35D56A38761D2018D09A2AA15C5AD162FB4F8A0838A00D"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-hdr-rootcause-20261013/phase-c/runs/coin/evidence/normal-luma-min-quilt.png",
+      "bytes": 211637,
+      "sha256": "EB68412D65A255791AADF7B04F2BE2BABC430925BB8625A601506E59A1330EC4"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-hdr-rootcause-20261013/phase-c/runs/green/evidence/frames.csv",
+      "bytes": 97068,
+      "sha256": "5A1C2E1D2D4EF930D13E7057078EA8BB656FF64632655E40D847330255401D7A"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-hdr-rootcause-20261013/phase-c/runs/green/evidence/green-lights-first-alive-normal.bin",
+      "bytes": 2764800,
+      "sha256": "1C176F3FD380F1803372B6E8467DA121EFE8D1AF9F2028C499A2462BB9171748"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-hdr-rootcause-20261013/phase-c/runs/green/evidence/green-lights-first-alive-quilt.bin",
+      "bytes": 2764800,
+      "sha256": "E14D65963815D26257911676A60FF59A88E1E50CF639146A82B18DD1D5E1B00F"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-hdr-rootcause-20261013/phase-c/runs/green/evidence/green-lights-float-metadata.txt",
+      "bytes": 185,
+      "sha256": "2F00ADF672ACC0A82B536FD5A31FD9357C1C27925557A55DA6D07F4C928E6585"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-hdr-rootcause-20261013/phase-c/runs/green/evidence/green-lights-peak-alive-normal.bin",
+      "bytes": 2764800,
+      "sha256": "1B81282679F1D2C3A940C585D92177606D2ECED48971DFB4EEBCDC53505085F4"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-hdr-rootcause-20261013/phase-c/runs/green/evidence/green-lights-peak-alive-quilt.bin",
+      "bytes": 2764800,
+      "sha256": "0C84CE31B9D7069F27CCD541DBFDBF6740EBEF59EF15AB389ED72E854B7C5E97"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-rendering-incident-20261013/probes/hdr-target/phase-b/coin/evidence/coin-min-normal-float-peak.bin",
+      "bytes": 2764800,
+      "sha256": "3D6DC6E95298C6BEEA8CE0DD79E505790F908724BC65DF63575CA2FA48ED937C"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-rendering-incident-20261013/probes/hdr-target/phase-b/coin/evidence/coin-min-quilt-paired-float-peak.bin",
+      "bytes": 2764800,
+      "sha256": "23797FA4585F162D737D31D7C8F16BBA451E15A590DF29FFB963A2915C79C2D9"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-rendering-incident-20261013/probes/hdr-target/phase-b/coin/evidence/hdr-float-metadata.txt",
+      "bytes": 470,
+      "sha256": "F1B1D09081B071AF6389C63184082469F15F40603CE16408376A67EED5508C26"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-rendering-incident-20261013/probes/hdr-target/phase-b/coin/evidence/hdr-float-normal.bin",
+      "bytes": 2764800,
+      "sha256": "3D6DC6E95298C6BEEA8CE0DD79E505790F908724BC65DF63575CA2FA48ED937C"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-rendering-incident-20261013/probes/hdr-target/phase-b/coin/evidence/hdr-float-quilt.bin",
+      "bytes": 2764800,
+      "sha256": "23797FA4585F162D737D31D7C8F16BBA451E15A590DF29FFB963A2915C79C2D9"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-rendering-incident-20261013/probes/hdr-target/phase-b/coin/evidence/normal-luma-max-normal.png",
+      "bytes": 178912,
+      "sha256": "959316A42E6939C8767BC414805796727006B66F53168057D73841D609744B06"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-rendering-incident-20261013/probes/hdr-target/phase-b/coin/evidence/normal-luma-max-quilt.png",
+      "bytes": 217315,
+      "sha256": "E03906E8419ABFFF325A637C1C91FCB86F0E8F40F4BA0BA01FCCB282A9ACEE80"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-rendering-incident-20261013/probes/hdr-target/phase-b/coin/evidence/normal-luma-min-normal.png",
+      "bytes": 148979,
+      "sha256": "F6A78153F7B0FBC810EFB165F0D32B6FC04BAE3E11C8507BB3F4EFAD42BAED2F"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-rendering-incident-20261013/probes/hdr-target/phase-b/coin/evidence/normal-luma-min-quilt.png",
+      "bytes": 221289,
+      "sha256": "EC4A93378E970DEA22D794A166681F6C29F8BD688888B9005DE7A03457196D0A"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-rendering-incident-20261013/probes/hdr-target/phase-b/green/evidence/frames.csv",
+      "bytes": 97588,
+      "sha256": "5CDAF4397D60C2D490F5E93D9775C35A105638B6FDC6567E09B07CA19DCE95BB"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-rendering-incident-20261013/probes/hdr-target/phase-b/green/evidence/green-lights-first-alive-normal.bin",
+      "bytes": 2764800,
+      "sha256": "4887A0A74DBCEB57C598231DDCFFFAA3AD1CA547FE9E393201582448952CD58A"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-rendering-incident-20261013/probes/hdr-target/phase-b/green/evidence/green-lights-first-alive-quilt.bin",
+      "bytes": 2764800,
+      "sha256": "422CBB86BFE5D9CC0A0985630BA15335A2B35E726B653475200B8455C1CD0471"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-rendering-incident-20261013/probes/hdr-target/phase-b/green/evidence/green-lights-float-metadata.txt",
+      "bytes": 183,
+      "sha256": "8D5ACE9CD4ABF9DBF133ED6FA2E73DA00191C63DCAE97BAF5C32CC3FCCB72D46"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-rendering-incident-20261013/probes/hdr-target/phase-b/green/evidence/green-lights-peak-alive-normal.bin",
+      "bytes": 2764800,
+      "sha256": "56BFE258841692190B90A926070F6BCBDF725BD1227897C74A2EE29B4411B071"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-rendering-incident-20261013/probes/hdr-target/phase-b/green/evidence/green-lights-peak-alive-quilt.bin",
+      "bytes": 2764800,
+      "sha256": "3C4C9CC2DDED0AEF13438C7214022D4DE4CCCB366389FE9FE8BB45F4BCEFA6D7"
+    }
+  ]
+}

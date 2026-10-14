@@ -1,0 +1,33 @@
+{
+  "schema": "original-editor-gui-ready-v1",
+  "status": "editor_cli_connected",
+  "projectPath": "E:\\URPSample_6.6.41f1",
+  "editorPid": 22560,
+  "editorStartUtc": "2026-10-13T19:26:39.0594567Z",
+  "editorExecutable": "C:\\Program Files\\Unity\\Hub\\Editor\\6000.6.4f1\\Editor\\Unity.exe",
+  "editorVersion": "6000.6.4f1_12bfff696524",
+  "editorLogPath": "E:\\LookingGlassSDK\\.local\\windows-urp-vfx-original-remedy-20261013\\gui-ready-20261013T192637850Z\\editor.log",
+  "cliPath": "C:\\Users\\zzaba\\AppData\\Local\\Unity\\bin\\unity.exe",
+  "cliVersion": "1.0.0-beta.13",
+  "processHandlePinned": true,
+  "cliConnected": true,
+  "exactTargetStateReady": true,
+  "beforeHashes": {
+    "sceneSha256": "909CF2976E91B2B5278A6550BF85739805749E5BFC9010166B8EF6882F9115AC",
+    "sourceGraphSha256": "78D34F482963B47E6555E9218389A98A045F614F3F5B300776C78948CFE96556",
+    "treatmentGraphSha256": "EF29E6CD2361E92BAE2E0CC1937F75ED8A44A5B2ACA1AEFA614F918B5371F097",
+    "sourcePrefabSha256": "0BB66828975CFC45F4A4615AA60DF579B5EB1672225FCAABB9DC382AD0C0519B"
+  },
+  "bridgePid": 29956,
+  "bridgePresentBefore": true,
+  "timedOut": false,
+  "editorExitedBeforeReady": false,
+  "completedUtc": "2026-10-13T19:26:52.7453389Z",
+  "afterHashes": {
+    "sceneSha256": "909CF2976E91B2B5278A6550BF85739805749E5BFC9010166B8EF6882F9115AC",
+    "sourceGraphSha256": "78D34F482963B47E6555E9218389A98A045F614F3F5B300776C78948CFE96556",
+    "treatmentGraphSha256": "EF29E6CD2361E92BAE2E0CC1937F75ED8A44A5B2ACA1AEFA614F918B5371F097",
+    "sourcePrefabSha256": "0BB66828975CFC45F4A4615AA60DF579B5EB1672225FCAABB9DC382AD0C0519B"
+  },
+  "hashesUnchanged": true
+}

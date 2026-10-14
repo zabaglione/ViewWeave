@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Failed(Child)" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-13 06:42:07Z" end-time="2026-10-13 06:42:07Z" duration="0.051997">
+  <test-suite type="TestSuite" id="1000" name="URPSample_6.6.41f1" fullname="URPSample_6.6.41f1" runstate="Runnable" testcasecount="2" result="Failed" site="Child" start-time="2026-10-13 06:42:07Z" end-time="2026-10-13 06:42:07Z" duration="0.051997" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <failure>
+      <message><![CDATA[One or more child tests had errors]]></message>
+    </failure>
+    <test-suite type="Assembly" id="1013" name="ViewWeave.FrustumMetadata.Editor.Tests.dll" fullname="E:/LookingGlassSDK/.local/windows-vfx-scene-comparison-20261013/URP/UnityProject/Library/ScriptAssemblies/ViewWeave.FrustumMetadata.Editor.Tests.dll" runstate="Runnable" testcasecount="2" result="Failed" site="Child" start-time="2026-10-13 06:42:07Z" end-time="2026-10-13 06:42:07Z" duration="0.044785" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="54052" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <failure>
+        <message><![CDATA[One or more child tests had errors]]></message>
+      </failure>
+      <test-suite type="TestSuite" id="1014" name="ViewWeave" fullname="ViewWeave" runstate="Runnable" testcasecount="2" result="Failed" site="Child" start-time="2026-10-13 06:42:07Z" end-time="2026-10-13 06:42:07Z" duration="0.044314" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <failure>
+          <message><![CDATA[One or more child tests had errors]]></message>
+        </failure>
+        <test-suite type="TestSuite" id="1015" name="SceneComparison" fullname="ViewWeave.SceneComparison" runstate="Runnable" testcasecount="2" result="Failed" site="Child" start-time="2026-10-13 06:42:07Z" end-time="2026-10-13 06:42:07Z" duration="0.044053" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <failure>
+            <message><![CDATA[One or more child tests had errors]]></message>
+          </failure>
+          <test-suite type="TestSuite" id="1016" name="Tests" fullname="ViewWeave.SceneComparison.Tests" runstate="Runnable" testcasecount="2" result="Failed" site="Child" start-time="2026-10-13 06:42:07Z" end-time="2026-10-13 06:42:07Z" duration="0.043751" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-suite type="TestFixture" id="1011" name="SampleTextureCapacityFixture" fullname="ViewWeave.SceneComparison.Tests.SampleTextureCapacityFixture" classname="ViewWeave.SceneComparison.Tests.SampleTextureCapacityFixture" runstate="Runnable" testcasecount="1" result="Failed" site="Child" start-time="2026-10-13 06:42:07Z" end-time="2026-10-13 06:42:07Z" duration="0.042624" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <failure>
+                <message><![CDATA[One or more child tests had errors]]></message>
+              </failure>
+              <test-case id="1012" name="CreatesAutoAndCustomCapacityOnlyClonesAndDescribesCompiledAssets" fullname="ViewWeave.SceneComparison.Tests.SampleTextureCapacityFixture.CreatesAutoAndCustomCapacityOnlyClonesAndDescribesCompiledAssets" methodname="CreatesAutoAndCustomCapacityOnlyClonesAndDescribesCompiledAssets" classname="ViewWeave.SceneComparison.Tests.SampleTextureCapacityFixture" runstate="Runnable" seed="864743039" result="Failed" start-time="2026-10-13 06:42:07Z" end-time="2026-10-13 06:42:07Z" duration="0.029943" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[  A loaded scene camera is active.
+  Expected: 0
+  But was:  1
+]]></message>
+                  <stack-trace><![CDATA[at ViewWeave.SceneComparison.Tests.SampleTextureCapacityFixture.CreatesAutoAndCustomCapacityOnlyClonesAndDescribesCompiledAssets () [0x0012b] in E:\LookingGlassSDK\.local\windows-vfx-scene-comparison-20261013\URP\UnityProject\Assets\Editor\FrustumMetadataProbe\SampleTextureCapacityFixture.cs:53
+]]></stack-trace>
+                </failure>
+                <output><![CDATA[Saving results to: C:/Users/zzaba/AppData/LocalLow/DefaultCompany/URPSample_6_6_41f1\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

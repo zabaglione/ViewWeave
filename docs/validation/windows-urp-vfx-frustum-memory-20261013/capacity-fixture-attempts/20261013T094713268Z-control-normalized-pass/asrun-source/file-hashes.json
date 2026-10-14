@@ -1,0 +1,12 @@
+[
+  {
+    "name": "SampleTextureCapacityFixture.cs",
+    "sha256": "D4D1ED111F9701EE4AEB41B989AA6EDFB62EA2830958C8C7D7720E2D612DA73D",
+    "bytes": 49976
+  },
+  {
+    "name": "Run-SampleTextureCapacityFixture.ps1",
+    "sha256": "79F59441A75262CDF5CA2BC50FC2B0FDFB4D8943B5A8BF906D3AA97D87E6B852",
+    "bytes": 9539
+  }
+]

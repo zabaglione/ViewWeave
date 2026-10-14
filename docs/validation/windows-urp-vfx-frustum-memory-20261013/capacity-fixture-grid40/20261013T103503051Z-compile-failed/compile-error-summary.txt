@@ -1,0 +1,5 @@
+Unity 6000.6.4f1 compile failed before NUnit XML was produced.
+Compiler error: CS0029 cannot implicitly convert type string to long.
+Affected fixture source fields: control/auto/custom grid parameter and output-slot file IDs (six assignments).
+The fixture source was corrected to parse invariant-culture Int64 values before a separate successful exact-case rerun.
+The failed attempt is retained as non-passing evidence; it is not included in pass counts.

@@ -1,0 +1,425 @@
+{
+  "schemaVersion": 1,
+  "capturedUtc": "2026-10-13T04:43:35.8705469Z",
+  "testProject": "Tests/Pipelines/Unity",
+  "unityVersion": "6000.6.4f1",
+  "graphicsApiRequested": "D3D12",
+  "actualGraphicsApiEvidence": "Direct3D 12 markers parsed from local Editor logs; full logs are not included.",
+  "resolvedPackages": [
+    {
+      "name": "com.unity.render-pipelines.universal",
+      "version": "17.6.0",
+      "source": "builtin"
+    },
+    {
+      "name": "com.unity.render-pipelines.high-definition",
+      "version": "17.6.0",
+      "source": "builtin"
+    },
+    {
+      "name": "com.unity.visualeffectgraph",
+      "version": "17.6.0",
+      "source": "builtin"
+    },
+    {
+      "name": "com.unity.test-framework",
+      "version": "1.8.0",
+      "source": "builtin"
+    },
+    {
+      "name": "com.zabaglione.lookingglass.viewweave.core",
+      "version": "file:../../../../Packages/com.zabaglione.lookingglass.viewweave.core",
+      "source": "local"
+    },
+    {
+      "name": "com.zabaglione.lookingglass.viewweave.urp",
+      "version": "file:../../../../Packages/com.zabaglione.lookingglass.viewweave.urp",
+      "source": "local"
+    },
+    {
+      "name": "com.zabaglione.lookingglass.viewweave.hdrp",
+      "version": "file:../../../../Packages/com.zabaglione.lookingglass.viewweave.hdrp",
+      "source": "local"
+    },
+    {
+      "name": "com.zabaglione.lookingglass.viewweave.bridge",
+      "version": "file:../../../../Packages/com.zabaglione.lookingglass.viewweave.bridge",
+      "source": "local"
+    }
+  ],
+  "manifestTestFrameworkRequest": "1.5.1",
+  "suiteCasesRequested": 12,
+  "suiteCasesWithPassingGate": 12,
+  "suiteCasesFailed": 0,
+  "suiteCasesNotExecuted": 0,
+  "firstAttempt": {
+    "label": "msaa-lifecycle",
+    "status": "compile-failed-no-nunit-result",
+    "exitCode": 1,
+    "xmlExists": false,
+    "safeDiagnostic": {
+      "code": "CS0246",
+      "symbol": "System.InvalidOperationException",
+      "source": "Assets/SrpAdditionalValidation/QuiltRendererMsaaLifecycleTests.cs",
+      "line": 353
+    },
+    "includedInPassCount": false
+  },
+  "userRestartInterruptedRun": {
+    "label": "bridge-hdrp-editor-preview-owned-pre-restart",
+    "startedUtc": "2026-10-13T04:20:12Z",
+    "status": "interrupted-by-user-reported-operating-system-restart",
+    "editorLogShared": false,
+    "editorLogPath": ".local/windows-urp-vfx-hdr-fix-20261013/Results/bridge-hdrp-editor-preview-owned-20261013T042012322Z-editor.log",
+    "nunitXmlExists": false,
+    "runnerRecordExists": false,
+    "countedAsTestResult": false,
+    "startedUtcPrecision": "Approximate; derived from the result filename because no runner record was captured."
+  },
+  "runs": [
+    {
+      "label": "bridge-hdrp-editor-preview-owned-restart1",
+      "status": "nonpass",
+      "platform": "EditMode",
+      "filter": "ViewWeave.BridgeEditorPreviewValidation.BridgeEditorPreviewGpuTests.HdrpEditorPreviewRendersAndRejectsProfileMutationWhileOwned",
+      "expectedFullNames": [
+        "ViewWeave.BridgeEditorPreviewValidation.BridgeEditorPreviewGpuTests.HdrpEditorPreviewRendersAndRejectsProfileMutationWhileOwned"
+      ],
+      "actualFullNames": [
+        "ViewWeave.BridgeEditorPreviewValidation.BridgeEditorPreviewGpuTests.HdrpEditorPreviewRendersAndRejectsProfileMutationWhileOwned"
+      ],
+      "nunit": {
+        "total": 1,
+        "passed": 0,
+        "failed": 1,
+        "skipped": 0,
+        "inconclusive": 0,
+        "result": "Failed(Child)",
+        "caseFullNames": [
+          "ViewWeave.BridgeEditorPreviewValidation.BridgeEditorPreviewGpuTests.HdrpEditorPreviewRendersAndRejectsProfileMutationWhileOwned"
+        ]
+      },
+      "testPassGate": false,
+      "unityExitCode": 2,
+      "timeout": false,
+      "outputDrainIncomplete": false,
+      "processInventoryAvailableAfter": true,
+      "processResidualCount": 0,
+      "editorProcessId": 27100,
+      "startedUtc": "2026-10-13T04:34:45.4917897Z",
+      "endedUtc": "2026-10-13T04:35:28.6292281Z",
+      "actualGraphicsApiFromSafeLogMarker": "D3D12",
+      "rawXml": {
+        "path": "runs/bridge-hdrp-editor-preview-owned-restart1-20261013T043445174Z-runner.xml",
+        "bytes": 5683,
+        "sha256": "A266662253B721946AA2F3DB58A6B418BEB5CD62B1D7435BCB86BAB374D183BB"
+      },
+      "runnerRecordPath": "runs/bridge-hdrp-editor-preview-owned-restart1-20261013T043445174Z-runner.json"
+    },
+    {
+      "label": "bridge-local-preview-playmode-transition",
+      "status": "pass",
+      "platform": "EditMode",
+      "filter": "ViewWeave.BridgeEditorPreviewValidation.BridgeEditorPreviewGpuTests.LocalPreviewStopsBeforePlayModeTransition",
+      "expectedFullNames": [
+        "ViewWeave.BridgeEditorPreviewValidation.BridgeEditorPreviewGpuTests.LocalPreviewStopsBeforePlayModeTransition"
+      ],
+      "actualFullNames": [
+        "ViewWeave.BridgeEditorPreviewValidation.BridgeEditorPreviewGpuTests.LocalPreviewStopsBeforePlayModeTransition"
+      ],
+      "nunit": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "inconclusive": 0,
+        "result": "Passed",
+        "caseFullNames": [
+          "ViewWeave.BridgeEditorPreviewValidation.BridgeEditorPreviewGpuTests.LocalPreviewStopsBeforePlayModeTransition"
+        ]
+      },
+      "testPassGate": true,
+      "unityExitCode": 0,
+      "timeout": false,
+      "outputDrainIncomplete": false,
+      "processInventoryAvailableAfter": true,
+      "processResidualCount": 0,
+      "editorProcessId": 5880,
+      "startedUtc": "2026-10-13T04:19:23.9167617Z",
+      "endedUtc": "2026-10-13T04:20:05.2109748Z",
+      "actualGraphicsApiFromSafeLogMarker": "D3D12",
+      "rawXml": {
+        "path": "runs/bridge-local-preview-playmode-transition-20261013T041923226Z-runner.xml",
+        "bytes": 4491,
+        "sha256": "46542B43045E664518F6AB3BC6414AED58E251FB18D8057833FF5893E1DAA979"
+      },
+      "runnerRecordPath": "runs/bridge-local-preview-playmode-transition-20261013T041923226Z-runner.json"
+    },
+    {
+      "label": "bridge-urp-editor-preview-owned",
+      "status": "pass",
+      "platform": "EditMode",
+      "filter": "ViewWeave.BridgeEditorPreviewValidation.BridgeEditorPreviewGpuTests.UrpEditorPreviewRendersAndRejectsProfileMutationWhileOwned",
+      "expectedFullNames": [
+        "ViewWeave.BridgeEditorPreviewValidation.BridgeEditorPreviewGpuTests.UrpEditorPreviewRendersAndRejectsProfileMutationWhileOwned"
+      ],
+      "actualFullNames": [
+        "ViewWeave.BridgeEditorPreviewValidation.BridgeEditorPreviewGpuTests.UrpEditorPreviewRendersAndRejectsProfileMutationWhileOwned"
+      ],
+      "nunit": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "inconclusive": 0,
+        "result": "Passed",
+        "caseFullNames": [
+          "ViewWeave.BridgeEditorPreviewValidation.BridgeEditorPreviewGpuTests.UrpEditorPreviewRendersAndRejectsProfileMutationWhileOwned"
+        ]
+      },
+      "testPassGate": true,
+      "unityExitCode": 0,
+      "timeout": false,
+      "outputDrainIncomplete": false,
+      "processInventoryAvailableAfter": true,
+      "processResidualCount": 0,
+      "editorProcessId": 61820,
+      "startedUtc": "2026-10-13T04:18:40.2433305Z",
+      "endedUtc": "2026-10-13T04:19:16.4993496Z",
+      "actualGraphicsApiFromSafeLogMarker": "D3D12",
+      "rawXml": {
+        "path": "runs/bridge-urp-editor-preview-owned-20261013T041839636Z-runner.xml",
+        "bytes": 5164,
+        "sha256": "DA7A289073DD82A3397C399DA55C7F738AB828964D93F2366ADF8586CE728111"
+      },
+      "runnerRecordPath": "runs/bridge-urp-editor-preview-owned-20261013T041839636Z-runner.json"
+    },
+    {
+      "label": "msaa-lifecycle",
+      "status": "no-valid-nunit-result",
+      "platform": "PlayMode",
+      "filter": "ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests",
+      "expectedFullNames": [
+        "ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests.CoreDefaultsToLdrWithoutAnOptionalViewFormatProvider",
+        "ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests.HdrFormatReplacementRequestsPreviewStopBeforeReleasingOwnedTexture",
+        "ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests.UrpDeferredRendererFallsBackToSingleSample",
+        "ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests.UrpHdrViewResolvesToLdrAndRecreatesOnFormatToggle",
+        "ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests.UrpMsaaPreservesColorSpaceAcrossSamplesResizeAndCleanup",
+        "ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests.UrpMsaaRecreatesResolveOnResizeAndDisable",
+        "ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests.UrpMsaaRequestedSamplesFollowDeviceSupport"
+      ],
+      "actualFullNames": [],
+      "nunit": null,
+      "testPassGate": false,
+      "unityExitCode": 1,
+      "timeout": false,
+      "outputDrainIncomplete": false,
+      "processInventoryAvailableAfter": true,
+      "processResidualCount": 0,
+      "editorProcessId": 114360,
+      "startedUtc": "2026-10-13T04:13:33.8626551Z",
+      "endedUtc": "2026-10-13T04:13:52.6415361Z",
+      "actualGraphicsApiFromSafeLogMarker": "D3D12",
+      "rawXml": null,
+      "runnerRecordPath": "runs/msaa-lifecycle-20261013T041333115Z-runner.json"
+    },
+    {
+      "label": "msaa-lifecycle-retry1",
+      "status": "pass",
+      "platform": "PlayMode",
+      "filter": "ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests",
+      "expectedFullNames": [
+        "ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests.CoreDefaultsToLdrWithoutAnOptionalViewFormatProvider",
+        "ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests.HdrFormatReplacementRequestsPreviewStopBeforeReleasingOwnedTexture",
+        "ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests.UrpDeferredRendererFallsBackToSingleSample",
+        "ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests.UrpHdrViewResolvesToLdrAndRecreatesOnFormatToggle",
+        "ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests.UrpMsaaPreservesColorSpaceAcrossSamplesResizeAndCleanup",
+        "ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests.UrpMsaaRecreatesResolveOnResizeAndDisable",
+        "ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests.UrpMsaaRequestedSamplesFollowDeviceSupport"
+      ],
+      "actualFullNames": [
+        "ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests.CoreDefaultsToLdrWithoutAnOptionalViewFormatProvider",
+        "ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests.HdrFormatReplacementRequestsPreviewStopBeforeReleasingOwnedTexture",
+        "ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests.UrpDeferredRendererFallsBackToSingleSample",
+        "ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests.UrpHdrViewResolvesToLdrAndRecreatesOnFormatToggle",
+        "ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests.UrpMsaaPreservesColorSpaceAcrossSamplesResizeAndCleanup",
+        "ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests.UrpMsaaRecreatesResolveOnResizeAndDisable",
+        "ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests.UrpMsaaRequestedSamplesFollowDeviceSupport"
+      ],
+      "nunit": {
+        "total": 7,
+        "passed": 7,
+        "failed": 0,
+        "skipped": 0,
+        "inconclusive": 0,
+        "result": "Passed",
+        "caseFullNames": [
+          "ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests.CoreDefaultsToLdrWithoutAnOptionalViewFormatProvider",
+          "ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests.HdrFormatReplacementRequestsPreviewStopBeforeReleasingOwnedTexture",
+          "ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests.UrpDeferredRendererFallsBackToSingleSample",
+          "ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests.UrpHdrViewResolvesToLdrAndRecreatesOnFormatToggle",
+          "ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests.UrpMsaaPreservesColorSpaceAcrossSamplesResizeAndCleanup",
+          "ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests.UrpMsaaRecreatesResolveOnResizeAndDisable",
+          "ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests.UrpMsaaRequestedSamplesFollowDeviceSupport"
+        ]
+      },
+      "testPassGate": true,
+      "unityExitCode": 0,
+      "timeout": false,
+      "outputDrainIncomplete": false,
+      "processInventoryAvailableAfter": true,
+      "processResidualCount": 0,
+      "editorProcessId": 121756,
+      "startedUtc": "2026-10-13T04:15:50.3347407Z",
+      "endedUtc": "2026-10-13T04:16:51.3328716Z",
+      "actualGraphicsApiFromSafeLogMarker": "D3D12",
+      "rawXml": {
+        "path": "runs/msaa-lifecycle-retry1-20261013T041549458Z-runner.xml",
+        "bytes": 9746,
+        "sha256": "31FA61F84A8FDE841EB978D1C9AB99926227B4933249C945C0AE918016FF5F4F"
+      },
+      "runnerRecordPath": "runs/msaa-lifecycle-retry1-20261013T041549458Z-runner.json"
+    },
+    {
+      "label": "urp-msaa-effective-permission",
+      "status": "pass",
+      "platform": "PlayMode",
+      "filter": "ViewWeave.GraphicsCompatibility.UrpTaaPlatformTests.QuiltMsaaFollowsEffectiveRendererAndSourcePermission",
+      "expectedFullNames": [
+        "ViewWeave.GraphicsCompatibility.UrpTaaPlatformTests.QuiltMsaaFollowsEffectiveRendererAndSourcePermission"
+      ],
+      "actualFullNames": [
+        "ViewWeave.GraphicsCompatibility.UrpTaaPlatformTests.QuiltMsaaFollowsEffectiveRendererAndSourcePermission"
+      ],
+      "nunit": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "inconclusive": 0,
+        "result": "Passed",
+        "caseFullNames": [
+          "ViewWeave.GraphicsCompatibility.UrpTaaPlatformTests.QuiltMsaaFollowsEffectiveRendererAndSourcePermission"
+        ]
+      },
+      "testPassGate": true,
+      "unityExitCode": 0,
+      "timeout": false,
+      "outputDrainIncomplete": false,
+      "processInventoryAvailableAfter": true,
+      "processResidualCount": 0,
+      "editorProcessId": 87576,
+      "startedUtc": "2026-10-13T04:17:50.1116231Z",
+      "endedUtc": "2026-10-13T04:18:28.9562969Z",
+      "actualGraphicsApiFromSafeLogMarker": "D3D12",
+      "rawXml": {
+        "path": "runs/urp-msaa-effective-permission-20261013T041749513Z-runner.xml",
+        "bytes": 4144,
+        "sha256": "648555BBC915C6514829B09D1EDB749209A40E00B6E38B463EAB1DE65C4FAC06"
+      },
+      "runnerRecordPath": "runs/urp-msaa-effective-permission-20261013T041749513Z-runner.json"
+    },
+    {
+      "label": "urp-taa-independent-histories",
+      "status": "pass",
+      "platform": "PlayMode",
+      "filter": "ViewWeave.GraphicsCompatibility.UrpTaaPlatformTests.QuiltTaaHasIndependentAccumulatingHistoriesAndChangedPixels",
+      "expectedFullNames": [
+        "ViewWeave.GraphicsCompatibility.UrpTaaPlatformTests.QuiltTaaHasIndependentAccumulatingHistoriesAndChangedPixels"
+      ],
+      "actualFullNames": [
+        "ViewWeave.GraphicsCompatibility.UrpTaaPlatformTests.QuiltTaaHasIndependentAccumulatingHistoriesAndChangedPixels"
+      ],
+      "nunit": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "inconclusive": 0,
+        "result": "Passed",
+        "caseFullNames": [
+          "ViewWeave.GraphicsCompatibility.UrpTaaPlatformTests.QuiltTaaHasIndependentAccumulatingHistoriesAndChangedPixels"
+        ]
+      },
+      "testPassGate": true,
+      "unityExitCode": 0,
+      "timeout": false,
+      "outputDrainIncomplete": false,
+      "processInventoryAvailableAfter": true,
+      "processResidualCount": 0,
+      "editorProcessId": 99632,
+      "startedUtc": "2026-10-13T04:17:04.0075727Z",
+      "endedUtc": "2026-10-13T04:17:42.5701572Z",
+      "actualGraphicsApiFromSafeLogMarker": "D3D12",
+      "rawXml": {
+        "path": "runs/urp-taa-independent-histories-20261013T041703324Z-runner.xml",
+        "bytes": 4166,
+        "sha256": "4ADA6A26B48271BE20DB09A52FA40455C0CE7CF072AD07C4FEA7817F41E74350"
+      },
+      "runnerRecordPath": "runs/urp-taa-independent-histories-20261013T041703324Z-runner.json"
+    },
+    {
+      "label": "bridge-hdrp-editor-preview-cold-warm-retry2",
+      "status": "pass",
+      "platform": "EditMode",
+      "filter": "ViewWeave.BridgeEditorPreviewValidation.BridgeEditorPreviewGpuTests.HdrpEditorPreviewRendersAndRejectsProfileMutationWhileOwned",
+      "expectedFullNames": [
+        "ViewWeave.BridgeEditorPreviewValidation.BridgeEditorPreviewGpuTests.HdrpEditorPreviewRendersAndRejectsProfileMutationWhileOwned"
+      ],
+      "actualFullNames": [
+        "ViewWeave.BridgeEditorPreviewValidation.BridgeEditorPreviewGpuTests.HdrpEditorPreviewRendersAndRejectsProfileMutationWhileOwned"
+      ],
+      "nunit": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "inconclusive": 0,
+        "result": "Passed",
+        "caseFullNames": [
+          "ViewWeave.BridgeEditorPreviewValidation.BridgeEditorPreviewGpuTests.HdrpEditorPreviewRendersAndRejectsProfileMutationWhileOwned"
+        ]
+      },
+      "testPassGate": true,
+      "unityExitCode": 0,
+      "timeout": false,
+      "outputDrainIncomplete": false,
+      "processInventoryAvailableAfter": true,
+      "processResidualCount": 0,
+      "editorProcessId": 55288,
+      "startedUtc": "2026-10-13T04:42:19.713663Z",
+      "endedUtc": "2026-10-13T04:42:39.9616853Z",
+      "actualGraphicsApiFromSafeLogMarker": "D3D12",
+      "coldInitialization": {
+        "elapsedSeconds": 1.12,
+        "visible": true,
+        "greenDominant": 868,
+        "nonBlack": 868,
+        "maxRGB": "79/203/41"
+      },
+      "readinessWindow": {
+        "elapsedSeconds": 0.08,
+        "greenDominant": 868,
+        "nonBlack": 868,
+        "maxRGB": "79/203/41"
+      },
+      "rawXml": {
+        "path": "runs/bridge-hdrp-editor-preview-cold-warm-retry2-20261013T044219436Z.xml",
+        "bytes": 5145,
+        "sha256": "E7E87D239C1559FB5974D54A7C7B55FF17B6B95AD931E752C8EB5C03249E8287"
+      },
+      "runnerRecordPath": "runs/bridge-hdrp-editor-preview-cold-warm-retry2-20261013T044219436Z-runner.json"
+    }
+  ],
+  "notes": [
+    "The HDRP Editor Preview test failed its bounded green-target pixel assertion: greenDominant=868, nonBlack=868, maxRGB=79/203/41.",
+    "A separate exact-project process inventory after that run found zero Unity Editor residual processes.",
+    "The prior pre-restart run had only a local Editor log; it is not counted as a test result.",
+    "Editor logs are intentionally excluded because they may contain sensitive launch or environment data.",
+    "No user project, Looking Glass Bridge process, or physical display was modified by these unit runs.",
+    "All Unity runs were sequential."
+  ],
+  "historicalFailedTestRuns": 1,
+  "historicalCompileFailedSetupAttempts": 1,
+  "hdrpColdRetryFinding": "A separate HDRP cold RenderSourceControl call took 1.12 seconds and observed 868 green-dominant pixels in this warmed project state; the original readiness window then observed the same 868 pixels in 0.08 seconds. The earlier 22.40-second first attempt remains a distinct nonpassing run. This does not guarantee cold-start latency."
+}

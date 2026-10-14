@@ -1,0 +1,9 @@
+{
+  "schema": "viewweave-native-result-normalization-v1",
+  "sourceFile": "native-result.json",
+  "sourceSha256": "57617B1E8DC2CCBDDEBBC82230D1B91FE40643F271E0A5FE62ACE9999DF2F310",
+  "derivedFile": "native-result-derived.json",
+  "derivedSha256": "BD38C957155EDDD90175A8CCE3E9908E02136D3ED12E668846B9D927FB0AF19F",
+  "method": "Replaced question-mark characters outside JSON strings with line feeds. The as-run source wrapped pretty-print JSON in Ascii(), replacing structural line feeds with question marks; question marks inside strings were preserved.",
+  "unityRerun": false
+}

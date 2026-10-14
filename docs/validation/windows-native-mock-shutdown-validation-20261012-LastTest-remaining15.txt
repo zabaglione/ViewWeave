@@ -1,0 +1,242 @@
+Start testing: Oct 12 23:19 ???? (?W????)
+----------------------------------------------------------
+1/19 Testing: lookingglass_worker_common_test
+1/19 Test: lookingglass_worker_common_test
+Command: "E:/LookingGlassSDK/Native/build-worker-release-vs/Release/lookingglass_worker_common_test.exe"
+Directory: E:/LookingGlassSDK/Native/build-worker-release-vs
+"lookingglass_worker_common_test" start time: Oct 12 23:19 ???? (?W????)
+Output:
+----------------------------------------------------------
+portable_common_test pass
+<end of output>
+Test time =   0.03 sec
+----------------------------------------------------------
+Test Passed.
+"lookingglass_worker_common_test" end time: Oct 12 23:19 ???? (?W????)
+"lookingglass_worker_common_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+2/19 Testing: lookingglass_metadata_test
+2/19 Test: lookingglass_metadata_test
+Command: "E:/LookingGlassSDK/Native/build-worker-release-vs/Release/lookingglass_metadata_test.exe"
+Directory: E:/LookingGlassSDK/Native/build-worker-release-vs
+"lookingglass_metadata_test" start time: Oct 12 23:19 ???? (?W????)
+Output:
+----------------------------------------------------------
+metadata_test pass
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"lookingglass_metadata_test" end time: Oct 12 23:19 ???? (?W????)
+"lookingglass_metadata_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+3/19 Testing: lookingglass_subpixel_calibration_test
+3/19 Test: lookingglass_subpixel_calibration_test
+Command: "E:/LookingGlassSDK/Native/build-worker-release-vs/Release/lookingglass_subpixel_calibration_test.exe"
+Directory: E:/LookingGlassSDK/Native/build-worker-release-vs
+"lookingglass_subpixel_calibration_test" start time: Oct 12 23:19 ???? (?W????)
+Output:
+----------------------------------------------------------
+subpixel_calibration_test pass
+<end of output>
+Test time =   0.03 sec
+----------------------------------------------------------
+Test Passed.
+"lookingglass_subpixel_calibration_test" end time: Oct 12 23:19 ???? (?W????)
+"lookingglass_subpixel_calibration_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+4/19 Testing: lookingglass_metal_calibration_test
+4/19 Test: lookingglass_metal_calibration_test
+Command: "E:/LookingGlassSDK/Native/build-worker-release-vs/Release/lookingglass_metal_calibration_test.exe"
+Directory: E:/LookingGlassSDK/Native/build-worker-release-vs
+"lookingglass_metal_calibration_test" start time: Oct 12 23:19 ???? (?W????)
+Output:
+----------------------------------------------------------
+Metal calibration validation passed: 5 synthetic profiles, 5 cell modes, invalid values and ABI guards
+<end of output>
+Test time =   0.03 sec
+----------------------------------------------------------
+Test Passed.
+"lookingglass_metal_calibration_test" end time: Oct 12 23:19 ???? (?W????)
+"lookingglass_metal_calibration_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+5/19 Testing: lookingglass_bridge_subpixel_metadata_test
+5/19 Test: lookingglass_bridge_subpixel_metadata_test
+Command: "E:/LookingGlassSDK/Native/build-worker-release-vs/Release/lookingglass_bridge_subpixel_metadata_test.exe"
+Directory: E:/LookingGlassSDK/Native/build-worker-release-vs
+"lookingglass_bridge_subpixel_metadata_test" start time: Oct 12 23:19 ???? (?W????)
+Output:
+----------------------------------------------------------
+bridge_subpixel_metadata_test pass
+<end of output>
+Test time =   0.40 sec
+----------------------------------------------------------
+Test Passed.
+"lookingglass_bridge_subpixel_metadata_test" end time: Oct 12 23:19 ???? (?W????)
+"lookingglass_bridge_subpixel_metadata_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+6/19 Testing: lookingglass_manual_subpixel_presenter_test
+6/19 Test: lookingglass_manual_subpixel_presenter_test
+Command: "E:/LookingGlassSDK/Native/build-worker-release-vs/Release/lookingglass_manual_subpixel_presenter_test.exe"
+Directory: E:/LookingGlassSDK/Native/build-worker-release-vs
+"lookingglass_manual_subpixel_presenter_test" start time: Oct 12 23:19 ???? (?W????)
+Output:
+----------------------------------------------------------
+PASS: 25 GPU oracle cases; 6 calibration boundary checks passed; compared every output pixel and RGBA channel; tolerance 0.006
+<end of output>
+Test time =   0.83 sec
+----------------------------------------------------------
+Test Passed.
+"lookingglass_manual_subpixel_presenter_test" end time: Oct 12 23:19 ???? (?W????)
+"lookingglass_manual_subpixel_presenter_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+8/19 Testing: lookingglass_worker_transport_test
+8/19 Test: lookingglass_worker_transport_test
+Command: "E:/LookingGlassSDK/Native/build-worker-release-vs/Release/lookingglass_worker_transport_test.exe"
+Directory: E:/LookingGlassSDK/Native/build-worker-release-vs
+"lookingglass_worker_transport_test" start time: Oct 12 23:19 ???? (?W????)
+Output:
+----------------------------------------------------------
+worker_transport_test pass
+<end of output>
+Test time =  12.52 sec
+----------------------------------------------------------
+Test Passed.
+"lookingglass_worker_transport_test" end time: Oct 12 23:20 ???? (?W????)
+"lookingglass_worker_transport_test" time elapsed: 00:00:12
+----------------------------------------------------------
+
+9/19 Testing: lookingglass_worker_cleanup_exception_test
+9/19 Test: lookingglass_worker_cleanup_exception_test
+Command: "E:/LookingGlassSDK/Native/build-worker-release-vs/Release/lookingglass_worker_transport_test.exe" "--cleanup-exception-only"
+Directory: E:/LookingGlassSDK/Native/build-worker-release-vs
+"lookingglass_worker_cleanup_exception_test" start time: Oct 12 23:20 ???? (?W????)
+Output:
+----------------------------------------------------------
+worker_cleanup_exception_test pass
+<end of output>
+Test time =   0.34 sec
+----------------------------------------------------------
+Test Passed.
+"lookingglass_worker_cleanup_exception_test" end time: Oct 12 23:20 ???? (?W????)
+"lookingglass_worker_cleanup_exception_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+10/19 Testing: lookingglass_worker_host_initialize_failure_test
+10/19 Test: lookingglass_worker_host_initialize_failure_test
+Command: "E:/LookingGlassSDK/Native/build-worker-release-vs/Release/lookingglass_worker_transport_test.exe" "--host-initialize-failure-only"
+Directory: E:/LookingGlassSDK/Native/build-worker-release-vs
+"lookingglass_worker_host_initialize_failure_test" start time: Oct 12 23:20 ???? (?W????)
+Output:
+----------------------------------------------------------
+worker_host_initialize_failure_test pass
+<end of output>
+Test time =   0.29 sec
+----------------------------------------------------------
+Test Passed.
+"lookingglass_worker_host_initialize_failure_test" end time: Oct 12 23:20 ???? (?W????)
+"lookingglass_worker_host_initialize_failure_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+11/19 Testing: lookingglass_worker_host_uninitialize_failure_test
+11/19 Test: lookingglass_worker_host_uninitialize_failure_test
+Command: "E:/LookingGlassSDK/Native/build-worker-release-vs/Release/lookingglass_worker_transport_test.exe" "--host-uninitialize-failure-only"
+Directory: E:/LookingGlassSDK/Native/build-worker-release-vs
+"lookingglass_worker_host_uninitialize_failure_test" start time: Oct 12 23:20 ???? (?W????)
+Output:
+----------------------------------------------------------
+worker_host_uninitialize_failure_test pass
+<end of output>
+Test time =   0.34 sec
+----------------------------------------------------------
+Test Passed.
+"lookingglass_worker_host_uninitialize_failure_test" end time: Oct 12 23:20 ???? (?W????)
+"lookingglass_worker_host_uninitialize_failure_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+12/19 Testing: lookingglass_persistent_d3d11_device_test
+12/19 Test: lookingglass_persistent_d3d11_device_test
+Command: "E:/LookingGlassSDK/Native/build-worker-release-vs/Release/lookingglass_worker_transport_test.exe" "--persistent-d3d11-device-only"
+Directory: E:/LookingGlassSDK/Native/build-worker-release-vs
+"lookingglass_persistent_d3d11_device_test" start time: Oct 12 23:20 ???? (?W????)
+Output:
+----------------------------------------------------------
+persistent_d3d11_device_test pass
+<end of output>
+Test time =   0.47 sec
+----------------------------------------------------------
+Test Passed.
+"lookingglass_persistent_d3d11_device_test" end time: Oct 12 23:20 ???? (?W????)
+"lookingglass_persistent_d3d11_device_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+13/19 Testing: lookingglass_worker_preview_pause_test
+13/19 Test: lookingglass_worker_preview_pause_test
+Command: "E:/LookingGlassSDK/Native/build-worker-release-vs/Release/lookingglass_worker_transport_test.exe" "--preview-pause-only"
+Directory: E:/LookingGlassSDK/Native/build-worker-release-vs
+"lookingglass_worker_preview_pause_test" start time: Oct 12 23:20 ???? (?W????)
+Output:
+----------------------------------------------------------
+worker_preview_pause_test pass
+<end of output>
+Test time =   0.47 sec
+----------------------------------------------------------
+Test Passed.
+"lookingglass_worker_preview_pause_test" end time: Oct 12 23:20 ???? (?W????)
+"lookingglass_worker_preview_pause_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+14/19 Testing: lookingglass_worker_preview_lease_test
+14/19 Test: lookingglass_worker_preview_lease_test
+Command: "E:/LookingGlassSDK/Native/build-worker-release-vs/Release/lookingglass_worker_transport_test.exe" "--preview-lease-only"
+Directory: E:/LookingGlassSDK/Native/build-worker-release-vs
+"lookingglass_worker_preview_lease_test" start time: Oct 12 23:20 ???? (?W????)
+Output:
+----------------------------------------------------------
+worker_preview_lease_test pass
+<end of output>
+Test time =   0.50 sec
+----------------------------------------------------------
+Test Passed.
+"lookingglass_worker_preview_lease_test" end time: Oct 12 23:20 ???? (?W????)
+"lookingglass_worker_preview_lease_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+15/19 Testing: lookingglass_bridge_static_present_test
+15/19 Test: lookingglass_bridge_static_present_test
+Command: "E:/LookingGlassSDK/Native/build-worker-release-vs/Release/lookingglass_bridge_static_present_test.exe"
+Directory: E:/LookingGlassSDK/Native/build-worker-release-vs
+"lookingglass_bridge_static_present_test" start time: Oct 12 23:20 ???? (?W????)
+Output:
+----------------------------------------------------------
+bridge_static_present_test pass
+<end of output>
+Test time =   0.03 sec
+----------------------------------------------------------
+Test Passed.
+"lookingglass_bridge_static_present_test" end time: Oct 12 23:20 ???? (?W????)
+"lookingglass_bridge_static_present_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+16/19 Testing: lookingglass_stable_sdk_input_d3d11_test
+16/19 Test: lookingglass_stable_sdk_input_d3d11_test
+Command: "E:/LookingGlassSDK/Native/build-worker-release-vs/Release/lookingglass_stable_sdk_input_d3d11_test.exe"
+Directory: E:/LookingGlassSDK/Native/build-worker-release-vs
+"lookingglass_stable_sdk_input_d3d11_test" start time: Oct 12 23:20 ???? (?W????)
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.17 sec
+----------------------------------------------------------
+Test Passed.
+"lookingglass_stable_sdk_input_d3d11_test" end time: Oct 12 23:20 ???? (?W????)
+"lookingglass_stable_sdk_input_d3d11_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Oct 12 23:20 ???? (?W????)

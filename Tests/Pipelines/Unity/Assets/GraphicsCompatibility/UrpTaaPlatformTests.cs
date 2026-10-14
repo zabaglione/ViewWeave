@@ -251,7 +251,10 @@ namespace ViewWeave.GraphicsCompatibility
                     Assert.AreEqual(sourceDeferred ? 1 : forwardSamples, fixture.Quilt.ViewAntiAliasingSamples);
                     fixture.Guard.followReferenceRenderingSettings = true; fixture.Quilt.sourceCamera.allowMSAA = false;
                     fixture.Quilt.RenderQuilt(); Assert.AreEqual(1, fixture.Quilt.ViewAntiAliasingSamples);
-                    Assert.AreEqual(0, fixture.Quilt.ResolveAntiAliasingSamples);
+                    UniversalRenderPipelineAsset activeUrp = GraphicsSettings.currentRenderPipeline as UniversalRenderPipelineAsset;
+                    bool formatResolve = fixture.Quilt.sourceCamera.allowHDR && activeUrp != null && activeUrp.supportsHDR;
+                    Assert.AreEqual(formatResolve ? 1 : 0, fixture.Quilt.ResolveAntiAliasingSamples,
+                        "A single-sample HDR view still requires conversion to the LDR quilt atlas.");
                     fixture.Quilt.sourceCamera.allowMSAA = true;
                     if (!sourceDeferred)
                     {

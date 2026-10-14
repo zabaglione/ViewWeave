@@ -1,0 +1,58 @@
+{
+  "status": "not-passed",
+  "probe": "Green",
+  "testFilter": "ViewWeave.SceneComparison.Tests.VfxPairedViewProbeTests.ObserveMultiStripGpuEventsOnOriginalScene",
+  "testPlatform": "PlayMode",
+  "expectedTestCount": 1,
+  "graphicsApi": "D3D12",
+  "projectPath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\UnityProject",
+  "unityExecutable": "C:/Program Files/Unity/Hub/Editor/6000.6.4f1/Editor/Unity.exe",
+  "startedUtc": "2026-10-13T01:41:59.0831512Z",
+  "startedProcessCreationUtc": "2026-10-13T01:41:59.0831512Z",
+  "endedUtc": "2026-10-13T01:42:38.4605821Z",
+  "editorProcessId": 29628,
+  "editorExitCode": 2,
+  "timeout": false,
+  "timeoutSeconds": 150,
+  "timeoutKillAttempted": false,
+  "timeoutKillErrorType": null,
+  "startErrorType": null,
+  "stdoutAndStderrDrained": true,
+  "processInventoryAvailableBefore": true,
+  "matchingBefore": null,
+  "processInventoryAvailableAfter": true,
+  "matchingAfter": null,
+  "processObjectStillRunning": false,
+  "xmlPath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\Results\\vfxvisual-green-20261013T014158535Z.xml",
+  "xmlBytes": 5647,
+  "xmlSha256": "2FC69DBC0FC1B796D98CA3FC7E36FEC7D6760FA05880839BD057548933C6044C",
+  "xmlParseErrorType": null,
+  "nunit": {
+    "total": 1,
+    "passed": 0,
+    "failed": 1,
+    "skipped": 0,
+    "inconclusive": 0,
+    "result": "Failed(Child)",
+    "testCaseFullNames": [
+      "ViewWeave.SceneComparison.Tests.VfxPairedViewProbeTests.ObserveMultiStripGpuEventsOnOriginalScene"
+    ]
+  },
+  "exactTestCaseGate": false,
+  "editorLogPath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\Results\\vfxvisual-green-20261013T014158535Z-editor.log",
+  "editorLogShared": false,
+  "evidenceDirectory": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\UnityProject\\TestResults\\vfxvisual-green-20261013T014158535Z",
+  "evidenceFiles": [
+    {
+      "name": "frames.csv",
+      "bytes": 240,
+      "sha256": "4A061D169FA9CFC41032E190B507550FE532D5D7E424AE2650D72849ED84C569"
+    },
+    {
+      "name": "observations.txt",
+      "bytes": 2182,
+      "sha256": "13B16182113504682F897A7FEB3B4F4946F58588547639FE100B1E48E0C92152"
+    }
+  ],
+  "boundedObservationGate": false
+}

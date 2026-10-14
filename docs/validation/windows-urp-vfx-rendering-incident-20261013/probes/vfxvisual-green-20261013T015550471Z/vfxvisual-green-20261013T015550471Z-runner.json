@@ -1,0 +1,108 @@
+{
+  "status": "not-passed",
+  "probe": "Green",
+  "testFilter": "ViewWeave.SceneComparison.Tests.VfxPairedViewProbeTests.ObserveMultiStripGpuEventsOnOriginalScene",
+  "testPlatform": "PlayMode",
+  "expectedTestCount": 1,
+  "graphicsApi": "D3D12",
+  "projectPath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\UnityProject",
+  "unityExecutable": "C:/Program Files/Unity/Hub/Editor/6000.6.4f1/Editor/Unity.exe",
+  "startedUtc": "2026-10-13T01:55:50.9656342Z",
+  "startedProcessCreationUtc": "2026-10-13T01:55:50.9656342Z",
+  "endedUtc": "2026-10-13T01:56:51.5344239Z",
+  "editorProcessId": 44420,
+  "editorExitCode": 2,
+  "timeout": false,
+  "timeoutSeconds": 150,
+  "timeoutKillAttempted": false,
+  "timeoutKillErrorType": null,
+  "startErrorType": null,
+  "stdoutAndStderrDrained": true,
+  "processInventoryAvailableBefore": true,
+  "matchingBefore": null,
+  "processInventoryAvailableAfter": true,
+  "matchingAfter": null,
+  "processObjectStillRunning": false,
+  "xmlPath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\Results\\vfxvisual-green-20261013T015550471Z.xml",
+  "xmlBytes": 4833,
+  "xmlSha256": "9A2C64990E6C3973F8FA9C29F93EC1962D6E7CEC1B45D0F416E2ED4AE8A6DDF3",
+  "xmlParseErrorType": null,
+  "nunit": {
+    "total": 1,
+    "passed": 0,
+    "failed": 0,
+    "skipped": 0,
+    "inconclusive": 1,
+    "result": "Passed",
+    "testCaseFullNames": [
+      "ViewWeave.SceneComparison.Tests.VfxPairedViewProbeTests.ObserveMultiStripGpuEventsOnOriginalScene"
+    ]
+  },
+  "exactTestCaseGate": false,
+  "editorLogPath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\Results\\vfxvisual-green-20261013T015550471Z-editor.log",
+  "editorLogShared": false,
+  "evidenceDirectory": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\UnityProject\\TestResults\\vfxvisual-green-20261013T015550471Z",
+  "evidenceFiles": [
+    {
+      "name": "first-normal.png",
+      "bytes": 193851,
+      "sha256": "2E10F8AC84133F9CBC96076C0A3022DA21EF01A7114B62798413F599FC030C77"
+    },
+    {
+      "name": "first-quilt.png",
+      "bytes": 193403,
+      "sha256": "D5F5BA42EFDBB9B73ABEDD69C7F1ABA3804BB2636EAED6FFF9D6CD0ECE90A04E"
+    },
+    {
+      "name": "frames.csv",
+      "bytes": 106452,
+      "sha256": "CF71AC591775EE250220E492DFCBB6B9007FC5F11F455ADE8D93EE495FDF2CA3"
+    },
+    {
+      "name": "normal-green-peak-normal.png",
+      "bytes": 193851,
+      "sha256": "2E10F8AC84133F9CBC96076C0A3022DA21EF01A7114B62798413F599FC030C77"
+    },
+    {
+      "name": "normal-green-peak-quilt.png",
+      "bytes": 193403,
+      "sha256": "D5F5BA42EFDBB9B73ABEDD69C7F1ABA3804BB2636EAED6FFF9D6CD0ECE90A04E"
+    },
+    {
+      "name": "normal-luma-max-normal.png",
+      "bytes": 257312,
+      "sha256": "96F7B6F0054D0D80E26E15039B2A3B3E3CF2DF922A54B819EBEEB0904395ADE4"
+    },
+    {
+      "name": "normal-luma-max-quilt.png",
+      "bytes": 256948,
+      "sha256": "FDEF068C9DC6F16EF15987E11FC771E6770539C32D58CAE0DD19FA14E13D6D86"
+    },
+    {
+      "name": "normal-luma-min-normal.png",
+      "bytes": 201877,
+      "sha256": "0421B69C9CDC56897DEE3A9079CBF8FBA90E86627657C415F3A9B7DEC4B98C48"
+    },
+    {
+      "name": "normal-luma-min-quilt.png",
+      "bytes": 201456,
+      "sha256": "DA452D75E497D5D97E334B8F75BE6551D54359F1A2C56B889D0754184DF5C915"
+    },
+    {
+      "name": "observations.txt",
+      "bytes": 2346,
+      "sha256": "AF2EC4E99E868BFA24F60BD9D0BF55F617EE694A51B05163EA197F0F9282E03E"
+    },
+    {
+      "name": "quilt-green-peak-normal.png",
+      "bytes": 193851,
+      "sha256": "2E10F8AC84133F9CBC96076C0A3022DA21EF01A7114B62798413F599FC030C77"
+    },
+    {
+      "name": "quilt-green-peak-quilt.png",
+      "bytes": 193403,
+      "sha256": "D5F5BA42EFDBB9B73ABEDD69C7F1ABA3804BB2636EAED6FFF9D6CD0ECE90A04E"
+    }
+  ],
+  "boundedObservationGate": false
+}

@@ -1,6 +1,6 @@
 # Unity対応表の保守
 
-[現在の対応状況](unity-feature-platform-matrix.html)は、Windows / macOSとURP / HDRPのUnity機能をまとめる単一のHTMLです。HTMLを直接更新し、別の表データや生成器は作りません。技術者向けの詳細は本ページではなく、リンク先の試験記録に記載します。
+[現在の対応状況](unity-feature-platform-matrix.html)は、Windows / macOSとURP / HDRPのUnity機能をまとめるHTMLです。ページ冒頭は短い照合日・対象行の後に表を置き、利用者向けの機能・必要設定・実用上の制限を表内に保ちます。表には作業履歴や試験数を並べず、実装状態・検証範囲・未確認条件を混同しません。詳細なコード基準、検証件数、作業履歴、長い根拠説明は[作業・検証履歴](unity-feature-platform-matrix-history.html)または日付付き試験記録に置き、現行ページの先頭へ追記しません。HTMLを直接更新し、別の表データや生成器は作りません。
 
 ## 証拠の優先順位
 
@@ -26,7 +26,7 @@ raw XML/structured recordを最も具体的な実行証拠とし、日付付き�
 
 ## HTML更新と検証
 
-表はWindows URP、Windows HDRP、macOS URP、macOS HDRPの4列を維持します。CSSのstatus classとlegendを合わせ、変更した各status行の条件文・根拠リンクも更新します。冒頭の要約、検証件数、対応範囲の要点、source一覧、最終照合日とコード基準も同じ証拠に合わせます。特定のOSやAPIで未確認の事項を総論で「未検証」と言い切らない一方、検証したfixtureより広い主張にしません。
+表はWindows URP、Windows HDRP、macOS URP、macOS HDRPの4列を維持します。CSSのstatus classとlegendを合わせ、変更した各status行の条件文・根拠リンクも更新します。現行ページの冒頭は短い最終照合日・対象・履歴リンクにとどめます。詳細な検証件数、対応範囲の要点、source一覧の説明、コード基準は作業・検証履歴または日付付きreportへ記録し、既存のsource anchorは現行ページにも短いリンクとして残します。特定のOSやAPIで未確認の事項を総論で「未検証」と言い切らない一方、検証したfixtureより広い主張にしません。
 
 Markdown内に一時的なlocal pathだけのリンクを置かず、共有可能な日付付きreportへリンクします。reportは可能ならraw resultの保存場所と対象条件を示します。Status表示とsource anchorは日本語ページ上で読みやすく保ちます。
 

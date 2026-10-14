@@ -1,0 +1,57 @@
+[
+  {
+    "path": "normal-phase-baseline.txt",
+    "bytes": 45,
+    "sha256": "41DEC7FF840F6874402C2F8A676D3B35A1E91D9FB25232906709762D2ECDA81C"
+  },
+  {
+    "path": "original-apply-result.json",
+    "bytes": 3797,
+    "sha256": "57FE58E5E8A9D4DB1B5A94DA43D441EDA69A21067A7F825EC7855D5DFD249BA1"
+  },
+  {
+    "path": "process-memory.jsonl",
+    "bytes": 4646,
+    "sha256": "1F12B9919BC7C5F8D283A5A4F8A60A3A3E02CCA3324BEF2FE852611B460C00FD"
+  },
+  {
+    "path": "runner-error.json",
+    "bytes": 341,
+    "sha256": "D6419FDEBBEFD0CD6B9DFD23689F9EF97F66C6C3B951EA878147F51EADB9CFB1"
+  },
+  {
+    "path": "vfx-batch-sweep.jsonl",
+    "bytes": 32187,
+    "sha256": "472E7FB7E3A7E679361E4D19613FF9D33B2F0BDE1DCA28AD3E0994B0EC23B53F"
+  },
+  {
+    "path": "watcher.jsonl",
+    "bytes": 196178,
+    "sha256": "33B4C1B985B5DB68D0242C220CD29AFBEC805563BA23F7811EBC7BFBA2890BC2"
+  },
+  {
+    "path": "as-run/LiveGraphRemedyWatchTemplate.cs",
+    "bytes": 82627,
+    "sha256": "685D581BD718B078793F340D90FCD4834303B829804FDAF5D4AA8C3F3A59219C"
+  },
+  {
+    "path": "as-run/LivePlayWatch.cs",
+    "bytes": 83030,
+    "sha256": "5D44FDB6CA4B1F11D343CE859E9277490CBE6819493B47A5D80845BDFF9CB978"
+  },
+  {
+    "path": "as-run/Run-BoundedOriginalGraphRemedyProbe.ps1",
+    "bytes": 69378,
+    "sha256": "89536C4C1C7D90D165CE96FC22EAECD994F850514E0F6C34417C654C926E6AF6"
+  },
+  {
+    "path": "exit/summary.json",
+    "bytes": 2149,
+    "sha256": "D547015641B86E80E31D41684370E22EF9715B154B65C8649400123DEC66B162"
+  },
+  {
+    "path": "supervisor/supervisor-summary.json",
+    "bytes": 1890,
+    "sha256": "B49E82244B58C36B940D98E5B01AF8E5D97F038562FCA81D1293F72EB6A7CB62"
+  }
+]

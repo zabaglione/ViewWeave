@@ -5,3 +5,4 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("ViewWeave.Bridge")]
 [assembly: InternalsVisibleTo("ViewWeave.BridgeSessionValidation.Tests")]
 [assembly: InternalsVisibleTo("ViewWeave.BridgeEditorPreviewValidation.Editor.Tests")]
+[assembly: InternalsVisibleTo("ViewWeave.GraphicsCompatibility.Tests")]

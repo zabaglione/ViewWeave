@@ -1,0 +1,23 @@
+{
+  "autoReferenced": false,
+  "includePlatforms": [],
+  "references": [
+    "ViewWeave.Core",
+    "ViewWeave.URP",
+    "Unity.RenderPipelines.Core.Runtime",
+    "Unity.RenderPipelines.Universal.Runtime",
+    "Unity.VisualEffectGraph.Runtime"
+  ],
+  "precompiledReferences": [
+    "nunit.framework.dll"
+  ],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ],
+  "rootNamespace": "ViewWeave.SceneComparison.Tests",
+  "defineConstraints": [
+    "UNITY_INCLUDE_TESTS"
+  ],
+  "overrideReferences": true,
+  "name": "ViewWeave.SceneComparison.Tests"
+}

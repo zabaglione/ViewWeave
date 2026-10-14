@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Passed" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-13 04:18:51Z" end-time="2026-10-13 04:19:11Z" duration="20.4709271">
+  <test-suite type="TestSuite" id="1000" name="PipelineSmoke" fullname="PipelineSmoke" runstate="Runnable" testcasecount="165" result="Passed" start-time="2026-10-13 04:18:51Z" end-time="2026-10-13 04:19:11Z" duration="20.470927" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1143" name="ViewWeave.BridgeEditorPreviewValidation.Editor.Tests.dll" fullname="E:/LookingGlassSDK/Tests/Pipelines/Unity/Library/ScriptAssemblies/ViewWeave.BridgeEditorPreviewValidation.Editor.Tests.dll" runstate="Runnable" testcasecount="111" result="Passed" start-time="2026-10-13 04:18:51Z" end-time="2026-10-13 04:19:11Z" duration="20.454049" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="61820" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1144" name="ViewWeave" fullname="ViewWeave" runstate="Runnable" testcasecount="111" result="Passed" start-time="2026-10-13 04:18:51Z" end-time="2026-10-13 04:19:11Z" duration="20.452903" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1146" name="BridgeEditorPreviewValidation" fullname="ViewWeave.BridgeEditorPreviewValidation" runstate="Runnable" testcasecount="63" result="Passed" start-time="2026-10-13 04:18:51Z" end-time="2026-10-13 04:19:11Z" duration="20.451562" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1114" name="BridgeEditorPreviewGpuTests" fullname="ViewWeave.BridgeEditorPreviewValidation.BridgeEditorPreviewGpuTests" classname="ViewWeave.BridgeEditorPreviewValidation.BridgeEditorPreviewGpuTests" runstate="Runnable" testcasecount="19" result="Passed" start-time="2026-10-13 04:18:51Z" end-time="2026-10-13 04:19:11Z" duration="20.449624" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1123" name="UrpEditorPreviewRendersAndRejectsProfileMutationWhileOwned" fullname="ViewWeave.BridgeEditorPreviewValidation.BridgeEditorPreviewGpuTests.UrpEditorPreviewRendersAndRejectsProfileMutationWhileOwned" methodname="UrpEditorPreviewRendersAndRejectsProfileMutationWhileOwned" classname="ViewWeave.BridgeEditorPreviewValidation.BridgeEditorPreviewGpuTests" runstate="Runnable" seed="270306423" result="Passed" start-time="2026-10-13 04:18:51Z" end-time="2026-10-13 04:19:11Z" duration="20.435407" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[EDITOR_PREVIEW_GPU source_control_attempt pipeline=URP, attempt=1, camera=source.scene=, sceneMask=0, overrideMask=0, cameraMask=-1, targetVisibleByLayer=True, exposure=not-applicable, elapsedSeconds=0.31, withinDeadline=True, greenDominant=952, nonBlack=952, maxRGB=0/255/0
+Warning in Graph at Packages/com.unity.shadergraph/GraphTemplates/Cross Pipeline/2_Particle Lit.shadergraph on line 5: Treating '#include_with_pragmas' directive as '#include'
+Shader Graph at Packages/com.unity.render-pipelines.high-definition/Runtime/Tools/ColorChecker/ColorCheckerShader.shadergraph has 2 warning(s), the first is: Validation: Exposure Node is not allowed by Universal implementation
+Warning in Graph at Packages/com.unity.shadergraph/GraphTemplates/Cross Pipeline/0_Particle Unlit.shadergraph on line 5: Treating '#include_with_pragmas' directive as '#include'
+EDITOR_PREVIEW_GPU cameras=source.scene=, sceneMask=0, overrideMask=0, cameraMask=-1, targetVisibleByLayer=True; producer.scene=, sceneMask=0, overrideMask=0, cameraMask=-1, targetVisibleByLayer=True; target.scene=, target.sceneMask=16140901064495857664, target.layer=0
+EDITOR_PREVIEW_GPU render pipeline=URP, views=8, samplesView=4, samplesResolve=1
+EDITOR_PREVIEW_GPU pixels=greenDominant=1880, nonBlack=1880, maxRGB=0/255/0
+EDITOR_PREVIEW_GPU profile_mutation pipeline=URP, rejected=true, profileUnchanged=true
+EDITOR_PREVIEW_GPU pause_resume pipeline=URP, sameProducer=true, sameCoreTextures=true
+Saving results to: C:/Users/zzaba/AppData/LocalLow/zabaglione/PipelineSmoke\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

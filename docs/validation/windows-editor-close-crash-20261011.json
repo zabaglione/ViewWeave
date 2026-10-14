@@ -1,0 +1,1103 @@
+{
+  "schemaVersion": 1,
+  "record": "Windows manual Editor close crash dump analysis",
+  "date": "2026-10-11/2026-10-12",
+  "sourceBasis": {
+    "revision": "11312b8c6cf824d9a7ac7c8940e95cee742fa076",
+    "unityVersion": "6000.6.4f1",
+    "onDiskProductionDllSha256AtRecordedRevision": "CEE089B1779752DAB4FFABDFFC44B879A0E4D09414C9A85F7590C8D9A9DDCF4D",
+    "onDiskProductionDllBytesAtRecordedRevision": 302080,
+    "recordedRevision": "11312b8c6cf824d9a7ac7c8940e95cee742fa076",
+    "projectCurrentManifestHdrpVersion": "17.7.0",
+    "projectCurrentManifestCapturedAsIncidentVersion": false,
+    "productionDllChangedInThisInvestigation": false
+  },
+  "incident": {
+    "kind": "ManualEditorGuiCloseCrash",
+    "project": "E:\\My project (34)",
+    "userReportedDeviceOutput": true,
+    "editor": {
+      "processId": 101536,
+      "graphicsApi": "Direct3D 12",
+      "batchMode": false,
+      "processCreationTimeLocal": "2026-10-11 21:42:27.824"
+    },
+    "dump": {
+      "path": "C:/Users/zzaba/AppData/Local/Temp/Unity/Editor/Crashes/Crash_2026-10-11_124400942/crash.dmp",
+      "bytes": 790978,
+      "analysis": "Read-only Minidump ExceptionStream and AMD64 context"
+    },
+    "werEvents": [
+      {
+        "localTime": "2026-10-11 21:44:08",
+        "exceptionCode": "0xc0000005"
+      },
+      {
+        "localTime": "2026-10-11 21:44:18",
+        "exceptionCode": "0xc000041d"
+      }
+    ],
+    "loadedComponents": {
+      "nativeHdrpDistributionDllPath": "Distribution/hdrp",
+      "nativeHdrpDistributionMappedImageBytes": 319488,
+      "loadedImageSha256Captured": false,
+      "bridgeSdkVersion": "2.6.3"
+    },
+    "packageVersionLimits": "The current project manifest lists HDRP 17.7.0; incident-time package version was not directly captured. This is separate from test-project HDRP 17.6.0.",
+    "onDiskDllIdentity": {
+      "sha256AtRecordedRevision": "CEE089B1779752DAB4FFABDFFC44B879A0E4D09414C9A85F7590C8D9A9DDCF4D",
+      "bytesAtRecordedRevision": 302080,
+      "loadedImageByteIdentityMeasured": false
+    },
+    "recoveryWarningCode": -1,
+    "recoveryWarningInterpretation": "Consistent with a managed image-guard rejection before a Native close call; not evidence that a Native worker remained active. The specific guard state was not observed.",
+    "dumpAnalysis": {
+      "accessType": "write",
+      "exceptionAddress": "0x11f0",
+      "registerESI": "0xffffffff",
+      "registerESISigned": -1,
+      "instructionPointerModule": "Unity",
+      "instructionPointerSymbol": "dup_nolock",
+      "sanitizedStack": [
+        "Unity!dup_nolock",
+        "Unity!dup",
+        "Unity!RedirectStdout",
+        "Unity!Application::Terminate",
+        "Unity!ContainerWndProc"
+      ],
+      "matchesPriorStdoutShutdownFaultLocation": true,
+      "bridgeCausalityEstablished": false
+    },
+    "overlapHypothesis": {
+      "description": "The user suspected overlap between reported device output from this manual Editor and automated background validation.",
+      "retry7Player": {
+        "processId": 76728,
+        "startLocal": "2026-10-11 21:42:00.315",
+        "endLocal": "2026-10-11 21:42:11.247",
+        "manualEditorCreatedLocal": "2026-10-11 21:42:27.824",
+        "overlapped": false,
+        "naturalExit": true,
+        "exitCode": 0
+      },
+      "otherValidationProcessOverlapMeasured": false,
+      "bridgeServiceResidualStateMeasured": false
+    }
+  },
+  "runStatus": {
+    "activeOutputGuiCloseReproduction": "No crash reproduced in the controlled close trials: two HDRP Edit Preview stdio conditions and one reload-disabled HDRP Play condition; the manual crash cause remains unresolved.",
+    "controlAttemptsPerformed": 7,
+    "activeOutputGuiCloseReproductionRunPerformed": true,
+    "causeConfirmed": false,
+    "fixClaimed": false,
+    "redirectedStdioComparison": "one run failed the three-pipe startup gate; a separate -logFile - run passed the three-pipe gate",
+    "logFileDashComparison": "passed for one active HDRP Edit Preview run; limited to this launch configuration",
+    "successfulControlledCloseRuns": 4,
+    "nonPassingAttempts": 3
+  },
+  "diagnosticAttempts": [
+    {
+      "dateLocal": "2026-10-11",
+      "path": ".local/windows-editor-close-crash-20261011/hdrp-editor-stop-control-20261011-235355-274",
+      "mode": "HDRP Editor stop control",
+      "unityVersion": "6000.6.4f1",
+      "graphicsApi": "Direct3D 12",
+      "projectRequestedHdrpVersion": "17.7.0",
+      "lockedHdrpVersion": "17.6.0",
+      "actualResolvedHdrpVersion": "unobserved",
+      "processId": 21080,
+      "asRunHelperSha256": "91815EC92DBC981EE32C5074904A7D2BB651D41D952C64FF9FF983D9F2A574A3",
+      "runInputsFileSha256": "536D3BB3A0AB18ABD48258286506C3042A000BBE9FDE4CB1098CB81A15A27515",
+      "processSummaryFileSha256": "01DA2BB99BE56EB845A87ABA5B0DE658CF4F965D0BB39F4F341A709C06550004",
+      "cleanupSummaryFileSha256": "29819ABC5B62440BA2153EB6269AD300EAEE2B5AA75DD7AEB94CE78ED4D832E7",
+      "helperCompilePassed": false,
+      "compileErrors": [
+        "CS0117: EditorSceneManager.MarkSceneClean unavailable at two helper call sites."
+      ],
+      "readyReached": false,
+      "nativeTracePresent": false,
+      "processClose": "Ordinary Safe Mode dialog WM_CLOSE; process exited naturally.",
+      "exactPidApplicationCrashEvents": 0,
+      "cleanupPassed": true,
+      "countedAsPass": false,
+      "scopeNote": "The diagnostic did not reach Bridge preview lifecycle; absent trace does not prove SDK initialization state."
+    },
+    {
+      "dateLocal": "2026-10-12",
+      "path": ".local/windows-editor-close-crash-20261011/hdrp-editor-stop-control-20261012-000320-709",
+      "mode": "HDRP Editor stop control",
+      "unityVersion": "6000.6.4f1",
+      "graphicsApi": "Direct3D 12",
+      "projectRequestedHdrpVersion": "17.7.0",
+      "lockedHdrpVersion": "17.6.0",
+      "lockedHdrpSource": "built-in",
+      "actualResolvedHdrpVersion": "17.6.0",
+      "processId": 81800,
+      "asRunHelperSha256": "49FCEB5F7B4550D31D7EDB85A50FDCA8DF637AFD3CA10B9E9D1883B599BFE8CD",
+      "asRunRunnerSha256": "586218D1778004D1734D12D95B409D1DC49F02B109556D331E424737940367DA",
+      "runInputsDigestSha256": "896835228014BAE2FA504279C7D81B6FAB60CC8232B4A6E68C14BF1519CBA8B0",
+      "stopResultFileSha256": "F09946D4F593FF4F071F74E024B8F449B1B878890D87A8D73247506B81CECC9D",
+      "asRunSourceManifestFileSha256": "9BFC33E92238DE03AE86F089B484DECFB68E10D2A677AD12DF68EA73D6EB8591",
+      "stopReady": {
+        "workerReady": true,
+        "imageGuardValid": true,
+        "submitted": 5,
+        "completed": 5,
+        "aggregatePending": 0
+      },
+      "previewStoppedBeforeClose": true,
+      "aggregatePendingAfterStop": 0,
+      "firstCloseAttempt": {
+        "windowHandle": "0x2C1516",
+        "windowClass": "ViewWeaveManualSubpixelPresenter_1",
+        "windowCaption": "ViewWeave Manual Subpixel Output",
+        "wmCloseAccepted": true,
+        "expectedCloseGateCompleted": false,
+        "timedOut": true
+      },
+      "recoveryClose": {
+        "windowHandle": "0x5C164A",
+        "windowClass": "UnityContainerWndClass",
+        "caption": "My project (34) - Untitled - Windows, Mac, Linux - Unity 6.6 (6000.6.4f1) <DX12>",
+        "normalWmCloseAccepted": true,
+        "wantsToQuitObserved": true,
+        "quittingObserved": true,
+        "processExited": true,
+        "exitCode": "unobserved",
+        "exactPidApplicationCrashEvents": 0
+      },
+      "nativeShutdown": {
+        "loadObserved": true,
+        "initializeObserved": true,
+        "pendingZero": true,
+        "uninitializeSuccess": true,
+        "standardHandlesAtStartupAndQuitting": "stdin/stdout/stderr were character handles and each retained duplicate matched the same object at both observed stages.",
+        "provesPreHelperStdoutOrPrivateCrtHealth": false
+      },
+      "initialCleanupPassed": false,
+      "recoveryCleanupSummaryFileSha256": "B6CF0832EA1111E8255D87AEF97E87784852D09F6AC9DB98AEBB842C8FD7BF97",
+      "recoveryCleanupPassed": true,
+      "countedAsPass": false,
+      "scopeNote": "Preview was stopped and output destroyed before GUI close; the first close targeted the presenter window rather than the Unity project window. Recovery natural exit is not an active-output close test and does not override the failed original close gate."
+    },
+    {
+      "dateLocal": "2026-10-12",
+      "path": ".local/windows-editor-close-crash-20261011/hdrp-editor-stop-control-20261012-001206-102",
+      "mode": "HDRP Editor stop control",
+      "unityVersion": "6000.6.4f1",
+      "graphicsApi": "Direct3D 12",
+      "projectRequestedHdrpVersion": "17.7.0",
+      "lockedHdrpVersion": "17.6.0",
+      "lockedHdrpSource": "built-in",
+      "actualResolvedHdrpVersion": "17.6.0",
+      "processId": 106880,
+      "asRunHelperSha256": "49FCEB5F7B4550D31D7EDB85A50FDCA8DF637AFD3CA10B9E9D1883B599BFE8CD",
+      "asRunRunnerSha256": "F4DE96BAC73875077AA13B342E0E11286AC3E412A5A3D4A8D73577AFD9F6A429",
+      "runInputsFileSha256": "83B335E17C23BCB4B0DF5EDDC54143D8470C36ED51E94821855BC671B194C3E7",
+      "processSummaryFileSha256": "EAD0DD1D24660580A820DAC9B226F3F642C2E7DB84B831B6A7DFD91478D928BC",
+      "closeReadyFileSha256": "7EF359CFC0F21FF79CD8FA0FAA60C90409608C945F3DD2E84E9D4852BB3E023A",
+      "cleanupSummaryFileSha256": "E7785AC619B894845F55C3AC0BEC1E1F1827C60D6F72969519E47C49A024DCFC",
+      "readyCondition": "stop-control-pending-zero",
+      "framesSubmitted": 5,
+      "framesCompleted": 5,
+      "previewStoppedBeforeClose": true,
+      "nativePendingZero": true,
+      "nativeUninitializeSucceeded": true,
+      "naturalExit": true,
+      "exitCode": 0,
+      "exactPidApplicationCrashEvents": 0,
+      "cleanupPassed": true,
+      "countedAsPass": true,
+      "scopeNote": "Passing stop-before-close control only; not active-output close."
+    },
+    {
+      "dateLocal": "2026-10-12",
+      "path": ".local/windows-editor-close-crash-20261011/hdrp-editor-active-close-20261012-001303-831",
+      "mode": "HDRP active Edit Preview GUI close",
+      "unityVersion": "6000.6.4f1",
+      "graphicsApi": "Direct3D 12",
+      "projectRequestedHdrpVersion": "17.7.0",
+      "lockedHdrpVersion": "17.6.0",
+      "lockedHdrpSource": "built-in",
+      "actualResolvedHdrpVersion": "17.6.0",
+      "processId": 107968,
+      "asRunHelperSha256": "49FCEB5F7B4550D31D7EDB85A50FDCA8DF637AFD3CA10B9E9D1883B599BFE8CD",
+      "asRunRunnerSha256": "F4DE96BAC73875077AA13B342E0E11286AC3E412A5A3D4A8D73577AFD9F6A429",
+      "runInputsFileSha256": "CFEDF7575A42934FA6AD0D090C4FD935C2BADF7B94454AC8B8E30D03C29FBBB0",
+      "processSummaryFileSha256": "F00283D178BE6E2A494DEAC91FFB47B154494307C82D5A99B6159BC52BF67854",
+      "closeReadyFileSha256": "BF676D9AA3542FD2E1E1037E246B96558DBEFC0BB8FACB2E5213498A254D464D",
+      "nativeTraceFileSha256": "350367EBBCEB2BA24A4FF40D5EB08D0732E1B9825F730D992B844F62E39399BE",
+      "cleanupSummaryFileSha256": "53D23FCCC5614F82F1BFF04685C03930C8E36E81F1725061A69F4F566910B63C",
+      "readyCondition": "active-device-output",
+      "framesSubmitted": 5,
+      "framesCompleted": 5,
+      "guiCloseWhilePreviewActive": true,
+      "nativeLoadInitializeUninitializeSucceeded": true,
+      "nativePendingZero": true,
+      "naturalExit": true,
+      "exitCode": 0,
+      "exactPidApplicationCrashEvents": 0,
+      "cleanupPassed": true,
+      "countedAsPass": true,
+      "scopeNote": "One HDRP Edit Preview close case; active Play close remains untested."
+    },
+    {
+      "dateLocal": "2026-10-12",
+      "path": ".local/windows-editor-close-crash-20261011/hdrp-editor-play-active-close-20261012-001948-390",
+      "mode": "HDRP active Play GUI close",
+      "unityVersion": "6000.6.4f1",
+      "graphicsApi": "Direct3D 12",
+      "projectRequestedHdrpVersion": "17.7.0",
+      "lockedHdrpVersion": "17.6.0",
+      "lockedHdrpSource": "built-in",
+      "actualResolvedHdrpVersion": "17.6.0",
+      "processId": 106996,
+      "asRunHelperSha256": "435E4F5201B217BA1DC2315885FB8654B3DBBA795AB358ACA20CFA433AD056CA",
+      "asRunRunnerSha256": "C6B818B9F36EA55FCD2820CDE2006DAB7DAED8C5AFD917575372E2B1564C9A87",
+      "runInputsFileSha256": "064E2B067A37F6E1639B85A69987A16682536B1B50D2BA3C9AD8306F9414694A",
+      "processSummaryFileSha256": "DE92AE9C9E5552E67F33CE929F5FFD4085100852C5854F57EB658F4504467429",
+      "closeReadyFileSha256": "ACDB44833AF99CDE0A62FA7E0C83DEFF5907668D1655BD3F457B33FB5E57D5E3",
+      "nativeTraceFileSha256": "30DD2E88B64F80ABA078BD1AC741A7F1F3755CE20F054C5EDCFD9CA498BDA706",
+      "cleanupSummaryFileSha256": "A3DEFD47E74E53ECEB359E0E9E6C91776FD20A10D8A4ED9852873D4329F38BA2",
+      "readyCondition": "play-active-device-output",
+      "isPlaying": true,
+      "runtimeSessionRendering": true,
+      "outputReady": true,
+      "subpixelMode": "Automatic",
+      "submittedFrames": 7,
+      "completedFrames": 6,
+      "isolatedExistingSceneRootCount": 7,
+      "closeMethod": "exact-PID UnityContainerWndClass project window WM_CLOSE",
+      "naturalExit": true,
+      "exitCode": 0,
+      "exactPidApplicationCrashEvents": 0,
+      "nativePendingJobsAndInFlightZero": true,
+      "nativeUninitializeSucceeded": true,
+      "cleanupPassed": true,
+      "domainReloadDisabledDuringRun": true,
+      "sceneReloadDisabledDuringRun": true,
+      "reloadOptionsRestored": true,
+      "defaultReloadBehaviorTested": false,
+      "countedAsPass": true,
+      "scopeNote": "One HDRP D3D12 active Play GUI close case; not general Editor shutdown behavior.",
+      "playModeOptionsBefore": "DisableDomainReload, DisableSceneReload",
+      "originalDomainReloadEnabled": false,
+      "originalSceneReloadEnabled": false,
+      "originalPlayModeOptionsRestored": true
+    },
+    {
+      "dateLocal": "2026-10-12",
+      "path": ".local/windows-editor-close-crash-20261011/hdrp-editor-active-close-20261012-002258-245",
+      "mode": "HDRP active Edit Preview redirected-stdio comparison",
+      "unityVersion": "6000.6.4f1",
+      "graphicsApi": "Direct3D 12",
+      "projectRequestedHdrpVersion": "17.7.0",
+      "lockedHdrpVersion": "17.6.0",
+      "lockedHdrpSource": "built-in",
+      "actualResolvedHdrpVersion": "17.6.0",
+      "processId": 55456,
+      "asRunHelperSha256": "3F05DFA7F4AAC20F5D458042BE6231838B55A9A9E0EB17A7F00E3AC2C744DFC3",
+      "asRunRunnerSha256": "6701B2E108970885EE6403AB9FE23C2D88FEF90E965686CD7AA2F4D7BD3929DB",
+      "runInputsFileSha256": "8EDED7524A504E637A763220FEDEFE9AAAF95CF2EA0B7326034B6F5B1C05D472",
+      "processSummaryFileSha256": "6311E047012DC21C789E11E9461DAA24D32A7FB8B6AD9A47B278F6A0CBEF2FE7",
+      "closeReadyFileSha256": "7DA4E0C938DF038C3874D482F38B47C048C82F6F20FE469950C5A04525983E63",
+      "nativeTraceFileSha256": "18CD70E55767B376C2AE2D1F2EAFC9430BE6ADA5B22F255748D811D9708ABBE1",
+      "cleanupSummaryFileSha256": "155FC37C11BA051023BE92557377072294375AE10CF6FAA9D6298168D999F938",
+      "readyCondition": "active-device-output",
+      "framesSubmitted": 5,
+      "framesCompleted": 5,
+      "stdinStdoutStderrRedirected": true,
+      "parentDrainEndpointsRetained": true,
+      "helperStartupObservedPipeStreams": [
+        "stdin"
+      ],
+      "helperStartupAllThreePipesConfirmed": false,
+      "nativeModuleLoadedAtHelperStartup": false,
+      "naturalExit": true,
+      "exitCode": 0,
+      "exactPidApplicationCrashEvents": 0,
+      "nativePendingZero": true,
+      "nativeUninitializeSucceeded": true,
+      "cleanupPassed": true,
+      "gatePassed": false,
+      "countedAsPass": false,
+      "causeOfHandleDifferences": "unresolved",
+      "scopeNote": "Active Preview close body and cleanup succeeded, but required all-three-pipe startup gate failed; not counted as a passing comparison."
+    },
+    {
+      "dateLocal": "2026-10-12",
+      "path": ".local/windows-editor-close-crash-20261011/hdrp-editor-active-close-20261012-002645-631",
+      "mode": "HDRP active Edit Preview -logFile dash and redirected-pipe comparison",
+      "unityVersion": "6000.6.4f1",
+      "graphicsApi": "Direct3D 12",
+      "projectRequestedHdrpVersion": "17.7.0",
+      "lockedHdrpVersion": "17.6.0",
+      "lockedHdrpSource": "built-in",
+      "actualResolvedHdrpVersion": "17.6.0",
+      "processId": 94244,
+      "asRunHelperSha256": "3F05DFA7F4AAC20F5D458042BE6231838B55A9A9E0EB17A7F00E3AC2C744DFC3",
+      "asRunRunnerSha256": "045B895CD90795D547FB7457E27E4C0DDE9CF8E8C2FF6FD9BF48A5F49267078A",
+      "runInputsFileSha256": "9D0FA928ACE56768BAB401C5F63563476BE820F541A9B7945BF71D9E7B970CBA",
+      "processSummaryFileSha256": "730B59641C5ADEE23C36A112395DF9E165757E900FCCCD3D7FE3CBD2D7F56BB1",
+      "closeReadyFileSha256": "8128BF2D65641A6BC8018464E474E1911DD93B4B7AEB650985726F43DD0103D9",
+      "nativeTraceFileSha256": "FE66CEA4968E678F7FC81D80DC87D6D8EFAE6C141C1C842E7F05E835B43DB765",
+      "cleanupSummaryFileSha256": "8B06695CFA237F23E36DFDB01F980D97527280C4A375F4F6B58FB8F611DE532C",
+      "logMode": "-logFile -",
+      "stdioMode": "redirected-pipes",
+      "helperStartupPipeStreams": [
+        "stdin",
+        "stdout",
+        "stderr"
+      ],
+      "helperStartupAllThreePipesConfirmed": true,
+      "nativeModuleLoadedAtHelperStartup": false,
+      "standardHandleRetainedDuplicatesSameObjectAtStartupPreviewAndQuit": true,
+      "readyCondition": "active-device-output",
+      "framesSubmitted": 5,
+      "framesCompleted": 5,
+      "naturalExit": true,
+      "exitCode": 0,
+      "exactPidApplicationCrashEvents": 0,
+      "nativePendingZero": true,
+      "nativeUninitializeSucceeded": true,
+      "cleanupPassed": true,
+      "gatePassed": true,
+      "countedAsPass": true,
+      "incidentStartupHandleStateMeasured": false,
+      "unityCrtDescriptorHealthProven": false,
+      "causeConfirmed": false,
+      "scopeNote": "One active Edit Preview close under -logFile - and three redirected pipes; original incident trigger and CRT descriptor state remain unproven."
+    }
+  ],
+  "limits": [
+    "Fault location matches the prior stdout/shutdown fault family, but does not prove Bridge/device-output causation.",
+    "The current first-load standard-handle snapshot/restore behavior does not establish standard-handle state at shutdown.",
+    "Three distinct manual Editor crash reports do not establish a general Editor shutdown failure; the trigger or quit phase was not captured for the third report."
+  ],
+  "followupIncidents": [
+    {
+      "dateLocal": "2026-10-12",
+      "approximateCrashTimeLocal": "2026-10-12 21:04",
+      "kind": "ManualEditorGuiCloseCrash",
+      "userReportedLaunchOrder": "Unity launched before Looking Glass Bridge",
+      "userReportedBridgeStartedInEditorSession": false,
+      "userReportedDeviceOutputStartedInEditorSession": false,
+      "userReportedEditorClosed": true,
+      "userReportedCrashOnClose": true,
+      "editor": {
+        "processId": 110384,
+        "processIdHex": "0x1af30",
+        "processStartTimeLocal": "2026-10-12 21:02:20",
+        "unityVersion": "6000.6.4.49151"
+      },
+      "sourceBasis": {
+        "revision": "11312b8c6cf824d9a7ac7c8940e95cee742fa076",
+        "documentationOnlyLocalChanges": true,
+        "runtimeModifications": false,
+        "newUnityRunsPerformed": false
+      },
+      "dump": {
+        "path": "C:/Users/zzaba/AppData/Local/Temp/Unity/Editor/Crashes/Crash_2026-10-12_120359571/crash.dmp",
+        "bytes": 697726,
+        "sha256": "E77BC24D7B8E23C9FBF518672A63397E76C890CEE3B845D7B38375BFD77EA674",
+        "fullStackObtained": false
+      },
+      "applicationEvents": [
+        {
+          "localTime": "2026-10-12 21:04:02",
+          "eventId": 1000,
+          "exceptionCode": "0xc0000005",
+          "processIdHex": "0x1af30",
+          "module": "Unity.dll",
+          "moduleOffset": "00000000044383df"
+        },
+        {
+          "localTime": "2026-10-12 21:04:08",
+          "eventId": 1000,
+          "exceptionCode": "0xc000041d",
+          "processIdHex": "0x1af30",
+          "module": "Unity.dll",
+          "moduleOffset": "00000000044383df"
+        }
+      ],
+      "dumpAnalysis": {
+        "exceptionCode": "0xc0000005",
+        "accessType": "write",
+        "exceptionAddress": "0x11f0",
+        "instructionPointerModule": "Unity",
+        "instructionPointerSymbol": "dup_nolock+0x173",
+        "instructionPointerRva": "0x44383df",
+        "registers": {
+          "ESI": -1,
+          "RAX": "0x0",
+          "R12": "0x9"
+        },
+        "matchesPriorFaultLocation": true,
+        "applicationTerminateFrameDirectlyCaptured": false
+      },
+      "loadedComponents": {
+        "shimPath": "Distribution/hdrp/ViewWeave/Bridge/Plugins/x86_64/lookingglass_bridge_shim.dll",
+        "shimMappedSizeOfImage": 319488,
+        "shimMappedPeTimestamp": 1791711391,
+        "currentDiskBytes": 302080,
+        "currentDiskSha256": "CEE089B1779752DAB4FFABDFFC44B879A0E4D09414C9A85F7590C8D9A9DDCF4D",
+        "currentDiskPeTimestamp": 1791711391,
+        "currentDiskSizeOfImage": 319488,
+        "loadedImageSha256Captured": false,
+        "fileAndMappedImageSizesAreDifferentMeasures": true,
+        "vendorBridgeInprocVersion": "2.6.3"
+      },
+      "startupMetadataLoadPath": {
+        "initializeOnLoadConstructor": "BridgeEditorDisplayDiscovery",
+        "queuedAction": "scene Rig scan",
+        "pumpPath": "Pump/TryRefresh -> BridgeDisplayDiscovery.TryRequest/BeginMetadata",
+        "mayLoadVendorDllForStartupMetadata": true,
+        "requiresPlayPreviewOrDeviceOutput": false,
+        "bridgeRuntimeLocatorReportsDllLocationOnly": true,
+        "reliablePreloadAvailabilityGateFound": false,
+        "pathCausalityEstablished": false
+      },
+      "bridgeState": {
+        "userSaysBridgeWasNotStartedInEditorSession": true,
+        "currentBridgeAutoStarted": true,
+        "currentBridgeProcessId": 2364,
+        "currentBridgeProcessCreatedLocal": "2026-10-12T21:06:40.237646+09:00",
+        "currentSnapshotWasAfterCrash": true,
+        "exhaustiveBridgeAbsenceAtCrashEstablished": false,
+        "unityProcessCurrentlyOpen": false,
+        "hubUnityProcessIsSeparate": true
+      },
+      "hdrpReflectionWarning": {
+        "message": "ScriptableRuntimeReflectionSystemSettings.system is assigned more than once. Only a the last instance will be used.",
+        "source": "HDRuntimeReflectionSystem.cs",
+        "sourceLines": "32-36",
+        "assignmentPhase": "SubsystemRegistration",
+        "bridgeConditionInAssignment": false,
+        "editorReloadOptionsCurrently": 3,
+        "domainReloadDisabledCurrently": true,
+        "sceneReloadDisabledCurrently": true,
+        "incidentTimeReloadOptionsCaptured": false,
+        "defaultSettingsVolumeProfileAssetExists": true,
+        "relatedIssue": "https://issuetracker.unity.com/issues/24247/scriptableruntimereflectionsystemsettingssystem-is-assigned-more-than-once-warning-is-thrown-when-entering-play-mode-for-the-second-time-after-deleting-the-default-volume-profile",
+        "relatedIssueReproductionEstablished": false,
+        "relationToNativeCrash": "unestablished"
+      },
+      "causeConfirmed": false,
+      "fixClaimed": false,
+      "unityRerunPerformed": false,
+      "scopeNote": "Separate user-reported no-output startup-order incident. Exception location matches the prior fault family, but this dump's full stack was not obtained. Loaded shim does not prove Bridge app or device output was started."
+    },
+    {
+      "dateLocal": "2026-10-12",
+      "approximateCrashTimeLocal": "2026-10-12 21:40",
+      "kind": "ManualEditorCrashOperationUnknown",
+      "userReportedCrash": true,
+      "triggeringOperationCaptured": false,
+      "editorQuitPhaseCaptured": false,
+      "userChoseToLeaveCauseUnresolved": true,
+      "additionalCrashInvestigationAfterUserHold": false,
+      "readOnlyDumpAnalysisCompletedBeforeUserHold": true,
+      "editor": {
+        "processId": 39076,
+        "processIdHex": "0x98a4",
+        "processStartTimeLocal": "2026-10-12 21:37:14",
+        "unityVersion": "6000.6.4.49151"
+      },
+      "sourceBasis": {
+        "revision": "11312b8c6cf824d9a7ac7c8940e95cee742fa076",
+        "documentationOnlyLocalChanges": true,
+        "runtimeModifications": false,
+        "newUnityRunsPerformed": false
+      },
+      "dump": {
+        "path": "C:/Users/zzaba/AppData/Local/Temp/Unity/Editor/Crashes/Crash_2026-10-12_124022336/crash.dmp",
+        "bytes": 695274,
+        "sha256": "2615EA20BC34ABBEB321FDF82F91BB3D373E08D17DF9C8945A298A7B04B58E88",
+        "fullStackObtained": false
+      },
+      "applicationEvents": [
+        {
+          "localTime": "2026-10-12 21:40:25",
+          "eventId": 1000,
+          "exceptionCode": "0xc0000005",
+          "processId": 39076,
+          "module": "Unity.dll",
+          "moduleRva": "0x44383df"
+        },
+        {
+          "localTime": "2026-10-12 21:40:30",
+          "eventId": 1000,
+          "exceptionCode": "0xc000041d",
+          "processId": 39076,
+          "module": "Unity.dll",
+          "moduleRva": "0x44383df"
+        }
+      ],
+      "dumpAnalysis": {
+        "exceptionCode": "0xc0000005",
+        "accessType": "write",
+        "exceptionAddress": "0x11f0",
+        "instructionPointerModule": "Unity",
+        "instructionPointerSymbol": "dup_nolock+0x173",
+        "instructionPointerRva": "0x44383df",
+        "registers": {
+          "ESI": -1,
+          "RAX": "0x0",
+          "R12": "0x9"
+        },
+        "matchesPriorFaultLocation": true,
+        "applicationTerminateFrameDirectlyCaptured": false
+      },
+      "loadedComponents": {
+        "shimPath": "Distribution/hdrp/ViewWeave/Bridge/Plugins/x86_64/lookingglass_bridge_shim.dll",
+        "shimMappedSizeOfImage": 319488,
+        "shimMappedPeTimestamp": 1791711391,
+        "currentDiskBytes": 302080,
+        "currentDiskSha256": "CEE089B1779752DAB4FFABDFFC44B879A0E4D09414C9A85F7590C8D9A9DDCF4D",
+        "currentDiskPeTimestamp": 1791711391,
+        "currentDiskSizeOfImage": 319488,
+        "loadedImageSha256Captured": false,
+        "fileAndMappedImageSizesAreDifferentMeasures": true,
+        "vendorBridgeInprocVersion": "2.6.3",
+        "vendorBridgeInprocMappedSize": 8847360,
+        "vendorBridgeInprocMappedPeTimestamp": 1757636171
+      },
+      "bridgeState": {
+        "processId": 34832,
+        "processCreatedLocal": "2026-10-12T21:26:36.503633+09:00",
+        "sameProcessCurrentlyAlive": true,
+        "processPredatesUnityStart": true,
+        "internalBridgeResponseAtIncidentMeasured": false
+      },
+      "causeConfirmed": false,
+      "fixClaimed": false,
+      "unityRerunPerformed": false,
+      "scopeNote": "Third distinct user-reported manual Editor crash. Triggering operation and quit phase are unknown; do not classify as an observed close crash. Matching fault location does not establish cause. User requested that investigation stop with cause unresolved."
+    },
+    {
+      "dateLocal": "2026-10-12",
+      "approximateCrashTimeLocal": "2026-10-12 22:04",
+      "kind": "ManualEditorCrashUrpVfxPreviewToPlay",
+      "userReportedBudgetException": true,
+      "userReportedTransitionBeforeCrash": "Editor Preview to Play",
+      "crashQuitPhaseCaptured": false,
+      "editor": {
+        "processId": 45052,
+        "processStartTimeLocal": "2026-10-12 22:00:03",
+        "unityVersion": "6000.6.4f1",
+        "project": "E:/URPSample_6.6.41f1"
+      },
+      "sourceBasis": {
+        "revision": "11312b8c6cf824d9a7ac7c8940e95cee742fa076",
+        "diagnosticRuntimeChangesUncommitted": true,
+        "productFixClaimed": false,
+        "additionalCrashReproductionPerformed": false,
+        "projectAssetsChanged": false
+      },
+      "reportedBudgetValues": {
+        "graphicsGrowthMB": 54473,
+        "estimatedTextureGrowthMB": 46,
+        "budgetMB": 4096,
+        "actualPeakRamOrVramMeasured": false,
+        "causalLinkToNativeCrashEstablished": false
+      },
+      "dump": {
+        "path": "C:/Users/zzaba/AppData/Local/Temp/Unity/Editor/Crashes/Crash_2026-10-12_130416532/crash.dmp",
+        "bytes": 694297,
+        "sha256": "EA213561784326723FE39C29845929A61C4A01CFC71FA7FEB7F35CFCF756D3A1",
+        "fullStackObtained": false
+      },
+      "applicationEvents": [
+        {
+          "localTime": "2026-10-12 22:04:39",
+          "eventId": 1000,
+          "exceptionCode": "0xc0000005",
+          "processId": 45052,
+          "module": "Unity.dll",
+          "moduleRva": "0x44383df"
+        },
+        {
+          "localTime": "2026-10-12 22:04:59",
+          "eventId": 1000,
+          "exceptionCode": "0xc000041d",
+          "processId": 45052,
+          "module": "Unity.dll",
+          "moduleRva": "0x44383df"
+        }
+      ],
+      "dumpAnalysis": {
+        "exceptionCode": "0xc0000005",
+        "accessType": "write",
+        "instructionPointerModule": "Unity",
+        "instructionPointerSymbol": "dup_nolock+0x173",
+        "instructionPointerRva": "0x44383df",
+        "registers": {
+          "ESI": -1,
+          "RAX": "0x0",
+          "R12": "0x9"
+        },
+        "matchesPriorFaultLocation": true,
+        "fullStackObtained": false,
+        "accessTargetAddress": "0x11f0"
+      },
+      "loadedComponents": {
+        "shimPath": "Distribution/urp/ViewWeave/Bridge/Plugins/x86_64/lookingglass_bridge_shim.dll",
+        "shimMappedSizeOfImage": 319488,
+        "shimMappedPeTimestamp": 1791711391,
+        "currentDiskSha256": "CEE089B1779752DAB4FFABDFFC44B879A0E4D09414C9A85F7590C8D9A9DDCF4D",
+        "currentDiskPeTimestamp": 1791711391,
+        "loadedImageSha256Captured": false,
+        "vendorBridgeInprocVersion": "2.6.3"
+      },
+      "currentProjectObservations": {
+        "manifestUnityVersion": "6000.6.4f1",
+        "manifestUrpVersion": "17.7.0",
+        "manifestVfxGraphVersion": "17.7.0",
+        "sampleFolderVersion": "17.6.0",
+        "incidentTimePackageResolutionCaptured": false,
+        "currentEditorReloadOptions": 3,
+        "incidentTimeReloadOptionsCaptured": false,
+        "currentScenePath": "E:/URPSample_6.6.41f1/Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/Scenes/URP_VFX_Learning_Templates.unity",
+        "sourceViewCount": 48,
+        "sourceMode": "Full",
+        "sourceQuality": "Balanced",
+        "sourceSaveSize": "1920x1080",
+        "effectiveGeometryMayOverrideSaveSize": true,
+        "learningPrefabVariantCount": 32,
+        "activePrefabCountCaptured": false,
+        "urpDriverDirectlyPresentInScene": false,
+        "driverAbsenceEstablishesCause": false
+      },
+      "causeConfirmed": false,
+      "fixClaimed": false,
+      "unityRerunPerformed": false,
+      "scopeNote": "Fourth distinct user-reported crash; user trigger was Preview-to-Play. Do not classify it as Editor close. Memory values are the reported budget counter/estimate, not physical memory peaks. Matching native fault location does not establish a causal link to InsufficientMemoryException."
+    }
+  ],
+  "redaction": {
+    "credentialsIncluded": false,
+    "accessTokensIncluded": false,
+    "machineIdentifiersIncluded": false,
+    "rawGlobalEditorLogIncluded": false
+  },
+  "instrumentationCode": {
+    "currentRunnerScriptSha256": "9310C783B845BAB4DB01604D6448F8EF3694AF621ADE525A49F1110FA91F803A",
+    "lastUnityRunRunnerScriptSha256": "045B895CD90795D547FB7457E27E4C0DDE9CF8E8C2FF6FD9BF48A5F49267078A",
+    "helperSha256Unchanged": "3F05DFA7F4AAC20F5D458042BE6231838B55A9A9E0EB17A7F00E3AC2C744DFC3",
+    "postRunChange": "Bounded pipe-drain wait; timeout keeps diagnostic-incomplete sticky, closes parent endpoints without killing process, then continues cleanup.",
+    "postRunValidation": "AST and non-Unity held-pipe self-test passed; Unity was not rerun with this runner."
+  },
+  "nativeStdioComparison": {
+    "sourceBasis": {
+      "revision": "11312b8c6cf824d9a7ac7c8940e95cee742fa076",
+      "workingTreeRuntimeChanges": false,
+      "productionNativeSourceOrBinariesChanged": false,
+      "unityRunsPerformed": false,
+      "deviceRenderingPerformed": false
+    },
+    "interpretation": "Native-only redirected standard-handle probe; not a Unity Editor crash reproduction or Editor shutdown pass.",
+    "inputs": {
+      "probeSourceSha256": "91A3EDAE4306DD5EB34E2630F783FFC43D228DB64B97F4012D6C9701997CFB6F",
+      "probeExecutableSha256": "18AC3C1912058550AC3862C7C0FC08BEBD7C6305FF239564E468C489483C4416",
+      "productionShimSha256": "CEE089B1779752DAB4FFABDFFC44B879A0E4D09414C9A85F7590C8D9A9DDCF4D",
+      "vendorRuntimeSha256": "3BE0EBA96844688C2EB2E70FC512A5ADA3D53E3ED9C8810454AB0370B8241386",
+      "probeExecutablePath": "E:\\LookingGlassSDK\\.local\\windows-unity-crash-20261011\\native-handle-probe\\build\\Release\\bridge_std_handle_probe_gui.exe",
+      "productionShimPath": "E:\\LookingGlassSDK\\Distribution\\hdrp\\ViewWeave\\Bridge\\Plugins\\x86_64\\lookingglass_bridge_shim.dll",
+      "vendorRuntimePath": "C:\\Program Files\\Looking Glass\\Looking Glass Bridge 2.6.3\\bridge_inproc.dll"
+    },
+    "sharedInputsAcrossRuns": true,
+    "bridgeOnBaseline": {
+      "summaryPath": ".local/windows-editor-close-crash-20261011/bridge-offline-20261012-212039-367/run-bridge-on-baseline-20261012-212150-350/summary.json",
+      "summarySha256": "E35B06A349E2A11767662F977FF69758913C0C66F187C12E1D23639004F99344",
+      "label": "bridge-on-baseline",
+      "probeLogPath": "E:\\LookingGlassSDK\\.local\\windows-editor-close-crash-20261011\\bridge-offline-20261012-212039-367\\run-bridge-on-baseline-20261012-212150-350\\probe.log",
+      "probeLogSha256": "DF42697FE84E936A1B57D2EC67D653D5425E586B618024358AB220FEAED24B4D",
+      "nativeTracePath": "E:\\LookingGlassSDK\\.local\\windows-editor-close-crash-20261011\\bridge-offline-20261012-212039-367\\run-bridge-on-baseline-20261012-212150-350\\native-trace.log",
+      "nativeTraceSha256": "475ACCB597DEE38C8C5B5263445AF33A9736CCCA06B14C9732B3BF4BF6D84125",
+      "startObservedLocal": "2026-10-12T21:21:51.0233572+09:00",
+      "processStartLocal": "2026-10-12T21:21:51.0733192+09:00",
+      "processEndLocal": "2026-10-12T21:21:52.6860104+09:00",
+      "probePid": 82952,
+      "actualProcessExitCode": 0,
+      "probeExitMarker": 0,
+      "probeMarkerIsNotActualProcessExit": true,
+      "timedOut": false,
+      "threeRedirectedPipesValidAtStart": true,
+      "startupStreams": {
+        "stdout": {
+          "valid": true,
+          "duplicateValid": true,
+          "fileType": "pipe"
+        },
+        "stdin": {
+          "valid": true,
+          "duplicateValid": true,
+          "fileType": "pipe"
+        },
+        "stderr": {
+          "valid": true,
+          "duplicateValid": true,
+          "fileType": "pipe"
+        }
+      },
+      "allHandleStagesValidAndSameObject": true,
+      "handleStageCount": 15,
+      "handleStages": {
+        "after_bridge_initialize": {
+          "allThreeCurrentHandlesValid": true,
+          "allThreeMatchOriginalObjects": true
+        },
+        "before_bridge_uninitialize": {
+          "allThreeCurrentHandlesValid": true,
+          "allThreeMatchOriginalObjects": true
+        },
+        "before_bridge_initialize": {
+          "allThreeCurrentHandlesValid": true,
+          "allThreeMatchOriginalObjects": true
+        },
+        "before_shim_load": {
+          "allThreeCurrentHandlesValid": true,
+          "allThreeMatchOriginalObjects": true
+        },
+        "before_shim_freelibrary": {
+          "allThreeCurrentHandlesValid": true,
+          "allThreeMatchOriginalObjects": true
+        },
+        "after_shim_freelibrary": {
+          "allThreeCurrentHandlesValid": true,
+          "allThreeMatchOriginalObjects": true
+        },
+        "before_version_count": {
+          "allThreeCurrentHandlesValid": true,
+          "allThreeMatchOriginalObjects": true
+        },
+        "after_shim_load": {
+          "allThreeCurrentHandlesValid": true,
+          "allThreeMatchOriginalObjects": true
+        },
+        "after_bridge_unload": {
+          "allThreeCurrentHandlesValid": true,
+          "allThreeMatchOriginalObjects": true
+        },
+        "before_bridge_load": {
+          "allThreeCurrentHandlesValid": true,
+          "allThreeMatchOriginalObjects": true
+        },
+        "before_bridge_unload": {
+          "allThreeCurrentHandlesValid": true,
+          "allThreeMatchOriginalObjects": true
+        },
+        "process_start": {
+          "allThreeCurrentHandlesValid": true,
+          "allThreeMatchOriginalObjects": true
+        },
+        "after_bridge_uninitialize": {
+          "allThreeCurrentHandlesValid": true,
+          "allThreeMatchOriginalObjects": true
+        },
+        "after_bridge_load": {
+          "allThreeCurrentHandlesValid": true,
+          "allThreeMatchOriginalObjects": true
+        },
+        "after_version_count": {
+          "allThreeCurrentHandlesValid": true,
+          "allThreeMatchOriginalObjects": true
+        }
+      },
+      "pipeDrainsCompleted": true,
+      "diagnosticIncomplete": null,
+      "stdoutBytes": 0,
+      "stderrBytes": 0,
+      "bridgeSnapshotBefore": {
+        "query": "Win32_Process exact executable path",
+        "querySucceeded": true,
+        "exactExecutableMatches": [
+          {
+            "processId": 2364,
+            "name": "LookingGlassBridge.exe",
+            "executablePath": "C:\\Program Files\\Looking Glass\\Looking Glass Bridge 2.6.3\\LookingGlassBridge.exe",
+            "creationDate": "10/12/2026 21:06:40"
+          }
+        ],
+        "processNameObservations": [
+          {
+            "processId": 2364,
+            "name": "LookingGlassBridge.exe",
+            "executablePath": "C:\\Program Files\\Looking Glass\\Looking Glass Bridge 2.6.3\\LookingGlassBridge.exe",
+            "creationDate": "10/12/2026 21:06:40"
+          }
+        ],
+        "exhaustiveServiceAbsenceClaimed": false,
+        "expectedBridgeRunning": "true"
+      },
+      "bridgeSnapshotAfter": {
+        "query": "Win32_Process exact executable path",
+        "querySucceeded": true,
+        "exactExecutableMatches": [
+          {
+            "processId": 2364,
+            "name": "LookingGlassBridge.exe",
+            "executablePath": "C:\\Program Files\\Looking Glass\\Looking Glass Bridge 2.6.3\\LookingGlassBridge.exe",
+            "creationDate": "10/12/2026 21:06:40"
+          }
+        ],
+        "processNameObservations": [
+          {
+            "processId": 2364,
+            "name": "LookingGlassBridge.exe",
+            "executablePath": "C:\\Program Files\\Looking Glass\\Looking Glass Bridge 2.6.3\\LookingGlassBridge.exe",
+            "creationDate": "10/12/2026 21:06:40"
+          }
+        ],
+        "exhaustiveServiceAbsenceClaimed": false,
+        "expectedBridgeRunning": "true"
+      },
+      "bridgeLoadRc": 0,
+      "bridgeInitializeRc": 0,
+      "runtimeVersion": "2.6.3",
+      "displayCount": 1,
+      "uninitializeSucceeded": true,
+      "probeRunnerSha256": null
+    },
+    "bridgeAppOffline": {
+      "summaryPath": ".local/windows-editor-close-crash-20261011/bridge-offline-20261012-212039-367/run-bridge-offline-20261012-212633-670/summary.json",
+      "summarySha256": "FC6D186879F410A9559420E6ED424F61403E623D4F0E9499CB72BB009C5E6ABD",
+      "label": "bridge-offline",
+      "probeLogPath": "E:\\LookingGlassSDK\\.local\\windows-editor-close-crash-20261011\\bridge-offline-20261012-212039-367\\run-bridge-offline-20261012-212633-670\\probe.log",
+      "probeLogSha256": "6C30FB27466567434FB97A43CB9E280E9E94C249873ACD7768DAB854282A2A58",
+      "nativeTracePath": "E:\\LookingGlassSDK\\.local\\windows-editor-close-crash-20261011\\bridge-offline-20261012-212039-367\\run-bridge-offline-20261012-212633-670\\native-trace.log",
+      "nativeTraceSha256": "1D8CCFCCD87E89BCFB00E6E7941D4399BA68B2CB8C9FD47985E050E99571192C",
+      "startObservedLocal": "2026-10-12T21:26:34.0018999+09:00",
+      "processStartLocal": "2026-10-12T21:26:34.0338883+09:00",
+      "processEndLocal": "2026-10-12T21:26:35.6661263+09:00",
+      "probePid": 60008,
+      "actualProcessExitCode": 0,
+      "probeExitMarker": 0,
+      "probeMarkerIsNotActualProcessExit": true,
+      "timedOut": false,
+      "threeRedirectedPipesValidAtStart": true,
+      "startupStreams": {
+        "stdout": {
+          "valid": true,
+          "duplicateValid": true,
+          "fileType": "pipe"
+        },
+        "stdin": {
+          "valid": true,
+          "duplicateValid": true,
+          "fileType": "pipe"
+        },
+        "stderr": {
+          "valid": true,
+          "duplicateValid": true,
+          "fileType": "pipe"
+        }
+      },
+      "allHandleStagesValidAndSameObject": true,
+      "handleStageCount": 15,
+      "handleStages": {
+        "after_bridge_initialize": {
+          "allThreeCurrentHandlesValid": true,
+          "allThreeMatchOriginalObjects": true
+        },
+        "before_bridge_uninitialize": {
+          "allThreeCurrentHandlesValid": true,
+          "allThreeMatchOriginalObjects": true
+        },
+        "before_bridge_initialize": {
+          "allThreeCurrentHandlesValid": true,
+          "allThreeMatchOriginalObjects": true
+        },
+        "before_shim_load": {
+          "allThreeCurrentHandlesValid": true,
+          "allThreeMatchOriginalObjects": true
+        },
+        "before_shim_freelibrary": {
+          "allThreeCurrentHandlesValid": true,
+          "allThreeMatchOriginalObjects": true
+        },
+        "after_shim_freelibrary": {
+          "allThreeCurrentHandlesValid": true,
+          "allThreeMatchOriginalObjects": true
+        },
+        "before_version_count": {
+          "allThreeCurrentHandlesValid": true,
+          "allThreeMatchOriginalObjects": true
+        },
+        "after_shim_load": {
+          "allThreeCurrentHandlesValid": true,
+          "allThreeMatchOriginalObjects": true
+        },
+        "after_bridge_unload": {
+          "allThreeCurrentHandlesValid": true,
+          "allThreeMatchOriginalObjects": true
+        },
+        "before_bridge_load": {
+          "allThreeCurrentHandlesValid": true,
+          "allThreeMatchOriginalObjects": true
+        },
+        "before_bridge_unload": {
+          "allThreeCurrentHandlesValid": true,
+          "allThreeMatchOriginalObjects": true
+        },
+        "process_start": {
+          "allThreeCurrentHandlesValid": true,
+          "allThreeMatchOriginalObjects": true
+        },
+        "after_bridge_uninitialize": {
+          "allThreeCurrentHandlesValid": true,
+          "allThreeMatchOriginalObjects": true
+        },
+        "after_bridge_load": {
+          "allThreeCurrentHandlesValid": true,
+          "allThreeMatchOriginalObjects": true
+        },
+        "after_version_count": {
+          "allThreeCurrentHandlesValid": true,
+          "allThreeMatchOriginalObjects": true
+        }
+      },
+      "pipeDrainsCompleted": true,
+      "diagnosticIncomplete": false,
+      "stdoutBytes": 0,
+      "stderrBytes": 0,
+      "bridgeSnapshotBefore": {
+        "query": "Win32_Process exact executable path",
+        "querySucceeded": true,
+        "exactExecutableMatches": [],
+        "processNameObservations": [],
+        "exhaustiveServiceAbsenceClaimed": false,
+        "expectedBridgeRunning": "false"
+      },
+      "bridgeSnapshotAfter": {
+        "query": "Win32_Process exact executable path",
+        "querySucceeded": true,
+        "exactExecutableMatches": [],
+        "processNameObservations": [],
+        "exhaustiveServiceAbsenceClaimed": false,
+        "expectedBridgeRunning": "false"
+      },
+      "bridgeLoadRc": 0,
+      "bridgeInitializeRc": 0,
+      "runtimeVersion": "2.6.3",
+      "displayCount": 1,
+      "uninitializeSucceeded": true,
+      "probeRunnerSha256": null,
+      "exactBridgeExecutableAbsentInSnapshotsBeforeAndAfterProbe": true,
+      "knownLoopbackListenersAbsentAtPreprobeCheck": true,
+      "processOrListenerStateContinuouslySampledDuringProbe": false,
+      "transientBridgeProcessOrListenerChangesDuringProbeExcluded": false,
+      "bridgeAbsenceScope": "Exact approved executable snapshots before and after probe, plus the three known listener endpoints measured after stop before probe; not continuous sampling and not a claim that all services or processes were absent."
+    },
+    "cycleSummary": {
+      "path": ".local/windows-editor-close-crash-20261011/bridge-offline-20261012-212039-367/bridge-offline-cycle-20261012-212631-443.json",
+      "sha256": "68719029F5DF6D3A54AA609518490666115FB62C3853133DAE4963C410C2AB28",
+      "stoppedExactBridgePid": [
+        2364
+      ],
+      "revalidatedExactPathAndCreationTimeBeforeStop": true,
+      "bridgeAbsentWithin10Seconds": true,
+      "respawnObserved": false,
+      "knownListenersAfterStop": [],
+      "offlineComparisonEstablished": true,
+      "restoredProcessId": 34832,
+      "restoredProcessCreationDate": "2026-10-12T12:26:36.5036330Z",
+      "restorationVerified": true,
+      "bridgeOwnedPort33334Ready": true,
+      "listenersAfterRestore": [
+        {
+          "localAddress": "127.0.0.1",
+          "localPort": 33334,
+          "owningProcessId": 34832,
+          "ownedByExactBridgeProcess": true
+        },
+        {
+          "localAddress": "127.0.0.1",
+          "localPort": 11222,
+          "owningProcessId": 34832,
+          "ownedByExactBridgeProcess": true
+        },
+        {
+          "localAddress": "127.0.0.1",
+          "localPort": 9724,
+          "owningProcessId": 34832,
+          "ownedByExactBridgeProcess": true
+        }
+      ]
+    },
+    "offlineRunnerFingerprint": {
+      "path": ".local/windows-editor-close-crash-20261011/bridge-offline-20261012-212039-367/Run-BridgeStdHandleProbe.ps1",
+      "sha256": "DCFA833D1312A64B007DFD8BE9F44665365FD9CAF97D30CB7BB8E77D703BE61C",
+      "appliesTo": "offline run only; baseline as-run fingerprint was not captured"
+    },
+    "cycleRunnerFingerprint": {
+      "path": ".local/windows-editor-close-crash-20261011/bridge-offline-20261012-212039-367/Run-BridgeOfflineCycle.ps1",
+      "sha256": "4A9979C155E79370A44677F88AF2F541A9BCC14BF1E35B3F319A63E9FC6EC7AD"
+    },
+    "baselineRunnerFingerprint": {
+      "capturedAtRunTime": false,
+      "sha256": null,
+      "note": "Not captured at baseline time; the diagnostic drain-cleanup change is not retroactively assigned to baseline."
+    },
+    "bridgeAbsenceScope": "Exact approved executable query and known loopback listeners only; no claim that all services or processes were absent.",
+    "unityPrivateCrtOrIncidentStartupStdioMeasured": false,
+    "productFixClaimed": false,
+    "failedSetupAttempt": {
+      "summaryPath": ".local/windows-editor-close-crash-20261011/bridge-offline-20261012-212039-367/bridge-offline-cycle-20261012-212439-070.json",
+      "summarySha256": "2EF750FE3397CF4EDC8C192AC78AA70BD148943D45CF001426C2907261164211",
+      "startedLocal": "2026-10-12T21:24:39.0849366+09:00",
+      "failureHresult": "0x80131501",
+      "failureType": "System.Management.Automation.RuntimeException",
+      "cause": "The first cycle treated CIM CreationDate (System.DateTime) as a DMTF timestamp.",
+      "stopProcessCalled": false,
+      "nativeProbeLaunched": false,
+      "finallyStartProcessWasAttemptedWhileOriginalWasStillPresent": true,
+      "postFailureReadOnlyVerification": {
+        "processQuerySucceeded": true,
+        "exactExecutableMatches": [
+          {
+            "processId": 2364,
+            "name": "LookingGlassBridge.exe",
+            "executablePath": "C:Program FilesLooking GlassLooking Glass Bridge 2.6.3LookingGlassBridge.exe",
+            "creationDate": "2026-10-12T21:06:40.2376460+09:00",
+            "executablePathFieldFormatDefect": true,
+            "fieldNote": "The source cycle summary serialized this path without separators. Do not treat this field as an exact-path observation; independent read-only verification recorded the exact path below."
+          }
+        ],
+        "independentReadOnlyVerification": {
+          "processId": 2364,
+          "executablePath": "C:\\Program Files\\Looking Glass\\Looking Glass Bridge 2.6.3\\LookingGlassBridge.exe",
+          "creationDate": "2026-10-12T21:06:40.2376460+09:00",
+          "source": "Parent read-only Win32_Process verification; no process stop was issued."
+        },
+        "loopbackListeners": [
+          {
+            "localAddress": "127.0.0.1",
+            "localPort": 33334,
+            "owningProcessId": 2364
+          },
+          {
+            "localAddress": "127.0.0.1",
+            "localPort": 11222,
+            "owningProcessId": 2364
+          },
+          {
+            "localAddress": "127.0.0.1",
+            "localPort": 9724,
+            "owningProcessId": 2364
+          }
+        ],
+        "stopProcessCalled": false,
+        "nativeProbeLaunched": false,
+        "finallyStartProcessWasAttemptedWhileOriginalWasStillPresent": true,
+        "noAdditionalBridgeProcessObserved": true,
+        "offlineComparisonEstablished": false
+      },
+      "countedAsPass": false,
+      "offlineComparisonEstablished": false
+    },
+    "probeGuardConfiguration": {
+      "optionalProbeGuardNullStdArgumentPassed": false,
+      "productionShimBuiltInFirstLoadGuardActiveAndUnchanged": true
+    }
+  }
+}

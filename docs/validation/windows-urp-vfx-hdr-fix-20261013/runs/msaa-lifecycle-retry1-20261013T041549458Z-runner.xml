@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="7" result="Passed" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-13 04:16:13Z" end-time="2026-10-13 04:16:46Z" duration="33.0550777">
+  <test-suite type="TestSuite" id="1323" name="PipelineSmoke" fullname="PipelineSmoke" runstate="Runnable" testcasecount="259" result="Passed" start-time="2026-10-13 04:16:13Z" end-time="2026-10-13 04:16:46Z" duration="33.055078" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1280" name="ViewWeave.SrpAdditionalValidation.Tests.dll" fullname="E:/LookingGlassSDK/Tests/Pipelines/Unity/Library/ScriptAssemblies/ViewWeave.SrpAdditionalValidation.Tests.dll" runstate="Runnable" testcasecount="14" result="Passed" start-time="2026-10-13 04:16:13Z" end-time="2026-10-13 04:16:46Z" duration="33.037155" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="121756" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1281" name="ViewWeave" fullname="ViewWeave" runstate="Runnable" testcasecount="14" result="Passed" start-time="2026-10-13 04:16:13Z" end-time="2026-10-13 04:16:46Z" duration="33.035811" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1282" name="SrpAdditionalValidation" fullname="ViewWeave.SrpAdditionalValidation" runstate="Runnable" testcasecount="14" result="Passed" start-time="2026-10-13 04:16:13Z" end-time="2026-10-13 04:16:46Z" duration="33.034825" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1264" name="QuiltRendererMsaaLifecycleTests" fullname="ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests" classname="ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests" runstate="Runnable" testcasecount="7" result="Passed" start-time="2026-10-13 04:16:13Z" end-time="2026-10-13 04:16:46Z" duration="33.032986" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1269" name="CoreDefaultsToLdrWithoutAnOptionalViewFormatProvider" fullname="ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests.CoreDefaultsToLdrWithoutAnOptionalViewFormatProvider" methodname="CoreDefaultsToLdrWithoutAnOptionalViewFormatProvider" classname="ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests" runstate="Runnable" seed="1762624227" result="Passed" start-time="2026-10-13 04:16:13Z" end-time="2026-10-13 04:16:13Z" duration="0.015443" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1270" name="HdrFormatReplacementRequestsPreviewStopBeforeReleasingOwnedTexture" fullname="ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests.HdrFormatReplacementRequestsPreviewStopBeforeReleasingOwnedTexture" methodname="HdrFormatReplacementRequestsPreviewStopBeforeReleasingOwnedTexture" classname="ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests" runstate="Runnable" seed="1268566745" result="Passed" start-time="2026-10-13 04:16:13Z" end-time="2026-10-13 04:16:39Z" duration="26.359791" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Warning in Graph at Packages/com.unity.shadergraph/GraphTemplates/Cross Pipeline/2_Particle Lit.shadergraph on line 5: Treating '#include_with_pragmas' directive as '#include'
+Shader Graph at Packages/com.unity.render-pipelines.high-definition/Runtime/Tools/ColorChecker/ColorCheckerShader.shadergraph has 2 warning(s), the first is: Validation: Exposure Node is not allowed by Universal implementation
+Warning in Graph at Packages/com.unity.shadergraph/GraphTemplates/Cross Pipeline/0_Particle Unlit.shadergraph on line 5: Treating '#include_with_pragmas' directive as '#include'
+]]></output>
+            </test-case>
+            <test-case id="1267" name="UrpDeferredRendererFallsBackToSingleSample" fullname="ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests.UrpDeferredRendererFallsBackToSingleSample" methodname="UrpDeferredRendererFallsBackToSingleSample" classname="ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests" runstate="Runnable" seed="581646680" result="Passed" start-time="2026-10-13 04:16:39Z" end-time="2026-10-13 04:16:40Z" duration="0.388716" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1271" name="UrpHdrViewResolvesToLdrAndRecreatesOnFormatToggle" fullname="ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests.UrpHdrViewResolvesToLdrAndRecreatesOnFormatToggle" methodname="UrpHdrViewResolvesToLdrAndRecreatesOnFormatToggle" classname="ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests" runstate="Runnable" seed="1210166986" result="Passed" start-time="2026-10-13 04:16:40Z" end-time="2026-10-13 04:16:42Z" duration="1.919569" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1265" name="UrpMsaaPreservesColorSpaceAcrossSamplesResizeAndCleanup" fullname="ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests.UrpMsaaPreservesColorSpaceAcrossSamplesResizeAndCleanup" methodname="UrpMsaaPreservesColorSpaceAcrossSamplesResizeAndCleanup" classname="ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests" runstate="Runnable" seed="583892581" result="Passed" start-time="2026-10-13 04:16:42Z" end-time="2026-10-13 04:16:43Z" duration="1.514596" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[MSAA color validation requested=1 actual=1 quiltSrgb=True viewSrgb=True graphicsFormat=R8G8B8A8_SRGB colorSpace=Linear
+MSAA color validation requested=2 actual=2 quiltSrgb=True viewSrgb=True graphicsFormat=R8G8B8A8_SRGB colorSpace=Linear
+MSAA color validation requested=4 actual=4 quiltSrgb=True viewSrgb=True graphicsFormat=R8G8B8A8_SRGB colorSpace=Linear
+MSAA color validation requested=8 actual=8 quiltSrgb=True viewSrgb=True graphicsFormat=R8G8B8A8_SRGB colorSpace=Linear
+]]></output>
+            </test-case>
+            <test-case id="1268" name="UrpMsaaRecreatesResolveOnResizeAndDisable" fullname="ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests.UrpMsaaRecreatesResolveOnResizeAndDisable" methodname="UrpMsaaRecreatesResolveOnResizeAndDisable" classname="ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests" runstate="Runnable" seed="468846213" result="Passed" start-time="2026-10-13 04:16:43Z" end-time="2026-10-13 04:16:45Z" duration="1.408199" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1266" name="UrpMsaaRequestedSamplesFollowDeviceSupport" fullname="ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests.UrpMsaaRequestedSamplesFollowDeviceSupport" methodname="UrpMsaaRequestedSamplesFollowDeviceSupport" classname="ViewWeave.SrpAdditionalValidation.QuiltRendererMsaaLifecycleTests" runstate="Runnable" seed="1680823846" result="Passed" start-time="2026-10-13 04:16:45Z" end-time="2026-10-13 04:16:46Z" duration="1.413118" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[MSAA lifecycle requested=1 expected=1 actual=1 colorSpace=Linear
+MSAA lifecycle requested=2 expected=2 actual=2 colorSpace=Linear
+MSAA lifecycle requested=4 expected=4 actual=4 colorSpace=Linear
+MSAA lifecycle requested=8 expected=8 actual=8 colorSpace=Linear
+Saving results to: C:/Users/zzaba/AppData/LocalLow/zabaglione/PipelineSmoke\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

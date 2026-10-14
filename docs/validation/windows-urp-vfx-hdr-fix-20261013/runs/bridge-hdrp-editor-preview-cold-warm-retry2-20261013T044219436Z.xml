@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Passed" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-13 04:42:34Z" end-time="2026-10-13 04:42:35Z" duration="1.7887573">
+  <test-suite type="TestSuite" id="1000" name="PipelineSmoke" fullname="PipelineSmoke" runstate="Runnable" testcasecount="165" result="Passed" start-time="2026-10-13 04:42:34Z" end-time="2026-10-13 04:42:35Z" duration="1.788757" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1143" name="ViewWeave.BridgeEditorPreviewValidation.Editor.Tests.dll" fullname="E:/LookingGlassSDK/Tests/Pipelines/Unity/Library/ScriptAssemblies/ViewWeave.BridgeEditorPreviewValidation.Editor.Tests.dll" runstate="Runnable" testcasecount="111" result="Passed" start-time="2026-10-13 04:42:34Z" end-time="2026-10-13 04:42:35Z" duration="1.779910" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="55288" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1144" name="ViewWeave" fullname="ViewWeave" runstate="Runnable" testcasecount="111" result="Passed" start-time="2026-10-13 04:42:34Z" end-time="2026-10-13 04:42:35Z" duration="1.778740" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1146" name="BridgeEditorPreviewValidation" fullname="ViewWeave.BridgeEditorPreviewValidation" runstate="Runnable" testcasecount="63" result="Passed" start-time="2026-10-13 04:42:34Z" end-time="2026-10-13 04:42:35Z" duration="1.777273" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1114" name="BridgeEditorPreviewGpuTests" fullname="ViewWeave.BridgeEditorPreviewValidation.BridgeEditorPreviewGpuTests" classname="ViewWeave.BridgeEditorPreviewValidation.BridgeEditorPreviewGpuTests" runstate="Runnable" testcasecount="19" result="Passed" start-time="2026-10-13 04:42:34Z" end-time="2026-10-13 04:42:35Z" duration="1.775116" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1124" name="HdrpEditorPreviewRendersAndRejectsProfileMutationWhileOwned" fullname="ViewWeave.BridgeEditorPreviewValidation.BridgeEditorPreviewGpuTests.HdrpEditorPreviewRendersAndRejectsProfileMutationWhileOwned" methodname="HdrpEditorPreviewRendersAndRejectsProfileMutationWhileOwned" classname="ViewWeave.BridgeEditorPreviewValidation.BridgeEditorPreviewGpuTests" runstate="Runnable" seed="1924793559" result="Passed" start-time="2026-10-13 04:42:34Z" end-time="2026-10-13 04:42:35Z" duration="1.760859" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[EDITOR_PREVIEW_GPU cold_source_initialization pipeline=HDRP, elapsedSeconds=1.12, withinSetupBudget=True, sourcePixelsVisible=True, greenDominant=868, nonBlack=868, maxRGB=79/203/41
+EDITOR_PREVIEW_GPU source_control_attempt pipeline=HDRP, attempt=1, camera=source.scene=, sceneMask=0, overrideMask=0, cameraMask=-1, targetVisibleByLayer=True, exposure=fallbackEnabled=True, fallbackFixedExposureEV=0.00, exposureMode=ManualFixed, elapsedSeconds=0.08, withinDeadline=True, greenDominant=868, nonBlack=868, maxRGB=79/203/41
+EDITOR_PREVIEW_GPU hdrp_producer_exposure guard=True, mode=ManualFixed, fallbackEV=0.00
+EDITOR_PREVIEW_GPU hdrp_producer_ready frames=0, valid=true, hasRenderedQuilt=true, revision=1, renderStatus=HDRP isolated histories: 8 cameras; shared exposure EV 0.00; graphics growth 0.0 MB; texture growth estimate 0.0 MB
+EDITOR_PREVIEW_GPU cameras=source.scene=, sceneMask=0, overrideMask=0, cameraMask=-1, targetVisibleByLayer=True; producer.scene=, sceneMask=0, overrideMask=0, cameraMask=-1, targetVisibleByLayer=True; target.scene=, target.sceneMask=16140901064495857664, target.layer=0
+EDITOR_PREVIEW_GPU render pipeline=HDRP, views=8, samplesView=1, samplesResolve=0
+EDITOR_PREVIEW_GPU pixels=greenDominant=1720, nonBlack=1720, maxRGB=82/204/43
+EDITOR_PREVIEW_GPU profile_mutation pipeline=HDRP, rejected=true, profileUnchanged=true
+EDITOR_PREVIEW_GPU pause_resume pipeline=HDRP, sameProducer=true, sameCoreTextures=true
+Saving results to: C:/Users/zzaba/AppData/LocalLow/zabaglione/PipelineSmoke\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

@@ -1,0 +1,18 @@
+{
+  "dependencies": {
+    "com.unity.inputsystem": "1.20.0",
+    "com.unity.render-pipelines.high-definition": "17.6.0",
+    "com.unity.render-pipelines.universal": "17.6.0",
+    "com.unity.test-framework": "1.5.1",
+    "com.unity.ugui": "2.6.0",
+    "com.zabaglione.lookingglass.viewweave.bridge": "file:../../../../Packages/com.zabaglione.lookingglass.viewweave.bridge",
+    "com.zabaglione.lookingglass.viewweave.core": "file:../../../../Packages/com.zabaglione.lookingglass.viewweave.core",
+    "com.zabaglione.lookingglass.viewweave.hdrp": "file:../../../../Packages/com.zabaglione.lookingglass.viewweave.hdrp",
+    "com.zabaglione.lookingglass.viewweave.urp": "file:../../../../Packages/com.zabaglione.lookingglass.viewweave.urp",
+    "com.unity.modules.jsonserialize": "1.0.0",
+    "com.unity.modules.imageconversion": "1.0.0",
+    "com.unity.modules.particlesystem": "1.0.0",
+    "com.unity.modules.physics": "1.0.0",
+    "com.unity.modules.uielements": "1.0.0"
+  }
+}

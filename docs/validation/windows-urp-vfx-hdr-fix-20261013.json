@@ -1,0 +1,311 @@
+{
+  "schemaVersion": 1,
+  "record": "Windows URP VFX HDR intermediate fix validation",
+  "dateLocal": "2026-10-13",
+  "status": "implemented-uncommitted-selected-editor-offscreen-and-device-passes",
+  "sourceBasis": {
+    "baselineRevision": "11312b8c6cf824d9a7ac7c8940e95cee742fa076",
+    "preexistingUncommittedDiagnosticChangesPresent": true,
+    "hdrImplementationPresentInSdkAndDistribution": true,
+    "implementationCommitted": false,
+    "implementationReleased": false,
+    "originalUserProjectsModified": false,
+    "unityVersion": "6000.6.4f1",
+    "graphicsApi": "D3D12",
+    "primarySourceHashes": {
+      "Packages/com.zabaglione.lookingglass.viewweave.core/Runtime/QuiltRenderer.cs": "8DC2F11769425D22C123ACFE49C59B742C2CF548A2F956D845F4895A2E4A9BBE",
+      "Packages/com.zabaglione.lookingglass.viewweave.core/Runtime/IQuiltViewTextureFormatProvider.cs": "99182903A82CA89E818CA03770AC9EAA18FF5CB861D0624DBC3B43912EC0FC11",
+      "Packages/com.zabaglione.lookingglass.viewweave.urp/Runtime/UrpQuiltCamera.cs": "864C024CA951E6EB07C6FDF09EF4BDAB8762ACB2E536AC619AA097F639113CBB",
+      "Tests/Pipelines/Unity/Assets/SrpAdditionalValidation/QuiltRendererMsaaLifecycleTests.cs": "DEFDD8FDCAD8637A91A6AC547831FD0EA62562997F0D56FFFC70B86370ABB921",
+      "Tests/Pipelines/Unity/Assets/BridgeSessionValidation/Editor/BridgeEditorPreviewGpuTests.cs": "55A89AD09B0AC46E8D917FD525501915E3CB3384972036F9A8C6C68158DEBFF5"
+    },
+    "followupProbeSourceHashes": {
+      "offscreenProbeSource": "B901F4C16102F2A9BE228CFC4D5BF28D812E88FAC2A57B6F095E18857A06C7AC",
+      "mainSdkDeviceProbeSource": "AFC521F615489468D1F351565366935B37835B061B953DC6F9DBEC6303DE2B7F"
+    }
+  },
+  "scope": {
+    "platform": "Windows",
+    "renderPipeline": "URP",
+    "unityVersion": "6000.6.4f1",
+    "graphicsApi": "D3D12",
+    "editor": true,
+    "player": false,
+    "hdrpProviderImplemented": false,
+    "macosMetalExecuted": false,
+    "nativeDeviceTransferTested": true,
+    "physicalLookingGlassOutputTested": true,
+    "physicalDeviceDetails": {
+      "device": "Looking Glass; Bridge 2.6.3",
+      "gpu": "NVIDIA RTX 3090 Ti",
+      "unityVersion": "6000.6.4f1",
+      "graphicsApi": "D3D12",
+      "outputQuality": "Preview",
+      "viewMode": "Quarter",
+      "actualRenderedViews": 12,
+      "actualLayout": "1920x1080, 8x6, 48 views",
+      "vfxGraphVersion": "17.6.0",
+      "graphs": [
+        "MultiStripGPUEvents",
+        "RotationAngle"
+      ],
+      "taaPostProcessingHdrPreserved": true
+    }
+  },
+  "implementation": {
+    "formatProvider": "optional Core render-target format provider with URP implementation",
+    "halfFloatSelectionCondition": "source camera allows HDR AND active URP asset supports HDR",
+    "hdrViewTarget": "R16G16B16A16_SFloat linear",
+    "ldrFallback": "existing LDR view target only when source-camera HDR is off, active URP asset reports HDR unsupported, or no format provider is installed",
+    "finalQuiltAtlas": "existing RGBA8 sRGB",
+    "ownership": "preserve CoreTrack ownership and detach/retain behavior",
+    "msaaResolve": "query effective target/device capability and resolve once into LDR quilt",
+    "graphicsState": "restore graphics state and active render target in finally",
+    "taaHistory": "retain existing camera identity",
+    "diagnosticBudgets": "unchanged",
+    "providerRequestedHdrFormatFailure": "unsupported or invalid requested HDR half-float format throws/fails closed; no silent LDR fallback"
+  },
+  "selectedEditorResults": {
+    "unityVersion": "6000.6.4f1",
+    "graphicsApi": "D3D12",
+    "nunitPassed": 12,
+    "nunitFailed": 0,
+    "nunitInconclusive": 0,
+    "nunitSkipped": 0,
+    "urpRelatedSelectedNunitPassed": 11,
+    "testPlatformCounts": {
+      "PlayMode": 9,
+      "EditMode": 3
+    },
+    "coverageNote": "The URP-related selected cases include Core default-format and renderer/history lifecycle tests. The aggregate does not mean 11 successful URP VFX output cases.",
+    "hdrpLimitedWarmedPreviewNunitPassed": 1,
+    "editorProcessesNaturalExitZero": true,
+    "residualExactProjectProcesses": 0,
+    "outputDrainIncomplete": false,
+    "runArchive": "validation/windows-urp-vfx-hdr-fix-20261013/runs/ (unit) and validation/windows-urp-vfx-hdr-fix-20261013/main-sdk-hdr/ (offscreen and physical)",
+    "cases": [
+      {
+        "label": "URP Editor Preview owned",
+        "nunit": "1/1 pass",
+        "testPlatform": "EditMode",
+        "scope": "D3D12 EditMode; URP Editor Preview and profile ownership behavior"
+      },
+      {
+        "label": "Local Preview-to-Play transition",
+        "nunit": "1/1 pass",
+        "testPlatform": "EditMode",
+        "scope": "D3D12 EditMode fixture; Preview stops before entering Play Mode"
+      },
+      {
+        "label": "URP TAA independent histories",
+        "nunit": "1/1 pass",
+        "testPlatform": "PlayMode",
+        "scope": "D3D12 PlayMode; selected TAA accumulation fixture"
+      },
+      {
+        "label": "URP effective MSAA permission",
+        "nunit": "1/1 pass",
+        "testPlatform": "PlayMode",
+        "scope": "D3D12 PlayMode; effective renderer and source-camera permission"
+      },
+      {
+        "label": "URP MSAA and texture lifecycle",
+        "nunit": "7/7 pass",
+        "testPlatform": "PlayMode",
+        "scope": "D3D12 PlayMode; Core default LDR and selected HDR format, resolve, support fallback, resize and cleanup; not VFX output coverage"
+      },
+      {
+        "label": "HDRP Editor Preview cold-warm retry2",
+        "nunit": "1/1 pass",
+        "testPlatform": "EditMode",
+        "scope": "D3D12 EditMode; one bounded eight-view warmed Preview/lifecycle check on shared Core code; no HDRP provider"
+      }
+    ],
+    "mainSdkHdrFollowup": {
+      "archive": "windows-urp-vfx-hdr-fix-20261013/main-sdk-hdr/",
+      "manifestSha256": "F2F3C2B8C463F1FAAD43BD53A994F6E57AF59ECACF877A3AA1AAD38C589D5015",
+      "files": 70,
+      "bytes": 32481347,
+      "runs": [
+        {
+          "name": "phase-b-green",
+          "scope": "D3D12 offscreen Editor PlayMode; 1 selected graph; PP/Bloom/ACES on; one quilt view; AA off",
+          "nunit": "1/1 pass",
+          "seconds": 20.0078,
+          "observations": 720,
+          "greenSignalFramesNormal": 566,
+          "greenSignalFramesQuilt": 566,
+          "normalTarget": "R16G16B16A16_SFloat linear",
+          "quiltTarget": "R8G8B8A8_SRGB",
+          "xmlSha256": "2DA6709D70588E3692BDBC81DBB92650A1E9861A687E8F8661357BC8A8B80F5F",
+          "greenFramesStrictClassifierBothTargetsPositive": true
+        },
+        {
+          "name": "phase-b-coin",
+          "scope": "D3D12 offscreen Editor PlayMode; 1 selected graph; PP/Bloom/ACES on; one quilt view; AA off",
+          "nunit": "1/1 pass",
+          "seconds": 6.0147,
+          "observations": 233,
+          "normalTarget": "R16G16B16A16_SFloat linear",
+          "quiltTarget": "R8G8B8A8_SRGB",
+          "xmlSha256": "1435818CC82CF05A766D9192770D1731E4F2F05D0AA01C4979AA20F2E2771B6A",
+          "coinBrightnessVariedOnBothTargets": true
+        },
+        {
+          "name": "main-device-green",
+          "graph": "MultiStripGPUEvents",
+          "nunit": "1/1 pass",
+          "editorExitCode": 0,
+          "drain": true,
+          "response": "green-visible",
+          "responseNonceMatched": true,
+          "deviceOptIn": true,
+          "graphicsApi": "D3D12",
+          "gpu": "NVIDIA RTX 3090 Ti",
+          "unityVersion": "6000.6.4f1",
+          "vfxGraphVersion": "17.6.0",
+          "bridgeVersion": "2.6.3",
+          "preview": "Quarter; layout 1920x1080 8x6 48 views; rendered/history 12",
+          "taaPostProcessingHdrUnchanged": true,
+          "normalTarget": "240x180 R16G16B16A16_SFloat linear",
+          "resolveTarget": "240x180 R8G8B8A8_SRGB",
+          "quiltTarget": "1920x1080 R8G8B8A8_SRGB",
+          "selectedEffectPeakGrowthBytes": {
+            "graphics": 27213568,
+            "private": 28651520
+          },
+          "cleanup": "Idle; pending 0; history cameras 0; view/resolve/quilt released; all effects inactive",
+          "xmlSha256": "20E9A5F84B7DDE84DBF90DE1E0554D600F9BC70AF14681A68E8D62032520D05A",
+          "userVisualAnswerJa": "緑に点灯している／緑に切り替わる"
+        },
+        {
+          "name": "main-device-coin",
+          "graph": "RotationAngle",
+          "nunit": "1/1 pass",
+          "editorExitCode": 0,
+          "drain": true,
+          "response": "coin-flash-visible",
+          "responseNonceMatched": true,
+          "deviceOptIn": true,
+          "graphicsApi": "D3D12",
+          "gpu": "NVIDIA RTX 3090 Ti",
+          "unityVersion": "6000.6.4f1",
+          "vfxGraphVersion": "17.6.0",
+          "bridgeVersion": "2.6.3",
+          "preview": "Quarter; layout 1920x1080 8x6 48 views; rendered/history 12",
+          "taaPostProcessingHdrUnchanged": true,
+          "normalTarget": "240x180 R16G16B16A16_SFloat linear",
+          "resolveTarget": "240x180 R8G8B8A8_SRGB",
+          "quiltTarget": "1920x1080 R8G8B8A8_SRGB",
+          "startupGraphicsBytes": 246065608,
+          "startupPrivateBytes": 1753247744,
+          "prewarmGraphicsBytes": 953826708,
+          "prewarmPrivateBytes": 2995957760,
+          "selectedEffectPeakGrowthBytes": {
+            "graphics": 4295680,
+            "private": 7618560
+          },
+          "cleanup": "Idle; pending 0; history cameras 0; view/resolve/quilt released; all effects inactive",
+          "xmlSha256": "963974B554D6C9FB223D9FB258454233660D82E0C7F323C88C87D8742B3395B3",
+          "userVisualAnswerJa": "強い発光・明滅が見える"
+        }
+      ],
+      "notes": [
+        "All four follow-up probes passed 1/1, exited naturally with code 0, drained output, and passed cleanup gates.",
+        "Both physical stages used deviceOptIn=true and user nonce-matched observations: Green was reported as green switching/on; Coin as strong glow/flicker visible.",
+        "The effect-growth safety cap is measured after all-VFX-off prewarm for the selected graph only. Startup and prewarm absolute process counters are separate and are not a total-memory cap.",
+        "Coin runner/XML filenames retain a green prefix; use manifest run name and NUnit test case to identify it.",
+        "The two offscreen runs and two physical runs are different scopes. Physical output does not assert all scenes, all 33 effects, Player, all quilt views simultaneously, or crash/memory incident resolution.",
+        "A prior Green setup attempt failed before the device stage; the raw failure record is preserved under support-failures and is not counted as a probe pass."
+      ],
+      "physicalScopeNote": "Preview/Quarter profile retained the configured TAA, post-processing and HDR. 12 rendered/history views were observed within the 48-view quilt layout; the probes did not claim all 48 views were rendered simultaneously."
+    },
+    "adoptedNunitTotal": 16,
+    "adoptedNunitPassed": 16,
+    "adoptedNunitFailed": 0,
+    "adoptedNunitInconclusive": 0,
+    "adoptedNunitSkipped": 0,
+    "countDefinition": "12 selected Editor cases + 2 offscreen original-graph probes + 2 main-SDK physical-device probes; failed setup/compile/interrupted attempts are not added.",
+    "runArchiveManifestSha256": "F2F3C2B8C463F1FAAD43BD53A994F6E57AF59ECACF877A3AA1AAD38C589D5015"
+  },
+  "historicalNonPasses": [
+    {
+      "label": "HDRP Editor Preview owned restart1 cold attempt",
+      "status": "failed",
+      "nunit": "0/1 passed; 1 failed",
+      "observation": "cold readiness attempt took 22.40 seconds and measured 868 green-dominant pixels, exceeding the fixture's 15-second readiness window; Preview did not start",
+      "disposition": "preserved; followed by a source/test-revision retry that passed the bounded warmed Preview case; no cold-start guarantee"
+    },
+    {
+      "label": "Initial setup compilation",
+      "status": "setup-failed",
+      "observation": "CS0246 before the test case ran; setup reference was corrected before selected passing runs",
+      "nunitCounted": false
+    },
+    {
+      "label": "OS-interrupted run",
+      "status": "interrupted-no-xml",
+      "observation": "no NUnit XML was produced",
+      "nunitCounted": false
+    },
+    {
+      "label": "Main-SDK physical Green guard/prewarm setup attempt",
+      "status": "setup-failed-before-device-stage",
+      "observation": "The all-VFX-disabled prewarm setup failed before a valid profile, rendered view, or device visual response was produced. Cleanup returned Idle with zero pending shutdown, history cameras, and render targets. The helper guard setup was corrected before the passing physical runs.",
+      "nunitCounted": false,
+      "portableRawRecord": "main-sdk-hdr/support-failures/device-green-guard-setup-result.json and matching runner/XML"
+    }
+  ],
+  "hdrpColdWarmRetry": {
+    "status": "limited-pass",
+    "coldInitializationSeconds": 1.12,
+    "coldSourceGreenDominantPixels": 868,
+    "coldSourceMaxRgb": [
+      79,
+      203,
+      41
+    ],
+    "warmedSourceControlSeconds": 0.08,
+    "warmedSourceControlGreenDominantPixels": 868,
+    "previewViews": 8,
+    "xmlSha256": "E7E87D239C1559FB5974D54A7C7B55FF17B6B95AD931E752C8EB5C03249E8287",
+    "constraint": "This bounded retry does not replace the prior cold timing failure or establish a cold-start performance guarantee."
+  },
+  "gates": {
+    "urpHdrFormatSelection": "pass-selected-editor-tests",
+    "urpLdrFallback": "pass-selected-editor-tests",
+    "finalQuiltRgba8": "pass-selected-editor-tests",
+    "coreTrackOwnershipAndDetachRetain": "pass-selected-editor-tests",
+    "singleMsaaResolveAndEffectiveSupport": "pass-selected-editor-tests",
+    "graphicsStateFinallyRestoration": "pass-selected-editor-tests",
+    "taaCameraIdentity": "pass-selected-editor-tests",
+    "windowsUrpEditor": "11-selected-nunit-cases-passed",
+    "hdrpSharedCoreRegression": "one-limited-warmed-preview-case-passed; prior-cold-readiness-failure-preserved",
+    "lookingGlassPhysicalOutput": "two-selected-graphs-passed-main-SDK-D3D12-Editor-Preview-Quarter-12-rendered-views; user optical acknowledgements received; limited to tested profile and graphs",
+    "twoOffscreenFollowupProbes": "two-selected-original-graph-PP-on-AA-off-one-view-probes-passed",
+    "macosMetalHdrPath": "not-run",
+    "player": "not-run",
+    "broadVfxCompatibility": "not-established",
+    "urpLdrFallbackBoundary": "selected tests cover existing LDR path for source HDR off, active URP HDR unsupported, or absent provider; a provider-requested unsupported/invalid HDR format fails closed with an exception, not LDR fallback"
+  },
+  "observations": {
+    "memoryBudgetIncident": "separate unresolved incident; not attributed to or fixed by this change",
+    "editorShutdownCrash": "separate unresolved incident; causality unknown and not attributed to or fixed by this change",
+    "generalVfxCompatibilityClaim": false,
+    "priorRootCauseEvidence": "clone-only Phase A-C is retained in the linked root-cause report and is not a device or production-source run",
+    "macosEvidence": "No Metal run used this HDR implementation; older Metal results do not validate this source path.",
+    "physicalVisualAcknowledgements": {
+      "MultiStripGPUEvents": "green-visible",
+      "RotationAngle": "coin-flash-visible",
+      "limitation": "User-reported visual acknowledgement during selected main-SDK stages; not an independent optical measurement or broad compatibility guarantee."
+    }
+  },
+  "artifactLinks": {
+    "report": "../windows-urp-vfx-hdr-fix-20261013.md",
+    "runArchive": "windows-urp-vfx-hdr-fix-20261013/runs/",
+    "priorRootCauseReport": "../windows-urp-vfx-hdr-rootcause-20261013.md",
+    "priorIncidentReport": "../windows-urp-vfx-rendering-incident-20261013.md",
+    "mainSdkHdrArchive": "windows-urp-vfx-hdr-fix-20261013/main-sdk-hdr/",
+    "mainSdkHdrManifestSha256": "F2F3C2B8C463F1FAAD43BD53A994F6E57AF59ECACF877A3AA1AAD38C589D5015"
+  }
+}

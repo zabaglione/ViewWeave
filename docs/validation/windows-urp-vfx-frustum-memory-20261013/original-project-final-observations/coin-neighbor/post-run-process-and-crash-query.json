@@ -1,0 +1,17 @@
+{
+  "schema": "viewweave-original-coin-post-run-process-crash-query-v1",
+  "capturedUtc": "2026-10-13T19:49:56.4562414Z",
+  "exactProjectEditorCount": 0,
+  "bridgePid": 29956,
+  "bridgePresent": true,
+  "dumpRootsQueried": [
+    "%LOCALAPPDATA%/CrashDumps",
+    "%LOCALAPPDATA%/Temp/Unity/Editor/Crashes",
+    "%LOCALAPPDATA%/Microsoft/Windows/WER/ReportArchive",
+    "%LOCALAPPDATA%/Microsoft/Windows/WER/ReportQueue"
+  ],
+  "matchingDumpFiles": [],
+  "applicationEventLogQuery": "available",
+  "matchingUnityOrPidEvents": 0,
+  "scope": "read-only; no full event text or command line retained"
+}

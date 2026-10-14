@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Passed" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-13 16:43:59Z" end-time="2026-10-13 16:44:06Z" duration="7.1735051">
+  <test-suite type="TestSuite" id="1000" name="URPSample_6.6.41f1" fullname="URPSample_6.6.41f1" runstate="Runnable" testcasecount="8" result="Passed" start-time="2026-10-13 16:43:59Z" end-time="2026-10-13 16:44:06Z" duration="7.173505" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1015" name="ViewWeave.FrustumMetadata.Editor.Tests.dll" fullname="E:/LookingGlassSDK/.local/windows-vfx-scene-comparison-20261013/URP/UnityProject/Library/ScriptAssemblies/ViewWeave.FrustumMetadata.Editor.Tests.dll" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-13 16:43:59Z" end-time="2026-10-13 16:44:06Z" duration="7.166292" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="34152" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1016" name="ViewWeave" fullname="ViewWeave" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-13 16:43:59Z" end-time="2026-10-13 16:44:06Z" duration="7.165881" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1017" name="SceneComparison" fullname="ViewWeave.SceneComparison" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-13 16:43:59Z" end-time="2026-10-13 16:44:06Z" duration="7.165565" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1018" name="Tests" fullname="ViewWeave.SceneComparison.Tests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-13 16:43:59Z" end-time="2026-10-13 16:44:06Z" duration="7.165261" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1011" name="SampleSkinnedCustomCapacityFixture" fullname="ViewWeave.SceneComparison.Tests.SampleSkinnedCustomCapacityFixture" classname="ViewWeave.SceneComparison.Tests.SampleSkinnedCustomCapacityFixture" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-10-13 16:43:59Z" end-time="2026-10-13 16:44:06Z" duration="7.164094" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1012" name="BuildsSampleSkinnedCustomCapacityOneCloneAndChecksCompiledData" fullname="ViewWeave.SceneComparison.Tests.SampleSkinnedCustomCapacityFixture.BuildsSampleSkinnedCustomCapacityOneCloneAndChecksCompiledData" methodname="BuildsSampleSkinnedCustomCapacityOneCloneAndChecksCompiledData" classname="ViewWeave.SceneComparison.Tests.SampleSkinnedCustomCapacityFixture" runstate="Runnable" seed="2022336794" result="Passed" start-time="2026-10-13 16:43:59Z" end-time="2026-10-13 16:44:06Z" duration="7.151595" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Remove 1 child(ren) that couldnt be deserialized from  of type UnityEditor.VFX.VFXGraph
+Remove 1 linked context(s) that could not be deserialized from Update Particle of type UnityEditor.VFX.VFXBasicUpdate
+Remove 1 owners that couldnt be deserialized from  of type UnityEditor.VFX.VFXDataParticle
+Remove 1 linked context(s) that could not be deserialized from Update Particle of type UnityEditor.VFX.VFXBasicUpdate
+Remove 1 child(ren) that couldnt be deserialized from  of type UnityEditor.VFX.VFXGraph
+Remove 1 owners that couldnt be deserialized from  of type UnityEditor.VFX.VFXDataParticle
+Assets/FrustumMemorySkinnedCustom/Control/SampleSkinnedMesh.vfx - The source graph was out of date and has been upgraded before compilation - Save the graph to store the changes in the source asset
+Remove 1 linked context(s) that could not be deserialized from Update Particle of type UnityEditor.VFX.VFXBasicUpdate
+Remove 1 child(ren) that couldnt be deserialized from  of type UnityEditor.VFX.VFXGraph
+Remove 1 owners that couldnt be deserialized from  of type UnityEditor.VFX.VFXDataParticle
+Assets/FrustumMemorySkinnedCustom/Control/SampleSkinnedMesh.vfx - The source graph was out of date and has been upgraded before compilation - Save the graph to store the changes in the source asset
+Remove 1 child(ren) that couldnt be deserialized from  of type UnityEditor.VFX.VFXGraph
+Remove 1 linked context(s) that could not be deserialized from Update Particle of type UnityEditor.VFX.VFXBasicUpdate
+Remove 1 owners that couldnt be deserialized from  of type UnityEditor.VFX.VFXDataParticle
+Remove 1 linked slot(s) that couldnt be deserialized from Direction of type UnityEditor.VFX.VFXSlotFloat3
+Remove 1 linked slot(s) that couldnt be deserialized from Direction of type UnityEditor.VFX.VFXSlotFloat3
+Remove 1 linked slot(s) that couldnt be deserialized from Direction of type UnityEditor.VFX.VFXSlotFloat3
+Remove 1 linked slot(s) that couldnt be deserialized from Direction of type UnityEditor.VFX.VFXSlotFloat3
+Remove 1 linked slot(s) that couldnt be deserialized from Direction of type UnityEditor.VFX.VFXSlotFloat3
+Remove 1 linked slot(s) that couldnt be deserialized from Direction of type UnityEditor.VFX.VFXSlotFloat3
+Saving results to: C:/Users/zzaba/AppData/LocalLow/DefaultCompany/URPSample_6_6_41f1\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

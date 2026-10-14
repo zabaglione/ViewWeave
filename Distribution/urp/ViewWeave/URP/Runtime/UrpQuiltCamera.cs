@@ -8,7 +8,7 @@ namespace ViewWeave.URP
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Camera))]
-    public sealed class UrpQuiltCamera : MonoBehaviour, IQuiltRenderGuard, IQuiltMsaaSettingsProvider, IQuiltRenderSessionProvider, IQuiltRenderResourceOwner
+    public sealed class UrpQuiltCamera : MonoBehaviour, IQuiltRenderGuard, IQuiltMsaaSettingsProvider, IQuiltViewTextureFormatProvider, IQuiltRenderSessionProvider, IQuiltRenderResourceOwner
     {
         [Tooltip("Isolated histories keep a persistent Camera per rendered logical view and support TAA. Shared Camera Compatibility disables TAA temporarily.")]
         public UrpQuiltRenderingMode renderingMode = UrpQuiltRenderingMode.IsolatedViewHistories;
@@ -23,6 +23,15 @@ namespace ViewWeave.URP
         public long HistoryTextureMemoryEstimateBytes => historyRenderer == null ? 0 : historyRenderer.TextureMemoryGrowthBytes;
         public string HistoryStatus => historyRenderer == null ? string.Empty : historyRenderer.Status;
         public Camera GetHistoryCamera(int logicalView) => historyRenderer?.GetCamera(logicalView);
+        public RenderTextureFormat GetQuiltViewTextureFormat(Camera sourceCamera)
+        {
+            if (sourceCamera == null || sourceCamera != Camera)
+                throw new InvalidOperationException("view texture format source camera does not match the URP quilt camera");
+            UniversalRenderPipelineAsset pipeline = GraphicsSettings.currentRenderPipeline as UniversalRenderPipelineAsset;
+            return sourceCamera.allowHDR && pipeline != null && pipeline.supportsHDR
+                ? RenderTextureFormat.ARGBHalf
+                : RenderTextureFormat.ARGB32;
+        }
         public void ReleaseQuiltRenderResources() { historyRenderer?.Dispose(); historyRenderer = null; }
         public IQuiltRenderSession BeginQuiltRender(QuiltRenderContext context)
         {

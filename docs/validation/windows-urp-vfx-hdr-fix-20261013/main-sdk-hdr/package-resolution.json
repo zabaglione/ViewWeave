@@ -1,0 +1,72 @@
+{
+    "status": "success-after-reload",
+    "pipeline": "URP",
+    "packages": [
+        {
+            "name": "com.unity.graph-authoring",
+            "version": "1.0.0",
+            "source": "BuiltIn",
+            "resolvedPath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\UnityProject\\Library\\PackageCache\\com.unity.graph-authoring@cfd2588851ee"
+        },
+        {
+            "name": "com.unity.inputsystem",
+            "version": "1.20.0",
+            "source": "Registry",
+            "resolvedPath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\UnityProject\\Library\\PackageCache\\com.unity.inputsystem@7a4e1a2a8194"
+        },
+        {
+            "name": "com.unity.render-pipelines.core",
+            "version": "17.6.0",
+            "source": "BuiltIn",
+            "resolvedPath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\UnityProject\\Library\\PackageCache\\com.unity.render-pipelines.core@285af6b8c83f"
+        },
+        {
+            "name": "com.unity.render-pipelines.universal",
+            "version": "17.6.0",
+            "source": "BuiltIn",
+            "resolvedPath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\UnityProject\\Library\\PackageCache\\com.unity.render-pipelines.universal@b0678dfc9e21"
+        },
+        {
+            "name": "com.unity.searcher",
+            "version": "4.9.5",
+            "source": "Registry",
+            "resolvedPath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\UnityProject\\Library\\PackageCache\\com.unity.searcher@a463122f2c00"
+        },
+        {
+            "name": "com.unity.shadergraph",
+            "version": "17.6.0",
+            "source": "BuiltIn",
+            "resolvedPath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\UnityProject\\Library\\PackageCache\\com.unity.shadergraph@58bcb150677d"
+        },
+        {
+            "name": "com.unity.test-framework",
+            "version": "1.8.0",
+            "source": "BuiltIn",
+            "resolvedPath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\UnityProject\\Library\\PackageCache\\com.unity.test-framework@80f691d4262b"
+        },
+        {
+            "name": "com.unity.ugui",
+            "version": "2.6.0",
+            "source": "BuiltIn",
+            "resolvedPath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\UnityProject\\Library\\PackageCache\\com.unity.ugui@0727b404f3a0"
+        },
+        {
+            "name": "com.zabaglione.lookingglass.viewweave.bridge",
+            "version": "0.1.0",
+            "source": "Local",
+            "resolvedPath": "E:\\LookingGlassSDK\\Packages\\com.zabaglione.lookingglass.viewweave.bridge"
+        },
+        {
+            "name": "com.zabaglione.lookingglass.viewweave.core",
+            "version": "0.1.0",
+            "source": "Local",
+            "resolvedPath": "E:\\LookingGlassSDK\\Packages\\com.zabaglione.lookingglass.viewweave.core"
+        },
+        {
+            "name": "com.zabaglione.lookingglass.viewweave.urp",
+            "version": "0.1.0",
+            "source": "Local",
+            "resolvedPath": "E:\\LookingGlassSDK\\Packages\\com.zabaglione.lookingglass.viewweave.urp"
+        }
+    ]
+}

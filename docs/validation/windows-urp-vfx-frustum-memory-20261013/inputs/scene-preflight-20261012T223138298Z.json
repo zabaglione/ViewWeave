@@ -1,0 +1,2426 @@
+{
+    "status": "failed",
+    "pipeline": "UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset|PC_High",
+    "projectPath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\UnityProject",
+    "scenePath": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/Scenes/URP_VFX_Learning_Templates.unity",
+    "unityVersion": "6000.6.4f1",
+    "noGraphicsRequested": true,
+    "graphicsSettingsPipeline": "UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset|PC_High",
+    "currentQualityPipeline": "UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset|PC_High",
+    "expectedPipeline": "URP",
+    "qualityAntiAliasing": 0,
+    "colorSpace": "Linear",
+    "missingScriptComponentCount": 0,
+    "strippedMissingScripts": [],
+    "strippedBridgeScriptComponentCount": 2,
+    "strippedBridgeScriptComponents": [
+        {
+            "assetPath": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/Scenes/URP_VFX_Learning_Templates.unity",
+            "componentFileId": "1167495801",
+            "scriptGuid": "e8cdf3cd3265460a8633a892842ed0d6"
+        },
+        {
+            "assetPath": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/Scenes/URP_VFX_Learning_Templates.unity",
+            "componentFileId": "1167495802",
+            "scriptGuid": "7fbfb1f9c2d248a2b6e1eb4d4fd6c733"
+        }
+    ],
+    "visualEffectComponentCount": 33,
+    "activeVisualEffectComponentCount": 32,
+    "effects": [
+        {
+            "objectPath": "Multi-Strips GPU-Event/TurntableWithBackdrop_VFX/VFXG Multi-Strips GPU-Events",
+            "activeSelf": true,
+            "activeInHierarchy": true,
+            "componentEnabled": true,
+            "assetPath": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/VFX/MultiStripGPUEvents.vfx",
+            "assetGuid": "09e4dfff658c863459dc084250a47a15",
+            "assetName": "MultiStripGPUEvents",
+            "graphOutputs": [
+                {
+                    "type": "UnityEditor.VFX.VFXComposedParticleOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "320",
+                    "stripCapacity": "1",
+                    "blendMode": "Alpha",
+                    "generateMotionVector": "True",
+                    "hasMotionVector": "True",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.VFXPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "16",
+                    "stripCapacity": "1",
+                    "blendMode": "Additive",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "False"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.VFXPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "16",
+                    "stripCapacity": "1",
+                    "blendMode": "Additive",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "False"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPLitQuadStripOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "32000",
+                    "stripCapacity": "320",
+                    "blendMode": "Opaque",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                }
+            ],
+            "graphInventoryStatus": "success"
+        },
+        {
+            "objectPath": "Strip GPU-Events/TurntableWithBackdrop_VFX/VFXG Strip GPU-Events",
+            "activeSelf": true,
+            "activeInHierarchy": true,
+            "componentEnabled": true,
+            "assetPath": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/VFX/StripGPUEvent.vfx",
+            "assetGuid": "df1e474b859146a4cb64910d1405926d",
+            "assetName": "StripGPUEvent",
+            "graphOutputs": [
+                {
+                    "type": "UnityEditor.VFX.VFXComposedParticleOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "64",
+                    "stripCapacity": "1",
+                    "blendMode": "Alpha",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.VFXPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "15000",
+                    "stripCapacity": "1",
+                    "blendMode": "Additive",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "False"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.VFXPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "48",
+                    "stripCapacity": "1",
+                    "blendMode": "Additive",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "False"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPLitQuadStripOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "6400",
+                    "stripCapacity": "64",
+                    "blendMode": "Opaque",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                }
+            ],
+            "graphInventoryStatus": "success"
+        },
+        {
+            "objectPath": "Multi-Strip Periodic Burst/TurntableWithBackdrop_VFX/VFXG MultiStrips PeriodicBurst",
+            "activeSelf": true,
+            "activeInHierarchy": true,
+            "componentEnabled": true,
+            "assetPath": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/VFX/MultiStripsPeriodicBurst.vfx",
+            "assetGuid": "6f1b2eba78337db42b0c077a7efc5cfc",
+            "assetName": "MultiStripsPeriodicBurst",
+            "graphOutputs": [
+                {
+                    "type": "UnityEditor.VFX.VFXQuadStripOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "1000",
+                    "stripCapacity": "20",
+                    "blendMode": "Alpha",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "False"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.VFXPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "1000",
+                    "stripCapacity": "20",
+                    "blendMode": "Additive",
+                    "generateMotionVector": "True",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "False"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                }
+            ],
+            "graphInventoryStatus": "success"
+        },
+        {
+            "objectPath": "Multi-Strip Single Burst/TurntableWithBackdrop_VFX/VFXG MultiStrips SingleBurst",
+            "activeSelf": true,
+            "activeInHierarchy": true,
+            "componentEnabled": true,
+            "assetPath": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/VFX/MultiStripSingleBurst.vfx",
+            "assetGuid": "285ef980a6fd8b746bc973e6f8b7b08d",
+            "assetName": "MultiStripSingleBurst",
+            "graphOutputs": [
+                {
+                    "type": "UnityEditor.VFX.VFXComposedParticleOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "500",
+                    "stripCapacity": "10",
+                    "blendMode": "Alpha",
+                    "generateMotionVector": "True",
+                    "hasMotionVector": "True",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPLitQuadStripOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "500",
+                    "stripCapacity": "10",
+                    "blendMode": "Opaque",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                }
+            ],
+            "graphInventoryStatus": "success"
+        },
+        {
+            "objectPath": "Multi-Strip SpawnRate/TurntableWithBackdrop_VFX/VFXG MultiStrips SpawnRate",
+            "activeSelf": true,
+            "activeInHierarchy": true,
+            "componentEnabled": true,
+            "assetPath": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/VFX/MultiStripsSpawnRate.vfx",
+            "assetGuid": "ca72ef41e5ce48145b8c4b3fc13e3649",
+            "assetName": "MultiStripsSpawnRate",
+            "graphOutputs": [
+                {
+                    "type": "UnityEditor.VFX.VFXQuadStripOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "600",
+                    "stripCapacity": "6",
+                    "blendMode": "Alpha",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "False"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                }
+            ],
+            "graphInventoryStatus": "success"
+        },
+        {
+            "objectPath": "Strip SpawnRate/TurntableWithBackdrop_VFX/VFXG Strip SpawnRate",
+            "activeSelf": true,
+            "activeInHierarchy": true,
+            "componentEnabled": true,
+            "assetPath": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/VFX/StripSpawnRate.vfx",
+            "assetGuid": "f78050f9f0d59454f85bb860231d6b0d",
+            "assetName": "StripSpawnRate",
+            "graphOutputs": [
+                {
+                    "type": "UnityEditor.VFX.VFXQuadStripOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "72",
+                    "stripCapacity": "1",
+                    "blendMode": "Alpha",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "False"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                }
+            ],
+            "graphInventoryStatus": "success"
+        },
+        {
+            "objectPath": "Strip Properties/TurntableWithBackdrop_VFX/VFXG Strip Properties",
+            "activeSelf": true,
+            "activeInHierarchy": true,
+            "componentEnabled": true,
+            "assetPath": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/VFX/StripProperties.vfx",
+            "assetGuid": "db2d8637cfa4fab4082fc079f1f26b14",
+            "assetName": "StripProperties",
+            "graphOutputs": [
+                {
+                    "type": "UnityEditor.VFX.VFXQuadStripOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "9",
+                    "stripCapacity": "1",
+                    "blendMode": "Alpha",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "False"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.VFXPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "9",
+                    "stripCapacity": "1",
+                    "blendMode": "Alpha",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "False"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.VFXQuadStripOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "9",
+                    "stripCapacity": "1",
+                    "blendMode": "Additive",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "False"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.VFXQuadStripOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "9",
+                    "stripCapacity": "1",
+                    "blendMode": "Alpha",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "False"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.VFXPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "2",
+                    "stripCapacity": "16",
+                    "blendMode": "Opaque",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.VFXPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "9",
+                    "stripCapacity": "1",
+                    "blendMode": "Opaque",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                }
+            ],
+            "graphInventoryStatus": "success"
+        },
+        {
+            "objectPath": "Decal Particles/TurntableWithBackdrop_VFX/VFXG Decal Particles",
+            "activeSelf": true,
+            "activeInHierarchy": true,
+            "componentEnabled": true,
+            "assetPath": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/VFX/DecalParticles.vfx",
+            "assetGuid": "43cf54d53d92df1498cf12fec3653478",
+            "assetName": "DecalParticles",
+            "graphOutputs": [
+                {
+                    "type": "UnityEditor.VFX.URP.VFXDecalURPOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "200",
+                    "stripCapacity": "1",
+                    "blendMode": "Opaque",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXDecalURPOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "1",
+                    "stripCapacity": "1",
+                    "blendMode": "Opaque",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                }
+            ],
+            "graphInventoryStatus": "success"
+        },
+        {
+            "objectPath": "Decal Particles/TurntableWithBackdrop_VFX/VFXG Decal Particles/Hoodie/joint33/joint0/Sphere/VFXG_Decal_Eyes",
+            "activeSelf": false,
+            "activeInHierarchy": false,
+            "componentEnabled": true,
+            "assetPath": "",
+            "assetGuid": "",
+            "assetName": "",
+            "graphOutputs": [],
+            "graphInventoryStatus": "no-asset"
+        },
+        {
+            "objectPath": "Trigger Event on Collide/TurntableWithBackdrop_VFX/VFXG Trigger Event on Collide",
+            "activeSelf": true,
+            "activeInHierarchy": true,
+            "componentEnabled": true,
+            "assetPath": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/VFX/TriggerEventCollide.vfx",
+            "assetGuid": "9afc526ed3803a94b911bba9121f670e",
+            "assetName": "TriggerEventCollide",
+            "graphOutputs": [
+                {
+                    "type": "UnityEditor.VFX.VFXComposedParticleOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "5",
+                    "stripCapacity": "16",
+                    "blendMode": "Alpha",
+                    "generateMotionVector": "True",
+                    "hasMotionVector": "True",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.VFXComposedParticleOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "32",
+                    "stripCapacity": "16",
+                    "blendMode": "Alpha",
+                    "generateMotionVector": "True",
+                    "hasMotionVector": "True",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.VFXPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "32",
+                    "stripCapacity": "16",
+                    "blendMode": "Alpha",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "False"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.VFXPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "32",
+                    "stripCapacity": "16",
+                    "blendMode": "Alpha",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "False"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.VFXPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "32",
+                    "stripCapacity": "16",
+                    "blendMode": "Alpha",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "False"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                }
+            ],
+            "graphInventoryStatus": "success"
+        },
+        {
+            "objectPath": "Collision Advanced/TurntableWithBackdrop_VFX/VFXG Collision Advanced",
+            "activeSelf": true,
+            "activeInHierarchy": true,
+            "componentEnabled": true,
+            "assetPath": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/VFX/CollisionAdvanced.vfx",
+            "assetGuid": "fdd4e278b167d3f41a9bfeabcdb3ff21",
+            "assetName": "CollisionAdvanced",
+            "graphOutputs": [
+                {
+                    "type": "UnityEditor.VFX.VFXStaticMeshOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPLitPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "162000",
+                    "stripCapacity": "16",
+                    "blendMode": "Opaque",
+                    "generateMotionVector": "True",
+                    "hasMotionVector": "True",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                }
+            ],
+            "graphInventoryStatus": "success"
+        },
+        {
+            "objectPath": "Collision Simple/TurntableWithBackdrop_VFX/VFXG Collision Simple",
+            "activeSelf": true,
+            "activeInHierarchy": true,
+            "componentEnabled": true,
+            "assetPath": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/VFX/CollisionSimple.vfx",
+            "assetGuid": "e075786f47306614894aed1c188c9ce3",
+            "assetName": "CollisionSimple",
+            "graphOutputs": [
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPLitMeshOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "16",
+                    "stripCapacity": "16",
+                    "blendMode": "Opaque",
+                    "generateMotionVector": "True",
+                    "hasMotionVector": "True",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                }
+            ],
+            "graphInventoryStatus": "success"
+        },
+        {
+            "objectPath": "Collision Properties/TurntableWithBackdrop_VFX/VFXG Collision Basic Properties",
+            "activeSelf": true,
+            "activeInHierarchy": true,
+            "componentEnabled": true,
+            "assetPath": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/VFX/CollisionBasicProperties.vfx",
+            "assetGuid": "768710f96cc43ca45b44ca733a6ac7ba",
+            "assetName": "CollisionBasicProperties",
+            "graphOutputs": [
+                {
+                    "type": "UnityEditor.VFX.VFXPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "2",
+                    "stripCapacity": "1",
+                    "blendMode": "Opaque",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.VFXPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "2",
+                    "stripCapacity": "1",
+                    "blendMode": "Opaque",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.VFXPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "2",
+                    "stripCapacity": "1",
+                    "blendMode": "Opaque",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.VFXPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "1",
+                    "stripCapacity": "1",
+                    "blendMode": "Alpha",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "False"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.VFXComposedParticleOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "10",
+                    "stripCapacity": "16",
+                    "blendMode": "Alpha",
+                    "generateMotionVector": "True",
+                    "hasMotionVector": "True",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.VFXComposedParticleOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "4",
+                    "stripCapacity": "16",
+                    "blendMode": "Alpha",
+                    "generateMotionVector": "True",
+                    "hasMotionVector": "True",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPLitMeshOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "10",
+                    "stripCapacity": "16",
+                    "blendMode": "Opaque",
+                    "generateMotionVector": "True",
+                    "hasMotionVector": "True",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                }
+            ],
+            "graphInventoryStatus": "success"
+        },
+        {
+            "objectPath": "Sample Skinned Mesh/TurntableWithBackdrop_VFX/VFXG Sample Skinned Mesh",
+            "activeSelf": true,
+            "activeInHierarchy": true,
+            "componentEnabled": true,
+            "assetPath": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/VFX/SampleSkinnedMesh.vfx",
+            "assetGuid": "986cf4b6651f46246bdc1e5e7f81b4c2",
+            "assetName": "SampleSkinnedMesh",
+            "graphOutputs": [
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPLitPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "30000",
+                    "stripCapacity": "16",
+                    "blendMode": "Opaque",
+                    "generateMotionVector": "True",
+                    "hasMotionVector": "True",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                }
+            ],
+            "graphInventoryStatus": "success"
+        },
+        {
+            "objectPath": "Sample SDF/TurntableWithBackdrop_VFX/VFXG Sample SDF",
+            "activeSelf": true,
+            "activeInHierarchy": true,
+            "componentEnabled": true,
+            "assetPath": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/VFX/SampleSDF.vfx",
+            "assetGuid": "835e76cc0c1f8e54581052d7c111c058",
+            "assetName": "SampleSDF",
+            "graphOutputs": [
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPLitQuadStripOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "345000",
+                    "stripCapacity": "2300",
+                    "blendMode": "Opaque",
+                    "generateMotionVector": "True",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                }
+            ],
+            "graphInventoryStatus": "success"
+        },
+        {
+            "objectPath": "Sample Texture2D/TurntableWithBackdrop_VFX/VFXG Sample Texture2D",
+            "activeSelf": true,
+            "activeInHierarchy": true,
+            "componentEnabled": true,
+            "assetPath": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/VFX/SampleTexture2D.vfx",
+            "assetGuid": "e166f36ceb1831f46bea1e17fbc67c5a",
+            "assetName": "SampleTexture2D",
+            "graphOutputs": [
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPLitPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "160000",
+                    "stripCapacity": "16",
+                    "blendMode": "Opaque",
+                    "generateMotionVector": "True",
+                    "hasMotionVector": "True",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                }
+            ],
+            "graphInventoryStatus": "success"
+        },
+        {
+            "objectPath": "Sample Mesh/TurntableWithBackdrop_VFX/VFXG Sample Mesh",
+            "activeSelf": true,
+            "activeInHierarchy": true,
+            "componentEnabled": true,
+            "assetPath": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/VFX/SampleMesh.vfx",
+            "assetGuid": "e7595e60b3331314388c1a1de30631b5",
+            "assetName": "SampleMesh",
+            "graphOutputs": [
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPLitPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "50500",
+                    "stripCapacity": "16",
+                    "blendMode": "Opaque",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                }
+            ],
+            "graphInventoryStatus": "success"
+        },
+        {
+            "objectPath": "Pivot Advanced/TurntableWithBackdrop_VFX/VFXG_Pivot_Advanced",
+            "activeSelf": true,
+            "activeInHierarchy": true,
+            "componentEnabled": true,
+            "assetPath": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/VFX/PivotAdvanced.vfx",
+            "assetGuid": "bd5d3a0c8cc0a4748bce4ff39d74c79e",
+            "assetName": "PivotAdvanced",
+            "graphOutputs": [
+                {
+                    "type": "UnityEditor.VFX.VFXComposedParticleOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "135",
+                    "stripCapacity": "16",
+                    "blendMode": "Alpha",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.VFXComposedParticleOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "32",
+                    "stripCapacity": "16",
+                    "blendMode": "Alpha",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPLitPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "250",
+                    "stripCapacity": "16",
+                    "blendMode": "Opaque",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                }
+            ],
+            "graphInventoryStatus": "success"
+        },
+        {
+            "objectPath": "Flipbook Blending/TurntableWithBackdrop_VFX/VFXG Flipbook Blending",
+            "activeSelf": true,
+            "activeInHierarchy": true,
+            "componentEnabled": true,
+            "assetPath": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/VFX/FlipbookBlending.vfx",
+            "assetGuid": "a977458597c62ae48aca0c6ba7674959",
+            "assetName": "FlipbookBlending",
+            "graphOutputs": [
+                {
+                    "type": "UnityEditor.VFX.VFXPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "1",
+                    "stripCapacity": "1",
+                    "blendMode": "Alpha",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "False"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.VFXPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "1",
+                    "stripCapacity": "1",
+                    "blendMode": "Alpha",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "False"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                }
+            ],
+            "graphInventoryStatus": "success"
+        },
+        {
+            "objectPath": "Pivot Attribute/TurntableWithBackdrop_VFX/VFXG Pivot Attribute",
+            "activeSelf": true,
+            "activeInHierarchy": true,
+            "componentEnabled": true,
+            "assetPath": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/VFX/PivotAttribute.vfx",
+            "assetGuid": "1edd86e27000c234fb781ca4a6682571",
+            "assetName": "PivotAttribute",
+            "graphOutputs": [
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPLitPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "3",
+                    "stripCapacity": "16",
+                    "blendMode": "Opaque",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.VFXPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "3",
+                    "stripCapacity": "16",
+                    "blendMode": "Additive",
+                    "generateMotionVector": "True",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "False"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.VFXPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "3",
+                    "stripCapacity": "16",
+                    "blendMode": "Additive",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "False"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                }
+            ],
+            "graphInventoryStatus": "success"
+        },
+        {
+            "objectPath": "TexIndex Advanced/TurntableWithBackdrop_VFX/VFXG TexIndex Advanced",
+            "activeSelf": true,
+            "activeInHierarchy": true,
+            "componentEnabled": true,
+            "assetPath": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/VFX/TexIndexAdvanced.vfx",
+            "assetGuid": "29714eb2a2055e849b2ad797689dd11c",
+            "assetName": "TexIndexAdvanced",
+            "graphOutputs": [
+                {
+                    "type": "UnityEditor.VFX.VFXPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "5",
+                    "stripCapacity": "16",
+                    "blendMode": "Opaque",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.VFXPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "1",
+                    "stripCapacity": "16",
+                    "blendMode": "Alpha",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "False"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.VFXComposedParticleOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "1",
+                    "stripCapacity": "16",
+                    "blendMode": "Alpha",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.VFXComposedParticleOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "1",
+                    "stripCapacity": "16",
+                    "blendMode": "Alpha",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.VFXPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "10000",
+                    "stripCapacity": "1",
+                    "blendMode": "Additive",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "False"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.VFXPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "5",
+                    "stripCapacity": "16",
+                    "blendMode": "Opaque",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.VFXPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "5",
+                    "stripCapacity": "16",
+                    "blendMode": "Opaque",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.VFXPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "11",
+                    "stripCapacity": "16",
+                    "blendMode": "Additive",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "False"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.VFXPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "11",
+                    "stripCapacity": "16",
+                    "blendMode": "Additive",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "False"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.VFXPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "5",
+                    "stripCapacity": "16",
+                    "blendMode": "Opaque",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.VFXPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "5",
+                    "stripCapacity": "16",
+                    "blendMode": "Opaque",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.VFXMeshOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "1",
+                    "stripCapacity": "16",
+                    "blendMode": "Alpha",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "False"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.VFXMeshOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "1",
+                    "stripCapacity": "16",
+                    "blendMode": "Additive",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "False"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.VFXMeshOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "1",
+                    "stripCapacity": "16",
+                    "blendMode": "Alpha",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "False"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.VFXPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "150",
+                    "stripCapacity": "16",
+                    "blendMode": "Alpha",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "False"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                }
+            ],
+            "graphInventoryStatus": "success"
+        },
+        {
+            "objectPath": "Flipbook Mode/TurntableWithBackdrop_VFX/VFXG Flipbook Mode",
+            "activeSelf": true,
+            "activeInHierarchy": true,
+            "componentEnabled": true,
+            "assetPath": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/VFX/FlipbookMode.vfx",
+            "assetGuid": "aa3d09e97ddac6c4e84b08e738fc4a79",
+            "assetName": "FlipbookMode",
+            "graphOutputs": [
+                {
+                    "type": "UnityEditor.VFX.VFXComposedParticleOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "2",
+                    "stripCapacity": "16",
+                    "blendMode": "Alpha",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.VFXPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "2",
+                    "stripCapacity": "16",
+                    "blendMode": "Additive",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "False"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.VFXPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "2",
+                    "stripCapacity": "16",
+                    "blendMode": "Additive",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "False"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.VFXPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "1",
+                    "stripCapacity": "16",
+                    "blendMode": "Alpha",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "False"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.VFXPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "1",
+                    "stripCapacity": "16",
+                    "blendMode": "Alpha",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "False"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                }
+            ],
+            "graphInventoryStatus": "success"
+        },
+        {
+            "objectPath": "TexIndex Attribute/TurntableWithBackdrop_VFX/VFXG TexIndex Attribute",
+            "activeSelf": true,
+            "activeInHierarchy": true,
+            "componentEnabled": true,
+            "assetPath": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/VFX/BasicTexIndex.vfx",
+            "assetGuid": "d27e95a5e4a69f84ba7d1a7c6b791ae0",
+            "assetName": "BasicTexIndex",
+            "graphOutputs": [
+                {
+                    "type": "UnityEditor.VFX.VFXPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "1",
+                    "stripCapacity": "16",
+                    "blendMode": "Opaque",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.VFXPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "9",
+                    "stripCapacity": "16",
+                    "blendMode": "Opaque",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.VFXPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "9",
+                    "stripCapacity": "16",
+                    "blendMode": "Alpha",
+                    "generateMotionVector": "True",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "False"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPLitPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "1",
+                    "stripCapacity": "16",
+                    "blendMode": "Opaque",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPLitPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "9",
+                    "stripCapacity": "16",
+                    "blendMode": "Opaque",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                }
+            ],
+            "graphInventoryStatus": "success"
+        },
+        {
+            "objectPath": "Rotation & Angular Velocity/TurntableWithBackdrop_VFX/VFXG Rotation & Angular Velocity",
+            "activeSelf": true,
+            "activeInHierarchy": true,
+            "componentEnabled": true,
+            "assetPath": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/VFX/AngularVelocity.vfx",
+            "assetGuid": "0716daebd7b426f478f6dc430926c3b8",
+            "assetName": "AngularVelocity",
+            "graphOutputs": [
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPLitMeshOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "84",
+                    "stripCapacity": "16",
+                    "blendMode": "Opaque",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPLitMeshOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "4000",
+                    "stripCapacity": "16",
+                    "blendMode": "Opaque",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPLitMeshOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "4000",
+                    "stripCapacity": "16",
+                    "blendMode": "Opaque",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPLitMeshOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "1",
+                    "stripCapacity": "16",
+                    "blendMode": "Opaque",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPLitMeshOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "115",
+                    "stripCapacity": "16",
+                    "blendMode": "Opaque",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                }
+            ],
+            "graphInventoryStatus": "success"
+        },
+        {
+            "objectPath": "Rotation & Angle/TurntableWithBackdrop_VFX/VFXG Rotation & Angle",
+            "activeSelf": true,
+            "activeInHierarchy": true,
+            "componentEnabled": true,
+            "assetPath": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/VFX/RotationAngle.vfx",
+            "assetGuid": "ccd23b3eb0caff84aab1cd555791352b",
+            "assetName": "RotationAngle",
+            "graphOutputs": [
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPLitMeshOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "3",
+                    "stripCapacity": "16",
+                    "blendMode": "Opaque",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                }
+            ],
+            "graphInventoryStatus": "success"
+        },
+        {
+            "objectPath": "Orient Advanced/TurntableWithBackdrop_VFX/VFXG Orient Advanced",
+            "activeSelf": true,
+            "activeInHierarchy": true,
+            "componentEnabled": true,
+            "assetPath": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/VFX/OrientAdvanced.vfx",
+            "assetGuid": "33f68cda04641ea4e8bb4e16fc221947",
+            "assetName": "OrientAdvanced",
+            "graphOutputs": [
+                {
+                    "type": "UnityEditor.VFX.VFXPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "1000",
+                    "stripCapacity": "16",
+                    "blendMode": "Opaque",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                }
+            ],
+            "graphInventoryStatus": "success"
+        },
+        {
+            "objectPath": "Orient Fixed Axis/TurntableWithBackdrop_VFX/VFXG Orient Fixed Axis",
+            "activeSelf": true,
+            "activeInHierarchy": true,
+            "componentEnabled": true,
+            "assetPath": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/VFX/OrientFixedAxis.vfx",
+            "assetGuid": "c96faae58e47c41429753fb0da60adc0",
+            "assetName": "OrientFixedAxis",
+            "graphOutputs": [
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPLitPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "5000",
+                    "stripCapacity": "16",
+                    "blendMode": "Opaque",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.VFXComposedParticleOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "100",
+                    "stripCapacity": "16",
+                    "blendMode": "Alpha",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPLitMeshOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "1",
+                    "stripCapacity": "16",
+                    "blendMode": "Opaque",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                }
+            ],
+            "graphInventoryStatus": "success"
+        },
+        {
+            "objectPath": "Orient Face Camera/TurntableWithBackdrop_VFX/VFXG Orient Face Camera",
+            "activeSelf": true,
+            "activeInHierarchy": true,
+            "componentEnabled": true,
+            "assetPath": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/VFX/OrientFaceCamera.vfx",
+            "assetGuid": "a1661416573514b4a90c5621cb3d564e",
+            "assetName": "OrientFaceCamera",
+            "graphOutputs": [
+                {
+                    "type": "UnityEditor.VFX.VFXComposedParticleOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "1",
+                    "stripCapacity": "16",
+                    "blendMode": "Alpha",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.VFXComposedParticleOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "100",
+                    "stripCapacity": "16",
+                    "blendMode": "Alpha",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                }
+            ],
+            "graphInventoryStatus": "success"
+        },
+        {
+            "objectPath": "Bounds/TurntableWithBackdrop_VFX/VFXG Bounds",
+            "activeSelf": true,
+            "activeInHierarchy": true,
+            "componentEnabled": true,
+            "assetPath": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/VFX/BoundsGizmo.vfx",
+            "assetGuid": "f023ef5f170adc34180abdbd65838179",
+            "assetName": "BoundsGizmo",
+            "graphOutputs": [
+                {
+                    "type": "UnityEditor.VFX.VFXPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "14",
+                    "stripCapacity": "16",
+                    "blendMode": "Alpha",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "False"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                }
+            ],
+            "graphInventoryStatus": "success"
+        },
+        {
+            "objectPath": "Multiple Outputs/TurntableWithBackdrop_VFX/VFXG Multiple Outputs",
+            "activeSelf": true,
+            "activeInHierarchy": true,
+            "componentEnabled": true,
+            "assetPath": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/VFX/MultipleOutputs.vfx",
+            "assetGuid": "658803bbb15d7c345a3ce545b2af61b9",
+            "assetName": "MultipleOutputs",
+            "graphOutputs": [
+                {
+                    "type": "UnityEditor.VFX.VFXPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "7",
+                    "stripCapacity": "16",
+                    "blendMode": "Additive",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "False"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPLitMeshOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "7",
+                    "stripCapacity": "16",
+                    "blendMode": "Opaque",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPLitPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "7",
+                    "stripCapacity": "16",
+                    "blendMode": "Opaque",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                }
+            ],
+            "graphInventoryStatus": "success"
+        },
+        {
+            "objectPath": "Capacity/TurntableWithBackdrop_VFX/Capacity",
+            "activeSelf": true,
+            "activeInHierarchy": true,
+            "componentEnabled": true,
+            "assetPath": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/VFX/Capacity.vfx",
+            "assetGuid": "d8ac821b2f9954541a191644e9ecc747",
+            "assetName": "Capacity",
+            "graphOutputs": [
+                {
+                    "type": "UnityEditor.VFX.VFXPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "256",
+                    "stripCapacity": "16",
+                    "blendMode": "Additive",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "False"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                }
+            ],
+            "graphInventoryStatus": "success"
+        },
+        {
+            "objectPath": "Spawn Context/TurntableWithBackdrop_VFX/VFXG Spawn Context",
+            "activeSelf": true,
+            "activeInHierarchy": true,
+            "componentEnabled": true,
+            "assetPath": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/VFX/SpawnContext.vfx",
+            "assetGuid": "59d56ab246a8d9d44a0b28c80ceb819c",
+            "assetName": "SpawnContext",
+            "graphOutputs": [
+                {
+                    "type": "UnityEditor.VFX.VFXPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "8",
+                    "stripCapacity": "16",
+                    "blendMode": "Opaque",
+                    "generateMotionVector": "False",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "True"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                }
+            ],
+            "graphInventoryStatus": "success"
+        },
+        {
+            "objectPath": "Contexts & Data Flow/TurntableWithBackdrop_VFX/00_VFXG_Basic_Flow",
+            "activeSelf": true,
+            "activeInHierarchy": true,
+            "componentEnabled": true,
+            "assetPath": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/VFX/Context&Flow.vfx",
+            "assetGuid": "4bac8f94c64bb6545880cdfd6b88a375",
+            "assetName": "Context&Flow",
+            "graphOutputs": [
+                {
+                    "type": "UnityEditor.VFX.VFXPlanarPrimitiveOutput",
+                    "kind": "particle-render-output",
+                    "capacity": "68",
+                    "stripCapacity": "1",
+                    "blendMode": "Alpha",
+                    "generateMotionVector": "True",
+                    "hasMotionVector": "False",
+                    "supportsMotionVector": "False"
+                },
+                {
+                    "type": "UnityEditor.VFX.URP.VFXURPSubOutput",
+                    "kind": "other-output-model",
+                    "capacity": "not-applicable",
+                    "stripCapacity": "not-applicable",
+                    "blendMode": "unavailable",
+                    "generateMotionVector": "unavailable",
+                    "hasMotionVector": "unavailable",
+                    "supportsMotionVector": "unavailable"
+                }
+            ],
+            "graphInventoryStatus": "success"
+        }
+    ],
+    "quiltRenderers": [
+        {
+            "objectPath": "VFX_URP_Camera/ViewWeave Bridge Rig",
+            "autoRenderBefore": false,
+            "autoRenderAfter": false,
+            "views": 48,
+            "renderMode": "Full",
+            "renderingMode": "IsolatedViewHistories",
+            "settingsType": "ViewWeave.QuiltSettings",
+            "effectiveCameraPath": "VFX_URP_Camera"
+        }
+    ],
+    "rigs": [
+        {
+            "objectPath": "VFX_URP_Camera/ViewWeave Bridge Rig",
+            "autoRenderBefore": false,
+            "autoRenderAfter": false,
+            "sourceCameraPath": "VFX_URP_Camera/ViewWeave Bridge Rig",
+            "referenceCameraPath": "VFX_URP_Camera",
+            "outputBefore": "",
+            "guardBefore": "VFX_URP_Camera/ViewWeave Bridge Rig",
+            "outputCleared": true,
+            "guardCleared": true,
+            "sourceCameraPose": {
+                "localPosition": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "localRotation": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0,
+                    "w": 1.0
+                },
+                "worldPosition": {
+                    "x": -105.04244995117188,
+                    "y": 1.1289734840393066,
+                    "z": 4.6848320960998535
+                },
+                "worldRotation": {
+                    "x": -0.000027898233383893967,
+                    "y": 0.9998258948326111,
+                    "z": 0.018599562346935272,
+                    "w": 0.0014998316764831543
+                }
+            },
+            "referenceCameraPose": {
+                "localPosition": {
+                    "x": -105.04244995117188,
+                    "y": 1.1289734840393066,
+                    "z": 4.6848320960998535
+                },
+                "localRotation": {
+                    "x": -0.000027898233383893967,
+                    "y": 0.9998258948326111,
+                    "z": 0.018599562346935272,
+                    "w": 0.0014998316764831543
+                },
+                "worldPosition": {
+                    "x": -105.04244995117188,
+                    "y": 1.1289734840393066,
+                    "z": 4.6848320960998535
+                },
+                "worldRotation": {
+                    "x": -0.000027898233383893967,
+                    "y": 0.9998258948326111,
+                    "z": 0.018599562346935272,
+                    "w": 0.0014998316764831543
+                }
+            }
+        }
+    ],
+    "cameras": [
+        {
+            "objectPath": "VFX_URP_Camera",
+            "activeSelf": true,
+            "activeInHierarchy": true,
+            "enabled": true,
+            "localPosition": {
+                "x": -105.04244995117188,
+                "y": 1.1289734840393066,
+                "z": 4.6848320960998535
+            },
+            "localRotation": {
+                "x": -0.000027898233383893967,
+                "y": 0.9998258948326111,
+                "z": 0.018599562346935272,
+                "w": 0.0014998316764831543
+            },
+            "worldPosition": {
+                "x": -105.04244995117188,
+                "y": 1.1289734840393066,
+                "z": 4.6848320960998535
+            },
+            "worldRotation": {
+                "x": -0.000027898233383893967,
+                "y": 0.9998258948326111,
+                "z": 0.018599562346935272,
+                "w": 0.0014998316764831543
+            }
+        },
+        {
+            "objectPath": "VFX_URP_Camera/ViewWeave Bridge Rig",
+            "activeSelf": true,
+            "activeInHierarchy": true,
+            "enabled": false,
+            "localPosition": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "localRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+            },
+            "worldPosition": {
+                "x": -105.04244995117188,
+                "y": 1.1289734840393066,
+                "z": 4.6848320960998535
+            },
+            "worldRotation": {
+                "x": -0.000027898233383893967,
+                "y": 0.9998258948326111,
+                "z": 0.018599562346935272,
+                "w": 0.0014998316764831543
+            }
+        }
+    ],
+    "disabledSampleScripts": [],
+    "stoppedAutomaticPresenters": [],
+    "errors": [
+        "effect-asset-unresolved",
+        "exception:InvalidOperationException"
+    ],
+    "editorErrorCategories": [],
+    "editorErrorCount": 0,
+    "retentionMarkers": [
+        {
+            "objectPath": "VFX_URP_Camera/ViewWeave Bridge Rig",
+            "requiredBefore": false,
+            "requiredAfter": false,
+            "ownerBefore": false,
+            "ownerAfter": false
+        }
+    ],
+    "sceneSaved": false
+}

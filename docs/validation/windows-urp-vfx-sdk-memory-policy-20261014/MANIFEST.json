@@ -1,0 +1,273 @@
+{
+  "schema": "viewweave-portable-evidence-manifest-v1",
+  "createdLocalDate": "2026-10-14",
+  "fileCount": 53,
+  "totalBytes": 676353,
+  "files": [
+    {
+      "path": "input-proof/SampleTextureNative-20261013T103828702Z-Auto/fixture-result.json",
+      "bytes": 18350,
+      "sha256": "bc98605ecc20f34f8432466bc68c61631e3d1b43ba135fd57ffac68de837e6c4"
+    },
+    {
+      "path": "input-proof/SampleTextureNative-20261013T103828702Z-Auto/native-result.json",
+      "bytes": 26153,
+      "sha256": "b7d337bd34226d44d4468df0a5f98554714fa964b6cf6646e929fc8c1a998209"
+    },
+    {
+      "path": "input-proof/SampleTextureNative-20261013T103828702Z-Auto/results.xml",
+      "bytes": 4140,
+      "sha256": "ec106d15266440e400eecdf2c68d98466cf2448de4612b7b1d1cd6384ed1ec22"
+    },
+    {
+      "path": "input-proof/SampleTextureNative-20261013T103828702Z-Auto/runner.json",
+      "bytes": 2893,
+      "sha256": "cfb0b02cca5afb06588a62bc6e7fe39f281903fd2d4ab56edb05e0b8356efc81"
+    },
+    {
+      "path": "input-proof/SampleTextureNative-20261013T103828702Z-Auto/summary.json",
+      "bytes": 4071,
+      "sha256": "6b669acb0563d9309fe45bb4c22b1164a021e8b98a070c3869b93a17649234e9"
+    },
+    {
+      "path": "README.txt",
+      "bytes": 435,
+      "sha256": "2b6a0dc636f961ac1532fda9f5861f076fa1d4741991cea59773450e60bb1e6f"
+    },
+    {
+      "path": "runs/20261013T235409936Z/asrun-source/AllowInstancingRuntimeTransitionProbe.cs",
+      "bytes": 49718,
+      "sha256": "993a7fcf4755762393d5edca1bc2a963e7a8ad57b1650f52c11e1bf254b8c7fa"
+    },
+    {
+      "path": "runs/20261013T235409936Z/asrun-source/AllowInstancingRuntimeTransitionProbe.cs.meta",
+      "bytes": 239,
+      "sha256": "3113c81771f3c92ad8478ca56113b8cae32f13e7fd511ac77ee5ae8fe83772d4"
+    },
+    {
+      "path": "runs/20261013T235409936Z/asrun-source/Run-AllowInstancingRuntimeTransitionProbe.ps1",
+      "bytes": 16544,
+      "sha256": "19763f68e63e8eaf80767cbc9f30df6f4e98dcfadc568018c78bf62553539251"
+    },
+    {
+      "path": "runs/20261013T235409936Z/asrun-source/ViewWeave.AllowInstancingRuntimeTransition.Tests.asmdef",
+      "bytes": 652,
+      "sha256": "b0874f194dc76944ccb06c0b2de10070dbc519ebc7b6c1d3b56a6af39ad79655"
+    },
+    {
+      "path": "runs/20261013T235409936Z/asrun-source/ViewWeave.AllowInstancingRuntimeTransition.Tests.asmdef.meta",
+      "bytes": 162,
+      "sha256": "b232e40a93eb0d46cd6c02a8b6a1b4c1349335d516bcc02b898025a7c7d01685"
+    },
+    {
+      "path": "runs/20261013T235409936Z/retired-clone-source/AllowInstancingRuntimeTransitionProbe.cs",
+      "bytes": 46449,
+      "sha256": "7d990d85d9cce9d409d54deaf21e3cf8c287d5bf21b6d94481a0f09825a6af1d"
+    },
+    {
+      "path": "runs/20261013T235409936Z/retired-clone-source/AllowInstancingRuntimeTransitionProbe.cs.meta",
+      "bytes": 239,
+      "sha256": "3113c81771f3c92ad8478ca56113b8cae32f13e7fd511ac77ee5ae8fe83772d4"
+    },
+    {
+      "path": "runs/20261013T235409936Z/runner-summary.json",
+      "bytes": 3412,
+      "sha256": "e37a42581a18efe43f0af6324381f9bfc8d8981d7ede9e704d78b4615a611cdd"
+    },
+    {
+      "path": "runs/20261013T235838052Z/asrun-source/AllowInstancingRuntimeTransitionProbe.cs",
+      "bytes": 49718,
+      "sha256": "993a7fcf4755762393d5edca1bc2a963e7a8ad57b1650f52c11e1bf254b8c7fa"
+    },
+    {
+      "path": "runs/20261013T235838052Z/asrun-source/AllowInstancingRuntimeTransitionProbe.cs.meta",
+      "bytes": 239,
+      "sha256": "3113c81771f3c92ad8478ca56113b8cae32f13e7fd511ac77ee5ae8fe83772d4"
+    },
+    {
+      "path": "runs/20261013T235838052Z/asrun-source/Run-AllowInstancingRuntimeTransitionProbe.ps1",
+      "bytes": 17207,
+      "sha256": "1b47d21e6e84d8d4369e0b638f8af1a93fffceeee687feb76084e024eb5930cd"
+    },
+    {
+      "path": "runs/20261013T235838052Z/asrun-source/ViewWeave.AllowInstancingRuntimeTransition.Tests.asmdef",
+      "bytes": 652,
+      "sha256": "b0874f194dc76944ccb06c0b2de10070dbc519ebc7b6c1d3b56a6af39ad79655"
+    },
+    {
+      "path": "runs/20261013T235838052Z/asrun-source/ViewWeave.AllowInstancingRuntimeTransition.Tests.asmdef.meta",
+      "bytes": 162,
+      "sha256": "b232e40a93eb0d46cd6c02a8b6a1b4c1349335d516bcc02b898025a7c7d01685"
+    },
+    {
+      "path": "runs/20261013T235838052Z/results.xml",
+      "bytes": 739,
+      "sha256": "5514aabd80bd7c032b9549626a7ae0ac1407492793afb26b6284c176ebe0a0f4"
+    },
+    {
+      "path": "runs/20261013T235838052Z/runner-summary.json",
+      "bytes": 3562,
+      "sha256": "2b665ce8254e838ae08310551db4b039efdb6122b8466b049333646b38bdfe57"
+    },
+    {
+      "path": "runs/20261013T235838052Z/unity-runner.json",
+      "bytes": 2917,
+      "sha256": "193b0de04f44fc3ccbfae7c4e983ace581387acae86769793d0f54156bc3d7e7"
+    },
+    {
+      "path": "runs/20261014T000358816Z/asrun-source/AllowInstancingRuntimeTransitionProbe.cs",
+      "bytes": 49718,
+      "sha256": "993a7fcf4755762393d5edca1bc2a963e7a8ad57b1650f52c11e1bf254b8c7fa"
+    },
+    {
+      "path": "runs/20261014T000358816Z/asrun-source/AllowInstancingRuntimeTransitionProbe.cs.meta",
+      "bytes": 240,
+      "sha256": "59a9f2902fadcb90c5c4393aef920d9d279f0bd20ff16551026a84e793ef35b9"
+    },
+    {
+      "path": "runs/20261014T000358816Z/asrun-source/Run-AllowInstancingRuntimeTransitionProbe.ps1",
+      "bytes": 18754,
+      "sha256": "b84c7940375a8823651e828b56f0cc02f90900db55ba740055e1897020d583e4"
+    },
+    {
+      "path": "runs/20261014T000358816Z/asrun-source/ViewWeave.AllowInstancingRuntimeTransition.Tests.asmdef",
+      "bytes": 652,
+      "sha256": "b0874f194dc76944ccb06c0b2de10070dbc519ebc7b6c1d3b56a6af39ad79655"
+    },
+    {
+      "path": "runs/20261014T000358816Z/asrun-source/ViewWeave.AllowInstancingRuntimeTransition.Tests.asmdef.meta",
+      "bytes": 163,
+      "sha256": "95532635c31381e6b1e0c6019e53a2b14844c7ba9d22d8e21efcd3ebb244f988"
+    },
+    {
+      "path": "runs/20261014T000358816Z/results.xml",
+      "bytes": 5792,
+      "sha256": "cca5c0c31185d9837c584aa486a859ef1b8113a26ee2bc6e306c30be54664f33"
+    },
+    {
+      "path": "runs/20261014T000358816Z/retired-clone-source/AllowInstancingRuntimeTransitionProbe.cs",
+      "bytes": 49718,
+      "sha256": "993a7fcf4755762393d5edca1bc2a963e7a8ad57b1650f52c11e1bf254b8c7fa"
+    },
+    {
+      "path": "runs/20261014T000358816Z/retired-clone-source/AllowInstancingRuntimeTransitionProbe.cs.meta",
+      "bytes": 239,
+      "sha256": "3113c81771f3c92ad8478ca56113b8cae32f13e7fd511ac77ee5ae8fe83772d4"
+    },
+    {
+      "path": "runs/20261014T000358816Z/retired-clone-source/ViewWeave.AllowInstancingRuntimeTransition.Tests.asmdef",
+      "bytes": 652,
+      "sha256": "b0874f194dc76944ccb06c0b2de10070dbc519ebc7b6c1d3b56a6af39ad79655"
+    },
+    {
+      "path": "runs/20261014T000358816Z/retired-clone-source/ViewWeave.AllowInstancingRuntimeTransition.Tests.asmdef.meta",
+      "bytes": 162,
+      "sha256": "b232e40a93eb0d46cd6c02a8b6a1b4c1349335d516bcc02b898025a7c7d01685"
+    },
+    {
+      "path": "runs/20261014T000358816Z/runner-summary.json",
+      "bytes": 3968,
+      "sha256": "cade8a146f63ac67c993c53babf025dce1f652b2c11234acf7ae747bfe839569"
+    },
+    {
+      "path": "runs/20261014T000358816Z/unity-runner.json",
+      "bytes": 2928,
+      "sha256": "a1050822d8ce726635218b35e7e3366ec91d9c634d908659dac746404d512cb1"
+    },
+    {
+      "path": "runs/20261014T001050485Z/asrun-source/AllowInstancingRuntimeTransitionProbe.cs",
+      "bytes": 54743,
+      "sha256": "f8e59e50aaab0bc11700a3c7ac1e7b362507009f5996b6374f9c30215e4185f8"
+    },
+    {
+      "path": "runs/20261014T001050485Z/asrun-source/AllowInstancingRuntimeTransitionProbe.cs.meta",
+      "bytes": 240,
+      "sha256": "59a9f2902fadcb90c5c4393aef920d9d279f0bd20ff16551026a84e793ef35b9"
+    },
+    {
+      "path": "runs/20261014T001050485Z/asrun-source/Run-AllowInstancingRuntimeTransitionProbe.ps1",
+      "bytes": 18821,
+      "sha256": "3f528402071630b49a6320ae37dc11e3910c406c52746b2414525599f4923055"
+    },
+    {
+      "path": "runs/20261014T001050485Z/asrun-source/ViewWeave.AllowInstancingRuntimeTransition.Tests.asmdef",
+      "bytes": 652,
+      "sha256": "b0874f194dc76944ccb06c0b2de10070dbc519ebc7b6c1d3b56a6af39ad79655"
+    },
+    {
+      "path": "runs/20261014T001050485Z/asrun-source/ViewWeave.AllowInstancingRuntimeTransition.Tests.asmdef.meta",
+      "bytes": 163,
+      "sha256": "95532635c31381e6b1e0c6019e53a2b14844c7ba9d22d8e21efcd3ebb244f988"
+    },
+    {
+      "path": "runs/20261014T001050485Z/runner-summary.json",
+      "bytes": 3398,
+      "sha256": "d7b54dac038a9b7ac855afd77083330771467b7c9a872fc98d8733c666429e79"
+    },
+    {
+      "path": "runs/20261014T001156656Z/asrun-source/AllowInstancingRuntimeTransitionProbe.cs",
+      "bytes": 54743,
+      "sha256": "f8e59e50aaab0bc11700a3c7ac1e7b362507009f5996b6374f9c30215e4185f8"
+    },
+    {
+      "path": "runs/20261014T001156656Z/asrun-source/AllowInstancingRuntimeTransitionProbe.cs.meta",
+      "bytes": 240,
+      "sha256": "59a9f2902fadcb90c5c4393aef920d9d279f0bd20ff16551026a84e793ef35b9"
+    },
+    {
+      "path": "runs/20261014T001156656Z/asrun-source/Run-AllowInstancingRuntimeTransitionProbe.ps1",
+      "bytes": 19167,
+      "sha256": "0d9af775c959eb6fc8b76c467a570a06a8bc3411adcda621e78ada537dcbae48"
+    },
+    {
+      "path": "runs/20261014T001156656Z/asrun-source/ViewWeave.AllowInstancingRuntimeTransition.Tests.asmdef",
+      "bytes": 652,
+      "sha256": "b0874f194dc76944ccb06c0b2de10070dbc519ebc7b6c1d3b56a6af39ad79655"
+    },
+    {
+      "path": "runs/20261014T001156656Z/asrun-source/ViewWeave.AllowInstancingRuntimeTransition.Tests.asmdef.meta",
+      "bytes": 163,
+      "sha256": "95532635c31381e6b1e0c6019e53a2b14844c7ba9d22d8e21efcd3ebb244f988"
+    },
+    {
+      "path": "runs/20261014T001156656Z/native-result.json",
+      "bytes": 78196,
+      "sha256": "4547207bc2793fb23ddab722b928c308de5921cf10175c2b05bb01986877cbc4"
+    },
+    {
+      "path": "runs/20261014T001156656Z/results.xml",
+      "bytes": 5867,
+      "sha256": "c0ffbaf84b3de7eecf2c624444cb7bff09058de76faa2fd3d8e3a747431047c1"
+    },
+    {
+      "path": "runs/20261014T001156656Z/retired-clone-source/AllowInstancingRuntimeTransitionProbe.cs",
+      "bytes": 49718,
+      "sha256": "993a7fcf4755762393d5edca1bc2a963e7a8ad57b1650f52c11e1bf254b8c7fa"
+    },
+    {
+      "path": "runs/20261014T001156656Z/retired-clone-source/AllowInstancingRuntimeTransitionProbe.cs.meta",
+      "bytes": 240,
+      "sha256": "59a9f2902fadcb90c5c4393aef920d9d279f0bd20ff16551026a84e793ef35b9"
+    },
+    {
+      "path": "runs/20261014T001156656Z/retired-clone-source/ViewWeave.AllowInstancingRuntimeTransition.Tests.asmdef",
+      "bytes": 652,
+      "sha256": "b0874f194dc76944ccb06c0b2de10070dbc519ebc7b6c1d3b56a6af39ad79655"
+    },
+    {
+      "path": "runs/20261014T001156656Z/retired-clone-source/ViewWeave.AllowInstancingRuntimeTransition.Tests.asmdef.meta",
+      "bytes": 163,
+      "sha256": "95532635c31381e6b1e0c6019e53a2b14844c7ba9d22d8e21efcd3ebb244f988"
+    },
+    {
+      "path": "runs/20261014T001156656Z/runner-summary.json",
+      "bytes": 3968,
+      "sha256": "4127bdc11a7a3d9c369ea59e37201eb32963b2e92f8705753263830331e37de0"
+    },
+    {
+      "path": "runs/20261014T001156656Z/unity-runner.json",
+      "bytes": 2928,
+      "sha256": "4459c67230b6214714ce7bc5cebd16b59f483b59451d89fc150168c3af42819f"
+    }
+  ]
+}

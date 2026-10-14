@@ -1,0 +1,755 @@
+{
+  "schemaVersion": 1,
+  "record": "Windows URP VFX follow-up validation",
+  "dateLocal": "2026-10-13",
+  "sourceBasis": {
+    "revision": "11312b8c6cf824d9a7ac7c8940e95cee742fa076",
+    "diagnosticRuntimeChangesRemainUncommitted": true,
+    "trackedRuntimeSourceChangedByThisValidation": false,
+    "userProjectOpenedOrModified": false,
+    "bridgeStartedStoppedOrControlled": false,
+    "deviceOutputUsed": false,
+    "productFixClaimed": false
+  },
+  "priorHistory": {
+    "resourceBudgetFocusedAttempts": 10,
+    "priorAttemptsProducedNUnitResults": false,
+    "run11": "Setup-only GUI Editor launch; Unity rejected the manifest BOM before package resolution; no NUnit result.",
+    "isolatedHarnessRepairs": [
+      "Copied Core-only manifest is UTF-8 without BOM; the run11 U+FEFF parse error was corrected.",
+      "The isolated CPU test assembly references Core explicitly and keeps TestAssemblies optional reference without duplicate UnityEngine.TestRunner or UnityEditor.TestRunner references.",
+      "The test source and assembly definition metadata use distinct GUIDs."
+    ],
+    "repairsDoNotClassifyTheEarlierTenAttempts": true,
+    "priorIncidentAndAttemptRecordsPreserved": true,
+    "priorControlledUnityPassesChanged": false
+  },
+  "isolatedGraphicsProject": {
+    "path": ".local/windows-urp-vfx-graphics-isolated-20261013",
+    "unityVersion": "6000.6.4f1",
+    "seedManifest": "copied unchanged from the minimal Core project; UTF-8 without BOM",
+    "manifestPackageRequests": [
+      "com.unity.test-framework@1.5.1",
+      "com.zabaglione.lookingglass.viewweave.core=file:E:/LookingGlassSDK/Packages/com.zabaglione.lookingglass.viewweave.core",
+      "com.zabaglione.lookingglass.viewweave.urp=file:E:/LookingGlassSDK/Packages/com.zabaglione.lookingglass.viewweave.urp",
+      "com.unity.render-pipelines.universal@17.6.0",
+      "com.unity.visualeffectgraph@17.6.0"
+    ],
+    "packageManagementMethod": "UnityEditor.PackageManager.Client.AddAndRemove; manifest was not hand-edited",
+    "colorSpaceSetByEditorApi": "Linear",
+    "savedScenePresent": false,
+    "bridgePackagePresent": false,
+    "resolvedPackagesReadFromPackagesLock": [
+      {
+        "name": "com.unity.burst",
+        "version": "2.0.0",
+        "source": "builtin"
+      },
+      {
+        "name": "com.unity.collections",
+        "version": "6.6.0",
+        "source": "builtin"
+      },
+      {
+        "name": "com.unity.graph-authoring",
+        "version": "1.0.0",
+        "source": "builtin"
+      },
+      {
+        "name": "com.unity.render-pipelines.core",
+        "version": "17.6.0",
+        "source": "builtin"
+      },
+      {
+        "name": "com.unity.render-pipelines.universal",
+        "version": "17.6.0",
+        "source": "builtin"
+      },
+      {
+        "name": "com.unity.searcher",
+        "version": "4.9.5",
+        "source": "registry"
+      },
+      {
+        "name": "com.unity.shadergraph",
+        "version": "17.6.0",
+        "source": "builtin"
+      },
+      {
+        "name": "com.unity.test-framework",
+        "requested": "1.5.1",
+        "version": "1.8.0",
+        "source": "builtin"
+      },
+      {
+        "name": "com.unity.visualeffectgraph",
+        "version": "17.6.0",
+        "source": "builtin"
+      },
+      {
+        "name": "com.zabaglione.lookingglass.viewweave.core",
+        "version": "file:E:/LookingGlassSDK/Packages/com.zabaglione.lookingglass.viewweave.core",
+        "source": "local"
+      },
+      {
+        "name": "com.zabaglione.lookingglass.viewweave.urp",
+        "version": "file:E:/LookingGlassSDK/Packages/com.zabaglione.lookingglass.viewweave.urp",
+        "source": "local"
+      }
+    ],
+    "packageResolutionSetupLaunches": [
+      {
+        "processId": 99988,
+        "processExitCode": 1,
+        "compilerDiagnostic": {
+          "code": "CS0104",
+          "source": "Assets/Editor/ProjectBootstrap/ResolveGraphicsPackages.cs",
+          "line": 44,
+          "symbol": "PackageInfo"
+        },
+        "testExecutionConfirmed": false,
+        "resultJsonProduced": false,
+        "status": "bootstrap-compile-failed"
+      },
+      {
+        "processId": 23992,
+        "processExitCode": 1,
+        "compilerDiagnostic": {
+          "code": "CS0234",
+          "source": "Assets/VfxDriverValidation/UrpVfxCameraDriverTests.cs",
+          "line": 8,
+          "symbol": "Universal"
+        },
+        "testExecutionConfirmed": false,
+        "resultJsonProduced": false,
+        "status": "fixture-compiled-before-URP-resolution"
+      },
+      {
+        "processId": 68920,
+        "processExitCode": 0,
+        "testExecutionConfirmed": false,
+        "resultState": "success",
+        "colorSpace": "Linear",
+        "status": "package-resolution-succeeded"
+      }
+    ],
+    "packageManagerRawLogsPersistedInSharedDocs": false
+  },
+  "cpuBudgetFocusedRun": {
+    "project": ".local/windows-resource-budget-isolated-20261012/UnityMinimal",
+    "mode": "EditMode",
+    "testClass": "ViewWeave.GraphicsCompatibility.QuiltHistoryResourceBudgetTests",
+    "runLabel": "run12-after-prior-ten-no-result-attempts",
+    "editorProcessId": 105088,
+    "processExitCode": 0,
+    "elapsedSeconds": 10.927,
+    "startedLocalJst": "2026-10-13T00:45:59.8134057+09:00",
+    "finishedLocalJst": "2026-10-13T00:46:10.740479+09:00",
+    "nunit": {
+      "total": 5,
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0,
+      "result": "Passed"
+    },
+    "abortingMarker": true,
+    "abortContextKeywords": [
+      "failed",
+      "abort",
+      "aborting"
+    ],
+    "abortMarkerInterpretation": "unclassified; original line not retained",
+    "crashMarker": false,
+    "remainingProjectEditorCount": 0,
+    "resultFiles": [
+      {
+        "path": ".local/windows-resource-budget-isolated-20261012/results/cpu-budget-run12.xml",
+        "bytes": 6493,
+        "sha256": "C894C89585392E12F20DA16601E0BF1637307F4C1DEED9433F171B84A38F5B13"
+      },
+      {
+        "path": ".local/windows-resource-budget-isolated-20261012/results/cpu-budget-run12.json",
+        "bytes": 2896,
+        "sha256": "08034A11F0D5F41AEBB9803FD277B56BCFABF2B5EEE48CED6B295912F48AA2D6"
+      }
+    ],
+    "sourceHashes": [
+      {
+        "path": "Tests/Pipelines/Unity/Assets/GraphicsCompatibility/QuiltHistoryResourceBudgetTests.cs",
+        "sha256": "339D517DA0D7D074D139D0AD4C64F68C641D3F48DAC0354A0A1CA8319BADD6DA"
+      },
+      {
+        "path": "Packages/com.zabaglione.lookingglass.viewweave.core/Runtime/QuiltHistoryResourceBudget.cs",
+        "sha256": "DA8ED0F0204E763031123473E40F65B39CD397262DB16425D869B29501953529"
+      }
+    ],
+    "resolvedCoreUri": "file:E:/LookingGlassSDK/Packages/com.zabaglione.lookingglass.viewweave.core",
+    "resolvedTestFramework": {
+      "manifestRequested": "1.5.1",
+      "actual": "builtin 1.8.0"
+    },
+    "scope": "Counter-injected budget equality/over-budget, high-water, reset, unavailable-counter, and failure-diagnostic invariants only; no graphics or VFX reproduction."
+  },
+  "vfxBasicDriverRun": {
+    "project": ".local/windows-urp-vfx-graphics-isolated-20261013",
+    "editorProcessId": 52936,
+    "mode": "PlayMode",
+    "graphicsApiRequested": "D3D11",
+    "graphicsDeviceObservedInEditorLog": "Direct3D 11",
+    "colorSpace": "Linear",
+    "testFullName": "ViewWeave.VfxDriverValidation.UrpVfxCameraDriverTests.SimpleBurstUsesOneByOneDriverAtFieldOfView50",
+    "simpleBurstTemplate": "Packages/com.unity.visualeffectgraph/Editor/Templates/Simple_Burst.vfx",
+    "templatePresentInResolvedPackageCache": true,
+    "templateBytes": 76461,
+    "testReachedRuntimeAssertion": true,
+    "failure": "Simple Burst driver phase produced no alive particles; expected > 0, actual 0",
+    "nunit": {
+      "total": 1,
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0,
+      "result": "Failed(Child)"
+    },
+    "testDurationSeconds": 8.6289304,
+    "processExitCode": 2,
+    "crashMarker": false,
+    "remainingProjectEditorCount": 0,
+    "xml": {
+      "localPath": ".local/windows-urp-vfx-graphics-isolated-20261013/TestResults/vfx-basic-simpleburst-run1.xml",
+      "bytes": 4910,
+      "sha256": "5C6B5B4A7525CB32998D7BFE695B488331C7B54E880C5EE927F3783732870A19",
+      "sharedCopyCreated": false
+    },
+    "sourceHashes": [
+      {
+        "path": "Packages/com.zabaglione.lookingglass.viewweave.core/Runtime/QuiltHistoryResourceBudget.cs",
+        "sha256": "DA8ED0F0204E763031123473E40F65B39CD397262DB16425D869B29501953529"
+      },
+      {
+        "path": "Packages/com.zabaglione.lookingglass.viewweave.urp/Runtime/UrpViewHistoryRenderer.cs",
+        "sha256": "EED54060E298FA37CAFD9832B4185FC1B3B0649B3BE17DAEED95E48A36659E78"
+      }
+    ],
+    "compiledAssemblies": [
+      {
+        "name": "ViewWeave.Core.dll",
+        "bytes": 119296,
+        "sha256": "D940E4AE022C2E8A2EA69FAE1A7B326DB4DC71F5DFA5A64CA11ECC691E986A79"
+      },
+      {
+        "name": "ViewWeave.URP.dll",
+        "bytes": 32768,
+        "sha256": "F63F1C6083E3D2BEAB73894B6020634EFD5300A15118D00F75025383BB77139A"
+      },
+      {
+        "name": "ViewWeave.VfxDriverValidation.Tests.dll",
+        "bytes": 25600,
+        "sha256": "9581F91724CF9CC59900A340863A9F06E942E671A1D623C58FBE76088A647B04"
+      }
+    ],
+    "copiedFixture": {
+      "sourceTestSha256": "8FD7B2256CE14E1CB171FF6D53B6650623C541F8102F9BA719161E081B6A83E1",
+      "isolatedTestSha256": "458C56B55AAC0ADA6BA0D7133B2F140B8E0A55EAE968B75C3F8DE7377884C94B",
+      "difference": "EvidencePath writes under the isolated project's TestResults directory instead of the source repository's .local validation directory."
+    },
+    "rawEditorLogPersistedInSharedDocs": false,
+    "memoryCounterSamplesCaptured": false,
+    "deviceRenderingPerformed": false
+  },
+  "memoryFixtureGateRuns": {
+    "run1": {
+      "processId": 74500,
+      "processVerifiedExited": true,
+      "compilerDiagnostic": {
+        "code": "CS0103",
+        "source": "Assets/VfxDriverValidation/UrpVfxMemoryScaleTests.cs",
+        "line": 298,
+        "missingIdentifier": "GetGraph"
+      },
+      "nunitXmlPresent": false,
+      "testResult": "no-result",
+      "sourceSnapshotCaptured": false,
+      "sourceHashFromRunSummary": "0B56F4EEFC6D8220EC6CF5DEDE7AF38B9B0A27EDA209FDAC82BA53F9CC7CA4A9",
+      "safeSummary": ".local/windows-urp-vfx-graphics-isolated-20261013/TestResults/vfx-memory-scale-run1-safe-summary.json"
+    },
+    "run2": {
+      "processId": 69572,
+      "startedUtc": "2026-10-12T16:32:07.8753679Z",
+      "finishedUtc": "2026-10-12T16:32:32.4031242Z",
+      "graphicsApi": "Direct3D11",
+      "testFullName": "ViewWeave.VfxDriverValidation.UrpVfxMemoryScaleTests.SimpleBurstCapacity512MemoryScaleNineConditions",
+      "processExitCode": 2,
+      "nunit": {
+        "total": 1,
+        "passed": 0,
+        "failed": 1,
+        "skipped": 0,
+        "result": "Failed"
+      },
+      "failure": "Motion-off one-view renderer toggle changed zero pixels; stopped before memory sampling or later conditions.",
+      "noProductFailureInferred": true,
+      "sourceSnapshotCaptured": false,
+      "testSourceHashAsRun": "0B56F4EEFC6D8220EC6CF5DEDE7AF38B9B0A27EDA209FDAC82BA53F9CC7CA4A9",
+      "resultFiles": [
+        {
+          "path": ".local/windows-urp-vfx-graphics-isolated-20261013/TestResults/vfx-memory-scale-run2.xml",
+          "sha256": "35F5EA5D3F3E17ECBFD6C584CD49F243EE104EA5DAFDF8A165BA18E161C82D6A"
+        },
+        {
+          "path": ".local/windows-urp-vfx-graphics-isolated-20261013/TestResults/vfx-memory-scale-run2.txt",
+          "sha256": "B4B644D10F6FA49F198A6D8FC271A38E77720AFC3828AE8C741B067671DE9941"
+        },
+        {
+          "path": ".local/windows-urp-vfx-graphics-isolated-20261013/TestResults/vfx-memory-scale-run2-summary.json",
+          "sha256": "2DF2F43382915E17541C96B76E3916B8563B1442B5965FED2E094F00D3F0B434"
+        }
+      ],
+      "processCounters": "The Unity Process.GetCurrentProcess private-bytes and working-set APIs returned zero; unavailable for this run.",
+      "rootGpuSampling": {
+        "path": "windows-urp-vfx-memory-run2-gpu-snapshot-20261013.json",
+        "sampleCount": 11,
+        "scope": "Startup/partial-run only; ended before test completion; not a hard-stop monitor; no fixture-frame alignment or instantaneous peak. Do not use as fixture safety/peak evidence."
+      }
+    },
+    "run3": {
+      "processId": 39756,
+      "startedUtc": "2026-10-12T16:41:31.317312Z",
+      "finishedUtc": "2026-10-12T16:41:54.572184Z",
+      "elapsedSeconds": 23.231,
+      "graphicsApi": "Direct3D11",
+      "testFullName": "ViewWeave.VfxDriverValidation.UrpVfxMemoryScaleTests.SimpleBurstCapacity512OneViewPixelGate",
+      "scope": {
+        "views": 1,
+        "tile": "128x96",
+        "capacity": 512,
+        "generateMotionVector": false,
+        "msaa": 1,
+        "cameraAA": "None",
+        "sourceClear": "SolidColor black",
+        "memorySweep": false
+      },
+      "processExitCode": 0,
+      "nunit": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "result": "Passed"
+      },
+      "pixelGate": {
+        "rendererOnVsBlackOffChangedPixelsPerTile": [
+          2981
+        ],
+        "offNonBlackPixelsPerTile": [
+          0
+        ],
+        "aliveAtCapture": 128,
+        "culled": false,
+        "paused": false
+      },
+      "resourceCleanup": {
+        "historyCameraCountAfterRelease": 0,
+        "historyObjectsDestroyed": true,
+        "ownedObjectsDestroyed": true,
+        "sampleFrames": [
+          2,
+          4,
+          8
+        ],
+        "continuedGrowthAbove8MiB": false
+      },
+      "memoryMeasurement": "The 4096 MB guard stayed at its default; this was a single-view display gate only. The Unity process private/working-set API returned zero. No multi-view or 1/2/8-view memory sweep was run.",
+      "sourceSnapshot": {
+        "path": ".local/windows-urp-vfx-graphics-isolated-20261013/TestResults/vfx-memory-scale-run3-testsource.cs",
+        "sha256": "3AB947C6D80D3F8DBB5F2EB1E4C95381D70FFA825DD426DA01CC99257BB90E4C"
+      },
+      "resultFiles": [
+        {
+          "path": ".local/windows-urp-vfx-graphics-isolated-20261013/TestResults/vfx-memory-scale-run3.xml",
+          "sha256": "3841DBC7129D8386F47AEEFA6EC217DBF1AE00E23AD34CA696F68D86CBD6C594"
+        },
+        {
+          "path": ".local/windows-urp-vfx-graphics-isolated-20261013/TestResults/vfx-memory-scale-run3.txt",
+          "sha256": "309EC9541499827842518B485FC39E111D00DBB9C6D5DA59633E3219778724BE"
+        },
+        {
+          "path": ".local/windows-urp-vfx-graphics-isolated-20261013/TestResults/vfx-memory-scale-run3-on.png",
+          "sha256": "BAE6CCB34D3A5FFA3A4A453CCC49A3253C607C9FA56C3888CD3DB87BA91A0792"
+        },
+        {
+          "path": ".local/windows-urp-vfx-graphics-isolated-20261013/TestResults/vfx-memory-scale-run3-off.png",
+          "sha256": "EEE16FB9E7278CCC17F9FE9769D5D8676FB53B8839302DB94C62FF199F61066D"
+        }
+      ]
+    },
+    "run4": {
+      "processId": 37328,
+      "startedUtc": "2026-10-12T16:48:19.304841Z",
+      "editorExitCode": null,
+      "editorExitCodeStatus": "not-captured-wrapper-terminated",
+      "wrapperFailure": "PowerShell async output callbacks failed without an available runspace; Unity completion was verified separately from NUnit XML and evidence",
+      "editorProcessPresentAtReadback": false,
+      "graphicsApi": "Direct3D11",
+      "testMode": "PlayMode",
+      "testFullName": "ViewWeave.VfxDriverValidation.UrpVfxMemoryScaleTests.SimpleBurstCapacity512MemoryScaleNineConditions",
+      "nunit": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "result": "Passed",
+        "durationSeconds": 9.3761006
+      },
+      "fixtureConditions": {
+        "count": 9,
+        "viewCounts": [
+          1,
+          2,
+          8
+        ],
+        "states": [
+          "VFX-off control",
+          "serialized generateMotionVector setting off",
+          "serialized generateMotionVector setting on"
+        ],
+        "tile": "128x96",
+        "capacity": 512,
+        "msaaSamples": 1,
+        "historyAA": "None",
+        "background": "SolidColor black",
+        "sampleFrames": [
+          1,
+          2,
+          4,
+          8,
+          16,
+          32
+        ],
+        "defaultHistoryBudgetMB": 4096
+      },
+      "motionVectorComparisonScope": {
+        "comparisonWasSerializedSettingToggle": true,
+        "clonedGraphBlendMode": "Alpha",
+        "clonedGraphGenerateMotionVectorSettingOn": true,
+        "asRunClonedGraph": {
+          "path": ".local/windows-urp-vfx-graphics-isolated-20261013/Assets/Generated/MemoryProbe_Capacity512_MotionOn_Run4.vfx",
+          "blendModeLine": 530,
+          "generateMotionVectorLine": 535
+        },
+        "urpSourceFinding": "Under the run's default URP binder/compile path, this output does not add the MotionVector feature even when generateMotionVector is true.",
+        "sourceBasis": [
+          "Library/PackageCache/com.unity.visualeffectgraph@3c55eb193cdb/Editor/Core/VFXLibrary.cs:607-619",
+          "Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Editor/VFXGraph/VFXURPBinder.cs:14",
+          "Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Editor/VFXGraph/VFXURPSubOutput.cs:10",
+          "Library/PackageCache/com.unity.visualeffectgraph@3c55eb193cdb/Editor/Models/Contexts/VFXAbstractRenderedOutput.cs:78-85",
+          "Library/PackageCache/com.unity.visualeffectgraph@3c55eb193cdb/Editor/Models/Contexts/VFXAbstractParticleOutput.cs:222-228"
+        ],
+        "sourceAssessmentMotionVectorFeatureEnabledForTestOutput": false,
+        "compiledDescriptorCaptured": false,
+        "nativeMotionBufferAllocationMeasured": false,
+        "otherPerCameraResourcesIsolated": false,
+        "interpretation": "The off/on factor was not an effective motion-buffer load comparison. Other per-camera resources such as sorting-related buffers may remain."
+      },
+      "fixtureAssertionsPassed": true,
+      "pixelGate": {
+        "vfxOnCases": 6,
+        "allTilesDifferenceGreaterThan20": true,
+        "rendererOffNonblackPixelCountZero": true,
+        "pixelImages": [
+          {
+            "path": "validation/windows-urp-vfx-memory-run4-pixels/views-1-motion-off-off.png",
+            "bytes": 420,
+            "sha256": "EEE16FB9E7278CCC17F9FE9769D5D8676FB53B8839302DB94C62FF199F61066D"
+          },
+          {
+            "path": "validation/windows-urp-vfx-memory-run4-pixels/views-1-motion-off-on.png",
+            "bytes": 4771,
+            "sha256": "67A05D8F47BCB985A8E1135D454CF43B0EE95CEFFCCD89EFCF58C98FDC6B682A"
+          },
+          {
+            "path": "validation/windows-urp-vfx-memory-run4-pixels/views-1-motion-on-off.png",
+            "bytes": 420,
+            "sha256": "EEE16FB9E7278CCC17F9FE9769D5D8676FB53B8839302DB94C62FF199F61066D"
+          },
+          {
+            "path": "validation/windows-urp-vfx-memory-run4-pixels/views-1-motion-on-on.png",
+            "bytes": 4762,
+            "sha256": "BFA7D37A2BF69E0D87B41B85CC27398943A16CD2C3664E612B6FE149B45018E0"
+          },
+          {
+            "path": "validation/windows-urp-vfx-memory-run4-pixels/views-2-motion-off-off.png",
+            "bytes": 683,
+            "sha256": "7E75006CC2B36AAA3C3C5AFDD68D3A929F8E9B637905C0EE1D6EE174FD9DA62F"
+          },
+          {
+            "path": "validation/windows-urp-vfx-memory-run4-pixels/views-2-motion-off-on.png",
+            "bytes": 2063,
+            "sha256": "544580C9972608DCA8E1E236CD8BC8580D297AF53A3889936D99B170DDC8E977"
+          },
+          {
+            "path": "validation/windows-urp-vfx-memory-run4-pixels/views-2-motion-on-off.png",
+            "bytes": 683,
+            "sha256": "7E75006CC2B36AAA3C3C5AFDD68D3A929F8E9B637905C0EE1D6EE174FD9DA62F"
+          },
+          {
+            "path": "validation/windows-urp-vfx-memory-run4-pixels/views-2-motion-on-on.png",
+            "bytes": 5886,
+            "sha256": "1F8E6D57FD9920E4817446AD5D6BCA4E526AFDCC3085D708D899A508F850D60D"
+          },
+          {
+            "path": "validation/windows-urp-vfx-memory-run4-pixels/views-8-motion-off-off.png",
+            "bytes": 2166,
+            "sha256": "0FF888D54852FDBF44C52D8F1DB5E1072A91BC1CE265CB0A15F7BDA7A996F821"
+          },
+          {
+            "path": "validation/windows-urp-vfx-memory-run4-pixels/views-8-motion-off-on.png",
+            "bytes": 28101,
+            "sha256": "24F8F15961A1CCA9576BBF039F1B4DC02E65A29EE7C5834A302C0433F2EC9445"
+          },
+          {
+            "path": "validation/windows-urp-vfx-memory-run4-pixels/views-8-motion-on-off.png",
+            "bytes": 2166,
+            "sha256": "0FF888D54852FDBF44C52D8F1DB5E1072A91BC1CE265CB0A15F7BDA7A996F821"
+          },
+          {
+            "path": "validation/windows-urp-vfx-memory-run4-pixels/views-8-motion-on-on.png",
+            "bytes": 28085,
+            "sha256": "069E292B4D8313CFD3D82E8F572D0B0DF8E35EFC50DEC7CC708BE5420180DCF0"
+          }
+        ]
+      },
+      "memorySafety": {
+        "globalStopThresholdBytes": 536870912,
+        "rawGraphicsBaselineBytes": 32309820,
+        "rawGraphicsPeakDeltaBytes": 5134564,
+        "processPrivateBaselineBytes": 1466642432,
+        "processPrivatePeakDeltaBytes": 164261888,
+        "processMemoryApi": "Win32 GetProcessMemoryInfo",
+        "processPrivateAndWorkingSetReadingsSucceeded": true,
+        "rawGraphicsReadingsSucceeded": true,
+        "maximumHistoryGraphicsGrowthBytes": 589824,
+        "osGpuDedicatedSharedCountersCaptured": true,
+        "historyBudgetMB": 4096,
+        "counterSampleCount": 54,
+        "rawGraphicsDeltaSinceEachConditionBaselineFrames1To32AllZero": true,
+        "maximumSdkPerConditionHistoryGraphicsGrowthBytes": 589824,
+        "maximumHistoryTextureEstimateBytes": 196608,
+        "motionVectorSettingOnProvesNativeMotionBufferAllocation": false,
+        "processMemoryZeroFromEarlierMonoApiCountedAsValid": false
+      },
+      "cleanup": {
+        "sampleFrames": [
+          2,
+          4,
+          8
+        ],
+        "allConditionsHistoryCameraCountAfterReleaseZero": true,
+        "allConditionsOwnedResourcesDestroyed": true,
+        "stoppedForContinuousGrowthAbove8MiB": false
+      },
+      "sourceSnapshot": {
+        "path": "validation/windows-urp-vfx-memory-run4-testsource.cs",
+        "sha256": "165BDDDFFC8D583AD02D75D8DA7F57B85FBBA2E4597A548BD4C21DB1405148D0"
+      },
+      "resultFiles": [
+        {
+          "path": "validation/windows-urp-vfx-memory-run4.xml",
+          "bytes": 4444,
+          "sha256": "3947FF91DDBDB95A1CC38FEFCA60BABD9109D59ED9A0A69B686E3BA9E57719C2"
+        },
+        {
+          "path": "validation/windows-urp-vfx-memory-run4.txt",
+          "bytes": 40439,
+          "sha256": "47F7E9F338DBBCE62E0AEEB7559A0DE5DD68D567E3D96062B391EC088C8DF500"
+        },
+        {
+          "path": "validation/windows-urp-vfx-memory-run4-safe-summary.json",
+          "bytes": 50719,
+          "sha256": "19119A8F258AE25824EA646651C584E0FE2EBDA928B0FB076DCCE07E1605DB1A"
+        }
+      ],
+      "editorLog": {
+        "localOnlyPath": ".local/windows-urp-vfx-graphics-isolated-20261013/TestResults/vfx-memory-scale-run4-editor.log",
+        "bytes": 158992,
+        "sha256": "49CF7A4398ABB36F618A62425EB5F484C9200473854DF6EE79F35FB99315D582",
+        "copiedToSharedDocs": false,
+        "crashMarker": "Crash!!!",
+        "crashMarkerFound": false,
+        "testCompletedMarkerFound": true,
+        "normalBatchmodeExitMarkerFound": false
+      },
+      "scope": "NUnit fixture assertions completed, but the supervising wrapper did not capture the Unity process exit code. Isolated Editor/D3D11/PlayMode characterization only; not a user-project, hardware-output, or incident reproduction.",
+      "overallCompletionGate": "NUnit and fixture assertions completed; the supervising wrapper did not capture Editor exit code, so the overall clean-exit gate is unconfirmed.",
+      "osGpuSnapshot": {
+        "path": "validation/windows-urp-vfx-memory-run4-os-gpu-snapshot.json",
+        "bytes": 2931,
+        "sha256": "9B4CD90103AA817EFFB8DFD2CF7A53CB7D70DABDD332F44A6519F2B0A3DB342C",
+        "source": "root read-only Windows CIM sampling",
+        "sampleCount": 23,
+        "sampledMaximumBytes": {
+          "dedicatedUsage": 82792448,
+          "sharedUsage": 47984640,
+          "totalCommitted": 136904704,
+          "processPrivateBytes": 1625202688,
+          "workingSetBytes": 1327484928
+        },
+        "limits": [
+          "Approximately 1-second cadence; no exact Unity frame alignment.",
+          "Sampled maxima are not instantaneous peaks.",
+          "Not a fixture hard-stop monitor."
+        ]
+      },
+      "scopeLimitations": [
+        "Small isolated Editor/D3D11/PlayMode fixture only; no user scene, 48-view heavy sample, device rendering, or Preview-to-Play reproduction.",
+        "Only 32 observation frames per condition; not a long-duration stability test.",
+        "The same Editor process and graphics pools are reused across sequential conditions; per-condition values are not independent cold starts.",
+        "Motion-vector setting readback does not prove native motion-buffer allocation.",
+        "Dedicated/shared counters are separate OS process observations, not a physical VRAM total.",
+        "No native crash or user-reported budget exception was reproduced."
+      ],
+      "runtimeCodeBasis": {
+        "revision": "11312b8c6cf824d9a7ac7c8940e95cee742fa076",
+        "corePackageSourceSha256": "DA8ED0F0204E763031123473E40F65B39CD397262DB16425D869B29501953529",
+        "urpPackageSourceSha256": "EED54060E298FA37CAFD9832B4185FC1B3B0649B3BE17DAEED95E48A36659E78",
+        "diagnosticRuntimeChangesWereUncommitted": true
+      },
+      "osGpuCaptureLimit": "23 read-only Windows CIM samples over startup and test; approximately one-second cadence; no exact Unity-frame alignment; sampled maxima are not instantaneous peaks and sampler is not the fixture hard-stop monitor.",
+      "applicationEventReadback": {
+        "source": "Root read-only Windows Application event query",
+        "windowStartUtc": "2026-10-12T16:48:19Z",
+        "windowEndUtc": "2026-10-12T16:48:55Z",
+        "queriedEventIds": [
+          1000,
+          1001,
+          1002,
+          1026
+        ],
+        "matchingUnityExecutableEventCount": 0,
+        "scope": "No matching event was returned; this is not proof of a clean process exit and does not satisfy the missing Editor exit-code gate."
+      },
+      "sourceSideContext": {
+        "savedSceneAsset": {
+          "path": "E:/URPSample_6.6.41f1/Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/VFX/SampleSDF.vfx",
+          "capacity": 345000,
+          "stripCapacity": 2300,
+          "stripUrpBlendMode": "Opaque",
+          "stripUrpBlendModeEvidenceLine": 6092,
+          "generateMotionVector": true,
+          "generateMotionVectorEvidenceLine": 6097,
+          "implementsMotionVector": false,
+          "compiledHasMotionVector": false,
+          "compiledMotionVectorBufferDescriptorPresent": false,
+          "readOnlyInspection": true,
+          "opaqueBlendModeAloneSatisfiesTheOutputImplementationGate": false
+        },
+        "isolatedFixtureCapacity": 512,
+        "vfxGraphSource": {
+          "path": "Library/PackageCache/com.unity.visualeffectgraph@3c55eb193cdb/Editor/Data/VFXDataParticle.cs",
+          "motionBufferDescriptorLines": "1192-1206",
+          "currentPreviousPerCameraMappingLines": "1263-1279",
+          "temporaryBufferFrameCount": 2
+        },
+        "urpBudgetTiming": {
+          "path": "Packages/com.zabaglione.lookingglass.viewweave.urp/Runtime/UrpViewHistoryRenderer.cs",
+          "requestedHistoryCameraSetupLines": "88-117",
+          "beforeViewBudgetCheckLine": 283,
+          "afterViewBudgetCheckAroundLine": 369,
+          "allocationHardCap": false
+        },
+        "limits": [
+          "Saved capacity and source descriptors do not prove the graph/output was active or compiled during the incident.",
+          "Native allocation size and the relation to the reported 54,473 MB remain unknown.",
+          "The 4096 MB budget is sampled around view work; setup or render allocations may happen before a later sample.",
+          "This source context does not establish a cause or a fix."
+        ]
+      }
+    }
+  },
+  "savedScenePipelineComparison": {
+    "readOnly": true,
+    "comparisonBasis": "Current saved scene files and current package/source files; not incident-time runtime state.",
+    "unityVersion": "6000.6.4f1",
+    "packages": {
+      "vfxGraph": "17.6.0",
+      "renderPipelines": "17.6.0",
+      "packageCacheIdentity": "3c55eb193cdb",
+      "correspondingVfxGraphFiles": 32,
+      "correspondingVfxGraphFilesHaveMatchingSha256": true
+    },
+    "sharedSettings": {
+      "historyBudgetMegabytes": 4096,
+      "maxHistoryCameras": 256
+    },
+    "hdrp": {
+      "savedScene": "E:/My project (34)/Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/Scenes/HDRP_VFX_Learning_Templates.unity",
+      "evidenceLines": [1866, 2103, 2113],
+      "output": "Quilt48",
+      "renderModeIsolated": 0,
+      "viewRenderModeQuarter": 4,
+      "renderedViewCount": 12,
+      "viewCountSource": "Core/QuiltViewSampling.cs:14",
+      "referenceCameraSaved": false,
+      "sourceAntiAliasing": 0,
+      "savedSceneEffectiveAntiAliasing": "None; no saved reference camera",
+      "renderPath": "HDRP StandardRequest; Core/QuiltRenderer.cs around line 641"
+    },
+    "urp": {
+      "savedScene": "E:/URPSample_6.6.41f1/Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/Scenes/URP_VFX_Learning_Templates.unity",
+      "evidenceLines": [756, 894, 904],
+      "output": "Quilt48",
+      "renderModeIsolated": 0,
+      "viewRenderModeQuarter": 1,
+      "renderedViewCount": 48,
+      "viewCountSource": "Core/QuiltViewSampling.cs:14",
+      "referenceCameraSaved": true,
+      "sourceAntiAliasing": 3,
+      "referenceCamera": {
+        "sceneFileId": "953032635588042676",
+        "prefabAsset": "Assets/Samples/Visual Effect Graph/17.6.0/Common/Prefabs/VFX_URP_Camera.prefab",
+        "prefabGuid": "719615f492dfced46be67a250bc49568",
+        "prefabFileId": "3524051877139940520",
+        "postProcessingEnabled": true,
+        "antiAliasing": "TAA",
+        "prefabEvidenceLines": [120, 121],
+        "sceneFollowReferenceRenderingSettings": true,
+        "sceneEvidenceLine": 757,
+        "sceneLevelAaOrPostProcessingOverride": false
+      },
+      "savedSceneEffectiveAntiAliasing": "TAA expected from saved reference camera settings; incident runtime value not established",
+      "renderPath": "camera.Render(); UrpQuiltCamera.cs:295-305"
+    },
+    "vfxSourceComparison": {
+      "perCameraBufferMechanismPresentInBothPipelines": true,
+      "motionVectorOutputs": {
+        "urp": "Opaque outputs",
+        "hdrp": "Opaque and regular transparent outputs"
+      },
+      "interpretation": "HDRP is not thereby free of VFX per-camera resource use; saved graph identity and pipeline version are aligned."
+    },
+    "incidentRuntimeAntiAliasingConfirmed": false,
+    "profilePath": {
+      "source": "Packages/com.zabaglione.lookingglass.viewweave.bridge/Runtime/Platforms/Windows/ViewWeaveBridgeSession.cs:501 -> Packages/com.zabaglione.lookingglass.viewweave.core/Runtime/ViewWeaveRig.cs:124 -> Renderer.settings.ApplyTo",
+      "overwritesRendererViewRenderMode": false,
+      "profileMayChangeViewCount": true,
+      "viewQuarterRule": "A profile view count can yield ceil(profile view count / 4) rendered views in Quarter mode."
+    },
+    "priorDisplayOrIncidentRuntimeStateProven": false,
+    "allSavedGraphsActiveOrCompiledProven": false,
+    "fourfoldTotalMemoryRelationshipProven": false,
+    "reported54473MegabytesExplained": false,
+    "limits": [
+      "Saved configuration does not establish past manual-display or incident-time runtime settings.",
+      "Matching saved graph files do not prove which graphs were active or compiled.",
+      "View count or pipeline differences do not establish a 4x total-memory relationship or explain the reported 54,473 MB."
+    ]
+  },
+  "limits": [
+    "The ten historical focused EditMode attempts remain no-result attempts; the later CPU/EditMode run is a separate 5/5 result.",
+    "The existing URP VFX PlayMode driver fixture failed at its alive-particle assertion and is not a pass or a memory-stability result.",
+    "Run2 stopped at a zero-pixel gate; run3 passed a corrected one-view pixel gate; run4 completed nine small 1/2/8-view conditions with NUnit assertions passing. Run4 characterizes the isolated fixture only, and the Unity process exit code was not captured by its failed wrapper.",
+    "The 4096 MB guard observes growth around view work; it is not an allocation cap and cannot prevent an allocation inside Camera.Render before the after-view sample.",
+    "Run4's motion-vector off/on factor was only a serialized setting toggle; the alpha-blended test output did not enable the URP MotionVector feature under the source path. The saved SampleSDF Strip URP output is opaque, but incident-time compiled features and native allocations remain unknown.",
+    "Shared-camera rendering was not measured; no memory-reduction effect is established.",
+    "No 54,473 MB allocation, user-scene budget exception, native crash, Preview-to-Play incident, or device output was reproduced."
+  ]
+}

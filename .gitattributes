@@ -24,3 +24,9 @@ CMakeLists.txt text eol=lf
 # Preserve validation evidence bytes and allow their CRLF line endings.
 docs/validation/windows-mac-quality-profile-*.xml -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 docs/validation/windows-mac-quality-profile-native-transport-ctest.txt -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+docs/validation/*/** -text -eol -whitespace
+docs/validation/windows-urp-vfx-* -text -eol -whitespace
+docs/validation/windows-vfx-* -text -eol -whitespace
+docs/validation/windows-editor-close-crash-20261011.json -text -eol -whitespace
+docs/validation/windows-native-mock-shutdown-validation-20261012* -text -eol -whitespace
+Tests/Pipelines/Unity/Tools/Run-WindowsEditorCloseValidation.ps1 -text whitespace=-blank-at-eof,cr-at-eol

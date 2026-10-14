@@ -1,0 +1,177 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Read-only derived analysis; frozen inputs are not modified.",
+  "python": "3.12.10",
+  "numpy": "2.4.4",
+  "pillow": "12.2.0",
+  "command": "python docs/validation/windows-urp-vfx-hdr-rootcause-20261013/analysis/analyze_hdr_probe_pairs.py",
+  "inputCount": 30,
+  "fileCount": 33,
+  "files": [
+    {
+      "path": "docs/validation/windows-urp-vfx-hdr-rootcause-20261013/analysis/README.txt",
+      "bytes": 1623,
+      "sha256": "777AA404E2DEA9579DD2EF62F87FE1254D089BFB281C9BFE845AA1E5AF186F19"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-hdr-rootcause-20261013/analysis/analysis.json",
+      "bytes": 33290,
+      "sha256": "990E8F27A2A9465491F6D2CA97177AAD50FDF2F8397798E390C9664D96278D18"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-hdr-rootcause-20261013/analysis/analyze_hdr_probe_pairs.py",
+      "bytes": 13185,
+      "sha256": "5107897CCBB7ECCBC4CC513969F94E2C56D661D11D090071E5A86A060BF1F87A"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-hdr-rootcause-20261013/phase-c/runs/coin/evidence/coin-min-normal-float-peak.bin",
+      "bytes": 2764800,
+      "sha256": "3D6DC6E95298C6BEEA8CE0DD79E505790F908724BC65DF63575CA2FA48ED937C"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-hdr-rootcause-20261013/phase-c/runs/coin/evidence/coin-min-quilt-paired-float-peak.bin",
+      "bytes": 2764800,
+      "sha256": "D11F53F35B0DE2725BB18F913ACE75BBD842D9929336B9E9CD57177D5D2390B0"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-hdr-rootcause-20261013/phase-c/runs/coin/evidence/hdr-float-metadata.txt",
+      "bytes": 463,
+      "sha256": "9550509BADD9C53998237925B55B57F00A70ED1DAF47CFC5F8A14429417836FF"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-hdr-rootcause-20261013/phase-c/runs/coin/evidence/hdr-float-normal.bin",
+      "bytes": 2764800,
+      "sha256": "3D6DC6E95298C6BEEA8CE0DD79E505790F908724BC65DF63575CA2FA48ED937C"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-hdr-rootcause-20261013/phase-c/runs/coin/evidence/hdr-float-quilt.bin",
+      "bytes": 2764800,
+      "sha256": "D11F53F35B0DE2725BB18F913ACE75BBD842D9929336B9E9CD57177D5D2390B0"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-hdr-rootcause-20261013/phase-c/runs/coin/evidence/normal-luma-max-normal.png",
+      "bytes": 181287,
+      "sha256": "FF847787E4464E98F9B929FA0BB4822753A70D96232A3388B5812CAE7EF3A7FF"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-hdr-rootcause-20261013/phase-c/runs/coin/evidence/normal-luma-max-quilt.png",
+      "bytes": 199066,
+      "sha256": "BC69ED1D804BCADA395E24E4C2A9A6CAEE59D51C83CC6E9E561AACB971DD4EB5"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-hdr-rootcause-20261013/phase-c/runs/coin/evidence/normal-luma-min-normal.png",
+      "bytes": 148200,
+      "sha256": "379FCA8232B02CF9EA35D56A38761D2018D09A2AA15C5AD162FB4F8A0838A00D"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-hdr-rootcause-20261013/phase-c/runs/coin/evidence/normal-luma-min-quilt.png",
+      "bytes": 211637,
+      "sha256": "EB68412D65A255791AADF7B04F2BE2BABC430925BB8625A601506E59A1330EC4"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-hdr-rootcause-20261013/phase-c/runs/green/evidence/frames.csv",
+      "bytes": 97068,
+      "sha256": "5A1C2E1D2D4EF930D13E7057078EA8BB656FF64632655E40D847330255401D7A"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-hdr-rootcause-20261013/phase-c/runs/green/evidence/green-lights-first-alive-normal.bin",
+      "bytes": 2764800,
+      "sha256": "1C176F3FD380F1803372B6E8467DA121EFE8D1AF9F2028C499A2462BB9171748"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-hdr-rootcause-20261013/phase-c/runs/green/evidence/green-lights-first-alive-quilt.bin",
+      "bytes": 2764800,
+      "sha256": "E14D65963815D26257911676A60FF59A88E1E50CF639146A82B18DD1D5E1B00F"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-hdr-rootcause-20261013/phase-c/runs/green/evidence/green-lights-float-metadata.txt",
+      "bytes": 185,
+      "sha256": "2F00ADF672ACC0A82B536FD5A31FD9357C1C27925557A55DA6D07F4C928E6585"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-hdr-rootcause-20261013/phase-c/runs/green/evidence/green-lights-peak-alive-normal.bin",
+      "bytes": 2764800,
+      "sha256": "1B81282679F1D2C3A940C585D92177606D2ECED48971DFB4EEBCDC53505085F4"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-hdr-rootcause-20261013/phase-c/runs/green/evidence/green-lights-peak-alive-quilt.bin",
+      "bytes": 2764800,
+      "sha256": "0C84CE31B9D7069F27CCD541DBFDBF6740EBEF59EF15AB389ED72E854B7C5E97"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-rendering-incident-20261013/probes/hdr-target/phase-b/coin/evidence/coin-min-normal-float-peak.bin",
+      "bytes": 2764800,
+      "sha256": "3D6DC6E95298C6BEEA8CE0DD79E505790F908724BC65DF63575CA2FA48ED937C"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-rendering-incident-20261013/probes/hdr-target/phase-b/coin/evidence/coin-min-quilt-paired-float-peak.bin",
+      "bytes": 2764800,
+      "sha256": "23797FA4585F162D737D31D7C8F16BBA451E15A590DF29FFB963A2915C79C2D9"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-rendering-incident-20261013/probes/hdr-target/phase-b/coin/evidence/hdr-float-metadata.txt",
+      "bytes": 470,
+      "sha256": "F1B1D09081B071AF6389C63184082469F15F40603CE16408376A67EED5508C26"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-rendering-incident-20261013/probes/hdr-target/phase-b/coin/evidence/hdr-float-normal.bin",
+      "bytes": 2764800,
+      "sha256": "3D6DC6E95298C6BEEA8CE0DD79E505790F908724BC65DF63575CA2FA48ED937C"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-rendering-incident-20261013/probes/hdr-target/phase-b/coin/evidence/hdr-float-quilt.bin",
+      "bytes": 2764800,
+      "sha256": "23797FA4585F162D737D31D7C8F16BBA451E15A590DF29FFB963A2915C79C2D9"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-rendering-incident-20261013/probes/hdr-target/phase-b/coin/evidence/normal-luma-max-normal.png",
+      "bytes": 178912,
+      "sha256": "959316A42E6939C8767BC414805796727006B66F53168057D73841D609744B06"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-rendering-incident-20261013/probes/hdr-target/phase-b/coin/evidence/normal-luma-max-quilt.png",
+      "bytes": 217315,
+      "sha256": "E03906E8419ABFFF325A637C1C91FCB86F0E8F40F4BA0BA01FCCB282A9ACEE80"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-rendering-incident-20261013/probes/hdr-target/phase-b/coin/evidence/normal-luma-min-normal.png",
+      "bytes": 148979,
+      "sha256": "F6A78153F7B0FBC810EFB165F0D32B6FC04BAE3E11C8507BB3F4EFAD42BAED2F"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-rendering-incident-20261013/probes/hdr-target/phase-b/coin/evidence/normal-luma-min-quilt.png",
+      "bytes": 221289,
+      "sha256": "EC4A93378E970DEA22D794A166681F6C29F8BD688888B9005DE7A03457196D0A"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-rendering-incident-20261013/probes/hdr-target/phase-b/green/evidence/frames.csv",
+      "bytes": 97588,
+      "sha256": "5CDAF4397D60C2D490F5E93D9775C35A105638B6FDC6567E09B07CA19DCE95BB"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-rendering-incident-20261013/probes/hdr-target/phase-b/green/evidence/green-lights-first-alive-normal.bin",
+      "bytes": 2764800,
+      "sha256": "4887A0A74DBCEB57C598231DDCFFFAA3AD1CA547FE9E393201582448952CD58A"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-rendering-incident-20261013/probes/hdr-target/phase-b/green/evidence/green-lights-first-alive-quilt.bin",
+      "bytes": 2764800,
+      "sha256": "422CBB86BFE5D9CC0A0985630BA15335A2B35E726B653475200B8455C1CD0471"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-rendering-incident-20261013/probes/hdr-target/phase-b/green/evidence/green-lights-float-metadata.txt",
+      "bytes": 183,
+      "sha256": "8D5ACE9CD4ABF9DBF133ED6FA2E73DA00191C63DCAE97BAF5C32CC3FCCB72D46"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-rendering-incident-20261013/probes/hdr-target/phase-b/green/evidence/green-lights-peak-alive-normal.bin",
+      "bytes": 2764800,
+      "sha256": "56BFE258841692190B90A926070F6BCBDF725BD1227897C74A2EE29B4411B071"
+    },
+    {
+      "path": "docs/validation/windows-urp-vfx-rendering-incident-20261013/probes/hdr-target/phase-b/green/evidence/green-lights-peak-alive-quilt.bin",
+      "bytes": 2764800,
+      "sha256": "3C4C9CC2DDED0AEF13438C7214022D4DE4CCCB366389FE9FE8BB45F4BCEFA6D7"
+    }
+  ]
+}

@@ -119,9 +119,12 @@ namespace ViewWeave.SrpAdditionalValidation
                 root.layer = 31;
                 SceneManager.MoveGameObjectToScene(root, fixtureScene);
                 requestedMsaaSamples = msaaSamples;
-                expectedMsaaSamples = msaa ? SupportedMsaaSamples(msaaSamples) : 1;
                 if (hdrp) SetupHdrp(); else SetupUrp(aa, msaa);
                 AddCamera(dof);
+                RenderTextureFormat viewFormat = camera.allowHDR && urp != null && urp.supportsHDR
+                    ? RenderTextureFormat.ARGBHalf : RenderTextureFormat.ARGB32;
+                bool viewSrgb = viewFormat == RenderTextureFormat.ARGBHalf ? false : QualitySettings.activeColorSpace == ColorSpace.Linear;
+                expectedMsaaSamples = msaa ? SupportedMsaaSamples(msaaSamples, viewFormat, viewSrgb) : 1;
                 oldAllowMsaa = camera.allowMSAA;
                 urpAaMode = aa;
                 urpMsaa = msaa;
@@ -373,16 +376,22 @@ namespace ViewWeave.SrpAdditionalValidation
                     Assert.AreEqual(effectEnabled ? urpAaMode : AntialiasingMode.None, urpCameraData.antialiasing, "AA mode changed unexpectedly");
                     Assert.AreEqual(effectEnabled && urpMsaa, camera.allowMSAA, "MSAA state changed unexpectedly");
                     Assert.AreEqual(effectEnabled && urpMsaa ? expectedMsaaSamples : 1, quilt.ViewAntiAliasingSamples, "view RT MSAA sample count was not applied");
-                    Assert.AreEqual(effectEnabled && urpMsaa && expectedMsaaSamples > 1 ? 1 : 0, quilt.ResolveAntiAliasingSamples, "resolve RT lifecycle was not applied");
+                    bool formatResolve = camera.allowHDR && urp != null && urp.supportsHDR;
+                    bool msaaResolve = effectEnabled && urpMsaa && expectedMsaaSamples > 1;
+                    Assert.AreEqual(formatResolve || msaaResolve ? 1 : 0, quilt.ResolveAntiAliasingSamples, "resolve RT lifecycle was not applied");
                     Debug.Log("MSAA requested=" + requestedMsaaSamples + " expected=" + (effectEnabled && urpMsaa ? expectedMsaaSamples : 1) + " actual=" + quilt.ViewAntiAliasingSamples + " allowMSAA=" + camera.allowMSAA + " colorSpace=" + QualitySettings.activeColorSpace);
                 }
                 Texture2D image = Read(quilt.QuiltTexture);
                 if (effectEnabled) after = image; else before = image;
             }
 
-            int SupportedMsaaSamples(int requested)
+            int SupportedMsaaSamples(int requested, RenderTextureFormat format, bool sRgb)
             {
-                RenderTextureDescriptor descriptor = new RenderTextureDescriptor(TileWidth, TileHeight, RenderTextureFormat.ARGB32, 24) { msaaSamples = requested };
+                RenderTextureDescriptor descriptor = new RenderTextureDescriptor(TileWidth, TileHeight, format, 24)
+                {
+                    msaaSamples = requested,
+                    sRGB = sRgb
+                };
                 int supported = SystemInfo.GetRenderTextureSupportedMSAASampleCount(descriptor);
                 return supported == 2 || supported == 4 || supported == 8 ? supported : 1;
             }

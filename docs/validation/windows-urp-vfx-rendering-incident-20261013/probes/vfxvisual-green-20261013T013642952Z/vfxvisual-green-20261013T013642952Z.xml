@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Failed(Child)" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-13 01:37:18Z" end-time="2026-10-13 01:37:18Z" duration="0.5340466">
+  <test-suite type="TestSuite" id="1017" name="URPSample_6.6.41f1" fullname="URPSample_6.6.41f1" runstate="Runnable" testcasecount="7" result="Failed" site="Child" start-time="2026-10-13 01:37:18Z" end-time="2026-10-13 01:37:18Z" duration="0.534047" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <failure>
+      <message><![CDATA[One or more child tests had errors]]></message>
+    </failure>
+    <test-suite type="Assembly" id="1030" name="ViewWeave.SceneComparison.Tests.dll" fullname="E:/LookingGlassSDK/.local/windows-vfx-scene-comparison-20261013/URP/UnityProject/Library/ScriptAssemblies/ViewWeave.SceneComparison.Tests.dll" runstate="Runnable" testcasecount="7" result="Failed" site="Child" start-time="2026-10-13 01:37:18Z" end-time="2026-10-13 01:37:18Z" duration="0.526797" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="118544" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <failure>
+        <message><![CDATA[One or more child tests had errors]]></message>
+      </failure>
+      <test-suite type="TestSuite" id="1031" name="ViewWeave" fullname="ViewWeave" runstate="Runnable" testcasecount="7" result="Failed" site="Child" start-time="2026-10-13 01:37:18Z" end-time="2026-10-13 01:37:18Z" duration="0.525958" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <failure>
+          <message><![CDATA[One or more child tests had errors]]></message>
+        </failure>
+        <test-suite type="TestSuite" id="1032" name="SceneComparison" fullname="ViewWeave.SceneComparison" runstate="Runnable" testcasecount="7" result="Failed" site="Child" start-time="2026-10-13 01:37:18Z" end-time="2026-10-13 01:37:18Z" duration="0.525533" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <failure>
+            <message><![CDATA[One or more child tests had errors]]></message>
+          </failure>
+          <test-suite type="TestSuite" id="1033" name="Tests" fullname="ViewWeave.SceneComparison.Tests" runstate="Runnable" testcasecount="7" result="Failed" site="Child" start-time="2026-10-13 01:37:18Z" end-time="2026-10-13 01:37:18Z" duration="0.525112" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-suite type="TestFixture" id="1027" name="VfxPairedViewProbeTests" fullname="ViewWeave.SceneComparison.Tests.VfxPairedViewProbeTests" classname="ViewWeave.SceneComparison.Tests.VfxPairedViewProbeTests" runstate="Runnable" testcasecount="2" result="Failed" site="Child" start-time="2026-10-13 01:37:18Z" end-time="2026-10-13 01:37:18Z" duration="0.523864" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <failure>
+                <message><![CDATA[One or more child tests had errors]]></message>
+              </failure>
+              <test-case id="1028" name="ObserveMultiStripGpuEventsOnOriginalScene" fullname="ViewWeave.SceneComparison.Tests.VfxPairedViewProbeTests.ObserveMultiStripGpuEventsOnOriginalScene" methodname="ObserveMultiStripGpuEventsOnOriginalScene" classname="ViewWeave.SceneComparison.Tests.VfxPairedViewProbeTests" runstate="Runnable" seed="1743906006" result="Failed" start-time="2026-10-13 01:37:18Z" end-time="2026-10-13 01:37:18Z" duration="0.513118" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[Visual probe failed during load-prepared-scene: AssertionException:   Expected exactly one prepared effect with the selected graph GUID.??  Expected: 1??  But was:  0??]]></message>
+                  <stack-trace><![CDATA[at ViewWeave.SceneComparison.Tests.VfxPairedViewProbeTests+<ObserveGraph>d__99.MoveNext () [0x0046c] in E:\LookingGlassSDK\.local\windows-vfx-scene-comparison-20261013\URP\UnityProject\Assets\SceneComparisonTests\VfxPairedViewProbeTests.cs:259
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__8.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@80f691d4262b\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:52
+]]></stack-trace>
+                </failure>
+                <output><![CDATA[Saving results to: C:/Users/zzaba/AppData/LocalLow/DefaultCompany/URPSample_6_6_41f1\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

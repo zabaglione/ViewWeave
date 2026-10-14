@@ -1,0 +1,5 @@
+{"phase":"before_play","privateBytes":6578159616,"workingSetBytes":3050889216,"pid":57092,"utc":"2026-10-13T08:58:46.2250122Z"}
+{"phasePrivateBaseline":null,"utc":"2026-10-13T08:58:46.5319892Z","privateBytes":6576316416,"workingSetBytes":3047292928,"phase":"play_monitor","pid":57092}
+{"phasePrivateBaseline":null,"utc":"2026-10-13T08:58:46.7802507Z","privateBytes":6576324608,"workingSetBytes":3047567360,"phase":"play_monitor","pid":57092}
+{"phasePrivateBaseline":null,"utc":"2026-10-13T08:58:46.9995131Z","privateBytes":6583861248,"workingSetBytes":3056001024,"phase":"play_monitor","pid":57092}
+{"privateBytes":6583861248,"sampleSpanSeconds":0.4675239,"phase":"normal_baseline_ack_written","privateRangeBytes":7544832,"pid":57092,"utc":"2026-10-13T08:58:47.0400196Z","rawCandidateBaseline":3455717486,"workingSetBytes":3056001024}

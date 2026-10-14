@@ -1,0 +1,27 @@
+{
+  "schema": "original-vfx-host-resource-snapshot-v1",
+  "capturedUtc": "2026-10-13T15:33:06.3228860Z",
+  "unityEditorPid": 28196,
+  "editorStartUtc": "2026-10-13T15:32:24.5537807Z",
+  "bridgePid": 29956,
+  "freePhysicalBytes": 27868131328,
+  "totalPhysicalBytes": 68636729344,
+  "committedBytes": 59636879360,
+  "commitLimitBytes": 76421357568,
+  "commitHeadroomBytes": 16784478208,
+  "gpuAdapterMemory": [
+    {
+      "name": "luid_0x00000000_0x00011CE9_phys_0",
+      "totalCommitted": 6258688
+    },
+    {
+      "name": "luid_0x00000000_0x0000EE36_phys_0",
+      "totalCommitted": 6698819584
+    }
+  ],
+  "driveEAvailableBytes": 1257986572288,
+  "preflightFile": ".local/windows-urp-vfx-original-remedy-20261013/preflight-20261013T153010142Z/preflight.json",
+  "preflightCommitValuesUseKiBAsBytes": true,
+  "preflightCommitFieldsWereMultipliedBy1024": true,
+  "interpretation": "Use this snapshot for commit counters; the earlier preflight JSON retains its raw captured values and is not corrected."
+}

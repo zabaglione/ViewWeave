@@ -1,0 +1,1 @@
+firstAliveObservation=62;firstAliveUnityFrame=86;peakAlive=16;peakAliveObservation=242;peakAliveUnityFrame=266;encoding=float32-ieee754-little-endian-rgba;readbackTextureLinear=true

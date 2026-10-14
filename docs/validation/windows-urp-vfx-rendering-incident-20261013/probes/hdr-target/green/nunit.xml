@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Passed" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-13 02:58:25Z" end-time="2026-10-13 02:58:48Z" duration="22.8446132">
+  <test-suite type="TestSuite" id="1020" name="URPSample_6.6.41f1" fullname="URPSample_6.6.41f1" runstate="Runnable" testcasecount="9" result="Passed" start-time="2026-10-13 02:58:25Z" end-time="2026-10-13 02:58:48Z" duration="22.844613" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1036" name="ViewWeave.SceneComparison.Tests.dll" fullname="E:/LookingGlassSDK/.local/windows-vfx-scene-comparison-20261013/URP/UnityProject/Library/ScriptAssemblies/ViewWeave.SceneComparison.Tests.dll" runstate="Runnable" testcasecount="9" result="Passed" start-time="2026-10-13 02:58:25Z" end-time="2026-10-13 02:58:48Z" duration="22.837868" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="60640" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1037" name="ViewWeave" fullname="ViewWeave" runstate="Runnable" testcasecount="9" result="Passed" start-time="2026-10-13 02:58:25Z" end-time="2026-10-13 02:58:48Z" duration="22.837290" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1038" name="SceneComparison" fullname="ViewWeave.SceneComparison" runstate="Runnable" testcasecount="9" result="Passed" start-time="2026-10-13 02:58:25Z" end-time="2026-10-13 02:58:48Z" duration="22.836942" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1039" name="Tests" fullname="ViewWeave.SceneComparison.Tests" runstate="Runnable" testcasecount="9" result="Passed" start-time="2026-10-13 02:58:25Z" end-time="2026-10-13 02:58:48Z" duration="22.836581" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1024" name="HdrTargetProbeTests" fullname="ViewWeave.SceneComparison.Tests.HdrTargetProbeTests" classname="ViewWeave.SceneComparison.Tests.HdrTargetProbeTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-13 02:58:25Z" end-time="2026-10-13 02:58:48Z" duration="22.835296" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1025" name="ObserveMultiStripGpuEventsOnOriginalSceneHdrTarget" fullname="ViewWeave.SceneComparison.Tests.HdrTargetProbeTests.ObserveMultiStripGpuEventsOnOriginalSceneHdrTarget" methodname="ObserveMultiStripGpuEventsOnOriginalSceneHdrTarget" classname="ViewWeave.SceneComparison.Tests.HdrTargetProbeTests" runstate="Runnable" seed="55437687" result="Passed" start-time="2026-10-13 02:58:25Z" end-time="2026-10-13 02:58:48Z" duration="22.824765" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[The referenced script (Unknown) on this Behaviour is missing!
+The referenced script (Unknown) on this Behaviour is missing!
+The referenced script (Unknown) on this Behaviour is missing!
+The referenced script (Unknown) on this Behaviour is missing!
+The referenced script (Unknown) on this Behaviour is missing!
+The referenced script (Unknown) on this Behaviour is missing!
+Remove 1 child(ren) that couldnt be deserialized from  of type UnityEditor.VFX.VFXGraph
+Remove 1 linked context(s) that could not be deserialized from Update Particle Strip of type UnityEditor.VFX.VFXBasicUpdate
+Remove 1 owners that couldnt be deserialized from  of type UnityEditor.VFX.VFXDataParticle
+Saving results to: C:/Users/zzaba/AppData/LocalLow/DefaultCompany/URPSample_6_6_41f1\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

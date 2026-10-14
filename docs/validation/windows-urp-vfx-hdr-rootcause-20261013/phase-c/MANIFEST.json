@@ -1,0 +1,291 @@
+{
+  "schemaVersion": 1,
+  "scope": "Phase C isolated URP HDR intermediate experiment",
+  "graphicsApi": "D3D12",
+  "projectPath": ".local/windows-vfx-scene-comparison-20261013/URP/UnityProject",
+  "candidatePackagePath": ".local/windows-vfx-scene-comparison-20261013/CandidatePackages/com.zabaglione.lookingglass.viewweave.urp",
+  "candidatePackageVersion": "0.1.0",
+  "candidateRuntimeSourceSha256": "92356E442773A7C85E9EFEA7CBAA69B7FAB192A6E8B103B61A9B62DCADD3FF65",
+  "unityPackageResolutionExitCode": 0,
+  "unityPackageResolutionResult": "candidate-package-loaded",
+  "green": {
+    "editorPid": 108180,
+    "startedUtc": "2026-10-13T03:30:10.6736505Z",
+    "exitCode": 0,
+    "testResult": "Passed",
+    "xmlSha256": "23306ECB0B6928737676F2CC3B02D1936FE0FE112874D8E477E97D050AC503DF",
+    "evidence": "runs/green/evidence"
+  },
+  "coin": {
+    "editorPid": 92488,
+    "startedUtc": "2026-10-13T03:31:08.7256981Z",
+    "exitCode": 0,
+    "testResult": "Passed",
+    "xmlSha256": "CBCB1960C4DDCE341A066F7C6EF323B59DD6598A4464E6C2850EDB3DB35E079A",
+    "evidence": "runs/coin/evidence"
+  },
+  "editorLogsShared": false,
+  "artifactCount": 52,
+  "artifacts": [
+    {
+      "path": "package-resolution/result.json",
+      "bytes": 631,
+      "sha256": "AA84A4586F55B0FA051F5BA081236E07D4616787190403232415A0C50C209C39"
+    },
+    {
+      "path": "package-resolution/runner.json",
+      "bytes": 2278,
+      "sha256": "0F671E74FD155DA5A393660E4D89AC2513529C5AD26FB38889B8912B23B9A8F8"
+    },
+    {
+      "path": "runs/coin/evidence/camera-target-descriptors.txt",
+      "bytes": 1000,
+      "sha256": "7EB914061CD0A74C0C8DA944314DE360FD49E95E18A0C646CBD892203EF0B36B"
+    },
+    {
+      "path": "runs/coin/evidence/coin-min-float-metadata.txt",
+      "bytes": 200,
+      "sha256": "05E62310EF1962F1249FA03283A8CAC9E2CF9238D5C789D30B0AFD656407ED32"
+    },
+    {
+      "path": "runs/coin/evidence/coin-min-normal-float-peak.bin",
+      "bytes": 2764800,
+      "sha256": "3D6DC6E95298C6BEEA8CE0DD79E505790F908724BC65DF63575CA2FA48ED937C"
+    },
+    {
+      "path": "runs/coin/evidence/coin-min-quilt-paired-float-peak.bin",
+      "bytes": 2764800,
+      "sha256": "D11F53F35B0DE2725BB18F913ACE75BBD842D9929336B9E9CD57177D5D2390B0"
+    },
+    {
+      "path": "runs/coin/evidence/first-normal.png",
+      "bytes": 159331,
+      "sha256": "441E3DA4EA8EBDA79F0F9141B325578287A6835AC5EB9AABE2B255E86AB4F892"
+    },
+    {
+      "path": "runs/coin/evidence/first-quilt.png",
+      "bytes": 211768,
+      "sha256": "AEB17BD116DD8A5B4E40A4FD9368346FA8726FA2A99E9FD4FCD53D1FBBF819E7"
+    },
+    {
+      "path": "runs/coin/evidence/frames.csv",
+      "bytes": 29156,
+      "sha256": "A8C7F34B816790FFD9B1503EC38FDDE951FAE4AD54C44A4AAB3009BD1DDA2A70"
+    },
+    {
+      "path": "runs/coin/evidence/hdr-float-metadata.txt",
+      "bytes": 463,
+      "sha256": "9550509BADD9C53998237925B55B57F00A70ED1DAF47CFC5F8A14429417836FF"
+    },
+    {
+      "path": "runs/coin/evidence/hdr-float-normal.bin",
+      "bytes": 2764800,
+      "sha256": "3D6DC6E95298C6BEEA8CE0DD79E505790F908724BC65DF63575CA2FA48ED937C"
+    },
+    {
+      "path": "runs/coin/evidence/hdr-float-quilt.bin",
+      "bytes": 2764800,
+      "sha256": "D11F53F35B0DE2725BB18F913ACE75BBD842D9929336B9E9CD57177D5D2390B0"
+    },
+    {
+      "path": "runs/coin/evidence/normal-gold-peak-normal.png",
+      "bytes": 181948,
+      "sha256": "C7CE217DD3CAE674A652BA7318AD2789B21A1431D1CAE2465E6D71867FFA8752"
+    },
+    {
+      "path": "runs/coin/evidence/normal-gold-peak-quilt.png",
+      "bytes": 200022,
+      "sha256": "5791024587A25283B9B7C6C435FDB86008BF5B651F85055633D56BFD84DD597B"
+    },
+    {
+      "path": "runs/coin/evidence/normal-luma-max-normal.png",
+      "bytes": 181287,
+      "sha256": "FF847787E4464E98F9B929FA0BB4822753A70D96232A3388B5812CAE7EF3A7FF"
+    },
+    {
+      "path": "runs/coin/evidence/normal-luma-max-quilt.png",
+      "bytes": 199066,
+      "sha256": "BC69ED1D804BCADA395E24E4C2A9A6CAEE59D51C83CC6E9E561AACB971DD4EB5"
+    },
+    {
+      "path": "runs/coin/evidence/normal-luma-min-normal.png",
+      "bytes": 148200,
+      "sha256": "379FCA8232B02CF9EA35D56A38761D2018D09A2AA15C5AD162FB4F8A0838A00D"
+    },
+    {
+      "path": "runs/coin/evidence/normal-luma-min-quilt.png",
+      "bytes": 211637,
+      "sha256": "EB68412D65A255791AADF7B04F2BE2BABC430925BB8625A601506E59A1330EC4"
+    },
+    {
+      "path": "runs/coin/evidence/observations.txt",
+      "bytes": 5713,
+      "sha256": "D560743586D9B96CED005ABBEF5828D8B5614CDCD8191A8FC8C777F788390F7A"
+    },
+    {
+      "path": "runs/coin/evidence/quilt-gold-peak-normal.png",
+      "bytes": 181948,
+      "sha256": "C7CE217DD3CAE674A652BA7318AD2789B21A1431D1CAE2465E6D71867FFA8752"
+    },
+    {
+      "path": "runs/coin/evidence/quilt-gold-peak-quilt.png",
+      "bytes": 200022,
+      "sha256": "5791024587A25283B9B7C6C435FDB86008BF5B651F85055633D56BFD84DD597B"
+    },
+    {
+      "path": "runs/coin/results.xml",
+      "bytes": 4617,
+      "sha256": "CBCB1960C4DDCE341A066F7C6EF323B59DD6598A4464E6C2850EDB3DB35E079A"
+    },
+    {
+      "path": "runs/coin/runner.json",
+      "bytes": 5726,
+      "sha256": "053FE22E12950EABC459D34EF88102A436DE7593C7B00EE137002AE8E8C2D8AE"
+    },
+    {
+      "path": "runs/green/evidence/camera-target-descriptors.txt",
+      "bytes": 1000,
+      "sha256": "905586A2EFF85A10039779D67999C068C14630D18868FA9B93F2C25A67E25ED0"
+    },
+    {
+      "path": "runs/green/evidence/first-normal.png",
+      "bytes": 164380,
+      "sha256": "C214685F31CF66F2CF8DBCB17DF755159FC90A3AEE1CDB7AE4CFEBB3836CD0C1"
+    },
+    {
+      "path": "runs/green/evidence/first-quilt.png",
+      "bytes": 242930,
+      "sha256": "6765905CD4E92275803B2E15FBAE301AB748A10CA55666186D3BD9D746E6D871"
+    },
+    {
+      "path": "runs/green/evidence/frames.csv",
+      "bytes": 97068,
+      "sha256": "5A1C2E1D2D4EF930D13E7057078EA8BB656FF64632655E40D847330255401D7A"
+    },
+    {
+      "path": "runs/green/evidence/green-lights-first-alive-normal.bin",
+      "bytes": 2764800,
+      "sha256": "1C176F3FD380F1803372B6E8467DA121EFE8D1AF9F2028C499A2462BB9171748"
+    },
+    {
+      "path": "runs/green/evidence/green-lights-first-alive-quilt.bin",
+      "bytes": 2764800,
+      "sha256": "E14D65963815D26257911676A60FF59A88E1E50CF639146A82B18DD1D5E1B00F"
+    },
+    {
+      "path": "runs/green/evidence/green-lights-float-metadata.txt",
+      "bytes": 185,
+      "sha256": "2F00ADF672ACC0A82B536FD5A31FD9357C1C27925557A55DA6D07F4C928E6585"
+    },
+    {
+      "path": "runs/green/evidence/green-lights-peak-alive-normal.bin",
+      "bytes": 2764800,
+      "sha256": "1B81282679F1D2C3A940C585D92177606D2ECED48971DFB4EEBCDC53505085F4"
+    },
+    {
+      "path": "runs/green/evidence/green-lights-peak-alive-quilt.bin",
+      "bytes": 2764800,
+      "sha256": "0C84CE31B9D7069F27CCD541DBFDBF6740EBEF59EF15AB389ED72E854B7C5E97"
+    },
+    {
+      "path": "runs/green/evidence/hdr-float-metadata.txt",
+      "bytes": 462,
+      "sha256": "98E658A4AECDA1C7918DF50A0BAC0A27CA29993A82E02D987B9B604DD9B49E3B"
+    },
+    {
+      "path": "runs/green/evidence/hdr-float-normal.bin",
+      "bytes": 2764800,
+      "sha256": "0017BC0046E7FC3A836A5D3421F3879E45DED5C2C97CC3F1EC5BD81A6D44D574"
+    },
+    {
+      "path": "runs/green/evidence/hdr-float-quilt.bin",
+      "bytes": 2764800,
+      "sha256": "AED74DBB5FEBD519794FD2A27F243E147C7E1763B6748585499A083CB3E3C502"
+    },
+    {
+      "path": "runs/green/evidence/normal-green-peak-normal.png",
+      "bytes": 229100,
+      "sha256": "9470A82B763E316915BABD679C7303B7AF5F6848349685433B9051280BC35DA3"
+    },
+    {
+      "path": "runs/green/evidence/normal-green-peak-quilt.png",
+      "bytes": 308066,
+      "sha256": "1AAF2CB88ED3D81D20596B0F7B63843952ED3A58B03FF3831527EB22F4A95B82"
+    },
+    {
+      "path": "runs/green/evidence/normal-luma-max-normal.png",
+      "bytes": 229511,
+      "sha256": "22549AC9DD6591A23ABB465C7CEF72B753D8A08D4341FEA57870EE2F215936D3"
+    },
+    {
+      "path": "runs/green/evidence/normal-luma-max-quilt.png",
+      "bytes": 308013,
+      "sha256": "65F1173466DE278A7AAA4DF7064C0F420F96CBBD31F9EB4C050805C4D93D5B80"
+    },
+    {
+      "path": "runs/green/evidence/normal-luma-min-normal.png",
+      "bytes": 164380,
+      "sha256": "C214685F31CF66F2CF8DBCB17DF755159FC90A3AEE1CDB7AE4CFEBB3836CD0C1"
+    },
+    {
+      "path": "runs/green/evidence/normal-luma-min-quilt.png",
+      "bytes": 242930,
+      "sha256": "6765905CD4E92275803B2E15FBAE301AB748A10CA55666186D3BD9D746E6D871"
+    },
+    {
+      "path": "runs/green/evidence/observations.txt",
+      "bytes": 5730,
+      "sha256": "AA93F5C7540DDB3AA9BFDD268D197D02E4E0056E07A5853E1ACA887369B0FB8F"
+    },
+    {
+      "path": "runs/green/evidence/quilt-green-peak-normal.png",
+      "bytes": 229100,
+      "sha256": "9470A82B763E316915BABD679C7303B7AF5F6848349685433B9051280BC35DA3"
+    },
+    {
+      "path": "runs/green/evidence/quilt-green-peak-quilt.png",
+      "bytes": 308066,
+      "sha256": "1AAF2CB88ED3D81D20596B0F7B63843952ED3A58B03FF3831527EB22F4A95B82"
+    },
+    {
+      "path": "runs/green/results.xml",
+      "bytes": 4840,
+      "sha256": "23306ECB0B6928737676F2CC3B02D1936FE0FE112874D8E477E97D050AC503DF"
+    },
+    {
+      "path": "runs/green/runner.json",
+      "bytes": 6107,
+      "sha256": "63C8FB722DBAD8BB910339861267BAFF873194A7154B4EB15ED01E6B884E92B3"
+    },
+    {
+      "path": "source/candidate-package.json",
+      "bytes": 541,
+      "sha256": "D546DE3D3D4606DACA5A168C97AB477B4721322D85A3F7FCAE13AC14BD10011C"
+    },
+    {
+      "path": "source/HdrIntermediateProbeTests.cs",
+      "bytes": 100828,
+      "sha256": "8782A8B1B994C5909B655125397305A0341C918AFF203D9530A627754D4A87C7"
+    },
+    {
+      "path": "source/Install-CandidateUrpPackage.ps1",
+      "bytes": 7495,
+      "sha256": "6F3AB837BF002C4F5157FF7FC6447C8319A596025BAAA53AA89F27892C1B42D9"
+    },
+    {
+      "path": "source/InstallCandidateUrpPackage.cs",
+      "bytes": 7162,
+      "sha256": "FDD390C82491EF77A07F4B581BE067159782E1DE8F437E4F844DA832AB618D32"
+    },
+    {
+      "path": "source/Run-UnityHdrIntermediateProbe.ps1",
+      "bytes": 10548,
+      "sha256": "E34326BD3BCE6272754ADC8B4E3C22AC62EE2DF993DABF8C48C51A8BDEFD20AA"
+    },
+    {
+      "path": "source/UrpViewHistoryRenderer.cs",
+      "bytes": 27378,
+      "sha256": "92356E442773A7C85E9EFEA7CBAA69B7FAB192A6E8B103B61A9B62DCADD3FF65"
+    }
+  ]
+}

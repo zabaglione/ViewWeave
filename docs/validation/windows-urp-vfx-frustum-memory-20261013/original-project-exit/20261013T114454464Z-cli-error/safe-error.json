@@ -1,0 +1,14 @@
+{
+    "status":  "readonly_eval_failed_before_exit_schedule",
+    "capturedUtc":  "2026-10-13T11:44:54.4693145Z",
+    "editorPid":  57092,
+    "editorStartUtc":  "2026-10-13T08:35:33.8717292Z",
+    "projectPath":  "E:\\URPSample_6.6.41f1",
+    "unityCliError":  {
+                          "exitCode":  6,
+                          "code":  "COMMAND_FAILED",
+                          "message":  "Compilation Failed?  Invalid expression term \u0027|\u0027 (1 ???570 ??)?  Invalid expression term \u0027|\u0027 (1 ???641 ??)?  Invalid expression term \u0027|\u0027 (1 ???695 ??)?  Invalid expression term \u0027|\u0027 (1 ???710 ??)?  Invalid expression term \u0027|\u0027 (1 ???775 ??)?  Invalid expression term \u0027|\u0027 (1 ???793 ??)?  Invalid expression term \u0027|\u0027 (1 ???811 ??)?  Invalid expression term \u0027|\u0027 (1 ???828 ??)?  Invalid expression term \u0027|\u0027"
+                      },
+    "editorExitScheduled":  false,
+    "bridgeTouched":  false
+}

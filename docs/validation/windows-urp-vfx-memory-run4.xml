@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Passed" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-12 16:48:31Z" end-time="2026-10-12 16:48:40Z" duration="9.3761006">
+  <test-suite type="TestSuite" id="1018" name="UnityMinimal" fullname="UnityMinimal" runstate="Runnable" testcasecount="9" result="Passed" start-time="2026-10-12 16:48:31Z" end-time="2026-10-12 16:48:40Z" duration="9.376101" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1015" name="ViewWeave.VfxDriverValidation.Tests.dll" fullname="E:/LookingGlassSDK/.local/windows-urp-vfx-graphics-isolated-20261013/Library/ScriptAssemblies/ViewWeave.VfxDriverValidation.Tests.dll" runstate="Runnable" testcasecount="9" result="Passed" start-time="2026-10-12 16:48:31Z" end-time="2026-10-12 16:48:40Z" duration="9.366780" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="37328" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1016" name="ViewWeave" fullname="ViewWeave" runstate="Runnable" testcasecount="9" result="Passed" start-time="2026-10-12 16:48:31Z" end-time="2026-10-12 16:48:40Z" duration="9.363606" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1017" name="VfxDriverValidation" fullname="ViewWeave.VfxDriverValidation" runstate="Runnable" testcasecount="9" result="Passed" start-time="2026-10-12 16:48:31Z" end-time="2026-10-12 16:48:40Z" duration="9.363079" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1013" name="UrpVfxMemoryScaleTests" fullname="ViewWeave.VfxDriverValidation.UrpVfxMemoryScaleTests" classname="ViewWeave.VfxDriverValidation.UrpVfxMemoryScaleTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-10-12 16:48:31Z" end-time="2026-10-12 16:48:40Z" duration="9.361629" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1014" name="SimpleBurstCapacity512MemoryScaleNineConditions" fullname="ViewWeave.VfxDriverValidation.UrpVfxMemoryScaleTests.SimpleBurstCapacity512MemoryScaleNineConditions" methodname="SimpleBurstCapacity512MemoryScaleNineConditions" classname="ViewWeave.VfxDriverValidation.UrpVfxMemoryScaleTests" runstate="Runnable" seed="1776163243" result="Passed" start-time="2026-10-12 16:48:31Z" end-time="2026-10-12 16:48:40Z" duration="9.349925" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[The referenced script (Unknown) on this Behaviour is missing!
+The referenced script (Unknown) on this Behaviour is missing!
+The referenced script (Unknown) on this Behaviour is missing!
+The referenced script (Unknown) on this Behaviour is missing!
+The referenced script (Unknown) on this Behaviour is missing!
+The referenced script (Unknown) on this Behaviour is missing!
+The referenced script (Unknown) on this Behaviour is missing!
+The referenced script (Unknown) on this Behaviour is missing!
+The referenced script (Unknown) on this Behaviour is missing!
+The referenced script (Unknown) on this Behaviour is missing!
+The referenced script (Unknown) on this Behaviour is missing!
+The referenced script (Unknown) on this Behaviour is missing!
+The referenced script (Unknown) on this Behaviour is missing!
+The referenced script (Unknown) on this Behaviour is missing!
+Saving results to: C:/Users/zzaba/AppData/LocalLow/DefaultCompany/UnityMinimal\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

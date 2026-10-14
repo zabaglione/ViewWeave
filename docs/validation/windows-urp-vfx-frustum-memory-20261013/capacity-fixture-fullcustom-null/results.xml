@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Passed" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-13 11:16:52Z" end-time="2026-10-13 11:16:57Z" duration="4.3963763">
+  <test-suite type="TestSuite" id="1000" name="URPSample_6.6.41f1" fullname="URPSample_6.6.41f1" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-13 11:16:52Z" end-time="2026-10-13 11:16:57Z" duration="4.396376" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1015" name="ViewWeave.FrustumMetadata.Editor.Tests.dll" fullname="E:/LookingGlassSDK/.local/windows-vfx-scene-comparison-20261013/URP/UnityProject/Library/ScriptAssemblies/ViewWeave.FrustumMetadata.Editor.Tests.dll" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-13 11:16:52Z" end-time="2026-10-13 11:16:57Z" duration="4.388688" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="6792" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1016" name="ViewWeave" fullname="ViewWeave" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-13 11:16:52Z" end-time="2026-10-13 11:16:57Z" duration="4.388190" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1017" name="SceneComparison" fullname="ViewWeave.SceneComparison" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-13 11:16:52Z" end-time="2026-10-13 11:16:57Z" duration="4.387904" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1018" name="Tests" fullname="ViewWeave.SceneComparison.Tests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-13 11:16:52Z" end-time="2026-10-13 11:16:57Z" duration="4.387583" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1013" name="SampleTextureFullCustomCapacityFixture" fullname="ViewWeave.SceneComparison.Tests.SampleTextureFullCustomCapacityFixture" classname="ViewWeave.SceneComparison.Tests.SampleTextureFullCustomCapacityFixture" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-10-13 11:16:52Z" end-time="2026-10-13 11:16:57Z" duration="4.386367" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1014" name="CreatesFullCapacityCustomCloneAndDescribesCompiledAsset" fullname="ViewWeave.SceneComparison.Tests.SampleTextureFullCustomCapacityFixture.CreatesFullCapacityCustomCloneAndDescribesCompiledAsset" methodname="CreatesFullCapacityCustomCloneAndDescribesCompiledAsset" classname="ViewWeave.SceneComparison.Tests.SampleTextureFullCustomCapacityFixture" runstate="Runnable" seed="1311368487" result="Passed" start-time="2026-10-13 11:16:52Z" end-time="2026-10-13 11:16:57Z" duration="4.374046" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Remove 1 child(ren) that couldnt be deserialized from  of type UnityEditor.VFX.VFXGraph
+Remove 1 linked context(s) that could not be deserialized from Update Particle of type UnityEditor.VFX.VFXBasicUpdate
+Remove 1 owners that couldnt be deserialized from  of type UnityEditor.VFX.VFXDataParticle
+Saving results to: C:/Users/zzaba/AppData/LocalLow/DefaultCompany/URPSample_6_6_41f1\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

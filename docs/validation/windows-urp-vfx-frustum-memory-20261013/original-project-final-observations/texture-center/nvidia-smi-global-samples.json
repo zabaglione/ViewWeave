@@ -1,0 +1,142 @@
+{
+  "schema": "diagnostic-gpu-global-samples-v1",
+  "scope": "Root-provided read-only nvidia-smi values are system-wide, not process-specific and not a true peak. The reported free metric includes driver/firmware reservation effects; total-minus-used is not substituted. Primary source: root tool chunk d6c3ef.",
+  "source": "Primary root read-only nvidia-smi query name,memory.total,memory.used,memory.free --format=csv,noheader; tool chunk d6c3ef",
+  "gpuName": "RTX 3090 Ti",
+  "sampleCount": 21,
+  "maximumSampledUsedMiB": 6758,
+  "lastSample": {
+    "utc": "2026-10-13T19:36:17.5321668Z",
+    "totalMiB": 24564,
+    "usedMiB": 6758,
+    "freeMiB": 17556
+  },
+  "samples": [
+    {
+      "utc": "2026-10-13T19:35:56.1754397Z",
+      "totalMiB": 24564,
+      "usedMiB": 4685,
+      "freeMiB": 19629
+    },
+    {
+      "utc": "2026-10-13T19:35:57.2952873Z",
+      "totalMiB": 24564,
+      "usedMiB": 4685,
+      "freeMiB": 19629
+    },
+    {
+      "utc": "2026-10-13T19:35:58.3966341Z",
+      "totalMiB": 24564,
+      "usedMiB": 4685,
+      "freeMiB": 19629
+    },
+    {
+      "utc": "2026-10-13T19:35:59.4684807Z",
+      "totalMiB": 24564,
+      "usedMiB": 4685,
+      "freeMiB": 19629
+    },
+    {
+      "utc": "2026-10-13T19:36:00.5260061Z",
+      "totalMiB": 24564,
+      "usedMiB": 4685,
+      "freeMiB": 19629
+    },
+    {
+      "utc": "2026-10-13T19:36:01.5865681Z",
+      "totalMiB": 24564,
+      "usedMiB": 4711,
+      "freeMiB": 19603
+    },
+    {
+      "utc": "2026-10-13T19:36:02.6626937Z",
+      "totalMiB": 24564,
+      "usedMiB": 4695,
+      "freeMiB": 19619
+    },
+    {
+      "utc": "2026-10-13T19:36:03.7343115Z",
+      "totalMiB": 24564,
+      "usedMiB": 5027,
+      "freeMiB": 19287
+    },
+    {
+      "utc": "2026-10-13T19:36:04.7936353Z",
+      "totalMiB": 24564,
+      "usedMiB": 5028,
+      "freeMiB": 19286
+    },
+    {
+      "utc": "2026-10-13T19:36:05.8504492Z",
+      "totalMiB": 24564,
+      "usedMiB": 5860,
+      "freeMiB": 18454
+    },
+    {
+      "utc": "2026-10-13T19:36:06.9214796Z",
+      "totalMiB": 24564,
+      "usedMiB": 5861,
+      "freeMiB": 18453
+    },
+    {
+      "utc": "2026-10-13T19:36:07.9795529Z",
+      "totalMiB": 24564,
+      "usedMiB": 6758,
+      "freeMiB": 17556
+    },
+    {
+      "utc": "2026-10-13T19:36:09.0387715Z",
+      "totalMiB": 24564,
+      "usedMiB": 6758,
+      "freeMiB": 17556
+    },
+    {
+      "utc": "2026-10-13T19:36:10.0988236Z",
+      "totalMiB": 24564,
+      "usedMiB": 6758,
+      "freeMiB": 17556
+    },
+    {
+      "utc": "2026-10-13T19:36:11.1663526Z",
+      "totalMiB": 24564,
+      "usedMiB": 6758,
+      "freeMiB": 17556
+    },
+    {
+      "utc": "2026-10-13T19:36:12.2373247Z",
+      "totalMiB": 24564,
+      "usedMiB": 6758,
+      "freeMiB": 17556
+    },
+    {
+      "utc": "2026-10-13T19:36:13.2977239Z",
+      "totalMiB": 24564,
+      "usedMiB": 6758,
+      "freeMiB": 17556
+    },
+    {
+      "utc": "2026-10-13T19:36:14.3531086Z",
+      "totalMiB": 24564,
+      "usedMiB": 6758,
+      "freeMiB": 17556
+    },
+    {
+      "utc": "2026-10-13T19:36:15.4102231Z",
+      "totalMiB": 24564,
+      "usedMiB": 6758,
+      "freeMiB": 17556
+    },
+    {
+      "utc": "2026-10-13T19:36:16.4724185Z",
+      "totalMiB": 24564,
+      "usedMiB": 6758,
+      "freeMiB": 17556
+    },
+    {
+      "utc": "2026-10-13T19:36:17.5321668Z",
+      "totalMiB": 24564,
+      "usedMiB": 6758,
+      "freeMiB": 17556
+    }
+  ]
+}

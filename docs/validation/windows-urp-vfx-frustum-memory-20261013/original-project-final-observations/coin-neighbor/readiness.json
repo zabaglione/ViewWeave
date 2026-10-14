@@ -1,0 +1,44 @@
+{
+  "schema": "original-editor-three-ready-v1",
+  "status": "ready",
+  "projectPath": "E:\\URPSample_6.6.41f1",
+  "editorPid": 86992,
+  "editorStartUtc": "2026-10-13T19:41:56.1910048Z",
+  "bridgePid": 29956,
+  "snapshots": [
+    {
+      "sample": 1,
+      "utc": "2026-10-13T19:42:29.7841307Z",
+      "state": "playing=False|willPlay=False|compiling=False|scene=Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/Scenes/URP_VFX_Learning_Templates.unity|sceneCount=1|dirty=False|session=Idle|worker=Closed|pending=0|auto=False|rigAuto=False|history=0|quiltTextureNull=True|lastAutoError=False|sessionError=False|frame=1950|raw=1223537886|quality=Balanced|viewMode=Quarter|profile=1920x1080,8x6,views=48"
+    },
+    {
+      "sample": 2,
+      "utc": "2026-10-13T19:42:30.9753597Z",
+      "state": "playing=False|willPlay=False|compiling=False|scene=Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/Scenes/URP_VFX_Learning_Templates.unity|sceneCount=1|dirty=False|session=Idle|worker=Closed|pending=0|auto=False|rigAuto=False|history=0|quiltTextureNull=True|lastAutoError=False|sessionError=False|frame=2157|raw=1223537886|quality=Balanced|viewMode=Quarter|profile=1920x1080,8x6,views=48"
+    },
+    {
+      "sample": 3,
+      "utc": "2026-10-13T19:42:32.1547726Z",
+      "state": "playing=False|willPlay=False|compiling=False|scene=Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/Scenes/URP_VFX_Learning_Templates.unity|sceneCount=1|dirty=False|session=Idle|worker=Closed|pending=0|auto=False|rigAuto=False|history=0|quiltTextureNull=True|lastAutoError=False|sessionError=False|frame=2363|raw=1223537886|quality=Balanced|viewMode=Quarter|profile=1920x1080,8x6,views=48"
+    }
+  ],
+  "protectedBefore": {
+    "scene": "909CF2976E91B2B5278A6550BF85739805749E5BFC9010166B8EF6882F9115AC",
+    "textureSource": "78D34F482963B47E6555E9218389A98A045F614F3F5B300776C78948CFE96556",
+    "textureTreatment": "EF29E6CD2361E92BAE2E0CC1937F75ED8A44A5B2ACA1AEFA614F918B5371F097",
+    "skinTreatment": "9F6C0B7764A0CF32F01BAC5A87D3CD114AFC995A7086C52A19F634BE29E00222",
+    "collisionSource": "D12815212B21A7C9F20C3DE7A635AA3800BD80DC7DC0FC6904C965F25FBBE3BD",
+    "collisionPrefab": "1C5C5415C9720C6CD290C1EA8C199221F131567F1D96D346AD7BFA1EB82E83A6"
+  },
+  "protectedAfter": {
+    "scene": "909CF2976E91B2B5278A6550BF85739805749E5BFC9010166B8EF6882F9115AC",
+    "textureSource": "78D34F482963B47E6555E9218389A98A045F614F3F5B300776C78948CFE96556",
+    "textureTreatment": "EF29E6CD2361E92BAE2E0CC1937F75ED8A44A5B2ACA1AEFA614F918B5371F097",
+    "skinTreatment": "9F6C0B7764A0CF32F01BAC5A87D3CD114AFC995A7086C52A19F634BE29E00222",
+    "collisionSource": "D12815212B21A7C9F20C3DE7A635AA3800BD80DC7DC0FC6904C965F25FBBE3BD",
+    "collisionPrefab": "1C5C5415C9720C6CD290C1EA8C199221F131567F1D96D346AD7BFA1EB82E83A6"
+  },
+  "protectedUnchanged": true,
+  "readyGate": true,
+  "utc": "2026-10-13T19:42:32.1699972Z"
+}

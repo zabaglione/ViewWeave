@@ -1,0 +1,21 @@
+{
+  "editorExitCode": 2,
+  "underlyingRunner": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\Results\\RunTests-20261013T181232953Z-runner.json",
+  "processResidualCount": 0,
+  "status": "not-passed",
+  "canonicalFixtureAsmdefSha256": "066C2ED8A4D87AE3507D206122F04D163FC83B4D17044D91C91C7F6994DAEF41",
+  "nativeEvidenceGate": false,
+  "fixtureEvidenceGate": null,
+  "canonicalNativeSourceSha256": "D516CA8008D3AFA24CFEFC802695AF92F634052BCEB58FE90E4BC19F3A34ED1B",
+  "canonicalNativeMetaSha256": "6CD6C575D4709FBC75A3152B9E445043AC5A82D288C28E1117D06456D359FF95",
+  "mode": "NativeProbe",
+  "testFilter": "ViewWeave.SceneComparison.Tests.CollisionAdvancedUnbatchedNativeProbeTests.VerifiesCollisionAdvancedUnbatchedNativeDrawOnNaturalAutoRender",
+  "canonicalFixtureMetaSha256": "5CA482C38DA8E67230DC0A0AAB39ACFAFDFB3E166F5427235B92BF6706328335",
+  "canonicalFixtureSourceSha256": "3D1830EF112FB17630A53F1AD916C37165B1018156C77FD1B961C1265F1F4E39",
+  "nativeResult": "native-result.json",
+  "schema": "viewweave-collision-advanced-unbatched-native-runner-v1",
+  "fixtureEvidenceInput": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\UnityProject\\TestResults\\collision-advanced-fixture-20261013T180903781Z.json",
+  "fixtureResult": null,
+  "completedUtc": "2026-10-13T18:12:48.5043858Z",
+  "outputDrainIncomplete": false
+}

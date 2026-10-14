@@ -1,0 +1,13 @@
+{
+  "name": "ViewWeave.CollisionAdvancedUnbatched.Fixture.EditorTests",
+  "rootNamespace": "ViewWeave.SceneComparison.Tests",
+  "references": [
+    "Unity.VisualEffectGraph.Runtime"
+  ],
+  "overrideReferences": true,
+  "precompiledReferences": ["nunit.framework.dll"],
+  "optionalUnityReferences": ["TestAssemblies"],
+  "defineConstraints": ["UNITY_INCLUDE_TESTS"],
+  "includePlatforms": ["Editor"],
+  "autoReferenced": false
+}

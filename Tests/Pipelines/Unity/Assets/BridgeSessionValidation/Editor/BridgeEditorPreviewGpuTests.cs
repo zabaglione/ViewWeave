@@ -3095,6 +3095,19 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                 sourceRenderer.physicalFraming.visibleApertureHeightMillimeters = 450f;
                 sourceRenderer.physicalFraming.unitsPerMeter = 1f;
                 sourceRenderer.settings.fieldOfView = 60f;
+                if (hdrp)
+                {
+                    double coldInitializationStartedAt = EditorApplication.timeSinceStartup;
+                    string coldInitializationPixels;
+                    bool coldInitializationVisible = fixture.RenderSourceControl(out coldInitializationPixels);
+                    double coldInitializationElapsed = EditorApplication.timeSinceStartup - coldInitializationStartedAt;
+                    Debug.Log("EDITOR_PREVIEW_GPU cold_source_initialization pipeline=HDRP, elapsedSeconds=" +
+                        coldInitializationElapsed.ToString("F2", System.Globalization.CultureInfo.InvariantCulture) +
+                        ", withinSetupBudget=" + (coldInitializationElapsed <= 60.0) +
+                        ", sourcePixelsVisible=" + coldInitializationVisible + ", " + coldInitializationPixels);
+                    Assert.LessOrEqual(coldInitializationElapsed, 60.0,
+                        "The bounded HDRP cold source initialization should finish within its separate 60-second setup budget.");
+                }
                 double sourceReadyStartedAt = EditorApplication.timeSinceStartup;
                 double sourceReadyDeadline = sourceReadyStartedAt + (hdrp ? 15.0 : 0.0);
                 int sourceControlAttempts = 0;
@@ -3187,8 +3200,8 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                 Assert.AreEqual(64, first.height);
                 Assert.AreEqual(fixture.ExpectedViewSamples, producerRenderer.ViewAntiAliasingSamples,
                     "The preview view texture should follow the supported URP MSAA sample count.");
-                Assert.AreEqual(fixture.ExpectedViewSamples > 1 ? 1 : 0, producerRenderer.ResolveAntiAliasingSamples,
-                    "The preview resolve texture should be single-sampled when MSAA is active.");
+                Assert.AreEqual(fixture.ExpectedResolveSamples, producerRenderer.ResolveAntiAliasingSamples,
+                    "The preview resolve texture should exist for MSAA or a view-to-atlas format conversion.");
                 Debug.Log("EDITOR_PREVIEW_GPU render pipeline=" + (hdrp ? "HDRP" : "URP") + ", views=" + producerRenderer.LastRenderedViewCount +
                     ", samplesView=" + producerRenderer.ViewAntiAliasingSamples + ", samplesResolve=" + producerRenderer.ResolveAntiAliasingSamples);
                 bool hasGreenTargetPixels = HasGreenTargetPixels(first, out string pixelSummary);
@@ -3568,6 +3581,7 @@ namespace ViewWeave.BridgeEditorPreviewValidation
             internal RenderPipelineAsset PreviousDefaultPipeline => previousDefault;
             internal RenderPipelineAsset PreviousQualityPipeline => previousQuality;
             internal int ExpectedViewSamples { get; private set; } = 1;
+            internal int ExpectedResolveSamples { get; private set; }
 
             internal Fixture(bool hdrp) => this.hdrp = hdrp;
 
@@ -3635,9 +3649,17 @@ namespace ViewWeave.BridgeEditorPreviewValidation
                     UniversalAdditionalCameraData cameraData = rigObject.AddComponent<UniversalAdditionalCameraData>();
                     if (cameraData.renderType != CameraRenderType.Base) cameraData.renderType = CameraRenderType.Base;
                     rig.SetGuard(rigObject.AddComponent<UrpQuiltCamera>());
-                    var descriptor = new RenderTextureDescriptor(32, 32, RenderTextureFormat.ARGB32, 24) { msaaSamples = 4 };
+                    RenderTextureFormat viewFormat = sourceCamera.allowHDR && urpPipeline.supportsHDR
+                        ? RenderTextureFormat.ARGBHalf : RenderTextureFormat.ARGB32;
+                    bool viewSrgb = viewFormat == RenderTextureFormat.ARGBHalf ? false : QualitySettings.activeColorSpace == ColorSpace.Linear;
+                    var descriptor = new RenderTextureDescriptor(32, 32, viewFormat, 24)
+                    {
+                        msaaSamples = 4,
+                        sRGB = viewSrgb
+                    };
                     int supported = SystemInfo.GetRenderTextureSupportedMSAASampleCount(descriptor);
                     ExpectedViewSamples = supported == 2 || supported == 4 || supported == 8 ? supported : 1;
+                    ExpectedResolveSamples = ExpectedViewSamples > 1 || viewFormat == RenderTextureFormat.ARGBHalf ? 1 : 0;
                     if (ExpectedViewSamples != 4)
                         TestContext.Progress.WriteLine("URP MSAA request=4 actual supported samples=" + ExpectedViewSamples);
                 }
