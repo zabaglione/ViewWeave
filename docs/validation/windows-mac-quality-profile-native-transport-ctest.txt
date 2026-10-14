@@ -1,4 +1,4 @@
-Test project E:/LookingGlassSDK/.local/windows-macos-pull-native-20261011/transport-build
+Test project REPO_ROOT/.local/windows-macos-pull-native-20261011/transport-build
       Start  1: lookingglass_worker_common_test
  1/15 Test  #1: lookingglass_worker_common_test ......................   Passed    0.05 sec
       Start  2: lookingglass_metadata_test

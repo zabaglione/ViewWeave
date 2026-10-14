@@ -30,8 +30,8 @@
     "seedManifest": "copied unchanged from the minimal Core project; UTF-8 without BOM",
     "manifestPackageRequests": [
       "com.unity.test-framework@1.5.1",
-      "com.zabaglione.lookingglass.viewweave.core=file:E:/LookingGlassSDK/Packages/com.zabaglione.lookingglass.viewweave.core",
-      "com.zabaglione.lookingglass.viewweave.urp=file:E:/LookingGlassSDK/Packages/com.zabaglione.lookingglass.viewweave.urp",
+      "com.zabaglione.lookingglass.viewweave.core=file:REPO_ROOT/Packages/com.zabaglione.lookingglass.viewweave.core",
+      "com.zabaglione.lookingglass.viewweave.urp=file:REPO_ROOT/Packages/com.zabaglione.lookingglass.viewweave.urp",
       "com.unity.render-pipelines.universal@17.6.0",
       "com.unity.visualeffectgraph@17.6.0"
     ],
@@ -88,12 +88,12 @@
       },
       {
         "name": "com.zabaglione.lookingglass.viewweave.core",
-        "version": "file:E:/LookingGlassSDK/Packages/com.zabaglione.lookingglass.viewweave.core",
+        "version": "file:REPO_ROOT/Packages/com.zabaglione.lookingglass.viewweave.core",
         "source": "local"
       },
       {
         "name": "com.zabaglione.lookingglass.viewweave.urp",
-        "version": "file:E:/LookingGlassSDK/Packages/com.zabaglione.lookingglass.viewweave.urp",
+        "version": "file:REPO_ROOT/Packages/com.zabaglione.lookingglass.viewweave.urp",
         "source": "local"
       }
     ],
@@ -183,7 +183,7 @@
         "sha256": "DA8ED0F0204E763031123473E40F65B39CD397262DB16425D869B29501953529"
       }
     ],
-    "resolvedCoreUri": "file:E:/LookingGlassSDK/Packages/com.zabaglione.lookingglass.viewweave.core",
+    "resolvedCoreUri": "file:REPO_ROOT/Packages/com.zabaglione.lookingglass.viewweave.core",
     "resolvedTestFramework": {
       "manifestRequested": "1.5.1",
       "actual": "builtin 1.8.0"
@@ -629,7 +629,7 @@
       },
       "sourceSideContext": {
         "savedSceneAsset": {
-          "path": "E:/URPSample_6.6.41f1/Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/VFX/SampleSDF.vfx",
+          "path": "UNITY_PROJECT_1/Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/VFX/SampleSDF.vfx",
           "capacity": 345000,
           "stripCapacity": 2300,
           "stripUrpBlendMode": "Opaque",
@@ -681,7 +681,7 @@
       "maxHistoryCameras": 256
     },
     "hdrp": {
-      "savedScene": "E:/My project (34)/Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/Scenes/HDRP_VFX_Learning_Templates.unity",
+      "savedScene": "UNITY_PROJECT_2/Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/Scenes/HDRP_VFX_Learning_Templates.unity",
       "evidenceLines": [1866, 2103, 2113],
       "output": "Quilt48",
       "renderModeIsolated": 0,
@@ -694,7 +694,7 @@
       "renderPath": "HDRP StandardRequest; Core/QuiltRenderer.cs around line 641"
     },
     "urp": {
-      "savedScene": "E:/URPSample_6.6.41f1/Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/Scenes/URP_VFX_Learning_Templates.unity",
+      "savedScene": "UNITY_PROJECT_1/Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/Scenes/URP_VFX_Learning_Templates.unity",
       "evidenceLines": [756, 894, 904],
       "output": "Quilt48",
       "renderModeIsolated": 0,

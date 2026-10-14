@@ -46,7 +46,7 @@
   "environment": {
     "operatingSystem": "Windows",
     "renderPipeline": "URP",
-    "project": "E:/URPSample_6.6.41f1",
+    "project": "UNITY_PROJECT_1",
     "playMode": true,
     "editorCrashAfterThisBudgetEventReported": "unknown",
     "editorProcessesAtReadOnlySnapshot": 0
@@ -414,7 +414,7 @@
       }
     ],
     "dump": {
-      "path": "C:/Users/zzaba/AppData/Local/Temp/Unity/Editor/Crashes/Crash_2026-10-13_052049378/crash.dmp",
+      "path": "WINDOWS_USER_HOME/AppData/Local/Temp/Unity/Editor/Crashes/Crash_2026-10-13_052049378/crash.dmp",
       "sizeBytes": 703256,
       "sha256": "0CE85CF51C9E0660BB0FFEFF9175130911D17B88F5AC0AEC33476C2148DA44E1",
       "copied": false,

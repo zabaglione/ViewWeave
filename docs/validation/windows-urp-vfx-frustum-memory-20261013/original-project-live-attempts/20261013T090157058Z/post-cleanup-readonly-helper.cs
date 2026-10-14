@@ -1,4 +1,4 @@
-    const string outputPath = "E:/LookingGlassSDK/.local/windows-urp-vfx-live-play-20261013/run-20261013T090157058Z/post-run-readonly.json";
+    const string outputPath = "REPO_ROOT/.local/windows-urp-vfx-live-play-20261013/run-20261013T090157058Z/post-run-readonly.json";
     var sb = new System.Text.StringBuilder(32768);
     System.Func<string, string> q = value =>
     {

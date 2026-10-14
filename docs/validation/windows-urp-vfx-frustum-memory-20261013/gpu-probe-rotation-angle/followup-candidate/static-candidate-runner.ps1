@@ -1,5 +1,5 @@
 $ErrorActionPreference = 'Stop'
-$repo = 'E:/LookingGlassSDK'
+$repo = 'REPO_ROOT'
 $localRoot = Join-Path $repo '.local/windows-urp-vfx-frustum-memory-20261013'
 $project = Join-Path $repo '.local/windows-vfx-scene-comparison-20261013/URP/UnityProject'
 $editor = 'C:/Program Files/Unity/Hub/Editor/6000.6.4f1/Editor/Unity.exe'

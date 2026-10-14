@@ -5,9 +5,9 @@
   "testPlatform": "PlayMode",
   "expectedTestCount": 1,
   "graphicsApi": "D3D12",
-  "projectPath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\UnityProject",
+  "projectPath": "REPO_ROOT\\.local\\windows-vfx-scene-comparison-20261013\\URP\\UnityProject",
   "unityExecutable": "C:/Program Files/Unity/Hub/Editor/6000.6.4f1/Editor/Unity.exe",
-  "probeSourcePath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\Shared\\HdrPostProcessProbeTests.cs",
+  "probeSourcePath": "REPO_ROOT\\.local\\windows-vfx-scene-comparison-20261013\\Shared\\HdrPostProcessProbeTests.cs",
   "probeSourceSha256": "12329CFE66C875C6DCDFF8A978F05748D060208852A1352F7F66574E5F6B57C2",
   "probeSourceBytes": 93224,
   "startedUtc": "2026-10-13T03:11:59.5325117Z",
@@ -26,7 +26,7 @@
   "processInventoryAvailableAfter": true,
   "matchingAfter": null,
   "processObjectStillRunning": false,
-  "xmlPath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\ResultsPhaseB\\hdrpp-coin-20261013T031159026Z.xml",
+  "xmlPath": "REPO_ROOT\\.local\\windows-vfx-scene-comparison-20261013\\URP\\ResultsPhaseB\\hdrpp-coin-20261013T031159026Z.xml",
   "xmlBytes": 4499,
   "xmlSha256": "2E33D3D5A4E94BDEFA89CE2400F48CB25C0B592035AFA071B62844ADBDCB6D80",
   "xmlParseErrorType": null,
@@ -42,9 +42,9 @@
     ]
   },
   "exactTestCaseGate": true,
-  "editorLogPath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\ResultsPhaseB\\hdrpp-coin-20261013T031159026Z-editor.log",
+  "editorLogPath": "REPO_ROOT\\.local\\windows-vfx-scene-comparison-20261013\\URP\\ResultsPhaseB\\hdrpp-coin-20261013T031159026Z-editor.log",
   "editorLogShared": false,
-  "evidenceDirectory": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\UnityProject\\TestResults\\hdrpp-coin-20261013T031159026Z",
+  "evidenceDirectory": "REPO_ROOT\\.local\\windows-vfx-scene-comparison-20261013\\URP\\UnityProject\\TestResults\\hdrpp-coin-20261013T031159026Z",
   "evidenceFiles": [
     {
       "name": "camera-target-descriptors.txt",

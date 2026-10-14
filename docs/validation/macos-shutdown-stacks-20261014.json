@@ -1387,12 +1387,12 @@
         {
           "module": "UnityPlayer.dylib",
           "uuid": "BE07B931-A7A0-335B-BFDE-6D9331DBD96F",
-          "path": "/Users/*/Documents/*/Baseline.app/Contents/Frameworks/UnityPlayer.dylib"
+          "path": "MAC_USER_HOME/Documents/*/Baseline.app/Contents/Frameworks/UnityPlayer.dylib"
         },
         {
           "module": "libmonobdwgc-2.0.dylib",
           "uuid": "542F91E5-B702-33BE-86C6-5B39012524EA",
-          "path": "/Users/*/Documents/*/Baseline.app/Contents/Frameworks/libmonobdwgc-2.0.dylib"
+          "path": "MAC_USER_HOME/Documents/*/Baseline.app/Contents/Frameworks/libmonobdwgc-2.0.dylib"
         }
       ],
       "namedShimOrVendorAllocationFrameCount": 0
@@ -1627,12 +1627,12 @@
         {
           "module": "UnityPlayer.dylib",
           "uuid": "BE07B931-A7A0-335B-BFDE-6D9331DBD96F",
-          "path": "/Users/*/Documents/*/Baseline.app/Contents/Frameworks/UnityPlayer.dylib"
+          "path": "MAC_USER_HOME/Documents/*/Baseline.app/Contents/Frameworks/UnityPlayer.dylib"
         },
         {
           "module": "libmonobdwgc-2.0.dylib",
           "uuid": "542F91E5-B702-33BE-86C6-5B39012524EA",
-          "path": "/Users/*/Documents/*/Baseline.app/Contents/Frameworks/libmonobdwgc-2.0.dylib"
+          "path": "MAC_USER_HOME/Documents/*/Baseline.app/Contents/Frameworks/libmonobdwgc-2.0.dylib"
         }
       ],
       "namedShimOrVendorAllocationFrameCount": 0
@@ -1867,17 +1867,17 @@
         {
           "module": "UnityPlayer.dylib",
           "uuid": "BE07B931-A7A0-335B-BFDE-6D9331DBD96F",
-          "path": "/Users/*/Documents/*/PipelineSmoke.app/Contents/Frameworks/UnityPlayer.dylib"
+          "path": "MAC_USER_HOME/Documents/*/PipelineSmoke.app/Contents/Frameworks/UnityPlayer.dylib"
         },
         {
           "module": "libmonobdwgc-2.0.dylib",
           "uuid": "542F91E5-B702-33BE-86C6-5B39012524EA",
-          "path": "/Users/*/Documents/*/PipelineSmoke.app/Contents/Frameworks/libmonobdwgc-2.0.dylib"
+          "path": "MAC_USER_HOME/Documents/*/PipelineSmoke.app/Contents/Frameworks/libmonobdwgc-2.0.dylib"
         },
         {
           "module": "lookingglass_bridge_shim.dylib",
           "uuid": "FCDDC56E-5838-3052-89FF-1C2FAC5B9795",
-          "path": "/Users/*/Documents/*/PipelineSmoke.app/Contents/PlugIns/ARM64/lookingglass_bridge_shim.dylib"
+          "path": "MAC_USER_HOME/Documents/*/PipelineSmoke.app/Contents/PlugIns/ARM64/lookingglass_bridge_shim.dylib"
         },
         {
           "module": "libbridge_inproc.dylib",
@@ -2117,17 +2117,17 @@
         {
           "module": "UnityPlayer.dylib",
           "uuid": "BE07B931-A7A0-335B-BFDE-6D9331DBD96F",
-          "path": "/Users/*/Documents/*/PipelineSmoke.app/Contents/Frameworks/UnityPlayer.dylib"
+          "path": "MAC_USER_HOME/Documents/*/PipelineSmoke.app/Contents/Frameworks/UnityPlayer.dylib"
         },
         {
           "module": "libmonobdwgc-2.0.dylib",
           "uuid": "542F91E5-B702-33BE-86C6-5B39012524EA",
-          "path": "/Users/*/Documents/*/PipelineSmoke.app/Contents/Frameworks/libmonobdwgc-2.0.dylib"
+          "path": "MAC_USER_HOME/Documents/*/PipelineSmoke.app/Contents/Frameworks/libmonobdwgc-2.0.dylib"
         },
         {
           "module": "lookingglass_bridge_shim.dylib",
           "uuid": "FCDDC56E-5838-3052-89FF-1C2FAC5B9795",
-          "path": "/Users/*/Documents/*/PipelineSmoke.app/Contents/PlugIns/ARM64/lookingglass_bridge_shim.dylib"
+          "path": "MAC_USER_HOME/Documents/*/PipelineSmoke.app/Contents/PlugIns/ARM64/lookingglass_bridge_shim.dylib"
         },
         {
           "module": "libbridge_inproc.dylib",
@@ -2367,17 +2367,17 @@
         {
           "module": "UnityPlayer.dylib",
           "uuid": "BE07B931-A7A0-335B-BFDE-6D9331DBD96F",
-          "path": "/Users/*/Documents/*/Control.app/Contents/Frameworks/UnityPlayer.dylib"
+          "path": "MAC_USER_HOME/Documents/*/Control.app/Contents/Frameworks/UnityPlayer.dylib"
         },
         {
           "module": "libmonobdwgc-2.0.dylib",
           "uuid": "542F91E5-B702-33BE-86C6-5B39012524EA",
-          "path": "/Users/*/Documents/*/Control.app/Contents/Frameworks/libmonobdwgc-2.0.dylib"
+          "path": "MAC_USER_HOME/Documents/*/Control.app/Contents/Frameworks/libmonobdwgc-2.0.dylib"
         },
         {
           "module": "lookingglass_bridge_shim.dylib",
           "uuid": "FCDDC56E-5838-3052-89FF-1C2FAC5B9795",
-          "path": "/Users/*/Documents/*/Control.app/Contents/PlugIns/ARM64/lookingglass_bridge_shim.dylib"
+          "path": "MAC_USER_HOME/Documents/*/Control.app/Contents/PlugIns/ARM64/lookingglass_bridge_shim.dylib"
         },
         {
           "module": "libbridge_inproc.dylib",
@@ -2617,12 +2617,12 @@
         {
           "module": "UnityPlayer.dylib",
           "uuid": "BE07B931-A7A0-335B-BFDE-6D9331DBD96F",
-          "path": "/Users/*/Documents/*/Control.app/Contents/Frameworks/UnityPlayer.dylib"
+          "path": "MAC_USER_HOME/Documents/*/Control.app/Contents/Frameworks/UnityPlayer.dylib"
         },
         {
           "module": "libmonobdwgc-2.0.dylib",
           "uuid": "542F91E5-B702-33BE-86C6-5B39012524EA",
-          "path": "/Users/*/Documents/*/Control.app/Contents/Frameworks/libmonobdwgc-2.0.dylib"
+          "path": "MAC_USER_HOME/Documents/*/Control.app/Contents/Frameworks/libmonobdwgc-2.0.dylib"
         }
       ],
       "namedShimOrVendorAllocationFrameCount": 0

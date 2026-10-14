@@ -7,7 +7,7 @@
     <failure>
       <message><![CDATA[One or more child tests had errors]]></message>
     </failure>
-    <test-suite type="Assembly" id="1051" name="ViewWeave.AllowInstancingRuntimeTransition.Tests.dll" fullname="E:/LookingGlassSDK/.local/windows-vfx-scene-comparison-20261013/URP/UnityProject/Library/ScriptAssemblies/ViewWeave.AllowInstancingRuntimeTransition.Tests.dll" runstate="Runnable" testcasecount="1" result="Failed" site="Child" start-time="2026-10-14 00:04:14Z" end-time="2026-10-14 00:04:14Z" duration="0.483474" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+    <test-suite type="Assembly" id="1051" name="ViewWeave.AllowInstancingRuntimeTransition.Tests.dll" fullname="REPO_ROOT/.local/windows-vfx-scene-comparison-20261013/URP/UnityProject/Library/ScriptAssemblies/ViewWeave.AllowInstancingRuntimeTransition.Tests.dll" runstate="Runnable" testcasecount="1" result="Failed" site="Child" start-time="2026-10-14 00:04:14Z" end-time="2026-10-14 00:04:14Z" duration="0.483474" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
       <properties>
         <property name="_PID" value="77328" />
         <property name="_APPDOMAIN" value="Unity Child Domain" />
@@ -45,11 +45,11 @@
                 </properties>
                 <failure>
                   <message><![CDATA[Runtime transition probe failed: NUnit.Framework.AssertionException:   Expected: True??  But was:  False??]]></message>
-                  <stack-trace><![CDATA[at ViewWeave.SceneComparison.Tests.AllowInstancingRuntimeTransitionProbe+<MeasuresPublicAllowInstancingTransitionsWithoutReinitializingTheVfx>d__51.MoveNext () [0x003de] in E:\LookingGlassSDK\.local\windows-vfx-scene-comparison-20261013\URP\UnityProject\Assets\SceneComparisonTests\AllowInstancingRuntimeTransition\AllowInstancingRuntimeTransitionProbe.cs:180
+                  <stack-trace><![CDATA[at ViewWeave.SceneComparison.Tests.AllowInstancingRuntimeTransitionProbe+<MeasuresPublicAllowInstancingTransitionsWithoutReinitializingTheVfx>d__51.MoveNext () [0x003de] in REPO_ROOT\.local\windows-vfx-scene-comparison-20261013\URP\UnityProject\Assets\SceneComparisonTests\AllowInstancingRuntimeTransition\AllowInstancingRuntimeTransitionProbe.cs:180
 at UnityEngine.TestTools.TestEnumerator+<Execute>d__8.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@80f691d4262b\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:52
 ]]></stack-trace>
                 </failure>
-                <output><![CDATA[Saving results to: C:/Users/zzaba/AppData/LocalLow/DefaultCompany/URPSample_6_6_41f1\TestResults.xml
+                <output><![CDATA[Saving results to: WINDOWS_USER_HOME/AppData/LocalLow/DefaultCompany/URPSample_6_6_41f1\TestResults.xml
 ]]></output>
               </test-case>
             </test-suite>

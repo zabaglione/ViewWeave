@@ -1,6 +1,6 @@
 {
   "runId": "vfx-memory-scale-run4",
-  "project": "E:\\LookingGlassSDK\\.local\\windows-urp-vfx-graphics-isolated-20261013",
+  "project": "REPO_ROOT\\.local\\windows-urp-vfx-graphics-isolated-20261013",
   "unityExecutable": "C:/Program Files/Unity/Hub/Editor/6000.6.4f1/Editor/Unity.exe",
   "testFilter": "ViewWeave.VfxDriverValidation.UrpVfxMemoryScaleTests.SimpleBurstCapacity512MemoryScaleNineConditions",
   "startedUtc": "2026-10-12T16:48:19.304841Z",

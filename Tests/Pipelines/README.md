@@ -34,7 +34,7 @@ To run the same PlayMode suite from the CLI, use this command from the repositor
 unity test "$PWD/Tests/Pipelines/Unity" --editor-version 6000.6.4f1 --mode PlayMode --report-format junit --output "$PWD/.local/test-results/playmode.xml" --timeout 1200 -- -force-d3d11
 ```
 
-A result XML with a test count of 0 is not a successful run. For the result breakdown, known VFX failures, and D3D12 coverage boundaries, see [docs/windows-validation.md](../../docs/windows-validation.md).
+A result XML with a test count of 0 is not a successful run. For the result breakdown, known VFX failures, and D3D12 coverage boundaries, see [Windows validation](../../docs/development/windows-validation.md).
 
 ### Windows HDRP effect characterization
 
@@ -44,7 +44,7 @@ The Windows-only HDRP fixture is marked NUnit `Explicit`; the ordinary full suit
 unity test "$PWD/Tests/Pipelines/Unity" --editor-version 6000.6.4f1 --mode PlayMode --filter ViewWeave.GraphicsCompatibility.WindowsHdrpEffectPixelTests --output "$PWD/.local/hdrp-effects/results.xml" --timeout 1200 -- -force-d3d12
 ```
 
-To run a single case, use its fully qualified test name as the filter, for example `--filter ViewWeave.GraphicsCompatibility.WindowsHdrpEffectPixelTests.FxaaChangesDiagonalEdgePixels`. This is an effect-characterization fixture, not a general HDRP guarantee. Explicit tests reported as skipped or not run are not passes; current results include failed effect pixel gates and must be read from the [dated Windows feature record](../../docs/windows-current-feature-validation-20261011.md). Do not interpret a fixture failure as product incompatibility or report the full fixture as passing.
+To run a single case, use its fully qualified test name as the filter, for example `--filter ViewWeave.GraphicsCompatibility.WindowsHdrpEffectPixelTests.FxaaChangesDiagonalEdgePixels`. This is an effect-characterization fixture, not a general HDRP guarantee. Explicit tests reported as skipped or not run are not passes; current results include failed effect pixel gates and must be read from the [dated Windows feature record](../../docs/development/windows-current-feature-validation-20261011.md). Do not interpret a fixture failure as product incompatibility or report the full fixture as passing.
 
 ## Player Validation Using Generated Scenes
 
@@ -69,7 +69,7 @@ To create a generated scene and build a Player, pass the Editor method arguments
 unity run "$PWD/Tests/Pipelines/Unity" --editor-version 6000.6.4f1 -- -executeMethod ViewWeave.SamplePlayerValidation.Editor.SamplePlayerValidationBuilder.BuildUrp -buildOutput "$PWD/.local/player/SampleUrp.exe"
 ```
 
-The builder accepts `-buildGraphicsApi d3d11` or `-buildGraphicsApi d3d12`, and `-buildDevelopment true` or `-buildDevelopment false`; omitted values default to D3D11 Development. For example, add `-buildGraphicsApi d3d12 -buildDevelopment false` to build a D3D12 Release sample. Unknown values fail the build method. The builder temporarily creates `Assets/SamplePlayerValidationGenerated/SamplePlayerValidation.unity`, sets the requested graphics API, Linear color space, and Run In Background, then restores its settings. The built Player requires the Bridge runtime to start. Current Windows Player evidence and its narrow scope are in the [dated feature record](../../docs/windows-current-feature-validation-20261011.md).
+The builder accepts `-buildGraphicsApi d3d11` or `-buildGraphicsApi d3d12`, and `-buildDevelopment true` or `-buildDevelopment false`; omitted values default to D3D11 Development. For example, add `-buildGraphicsApi d3d12 -buildDevelopment false` to build a D3D12 Release sample. Unknown values fail the build method. The builder temporarily creates `Assets/SamplePlayerValidationGenerated/SamplePlayerValidation.unity`, sets the requested graphics API, Linear color space, and Run In Background, then restores its settings. The built Player requires the Bridge runtime to start. Current Windows Player evidence and its narrow scope are in the [dated feature record](../../docs/development/windows-current-feature-validation-20261011.md).
 
 ## macOS Metal History, Exposure, and URP TAA Validation
 
@@ -87,7 +87,7 @@ mkdir -p "$PWD/.local/hdrp-lighting"
 "$PWD/.local/hdrp-lighting/player-development/ViewWeaveHdrpValidation.app/Contents/MacOS/PipelineSmoke" -batchmode -force-metal -screen-width 320 -screen-height 240 -validationReport "$PWD/.local/hdrp-lighting/player-development.json" -logFile "$PWD/.local/hdrp-lighting/player-development.log"
 ```
 
-The 2026-10-11 Metal PlayMode `GraphicsCompatibility` run passed 58/58 with zero skips, including eight URP adapter tests. Those tests cover four-view history accumulation, separate per-view RenderTextures and pixel comparisons, stable frame-version checks, view pruning, resize/restart, budget cleanup, and scripted Volume preservation. It is Editor PlayMode evidence. Separate bounded Metal Edit Mode and rendering-only Development/Release Player runs are covered below; neither covers Windows or physical-device optical TAA. See the [URP dated record](../../docs/urp-view-history-validation-20261011.md).
+The 2026-10-11 Metal PlayMode `GraphicsCompatibility` run passed 58/58 with zero skips, including eight URP adapter tests. Those tests cover four-view history accumulation, separate per-view RenderTextures and pixel comparisons, stable frame-version checks, view pruning, resize/restart, budget cleanup, and scripted Volume preservation. It is Editor PlayMode evidence. Separate bounded Metal Edit Mode and rendering-only Development/Release Player runs are covered below; neither covers Windows or physical-device optical TAA. See the [URP dated record](../../docs/development/urp-view-history-validation-20261011.md).
 
 ### URP Edit Mode and Player checks
 
@@ -106,9 +106,9 @@ unity build "$PWD/Tests/Pipelines/Unity" --editor-version 6000.6.4f1 --target St
 "$PWD/.local/urp-history/player-development/ViewWeaveUrpValidation.app/Contents/MacOS/PipelineSmoke" -force-metal -screen-width 640 -screen-height 480 -validationReport "$PWD/.local/urp-history/player-development.json" -logFile "$PWD/.local/urp-history/player-development.log"
 ```
 
-Repeat the Player commands after replacing every `player-development` path with `player-release` and changing the builder option to `-validationConfiguration Release`. Read the Player exit code, JSON report, and log together; the report also writes PNGs used for TAA-on/off and moving-geometry comparisons. These rendering-only fixtures do not test Bridge output or physical-device optics. See the [URP dated record](../../docs/urp-view-history-validation-20261011.md) for run conditions and results.
+Repeat the Player commands after replacing every `player-development` path with `player-release` and changing the builder option to `-validationConfiguration Release`. Read the Player exit code, JSON report, and log together; the report also writes PNGs used for TAA-on/off and moving-geometry comparisons. These rendering-only fixtures do not test Bridge output or physical-device optics. See the [URP dated record](../../docs/development/urp-view-history-validation-20261011.md) for run conditions and results.
 
-The HDRP fixture checks independent/stable Cameras, retained HDRP TAA settings, Fixed exposure compensation, Automatic Histogram light response, non-magenta red Quilt pixels, owned-resource retirement, and a rejected 1 MB warmup budget. Read the JSON and process exit code together. It uses elapsed-time bounds for GPU completion and a Cube covering most of the metering view: a mostly black histogram cannot substantiate a large EV-change expectation. This does not validate Bridge output, physical optics, HDRP TAA pixel correctness, or Windows. See the [dated record](../../docs/hdrp-view-history-validation-20261010.md) for results and retained warnings.
+The HDRP fixture checks independent/stable Cameras, retained HDRP TAA settings, Fixed exposure compensation, Automatic Histogram light response, non-magenta red Quilt pixels, owned-resource retirement, and a rejected 1 MB warmup budget. Read the JSON and process exit code together. It uses elapsed-time bounds for GPU completion and a Cube covering most of the metering view: a mostly black histogram cannot substantiate a large EV-change expectation. This does not validate Bridge output, physical optics, HDRP TAA pixel correctness, or Windows. See the [dated record](../../docs/development/hdrp-view-history-validation-20261010.md) for results and retained warnings.
 
 ## GPU Resident Drawer Validation
 

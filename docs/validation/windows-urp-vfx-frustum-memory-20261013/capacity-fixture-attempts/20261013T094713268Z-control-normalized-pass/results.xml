@@ -4,7 +4,7 @@
     <properties>
       <property name="platform" value="EditMode" />
     </properties>
-    <test-suite type="Assembly" id="1013" name="ViewWeave.FrustumMetadata.Editor.Tests.dll" fullname="E:/LookingGlassSDK/.local/windows-vfx-scene-comparison-20261013/URP/UnityProject/Library/ScriptAssemblies/ViewWeave.FrustumMetadata.Editor.Tests.dll" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-13 09:47:24Z" end-time="2026-10-13 09:47:34Z" duration="10.115376" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <test-suite type="Assembly" id="1013" name="ViewWeave.FrustumMetadata.Editor.Tests.dll" fullname="REPO_ROOT/.local/windows-vfx-scene-comparison-20261013/URP/UnityProject/Library/ScriptAssemblies/ViewWeave.FrustumMetadata.Editor.Tests.dll" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-13 09:47:24Z" end-time="2026-10-13 09:47:34Z" duration="10.115376" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
       <properties>
         <property name="_PID" value="79612" />
         <property name="_APPDOMAIN" value="Unity Child Domain" />
@@ -54,7 +54,7 @@ Remove 1 owners that couldnt be deserialized from  of type UnityEditor.VFX.VFXDa
 Remove 1 child(ren) that couldnt be deserialized from  of type UnityEditor.VFX.VFXGraph
 Remove 1 linked context(s) that could not be deserialized from Update Particle of type UnityEditor.VFX.VFXBasicUpdate
 Remove 1 owners that couldnt be deserialized from  of type UnityEditor.VFX.VFXDataParticle
-Saving results to: C:/Users/zzaba/AppData/LocalLow/DefaultCompany/URPSample_6_6_41f1\TestResults.xml
+Saving results to: WINDOWS_USER_HOME/AppData/LocalLow/DefaultCompany/URPSample_6_6_41f1\TestResults.xml
 ]]></output>
               </test-case>
             </test-suite>

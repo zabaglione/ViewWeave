@@ -6,7 +6,7 @@
     "graphicsDevice": "Null",
     "noGraphics": true,
     "scenePath": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/Scenes/URP_VFX_Learning_Templates.unity",
-    "priorPreflightSnapshotPath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\Results\\scene-preflight-20261012T223138298Z.json",
+    "priorPreflightSnapshotPath": "REPO_ROOT\\.local\\windows-vfx-scene-comparison-20261013\\URP\\Results\\scene-preflight-20261012T223138298Z.json",
     "priorPreflightSnapshotSha256": "B2A25B1B10F42AC8857214C5986E8D946394F716A4449F5C1E5ED3CE685F512C",
     "priorPreflightEyesEntryFound": true,
     "priorPreflightEyesWasInactive": true,

@@ -1,3 +1,5 @@
+Publication copy (2026-10-14): local path roots are redacted. Existing hashes and byte counts retain their original as-run meaning. See docs/validation/PUBLIC_EVIDENCE.md and PUBLIC_REDACTIONS.json for current-copy hashes.
+
 Phase B bounded PP-on observations, Unity 6000.6.4f1, isolated repository URP clone, D3D12.
 No Editor logs, user project files, Bridge files, or runtime SDK modifications are included.
 Each run requires exact NUnit case=1 passed, editor exit=0, no residual exact-project editor, and cleanup/safety checks.

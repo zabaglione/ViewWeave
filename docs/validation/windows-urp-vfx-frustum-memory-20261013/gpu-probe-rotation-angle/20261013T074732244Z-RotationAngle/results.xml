@@ -7,7 +7,7 @@
     <failure>
       <message><![CDATA[One or more child tests had errors]]></message>
     </failure>
-    <test-suite type="Assembly" id="1062" name="ViewWeave.SceneComparison.Tests.dll" fullname="E:/LookingGlassSDK/.local/windows-vfx-scene-comparison-20261013/URP/UnityProject/Library/ScriptAssemblies/ViewWeave.SceneComparison.Tests.dll" runstate="Runnable" testcasecount="18" result="Failed" site="Child" start-time="2026-10-13 07:47:43Z" end-time="2026-10-13 07:47:44Z" duration="1.305837" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+    <test-suite type="Assembly" id="1062" name="ViewWeave.SceneComparison.Tests.dll" fullname="REPO_ROOT/.local/windows-vfx-scene-comparison-20261013/URP/UnityProject/Library/ScriptAssemblies/ViewWeave.SceneComparison.Tests.dll" runstate="Runnable" testcasecount="18" result="Failed" site="Child" start-time="2026-10-13 07:47:43Z" end-time="2026-10-13 07:47:44Z" duration="1.305837" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
       <properties>
         <property name="_PID" value="49604" />
         <property name="_APPDOMAIN" value="Unity Child Domain" />
@@ -48,12 +48,12 @@
   Expected: greater than 20
   But was:  0
 ]]></message>
-                  <stack-trace><![CDATA[at ViewWeave.SceneComparison.Tests.FrustumMemoryProbeTests+<RunAndValidate>d__113.MoveNext () [0x0044f] in E:\LookingGlassSDK\.local\windows-vfx-scene-comparison-20261013\URP\UnityProject\Assets\SceneComparisonTests\FrustumMemoryProbeTests.cs:317
+                  <stack-trace><![CDATA[at ViewWeave.SceneComparison.Tests.FrustumMemoryProbeTests+<RunAndValidate>d__113.MoveNext () [0x0044f] in REPO_ROOT\.local\windows-vfx-scene-comparison-20261013\URP\UnityProject\Assets\SceneComparisonTests\FrustumMemoryProbeTests.cs:317
 at UnityEngine.TestTools.TestEnumerator+<Execute>d__8.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@80f691d4262b\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:52
 ]]></stack-trace>
                 </failure>
                 <output><![CDATA[Font Asset [LiberationSansSDF-Fallback] Units Per EM set to 2048. Please commit the newly serialized value.
-Saving results to: C:/Users/zzaba/AppData/LocalLow/DefaultCompany/URPSample_6_6_41f1\TestResults.xml
+Saving results to: WINDOWS_USER_HOME/AppData/LocalLow/DefaultCompany/URPSample_6_6_41f1\TestResults.xml
 ]]></output>
               </test-case>
             </test-suite>

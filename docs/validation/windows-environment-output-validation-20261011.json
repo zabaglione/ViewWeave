@@ -555,7 +555,7 @@
   "observedIncidents": [
     {
       "kind": "ManualEditorGuiCloseCrash",
-      "project": "E:\\My project (34)",
+      "project": "UNITY_PROJECT_2",
       "editor": {
         "processId": 101536,
         "graphicsApi": "Direct3D 12",

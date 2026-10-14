@@ -7,7 +7,7 @@
     <failure>
       <message><![CDATA[One or more child tests had errors]]></message>
     </failure>
-    <test-suite type="Assembly" id="1015" name="ViewWeave.FrustumMetadata.Editor.Tests.dll" fullname="E:/LookingGlassSDK/.local/windows-vfx-scene-comparison-20261013/URP/UnityProject/Library/ScriptAssemblies/ViewWeave.FrustumMetadata.Editor.Tests.dll" runstate="Runnable" testcasecount="3" result="Failed" site="Child" start-time="2026-10-13 16:38:45Z" end-time="2026-10-13 16:38:52Z" duration="7.144218" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+    <test-suite type="Assembly" id="1015" name="ViewWeave.FrustumMetadata.Editor.Tests.dll" fullname="REPO_ROOT/.local/windows-vfx-scene-comparison-20261013/URP/UnityProject/Library/ScriptAssemblies/ViewWeave.FrustumMetadata.Editor.Tests.dll" runstate="Runnable" testcasecount="3" result="Failed" site="Child" start-time="2026-10-13 16:38:45Z" end-time="2026-10-13 16:38:52Z" duration="7.144218" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
       <properties>
         <property name="_PID" value="34304" />
         <property name="_APPDOMAIN" value="Unity Child Domain" />
@@ -49,7 +49,7 @@
   But was:  "02B60ECC4F0BE9768FD91F04CCE99242218FD9065BC2BC39D60FFFBFDA8AB1D9"
   -----------^
 ]]></message>
-                  <stack-trace><![CDATA[at ViewWeave.SceneComparison.Tests.SampleSkinnedCustomCapacityFixture.BuildsSampleSkinnedCustomCapacityOneCloneAndChecksCompiledData () [0x00d5f] in E:\LookingGlassSDK\.local\windows-vfx-scene-comparison-20261013\URP\UnityProject\Assets\Editor\FrustumMetadataProbe\SampleSkinnedCustomCapacityFixture.cs:263
+                  <stack-trace><![CDATA[at ViewWeave.SceneComparison.Tests.SampleSkinnedCustomCapacityFixture.BuildsSampleSkinnedCustomCapacityOneCloneAndChecksCompiledData () [0x00d5f] in REPO_ROOT\.local\windows-vfx-scene-comparison-20261013\URP\UnityProject\Assets\Editor\FrustumMetadataProbe\SampleSkinnedCustomCapacityFixture.cs:263
 ]]></stack-trace>
                 </failure>
                 <output><![CDATA[Remove 1 child(ren) that couldnt be deserialized from  of type UnityEditor.VFX.VFXGraph
@@ -72,7 +72,7 @@ Remove 1 linked slot(s) that couldnt be deserialized from Direction of type Unit
 Remove 1 linked slot(s) that couldnt be deserialized from Direction of type UnityEditor.VFX.VFXSlotFloat3
 Remove 1 linked slot(s) that couldnt be deserialized from Direction of type UnityEditor.VFX.VFXSlotFloat3
 Remove 1 linked slot(s) that couldnt be deserialized from Direction of type UnityEditor.VFX.VFXSlotFloat3
-Saving results to: C:/Users/zzaba/AppData/LocalLow/DefaultCompany/URPSample_6_6_41f1\TestResults.xml
+Saving results to: WINDOWS_USER_HOME/AppData/LocalLow/DefaultCompany/URPSample_6_6_41f1\TestResults.xml
 ]]></output>
               </test-case>
             </test-suite>

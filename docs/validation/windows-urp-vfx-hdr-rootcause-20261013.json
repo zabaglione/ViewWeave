@@ -23,7 +23,7 @@
     "unityVersion": "6000.6.4f1",
     "urpVersion": "17.6.0",
     "vfxGraphVersion": "17.6.0",
-    "project": "E:/URPSample_6.6.41f1",
+    "project": "UNITY_PROJECT_1",
     "graphicsApiForPriorPairedProbes": "Direct3D12"
   },
   "userObservation": {
@@ -130,7 +130,7 @@
         2337
       ],
       "postProcessFile": "HDRenderPipeline.PostProcess.cs",
-      "file": "E:/My project (34)/Library/PackageCache/com.unity.render-pipelines.high-definition@d2ce0954bf9d/Runtime/RenderPipeline/HDRenderPipeline.cs",
+      "file": "UNITY_PROJECT_2/Library/PackageCache/com.unity.render-pipelines.high-definition@d2ce0954bf9d/Runtime/RenderPipeline/HDRenderPipeline.cs",
       "postProcessGetColorBufferFormatLine": 671,
       "colorBufferCreationFile": "HDRenderPipeline.RenderGraph.cs",
       "provesHdrpSuccessCause": false

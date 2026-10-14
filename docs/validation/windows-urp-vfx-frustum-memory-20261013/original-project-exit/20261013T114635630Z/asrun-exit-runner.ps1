@@ -7,8 +7,8 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$project = [IO.Path]::GetFullPath('E:\URPSample_6.6.41f1')
-$unity = 'C:\Users\zzaba\AppData\Local\Unity\bin\unity.exe'
+$project = [IO.Path]::GetFullPath('UNITY_PROJECT_1')
+$unity = 'WINDOWS_USER_HOME\AppData\Local\Unity\bin\unity.exe'
 $editorExe = [IO.Path]::GetFullPath('C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe')
 $scene = Join-Path $project 'Assets\Samples\Visual Effect Graph\17.6.0\Learning Templates\Scenes\URP_VFX_Learning_Templates.unity'
 $asset = Join-Path $project 'Assets\Samples\Visual Effect Graph\17.6.0\Learning Templates\VFX\SampleTexture2D.vfx'

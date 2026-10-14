@@ -12,7 +12,7 @@ Define package boundaries, rights review, reproducible performance benchmarks, a
 
 Move GPU Resident Drawer applicability testing earlier, around M0/M1. Compare GRD OFF, GRD ON with occlusion OFF, and GRD ON with occlusion ON after validating history. Keep this work separate from the Bridge shutdown fix.
 
-After the GRD MVP, a minimal Lit test of custom multiview using shared culling across views and GPU-resident geometry was run. Under the limited 8-view conditions, 6 checks passed, the feature ran 1 time, and 8 RendererLists were confirmed. Reprojection remains an optional later investigation. Details and open questions are in [docs/multiview-rendering.md](docs/multiview-rendering.md). This is not an adoption decision for the production path or evidence of a performance target being met.
+After the GRD MVP, a minimal Lit test of custom multiview using shared culling across views and GPU-resident geometry was run. Under the limited 8-view conditions, 6 checks passed, the feature ran 1 time, and 8 RendererLists were confirmed. Reprojection remains an optional later investigation. Details and open questions are in [docs/multiview-rendering.md](docs/development/multiview-rendering.md). This is not an adoption decision for the production path or evidence of a performance target being met.
 
 ## M1: Bridge Normal-Thread Path (Implemented; Acceptance Gates Remain)
 

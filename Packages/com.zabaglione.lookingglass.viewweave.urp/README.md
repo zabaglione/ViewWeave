@@ -12,7 +12,7 @@ This source package provides the ViewWeave URP adapter for repository developmen
 
 Edit Mode Preview shows a static scene. For animation on a connected display, enter Play and explicitly choose **Bridge > Start Output**; output does not start automatically.
 
-The macOS Looking Glass Go route uses the separate Metal output. The Windows Quick Start scene has not been revalidated. See [Compatibility](../../docs/compatibility.md) and the [macOS Metal guide](../../docs/macos-metal.md) for current conditions. The optional Windows URP Lit sample remains available as a separate Bridge demonstration.
+macOS uses the separate Metal output route. See [Compatibility](../../docs/compatibility.md) and the [macOS Metal guide](../../docs/macos-metal.md) for current conditions. The optional Windows URP Lit sample remains available as a separate Bridge demonstration.
 
 ## Quilt TAA and view histories
 
@@ -20,4 +20,4 @@ The default **Isolated View Histories** mode keeps one disabled Camera, `Univers
 
 Target MSAA selection follows the effective renderer while preserving the Rig Source Camera's `allowMSAA`; Deferred targets remain single-sample.
 
-These controls are in **Rig > Rendering > URP Rendering**. The budget defaults to 4096 MB and the camera limit to 256. The budget compares observed graphics-memory growth with estimated storage for new or enlarged RenderTextures; it is not a complete VRAM cap. See [the URP validation record](../../docs/urp-view-history-validation-20261011.md) for the dated runtime evidence and remaining limits.
+These controls are in **Rig > Rendering > URP Rendering**. The budget defaults to 4096 MB and the camera limit to 256. The budget compares observed graphics-memory growth with estimated storage for new or enlarged RenderTextures; it is not a complete VRAM cap. See [the URP validation record](../../docs/development/urp-view-history-validation-20261011.md) for the dated runtime evidence and remaining limits.

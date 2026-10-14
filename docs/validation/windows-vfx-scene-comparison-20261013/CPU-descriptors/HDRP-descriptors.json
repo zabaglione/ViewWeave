@@ -6,7 +6,7 @@
     "graphicsDevice": "Null",
     "noGraphics": true,
     "scenePath": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/Scenes/HDRP_VFX_Learning_Templates.unity",
-    "priorPreflightSnapshotPath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\HDRP\\Results\\scene-preflight-20261012T231937635Z.json",
+    "priorPreflightSnapshotPath": "REPO_ROOT\\.local\\windows-vfx-scene-comparison-20261013\\HDRP\\Results\\scene-preflight-20261012T231937635Z.json",
     "priorPreflightSnapshotSha256": "B07F56E6C112E3CA4AD4BD1844994588ECF750F3547072E729299F5F4D2F5A0F",
     "priorPreflightEyesEntryFound": true,
     "priorPreflightEyesWasInactive": true,

@@ -10,7 +10,7 @@
     "newUnityVfxReproductionPerformed": false
   },
   "userReport": {
-    "project": "E:/URPSample_6.6.41f1",
+    "project": "UNITY_PROJECT_1",
     "sampleScene": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/Scenes/URP_VFX_Learning_Templates.unity",
     "reportedException": "InsufficientMemoryException",
     "reportedTransitionBeforeCrash": "Editor Preview to Play",
@@ -75,7 +75,7 @@
       }
     ],
     "dump": {
-      "path": "C:/Users/zzaba/AppData/Local/Temp/Unity/Editor/Crashes/Crash_2026-10-12_130416532/crash.dmp",
+      "path": "WINDOWS_USER_HOME/AppData/Local/Temp/Unity/Editor/Crashes/Crash_2026-10-12_130416532/crash.dmp",
       "bytes": 694297,
       "sha256": "EA213561784326723FE39C29845929A61C4A01CFC71FA7FEB7F35CFCF756D3A1",
       "fullStackObtained": false,
@@ -442,7 +442,7 @@
         "com.zabaglione.lookingglass.viewweave.core"
       ],
       "coreFileUri": "file:../../../Packages/com.zabaglione.lookingglass.viewweave.core",
-      "filesystemTarget": "E:/LookingGlassSDK/Packages/com.zabaglione.lookingglass.viewweave.core",
+      "filesystemTarget": "REPO_ROOT/Packages/com.zabaglione.lookingglass.viewweave.core",
       "filesystemTargetMatchesRepositoryPackage": true,
       "resolvedPackagesCaptured": false,
       "packagesLockProduced": false

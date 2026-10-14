@@ -7,7 +7,7 @@
     <failure>
       <message><![CDATA[One or more child tests had errors]]></message>
     </failure>
-    <test-suite type="Assembly" id="1143" name="ViewWeave.BridgeEditorPreviewValidation.Editor.Tests.dll" fullname="E:/LookingGlassSDK/Tests/Pipelines/Unity/Library/ScriptAssemblies/ViewWeave.BridgeEditorPreviewValidation.Editor.Tests.dll" runstate="Runnable" testcasecount="111" result="Failed" site="Child" start-time="2026-10-13 04:35:01Z" end-time="2026-10-13 04:35:24Z" duration="22.710682" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+    <test-suite type="Assembly" id="1143" name="ViewWeave.BridgeEditorPreviewValidation.Editor.Tests.dll" fullname="REPO_ROOT/Tests/Pipelines/Unity/Library/ScriptAssemblies/ViewWeave.BridgeEditorPreviewValidation.Editor.Tests.dll" runstate="Runnable" testcasecount="111" result="Failed" site="Child" start-time="2026-10-13 04:35:01Z" end-time="2026-10-13 04:35:24Z" duration="22.710682" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
       <properties>
         <property name="_PID" value="27100" />
         <property name="_APPDOMAIN" value="Unity Child Domain" />
@@ -43,12 +43,12 @@
   Expected: True
   But was:  False
 ]]></message>
-                <stack-trace><![CDATA[at ViewWeave.BridgeEditorPreviewValidation.BridgeEditorPreviewGpuTests+<RunLocalPreview>d__109.MoveNext () [0x003ba] in E:\LookingGlassSDK\Tests\Pipelines\Unity\Assets\BridgeSessionValidation\Editor\BridgeEditorPreviewGpuTests.cs:3121
+                <stack-trace><![CDATA[at ViewWeave.BridgeEditorPreviewValidation.BridgeEditorPreviewGpuTests+<RunLocalPreview>d__109.MoveNext () [0x003ba] in REPO_ROOT\Tests\Pipelines\Unity\Assets\BridgeSessionValidation\Editor\BridgeEditorPreviewGpuTests.cs:3121
 at UnityEngine.TestTools.TestEnumerator+<Execute>d__8.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@80f691d4262b\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:52
 ]]></stack-trace>
               </failure>
               <output><![CDATA[EDITOR_PREVIEW_GPU source_control_attempt pipeline=HDRP, attempt=1, camera=source.scene=, sceneMask=0, overrideMask=0, cameraMask=-1, targetVisibleByLayer=True, exposure=fallbackEnabled=True, fallbackFixedExposureEV=0.00, exposureMode=ManualFixed, elapsedSeconds=22.40, withinDeadline=False, greenDominant=868, nonBlack=868, maxRGB=79/203/41
-Saving results to: C:/Users/zzaba/AppData/LocalLow/zabaglione/PipelineSmoke\TestResults.xml
+Saving results to: WINDOWS_USER_HOME/AppData/LocalLow/zabaglione/PipelineSmoke\TestResults.xml
 ]]></output>
             </test-case>
           </test-suite>

@@ -5,7 +5,7 @@
   "testPlatform": "PlayMode",
   "expectedTestCount": 1,
   "graphicsApi": "D3D12",
-  "projectPath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\UnityProject",
+  "projectPath": "REPO_ROOT\\.local\\windows-vfx-scene-comparison-20261013\\URP\\UnityProject",
   "unityExecutable": "C:/Program Files/Unity/Hub/Editor/6000.6.4f1/Editor/Unity.exe",
   "startedUtc": "2026-10-13T01:55:50.9656342Z",
   "startedProcessCreationUtc": "2026-10-13T01:55:50.9656342Z",
@@ -23,7 +23,7 @@
   "processInventoryAvailableAfter": true,
   "matchingAfter": null,
   "processObjectStillRunning": false,
-  "xmlPath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\Results\\vfxvisual-green-20261013T015550471Z.xml",
+  "xmlPath": "REPO_ROOT\\.local\\windows-vfx-scene-comparison-20261013\\URP\\Results\\vfxvisual-green-20261013T015550471Z.xml",
   "xmlBytes": 4833,
   "xmlSha256": "9A2C64990E6C3973F8FA9C29F93EC1962D6E7CEC1B45D0F416E2ED4AE8A6DDF3",
   "xmlParseErrorType": null,
@@ -39,9 +39,9 @@
     ]
   },
   "exactTestCaseGate": false,
-  "editorLogPath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\Results\\vfxvisual-green-20261013T015550471Z-editor.log",
+  "editorLogPath": "REPO_ROOT\\.local\\windows-vfx-scene-comparison-20261013\\URP\\Results\\vfxvisual-green-20261013T015550471Z-editor.log",
   "editorLogShared": false,
-  "evidenceDirectory": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\UnityProject\\TestResults\\vfxvisual-green-20261013T015550471Z",
+  "evidenceDirectory": "REPO_ROOT\\.local\\windows-vfx-scene-comparison-20261013\\URP\\UnityProject\\TestResults\\vfxvisual-green-20261013T015550471Z",
   "evidenceFiles": [
     {
       "name": "first-normal.png",

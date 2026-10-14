@@ -1,4 +1,4 @@
-Source: E:/URPSample_6.6.41f1/Logs/Editor.log
+Source: UNITY_PROJECT_1/Logs/Editor.log
 Source lines: 1175
 Last write UTC: 2026-10-13T01:06:38.9876111Z
 Unity: 6000.6.4f1

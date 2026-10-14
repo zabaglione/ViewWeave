@@ -39,9 +39,9 @@ trap {
     [Console]::Error.WriteLine(('runner_failed_type=' + $failure.exceptionType + ';category=' + $failure.errorCategory + ';line=' + $failure.scriptLine))
     exit 1
 }
-$projectPath = [IO.Path]::GetFullPath('E:\URPSample_6.6.41f1')
+$projectPath = [IO.Path]::GetFullPath('UNITY_PROJECT_1')
 $scenePath = Join-Path $projectPath 'Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/Scenes/URP_VFX_Learning_Templates.unity'
-$unityCli = 'C:\Users\zzaba\AppData\Local\Unity\bin\unity.exe'
+$unityCli = 'WINDOWS_USER_HOME\AppData\Local\Unity\bin\unity.exe'
 $editorExe = 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe'
 $templatePath = Join-Path $PSScriptRoot 'LiveGraphRemedyWatchTemplate.cs'
 $limitBytes = [long](3 * 1024 * 1024 * 1024)

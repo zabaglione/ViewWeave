@@ -22,9 +22,9 @@ return new System.Func<string>(() =>
     if (prePlayRawBaseline <= 0)
         return "preflight_failed_raw_graphics_unavailable";
 
-    string logPath = "E:/LookingGlassSDK/.local/windows-urp-vfx-live-play-20261013/run-20261013T090157058Z/watcher.jsonl";
-    string stopPath = "E:/LookingGlassSDK/.local/windows-urp-vfx-live-play-20261013/run-20261013T090157058Z/stop.flag";
-    string baselinePath = "E:/LookingGlassSDK/.local/windows-urp-vfx-live-play-20261013/run-20261013T090157058Z/normal-phase-baseline.txt";
+    string logPath = "REPO_ROOT/.local/windows-urp-vfx-live-play-20261013/run-20261013T090157058Z/watcher.jsonl";
+    string stopPath = "REPO_ROOT/.local/windows-urp-vfx-live-play-20261013/run-20261013T090157058Z/stop.flag";
+    string baselinePath = "REPO_ROOT/.local/windows-urp-vfx-live-play-20261013/run-20261013T090157058Z/normal-phase-baseline.txt";
     if (System.IO.File.Exists(logPath) || System.IO.File.Exists(stopPath) || System.IO.File.Exists(baselinePath)) return "preflight_failed_evidence_exists";
 
     const long byteLimit = 512L * 1024L * 1024L;

@@ -10,9 +10,9 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$projectPath = [IO.Path]::GetFullPath('E:\URPSample_6.6.41f1').TrimEnd('\')
+$projectPath = [IO.Path]::GetFullPath('UNITY_PROJECT_1').TrimEnd('\')
 $editorExe = [IO.Path]::GetFullPath('C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe')
-$unityCli = 'C:\Users\zzaba\AppData\Local\Unity\bin\unity.exe'
+$unityCli = 'WINDOWS_USER_HOME\AppData\Local\Unity\bin\unity.exe'
 $watcherPath = Join-Path $PSScriptRoot 'Run-BoundedOriginalCoinNeighborProbe.ps1'
 $exitPath = Join-Path $PSScriptRoot 'Run-OriginalProjectGracefulExit.ps1'
 $applyPath = [IO.Path]::GetFullPath($ApplyResultJsonPath)

@@ -14,7 +14,7 @@
   },
   "incident": {
     "kind": "ManualEditorGuiCloseCrash",
-    "project": "E:\\My project (34)",
+    "project": "UNITY_PROJECT_2",
     "userReportedDeviceOutput": true,
     "editor": {
       "processId": 101536,
@@ -23,7 +23,7 @@
       "processCreationTimeLocal": "2026-10-11 21:42:27.824"
     },
     "dump": {
-      "path": "C:/Users/zzaba/AppData/Local/Temp/Unity/Editor/Crashes/Crash_2026-10-11_124400942/crash.dmp",
+      "path": "WINDOWS_USER_HOME/AppData/Local/Temp/Unity/Editor/Crashes/Crash_2026-10-11_124400942/crash.dmp",
       "bytes": 790978,
       "analysis": "Read-only Minidump ExceptionStream and AMD64 context"
     },
@@ -396,7 +396,7 @@
         "newUnityRunsPerformed": false
       },
       "dump": {
-        "path": "C:/Users/zzaba/AppData/Local/Temp/Unity/Editor/Crashes/Crash_2026-10-12_120359571/crash.dmp",
+        "path": "WINDOWS_USER_HOME/AppData/Local/Temp/Unity/Editor/Crashes/Crash_2026-10-12_120359571/crash.dmp",
         "bytes": 697726,
         "sha256": "E77BC24D7B8E23C9FBF518672A63397E76C890CEE3B845D7B38375BFD77EA674",
         "fullStackObtained": false
@@ -509,7 +509,7 @@
         "newUnityRunsPerformed": false
       },
       "dump": {
-        "path": "C:/Users/zzaba/AppData/Local/Temp/Unity/Editor/Crashes/Crash_2026-10-12_124022336/crash.dmp",
+        "path": "WINDOWS_USER_HOME/AppData/Local/Temp/Unity/Editor/Crashes/Crash_2026-10-12_124022336/crash.dmp",
         "bytes": 695274,
         "sha256": "2615EA20BC34ABBEB321FDF82F91BB3D373E08D17DF9C8945A298A7B04B58E88",
         "fullStackObtained": false
@@ -584,7 +584,7 @@
         "processId": 45052,
         "processStartTimeLocal": "2026-10-12 22:00:03",
         "unityVersion": "6000.6.4f1",
-        "project": "E:/URPSample_6.6.41f1"
+        "project": "UNITY_PROJECT_1"
       },
       "sourceBasis": {
         "revision": "11312b8c6cf824d9a7ac7c8940e95cee742fa076",
@@ -601,7 +601,7 @@
         "causalLinkToNativeCrashEstablished": false
       },
       "dump": {
-        "path": "C:/Users/zzaba/AppData/Local/Temp/Unity/Editor/Crashes/Crash_2026-10-12_130416532/crash.dmp",
+        "path": "WINDOWS_USER_HOME/AppData/Local/Temp/Unity/Editor/Crashes/Crash_2026-10-12_130416532/crash.dmp",
         "bytes": 694297,
         "sha256": "EA213561784326723FE39C29845929A61C4A01CFC71FA7FEB7F35CFCF756D3A1",
         "fullStackObtained": false
@@ -656,7 +656,7 @@
         "incidentTimePackageResolutionCaptured": false,
         "currentEditorReloadOptions": 3,
         "incidentTimeReloadOptionsCaptured": false,
-        "currentScenePath": "E:/URPSample_6.6.41f1/Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/Scenes/URP_VFX_Learning_Templates.unity",
+        "currentScenePath": "UNITY_PROJECT_1/Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/Scenes/URP_VFX_Learning_Templates.unity",
         "sourceViewCount": 48,
         "sourceMode": "Full",
         "sourceQuality": "Balanced",
@@ -700,8 +700,8 @@
       "probeExecutableSha256": "18AC3C1912058550AC3862C7C0FC08BEBD7C6305FF239564E468C489483C4416",
       "productionShimSha256": "CEE089B1779752DAB4FFABDFFC44B879A0E4D09414C9A85F7590C8D9A9DDCF4D",
       "vendorRuntimeSha256": "3BE0EBA96844688C2EB2E70FC512A5ADA3D53E3ED9C8810454AB0370B8241386",
-      "probeExecutablePath": "E:\\LookingGlassSDK\\.local\\windows-unity-crash-20261011\\native-handle-probe\\build\\Release\\bridge_std_handle_probe_gui.exe",
-      "productionShimPath": "E:\\LookingGlassSDK\\Distribution\\hdrp\\ViewWeave\\Bridge\\Plugins\\x86_64\\lookingglass_bridge_shim.dll",
+      "probeExecutablePath": "REPO_ROOT\\.local\\windows-unity-crash-20261011\\native-handle-probe\\build\\Release\\bridge_std_handle_probe_gui.exe",
+      "productionShimPath": "REPO_ROOT\\Distribution\\hdrp\\ViewWeave\\Bridge\\Plugins\\x86_64\\lookingglass_bridge_shim.dll",
       "vendorRuntimePath": "C:\\Program Files\\Looking Glass\\Looking Glass Bridge 2.6.3\\bridge_inproc.dll"
     },
     "sharedInputsAcrossRuns": true,
@@ -709,9 +709,9 @@
       "summaryPath": ".local/windows-editor-close-crash-20261011/bridge-offline-20261012-212039-367/run-bridge-on-baseline-20261012-212150-350/summary.json",
       "summarySha256": "E35B06A349E2A11767662F977FF69758913C0C66F187C12E1D23639004F99344",
       "label": "bridge-on-baseline",
-      "probeLogPath": "E:\\LookingGlassSDK\\.local\\windows-editor-close-crash-20261011\\bridge-offline-20261012-212039-367\\run-bridge-on-baseline-20261012-212150-350\\probe.log",
+      "probeLogPath": "REPO_ROOT\\.local\\windows-editor-close-crash-20261011\\bridge-offline-20261012-212039-367\\run-bridge-on-baseline-20261012-212150-350\\probe.log",
       "probeLogSha256": "DF42697FE84E936A1B57D2EC67D653D5425E586B618024358AB220FEAED24B4D",
-      "nativeTracePath": "E:\\LookingGlassSDK\\.local\\windows-editor-close-crash-20261011\\bridge-offline-20261012-212039-367\\run-bridge-on-baseline-20261012-212150-350\\native-trace.log",
+      "nativeTracePath": "REPO_ROOT\\.local\\windows-editor-close-crash-20261011\\bridge-offline-20261012-212039-367\\run-bridge-on-baseline-20261012-212150-350\\native-trace.log",
       "nativeTraceSha256": "475ACCB597DEE38C8C5B5263445AF33A9736CCCA06B14C9732B3BF4BF6D84125",
       "startObservedLocal": "2026-10-12T21:21:51.0233572+09:00",
       "processStartLocal": "2026-10-12T21:21:51.0733192+09:00",
@@ -862,9 +862,9 @@
       "summaryPath": ".local/windows-editor-close-crash-20261011/bridge-offline-20261012-212039-367/run-bridge-offline-20261012-212633-670/summary.json",
       "summarySha256": "FC6D186879F410A9559420E6ED424F61403E623D4F0E9499CB72BB009C5E6ABD",
       "label": "bridge-offline",
-      "probeLogPath": "E:\\LookingGlassSDK\\.local\\windows-editor-close-crash-20261011\\bridge-offline-20261012-212039-367\\run-bridge-offline-20261012-212633-670\\probe.log",
+      "probeLogPath": "REPO_ROOT\\.local\\windows-editor-close-crash-20261011\\bridge-offline-20261012-212039-367\\run-bridge-offline-20261012-212633-670\\probe.log",
       "probeLogSha256": "6C30FB27466567434FB97A43CB9E280E9E94C249873ACD7768DAB854282A2A58",
-      "nativeTracePath": "E:\\LookingGlassSDK\\.local\\windows-editor-close-crash-20261011\\bridge-offline-20261012-212039-367\\run-bridge-offline-20261012-212633-670\\native-trace.log",
+      "nativeTracePath": "REPO_ROOT\\.local\\windows-editor-close-crash-20261011\\bridge-offline-20261012-212039-367\\run-bridge-offline-20261012-212633-670\\native-trace.log",
       "nativeTraceSha256": "1D8CCFCCD87E89BCFB00E6E7941D4399BA68B2CB8C9FD47985E050E99571192C",
       "startObservedLocal": "2026-10-12T21:26:34.0018999+09:00",
       "processStartLocal": "2026-10-12T21:26:34.0338883+09:00",

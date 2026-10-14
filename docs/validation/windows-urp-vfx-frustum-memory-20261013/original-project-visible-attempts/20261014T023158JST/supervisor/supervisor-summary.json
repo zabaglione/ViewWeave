@@ -1,7 +1,7 @@
 {
   "schema": "viewweave-original-remedy-supervisor-v1",
   "status": "watcher_observation_incomplete_editor_exited_zero",
-  "projectPath": "E:\\URPSample_6.6.41f1",
+  "projectPath": "UNITY_PROJECT_1",
   "editorPid": 35412,
   "expectedEditorStartUtc": "2026-10-13T17:27:16.3970548Z",
   "bridgePid": 29956,
@@ -16,7 +16,7 @@
   "watcherSummaryPath": null,
   "exitHelperChildExitCode": 0,
   "exitEvidenceIdentityPassed": true,
-  "exitSummaryPath": "E:\\LookingGlassSDK\\.local\\windows-urp-vfx-original-remedy-20261013\\exit-observations\\20261013T173211765Z\\summary.json",
+  "exitSummaryPath": "REPO_ROOT\\.local\\windows-urp-vfx-original-remedy-20261013\\exit-observations\\20261013T173211765Z\\summary.json",
   "nativeWaitResult": 0,
   "nativeExitCode": 0,
   "exactProjectCountAfter": 0,

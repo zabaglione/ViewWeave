@@ -1,9 +1,9 @@
 {
     "status": "candidate-package-loaded",
     "packageName": "com.zabaglione.lookingglass.viewweave.urp",
-    "candidatePath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\CandidatePackages\\com.zabaglione.lookingglass.viewweave.urp",
-    "candidateUri": "file:E:/LookingGlassSDK/.local/windows-vfx-scene-comparison-20261013/CandidatePackages/com.zabaglione.lookingglass.viewweave.urp",
-    "resolvedPath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\CandidatePackages\\com.zabaglione.lookingglass.viewweave.urp",
+    "candidatePath": "REPO_ROOT\\.local\\windows-vfx-scene-comparison-20261013\\CandidatePackages\\com.zabaglione.lookingglass.viewweave.urp",
+    "candidateUri": "file:REPO_ROOT/.local/windows-vfx-scene-comparison-20261013/CandidatePackages/com.zabaglione.lookingglass.viewweave.urp",
+    "resolvedPath": "REPO_ROOT\\.local\\windows-vfx-scene-comparison-20261013\\CandidatePackages\\com.zabaglione.lookingglass.viewweave.urp",
     "version": "0.1.0",
     "source": "Local",
     "exitCode": 0

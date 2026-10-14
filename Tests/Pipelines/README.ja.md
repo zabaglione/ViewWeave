@@ -34,7 +34,7 @@ CLIで同じPlayMode suiteを実行する場合は、repository rootから次を
 unity test "$PWD/Tests/Pipelines/Unity" --editor-version 6000.6.4f1 --mode PlayMode --report-format junit --output "$PWD/.local/test-results/playmode.xml" --timeout 1200 -- -force-d3d11
 ```
 
-結果XMLのtest countが0の場合は成功扱いにしません。結果の内訳、既知のVFX未通過条件、D3D12の対象範囲は[docs/windows-validation.md](../../docs/windows-validation.md)を参照してください。
+結果XMLのtest countが0の場合は成功扱いにしません。結果の内訳、既知のVFX未通過条件、D3D12の対象範囲は[Windows検証記録](../../docs/development/windows-validation.md)を参照してください。
 
 ### Windows HDRP effect characterization
 
@@ -44,7 +44,7 @@ Windows専用HDRP fixtureにはNUnit `Explicit`を付けているため、通常
 unity test "$PWD/Tests/Pipelines/Unity" --editor-version 6000.6.4f1 --mode PlayMode --filter ViewWeave.GraphicsCompatibility.WindowsHdrpEffectPixelTests --output "$PWD/.local/hdrp-effects/results.xml" --timeout 1200 -- -force-d3d12
 ```
 
-個別caseは完全修飾名をfilterに指定します。例: `--filter ViewWeave.GraphicsCompatibility.WindowsHdrpEffectPixelTests.FxaaChangesDiagonalEdgePixels`。これはeffect characterisation用fixtureであり、HDRP一般の保証ではありません。Explicit testのskipや未実行はPASSではありません。現在の結果にはeffect画素gateの失敗が含まれるため、[Windows日付付きfeature record](../../docs/windows-current-feature-validation-20261011.md)でrunごとの結果と境界を確認してください。fixture失敗を製品非対応の証明にしたり、全case成功と報告したりしません。
+個別caseは完全修飾名をfilterに指定します。例: `--filter ViewWeave.GraphicsCompatibility.WindowsHdrpEffectPixelTests.FxaaChangesDiagonalEdgePixels`。これはeffect characterisation用fixtureであり、HDRP一般の保証ではありません。Explicit testのskipや未実行はPASSではありません。現在の結果にはeffect画素gateの失敗が含まれるため、[Windows日付付きfeature record](../../docs/development/windows-current-feature-validation-20261011.md)でrunごとの結果と境界を確認してください。fixture失敗を製品非対応の証明にしたり、全case成功と報告したりしません。
 
 ## generated sceneを使うPlayer validation
 
@@ -69,7 +69,7 @@ generated sceneを作ってPlayerをBuildする場合は、Unity CLIからEditor
 unity run "$PWD/Tests/Pipelines/Unity" --editor-version 6000.6.4f1 -- -executeMethod ViewWeave.SamplePlayerValidation.Editor.SamplePlayerValidationBuilder.BuildUrp -buildOutput "$PWD/.local/player/SampleUrp.exe" -buildGraphicsApi d3d11 -buildDevelopment true
 ```
 
-builderは`-buildGraphicsApi d3d11` / `d3d12`と`-buildDevelopment true` / `false`を受け付けます。省略時はD3D11 Developmentです。例えばD3D12 Releaseでは`-buildGraphicsApi d3d12 -buildDevelopment false`を渡します。不明な値はbuild methodが失敗します。builderは`Assets/SamplePlayerValidationGenerated/SamplePlayerValidation.unity`を一時作成し、指定API、Linear、Run In BackgroundでPlayerをBuildした後に設定を復元します。Build後のPlayer起動にはBridge runtimeが必要です。現在のWindows Player結果と限定範囲は[日付付きfeature record](../../docs/windows-current-feature-validation-20261011.md)を参照してください。
+builderは`-buildGraphicsApi d3d11` / `d3d12`と`-buildDevelopment true` / `false`を受け付けます。省略時はD3D11 Developmentです。例えばD3D12 Releaseでは`-buildGraphicsApi d3d12 -buildDevelopment false`を渡します。不明な値はbuild methodが失敗します。builderは`Assets/SamplePlayerValidationGenerated/SamplePlayerValidation.unity`を一時作成し、指定API、Linear、Run In BackgroundでPlayerをBuildした後に設定を復元します。Build後のPlayer起動にはBridge runtimeが必要です。現在のWindows Player結果と限定範囲は[日付付きfeature record](../../docs/development/windows-current-feature-validation-20261011.md)を参照してください。
 
 ## macOS Metalの履歴・露出・URP TAA試験
 
@@ -87,7 +87,7 @@ mkdir -p "$PWD/.local/hdrp-lighting"
 "$PWD/.local/hdrp-lighting/player-development/ViewWeaveHdrpValidation.app/Contents/MacOS/PipelineSmoke" -batchmode -force-metal -screen-width 320 -screen-height 240 -validationReport "$PWD/.local/hdrp-lighting/player-development.json" -logFile "$PWD/.local/hdrp-lighting/player-development.log"
 ```
 
-2026-10-11のMetal PlayMode `GraphicsCompatibility` runは58/58 PASS、skip 0でした。URP adapterの8 testを含み、4視点のhistory蓄積、view別RenderTextureと画素比較、frame versionの安定性、view削除、resize/restart、budget cleanup、scripted Volume設定の保持を確認しました。Editor PlayModeの証跡です。Metal上のbounded Edit Modeと描画専用Development／Release Playerのrunも以下に記載します。Windowsと実機光学TAAは対象外です。[URPの日付付き記録](../../docs/urp-view-history-validation-20261011.md)を参照してください。
+2026-10-11のMetal PlayMode `GraphicsCompatibility` runは58/58 PASS、skip 0でした。URP adapterの8 testを含み、4視点のhistory蓄積、view別RenderTextureと画素比較、frame versionの安定性、view削除、resize/restart、budget cleanup、scripted Volume設定の保持を確認しました。Editor PlayModeの証跡です。Metal上のbounded Edit Modeと描画専用Development／Release Playerのrunも以下に記載します。Windowsと実機光学TAAは対象外です。[URPの日付付き記録](../../docs/development/urp-view-history-validation-20261011.md)を参照してください。
 
 ### URP Edit ModeとPlayerの試験
 
@@ -106,9 +106,9 @@ unity build "$PWD/Tests/Pipelines/Unity" --editor-version 6000.6.4f1 --target St
 "$PWD/.local/urp-history/player-development/ViewWeaveUrpValidation.app/Contents/MacOS/PipelineSmoke" -force-metal -screen-width 640 -screen-height 480 -validationReport "$PWD/.local/urp-history/player-development.json" -logFile "$PWD/.local/urp-history/player-development.log"
 ```
 
-Releaseを試す場合は、両command内の`player-development`を`player-release`に置き換え、builderの設定を`-validationConfiguration Release`にします。Playerの終了code、JSON report、logを合わせて確認してください。reportと一緒にTAA on/offおよび移動geometryの比較に使うPNGも保存します。描画専用fixtureはBridge出力や実機光学を検証しません。条件と結果は[URPの日付付き記録](../../docs/urp-view-history-validation-20261011.md)を参照してください。
+Releaseを試す場合は、両command内の`player-development`を`player-release`に置き換え、builderの設定を`-validationConfiguration Release`にします。Playerの終了code、JSON report、logを合わせて確認してください。reportと一緒にTAA on/offおよび移動geometryの比較に使うPNGも保存します。描画専用fixtureはBridge出力や実機光学を検証しません。条件と結果は[URPの日付付き記録](../../docs/development/urp-view-history-validation-20261011.md)を参照してください。
 
-HDRP fixtureではCameraの視点別分離・維持、HDRP TAA設定の保持、Fixed exposureのcompensation、自動露出の光量追従、赤いQuilt画素とmagenta画素の不在、所有リソースの解放、1 MBのwarmup予算超過を確認します。JSONと終了codeを両方確認してください。GPU完了待ちは実時間で制限し、Cubeが測光画面の大部分を占めるようにしています。黒背景が大半のHistogramから大きなEV変化を期待することはできません。Bridge出力、実機光学、HDRP TAA画素正確性、Windowsの検証ではありません。結果と残る警告は[HDRPの日付付き記録](../../docs/hdrp-view-history-validation-20261010.md)を参照してください。
+HDRP fixtureではCameraの視点別分離・維持、HDRP TAA設定の保持、Fixed exposureのcompensation、自動露出の光量追従、赤いQuilt画素とmagenta画素の不在、所有リソースの解放、1 MBのwarmup予算超過を確認します。JSONと終了codeを両方確認してください。GPU完了待ちは実時間で制限し、Cubeが測光画面の大部分を占めるようにしています。黒背景が大半のHistogramから大きなEV変化を期待することはできません。Bridge出力、実機光学、HDRP TAA画素正確性、Windowsの検証ではありません。結果と残る警告は[HDRPの日付付き記録](../../docs/development/hdrp-view-history-validation-20261010.md)を参照してください。
 
 ## GPU Resident Drawer validation
 

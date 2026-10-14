@@ -1,7 +1,7 @@
 {
   "status": "bounded_observation_incomplete",
-  "projectPath": "E:\\URPSample_6.6.41f1",
-  "scenePath": "E:\\URPSample_6.6.41f1\\Assets\\Samples\\Visual Effect Graph\\17.6.0\\Learning Templates\\Scenes\\URP_VFX_Learning_Templates.unity",
+  "projectPath": "UNITY_PROJECT_1",
+  "scenePath": "UNITY_PROJECT_1\\Assets\\Samples\\Visual Effect Graph\\17.6.0\\Learning Templates\\Scenes\\URP_VFX_Learning_Templates.unity",
   "editorPid": 57092,
   "editorExecutable": "C:\\Program Files\\Unity\\Hub\\Editor\\6000.6.4f1\\Editor\\Unity.exe",
   "bridgePid": 29956,
@@ -2267,9 +2267,9 @@
     "original_profile_restored",
     "original_profile_restored"
   ],
-  "eventLogPath": "E:\\LookingGlassSDK\\.local\\windows-urp-vfx-live-play-20261013\\run-20261013T085015040Z\\watcher.jsonl",
-  "privateMemoryLogPath": "E:\\LookingGlassSDK\\.local\\windows-urp-vfx-live-play-20261013\\run-20261013T085015040Z\\process-memory.jsonl",
-  "stopFlagPath": "E:\\LookingGlassSDK\\.local\\windows-urp-vfx-live-play-20261013\\run-20261013T085015040Z\\stop.flag",
+  "eventLogPath": "REPO_ROOT\\.local\\windows-urp-vfx-live-play-20261013\\run-20261013T085015040Z\\watcher.jsonl",
+  "privateMemoryLogPath": "REPO_ROOT\\.local\\windows-urp-vfx-live-play-20261013\\run-20261013T085015040Z\\process-memory.jsonl",
+  "stopFlagPath": "REPO_ROOT\\.local\\windows-urp-vfx-live-play-20261013\\run-20261013T085015040Z\\stop.flag",
   "outerPlayStopConfirmed": false,
   "normalOnlyPrivateBaselineDescriptive": 6356750336,
   "afterStartSessionPrivateSampleDescriptive": 6361001984,

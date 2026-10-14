@@ -20,7 +20,7 @@
     "buildTesting": true,
     "transportTestsOnly": false,
     "unityPluginApiHeaders": "Unity 6000.6.4f1 installed Editor PluginAPI",
-    "cmakeHomeDirectory": "E:/LookingGlassSDK/Native",
+    "cmakeHomeDirectory": "REPO_ROOT/Native",
     "sandboxBuildAttempt": "failed Windows SDK registry access",
     "hostBuild": "passed selected current-source targets"
   },

@@ -1,9 +1,9 @@
 {
   "status": "candidate-urp-package-loaded",
-  "projectPath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\UnityProject",
+  "projectPath": "REPO_ROOT\\.local\\windows-vfx-scene-comparison-20261013\\URP\\UnityProject",
   "unityExecutable": "C:/Program Files/Unity/Hub/Editor/6000.6.4f1/Editor/Unity.exe",
-  "candidatePackagePath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\CandidatePackages\\com.zabaglione.lookingglass.viewweave.urp",
-  "candidatePackageUri": "file:E:/LookingGlassSDK/.local/windows-vfx-scene-comparison-20261013/CandidatePackages/com.zabaglione.lookingglass.viewweave.urp",
+  "candidatePackagePath": "REPO_ROOT\\.local\\windows-vfx-scene-comparison-20261013\\CandidatePackages\\com.zabaglione.lookingglass.viewweave.urp",
+  "candidatePackageUri": "file:REPO_ROOT/.local/windows-vfx-scene-comparison-20261013/CandidatePackages/com.zabaglione.lookingglass.viewweave.urp",
   "candidateRuntimeSourceSha256": "92356E442773A7C85E9EFEA7CBAA69B7FAB192A6E8B103B61A9B62DCADD3FF65",
   "startedUtc": "2026-10-13T03:29:14.4813569Z",
   "endedUtc": "2026-10-13T03:30:00.2360863Z",
@@ -20,19 +20,19 @@
   "processInventoryAvailableAfter": true,
   "matchingAfter": null,
   "processObjectStillRunning": false,
-  "packageResolutionResultPath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\CandidatePackageResolution\\candidate-urp-20261013T032913837Z.json",
+  "packageResolutionResultPath": "REPO_ROOT\\.local\\windows-vfx-scene-comparison-20261013\\URP\\CandidatePackageResolution\\candidate-urp-20261013T032913837Z.json",
   "packageResolutionResult": {
     "status": "candidate-package-loaded",
     "packageName": "com.zabaglione.lookingglass.viewweave.urp",
-    "candidatePath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\CandidatePackages\\com.zabaglione.lookingglass.viewweave.urp",
-    "candidateUri": "file:E:/LookingGlassSDK/.local/windows-vfx-scene-comparison-20261013/CandidatePackages/com.zabaglione.lookingglass.viewweave.urp",
-    "resolvedPath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\CandidatePackages\\com.zabaglione.lookingglass.viewweave.urp",
+    "candidatePath": "REPO_ROOT\\.local\\windows-vfx-scene-comparison-20261013\\CandidatePackages\\com.zabaglione.lookingglass.viewweave.urp",
+    "candidateUri": "file:REPO_ROOT/.local/windows-vfx-scene-comparison-20261013/CandidatePackages/com.zabaglione.lookingglass.viewweave.urp",
+    "resolvedPath": "REPO_ROOT\\.local\\windows-vfx-scene-comparison-20261013\\CandidatePackages\\com.zabaglione.lookingglass.viewweave.urp",
     "version": "0.1.0",
     "source": "Local",
     "exitCode": 0
   },
   "resolvedPathMatchesCandidate": true,
-  "editorLogPath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\CandidatePackageResolution\\candidate-urp-20261013T032913837Z-editor.log",
+  "editorLogPath": "REPO_ROOT\\.local\\windows-vfx-scene-comparison-20261013\\URP\\CandidatePackageResolution\\candidate-urp-20261013T032913837Z-editor.log",
   "editorLogShared": false,
   "passGate": true
 }

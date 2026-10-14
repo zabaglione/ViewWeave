@@ -197,7 +197,7 @@
       },
       "urp": {
         "operation": "VerifyOnly",
-        "packageSource": "Local file:E:/LookingGlassSDK/Distribution/urp",
+        "packageSource": "Local file:REPO_ROOT/Distribution/urp",
         "unityVersion": "6000.6.4f1",
         "graphicsApi": "Direct3D 12 level 12.2",
         "naturalExit": true,
@@ -222,7 +222,7 @@
       },
       "hdrp": {
         "operation": "VerifyOnly",
-        "packageSource": "Local file:E:/LookingGlassSDK/Distribution/hdrp",
+        "packageSource": "Local file:REPO_ROOT/Distribution/hdrp",
         "unityVersion": "6000.6.4f1",
         "graphicsApi": "Direct3D 12 level 12.2",
         "naturalExit": true,
@@ -254,7 +254,7 @@
     {
       "case": "case01-observer-ep-fix1",
       "completedUtc": "2026-10-08T02:37:46.3962624Z",
-      "evidencePath": "E:/LookingGlassSDK/.local/shutdown-regression-fixed-c4bc909e73c14ffaac2b15e356d8efe1/Run/case01-observer-ep-fix1",
+      "evidencePath": "REPO_ROOT/.local/shutdown-regression-fixed-c4bc909e73c14ffaac2b15e356d8efe1/Run/case01-observer-ep-fix1",
       "limits": "Visual and performance measurements were not made; native final trace corroboration and fake consumer GPU acknowledgement were not proven.",
       "result": "PASS: production PNG path and Native final status assertion passed; Unity Editor natural exit code 0."
     },
@@ -266,7 +266,7 @@
       "editorExit": "NATURAL_EXIT code 0",
       "editorPid": 88016,
       "editorStartUtc": "2026-10-08T03:28:48.4888937Z",
-      "evidencePath": "E:/LookingGlassSDK/.local/shutdown-regression-fixed-c4bc909e73c14ffaac2b15e356d8efe1/Run/case02-native-close1",
+      "evidencePath": "REPO_ROOT/.local/shutdown-regression-fixed-c4bc909e73c14ffaac2b15e356d8efe1/Run/case02-native-close1",
       "limits": "This runtime result does not validate the newer manual-notice-only candidate. Visual and performance measurements were not made; fake consumer GPU acknowledgement was not proven.",
       "result": "PASS under the previous frozen automatic-WM_CLOSE candidate after two Play/Stop and domain-reload recovery cycles. Native final status ABI32/v1: result 0, state Complete (3), registered contexts 0, host running 0, host joined 1, last result 0. Managed release: Reaper 0, unproven false, handles 0, coordinator ready true.",
       "unityVersion": "6000.6.4f1"
@@ -274,20 +274,20 @@
     {
       "case": "policy-playmode",
       "completedUtc": "2026-10-08T02:06:59.0874695Z",
-      "evidencePath": "E:/LookingGlassSDK/.local/shutdown-regression-fixed-c4bc909e73c14ffaac2b15e356d8efe1/Run/policy-playmode",
+      "evidencePath": "REPO_ROOT/.local/shutdown-regression-fixed-c4bc909e73c14ffaac2b15e356d8efe1/Run/policy-playmode",
       "limits": "Policy tests do not establish optical output or hardware consumer acknowledgement.",
       "result": "PASS, 7/7 policy PlayMode tests; Editor natural exit code 0."
     },
     {
       "case": "case03-quit-gate2",
       "completedUtc": "2026-10-08T02:50:47.6071829Z",
-      "evidencePath": "E:/LookingGlassSDK/.local/shutdown-regression-fixed-c4bc909e73c14ffaac2b15e356d8efe1/Run/case03-quit-gate2",
+      "evidencePath": "REPO_ROOT/.local/shutdown-regression-fixed-c4bc909e73c14ffaac2b15e356d8efe1/Run/case03-quit-gate2",
       "limits": "Native final trace corroboration and fake consumer GPU acknowledgement were not proven; visual and performance measurements were not made.",
       "result": "PASS; Editor and Player natural exit code 0. Player quit event, wants-to-quit observer, Native final join status, and managed finalization proof passed."
     },
     {
       "case": "historical-controls",
-      "evidencePath": "E:/LookingGlassSDK/.local/shutdown-regression-control-4193e7ab",
+      "evidencePath": "REPO_ROOT/.local/shutdown-regression-control-4193e7ab",
       "limits": "Historical controls are separate from the full-Bridge runtime cases above.",
       "result": "Earlier access-violation cause remains unproven. An SDK-absent File/Exit control ended in an access violation. A separate SDK-absent queued WM_CLOSE control exited naturally, but it is not evidence for full-Bridge shutdown, optics, frame rate, or consumer GPU acknowledgement."
     },

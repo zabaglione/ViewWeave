@@ -13,7 +13,7 @@ Use Unity 6000.6.4f1 with a URP or HDRP project. Install one self-contained pack
 
 Import **URP Quick Start** or **HDRP Quick Start** from the package's **Samples** tab, then open its `QuickStart.unity` scene. The scene contains a configured Rig and animated sample objects.
 
-For a step-by-step walkthrough with screenshots, see [Getting Started](getting-started.md). To preview the sample, select **ViewWeave Bridge Rig** and choose **Preview > Start Local Edit Mode Preview** for an Editor view, or **Start Looking Glass Device Preview** for a connected display. Device output needs the official runtime and a supported display. Review [Compatibility](compatibility.md) for current conditions; the Windows Quick Start scene has not been validated on Windows.
+For a step-by-step walkthrough with screenshots, see [Getting Started](getting-started.md). To preview the sample, select **ViewWeave Bridge Rig** and choose **Preview > Start Local Edit Mode Preview** for an Editor view, or **Start Looking Glass Device Preview** for a connected display. Device output needs the official runtime and a supported display. Review [Compatibility](compatibility.md) for current conditions.
 
 ## Frame a scene
 
@@ -31,7 +31,7 @@ Successful Bridge API device information supplies the aspect and view cone for t
 
 Under **Rendering**, **Quilt View Render Mode** controls how many viewpoints are rendered. **Full** renders all views. **Half** and **Quarter** render fewer views, which can lower GPU work; as you move sideways, the image can change in larger steps. Choose Full when view-to-view continuity matters more than render cost. Actual performance depends on the scene and GPU.
 
-**Output Quality** controls per-view render resolution separately from view count. The available Preview, Balanced, and Native choices use progressively larger fractions of the connected display profile's resolution. A local preview uses the Rig's local Quilt resolution and grid, with the last recognized Bridge aspect and view cone when available. Start at a lower setting if rendering is too slow, then check the image on the target display. See [Compatibility](compatibility.md) for tested boundaries and [Performance](performance.md) for dated measurements.
+**Output Quality** controls per-view render resolution separately from view count. The available Preview, Balanced, and Native choices use progressively larger fractions of the connected display profile's resolution. A local preview uses the Rig's local Quilt resolution and grid, with the last recognized Bridge aspect and view cone when available. Start at a lower setting if rendering is too slow, then check the image on the target display. See [Compatibility](compatibility.md) for tested boundaries and [Performance](development/performance.md) for dated measurements.
 
 In HDRP, **Rendering > HDRP Rendering** defaults to **Isolated View Histories** and **Quilt Exposure > Follow Scene**. Each rendered viewpoint retains its own history, while exposure is measured at the central viewpoint and shared across the Quilt. This keeps the scene's HDRP effect settings; the first frames wait for a valid exposure sample. Choose **Manual Fixed** only when you want an explicit exposure override.
 

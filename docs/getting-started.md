@@ -35,7 +35,7 @@ The scene includes a black background, red Cube, blue Sphere, yellow Capsule, ca
 
 Each distribution includes Core, Bridge and its pipeline adapter. Do not install both distributions in one project. A public GitHub repository can be installed without GitHub authentication. An access-restricted copy requires repository access and Git authentication; never embed authentication tokens in the URL.
 
-After an update, quit and reopen the Editor to reload native plugins. `#main` follows development; pin a commit hash or tag for a fixed revision. See [Package updates](bridge-package-update-safety.md) and [Native plugin update troubleshooting](native-plugin-update-troubleshooting.md).
+After an update, quit and reopen the Editor to reload native plugins. `#main` follows development; pin a commit hash or tag for a fixed revision. See [Package updates](development/bridge-package-update-safety.md) and [Native plugin update troubleshooting](development/native-plugin-update-troubleshooting.md).
 
 ## Build your own scene: eight steps
 
@@ -116,6 +116,6 @@ Changing Full to Quarter can improve frame rate in demanding scenes. Unrendered 
 
 Save the scene and add it to **File > Build Profiles**. Build with Metal on macOS or D3D11/D3D12 on Windows. The Sample disables automatic output: enable **Bridge > Start Output On Enable** for Metal or **Start Session On Enable** for Windows before saving and building. When switching OS, check the selected output's start preference and Output Quality.
 
-These are build instructions, not a verified Player result for the Quick Start Samples. Their Player builds, Windows UPM import and Windows device output are unverified. macOS verification used local package imports in the Editor; anonymous Git installation after public access is enabled has not been tested. See [Compatibility](compatibility.md#current-development-version-validation) for the current validation boundaries, including native signing and physical-device limits.
+These are build instructions, not a verified Player result for the Quick Start Samples. Limited local-package import and Editor checks do not establish device output or Player support. Consult the feature/platform matrix linked from Compatibility for the checked OS/API and sample conditions. Anonymous Git installation after public access is enabled has not been tested. See [Compatibility](compatibility.md#current-development-version-validation) for the current validation boundaries, including native signing and physical-device limits.
 
 For output problems, see [Compatibility](compatibility.md) and the [macOS Metal guide](macos-metal.md). Architecture, performance measurements, test projects and validation records are in the [Technical guide](technical-guide.md).

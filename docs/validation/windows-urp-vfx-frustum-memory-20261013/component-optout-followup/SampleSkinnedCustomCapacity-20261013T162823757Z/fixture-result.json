@@ -6,7 +6,7 @@
     "unityVersion": "6000.6.4f1",
     "graphicsDevice": "Null",
     "vfxGraphVersion": "17.6.0",
-    "vfxGraphResolvedPath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\UnityProject\\Library\\PackageCache\\com.unity.visualeffectgraph@3c55eb193cdb",
+    "vfxGraphResolvedPath": "REPO_ROOT\\.local\\windows-vfx-scene-comparison-20261013\\URP\\UnityProject\\Library\\PackageCache\\com.unity.visualeffectgraph@3c55eb193cdb",
     "sourceGraphPath": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/VFX/SampleSkinnedMesh.vfx",
     "sourceGraphGuid": "986cf4b6651f46246bdc1e5e7f81b4c2",
     "sourceGraphGuidAfter": "986cf4b6651f46246bdc1e5e7f81b4c2",

@@ -12,7 +12,7 @@ param(
     [ValidateSet(1, 4)]
     [int]$MsaaSamples = 1,
     [string]$EvidenceRoot = '',
-    [string]$UnityCliPath = 'C:\Users\zzaba\AppData\Local\Unity\bin\unity.exe',
+    [string]$UnityCliPath = (Join-Path $env:LOCALAPPDATA 'Unity\bin\unity.exe'),
     [string]$UnityEditorPath = 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe'
 )
 

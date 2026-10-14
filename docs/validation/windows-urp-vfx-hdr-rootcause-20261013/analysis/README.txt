@@ -1,3 +1,5 @@
+Publication copy (2026-10-14): local path roots are redacted. Existing hashes and byte counts retain their original as-run meaning. See docs/validation/PUBLIC_EVIDENCE.md and PUBLIC_REDACTIONS.json for current-copy hashes.
+
 Read-only analysis of frozen Phase B and Phase C paired-output artifacts.
 
 Run from the repository root with:

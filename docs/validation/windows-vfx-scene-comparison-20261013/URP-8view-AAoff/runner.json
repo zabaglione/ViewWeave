@@ -2,7 +2,7 @@
   "status": "process-exit-zero",
   "pipeline": "URP",
   "operation": "RunTests",
-  "projectPath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\UnityProject",
+  "projectPath": "REPO_ROOT\\.local\\windows-vfx-scene-comparison-20261013\\URP\\UnityProject",
   "unityExecutable": "C:/Program Files/Unity/Hub/Editor/6000.6.4f1/Editor/Unity.exe",
   "noGraphics": false,
   "standardOutputRedirected": true,
@@ -43,7 +43,7 @@
   "testPlatform": "PlayMode",
   "testFilter": "ViewWeave.SceneComparison.Tests.SelectedScenePilotTests.CollisionSimpleOriginalSceneEightViewsAAOffPostProcessOn",
   "expectedTestCount": 1,
-  "rawXmlPath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\Results\\tests-20261012T234919548Z.xml",
+  "rawXmlPath": "REPO_ROOT\\.local\\windows-vfx-scene-comparison-20261013\\URP\\Results\\tests-20261012T234919548Z.xml",
   "rawXmlBytes": 4011,
   "rawXmlSha256": "8FD769AA0FC82F8E8A32D1E9F2A51B09D9EF5A52387B64F16A99CCC21C4507EA",
   "nunit": {
@@ -56,7 +56,7 @@
   },
   "xmlParseErrorType": null,
   "testPassGate": true,
-  "editorLogPath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\Results\\RunTests-20261012T234919548Z-editor.log",
+  "editorLogPath": "REPO_ROOT\\.local\\windows-vfx-scene-comparison-20261013\\URP\\Results\\RunTests-20261012T234919548Z-editor.log",
   "editorLogShared": false,
   "startupExceptionType": null
 }

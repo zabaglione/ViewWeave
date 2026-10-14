@@ -1,3 +1,5 @@
+Publication copy (2026-10-14): local path roots are redacted. Existing hashes and byte counts retain their original as-run meaning. See docs/validation/PUBLIC_EVIDENCE.md and PUBLIC_REDACTIONS.json for current-copy hashes.
+
 Windows URP frustum-memory investigation evidence archive
 
 This archive contains one exact-case-reconciled no-graphics EditMode metadata probe, capacity-fixture failures and passing Null fixtures, bounded one-view and 12-view D3D12 Auto/Custom runs, an Auto history-restart follow-up, failed RotationAngle probes, and a bounded original-project observation. The accepted metadata XML contains exactly one test fullname matching its requested test filter; the original wrapper summary remains preserved as not-passed because its exact-case name array was absent. The reconciled summary was derived from existing runner/XML/metadata evidence; Unity was not rerun for reconciliation.

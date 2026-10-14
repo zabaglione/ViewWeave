@@ -1642,12 +1642,12 @@
     {
       "module": "UnityPlayer.dylib",
       "uuid": "BE07B931-A7A0-335B-BFDE-6D9331DBD96F",
-      "path": "/Users/*/Documents/*/Control.app/Contents/Frameworks/UnityPlayer.dylib"
+      "path": "MAC_USER_HOME/Documents/*/Control.app/Contents/Frameworks/UnityPlayer.dylib"
     },
     {
       "module": "libmonobdwgc-2.0.dylib",
       "uuid": "542F91E5-B702-33BE-86C6-5B39012524EA",
-      "path": "/Users/*/Documents/*/Control.app/Contents/Frameworks/libmonobdwgc-2.0.dylib"
+      "path": "MAC_USER_HOME/Documents/*/Control.app/Contents/Frameworks/libmonobdwgc-2.0.dylib"
     }
   ],
   "vendorModuleNames": [],

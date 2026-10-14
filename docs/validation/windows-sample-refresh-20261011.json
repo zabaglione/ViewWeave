@@ -7,11 +7,11 @@
   "samples": [
     {
       "pipeline": "URP",
-      "project": "E:\\URPSample_6.6.41f1",
+      "project": "UNITY_PROJECT_1",
       "packageName": "com.zabaglione.lookingglass.viewweave.urp",
       "manifestUri": "https://github.com/zabaglione/ViewWeave.git?path=/Distribution/urp#main",
       "expectedGitHash": "e9232d31afdbb80f2577c12955d9d060dba44441",
-      "resolvedPath": "E:\\URPSample_6.6.41f1\\Library\\PackageCache\\com.zabaglione.lookingglass.viewweave.urp@2ccb8cbca6fc\\ViewWeave",
+      "resolvedPath": "UNITY_PROJECT_1\\Library\\PackageCache\\com.zabaglione.lookingglass.viewweave.urp@2ccb8cbca6fc\\ViewWeave",
       "resolvedPackageFingerprint": "2ccb8cbca6fc01b3fc52f6555d403921e6bc42c1",
       "packageMetadataCanonicalSha256": "031CEBD32ACFAC222D38B642D4A0E55D8355FCF96788432FB326BB090D2ED0DE",
       "packageMetadataMatch": true,
@@ -63,11 +63,11 @@
     },
     {
       "pipeline": "HDRP",
-      "project": "E:\\My project (34)",
+      "project": "UNITY_PROJECT_2",
       "packageName": "com.zabaglione.lookingglass.viewweave.hdrp",
       "manifestUri": "ssh://git@github.com/zabaglione/ViewWeave.git?path=/Distribution/hdrp#main",
       "expectedGitHash": "e9232d31afdbb80f2577c12955d9d060dba44441",
-      "resolvedPath": "E:\\My project (34)\\Library\\PackageCache\\com.zabaglione.lookingglass.viewweave.hdrp@12897fecf3c4\\ViewWeave",
+      "resolvedPath": "UNITY_PROJECT_2\\Library\\PackageCache\\com.zabaglione.lookingglass.viewweave.hdrp@12897fecf3c4\\ViewWeave",
       "resolvedPackageFingerprint": "12897fecf3c4c46785d9ab099627845ba69523f4",
       "packageMetadataCanonicalSha256": "BB69642746D5945A3F8C146CFB9BE10FC5C5D94D274735F84919D697A585477E",
       "packageMetadataMatch": true,

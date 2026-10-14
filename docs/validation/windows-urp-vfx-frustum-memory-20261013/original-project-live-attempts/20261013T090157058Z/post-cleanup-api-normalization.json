@@ -26,18 +26,18 @@
     "urpPackage": {
       "name": "com.unity.render-pipelines.universal",
       "version": "17.6.0",
-      "resolvedPath": "E:\\URPSample_6.6.41f1\\Library\\PackageCache\\com.unity.render-pipelines.universal@b0678dfc9e21"
+      "resolvedPath": "UNITY_PROJECT_1\\Library\\PackageCache\\com.unity.render-pipelines.universal@b0678dfc9e21"
     },
     "vfxGraphPackage": {
       "name": "com.unity.visualeffectgraph",
       "version": "17.6.0",
-      "resolvedPath": "E:\\URPSample_6.6.41f1\\Library\\PackageCache\\com.unity.visualeffectgraph@3c55eb193cdb"
+      "resolvedPath": "UNITY_PROJECT_1\\Library\\PackageCache\\com.unity.visualeffectgraph@3c55eb193cdb"
     },
     "quality": "UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset",
     "corePackage": {
       "name": "com.zabaglione.lookingglass.viewweave.urp",
       "version": "0.1.0",
-      "resolvedPath": "E:\\LookingGlassSDK\\Distribution\\urp"
+      "resolvedPath": "REPO_ROOT\\Distribution\\urp"
     }
   },
   "sceneSha256": "909CF2976E91B2B5278A6550BF85739805749E5BFC9010166B8EF6882F9115AC",
@@ -152,13 +152,13 @@
       "unbatchedInstanceCount": 0
     }
   ],
-  "rawCapturePath": "E:\\LookingGlassSDK\\.local\\windows-urp-vfx-live-play-20261013\\run-20261013T090157058Z\\post-run-readonly.json",
+  "rawCapturePath": "REPO_ROOT\\.local\\windows-urp-vfx-live-play-20261013\\run-20261013T090157058Z\\post-run-readonly.json",
   "rawCaptureSha256": "3F87DA47F9F95D4831229ADEFDAC439EBC747A2C8D5666A929217B23D78912B8",
-  "normalizedCapturePath": "E:\\LookingGlassSDK\\.local\\windows-urp-vfx-live-play-20261013\\run-20261013T090157058Z\\post-run-readonly-normalized.json",
+  "normalizedCapturePath": "REPO_ROOT\\.local\\windows-urp-vfx-live-play-20261013\\run-20261013T090157058Z\\post-run-readonly-normalized.json",
   "normalizedCaptureSha256": "6E7273A95BE22667149E729D6013642131A6006A16CC67650AF637335D20D4B8",
   "normalizedCaptureBytes": 31600,
   "normalization": "Derived copy only: converted C# Boolean text literals True/False to JSON true/false and inserted one missing closing object delimiter before packages; raw original remains unchanged.",
-  "sourceHelperPath": "E:\\LookingGlassSDK\\.local\\windows-urp-vfx-live-play-20261013\\PostRunReadOnly.cs",
+  "sourceHelperPath": "REPO_ROOT\\.local\\windows-urp-vfx-live-play-20261013\\PostRunReadOnly.cs",
   "sourceHelperSha256": "005A20CECD3B1E6E3B39F0DCDC7440BFF7A41E1D102C871EAE365AB431E6D9C4",
   "firstEvalAttempt": "Compilation failure only; no body execution: UACD.allowMSAA missing and eval wrapper return shape.",
   "secondEvalAttempt": "Compilation failure only; no body execution: generated eval wrapper reported missing closing brace.",

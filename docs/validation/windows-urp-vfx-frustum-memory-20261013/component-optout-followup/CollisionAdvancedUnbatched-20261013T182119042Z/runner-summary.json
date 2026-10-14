@@ -7,7 +7,7 @@
   "mode": "NativeProbe",
   "nativeEvidenceGate": true,
   "canonicalFixtureMetaSha256": "5CA482C38DA8E67230DC0A0AAB39ACFAFDFB3E166F5427235B92BF6706328335",
-  "underlyingRunner": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\Results\\RunTests-20261013T182119526Z-runner.json",
+  "underlyingRunner": "REPO_ROOT\\.local\\windows-vfx-scene-comparison-20261013\\URP\\Results\\RunTests-20261013T182119526Z-runner.json",
   "nativeResult": "native-result.json",
   "canonicalFixtureAsmdefSha256": "066C2ED8A4D87AE3507D206122F04D163FC83B4D17044D91C91C7F6994DAEF41",
   "canonicalFixtureSourceSha256": "0EBC60C4673AC0B9967446BED725BD32536550DBBF8A8072A1085EB44E736FB8",
@@ -16,6 +16,6 @@
   "outputDrainIncomplete": false,
   "status": "runner-passed",
   "canonicalNativeMetaSha256": "6CD6C575D4709FBC75A3152B9E445043AC5A82D288C28E1117D06456D359FF95",
-  "fixtureEvidenceInput": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\UnityProject\\TestResults\\collision-advanced-fixture-20261013T182026874Z.json",
+  "fixtureEvidenceInput": "REPO_ROOT\\.local\\windows-vfx-scene-comparison-20261013\\URP\\UnityProject\\TestResults\\collision-advanced-fixture-20261013T182026874Z.json",
   "processResidualCount": 0
 }

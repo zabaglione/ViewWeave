@@ -1,6 +1,6 @@
 param([int]$TimeoutSeconds = 900)
 $ErrorActionPreference = 'Stop'
-$base = 'E:/LookingGlassSDK/.local/windows-vfx-scene-comparison-20261013'
+$base = 'REPO_ROOT/.local/windows-vfx-scene-comparison-20261013'
 $project = Join-Path $base 'URP/UnityProject'
 $editor = 'C:/Program Files/Unity/Hub/Editor/6000.6.4f1/Editor/Unity.exe'
 $candidate = Join-Path $base 'CandidatePackages/com.zabaglione.lookingglass.viewweave.urp'

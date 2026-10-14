@@ -1,3 +1,5 @@
+Publication copy (2026-10-14): local path roots are redacted. Existing hashes and byte counts retain their original as-run meaning. See docs/validation/PUBLIC_EVIDENCE.md and PUBLIC_REDACTIONS.json for current-copy hashes.
+
 ViewWeave main SDK HDR validation artifacts
 
 The source hashes in MANIFEST.json identify the HDR runtime fix used for these tests. The implementation is not committed. No additional runtime product changes were made during the probe executions.

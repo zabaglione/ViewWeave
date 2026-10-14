@@ -4,7 +4,7 @@
     <properties>
       <property name="platform" value="PlayMode" />
     </properties>
-    <test-suite type="Assembly" id="1015" name="ViewWeave.VfxDriverValidation.Tests.dll" fullname="E:/LookingGlassSDK/.local/windows-urp-vfx-graphics-isolated-20261013/Library/ScriptAssemblies/ViewWeave.VfxDriverValidation.Tests.dll" runstate="Runnable" testcasecount="9" result="Passed" start-time="2026-10-12 16:48:31Z" end-time="2026-10-12 16:48:40Z" duration="9.366780" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <test-suite type="Assembly" id="1015" name="ViewWeave.VfxDriverValidation.Tests.dll" fullname="REPO_ROOT/.local/windows-urp-vfx-graphics-isolated-20261013/Library/ScriptAssemblies/ViewWeave.VfxDriverValidation.Tests.dll" runstate="Runnable" testcasecount="9" result="Passed" start-time="2026-10-12 16:48:31Z" end-time="2026-10-12 16:48:40Z" duration="9.366780" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
       <properties>
         <property name="_PID" value="37328" />
         <property name="_APPDOMAIN" value="Unity Child Domain" />
@@ -37,7 +37,7 @@ The referenced script (Unknown) on this Behaviour is missing!
 The referenced script (Unknown) on this Behaviour is missing!
 The referenced script (Unknown) on this Behaviour is missing!
 The referenced script (Unknown) on this Behaviour is missing!
-Saving results to: C:/Users/zzaba/AppData/LocalLow/DefaultCompany/UnityMinimal\TestResults.xml
+Saving results to: WINDOWS_USER_HOME/AppData/LocalLow/DefaultCompany/UnityMinimal\TestResults.xml
 ]]></output>
             </test-case>
           </test-suite>

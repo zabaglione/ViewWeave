@@ -32,8 +32,8 @@
     "vfxGraphVersion": "17.6.0",
     "renderPipelinePackageVersion": "17.6.0",
     "sourcePackages": {
-      "urpProject": "E:/URPSample_6.6.41f1",
-      "hdrpProject": "E:/My project (34)"
+      "urpProject": "UNITY_PROJECT_1",
+      "hdrpProject": "UNITY_PROJECT_2"
     }
   },
   "savedSceneComparison": {

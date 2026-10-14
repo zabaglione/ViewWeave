@@ -11,7 +11,7 @@
     "graphSha256After": "84FFA22726257445766073C94CE9DBFD09A18E7EE91A7384A2C968FDCCBA8DFF",
     "graphicsDevice": "Direct3D12",
     "unityVersion": "6000.6.4f1",
-    "registeredPackages": "com.unity.visualeffectgraph@17.6.0;source=BuiltIn;path=E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\UnityProject\\Library\\PackageCache\\com.unity.visualeffectgraph@3c55eb193cdb|com.zabaglione.lookingglass.viewweave.bridge@0.1.0;source=Local;path=E:\\LookingGlassSDK\\Packages\\com.zabaglione.lookingglass.viewweave.bridge|com.zabaglione.lookingglass.viewweave.core@0.1.0;source=Local;path=E:\\LookingGlassSDK\\Packages\\com.zabaglione.lookingglass.viewweave.core|com.zabaglione.lookingglass.viewweave.urp@0.1.0;source=Local;path=E:\\LookingGlassSDK\\Packages\\com.zabaglione.lookingglass.viewweave.urp",
+    "registeredPackages": "com.unity.visualeffectgraph@17.6.0;source=BuiltIn;path=REPO_ROOT\\.local\\windows-vfx-scene-comparison-20261013\\URP\\UnityProject\\Library\\PackageCache\\com.unity.visualeffectgraph@3c55eb193cdb|com.zabaglione.lookingglass.viewweave.bridge@0.1.0;source=Local;path=REPO_ROOT\\Packages\\com.zabaglione.lookingglass.viewweave.bridge|com.zabaglione.lookingglass.viewweave.core@0.1.0;source=Local;path=REPO_ROOT\\Packages\\com.zabaglione.lookingglass.viewweave.core|com.zabaglione.lookingglass.viewweave.urp@0.1.0;source=Local;path=REPO_ROOT\\Packages\\com.zabaglione.lookingglass.viewweave.urp",
     "referenceTargetGraphicsFormatAtRender": "not-rendered-framing-camera-disabled",
     "quiltFinalGraphicsFormatAtRender": "R8G8B8A8_SRGB",
     "historyAaAtRender": "None",

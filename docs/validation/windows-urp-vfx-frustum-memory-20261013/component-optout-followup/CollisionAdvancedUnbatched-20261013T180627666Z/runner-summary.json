@@ -8,7 +8,7 @@
   "completedUtc": "2026-10-13T18:06:35.3032458Z",
   "status": "not-passed",
   "nativeResult": null,
-  "underlyingRunner": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\Results\\RunTests-20261013T180628233Z-runner.json",
+  "underlyingRunner": "REPO_ROOT\\.local\\windows-vfx-scene-comparison-20261013\\URP\\Results\\RunTests-20261013T180628233Z-runner.json",
   "fixtureEvidenceInput": null,
   "processResidualCount": 0,
   "canonicalFixtureMetaSha256": "5CA482C38DA8E67230DC0A0AAB39ACFAFDFB3E166F5427235B92BF6706328335",

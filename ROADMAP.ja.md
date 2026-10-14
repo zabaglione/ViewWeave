@@ -12,7 +12,7 @@
 
 GPU Resident Drawerの適用性試験をM0/M1付近へ前倒しします。Bridge出力から切り離し、GRD OFF、GRD ON・occlusion OFF、履歴確認後のGRD ON・occlusion ONを比較します。これはBridge停止修正とは別作業です。
 
-GRD-MVP後に、視点間の共通cullingとGPU常駐geometryを使う独自multiviewの最小Lit検証を行いました。8視点の限定条件で6判定、feature実行1回、8本のRendererListを確認しています。再投影方式はその後の選択式研究とします。方式の詳細と未解決事項は [docs/multiview-rendering.md](docs/ja/multiview-rendering.md) に記載します。量産経路への採用や性能達成とは扱いません。
+GRD-MVP後に、視点間の共通cullingとGPU常駐geometryを使う独自multiviewの最小Lit検証を行いました。8視点の限定条件で6判定、feature実行1回、8本のRendererListを確認しています。再投影方式はその後の選択式研究とします。方式の詳細と未解決事項は [docs/multiview-rendering.md](docs/development/ja/multiview-rendering.md) に記載します。量産経路への採用や性能達成とは扱いません。
 
 ## M1: Bridge通常thread経路（実装済み、受入ゲート継続）
 

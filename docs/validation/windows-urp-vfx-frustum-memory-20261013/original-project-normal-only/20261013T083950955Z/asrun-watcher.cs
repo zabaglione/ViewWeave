@@ -21,8 +21,8 @@ return new System.Func<string>(() =>
     if (UnityEngine.Profiling.Profiler.GetAllocatedMemoryForGraphicsDriver() <= 0)
         return "preflight_failed_raw_graphics_unavailable";
 
-    string logPath = "E:/LookingGlassSDK/.local/windows-urp-vfx-live-play-20261013/run-20261013T083950955Z/watcher.jsonl";
-    string stopPath = "E:/LookingGlassSDK/.local/windows-urp-vfx-live-play-20261013/run-20261013T083950955Z/stop.flag";
+    string logPath = "REPO_ROOT/.local/windows-urp-vfx-live-play-20261013/run-20261013T083950955Z/watcher.jsonl";
+    string stopPath = "REPO_ROOT/.local/windows-urp-vfx-live-play-20261013/run-20261013T083950955Z/stop.flag";
     if (System.IO.File.Exists(logPath) || System.IO.File.Exists(stopPath)) return "preflight_failed_evidence_exists";
 
     const long byteLimit = 512L * 1024L * 1024L;

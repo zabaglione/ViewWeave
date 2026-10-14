@@ -13,7 +13,7 @@ Unity 6000.6.4f1のURPまたはHDRPプロジェクトを使います。**Package
 
 packageの**Samples**から**URP Quick Start**または**HDRP Quick Start**をImportし、その`QuickStart.unity` sceneを開きます。sceneには設定済みRigとアニメーションするサンプルobjectが含まれます。
 
-画像付きの手順は[使い始める](getting-started.md)を参照してください。Sampleをプレビューするには**ViewWeave Bridge Rig**を選び、Editor内で見る場合は**Preview > Start Local Edit Mode Preview**、接続displayへ送る場合は**Start Looking Glass Device Preview**を選びます。機器出力には公式runtimeと対応displayが必要です。現在の条件は[対応表](compatibility.md)を確認してください。WindowsでのQuick Startの動作は未検証です。
+画像付きの手順は[使い始める](getting-started.md)を参照してください。Sampleをプレビューするには**ViewWeave Bridge Rig**を選び、Editor内で見る場合は**Preview > Start Local Edit Mode Preview**、接続displayへ送る場合は**Start Looking Glass Device Preview**を選びます。機器出力には公式runtimeと対応displayが必要です。現在の条件は[対応表](compatibility.md)を確認してください。
 
 ## Sceneの構図とfocusを調整する
 
@@ -31,7 +31,7 @@ Rigの**Bridge**欄では、通常のPlay Mode出力を**Start Output**／**Stop
 
 **Rendering**の**Quilt View Render Mode**は描画する視点数を決めます。**Full**は全視点を描画し、**Half**と**Quarter**は視点数を減らしてGPU負荷を下げられます。その分、横へ動いたときの画像変化が段階的になることがあります。描画負荷より視点の連続性を優先する場合はFullを選びます。実際の性能はsceneとGPUにより異なります。
 
-**Output Quality**は視点数とは別に、各viewの描画解像度を調整します。Preview、Balanced、Nativeの順に、接続display profileに対する解像度が大きくなります。Local Previewの解像度とgridはRigのlocal Quilt profileを使い、機器情報を取得済みの場合は縦横比と視野角をその結果に合わせます。描画が重い場合は低い設定から試し、対象displayで見え方を確認してください。確認済みの範囲は[対応表](compatibility.md)、日付付き測定は[Performance](performance.md)を参照してください。
+**Output Quality**は視点数とは別に、各viewの描画解像度を調整します。Preview、Balanced、Nativeの順に、接続display profileに対する解像度が大きくなります。Local Previewの解像度とgridはRigのlocal Quilt profileを使い、機器情報を取得済みの場合は縦横比と視野角をその結果に合わせます。描画が重い場合は低い設定から試し、対象displayで見え方を確認してください。確認済みの範囲は[対応表](compatibility.md)、日付付き測定は[Performance](../development/ja/performance.md)を参照してください。
 
 HDRPでは、**Rendering > HDRP Rendering**の**Isolated View Histories**と**Quilt Exposure > Follow Scene**が既定です。描画する視点ごとに履歴を保持し、中央視点で測った露出をQuilt全体で共有します。シーンのHDRP効果設定を保ち、起動直後は有効な測光結果が届くまで待機します。露出を自分で指定する場合だけ**Manual Fixed**を選んでください。
 

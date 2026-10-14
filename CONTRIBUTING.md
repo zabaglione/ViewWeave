@@ -6,6 +6,8 @@ This prototype is intended for community review. Keep runtime and Editor assembl
 
 English is the default language for repository documentation. When adding or changing user-facing documentation, update the corresponding Japanese page under `docs/ja/` or the adjacent `*.ja.md` file where one exists; link both language versions at the top of each page. See [README.ja.md](README.ja.md) for Japanese project information.
 
+Keep installation, operating instructions, and actionable limits in `docs/` and `docs/ja/`. Put implementation notes, research, dated validation reports, and earlier overviews in `docs/development/` (Japanese pages in `docs/development/ja/`) and link them from its index. Preserve original run outcomes and as-run identities in `docs/validation/`; for path-redacted publication copies, follow the [public evidence policy](docs/validation/PUBLIC_EVIDENCE.md) and record public-copy hashes separately. Update inbound links when moving reports. The current feature matrix remains at `docs/ja/unity-feature-platform-matrix.html`; follow its [maintenance rules](docs/ja/support-matrix-maintenance.md).
+
 Repository and package sources are distributed under Apache-2.0. The root `LICENSE` and each package `LICENSE.md` contain the complete license text; third-party notices remain subject to provenance review.
 
 Logs must contain ASCII characters only. Remove serial numbers, account data, absolute local paths, and credentials before attaching diagnostics. Use the repository validator before opening a pull request and include its output in the PR description.

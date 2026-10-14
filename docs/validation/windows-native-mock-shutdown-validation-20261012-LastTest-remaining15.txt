@@ -2,8 +2,8 @@ Start testing: Oct 12 23:19 ???? (?W????)
 ----------------------------------------------------------
 1/19 Testing: lookingglass_worker_common_test
 1/19 Test: lookingglass_worker_common_test
-Command: "E:/LookingGlassSDK/Native/build-worker-release-vs/Release/lookingglass_worker_common_test.exe"
-Directory: E:/LookingGlassSDK/Native/build-worker-release-vs
+Command: "REPO_ROOT/Native/build-worker-release-vs/Release/lookingglass_worker_common_test.exe"
+Directory: REPO_ROOT/Native/build-worker-release-vs
 "lookingglass_worker_common_test" start time: Oct 12 23:19 ???? (?W????)
 Output:
 ----------------------------------------------------------
@@ -18,8 +18,8 @@ Test Passed.
 
 2/19 Testing: lookingglass_metadata_test
 2/19 Test: lookingglass_metadata_test
-Command: "E:/LookingGlassSDK/Native/build-worker-release-vs/Release/lookingglass_metadata_test.exe"
-Directory: E:/LookingGlassSDK/Native/build-worker-release-vs
+Command: "REPO_ROOT/Native/build-worker-release-vs/Release/lookingglass_metadata_test.exe"
+Directory: REPO_ROOT/Native/build-worker-release-vs
 "lookingglass_metadata_test" start time: Oct 12 23:19 ???? (?W????)
 Output:
 ----------------------------------------------------------
@@ -34,8 +34,8 @@ Test Passed.
 
 3/19 Testing: lookingglass_subpixel_calibration_test
 3/19 Test: lookingglass_subpixel_calibration_test
-Command: "E:/LookingGlassSDK/Native/build-worker-release-vs/Release/lookingglass_subpixel_calibration_test.exe"
-Directory: E:/LookingGlassSDK/Native/build-worker-release-vs
+Command: "REPO_ROOT/Native/build-worker-release-vs/Release/lookingglass_subpixel_calibration_test.exe"
+Directory: REPO_ROOT/Native/build-worker-release-vs
 "lookingglass_subpixel_calibration_test" start time: Oct 12 23:19 ???? (?W????)
 Output:
 ----------------------------------------------------------
@@ -50,8 +50,8 @@ Test Passed.
 
 4/19 Testing: lookingglass_metal_calibration_test
 4/19 Test: lookingglass_metal_calibration_test
-Command: "E:/LookingGlassSDK/Native/build-worker-release-vs/Release/lookingglass_metal_calibration_test.exe"
-Directory: E:/LookingGlassSDK/Native/build-worker-release-vs
+Command: "REPO_ROOT/Native/build-worker-release-vs/Release/lookingglass_metal_calibration_test.exe"
+Directory: REPO_ROOT/Native/build-worker-release-vs
 "lookingglass_metal_calibration_test" start time: Oct 12 23:19 ???? (?W????)
 Output:
 ----------------------------------------------------------
@@ -66,8 +66,8 @@ Test Passed.
 
 5/19 Testing: lookingglass_bridge_subpixel_metadata_test
 5/19 Test: lookingglass_bridge_subpixel_metadata_test
-Command: "E:/LookingGlassSDK/Native/build-worker-release-vs/Release/lookingglass_bridge_subpixel_metadata_test.exe"
-Directory: E:/LookingGlassSDK/Native/build-worker-release-vs
+Command: "REPO_ROOT/Native/build-worker-release-vs/Release/lookingglass_bridge_subpixel_metadata_test.exe"
+Directory: REPO_ROOT/Native/build-worker-release-vs
 "lookingglass_bridge_subpixel_metadata_test" start time: Oct 12 23:19 ???? (?W????)
 Output:
 ----------------------------------------------------------
@@ -82,8 +82,8 @@ Test Passed.
 
 6/19 Testing: lookingglass_manual_subpixel_presenter_test
 6/19 Test: lookingglass_manual_subpixel_presenter_test
-Command: "E:/LookingGlassSDK/Native/build-worker-release-vs/Release/lookingglass_manual_subpixel_presenter_test.exe"
-Directory: E:/LookingGlassSDK/Native/build-worker-release-vs
+Command: "REPO_ROOT/Native/build-worker-release-vs/Release/lookingglass_manual_subpixel_presenter_test.exe"
+Directory: REPO_ROOT/Native/build-worker-release-vs
 "lookingglass_manual_subpixel_presenter_test" start time: Oct 12 23:19 ???? (?W????)
 Output:
 ----------------------------------------------------------
@@ -98,8 +98,8 @@ Test Passed.
 
 8/19 Testing: lookingglass_worker_transport_test
 8/19 Test: lookingglass_worker_transport_test
-Command: "E:/LookingGlassSDK/Native/build-worker-release-vs/Release/lookingglass_worker_transport_test.exe"
-Directory: E:/LookingGlassSDK/Native/build-worker-release-vs
+Command: "REPO_ROOT/Native/build-worker-release-vs/Release/lookingglass_worker_transport_test.exe"
+Directory: REPO_ROOT/Native/build-worker-release-vs
 "lookingglass_worker_transport_test" start time: Oct 12 23:19 ???? (?W????)
 Output:
 ----------------------------------------------------------
@@ -114,8 +114,8 @@ Test Passed.
 
 9/19 Testing: lookingglass_worker_cleanup_exception_test
 9/19 Test: lookingglass_worker_cleanup_exception_test
-Command: "E:/LookingGlassSDK/Native/build-worker-release-vs/Release/lookingglass_worker_transport_test.exe" "--cleanup-exception-only"
-Directory: E:/LookingGlassSDK/Native/build-worker-release-vs
+Command: "REPO_ROOT/Native/build-worker-release-vs/Release/lookingglass_worker_transport_test.exe" "--cleanup-exception-only"
+Directory: REPO_ROOT/Native/build-worker-release-vs
 "lookingglass_worker_cleanup_exception_test" start time: Oct 12 23:20 ???? (?W????)
 Output:
 ----------------------------------------------------------
@@ -130,8 +130,8 @@ Test Passed.
 
 10/19 Testing: lookingglass_worker_host_initialize_failure_test
 10/19 Test: lookingglass_worker_host_initialize_failure_test
-Command: "E:/LookingGlassSDK/Native/build-worker-release-vs/Release/lookingglass_worker_transport_test.exe" "--host-initialize-failure-only"
-Directory: E:/LookingGlassSDK/Native/build-worker-release-vs
+Command: "REPO_ROOT/Native/build-worker-release-vs/Release/lookingglass_worker_transport_test.exe" "--host-initialize-failure-only"
+Directory: REPO_ROOT/Native/build-worker-release-vs
 "lookingglass_worker_host_initialize_failure_test" start time: Oct 12 23:20 ???? (?W????)
 Output:
 ----------------------------------------------------------
@@ -146,8 +146,8 @@ Test Passed.
 
 11/19 Testing: lookingglass_worker_host_uninitialize_failure_test
 11/19 Test: lookingglass_worker_host_uninitialize_failure_test
-Command: "E:/LookingGlassSDK/Native/build-worker-release-vs/Release/lookingglass_worker_transport_test.exe" "--host-uninitialize-failure-only"
-Directory: E:/LookingGlassSDK/Native/build-worker-release-vs
+Command: "REPO_ROOT/Native/build-worker-release-vs/Release/lookingglass_worker_transport_test.exe" "--host-uninitialize-failure-only"
+Directory: REPO_ROOT/Native/build-worker-release-vs
 "lookingglass_worker_host_uninitialize_failure_test" start time: Oct 12 23:20 ???? (?W????)
 Output:
 ----------------------------------------------------------
@@ -162,8 +162,8 @@ Test Passed.
 
 12/19 Testing: lookingglass_persistent_d3d11_device_test
 12/19 Test: lookingglass_persistent_d3d11_device_test
-Command: "E:/LookingGlassSDK/Native/build-worker-release-vs/Release/lookingglass_worker_transport_test.exe" "--persistent-d3d11-device-only"
-Directory: E:/LookingGlassSDK/Native/build-worker-release-vs
+Command: "REPO_ROOT/Native/build-worker-release-vs/Release/lookingglass_worker_transport_test.exe" "--persistent-d3d11-device-only"
+Directory: REPO_ROOT/Native/build-worker-release-vs
 "lookingglass_persistent_d3d11_device_test" start time: Oct 12 23:20 ???? (?W????)
 Output:
 ----------------------------------------------------------
@@ -178,8 +178,8 @@ Test Passed.
 
 13/19 Testing: lookingglass_worker_preview_pause_test
 13/19 Test: lookingglass_worker_preview_pause_test
-Command: "E:/LookingGlassSDK/Native/build-worker-release-vs/Release/lookingglass_worker_transport_test.exe" "--preview-pause-only"
-Directory: E:/LookingGlassSDK/Native/build-worker-release-vs
+Command: "REPO_ROOT/Native/build-worker-release-vs/Release/lookingglass_worker_transport_test.exe" "--preview-pause-only"
+Directory: REPO_ROOT/Native/build-worker-release-vs
 "lookingglass_worker_preview_pause_test" start time: Oct 12 23:20 ???? (?W????)
 Output:
 ----------------------------------------------------------
@@ -194,8 +194,8 @@ Test Passed.
 
 14/19 Testing: lookingglass_worker_preview_lease_test
 14/19 Test: lookingglass_worker_preview_lease_test
-Command: "E:/LookingGlassSDK/Native/build-worker-release-vs/Release/lookingglass_worker_transport_test.exe" "--preview-lease-only"
-Directory: E:/LookingGlassSDK/Native/build-worker-release-vs
+Command: "REPO_ROOT/Native/build-worker-release-vs/Release/lookingglass_worker_transport_test.exe" "--preview-lease-only"
+Directory: REPO_ROOT/Native/build-worker-release-vs
 "lookingglass_worker_preview_lease_test" start time: Oct 12 23:20 ???? (?W????)
 Output:
 ----------------------------------------------------------
@@ -210,8 +210,8 @@ Test Passed.
 
 15/19 Testing: lookingglass_bridge_static_present_test
 15/19 Test: lookingglass_bridge_static_present_test
-Command: "E:/LookingGlassSDK/Native/build-worker-release-vs/Release/lookingglass_bridge_static_present_test.exe"
-Directory: E:/LookingGlassSDK/Native/build-worker-release-vs
+Command: "REPO_ROOT/Native/build-worker-release-vs/Release/lookingglass_bridge_static_present_test.exe"
+Directory: REPO_ROOT/Native/build-worker-release-vs
 "lookingglass_bridge_static_present_test" start time: Oct 12 23:20 ???? (?W????)
 Output:
 ----------------------------------------------------------
@@ -226,8 +226,8 @@ Test Passed.
 
 16/19 Testing: lookingglass_stable_sdk_input_d3d11_test
 16/19 Test: lookingglass_stable_sdk_input_d3d11_test
-Command: "E:/LookingGlassSDK/Native/build-worker-release-vs/Release/lookingglass_stable_sdk_input_d3d11_test.exe"
-Directory: E:/LookingGlassSDK/Native/build-worker-release-vs
+Command: "REPO_ROOT/Native/build-worker-release-vs/Release/lookingglass_stable_sdk_input_d3d11_test.exe"
+Directory: REPO_ROOT/Native/build-worker-release-vs
 "lookingglass_stable_sdk_input_d3d11_test" start time: Oct 12 23:20 ???? (?W????)
 Output:
 ----------------------------------------------------------

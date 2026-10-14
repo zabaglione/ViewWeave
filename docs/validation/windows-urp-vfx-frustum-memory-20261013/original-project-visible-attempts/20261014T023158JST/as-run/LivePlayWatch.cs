@@ -132,10 +132,10 @@ return new System.Func<string>(() =>
     if (prePlayRawBaseline <= 0)
         return "preflight_failed_raw_graphics_unavailable";
 
-    string logPath = "E:/LookingGlassSDK/.local/windows-urp-vfx-original-remedy-20261013/run-20261013T173158192Z/watcher.jsonl";
-    string batchLogPath = "E:/LookingGlassSDK/.local/windows-urp-vfx-original-remedy-20261013/run-20261013T173158192Z/vfx-batch-sweep.jsonl";
-    string stopPath = "E:/LookingGlassSDK/.local/windows-urp-vfx-original-remedy-20261013/run-20261013T173158192Z/stop.flag";
-    string baselinePath = "E:/LookingGlassSDK/.local/windows-urp-vfx-original-remedy-20261013/run-20261013T173158192Z/normal-phase-baseline.txt";
+    string logPath = "REPO_ROOT/.local/windows-urp-vfx-original-remedy-20261013/run-20261013T173158192Z/watcher.jsonl";
+    string batchLogPath = "REPO_ROOT/.local/windows-urp-vfx-original-remedy-20261013/run-20261013T173158192Z/vfx-batch-sweep.jsonl";
+    string stopPath = "REPO_ROOT/.local/windows-urp-vfx-original-remedy-20261013/run-20261013T173158192Z/stop.flag";
+    string baselinePath = "REPO_ROOT/.local/windows-urp-vfx-original-remedy-20261013/run-20261013T173158192Z/normal-phase-baseline.txt";
     string cameraMotionMode = "automated_camera_sweep";
     if (cameraMotionMode != "manual_pan" && cameraMotionMode != "automated_camera_sweep") return "preflight_failed_camera_motion_mode";
     if (cameraMotionMode == "automated_camera_sweep" && renderer.referenceCamera == null) return "preflight_failed_reference_camera_missing";

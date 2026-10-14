@@ -38,7 +38,7 @@ Use `Tools > ViewWeave > Run Quilt Video Export Validation` to run the Editor-si
 
 This scope summary was updated on 2026-10-08 JST; individual run timestamps are recorded in the corresponding test evidence.
 
-The fake-process validation suite passed after the exporter lifecycle fixes and received a passing code review. A separate real-tool smoke used FFmpeg and ffprobe 7.0.2 to encode three synthetic 64x48 quilt PNGs at 30 fps. The output used H.264/yuv420p, reported three frames and the expected 8x6/48-view geometry, preserved full layout metadata in the JSON sidecar, accepted a path with spaces and Unicode, and rejected an existing output. Evidence: `E:/LookingGlassSDK/.local/remaining-work-validation/mp4-final-20261007T195427/probe-result.txt`.
+The fake-process validation suite passed after the exporter lifecycle fixes and received a passing code review. A separate real-tool smoke used FFmpeg and ffprobe 7.0.2 to encode three synthetic 64x48 quilt PNGs at 30 fps. The output used H.264/yuv420p, reported three frames and the expected 8x6/48-view geometry, preserved full layout metadata in the JSON sidecar, accepted a path with spaces and Unicode, and rejected an existing output. Evidence: `REPO_ROOT/.local/remaining-work-validation/mp4-final-20261007T195427/probe-result.txt`.
 
 An additional Unity Editor end-to-end test used an actual URP DX12 `QuiltRecorder` recording as input and exported three 256x192 frames with a 4x2 grid (8 views) at 30 fps to H.264/yuv420p; it passed 1/1. The test did not start Native or the official Bridge and did not inspect a physical display. The synthetic smoke and this recorder-to-export test are separate evidence.
 

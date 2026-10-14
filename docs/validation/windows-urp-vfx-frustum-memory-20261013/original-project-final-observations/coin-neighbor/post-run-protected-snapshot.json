@@ -1,7 +1,7 @@
 {
   "schema": "viewweave-coin-neighbor-post-run-protected-snapshot-v1",
   "capturedUtc": "2026-10-13T19:49:07.9408875Z",
-  "projectPath": "E:\\URPSample_6.6.41f1",
+  "projectPath": "UNITY_PROJECT_1",
   "runDirectory": ".local/windows-urp-vfx-original-remedy-20261013/run-20261013T194309822Z",
   "readinessEvidence": {
     "path": ".local/windows-urp-vfx-original-remedy-20261013/three-ready-20261013T194228405Z/readiness.json",

@@ -49,7 +49,7 @@
 <main>
   <header>
     <h1>現在の対応状況</h1>
-    <p class="meta">最終照合: <time datetime="2026-10-14">2026年10月14日</time>（日本時間） · Unity 6000.6.4f1 · URP / HDRP 17.6.0 · 現行作業版（未リリースの変更を含みます）。詳細なコード基準と検証履歴は<a href="unity-feature-platform-matrix-history.html">作業・検証履歴</a>を参照。</p>
+    <p class="meta">最終照合: <time datetime="2026-10-14">2026年10月14日</time>（日本時間） · Unity 6000.6.4f1 · URP / HDRP 17.6.0 · 現行作業版（未リリースの変更を含みます）。詳細なコード基準と検証履歴は<a href="../development/ja/unity-feature-platform-matrix-history.html">作業・検証履歴</a>を参照。</p>
   </header>
 
   <h2>環境と出力経路</h2>
@@ -156,61 +156,62 @@
     <li><span class="status unknown">未検証</span><span>当該条件の対応を確認できる証拠なし</span></li>
     <li><span class="status no">非対応</span><span>SDKが拒否、または明記した標準機能がない</span></li>
   </ul>
-  <p class="footnote">表は条件を限定した現在の確認状況です。履歴、詳細な検証境界、根拠の説明は<a href="unity-feature-platform-matrix-history.html">作業・検証履歴</a>にまとめています。</p>
+  <p class="footnote">表は条件を限定した現在の確認状況です。履歴、詳細な検証境界、根拠の説明は<a href="../development/ja/unity-feature-platform-matrix-history.html">作業・検証履歴</a>にまとめています。</p>
 
   <h2>根拠リンク</h2>
   <ol>
-    <li id="source-current"><a href="unity-feature-platform-matrix-history.html#source-current">[1] Compatibility — 現行構成・current packageと過去fixtureの境界</a></li>
-    <li id="source-windows"><a href="unity-feature-platform-matrix-history.html#source-windows">[2] Windows validation — 既存の機能matrixと履歴実績</a></li>
-    <li id="source-metal"><a href="unity-feature-platform-matrix-history.html#source-metal">[3] macOS Metal検証記録（2026-10-10） / macOS Metal導入条件</a></li>
-    <li id="source-urp"><a href="unity-feature-platform-matrix-history.html#source-urp">[4] URP視点別履歴・TAAの描画試験（2026-10-11）</a></li>
-    <li id="source-hdrp"><a href="unity-feature-platform-matrix-history.html#source-hdrp">[5] HDRP視点別履歴・共有露出の描画試験（2026-10-10）</a></li>
-    <li id="source-quick"><a href="unity-feature-platform-matrix-history.html#source-quick">[6] URP/HDRP Quick Start検証（2026-10-10）</a></li>
-    <li id="source-features"><a href="unity-feature-platform-matrix-history.html#source-features">[7] Unity feature coverage — 個別機能とfixtureの制約</a></li>
-    <li id="source-vfx"><a href="unity-feature-platform-matrix-history.html#source-vfx">[8] VFX Graph — driver条件と未通過結果</a></li>
-    <li id="source-audio"><a href="unity-feature-platform-matrix-history.html#source-audio">[9] 音声録音 — Windows Editor Play / Monoの条件 / 現行ValidateEnvironmentの明示的な環境拒否</a></li>
-    <li id="source-unity"><a href="unity-feature-platform-matrix-history.html#source-unity">[10] Unity 6.6公式Render Pipeline機能比較（標準機能の有無。ViewWeave対応の証明ではない）</a></li>
-    <li id="source-vfx-unity"><a href="unity-feature-platform-matrix-history.html#source-vfx-unity">[11] Unity Visual Effect Graph 17.6公式要件</a></li>
-    <li id="source-lifecycle"><a href="unity-feature-platform-matrix-history.html#source-lifecycle">[12] Bridge output lifecycle — F1B同一DLLの限定実機観測記録</a></li>
-    <li id="source-provenance"><a href="unity-feature-platform-matrix-history.html#source-provenance">[13] native-provenance — current Native package metadata</a></li>
-    <li id="source-windows-current"><a href="unity-feature-platform-matrix-history.html#source-windows-current">[14] Windows 2026-10-11 post-fix検証 — 選択D3D11/D3D12 suite、HDRP device pause-resume、実装範囲と未解決事項</a></li>
-    <li id="source-windows-stdout"><a href="unity-feature-platform-matrix-history.html#source-windows-stdout">[15] Windows stdout/shutdown調査 — 現行解釈、範囲と制約</a></li>
-    <li id="source-display-generic"><a href="unity-feature-platform-matrix-history.html#source-display-generic">[16] Windows generic display metadata validation — 合成fixtureと他モデル実機確認の境界</a></li>
-    <li id="source-metal-generalization"><a href="unity-feature-platform-matrix-history.html#source-metal-generalization">[17] macOS Metal校正一般化記録（2026-10-11）</a></li>
-    <li id="source-metal-current"><a href="unity-feature-platform-matrix-history.html#source-metal-current">[18] 現行macOS校正出力の再検証（2026-10-11） / 構造化結果・コードhash</a></li>
-    <li id="source-windows-features"><a href="unity-feature-platform-matrix-history.html#source-windows-features">[19] Windows current graphics feature validation — Editor graphics、URP TAA、capture/MP4、GRD、d…</a></li>
-    <li id="source-reference-camera"><a href="unity-feature-platform-matrix-history.html#source-reference-camera">[20] Reference Camera Inspector validation — 共通Editor UI fixture（2026-10-11）</a></li>
-    <li id="source-metal-subpixel"><a href="unity-feature-platform-matrix-history.html#source-metal-subpixel">[21] macOS Bridgeセル配列対応・Go回帰検証（2026-10-11） / 構造化結果・当時のsource hash／旧v3履歴</a></li>
-    <li id="source-windows-subpixel"><a href="unity-feature-platform-matrix-history.html#source-windows-subpixel">[22] Windows subpixel output — 未公開の共通mode／Native D3D11実装、Native 19/19、Editor device 12/12</a></li>
-    <li id="source-display-geometry"><a href="unity-feature-platform-matrix-history.html#source-display-geometry">[23] Bridge機器情報の共通保持とGizmo形状（2026-10-11） / 構造化結果・コードhash</a></li>
-    <li id="source-metal-unified"><a href="unity-feature-platform-matrix-history.html#source-metal-unified">[24] macOS共通サブピクセル契約・open_v4再検証（2026-10-11） / 構造化結果・測定source／artifact hash</a></li>
-    <li id="source-ci-fxc"><a href="unity-feature-platform-matrix-history.html#source-ci-fxc">[25] Windows FXC探索のCI修正・5 job成功（2026-10-11） / run／job結果・ログhashとNative試験範囲</a></li>
-    <li id="source-windows-quality"><a href="unity-feature-platform-matrix-history.html#source-windows-quality">[26] Windows共通機器品質helperの合成suite 9/9・Native品質Editor fixture 4/4（2026-10-11） / 構造化結果、XMLと証跡hash</a></li>
-    <li id="source-sample-refresh"><a href="unity-feature-platform-matrix-history.html#source-sample-refresh">[27] URP／HDRP localサンプル更新・Editor参照とGame View確認（2026-10-11） / 構造化結果・取り込みファイルhash</a></li>
-    <li id="source-authoring-discovery"><a href="unity-feature-platform-matrix-history.html#source-authoring-discovery">[28] 起動時Bridge機器取得・上段再取得UI・Macサンプル検証（2026-10-11） / 構造化結果・source／artifact／test hash</a></li>
-    <li id="source-preview-profile"><a href="unity-feature-platform-matrix-history.html#source-preview-profile">[29] HDRP SampleSceneのEditor機器Preview・内部profile一致修正（2026-10-11） / 構造化結果・source／test hash</a></li>
-    <li id="source-windows-sample-refresh"><a href="unity-feature-platform-matrix-history.html#source-windows-sample-refresh">[30] 先行Windows Git package refresh — package import、source照合、cold native load（2026-10-11） /…</a></li>
-    <li id="source-windows-orientation"><a href="unity-feature-platform-matrix-history.html#source-windows-orientation">[31] Windows Worker出力の向き — URP/HDRP producer、Native WARP比較と限定接続機器確認（2026-10-11） / 構造化結果…</a></li>
-    <li id="source-windows-latest-integration"><a href="unity-feature-platform-matrix-history.html#source-windows-latest-integration">[32] Windows latest Native integration — Native CTestと選択Unity integration結果（2026-10-11） / 構造…</a></li>
-    <li id="source-windows-environment-output"><a href="unity-feature-platform-matrix-history.html#source-windows-environment-output">[33] Windows environment and output path — 実装経路の選択検証（2026-10-11） / 構造化結果と証跡</a></li>
-    <li id="source-windows-editor-close"><a href="unity-feature-platform-matrix-history.html#source-windows-editor-close">[34] Windows manual Editor crash dump analysis（手動crash報告3件、native stdio比較、2026-10-11〜12） / 構…</a></li>
-    <li id="source-windows-vfx-manual"><a href="unity-feature-platform-matrix-history.html#source-windows-vfx-manual">[35] Windows HDRP VFX manual display observation（利用者報告・Learning Templates、2026-10-12）</a></li>
-    <li id="source-windows-urp-vfx-budget"><a href="unity-feature-platform-matrix-history.html#source-windows-urp-vfx-budget">[36] Windows URP VFX budget error / Preview-to-Play crash report and diagnostic-only change…</a></li>
-    <li id="source-windows-urp-vfx-validation"><a href="unity-feature-platform-matrix-history.html#source-windows-urp-vfx-validation">[37] Windows URP VFX follow-up validation（2026-10-13） / 構造化package・CPU・VFX結果。診断CPU/EditModeは…</a></li>
-    <li id="source-windows-native-mock"><a href="unity-feature-platform-matrix-history.html#source-windows-native-mock">[38] Windows Native stdio/load/shutdownとfixture regressions（2026-10-12） / 構造化結果、source/binar…</a></li>
-    <li id="source-windows-vfx-scene-comparison"><a href="unity-feature-platform-matrix-history.html#source-windows-vfx-scene-comparison">[39] Windows URP/HDRP VFX Learning Templates比較（2026-10-13） / run結果とCPU descriptor inventory。…</a></li>
-    <li id="source-windows-urp-vfx-rendering-incident"><a href="unity-feature-platform-matrix-history.html#source-windows-urp-vfx-rendering-incident">[40] Windows URP VFX rendering mismatch and Editor shutdown crash observation（2026-10-13） /…</a></li>
-    <li id="source-windows-urp-vfx-hdr-rootcause"><a href="unity-feature-platform-matrix-history.html#source-windows-urp-vfx-hdr-rootcause">[41] Windows URP VFX HDR range root-cause investigation（2026-10-13） / Phase A-C structured r…</a></li>
-    <li id="source-windows-urp-vfx-hdr-fix"><a href="unity-feature-platform-matrix-history.html#source-windows-urp-vfx-hdr-fix">[42] Windows URP VFX HDR intermediate fix validation (2026-10-13) / structured validation ga…</a></li>
-    <li id="source-windows-urp-vfx-frustum-memory"><a href="unity-feature-platform-matrix-history.html#source-windows-urp-vfx-frustum-memory">[43] Windows URP frustum movement and history-budget investigation / structured evidence / p…</a></li>
-    <li id="source-windows-urp-vfx-memory-policy"><a href="unity-feature-platform-matrix-history.html#source-windows-urp-vfx-memory-policy">[44] Windows URP VFX instancing policy probe (2026-10-14) / structured result / portable evi…</a></li>
-    <li id="source-macos-latest-intake"><a href="unity-feature-platform-matrix-history.html#source-macos-latest-intake">[45] macOS旧基準の取得・Native build記録（2026-10-14）</a></li>
-    <li id="source-macos-current-player"><a href="unity-feature-platform-matrix-history.html#source-macos-current-player">[46] macOS旧Coreでの現行dylib Player検証（2026-10-14）</a></li>
-    <li id="source-macos-preview-shutdown"><a href="unity-feature-platform-matrix-history.html#source-macos-preview-shutdown">[47] macOS最新CoreのPlayer／Preview遷移・終了比較（2026-10-14）</a></li>
-    <li id="source-macos-shutdown-stacks"><a href="unity-feature-platform-matrix-history.html#source-macos-shutdown-stacks">[48] macOS終了thread・残留割当stackの切り分け（2026-10-14）</a></li>
+    <li id="source-current"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-current">[1] Compatibility — 現行構成・current packageと過去fixtureの境界</a></li>
+    <li id="source-windows"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-windows">[2] Windows validation — 既存の機能matrixと履歴実績</a></li>
+    <li id="source-metal"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-metal">[3] macOS Metal検証記録（2026-10-10） / macOS Metal導入条件</a></li>
+    <li id="source-urp"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-urp">[4] URP視点別履歴・TAAの描画試験（2026-10-11）</a></li>
+    <li id="source-hdrp"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-hdrp">[5] HDRP視点別履歴・共有露出の描画試験（2026-10-10）</a></li>
+    <li id="source-quick"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-quick">[6] URP/HDRP Quick Start検証（2026-10-10）</a></li>
+    <li id="source-features"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-features">[7] Unity feature coverage — 個別機能とfixtureの制約</a></li>
+    <li id="source-vfx"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-vfx">[8] VFX Graph — driver条件と未通過結果</a></li>
+    <li id="source-audio"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-audio">[9] 音声録音 — Windows Editor Play / Monoの条件 / 現行ValidateEnvironmentの明示的な環境拒否</a></li>
+    <li id="source-unity"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-unity">[10] Unity 6.6公式Render Pipeline機能比較（標準機能の有無。ViewWeave対応の証明ではない）</a></li>
+    <li id="source-vfx-unity"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-vfx-unity">[11] Unity Visual Effect Graph 17.6公式要件</a></li>
+    <li id="source-lifecycle"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-lifecycle">[12] Bridge output lifecycle — F1B同一DLLの限定実機観測記録</a></li>
+    <li id="source-provenance"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-provenance">[13] native-provenance — current Native package metadata</a></li>
+    <li id="source-windows-current"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-windows-current">[14] Windows 2026-10-11 post-fix検証 — 選択D3D11/D3D12 suite、HDRP device pause-resume、実装範囲と未解決事項</a></li>
+    <li id="source-windows-stdout"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-windows-stdout">[15] Windows stdout/shutdown調査 — 現行解釈、範囲と制約</a></li>
+    <li id="source-display-generic"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-display-generic">[16] Windows generic display metadata validation — 合成fixtureと他モデル実機確認の境界</a></li>
+    <li id="source-metal-generalization"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-metal-generalization">[17] macOS Metal校正一般化記録（2026-10-11）</a></li>
+    <li id="source-metal-current"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-metal-current">[18] 現行macOS校正出力の再検証（2026-10-11） / 構造化結果・コードhash</a></li>
+    <li id="source-windows-features"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-windows-features">[19] Windows current graphics feature validation — Editor graphics、URP TAA、capture/MP4、GRD、d…</a></li>
+    <li id="source-reference-camera"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-reference-camera">[20] Reference Camera Inspector validation — 共通Editor UI fixture（2026-10-11）</a></li>
+    <li id="source-metal-subpixel"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-metal-subpixel">[21] macOS Bridgeセル配列対応・Go回帰検証（2026-10-11） / 構造化結果・当時のsource hash／旧v3履歴</a></li>
+    <li id="source-windows-subpixel"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-windows-subpixel">[22] Windows subpixel output — 未公開の共通mode／Native D3D11実装、Native 19/19、Editor device 12/12</a></li>
+    <li id="source-display-geometry"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-display-geometry">[23] Bridge機器情報の共通保持とGizmo形状（2026-10-11） / 構造化結果・コードhash</a></li>
+    <li id="source-metal-unified"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-metal-unified">[24] macOS共通サブピクセル契約・open_v4再検証（2026-10-11） / 構造化結果・測定source／artifact hash</a></li>
+    <li id="source-ci-fxc"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-ci-fxc">[25] Windows FXC探索のCI修正・5 job成功（2026-10-11） / run／job結果・ログhashとNative試験範囲</a></li>
+    <li id="source-windows-quality"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-windows-quality">[26] Windows共通機器品質helperの合成suite 9/9・Native品質Editor fixture 4/4（2026-10-11） / 構造化結果、XMLと証跡hash</a></li>
+    <li id="source-sample-refresh"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-sample-refresh">[27] URP／HDRP localサンプル更新・Editor参照とGame View確認（2026-10-11） / 構造化結果・取り込みファイルhash</a></li>
+    <li id="source-authoring-discovery"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-authoring-discovery">[28] 起動時Bridge機器取得・上段再取得UI・Macサンプル検証（2026-10-11） / 構造化結果・source／artifact／test hash</a></li>
+    <li id="source-preview-profile"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-preview-profile">[29] HDRP SampleSceneのEditor機器Preview・内部profile一致修正（2026-10-11） / 構造化結果・source／test hash</a></li>
+    <li id="source-windows-sample-refresh"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-windows-sample-refresh">[30] 先行Windows Git package refresh — package import、source照合、cold native load（2026-10-11） /…</a></li>
+    <li id="source-windows-orientation"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-windows-orientation">[31] Windows Worker出力の向き — URP/HDRP producer、Native WARP比較と限定接続機器確認（2026-10-11） / 構造化結果…</a></li>
+    <li id="source-windows-latest-integration"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-windows-latest-integration">[32] Windows latest Native integration — Native CTestと選択Unity integration結果（2026-10-11） / 構造…</a></li>
+    <li id="source-windows-environment-output"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-windows-environment-output">[33] Windows environment and output path — 実装経路の選択検証（2026-10-11） / 構造化結果と証跡</a></li>
+    <li id="source-windows-editor-close"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-windows-editor-close">[34] Windows manual Editor crash dump analysis（手動crash報告3件、native stdio比較、2026-10-11〜12） / 構…</a></li>
+    <li id="source-windows-vfx-manual"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-windows-vfx-manual">[35] Windows HDRP VFX manual display observation（利用者報告・Learning Templates、2026-10-12）</a></li>
+    <li id="source-windows-urp-vfx-budget"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-windows-urp-vfx-budget">[36] Windows URP VFX budget error / Preview-to-Play crash report and diagnostic-only change…</a></li>
+    <li id="source-windows-urp-vfx-validation"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-windows-urp-vfx-validation">[37] Windows URP VFX follow-up validation（2026-10-13） / 構造化package・CPU・VFX結果。診断CPU/EditModeは…</a></li>
+    <li id="source-windows-native-mock"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-windows-native-mock">[38] Windows Native stdio/load/shutdownとfixture regressions（2026-10-12） / 構造化結果、source/binar…</a></li>
+    <li id="source-windows-vfx-scene-comparison"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-windows-vfx-scene-comparison">[39] Windows URP/HDRP VFX Learning Templates比較（2026-10-13） / run結果とCPU descriptor inventory。…</a></li>
+    <li id="source-windows-urp-vfx-rendering-incident"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-windows-urp-vfx-rendering-incident">[40] Windows URP VFX rendering mismatch and Editor shutdown crash observation（2026-10-13） /…</a></li>
+    <li id="source-windows-urp-vfx-hdr-rootcause"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-windows-urp-vfx-hdr-rootcause">[41] Windows URP VFX HDR range root-cause investigation（2026-10-13） / Phase A-C structured r…</a></li>
+    <li id="source-windows-urp-vfx-hdr-fix"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-windows-urp-vfx-hdr-fix">[42] Windows URP VFX HDR intermediate fix validation (2026-10-13) / structured validation ga…</a></li>
+    <li id="source-windows-urp-vfx-frustum-memory"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-windows-urp-vfx-frustum-memory">[43] Windows URP frustum movement and history-budget investigation / structured evidence / p…</a></li>
+    <li id="source-windows-urp-vfx-memory-policy"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-windows-urp-vfx-memory-policy">[44] Windows URP VFX instancing policy probe (2026-10-14) / structured result / portable evi…</a></li>
+    <li id="source-macos-latest-intake"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-macos-latest-intake">[45] macOS旧基準の取得・Native build記録（2026-10-14）</a></li>
+    <li id="source-macos-current-player"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-macos-current-player">[46] macOS旧Coreでの現行dylib Player検証（2026-10-14）</a></li>
+    <li id="source-macos-preview-shutdown"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-macos-preview-shutdown">[47] macOS最新CoreのPlayer／Preview遷移・終了比較（2026-10-14）</a></li>
+    <li id="source-macos-shutdown-stacks"><a href="../development/ja/unity-feature-platform-matrix-history.html#source-macos-shutdown-stacks">[48] macOS終了thread・残留割当stackの切り分け（2026-10-14）</a></li>
   </ol>
   <footer>
-    <p><a href="unity-feature-platform-matrix-history.html">作業・検証履歴と詳細根拠</a> · <a href="support-matrix-maintenance.md">対応表の保守手順</a></p>
+    <p><a href="../validation/PUBLIC_EVIDENCE.md">公開用証跡のパス・ハッシュの扱い</a></p>
+    <p><a href="../development/ja/unity-feature-platform-matrix-history.html">作業・検証履歴と詳細根拠</a> · <a href="support-matrix-maintenance.md">対応表の保守手順</a></p>
   </footer>
 </main>
 </body>

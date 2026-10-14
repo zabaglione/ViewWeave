@@ -7,7 +7,7 @@
     <failure>
       <message><![CDATA[One or more child tests had errors]]></message>
     </failure>
-    <test-suite type="Assembly" id="1013" name="ViewWeave.FrustumMetadata.Editor.Tests.dll" fullname="E:/LookingGlassSDK/.local/windows-vfx-scene-comparison-20261013/URP/UnityProject/Library/ScriptAssemblies/ViewWeave.FrustumMetadata.Editor.Tests.dll" runstate="Runnable" testcasecount="2" result="Failed" site="Child" start-time="2026-10-13 09:40:13Z" end-time="2026-10-13 09:40:21Z" duration="7.331186" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+    <test-suite type="Assembly" id="1013" name="ViewWeave.FrustumMetadata.Editor.Tests.dll" fullname="REPO_ROOT/.local/windows-vfx-scene-comparison-20261013/URP/UnityProject/Library/ScriptAssemblies/ViewWeave.FrustumMetadata.Editor.Tests.dll" runstate="Runnable" testcasecount="2" result="Failed" site="Child" start-time="2026-10-13 09:40:13Z" end-time="2026-10-13 09:40:21Z" duration="7.331186" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
       <properties>
         <property name="_PID" value="116556" />
         <property name="_APPDOMAIN" value="Unity Child Domain" />
@@ -49,7 +49,7 @@
   But was:  "C2C35B60289468671BFA1C8439A595F15E4A6C1B9DC971B17E0223836E93B3CE"
   -----------^
 ]]></message>
-                  <stack-trace><![CDATA[at ViewWeave.SceneComparison.Tests.SampleTextureCapacityFixture.CreatesAutoAndCustomCapacityOnlyClonesAndDescribesCompiledAssets () [0x008a9] in E:\LookingGlassSDK\.local\windows-vfx-scene-comparison-20261013\URP\UnityProject\Assets\Editor\FrustumMetadataProbe\SampleTextureCapacityFixture.cs:199
+                  <stack-trace><![CDATA[at ViewWeave.SceneComparison.Tests.SampleTextureCapacityFixture.CreatesAutoAndCustomCapacityOnlyClonesAndDescribesCompiledAssets () [0x008a9] in REPO_ROOT\.local\windows-vfx-scene-comparison-20261013\URP\UnityProject\Assets\Editor\FrustumMetadataProbe\SampleTextureCapacityFixture.cs:199
 ]]></stack-trace>
                 </failure>
                 <output><![CDATA[Remove 1 linked context(s) that could not be deserialized from Update Particle of type UnityEditor.VFX.VFXBasicUpdate
@@ -73,7 +73,7 @@ Remove 1 owners that couldnt be deserialized from  of type UnityEditor.VFX.VFXDa
 Remove 1 child(ren) that couldnt be deserialized from  of type UnityEditor.VFX.VFXGraph
 Remove 1 linked context(s) that could not be deserialized from Update Particle of type UnityEditor.VFX.VFXBasicUpdate
 Remove 1 owners that couldnt be deserialized from  of type UnityEditor.VFX.VFXDataParticle
-Saving results to: C:/Users/zzaba/AppData/LocalLow/DefaultCompany/URPSample_6_6_41f1\TestResults.xml
+Saving results to: WINDOWS_USER_HOME/AppData/LocalLow/DefaultCompany/URPSample_6_6_41f1\TestResults.xml
 ]]></output>
               </test-case>
             </test-suite>

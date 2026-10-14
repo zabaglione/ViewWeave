@@ -1,3 +1,5 @@
+Publication copy (2026-10-14): local path roots are redacted. Existing hashes and byte counts retain their original as-run meaning. See docs/validation/PUBLIC_EVIDENCE.md and PUBLIC_REDACTIONS.json for current-copy hashes.
+
 As-run probe archive. Editor logs are intentionally excluded.
 Final Green and Coin runs used source SHA256 7407D04524D9CE4FF0847EFD9CF529CBCD761A7EC6BC11E699337350B1C7C98D (Shared and clone identical) and runner SHA256 7A14D3DE791CC26EE4BB511A3C0CEBE83BE812196FAD75C3760A0A3C3BE5CCAC.
 Earlier Green compile/setup attempts have runner JSON and any NUnit XML/evidence copied in their run folders; dedicated exact source snapshots for those earlier hashes were not captured at run time and are not reconstructed here.

@@ -1456,7 +1456,7 @@ namespace ViewWeave.SceneComparison.Tests
                 UnityEditor.PackageManager.PackageInfo package = matches[0];
                 if (name.StartsWith("com.zabaglione.", StringComparison.Ordinal))
                 {
-                    string expected = Path.GetFullPath(Path.Combine("E:/LookingGlassSDK/Packages", name));
+                    string expected = Path.GetFullPath(Path.Combine("REPO_ROOT/Packages", name));
                     Assert.IsFalse(string.IsNullOrEmpty(package.resolvedPath), "Resolved path is missing for " + name);
                     string actual = Path.GetFullPath(package.resolvedPath ?? "");
                     Assert.IsTrue(string.Equals(expected.TrimEnd(Path.DirectorySeparatorChar), actual.TrimEnd(Path.DirectorySeparatorChar), StringComparison.OrdinalIgnoreCase),

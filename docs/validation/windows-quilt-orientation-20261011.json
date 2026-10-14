@@ -1564,8 +1564,8 @@
         "pipeline": "URP",
         "unityEditorVersion": "6000.6.4f1",
         "distributionPath": "Distribution/urp",
-        "distributionPackage": "file:E:/LookingGlassSDK/Distribution/urp",
-        "packageSource": "VW_SAMPLE_LOCAL_PACKAGE name=com.zabaglione.lookingglass.viewweave.urp version=0.1.0 source=Local resolvedPath=E:\\LookingGlassSDK\\Distribution\\urp",
+        "distributionPackage": "file:REPO_ROOT/Distribution/urp",
+        "packageSource": "VW_SAMPLE_LOCAL_PACKAGE name=com.zabaglione.lookingglass.viewweave.urp version=0.1.0 source=Local resolvedPath=REPO_ROOT\\Distribution\\urp",
         "finalSummary": ".local/windows-quilt-orientation-20261011/sample-refresh/baseline/urp/final-summary.json",
         "finalSummarySha256": "FC9DF3731F8357FC3BDAA6EDD2F176B51CDD790DE07D8CCF631D2214CE096CA7",
         "clientAddObserved": true,
@@ -1581,7 +1581,7 @@
           "exitCode": 0,
           "log": ".local/windows-quilt-orientation-20261011/sample-refresh/baseline/urp/local-package-refresh-editor-attempt-03.log",
           "logSha256": "08FCF204E286327BE4E2EE3E9685D036E4AF3840DE483CC2998B621A1A6060C8",
-          "passMarker": "VW_SAMPLE_LOCAL_PASS kind=urp resolvedPath=E:\\LookingGlassSDK\\Distribution\\urp"
+          "passMarker": "VW_SAMPLE_LOCAL_PASS kind=urp resolvedPath=REPO_ROOT\\Distribution\\urp"
         },
         "loadedDistributionNativeModule": {
           "path": "Distribution/urp/ViewWeave/Bridge/Plugins/x86_64/lookingglass_bridge_shim.dll",
@@ -1607,8 +1607,8 @@
         "pipeline": "HDRP",
         "unityEditorVersion": "6000.6.4f1",
         "distributionPath": "Distribution/hdrp",
-        "distributionPackage": "file:E:/LookingGlassSDK/Distribution/hdrp",
-        "packageSource": "VW_SAMPLE_LOCAL_PACKAGE name=com.zabaglione.lookingglass.viewweave.hdrp version=0.1.0 source=Local resolvedPath=E:\\LookingGlassSDK\\Distribution\\hdrp",
+        "distributionPackage": "file:REPO_ROOT/Distribution/hdrp",
+        "packageSource": "VW_SAMPLE_LOCAL_PACKAGE name=com.zabaglione.lookingglass.viewweave.hdrp version=0.1.0 source=Local resolvedPath=REPO_ROOT\\Distribution\\hdrp",
         "finalSummary": ".local/windows-quilt-orientation-20261011/sample-refresh/baseline/hdrp/final-summary.json",
         "finalSummarySha256": "EF03BA0A26F3A1B4E8EA50F6603B8DA988B485A17F3DC2FBC07CCF6FE0E08C68",
         "clientAddObserved": true,
@@ -1624,7 +1624,7 @@
           "exitCode": 0,
           "log": ".local/windows-quilt-orientation-20261011/sample-refresh/baseline/hdrp/local-package-refresh-editor-attempt-02.log",
           "logSha256": "64FF757135A9B935DA18ECFC62AED01C2D21450301135FC505407D30DAB5BF41",
-          "passMarker": "VW_SAMPLE_LOCAL_PASS kind=hdrp resolvedPath=E:\\LookingGlassSDK\\Distribution\\hdrp"
+          "passMarker": "VW_SAMPLE_LOCAL_PASS kind=hdrp resolvedPath=REPO_ROOT\\Distribution\\hdrp"
         },
         "loadedDistributionNativeModule": {
           "path": "Distribution/hdrp/ViewWeave/Bridge/Plugins/x86_64/lookingglass_bridge_shim.dll",

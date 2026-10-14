@@ -5,9 +5,9 @@
   "testPlatform": "PlayMode",
   "expectedTestCount": 1,
   "graphicsApi": "D3D12",
-  "projectPath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\UnityProject",
+  "projectPath": "REPO_ROOT\\.local\\windows-vfx-scene-comparison-20261013\\URP\\UnityProject",
   "unityExecutable": "C:/Program Files/Unity/Hub/Editor/6000.6.4f1/Editor/Unity.exe",
-  "probeSourcePath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\Shared\\HdrTargetProbeTests.cs",
+  "probeSourcePath": "REPO_ROOT\\.local\\windows-vfx-scene-comparison-20261013\\Shared\\HdrTargetProbeTests.cs",
   "probeSourceSha256": "2E083793F50E6FEAD435740C239EB6E74B1686307D9AAC1DF7C0F3299F956F96",
   "probeSourceBytes": 85469,
   "startedUtc": "2026-10-13T02:57:45.1833405Z",
@@ -26,7 +26,7 @@
   "processInventoryAvailableAfter": true,
   "matchingAfter": null,
   "processObjectStillRunning": false,
-  "xmlPath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\Results\\hdrtarget-green-20261013T025744669Z.xml",
+  "xmlPath": "REPO_ROOT\\.local\\windows-vfx-scene-comparison-20261013\\URP\\Results\\hdrtarget-green-20261013T025744669Z.xml",
   "xmlBytes": 4663,
   "xmlSha256": "DB61D595BED4EDBC3C74762FB0BADD3C1FE9D674DF3DDE9042A013047EE65E7F",
   "xmlParseErrorType": null,
@@ -42,9 +42,9 @@
     ]
   },
   "exactTestCaseGate": true,
-  "editorLogPath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\Results\\hdrtarget-green-20261013T025744669Z-editor.log",
+  "editorLogPath": "REPO_ROOT\\.local\\windows-vfx-scene-comparison-20261013\\URP\\Results\\hdrtarget-green-20261013T025744669Z-editor.log",
   "editorLogShared": false,
-  "evidenceDirectory": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\UnityProject\\TestResults\\hdrtarget-green-20261013T025744669Z",
+  "evidenceDirectory": "REPO_ROOT\\.local\\windows-vfx-scene-comparison-20261013\\URP\\UnityProject\\TestResults\\hdrtarget-green-20261013T025744669Z",
   "evidenceFiles": [
     {
       "name": "camera-target-descriptors.txt",

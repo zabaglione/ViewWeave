@@ -4,7 +4,7 @@
     "unityVersion": "6000.6.4f1",
     "graphicsDevice": "Null",
     "vfxPackageVersion": "17.6.0",
-    "vfxPackageResolvedPath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\UnityProject\\Library\\PackageCache\\com.unity.visualeffectgraph@3c55eb193cdb",
+    "vfxPackageResolvedPath": "REPO_ROOT\\.local\\windows-vfx-scene-comparison-20261013\\URP\\UnityProject\\Library\\PackageCache\\com.unity.visualeffectgraph@3c55eb193cdb",
     "sourceAssetPath": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/VFX/SampleTexture2D.vfx",
     "sourceAssetGuid": "e166f36ceb1831f46bea1e17fbc67c5a",
     "sourceAssetGuidAfter": "e166f36ceb1831f46bea1e17fbc67c5a",

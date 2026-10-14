@@ -2,6 +2,8 @@
 
 # ViewWeave
 
+![ViewWeave running on a laptop and Looking Glass display, with a blurred background](docs/images/viewweave-hero.jpg)
+
 ViewWeave is an unofficial Unity SDK for rendering a regular URP or HDRP scene as a multi-view Quilt for a Looking Glass display. The project provides an integrated Rig for camera framing, preview, capture, and output. Install the official Looking Glass Bridge runtime and connect a supported display for device output.
 
 This is an experimental development version. Use Unity 6000.6.4f1 with a URP or HDRP project. Choose one self-contained package and install it from **Package Manager > + > Install package from git URL**:
@@ -15,6 +17,6 @@ This is an experimental development version. Use Unity 6000.6.4f1 with a URP or 
 2. Open that sample's `QuickStart.unity` scene.
 3. Select **ViewWeave Bridge Rig**, then start **Preview > Start Looking Glass Device Preview**. Without a display, choose **Start Local Edit Mode Preview** instead.
 
-For illustrated setup and operating instructions, see the [User Guide](docs/user-guide.md) and [Getting Started](docs/getting-started.md). Current validation uses selected fixtures on Windows and macOS; Quick Start Sample device output and Player builds with the current package remain unverified. See [Compatibility](docs/compatibility.md) and the [current feature matrix](docs/ja/unity-feature-platform-matrix.html) for the tested scope and remaining limits.
+See the [illustrated setup](docs/getting-started.md), [User Guide](docs/user-guide.md), or [documentation index](docs/index.md). Use [Compatibility](docs/compatibility.md) for OS, pipeline, Editor/Player, device validation, and known limits.
 
 For implementation design, test procedures, dated verification records, and research, start at the [Technical Guide](docs/technical-guide.md). ViewWeave's original code is licensed under [Apache-2.0](LICENSE); Unity PluginAPI and other external dependencies have separate terms described in [Third-Party Notices](docs/THIRD_PARTY_NOTICES.md). The official Looking Glass Bridge runtime must be installed separately under its own terms.

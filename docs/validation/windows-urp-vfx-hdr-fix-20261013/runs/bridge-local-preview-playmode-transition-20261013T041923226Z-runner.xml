@@ -4,7 +4,7 @@
     <properties>
       <property name="platform" value="EditMode" />
     </properties>
-    <test-suite type="Assembly" id="1143" name="ViewWeave.BridgeEditorPreviewValidation.Editor.Tests.dll" fullname="E:/LookingGlassSDK/Tests/Pipelines/Unity/Library/ScriptAssemblies/ViewWeave.BridgeEditorPreviewValidation.Editor.Tests.dll" runstate="Runnable" testcasecount="111" result="Passed" start-time="2026-10-13 04:20:00Z" end-time="2026-10-13 04:20:00Z" duration="0.281614" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <test-suite type="Assembly" id="1143" name="ViewWeave.BridgeEditorPreviewValidation.Editor.Tests.dll" fullname="REPO_ROOT/Tests/Pipelines/Unity/Library/ScriptAssemblies/ViewWeave.BridgeEditorPreviewValidation.Editor.Tests.dll" runstate="Runnable" testcasecount="111" result="Passed" start-time="2026-10-13 04:20:00Z" end-time="2026-10-13 04:20:00Z" duration="0.281614" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
       <properties>
         <property name="_PID" value="5880" />
         <property name="_APPDOMAIN" value="Unity Child Domain" />
@@ -30,7 +30,7 @@ EDITOR_PREVIEW_PLAY_TRANSITION play=true active=false pending=0
 [ViewWeave] Bridge worker close-all is still pending (code -1)
 EDITOR_PREVIEW_PLAY_TRANSITION play=false active=false
 EDITOR_PREVIEW_PLAY_TRANSITION fixture_disposal_skipped_after_domain_reload=true
-Saving results to: C:/Users/zzaba/AppData/LocalLow/zabaglione/PipelineSmoke\TestResults.xml
+Saving results to: WINDOWS_USER_HOME/AppData/LocalLow/zabaglione/PipelineSmoke\TestResults.xml
 ]]></output>
             </test-case>
           </test-suite>

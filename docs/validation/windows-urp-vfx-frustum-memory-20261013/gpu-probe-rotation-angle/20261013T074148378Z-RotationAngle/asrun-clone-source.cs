@@ -1176,7 +1176,7 @@ namespace ViewWeave.SceneComparison.Tests
                 UnityEditor.PackageManager.PackageInfo package = matching[0];
                 if (name.StartsWith("com.zabaglione.", StringComparison.Ordinal))
                 {
-                    string expected = Path.GetFullPath(Path.Combine("E:/LookingGlassSDK/Packages", name));
+                    string expected = Path.GetFullPath(Path.Combine("REPO_ROOT/Packages", name));
                     Assert.IsTrue(string.Equals(expected.TrimEnd(Path.DirectorySeparatorChar), Path.GetFullPath(package.resolvedPath ?? "").TrimEnd(Path.DirectorySeparatorChar), StringComparison.OrdinalIgnoreCase), "Package was not resolved from the main SDK source.");
                 }
                 if (name == "com.unity.visualeffectgraph") Assert.AreEqual("17.6.0", package.version);

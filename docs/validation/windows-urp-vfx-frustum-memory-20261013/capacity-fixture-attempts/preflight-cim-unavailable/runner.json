@@ -2,7 +2,7 @@
   "status": "preflight-process-inventory-failed",
   "pipeline": "URP",
   "operation": "RunTests",
-  "projectPath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\UnityProject",
+  "projectPath": "REPO_ROOT\\.local\\windows-vfx-scene-comparison-20261013\\URP\\UnityProject",
   "errorType": "CimException",
   "startedUtc": null,
   "endedUtc": "2026-10-13T06:36:42.1546306Z",
@@ -12,9 +12,9 @@
   "processInventoryAvailable": false,
   "matchingBefore": [],
   "matchingAfter": [],
-  "editorLogPath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\Results\\RunTests-20261013T063642095Z-editor.log",
+  "editorLogPath": "REPO_ROOT\\.local\\windows-vfx-scene-comparison-20261013\\URP\\Results\\RunTests-20261013T063642095Z-editor.log",
   "editorLogShared": false,
   "resultJsonPath": null,
   "packageResolutionPath": null,
-  "rawXmlPath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\Results\\tests-20261013T063642095Z.xml"
+  "rawXmlPath": "REPO_ROOT\\.local\\windows-vfx-scene-comparison-20261013\\URP\\Results\\tests-20261013T063642095Z.xml"
 }

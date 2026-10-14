@@ -1,6 +1,6 @@
 # Unity対応表の保守
 
-[現在の対応状況](unity-feature-platform-matrix.html)は、Windows / macOSとURP / HDRPのUnity機能をまとめるHTMLです。ページ冒頭は短い照合日・対象行の後に表を置き、利用者向けの機能・必要設定・実用上の制限を表内に保ちます。表には作業履歴や試験数を並べず、実装状態・検証範囲・未確認条件を混同しません。詳細なコード基準、検証件数、作業履歴、長い根拠説明は[作業・検証履歴](unity-feature-platform-matrix-history.html)または日付付き試験記録に置き、現行ページの先頭へ追記しません。HTMLを直接更新し、別の表データや生成器は作りません。
+[現在の対応状況](unity-feature-platform-matrix.html)は、Windows / macOSとURP / HDRPのUnity機能をまとめるHTMLです。ページ冒頭は短い照合日・対象行の後に表を置き、利用者向けの機能・必要設定・実用上の制限を表内に保ちます。表には作業履歴や試験数を並べず、実装状態・検証範囲・未確認条件を混同しません。詳細なコード基準、検証件数、作業履歴、長い根拠説明は[作業・検証履歴](../development/ja/unity-feature-platform-matrix-history.html)または日付付き試験記録に置き、現行ページの先頭へ追記しません。HTMLを直接更新し、別の表データや生成器は作りません。
 
 ## 証拠の優先順位
 
@@ -9,6 +9,8 @@
 3. sourceを調べ、実装の有無、明示拒否、設定保持、resource/lifecycle動作を区別します。コードの存在だけで描画成功や画質を推定しません。
 
 raw XML/structured recordを最も具体的な実行証拠とし、日付付きレポートを人が読める説明として使います。失敗、skip、test 0件、自然終了やdevice cleanupなどの未通過gateをPASSに数えません。集計値だけでfixtureの対象や条件を広げません。
+
+公開用にローカルパスを伏せた証跡は、実行時原本と同じbytesではありません。[公開コピーの方針](../validation/PUBLIC_EVIDENCE.md)と[置換・hash一覧](../validation/PUBLIC_REDACTIONS.json)に従い、既存manifestの実行時hash／bytesと公開コピーの値を区別します。パス整理を再試験や対応範囲の拡大として扱いません。
 
 ## 状態と検証範囲
 

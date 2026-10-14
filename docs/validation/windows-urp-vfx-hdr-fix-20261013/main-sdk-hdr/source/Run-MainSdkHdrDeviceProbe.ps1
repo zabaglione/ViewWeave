@@ -5,10 +5,10 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$base = 'E:/LookingGlassSDK/.local/windows-vfx-scene-comparison-20261013'
+$base = 'REPO_ROOT/.local/windows-vfx-scene-comparison-20261013'
 $project = Join-Path $base 'URP/UnityProject'
 $editor = 'C:/Program Files/Unity/Hub/Editor/6000.6.4f1/Editor/Unity.exe'
-$source = 'E:/LookingGlassSDK/.local/windows-urp-vfx-hdr-fix-20261013/DeviceHelpers/MainSdkHdrDeviceProbeTests.cs'
+$source = 'REPO_ROOT/.local/windows-urp-vfx-hdr-fix-20261013/DeviceHelpers/MainSdkHdrDeviceProbeTests.cs'
 $cloneSource = Join-Path $project 'Assets/SceneComparisonTests/MainSdkHdrDeviceProbeTests.cs'
 $results = Join-Path $base 'URP/ResultsDevice'
 New-Item -ItemType Directory -Path $results -Force | Out-Null

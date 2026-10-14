@@ -3,11 +3,11 @@ param([int]$TimeoutSeconds = 900)
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
-$policyRoot = 'E:/LookingGlassSDK/.local/windows-urp-vfx-sdk-memory-policy-20261014'
-$cloneRoot = 'E:/LookingGlassSDK/.local/windows-vfx-scene-comparison-20261013/URP/UnityProject'
+$policyRoot = 'REPO_ROOT/.local/windows-urp-vfx-sdk-memory-policy-20261014'
+$cloneRoot = 'REPO_ROOT/.local/windows-vfx-scene-comparison-20261013/URP/UnityProject'
 $editor = 'C:/Program Files/Unity/Hub/Editor/6000.6.4f1/Editor/Unity.exe'
-$baseRunner = 'E:/LookingGlassSDK/.local/windows-vfx-scene-comparison-20261013/Tools/Run-UnityIsolated.ps1'
-$inputDirectory = 'E:/LookingGlassSDK/.local/windows-urp-vfx-frustum-memory-20261013/URP/Results/SampleTextureNative-20261013T103828702Z-Auto'
+$baseRunner = 'REPO_ROOT/.local/windows-vfx-scene-comparison-20261013/Tools/Run-UnityIsolated.ps1'
+$inputDirectory = 'REPO_ROOT/.local/windows-urp-vfx-frustum-memory-20261013/URP/Results/SampleTextureNative-20261013T103828702Z-Auto'
 $inputNative = Join-Path $inputDirectory 'native-result.json'
 $inputSummary = Join-Path $inputDirectory 'summary.json'
 $assetPath = 'Assets/FrustumMemoryFixturesGrid40/Auto/SampleTexture2D.vfx'

@@ -4,7 +4,7 @@
     <properties>
       <property name="platform" value="EditMode" />
     </properties>
-    <test-suite type="Assembly" id="1143" name="ViewWeave.BridgeEditorPreviewValidation.Editor.Tests.dll" fullname="E:/LookingGlassSDK/Tests/Pipelines/Unity/Library/ScriptAssemblies/ViewWeave.BridgeEditorPreviewValidation.Editor.Tests.dll" runstate="Runnable" testcasecount="111" result="Passed" start-time="2026-10-13 04:18:51Z" end-time="2026-10-13 04:19:11Z" duration="20.454049" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <test-suite type="Assembly" id="1143" name="ViewWeave.BridgeEditorPreviewValidation.Editor.Tests.dll" fullname="REPO_ROOT/Tests/Pipelines/Unity/Library/ScriptAssemblies/ViewWeave.BridgeEditorPreviewValidation.Editor.Tests.dll" runstate="Runnable" testcasecount="111" result="Passed" start-time="2026-10-13 04:18:51Z" end-time="2026-10-13 04:19:11Z" duration="20.454049" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
       <properties>
         <property name="_PID" value="61820" />
         <property name="_APPDOMAIN" value="Unity Child Domain" />
@@ -32,7 +32,7 @@ EDITOR_PREVIEW_GPU render pipeline=URP, views=8, samplesView=4, samplesResolve=1
 EDITOR_PREVIEW_GPU pixels=greenDominant=1880, nonBlack=1880, maxRGB=0/255/0
 EDITOR_PREVIEW_GPU profile_mutation pipeline=URP, rejected=true, profileUnchanged=true
 EDITOR_PREVIEW_GPU pause_resume pipeline=URP, sameProducer=true, sameCoreTextures=true
-Saving results to: C:/Users/zzaba/AppData/LocalLow/zabaglione/PipelineSmoke\TestResults.xml
+Saving results to: WINDOWS_USER_HOME/AppData/LocalLow/zabaglione/PipelineSmoke\TestResults.xml
 ]]></output>
             </test-case>
           </test-suite>

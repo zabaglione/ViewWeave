@@ -1,7 +1,7 @@
 {
     "status": "failed",
     "pipeline": "UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset|PC_High",
-    "projectPath": "E:\\LookingGlassSDK\\.local\\windows-vfx-scene-comparison-20261013\\URP\\UnityProject",
+    "projectPath": "REPO_ROOT\\.local\\windows-vfx-scene-comparison-20261013\\URP\\UnityProject",
     "scenePath": "Assets/Samples/Visual Effect Graph/17.6.0/Learning Templates/Scenes/URP_VFX_Learning_Templates.unity",
     "unityVersion": "6000.6.4f1",
     "noGraphicsRequested": true,

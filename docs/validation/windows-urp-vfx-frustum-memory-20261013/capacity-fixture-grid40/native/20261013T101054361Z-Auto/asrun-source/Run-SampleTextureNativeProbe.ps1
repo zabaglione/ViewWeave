@@ -5,7 +5,7 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 
-$repo = (Resolve-Path 'E:/LookingGlassSDK').Path
+$repo = (Resolve-Path 'REPO_ROOT').Path
 $localRoot = Join-Path $repo '.local/windows-urp-vfx-frustum-memory-20261013'
 $project = Join-Path $repo '.local/windows-vfx-scene-comparison-20261013/URP/UnityProject'
 $projectResults = Join-Path $project 'TestResults'

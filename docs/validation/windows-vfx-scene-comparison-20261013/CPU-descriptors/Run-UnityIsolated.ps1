@@ -9,7 +9,7 @@ param(
     [switch]$NoGraphics
 )
 $ErrorActionPreference = 'Stop'
-$base = 'E:/LookingGlassSDK/.local/windows-vfx-scene-comparison-20261013'
+$base = 'REPO_ROOT/.local/windows-vfx-scene-comparison-20261013'
 $editor = 'C:/Program Files/Unity/Hub/Editor/6000.6.4f1/Editor/Unity.exe'
 $project = Join-Path $base "$Pipeline/UnityProject"
 $results = Join-Path $base "$Pipeline/Results"
